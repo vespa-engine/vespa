@@ -5,7 +5,10 @@
 namespace proton {
 
 /**
- * Class representing the state of an resource (e.g. disk or memory) with its limit and current usage.
+ * Class representing the state of an resource (e.g. disk or memory) with its limit and current usage:
+ *   - usage: How much of this resource is currently used (number between 0 and 1).
+ *   - limit: How much of this resource is allowed to use (number between 0 and 1).
+ *   - utilization: How much of the allowed part of this resource is used (usage/limit).
  */
 class ResourceUsageState
 {
@@ -33,6 +36,7 @@ public:
     }
     double limit() const { return _limit; }
     double usage() const { return _usage; }
+    double utilization() const { return _usage/_limit; }
     bool aboveLimit() const {
         return aboveLimit(1.0);
     }

@@ -47,11 +47,12 @@
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/config/subscription/configuri.h>
 #include <list>
 #include <unordered_map>
+#include <mutex>
+#include <condition_variable>
 
 namespace storage {
 
@@ -120,9 +121,10 @@ class StorageBucketDBInitializer : public StorageLink,
             // This lock is held while the worker thread is working, such that
             // status retrieval can lock it. Listing part only grabs it when
             // needed to supporting listing in multiple threads
-        vespalib::Monitor _workerMonitor;
+        mutable std::mutex       _workerLock;
+        std::condition_variable  _workerCond;
             // This lock protects the reply list.
-        vespalib::Monitor _replyLock;
+        std::mutex               _replyLock;
 
         GlobalState();
         ~GlobalState();

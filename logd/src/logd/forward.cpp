@@ -11,8 +11,9 @@ LOG_SETUP("");
 
 namespace logdemon {
 
-Forwarder::Forwarder()
+Forwarder::Forwarder(Metrics &metrics)
     : _logserverfd(-1),
+      _metrics(metrics),
       _forwardMap(),
       _levelparser(),
       knownServices(),
@@ -171,6 +172,8 @@ Forwarder::parseline(const char *linestart, const char *lineend)
         ++_badLines;
         return false;
     }
+
+    _metrics.countLine(level, service);
 
     // Check overrides
     ForwardMap::iterator found = _forwardMap.find(l);

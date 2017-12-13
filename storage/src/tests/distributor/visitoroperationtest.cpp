@@ -454,7 +454,8 @@ VisitorOperationTest::testInvalidOrderDocSelection()
     CPPUNIT_ASSERT_EQUAL(
             std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
                         "ReturnCode(ILLEGAL_PARAMETERS, Failed to parse document select "
-                        "string 'id.order(10,3)=1 and dummy': Document type dummy not found)"),
+                        "string 'id.order(10,3)=1 and dummy': Document type 'dummy' not "
+                        "found at column 22 when parsing selection 'id.order(10,3)=1 and dummy')"),
             runEmptyVisitor(
                     createVisitorCommand("invalidOrderDoc",
                             id,

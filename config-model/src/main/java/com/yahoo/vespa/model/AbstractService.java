@@ -510,22 +510,6 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     }
 
     /**
-     * Sets up this service to be included when generating monitoring config.
-     * The ymon service name used will be {@link #getServiceType()}
-     */
-    public void monitorService() {
-        monitorService(getServiceType());
-    }
-
-    /**
-     * Sets up this service to be included when generating ymon config.
-     * @param ymonServiceName the ymon service name to be used
-     */
-    public void monitorService(String ymonServiceName) {
-        setProp("ymonService", ymonServiceName);
-    }
-
-    /**
      *
      * The service HTTP port for health status
      * @return portnumber

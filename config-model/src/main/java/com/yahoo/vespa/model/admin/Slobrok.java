@@ -23,7 +23,6 @@ public class Slobrok extends AbstractService {
         setProp("index", index);
         setProp("clustertype", "slobrok");
         setProp("clustername", "admin");
-        monitorService();
     }
 
     @Override

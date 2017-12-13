@@ -36,6 +36,7 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & comm
     _lock(),
     _sessionLock(),
     _sessions(),
+    _maxSessionRunTime(),
     _baseDir(baseDir),
     _fileHeaderContext(fileHeaderContext),
     _markedDeleted(false)
@@ -105,7 +106,7 @@ DomainInfo
 Domain::getDomainInfo() const
 {
     LockGuard guard(_lock);
-    DomainInfo info(SerialNumRange(begin(guard), end(guard)), size(guard), byteSize(guard));
+    DomainInfo info(SerialNumRange(begin(guard), end(guard)), size(guard), byteSize(guard), _maxSessionRunTime);
     for (const auto &entry: _parts) {
         const DomainPart &part = *entry.second;
         info.parts.emplace_back(PartInfo(part.range(), part.size(), part.byteSize(), part.fileName()));
@@ -332,6 +333,7 @@ int Domain::startSession(int sessionId)
     LockGuard guard(_sessionLock);
     SessionList::iterator found = _sessions.find(sessionId);
     if (found != _sessions.end()) {
+        found->second->setStartTime(std::chrono::steady_clock::now());
         if ( execute(Session::createTask(found->second)).get() == nullptr ) {
             retval = 0;
         } else {
@@ -345,10 +347,12 @@ int Domain::closeSession(int sessionId)
 {
     _commitExecutor.sync();
     int retval(-1);
+    DurationSeconds sessionRunTime(0);
     {
         LockGuard guard(_sessionLock);
         SessionList::iterator found = _sessions.find(sessionId);
         if (found != _sessions.end()) {
+            sessionRunTime = (std::chrono::steady_clock::now() - found->second->getStartTime());
             retval = 1;
             _sessionExecutor.sync();
         }
@@ -362,6 +366,12 @@ int Domain::closeSession(int sessionId)
             retval = 0;
         } else {
             retval = 0;
+        }
+    }
+    {
+        LockGuard guard(_lock);
+        if (sessionRunTime > _maxSessionRunTime) {
+            _maxSessionRunTime = sessionRunTime;
         }
     }
     return retval;

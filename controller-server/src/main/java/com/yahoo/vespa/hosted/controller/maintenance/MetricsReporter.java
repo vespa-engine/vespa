@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNode;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNodeResult;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -23,11 +24,14 @@ import java.util.Optional;
 
 /**
  * @author mortent
+ * @author mpolden
  */
 public class MetricsReporter extends Maintainer {
 
     public static final String convergeMetric = "seconds.since.last.chef.convergence";
     public static final String deploymentFailMetric = "deployment.failurePercentage";
+    public static final String remainingRotations = "remaining_rotations";
+
     private final Metric metric;
     private final Chef chefClient;
     private final Clock clock;
@@ -51,6 +55,14 @@ public class MetricsReporter extends Maintainer {
     public void maintain() {
         reportChefMetrics();
         reportDeploymentMetrics();
+        reportRemainingRotations();
+    }
+
+    private void reportRemainingRotations() {
+        try (RotationLock lock = controller().applications().rotationRepository().lock()) {
+            int availableRotations = controller().applications().rotationRepository().availableRotations(lock).size();
+            metric.set(remainingRotations, availableRotations, metric.createContext(Collections.emptyMap()));
+        }
     }
 
     private void reportChefMetrics() {

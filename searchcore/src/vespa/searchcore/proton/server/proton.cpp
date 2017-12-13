@@ -36,7 +36,6 @@ LOG_SETUP(".proton.server.proton");
 using document::DocumentTypeRepo;
 using vespalib::FileHeader;
 using vespalib::IllegalStateException;
-using vespalib::MonitorGuard;
 using vespalib::Slime;
 using vespalib::slime::ArrayInserter;
 using vespalib::slime::Cursor;
@@ -195,7 +194,6 @@ Proton::Proton(const config::ConfigUri & configUri,
       _queryLimiter(),
       _clock(0.010),
       _threadPool(128 * 1024),
-      _configGenMonitor(),
       _configGen(0),
       _distributionKey(-1),
       _isInitializing(true),
@@ -704,8 +702,11 @@ Proton::updateMetrics(const vespalib::MonitorGuard &)
         ContentProtonMetrics &metrics = _metricsEngine->root();
         metrics.transactionLog.update(_tls->getTransLogServer()->getDomainStats());
         const DiskMemUsageFilter &usageFilter = _diskMemUsageSampler->writeFilter();
-        metrics.resourceUsage.disk.set(usageFilter.getDiskUsedRatio());
-        metrics.resourceUsage.memory.set(usageFilter.getMemoryUsedRatio());
+        DiskMemUsageState usageState = usageFilter.usageState();
+        metrics.resourceUsage.disk.set(usageState.diskState().usage());
+        metrics.resourceUsage.diskUtilization.set(usageState.diskState().utilization());
+        metrics.resourceUsage.memory.set(usageState.memoryState().usage());
+        metrics.resourceUsage.memoryUtilization.set(usageState.memoryState().utilization());
         metrics.resourceUsage.memoryMappings.set(usageFilter.getMemoryStats().getMappingsCount());
         metrics.resourceUsage.openFileDescriptors.set(countOpenFiles());
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));
@@ -774,7 +775,11 @@ Proton::setClusterState(const storage::spi::ClusterState &calc)
     // about whether node is supposed to be up or not.  Match engine
     // needs to know this in order to stop serving queries.
     bool nodeUp(calc.nodeUp());
+    bool nodeRetired(calc.nodeRetired());
     _matchEngine->setNodeUp(nodeUp);
+    if (_memoryFlushConfigUpdater) {
+        _memoryFlushConfigUpdater->setNodeRetired(nodeRetired);
+    }
 }
 
 namespace {

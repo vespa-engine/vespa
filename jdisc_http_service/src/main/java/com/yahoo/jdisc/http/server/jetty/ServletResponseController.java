@@ -184,8 +184,7 @@ public class ServletResponseController {
 
     private static void setHeaders_holdingLock(Response jdiscResponse, HttpServletResponse servletResponse) {
         for (final Map.Entry<String, String> entry : jdiscResponse.headers().entries()) {
-            final String value = entry.getValue();
-            servletResponse.addHeader(entry.getKey(), value != null ? value : "");
+            servletResponse.addHeader(entry.getKey(), entry.getValue());
         }
 
         if (servletResponse.getContentType() == null) {

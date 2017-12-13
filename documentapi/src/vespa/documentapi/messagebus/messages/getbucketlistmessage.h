@@ -24,6 +24,8 @@ public:
      */
     GetBucketListMessage(const document::BucketId &bucketId);
 
+    ~GetBucketListMessage();
+
     /**
      * Returns the bucket whose list to retrieve.
      *

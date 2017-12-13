@@ -118,7 +118,8 @@ DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig()
       _lidSpaceCompaction(),
       _attributeUsageFilterConfig(),
       _attributeUsageSampleInterval(60.0),
-      _blockableJobConfig()
+      _blockableJobConfig(),
+      _flushConfig()
 {
 }
 
@@ -131,7 +132,8 @@ DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &
                             const DocumentDBLidSpaceCompactionConfig &lidSpaceCompaction,
                             const AttributeUsageFilterConfig &attributeUsageFilterConfig,
                             double attributeUsageSampleInterval,
-                            const BlockableMaintenanceJobConfig &blockableJobConfig)
+                            const BlockableMaintenanceJobConfig &blockableJobConfig,
+                            const DocumentDBFlushConfig &flushConfig)
     : _pruneRemovedDocuments(pruneRemovedDocuments),
       _heartBeat(heartBeat),
       _sessionCachePruneInterval(groupingSessionPruneInterval),
@@ -139,7 +141,8 @@ DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &
       _lidSpaceCompaction(lidSpaceCompaction),
       _attributeUsageFilterConfig(attributeUsageFilterConfig),
       _attributeUsageSampleInterval(attributeUsageSampleInterval),
-      _blockableJobConfig(blockableJobConfig)
+      _blockableJobConfig(blockableJobConfig),
+      _flushConfig(flushConfig)
 {
 }
 
@@ -154,7 +157,8 @@ operator==(const DocumentDBMaintenanceConfig &rhs) const
         _lidSpaceCompaction == rhs._lidSpaceCompaction &&
         _attributeUsageFilterConfig == rhs._attributeUsageFilterConfig &&
         _attributeUsageSampleInterval == rhs._attributeUsageSampleInterval &&
-        _blockableJobConfig == rhs._blockableJobConfig;
+        _blockableJobConfig == rhs._blockableJobConfig &&
+        _flushConfig == rhs._flushConfig;
 }
 
 } // namespace proton

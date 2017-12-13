@@ -7,9 +7,8 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
@@ -40,8 +39,8 @@ import static org.junit.Assert.assertTrue;
 public class ScrewdriverApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/screwdriver/responses/";
-    private static final Zone testZone = new Zone(Environment.test, RegionName.from("us-east-1"));
-    private static final Zone stagingZone = new Zone(Environment.staging, RegionName.from("us-east-3"));
+    private static final ZoneId testZone = ZoneId.from(Environment.test, RegionName.from("us-east-1"));
+    private static final ZoneId stagingZone = ZoneId.from(Environment.staging, RegionName.from("us-east-3"));
 
     @Test
     public void testGetReleaseStatus() throws Exception {
@@ -148,7 +147,7 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
         tester.containerTester().updateSystemVersion();
 
         Application app = tester.createApplication();
-        tester.controller().applications().lockedOrThrow(app.id(), application ->
+        tester.controller().applications().lockOrThrow(app.id(), application ->
                 tester.controller().applications().store(application.withProjectId(1)));
 
         // Unknown application

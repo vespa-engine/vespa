@@ -2,7 +2,6 @@
 
 #include "visitorthread.h"
 #include "messages.h"
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/bodyfielddetector.h>
 #include <vespa/document/select/orderingselector.h>
@@ -100,9 +99,7 @@ VisitorThread::VisitorThread(uint32_t threadIndex,
       _timeBetweenTicks(1000),
       _component(componentRegister, getThreadName(threadIndex)),
       _messageSessionFactory(messageSessionFac),
-      _visitorFactories(visitorFactories),
-      _memoryBufferAlloc(
-              _component.getMemoryManager().getAllocationType("VISITOR_BUFFER"))
+      _visitorFactories(visitorFactories)
 {
     framework::MilliSecTime maxProcessingTime(30 * 1000);
     framework::MilliSecTime waitTime(1000);
@@ -473,8 +470,6 @@ VisitorThread::onCreateVisitor(
                          cmd->getInstanceId().c_str(), errors.str().c_str());
             break;
         }
-        visitor->setAllocationType(_memoryBufferAlloc);
-        visitor->setMemoryManager(_component.getMemoryManager());
             // Set visitor parameters
         if (cmd->getMaximumPendingReplyCount() != 0) {
             visitor->setMaxPending(cmd->getMaximumPendingReplyCount());

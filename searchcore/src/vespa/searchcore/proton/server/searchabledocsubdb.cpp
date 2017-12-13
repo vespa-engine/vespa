@@ -5,6 +5,7 @@
 #include "document_subdb_initializer.h"
 #include "reconfig_params.h"
 #include "i_document_subdb_owner.h"
+#include "ibucketstatecalculator.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
@@ -49,7 +50,9 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
                   getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
       _numSearcherThreads(cfg._numSearcherThreads),
       _warmupExecutor(ctx._warmupExecutor),
-      _realGidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>())
+      _realGidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>()),
+      _flushConfig(),
+      _nodeRetired(false)
 {
     _gidToLidChangeHandler = _realGidToLidChangeHandler;
 }
@@ -136,6 +139,7 @@ SearchableDocSubDB::setup(const DocumentSubDbInitializerResult &initResult)
     Parent::setup(initResult);
     setupIndexManager(initResult.indexManager());
     _docIdLimit.set(_dms->getCommittedDocIdLimit());
+    applyFlushConfig(initResult.getFlushConfig());
 }
 
 void
@@ -160,6 +164,7 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
     StoreOnlyDocSubDB::reconfigure(newConfigSnapshot.getStoreConfig());
     IReprocessingTask::List tasks;
     updateLidReuseDelayer(&newConfigSnapshot);
+    applyFlushConfig(newConfigSnapshot.getMaintenanceConfigSP()->getFlushConfig());
     if (params.shouldMatchersChange() && _addMetrics) {
         reconfigureMatchingMetrics(newConfigSnapshot.getRankProfilesConfig());
     }
@@ -182,6 +187,27 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
     }
     syncViews();
     return tasks;
+}
+
+void
+SearchableDocSubDB::applyFlushConfig(const DocumentDBFlushConfig &flushConfig)
+{
+    _flushConfig = flushConfig;
+    propagateFlushConfig();
+}
+
+void
+SearchableDocSubDB::propagateFlushConfig()
+{
+    uint32_t maxFlushed = _nodeRetired ? _flushConfig.getMaxFlushedRetired() : _flushConfig.getMaxFlushed();
+    _indexMgr->setMaxFlushed(maxFlushed);
+}
+
+void
+SearchableDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc)
+{
+    _nodeRetired = calc->nodeRetired();
+    propagateFlushConfig();
 }
 
 void

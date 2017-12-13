@@ -35,7 +35,7 @@
 #include <vespa/storageframework/generic/component/componentregister.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vdslib/state/node.h>
-#include <vespa/vespalib/util/sync.h>
+#include <mutex>
 
 namespace vespa { namespace config { namespace content { namespace core {
 namespace internal {
@@ -113,7 +113,7 @@ private:
     document::BucketIdFactory _bucketIdFactory;
     DistributionSP _distribution;
     NodeStateUpdater* _nodeStateUpdater;
-    vespalib::Lock _lock;
+    mutable std::mutex _lock;
 };
 
 struct StorageComponentRegister : public virtual framework::ComponentRegister

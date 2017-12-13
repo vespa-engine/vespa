@@ -43,14 +43,16 @@ public class ContainerTester {
     
     public JDisc container() { return container; }
 
+    public Controller controller() {
+        return (Controller) container.components().getComponent(Controller.class.getName());
+    }
+
     public void updateSystemVersion() {
-        Controller controller = (Controller)container.components().getComponent("com.yahoo.vespa.hosted.controller.Controller");
-        controller.updateVersionStatus(VersionStatus.compute(controller));
+        controller().updateVersionStatus(VersionStatus.compute(controller()));
     }
 
     public void updateSystemVersion(Version version) {
-        Controller controller = (Controller)container.components().getComponent("com.yahoo.vespa.hosted.controller.Controller");
-        controller.updateVersionStatus(VersionStatus.compute(controller, version));
+        controller().updateVersionStatus(VersionStatus.compute(controller(), version));
     }
 
     public void assertResponse(Supplier<Request> request, File responseFile) throws IOException {

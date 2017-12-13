@@ -13,17 +13,10 @@
 #include <vespa/vdslib/state/nodetype.h>
 #include <vespa/vespalib/util/exception.h>
 
-namespace vespa {
-    namespace config {
-        namespace content {
-            namespace internal {
-                class InternalStorDistributionType;
-            }
-        }
-    }
+namespace vespa::config::content::internal {
+    class InternalStorDistributionType;
 }
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 VESPA_DEFINE_EXCEPTION(NoDistributorsAvailableException, vespalib::Exception);
 VESPA_DEFINE_EXCEPTION(TooFewBucketBitsInUseException, vespalib::Exception);
@@ -101,8 +94,7 @@ private:
 
     const Group* getIdealDistributorGroup(const document::BucketId& bucket,
                                           const ClusterState& clusterState,
-                                          const Group& parent,
-                                          uint16_t redundancy) const;
+                                          const Group& parent) const;
 
     /**
      * Since distribution object may be used often in ideal state calculations
@@ -205,6 +197,5 @@ public:
     static bool allDistributorsDown(const Group&, const ClusterState&);
 };
 
-} // lib
-} // storage
+} // storage::lib
 

@@ -4,60 +4,36 @@ package com.yahoo.vespa.model.filedistribution;
 import com.yahoo.cloud.config.filedistribution.FiledistributorConfig;
 import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
 import com.yahoo.cloud.config.filedistribution.FilereferencesConfig;
-import com.yahoo.config.FileReference;
-
-import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
-import com.yahoo.vespa.model.admin.FileDistributionOptions;
-
-import java.util.Collection;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
+ *
+ * Config is produced by {@link FileDistributionConfigProvider}
  */
 public class FileDistributorService extends AbstractService implements
         FiledistributorConfig.Producer,
         FiledistributorrpcConfig.Producer,
         FilereferencesConfig.Producer {
-    private final static int BASEPORT = 19092;
 
-    private final FileDistributor fileDistributor;
-    private final FileDistributionOptions fileDistributionOptions;
-    private final boolean sendAllFiles;
+    final static int BASEPORT = 19092;
 
-    private Collection<FileReference> getFileReferences() {
-        if (sendAllFiles) {
-            return fileDistributor.allFilesToSend();
-        } else {
-            return fileDistributor.filesToSendToHost(getHost());
-        }
-    }
+    private final FileDistributionConfigProvider configProvider;
 
-    public FileDistributorService(AbstractConfigProducer parent,
-                                  String name,
-                                  FileDistributor fileDistributor,
-                                  FileDistributionOptions fileDistributionOptions,
-                                  boolean sendAllFiles) {
-        super(parent, name);
+    public FileDistributorService(AbstractConfigProducer parent, String hostname, FileDistributionConfigProvider configProvider) {
+        super(parent, hostname);
+        this.configProvider = configProvider;
         portsMeta.on(0).tag("rpc");
         portsMeta.on(1).tag("torrent");
         portsMeta.on(2).tag("http").tag("state");
         setProp("clustertype", "filedistribution");
         setProp("clustername", "admin");
-
-        this.fileDistributor = fileDistributor;
-        this.fileDistributionOptions = fileDistributionOptions;
-        this.sendAllFiles = sendAllFiles;
-        monitorService();
     }
 
     @Override
     public String getStartupCommand() {
-        // If disabled config proxy should act as file distributor, so don't start this service
-        return (fileDistributionOptions.disabled())
-                ? null
-                : "exec $ROOT/sbin/vespa-filedistributor" + " --configid " + getConfigId();
+        return "exec $ROOT/sbin/vespa-filedistributor" + " --configid " + getConfigId();
     }
 
     @Override
@@ -70,6 +46,7 @@ public class FileDistributorService extends AbstractService implements
         return true;
     }
 
+    @Override
     public int getPortCount() {
         return 3;
     }
@@ -81,24 +58,16 @@ public class FileDistributorService extends AbstractService implements
 
     @Override
     public void getConfig(FiledistributorConfig.Builder builder) {
-        fileDistributionOptions.getConfig(builder);
-        builder.torrentport(getRelativePort(1));
-        builder.stateport(getRelativePort(2));
-        builder.hostname(getHostName());
-        builder.filedbpath(FileDistribution.getDefaultFileDBPath().toString());
+        configProvider.getConfig(builder);
     }
 
     @Override
     public void getConfig(FiledistributorrpcConfig.Builder builder) {
-        // If disabled config proxy should act as file distributor, so use config proxy port
-        int port = (fileDistributionOptions.disabled()) ? 19090 : getRelativePort(0);
-        builder.connectionspec("tcp/" + getHostName() + ":" + port);
+        configProvider.getConfig(builder);
     }
 
     @Override
     public void getConfig(FilereferencesConfig.Builder builder) {
-        for (FileReference reference : getFileReferences()) {
-            builder.filereferences(reference.value());
-        }
+        configProvider.getConfig(builder);
     }
 }

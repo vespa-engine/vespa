@@ -47,24 +47,15 @@ public:
     bool operator==(const DenseTensorView &rhs) const;
     CellsIterator cellsIterator() const { return CellsIterator(_typeRef, _cellsRef); }
 
-    virtual const eval::ValueType &getType() const override;
-    virtual double sum() const override;
-    virtual Tensor::UP add(const Tensor &arg) const override;
-    virtual Tensor::UP subtract(const Tensor &arg) const override;
-    virtual Tensor::UP multiply(const Tensor &arg) const override;
-    virtual Tensor::UP min(const Tensor &arg) const override;
-    virtual Tensor::UP max(const Tensor &arg) const override;
-    virtual Tensor::UP match(const Tensor &arg) const override;
+    virtual const eval::ValueType &type() const override;
+    virtual double as_double() const override;
     virtual Tensor::UP apply(const CellFunction &func) const override;
-    virtual Tensor::UP sum(const vespalib::string &dimension) const override;
     virtual Tensor::UP join(join_fun_t function,
                             const Tensor &arg) const override;
     virtual Tensor::UP reduce(join_fun_t op,
                               const std::vector<vespalib::string> &dimensions)
         const override;
     virtual bool equals(const Tensor &arg) const override;
-    virtual void print(std::ostream &out) const override;
-    virtual vespalib::string toString() const override;
     virtual Tensor::UP clone() const override;
     virtual eval::TensorSpec toSpec() const override;
     virtual void accept(TensorVisitor &visitor) const override;

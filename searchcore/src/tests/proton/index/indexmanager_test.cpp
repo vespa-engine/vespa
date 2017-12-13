@@ -20,7 +20,6 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -50,9 +49,6 @@ using search::queryeval::Source;
 using std::set;
 using std::string;
 using vespalib::BlockingThreadStackExecutor;
-using vespalib::Gate;
-using vespalib::Monitor;
-using vespalib::MonitorGuard;
 using vespalib::ThreadStackExecutor;
 
 using namespace proton;

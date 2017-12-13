@@ -205,7 +205,7 @@
   ],
   "compileVersion": "(ignore)",
   "globalRotations": [
-    "http://fake-global-rotation-tenant1.application1"
+    "http://application1.tenant1.global.vespa.yahooapis.com:4080/"
   ],
   "instances": [
     {

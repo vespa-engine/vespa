@@ -33,21 +33,23 @@ void
 ResourceUsageExplorer::get_state(const vespalib::slime::Inserter &inserter, bool full) const
 {
     Cursor &object = inserter.insertObject();
+    DiskMemUsageState usageState = _usageFilter.usageState();
     if (full) {
-        DiskMemUsageFilter::Config config = _usageFilter.getConfig();
         Cursor &disk = object.setObject("disk");
-        disk.setDouble("usedRatio", _usageFilter.getDiskUsedRatio());
-        disk.setDouble("usedLimit", config._diskLimit);
+        disk.setDouble("usage", usageState.diskState().usage());
+        disk.setDouble("limit", usageState.diskState().limit());
+        disk.setDouble("utilization", usageState.diskState().utilization());
         convertDiskStatsToSlime(_usageFilter.getHwInfo(), _usageFilter.getDiskUsedSize(), disk.setObject("stats"));
 
         Cursor &memory = object.setObject("memory");
-        memory.setDouble("usedRatio", _usageFilter.getMemoryUsedRatio());
-        memory.setDouble("usedLimit", config._memoryLimit);
+        memory.setDouble("usage", usageState.memoryState().usage());
+        memory.setDouble("limit", usageState.memoryState().limit());
+        memory.setDouble("utilization", usageState.memoryState().utilization());
         memory.setLong("physicalMemory", _usageFilter.getHwInfo().memory().sizeBytes());
         convertMemoryStatsToSlime(_usageFilter.getMemoryStats(), memory.setObject("stats"));
     } else {
-        object.setDouble("disk", _usageFilter.getDiskUsedRatio());
-        object.setDouble("memory", _usageFilter.getMemoryUsedRatio());
+        object.setDouble("disk", usageState.diskState().usage());
+        object.setDouble("memory", usageState.memoryState().usage());
     }
 }
 

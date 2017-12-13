@@ -138,7 +138,8 @@ public class VespaModelFactory implements ModelFactory {
             .rotations(modelContext.properties().rotations())
             .zone(zone)
             .now(clock.instant())
-            .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion());
+            .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion())
+            .disableFiledistributor(modelContext.properties().disableFileDistributor());
         modelContext.previousModel().ifPresent(builder::previousModel);
         return builder.build();
     }

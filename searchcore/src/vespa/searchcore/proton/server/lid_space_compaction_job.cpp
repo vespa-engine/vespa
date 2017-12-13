@@ -6,7 +6,7 @@
 #include "lid_space_compaction_job.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchlib/common/gatecallback.h>
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/gate.h>
 #include <cassert>
 
 #include <vespa/log/log.h>

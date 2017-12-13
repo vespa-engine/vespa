@@ -43,19 +43,19 @@ AttributeContext::~AttributeContext() { }
 const IAttributeVector *
 AttributeContext::getAttribute(const string & name) const
 {
-    vespalib::LockGuard guard(_cacheLock);
+    std::lock_guard<std::mutex> guard(_cacheLock);
     return getAttribute(_attributes, name, false);
 }
 
 const IAttributeVector *
 AttributeContext::getAttributeStableEnum(const string & name) const
 {
-    vespalib::LockGuard guard(_cacheLock);
+    std::lock_guard<std::mutex> guard(_cacheLock);
     return getAttribute(_enumAttributes, name, true);
 }
 
 void AttributeContext::releaseEnumGuards() {
-    vespalib::LockGuard guard(_cacheLock);
+    std::lock_guard<std::mutex> guard(_cacheLock);
     _enumAttributes.clear();
 }
 

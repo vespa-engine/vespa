@@ -4,6 +4,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
 #include <vespa/fastos/timestamp.h>
+#include "document_db_flush_config.h"
 
 namespace proton {
 
@@ -95,6 +96,7 @@ private:
     AttributeUsageFilterConfig            _attributeUsageFilterConfig;
     double                                _attributeUsageSampleInterval;
     BlockableMaintenanceJobConfig         _blockableJobConfig;
+    DocumentDBFlushConfig                 _flushConfig;
 
 public:
     DocumentDBMaintenanceConfig();
@@ -106,7 +108,8 @@ public:
                                 const DocumentDBLidSpaceCompactionConfig &lidSpaceCompaction,
                                 const AttributeUsageFilterConfig &attributeUsageFilterConfig,
                                 double attributeUsageSampleInterval,
-                                const BlockableMaintenanceJobConfig &blockableJobConfig);
+                                const BlockableMaintenanceJobConfig &blockableJobConfig,
+                                const DocumentDBFlushConfig &flushConfig);
 
     bool
     operator==(const DocumentDBMaintenanceConfig &rhs) const;
@@ -133,6 +136,7 @@ public:
     const BlockableMaintenanceJobConfig &getBlockableJobConfig() const {
         return _blockableJobConfig;
     }
+    const DocumentDBFlushConfig &getFlushConfig() const { return _flushConfig; }
 };
 
 } // namespace proton

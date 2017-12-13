@@ -60,7 +60,6 @@ public:
     void visitInvalidConstant(const InvalidConstant &expr) override;
     void visitDocumentType(const DocType &expr) override;
     void visitIdValueNode(const IdValueNode &expr) override;
-    void visitSearchColumnValueNode(const SearchColumnValueNode &expr) override;
     void visitFieldValueNode(const FieldValueNode &expr) override;
     void visitFloatValueNode(const FloatValueNode &expr) override;
     void visitVariableValueNode(const VariableValueNode &expr) override;

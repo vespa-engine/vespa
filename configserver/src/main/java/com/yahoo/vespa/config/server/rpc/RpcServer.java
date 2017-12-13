@@ -41,8 +41,8 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdaterFactory;
 import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.Tenants;
-import net.jpountz.xxhash.XXHash64;
-import net.jpountz.xxhash.XXHashFactory;
+import com.yahoo.vespa.filedistribution.FileReceiver;
+import com.yahoo.vespa.filedistribution.FileReferenceData;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -76,20 +76,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     static final int TRACELEVEL_DEBUG = 9;
     private static final String THREADPOOL_NAME = "rpcserver worker pool";
     private static final long SHUTDOWN_TIMEOUT = 60;
-    private enum FileApiErrorCodes {
-        OK(0, "OK"),
-        NOT_FOUND(1, "Filereference not found");
-        private final int code;
-        private final String description;
-        FileApiErrorCodes(int code, String description) {
-            this.code = code;
-            this.description = description;
-        }
-        int getCode() { return code; }
-        String getDescription() { return description; }
-    }
+
     private final Supervisor supervisor = new Supervisor(new Transport());
-    private Spec spec = null;
+    private Spec spec;
     private final boolean useRequestVersion;
     private final boolean hostedVespa;
 
@@ -106,6 +95,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private final FileServer fileServer;
     
     private final ThreadPoolExecutor executorService;
+    private final boolean useChunkedFileTransfer;
     private volatile boolean allTenantsLoaded = false;
 
     /**
@@ -131,6 +121,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         this.useRequestVersion = config.useVespaVersionInRequest();
         this.hostedVespa = config.hostedVespa();
         this.fileServer = fileServer;
+        this.useChunkedFileTransfer = config.usechunkedtransfer();
         setUpHandlers();
     }
 
@@ -426,9 +417,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         return useRequestVersion;
     }
 
-    class FileReceiver implements FileServer.Receiver {
+    class WholeFileReceiver implements FileServer.Receiver {
         Target target;
-        FileReceiver(Target target) {
+        WholeFileReceiver(Target target) {
             this.target = target;
         }
 
@@ -438,44 +429,111 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         }
 
         @Override
-        public void receive(FileReference reference, String filename, byte [] content, FileServer.ReplayStatus status) {
-            XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
-            Request fileBlob = new Request("filedistribution.receiveFile");
-            fileBlob.parameters().add(new StringValue(reference.value()));
-            fileBlob.parameters().add(new StringValue(filename));
-            fileBlob.parameters().add(new DataValue(content));
-            fileBlob.parameters().add(new Int64Value(hasher.hash(ByteBuffer.wrap(content), 0)));
+        public void receive(FileReferenceData fileData, FileServer.ReplayStatus status) {
+            Request fileBlob = new Request(FileReceiver.RECEIVE_METHOD);
+            fileBlob.parameters().add(new StringValue(fileData.fileReference().value()));
+            fileBlob.parameters().add(new StringValue(fileData.filename()));
+            fileBlob.parameters().add(new StringValue(fileData.type().name()));
+            fileBlob.parameters().add(new DataValue(fileData.content().array()));
+            fileBlob.parameters().add(new Int64Value(fileData.xxhash()));
             fileBlob.parameters().add(new Int32Value(status.getCode()));
             fileBlob.parameters().add(new StringValue(status.getDescription()));
             target.invokeSync(fileBlob, 600);
             if (fileBlob.isError()) {
-                log.warning("Failed delivering reference '" + reference.value() + "' with file '" + filename + "' to " +
-                            target.toString() + " with error : '" + fileBlob.errorMessage() + "'.");
+                log.warning("Failed delivering reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
+                            target.toString() + " with error: '" + fileBlob.errorMessage() + "'.");
+            }
+        }
+    }
+
+    class ChunkedFileReceiver implements FileServer.Receiver {
+        Target target;
+        ChunkedFileReceiver(Target target) {
+            this.target = target;
+        }
+
+        @Override
+        public String toString() {
+            return target.toString();
+        }
+
+        @Override
+        public void receive(FileReferenceData fileData, FileServer.ReplayStatus status) {
+            int session = sendMeta(fileData);
+            sendParts(session, fileData);
+            sendEof(session, fileData, status);
+        }
+        private void sendParts(int session, FileReferenceData fileData) {
+            ByteBuffer bb = ByteBuffer.allocate(0x100000);
+            for (int partId = 0, read = fileData.nextContent(bb); read >= 0; partId++, read = fileData.nextContent(bb)) {
+                byte [] buf = bb.array();
+                if (buf.length != bb.position()) {
+                    buf = new byte [bb.position()];
+                    bb.flip();
+                    bb.get(buf);
+                }
+                sendPart(session, fileData.fileReference(), partId, buf);
+                bb.clear();
+            }
+        }
+        private int sendMeta(FileReferenceData fileData) {
+            Request request = new Request(FileReceiver.RECEIVE_META_METHOD);
+            request.parameters().add(new StringValue(fileData.fileReference().value()));
+            request.parameters().add(new StringValue(fileData.filename()));
+            request.parameters().add(new StringValue(fileData.type().name()));
+            request.parameters().add(new Int64Value(fileData.size()));
+            target.invokeSync(request, 600);
+            if (request.isError()) {
+                log.warning("Failed delivering meta for reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
+                        target.toString() + " with error: '" + request.errorMessage() + "'.");
+            }
+            int retCode = request.returnValues().get(0).asInt32();
+            if (retCode != 0) {
+                throw new IllegalArgumentException("Unknown error from target '" + target.toString() + "' during rpc call " + request.methodName());
+            }
+            return request.returnValues().get(1).asInt32();
+        }
+        private void sendPart(int session, FileReference ref, int partId, byte [] buf) {
+            Request request = new Request(FileReceiver.RECEIVE_PART_METHOD);
+            request.parameters().add(new StringValue(ref.value()));
+            request.parameters().add(new Int32Value(session));
+            request.parameters().add(new Int32Value(partId));
+            request.parameters().add(new DataValue(buf));
+            target.invokeSync(request, 600);
+            if (request.isError()) {
+                log.warning("Failed delivering reference '" + ref.value() + "' to " +
+                        target.toString() + " with error: '" + request.errorMessage() + "'.");
+            }
+            int retCode = request.returnValues().get(0).asInt32();
+            if (retCode != 0) {
+                throw new IllegalArgumentException("Unknown error from target '" + target.toString() + "' during rpc call " + request.methodName());
+            }
+        }
+        private void sendEof(int session, FileReferenceData fileData, FileServer.ReplayStatus status) {
+            Request request = new Request(FileReceiver.RECEIVE_EOF_METHOD);
+            request.parameters().add(new StringValue(fileData.fileReference().value()));
+            request.parameters().add(new Int32Value(session));
+            request.parameters().add(new Int64Value(fileData.xxhash()));
+            request.parameters().add(new Int32Value(status.getCode()));
+            request.parameters().add(new StringValue(status.getDescription()));
+            target.invokeSync(request, 600);
+            if (request.isError()) {
+                log.warning("Failed delivering reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
+                        target.toString() + " with error: '" + request.errorMessage() + "'.");
+            }
+            int retCode = request.returnValues().get(0).asInt32();
+            if (retCode != 0) {
+                throw new IllegalArgumentException("Unknown error from target '" + target.toString() + "' during rpc call " + request.methodName());
             }
         }
     }
 
     @SuppressWarnings("UnusedDeclaration")
     public final void serveFile(Request request) {
-        String fileReference = request.parameters().get(0).asString();
-        FileApiErrorCodes result;
-        try {
-            // TODO remove once verified in system tests.
-            log.info("Received request for reference '" + fileReference + "'");
-            result = fileServer.hasFile(fileReference)
-                    ? FileApiErrorCodes.OK
-                    : FileApiErrorCodes.NOT_FOUND;
-            if (result == FileApiErrorCodes.OK) {
-                fileServer.startFileServing(fileReference, new FileReceiver(request.target()));
-            } else {
-                fileServer.download(new FileReference(fileReference));
-            }
-        } catch (IllegalArgumentException e) {
-            result = FileApiErrorCodes.NOT_FOUND;
-            log.warning("Failed serving file reference '" + fileReference + "' with error " + e.toString());
-        }
-        request.returnValues()
-                .add(new Int32Value(result.getCode()))
-                .add(new StringValue(result.getDescription()));
+        request.detach();
+        FileServer.Receiver receiver = useChunkedFileTransfer
+                                       ? new ChunkedFileReceiver(request.target())
+                                       : new WholeFileReceiver(request.target());
+        fileServer.serveFile(request, receiver);
     }
 }

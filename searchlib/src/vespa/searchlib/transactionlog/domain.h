@@ -4,6 +4,7 @@
 #include "domainpart.h"
 #include "session.h"
 #include <vespa/vespalib/util/threadexecutor.h>
+#include <chrono>
 
 namespace search::transactionlog {
 
@@ -20,14 +21,16 @@ struct PartInfo {
 };
 
 struct DomainInfo {
+    using DurationSeconds = std::chrono::duration<double>;
     SerialNumRange range;
     size_t numEntries;
     size_t byteSize;
+    DurationSeconds maxSessionRunTime;
     std::vector<PartInfo> parts;
-    DomainInfo(SerialNumRange range_in, size_t numEntries_in, size_t byteSize_in)
-        : range(range_in), numEntries(numEntries_in), byteSize(byteSize_in), parts() {}
+    DomainInfo(SerialNumRange range_in, size_t numEntries_in, size_t byteSize_in, DurationSeconds maxSessionRunTime_in)
+        : range(range_in), numEntries(numEntries_in), byteSize(byteSize_in), maxSessionRunTime(maxSessionRunTime_in), parts() {}
     DomainInfo()
-        : range(), numEntries(0), byteSize(0), parts() {}
+        : range(), numEntries(0), byteSize(0), maxSessionRunTime(), parts() {}
 };
 
 typedef std::map<vespalib::string, DomainInfo> DomainStats;
@@ -74,6 +77,7 @@ public:
         return _sessionExecutor.execute(std::move(task));
     }
     uint64_t size() const;
+
 private:
     SerialNum begin(const vespalib::LockGuard & guard) const;
     SerialNum end(const vespalib::LockGuard & guard) const;
@@ -89,6 +93,7 @@ private:
 
     using SessionList = std::map<int, Session::SP>;
     using DomainPartList = std::map<int64_t, DomainPart::SP>;
+    using DurationSeconds = std::chrono::duration<double>;
 
     DomainPart::Crc     _defaultCrcType;
     Executor          & _commitExecutor;
@@ -102,6 +107,7 @@ private:
     vespalib::Lock      _lock;
     vespalib::Lock      _sessionLock;
     SessionList         _sessions;
+    DurationSeconds     _maxSessionRunTime;
     vespalib::string    _baseDir;
     const common::FileHeaderContext &_fileHeaderContext;
     bool                _markedDeleted;

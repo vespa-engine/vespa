@@ -79,7 +79,12 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public Index getIndex(String name) {
-        throw createUnsupportedException("index");
+        if ( ! importedField.fieldName().equals(name)) {
+            throw new IllegalArgumentException("Getting an index (" + name + ") with different name than the imported field ("
+                                               + importedField.fieldName() + ") is not supported");
+        }
+        String targetIndexName = importedField.targetField().getName();
+        return importedField.targetField().getIndex(targetIndexName);
     }
 
     @Override

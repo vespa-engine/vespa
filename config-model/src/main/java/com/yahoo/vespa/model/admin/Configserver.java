@@ -35,7 +35,6 @@ public class Configserver extends AbstractService {
         portsMeta.on(1).tag("http").tag("config").tag("state");
         setProp("clustertype", "admin");
         setProp("clustername", "admin");
-        monitorService();
     }
 
     /**

@@ -6,6 +6,7 @@
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
+#include <mutex>
 
 namespace proton {
 
@@ -16,7 +17,7 @@ private:
     using DocsumRequest = search::engine::DocsumRequest;
     using DocsumClient = search::engine::DocsumClient;
 
-    vespalib::Lock                _lock;
+    std::mutex                    _lock;
     bool                          _closed;
     HandlerMap<ISearchHandler>    _handlers;
     vespalib::ThreadStackExecutor _executor;

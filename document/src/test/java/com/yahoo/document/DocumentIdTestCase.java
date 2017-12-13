@@ -1,9 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.yahoo.document.*;
 import com.yahoo.document.idstring.*;
 import com.yahoo.vespa.objects.BufferSerializer;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.math.BigInteger;
 
@@ -12,16 +15,20 @@ import java.util.regex.Pattern;
 import java.util.Arrays;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-public class DocumentIdTestCase extends junit.framework.TestCase {
+public class DocumentIdTestCase {
     DocumentTypeManager manager = new DocumentTypeManager();
 
-    public DocumentIdTestCase(String name) {
-        super(name);
-    }
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
-    protected void setUp() {
+    @Before
+    public void setUp() {
         DocumentType testDocType = new DocumentType("testdoc");
 
         testDocType.addHeaderField("intattr", DataType.INT);
@@ -33,6 +40,7 @@ public class DocumentIdTestCase extends junit.framework.TestCase {
         manager.registerDocumentType(testDocType);
     }
 
+    @Test
     public void testCompareTo() {
         DocumentId docId1 = new Document(manager.getDocumentType("testdoc"), new DocumentId("doc:testdoc:http://www.uio.no/")).getId();
         DocumentId docId2 = new Document(manager.getDocumentType("testdoc"), new DocumentId("doc:testdoc:http://www.uio.no/")).getId();
@@ -56,6 +64,7 @@ public class DocumentIdTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testValidInvalidUriSchemes() {
         try {
             //valid URIs
@@ -92,9 +101,23 @@ public class DocumentIdTestCase extends junit.framework.TestCase {
         checkInvalidUri("id:namespace:type:n=0,g=foo:foo");
     }
 
+    @Test
+    public void empty_user_location_value_throws_exception() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("ID location value for 'n=' key is empty");
+        new DocumentId("id:namespace:type:n=:foo");
+    }
+
+    @Test
+    public void empty_group_location_value_throws_exception() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("ID location value for 'g=' key is empty");
+        new DocumentId("id:namespace:type:g=:foo");
+    }
 
     //Compares globalId with C++ implementation located in
     // ~document-HEAD/document/src/tests/cpp-globalidbucketids.txt
+    @Test
     public void testCalculateGlobalId() throws IOException{
 
         String file = "src/tests/cpp-globalidbucketids.txt";
@@ -135,6 +158,7 @@ public class DocumentIdTestCase extends junit.framework.TestCase {
 
     //Compares bucketId with C++ implementation located in
     // ~document-HEAD/document/src/tests/cpp-globalidbucketids.txt
+    @Test
     public void testGetBucketId() throws IOException{
         String file = "src/tests/cpp-globalidbucketids.txt";
         BufferedReader fr = new BufferedReader(new FileReader(file));
@@ -153,6 +177,7 @@ public class DocumentIdTestCase extends junit.framework.TestCase {
         fr.close();
     }
 
+    @Test
     public void testGroupdoc() {
         try {
             //valid
@@ -166,11 +191,13 @@ public class DocumentIdTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testInvalidGroupdoc() {
         checkInvalidUri("grouppdoc:blabla:something");
         checkInvalidUri("groupdoc:blablasomething");
     }
 
+    @Test
     public void testUriNamespace() {
         DocumentId docId = new DocumentId("doc:bar:foo");
         assertEquals("doc:bar:foo", docId.toString());
@@ -217,6 +244,7 @@ public class DocumentIdTestCase extends junit.framework.TestCase {
         assertEquals(1268182861, ((OrderDocIdString)docId.getScheme()).getOrdering());
     }
 
+    @Test
     public void testIdStrings() {
         DocumentId docId;
         docId = new DocumentId(new DocIdString("test", "baaaa"));
@@ -240,6 +268,7 @@ public class DocumentIdTestCase extends junit.framework.TestCase {
         assertEquals("type", docId.getDocType());
     }
 
+    @Test
     public void testIdStringFeatures() {
         DocumentId none = new DocumentId("id:ns:type::foo");
         assertFalse(none.getScheme().hasGroup());
@@ -276,6 +305,7 @@ public class DocumentIdTestCase extends junit.framework.TestCase {
         assertEquals(42, order.getScheme().getNumber());
     }
 
+    @Test
     public void testHashCodeOfGids() {
         DocumentId docId0 = new DocumentId("doc:blabla:0");
         byte[] docId0Gid = docId0.getGlobalId();
@@ -295,6 +325,7 @@ public class DocumentIdTestCase extends junit.framework.TestCase {
         assertEquals(Arrays.hashCode(docId0Gid), Arrays.hashCode(docId0CopyGid));
     }
 
+    @Test
     public void testDocumentIdCanOnlyContainTextCharacters() throws UnsupportedEncodingException {
         assertExceptionWhenConstructing(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 0, 99}, // "id:a:b::0x0c"
                 "illegal code point 0x0");
@@ -313,6 +344,7 @@ public class DocumentIdTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testSerializedDocumentIdCanContainNonTextCharacter() throws UnsupportedEncodingException {
         String strId = new String(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 7, 99}); // "id:a:b::0x7c"
         DocumentId docId = DocumentId.createFromSerialized(strId);
@@ -328,6 +360,7 @@ public class DocumentIdTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testSerializedDocumentIdCannotContainZeroByte() throws UnsupportedEncodingException {
         String strId = new String(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 0, 99}); // "id:a:b::0x0c"
         try {

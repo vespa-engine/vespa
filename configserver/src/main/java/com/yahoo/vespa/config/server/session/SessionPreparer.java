@@ -155,7 +155,8 @@ public class SessionPreparer {
                                                               HostName.from(configserverConfig.loadBalancerAddress()),
                                                               configserverConfig.hostedVespa(),
                                                               zone,
-                                                              rotationsSet);
+                                                              rotationsSet,
+                                                              configserverConfig.disableFiledistributor());
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,
@@ -177,7 +178,7 @@ public class SessionPreparer {
 
         void preprocess() {
             try {
-                this.applicationPackage = context.getApplicationPackage().preprocess(properties.zone(), null, logger);
+                this.applicationPackage = context.getApplicationPackage().preprocess(properties.zone().id(), null, logger);
             } catch (IOException | TransformerException | ParserConfigurationException | SAXException e) {
                 throw new RuntimeException("Error deploying application package", e);
             }

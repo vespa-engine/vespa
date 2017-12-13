@@ -53,7 +53,6 @@ private:
     vespalib::Monitor _waiter;
     framework::SecondTime _startTime;
     framework::SecondTime _processedTime;
-    std::unique_ptr<framework::MemoryToken> _metricMemoryToken;
 
     void writeXmlTags(std::ostream& out,
                       const vespalib::StringTokenizer& name,

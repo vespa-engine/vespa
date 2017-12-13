@@ -309,6 +309,15 @@ DocumentSubDBCollection::close()
 }
 
 void
+DocumentSubDBCollection::setBucketStateCalculator(const IBucketStateCalculatorSP &calc)
+{
+    _calc = calc;
+    for (auto subDb : _subDBs) {
+        subDb->setBucketStateCalculator(calc);
+    }
+}
+
+void
 DocumentSubDBCollection::tearDownReferences(IDocumentDBReferenceResolver &resolver)
 {
     for (auto subDb : _subDBs) {

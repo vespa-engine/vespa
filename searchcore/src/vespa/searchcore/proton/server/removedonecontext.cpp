@@ -3,6 +3,7 @@
 #include "removedonecontext.h"
 #include "removedonetask.h"
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
+#include <cassert>
 
 namespace proton {
 

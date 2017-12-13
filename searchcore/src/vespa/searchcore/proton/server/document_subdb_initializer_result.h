@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/documentmetastore/document_meta_store_initializer_result.h>
 #include <vespa/searchcorespi/index/iindexmanager.h>
 #include <vespa/searchcore/proton/documentmetastore/lid_reuse_delayer_config.h>
+#include "document_db_flush_config.h"
 
 namespace proton {
 
@@ -24,6 +25,7 @@ private:
     std::shared_ptr<searchcorespi::IIndexManager::SP> _indexManager;
     using LidReuseDelayerConfig = documentmetastore::LidReuseDelayerConfig;
     LidReuseDelayerConfig _lidReuseDelayerConfig;
+    DocumentDBFlushConfig _flushConfig;
 
 public:
     DocumentSubDbInitializerResult();
@@ -56,6 +58,8 @@ public:
     const LidReuseDelayerConfig &lidReuseDelayerConfig() const {
         return _lidReuseDelayerConfig;
     }
+    void setFlushConfig(const DocumentDBFlushConfig &flushConfig);
+    const DocumentDBFlushConfig &getFlushConfig() const { return _flushConfig; }
 };
 
 } // namespace proton

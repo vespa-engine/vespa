@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.content.utils;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
@@ -11,9 +12,11 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.vespa.model.admin.FileDistributionOptions;
 import com.yahoo.vespa.model.admin.monitoring.DefaultMonitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
+import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import org.w3c.dom.Document;
 
 import java.util.Collections;
@@ -57,7 +60,8 @@ public class ContentClusterUtils {
 
     public static ContentCluster createCluster(String clusterXml, MockRoot root) throws Exception {
         Document doc = XML.getDocument(clusterXml);
-        Admin admin = new Admin(root, new DefaultMonitoring("vespa", 60), new Metrics(), Collections.emptyMap(), false);
+        Admin admin = new Admin(root, new DefaultMonitoring("vespa", 60), new Metrics(), Collections.emptyMap(), false,
+                                new FileDistributionConfigProducer.Builder(FileDistributionOptions.defaultOptions()).build(root, new MockFileRegistry()));
         ConfigModelContext context = ConfigModelContext.create(null, root.getDeployState(), null, root, null);
         
         return new ContentCluster.Builder(admin).build(Collections.emptyList(), context, doc.getDocumentElement());

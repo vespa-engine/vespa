@@ -5,7 +5,6 @@ import com.yahoo.collections.ListMap;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -20,12 +19,19 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
+/**
+ * Maintenance job which deactivates retired nodes, if given permission by orchestrator.
+ *
+ * @author hakon
+ */
+// TODO: This should be consolidated with RetiredExpirer. The only difference between this and RetiredExpirer is that
+// this runs more often by default and asks orchestrator for permission to retire nodes.
 public class RetiredEarlyExpirer extends Maintainer {
+
     private final Deployer deployer;
     private final Orchestrator orchestrator;
 
     public RetiredEarlyExpirer(NodeRepository nodeRepository,
-                               Zone zone,
                                Duration interval,
                                JobControl jobControl,
                                Deployer deployer,
@@ -56,7 +62,7 @@ public class RetiredEarlyExpirer extends Maintainer {
 
                 List<Node> nodesToRemove = new ArrayList<>();
                 for (Node node : retiredNodes) {
-                    if (nodeCanBeRemoved(node)) {
+                    if (canRemove(node)) {
                         nodesToRemove.add(node);
                     }
                 }
@@ -79,7 +85,8 @@ public class RetiredEarlyExpirer extends Maintainer {
         }
     }
 
-    boolean nodeCanBeRemoved(Node node) {
+    /** Returns whether orchestrator permits given node to be removed */
+    private boolean canRemove(Node node) {
         try {
             orchestrator.acquirePermissionToRemove(new HostName(node.hostname()));
             return true;
@@ -88,4 +95,5 @@ public class RetiredEarlyExpirer extends Maintainer {
             return false;
         }
     }
+
 }

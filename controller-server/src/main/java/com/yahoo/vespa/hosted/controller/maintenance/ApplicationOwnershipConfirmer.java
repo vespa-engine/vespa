@@ -1,7 +1,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
@@ -86,7 +85,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
     }
 
     protected void store(IssueId issueId, ApplicationId applicationId) {
-        controller().applications().lockedIfPresent(applicationId, application ->
+        controller().applications().lockIfPresent(applicationId, application ->
                 controller().applications().store(application.withOwnershipIssueId(issueId)));
     }
 }

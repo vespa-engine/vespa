@@ -46,7 +46,7 @@ TEST("Require that polling for elements work")
     holder.handle(ConfigUpdate::UP(new ConfigUpdate(value, true, 0)));
     ASSERT_TRUE(holder.poll());
     holder.provide();
-    ASSERT_TRUE(holder.poll());
+    ASSERT_FALSE(holder.poll());
 }
 
 TEST_MT_F("Require that wait is interrupted", 2, ConfigHolder)

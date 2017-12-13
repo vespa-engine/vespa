@@ -231,8 +231,6 @@ struct FileStorManagerTest : public CppUnit::TestFixture {
             fprintf(stderr, "%s\n", e.what());
         }
         _testdoctype1 = _node->getTypeRepo()->getDocumentType("testdoctype1");
-        _node->getMemoryManager().registerAllocationType(
-                framework::MemoryAllocationType("VISITOR_BUFFER"));
     }
 
     void putDoc(DummyStorageLink& top,
@@ -2010,19 +2008,11 @@ FileStorManagerTest::testVisiting()
     top.reset();
         // Visit bucket with no split, using no selection
     {
-        framework::MemoryToken::UP token(
-                _node->getMemoryManager().allocate(
-                    _node->getMemoryManager().getAllocationType(
-                        "VISITOR_BUFFER"),
-                16*1024,
-                16*1024,
-                127));
         spi::IteratorId iterId(createIterator(top, ids[0], "true"));
-        std::shared_ptr<GetIterCommand> cmd(
-                new GetIterCommand(std::move(token), makeDocumentBucket(ids[0]), iterId, 16*1024));
+        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[0]), iterId, 16*1024);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
+        CPPUNIT_ASSERT_EQUAL(size_t(1), top.getNumReplies());
         std::shared_ptr<GetIterReply> reply(
                 std::dynamic_pointer_cast<GetIterReply>(top.getReply(0)));
         CPPUNIT_ASSERT(reply.get());
@@ -2039,15 +2029,7 @@ FileStorManagerTest::testVisiting()
                                ids[1],
                                "testdoctype1.hstringval = \"John Doe\""));
         while (true) {
-            framework::MemoryToken::UP token(
-                    _node->getMemoryManager().allocate(
-                        _node->getMemoryManager().getAllocationType(
-                            "VISITOR_BUFFER"),
-                    16*1024,
-                    16*1024,
-                    127));
-            std::shared_ptr<GetIterCommand> cmd(
-                    new GetIterCommand(std::move(token), makeDocumentBucket(ids[1]), iterId, 16*1024));
+            auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[1]), iterId, 16*1024);
             top.sendDown(cmd);
             top.waitForMessages(1, _waitTime);
             CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
@@ -2078,18 +2060,10 @@ FileStorManagerTest::testVisiting()
                                true));
         uint32_t totalDocs = 0;
         while (true) {
-            framework::MemoryToken::UP token(
-                    _node->getMemoryManager().allocate(
-                        _node->getMemoryManager().getAllocationType(
-                            "VISITOR_BUFFER"),
-                    16*1024,
-                    16*1024,
-                    127));
-            std::shared_ptr<GetIterCommand> cmd(
-                    new GetIterCommand(std::move(token), makeDocumentBucket(ids[1]), iterId, 16*1024));
+            auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[1]), iterId, 16*1024);
             top.sendDown(cmd);
             top.waitForMessages(1, _waitTime);
-            CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
+            CPPUNIT_ASSERT_EQUAL(size_t(1), top.getNumReplies());
             std::shared_ptr<GetIterReply> reply(
                     std::dynamic_pointer_cast<GetIterReply>(
                         top.getReply(0)));
@@ -2799,15 +2773,8 @@ FileStorManagerTest::testGetIter()
         // Sending a getiter request that will only visit some of the docs
     spi::IteratorId iterId(createIterator(top, bid, ""));
     {
-        framework::MemoryToken::UP token(
-                _node->getMemoryManager().allocate(
-                    _node->getMemoryManager().getAllocationType(
-                        "VISITOR_BUFFER"),
-                2048,
-                2048,
-                127));
         std::shared_ptr<GetIterCommand> cmd(
-                new GetIterCommand(std::move(token), makeDocumentBucket(bid), iterId, 2048));
+                new GetIterCommand(makeDocumentBucket(bid), iterId, 2048));
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
         CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
@@ -2837,18 +2804,10 @@ FileStorManagerTest::testGetIter()
         CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
     }
     {
-        framework::MemoryToken::UP token(
-                _node->getMemoryManager().allocate(
-                    _node->getMemoryManager().getAllocationType(
-                        "VISITOR_BUFFER"),
-                2048,
-                2048,
-                127));
-        std::shared_ptr<GetIterCommand> cmd(
-                new GetIterCommand(std::move(token), makeDocumentBucket(bid), iterId, 2048));
+        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(bid), iterId, 2048);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
+        CPPUNIT_ASSERT_EQUAL(size_t(1), top.getNumReplies());
         std::shared_ptr<GetIterReply> reply(
                 std::dynamic_pointer_cast<GetIterReply>(
                     top.getReply(0)));

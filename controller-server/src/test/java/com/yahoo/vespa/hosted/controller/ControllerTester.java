@@ -7,7 +7,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.slime.Slime;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.Lock;
@@ -41,7 +41,7 @@ import com.yahoo.vespa.hosted.controller.persistence.MemoryControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.routing.MockRoutingGenerator;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
-import com.yahoo.vespa.hosted.rotation.MemoryRotationRepository;
+import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
 import java.util.Optional;
 
@@ -63,22 +63,31 @@ public final class ControllerTester {
     private final GitHubMock gitHub;
     private final CuratorDb curator;
     private final MemoryNameService nameService;
+    private final RotationsConfig rotationsConfig;
 
     private Controller controller;
 
     public ControllerTester() {
         this(new MemoryControllerDb(), new AthenzDbMock(), new ManualClock(), new ConfigServerClientMock(),
-             new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), new MemoryNameService());
+             new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), defaultRotationsConfig(),
+             new MemoryNameService());
     }
 
     public ControllerTester(ManualClock clock) {
         this(new MemoryControllerDb(), new AthenzDbMock(), clock, new ConfigServerClientMock(),
-             new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), new MemoryNameService());
+             new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), defaultRotationsConfig(),
+             new MemoryNameService());
+    }
+
+    public ControllerTester(RotationsConfig rotationsConfig) {
+        this(new MemoryControllerDb(), new AthenzDbMock(), new ManualClock(), new ConfigServerClientMock(),
+             new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), rotationsConfig, new MemoryNameService());
     }
 
     private ControllerTester(ControllerDb db, AthenzDbMock athenzDb, ManualClock clock,
                              ConfigServerClientMock configServer, ZoneRegistryMock zoneRegistry,
-                             GitHubMock gitHub, CuratorDb curator, MemoryNameService nameService) {
+                             GitHubMock gitHub, CuratorDb curator, RotationsConfig rotationsConfig,
+                             MemoryNameService nameService) {
         this.db = db;
         this.athenzDb = athenzDb;
         this.clock = clock;
@@ -87,7 +96,8 @@ public final class ControllerTester {
         this.gitHub = gitHub;
         this.curator = curator;
         this.nameService = nameService;
-        this.controller = createController(db, curator, configServer, clock, gitHub, zoneRegistry,
+        this.rotationsConfig = rotationsConfig;
+        this.controller = createController(db, curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
                                            athenzDb, nameService);
     }
 
@@ -109,7 +119,8 @@ public final class ControllerTester {
 
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
     public final void createNewController() {
-        controller = createController(db, curator, configServer, clock, gitHub, zoneRegistry, athenzDb, nameService);
+        controller = createController(db, curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry, athenzDb,
+                                      nameService);
     }
 
     /** Creates the given tenant and application and deploys it */
@@ -119,7 +130,7 @@ public final class ControllerTester {
 
     /** Creates the given tenant and application and deploys it */
     public Application createAndDeploy(String tenantName, String domainName, String applicationName,
-                                       String instanceName, Zone zone, long projectId, Long propertyId) {
+                                       String instanceName, ZoneId zone, long projectId, Long propertyId) {
         TenantId tenant = createTenant(tenantName, domainName, propertyId);
         Application application = createApplication(tenant, applicationName, instanceName, projectId);
         deploy(application, zone);
@@ -133,7 +144,7 @@ public final class ControllerTester {
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Application createAndDeploy(String tenantName, String domainName, String applicationName, Zone zone, long projectId, Long propertyId) {
+    public Application createAndDeploy(String tenantName, String domainName, String applicationName, ZoneId zone, long projectId, Long propertyId) {
         return createAndDeploy(tenantName, domainName, applicationName, "default", zone, projectId, propertyId);
     }
 
@@ -152,11 +163,14 @@ public final class ControllerTester {
         return application;
     }
 
-    public Zone toZone(Environment environment) {
+    public ZoneId toZone(Environment environment) {
         switch (environment) {
-            case dev: case test: return new Zone(environment, RegionName.from("us-east-1"));
-            case staging: return new Zone(environment, RegionName.from("us-east-3"));
-            default: return new Zone(environment, RegionName.from("us-west-1"));
+            case dev: case test:
+                return ZoneId.from(environment, RegionName.from("us-east-1"));
+            case staging:
+                return ZoneId.from(environment, RegionName.from("us-east-3"));
+            default:
+                return ZoneId.from(environment, RegionName.from("us-west-1"));
         }
     }
 
@@ -181,20 +195,20 @@ public final class ControllerTester {
     public Application createApplication(TenantId tenant, String applicationName, String instanceName, long projectId) {
         ApplicationId applicationId = applicationId(tenant.id(), applicationName, instanceName);
         controller().applications().createApplication(applicationId, Optional.of(TestIdentities.userNToken));
-        controller().applications().lockedOrThrow(applicationId, lockedApplication ->
+        controller().applications().lockOrThrow(applicationId, lockedApplication ->
                 controller().applications().store(lockedApplication.withProjectId(projectId)));
         return controller().applications().require(applicationId);
     }
 
-    public void deploy(Application application, Zone zone) {
+    public void deploy(Application application, ZoneId zone) {
         deploy(application, zone, new ApplicationPackage(new byte[0]));
     }
 
-    public void deploy(Application application, Zone zone, ApplicationPackage applicationPackage) {
+    public void deploy(Application application, ZoneId zone, ApplicationPackage applicationPackage) {
         deploy(application, zone, applicationPackage, false);
     }
 
-    public void deploy(Application application, Zone zone, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
+    public void deploy(Application application, ZoneId zone, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
         ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(application.deploymentJobs().projectId().get()));
         GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
         controller().applications().deployApplication(application.id(),
@@ -214,13 +228,13 @@ public final class ControllerTester {
         return new LockedApplication(application, new Lock("/test", new MockCurator()));
     }
 
-    private static Controller createController(ControllerDb db, CuratorDb curator,
+    private static Controller createController(ControllerDb db, CuratorDb curator, RotationsConfig rotationsConfig,
                                                ConfigServerClientMock configServerClientMock, ManualClock clock,
                                                GitHubMock gitHubClientMock, ZoneRegistryMock zoneRegistryMock,
                                                AthenzDbMock athensDb, MemoryNameService nameService) {
         Controller controller = new Controller(db,
                                                curator,
-                                               new MemoryRotationRepository(),
+                                               rotationsConfig,
                                                gitHubClientMock,
                                                new MemoryEntityService(),
                                                new MockOrganization(clock),
@@ -235,6 +249,15 @@ public final class ControllerTester {
                                                new AthenzClientFactoryMock(athensDb));
         controller.updateVersionStatus(VersionStatus.compute(controller));
         return controller;
+    }
+
+    private static RotationsConfig defaultRotationsConfig() {
+        RotationsConfig.Builder builder = new RotationsConfig.Builder();
+        for (int i = 1; i <= 10; i++) {
+            String id = String.format("%02d", i);
+            builder = builder.rotations("rotation-id-" + id, "rotation-fqdn-" + id);
+        }
+        return new RotationsConfig(builder);
     }
 
 }

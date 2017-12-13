@@ -24,15 +24,12 @@ public class OrchestratorImplTest {
     private static final String hostName = "host123.yahoo.com";
 
     private final ConfigServerHttpRequestExecutor requestExecutor = mock(ConfigServerHttpRequestExecutor.class);
-    private final int port = 1234;
-    private final OrchestratorImpl orchestrator = new OrchestratorImpl(requestExecutor, port);
-
+    private final OrchestratorImpl orchestrator = new OrchestratorImpl(requestExecutor);
 
     @Test
     public void testSuspendCall() {
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                port,
                 Optional.empty(),
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, null));
@@ -44,7 +41,6 @@ public class OrchestratorImplTest {
     public void testSuspendCallWithFailureReason() {
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                port,
                 Optional.empty(),
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "fail")));
@@ -56,7 +52,6 @@ public class OrchestratorImplTest {
     public void testSuspendCallWithNotFound() {
         when(requestExecutor.put(
                 any(String.class),
-                any(Integer.class),
                 any(),
                 any()
         )).thenThrow(new HttpException.NotFoundException("Not Found"));
@@ -68,7 +63,6 @@ public class OrchestratorImplTest {
     public void testSuspendCallWithSomeOtherException() {
         when(requestExecutor.put(
                 any(String.class),
-                any(Integer.class),
                 any(),
                 any()
         )).thenThrow(new RuntimeException("Some parameter was wrong"));
@@ -81,7 +75,6 @@ public class OrchestratorImplTest {
     public void testResumeCall() {
         when(requestExecutor.delete(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                port,
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, null));
 
@@ -92,7 +85,6 @@ public class OrchestratorImplTest {
     public void testResumeCallWithFailureReason() {
         when(requestExecutor.delete(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                port,
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "fail")));
 
@@ -103,7 +95,6 @@ public class OrchestratorImplTest {
     public void testResumeCallWithNotFound() {
         when(requestExecutor.delete(
                 any(String.class),
-                any(Integer.class),
                 any()
         )).thenThrow(new HttpException.NotFoundException("Not Found"));
 
@@ -114,7 +105,6 @@ public class OrchestratorImplTest {
     public void testResumeCallWithSomeOtherException() {
         when(requestExecutor.put(
                 any(String.class),
-                any(Integer.class),
                 any(),
                 any()
         )).thenThrow(new RuntimeException("Some parameter was wrong"));
@@ -130,7 +120,6 @@ public class OrchestratorImplTest {
 
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                port,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class
         )).thenReturn(BatchOperationResult.successResult());
@@ -146,7 +135,6 @@ public class OrchestratorImplTest {
 
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                port,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class
         )).thenReturn(new BatchOperationResult(failureReason));
@@ -162,7 +150,6 @@ public class OrchestratorImplTest {
 
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                port,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class
         )).thenThrow(new RuntimeException(exceptionMessage));

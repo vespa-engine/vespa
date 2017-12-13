@@ -4,7 +4,7 @@
 
 #include "tls_replay_progress.h"
 #include <vespa/searchlib/transactionlog/common.h>
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/gate.h>
 
 namespace proton {
 /**

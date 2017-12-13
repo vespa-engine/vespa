@@ -3,6 +3,7 @@ vespa_add_library(eval_tensor_dense OBJECT
     SOURCES
     direct_dense_tensor_builder.cpp
     dense_dot_product_function.cpp
+    dense_xw_product_function.cpp
     dense_tensor.cpp
     dense_tensor_address_combiner.cpp
     dense_tensor_builder.cpp

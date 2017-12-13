@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
@@ -34,11 +35,13 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ClusterUtilizationMaintainer clusterUtilizationMaintainer;
     private final DeploymentMetricsMaintainer deploymentMetricsMaintainer;
     private final ApplicationOwnershipConfirmer applicationOwnershipConfirmer;
+    private final DnsMaintainer dnsMaintainer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, Controller controller, CuratorDb curator,
                                  JobControl jobControl, Metric metric, Chef chefClient,
-                                 DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues) {
+                                 DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues,
+                                 NameService nameService) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
         deploymentExpirer = new DeploymentExpirer(controller, maintenanceInterval, jobControl);
@@ -52,6 +55,7 @@ public class ControllerMaintenance extends AbstractComponent {
         clusterUtilizationMaintainer = new ClusterUtilizationMaintainer(controller, Duration.ofHours(2), jobControl);
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(10), jobControl);
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
+        dnsMaintainer = new DnsMaintainer(controller, Duration.ofHours(1), jobControl, nameService);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -72,6 +76,7 @@ public class ControllerMaintenance extends AbstractComponent {
         clusterInfoMaintainer.deconstruct();
         deploymentMetricsMaintainer.deconstruct();
         applicationOwnershipConfirmer.deconstruct();
+        dnsMaintainer.deconstruct();
     }
 
 }

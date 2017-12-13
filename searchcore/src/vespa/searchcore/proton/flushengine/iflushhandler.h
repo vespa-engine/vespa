@@ -65,7 +65,7 @@ public:
     /**
      * This method is called after a flush has been completed. All transactions
      * up to the given serial number can be pruned from the domain of this
-     * handler. This method is called by an arbitrary worker thread.
+     * handler. This method is called by the flush scheduler thread.
      *
      * @param flushedSerial Serial number flushed for all flush
      *                      targets belonging to this handler.

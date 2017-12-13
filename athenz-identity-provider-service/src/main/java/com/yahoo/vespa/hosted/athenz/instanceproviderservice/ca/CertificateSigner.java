@@ -2,9 +2,9 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -68,13 +68,16 @@ public class CertificateSigner {
     private final Clock clock;
 
     @Inject
-    public CertificateSigner(KeyProvider keyProvider, AthenzProviderServiceConfig config, Zone zone) {
-        this(getPrivateKey(keyProvider, config, zone), HostName.getLocalhost(), Clock.systemUTC());
+    public CertificateSigner(KeyProvider keyProvider,
+                             ConfigserverConfig configserverConfig,
+                             AthenzProviderServiceConfig config,
+                             Zone zone) {
+        this(getPrivateKey(keyProvider, config, zone), configserverConfig.loadBalancerAddress(), Clock.systemUTC());
     }
 
-    CertificateSigner(PrivateKey caPrivateKey, String configServerHostname, Clock clock) {
+    CertificateSigner(PrivateKey caPrivateKey, String loadBalancerAddress, Clock clock) {
         this.caPrivateKey = caPrivateKey;
-        this.issuer = new X500Name("CN=" + configServerHostname);
+        this.issuer = new X500Name("CN=" + loadBalancerAddress);
         this.clock = clock;
     }
 

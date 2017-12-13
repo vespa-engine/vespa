@@ -146,7 +146,7 @@
   ],
   "compileVersion": "6.1.0",
   "globalRotations": [
-    "http://fake-global-rotation-tenant1.application1"
+    "http://application1.tenant1.global.vespa.yahooapis.com:4080/"
   ],
   "instances": [
     @include(dev-us-west-1.json),

@@ -5,6 +5,7 @@ import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TestIdentities;
@@ -20,12 +21,13 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzService;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -44,18 +46,16 @@ import java.util.Optional;
 public class ContainerControllerTester {
 
     private final ContainerTester containerTester;
-    private final Controller controller;
     private final Upgrader upgrader;
 
     public ContainerControllerTester(JDisc container, String responseFilePath) {
         containerTester = new ContainerTester(container, responseFilePath);
-        controller = (Controller)container.components().getComponent("com.yahoo.vespa.hosted.controller.Controller");
         CuratorDb curatorDb = new MockCuratorDb();
         curatorDb.writeUpgradesPerMinute(100);
-        upgrader = new Upgrader(controller, Duration.ofDays(1), new JobControl(curatorDb), curatorDb);
+        upgrader = new Upgrader(controller(), Duration.ofDays(1), new JobControl(curatorDb), curatorDb);
     }
 
-    public Controller controller() { return controller; }
+    public Controller controller() { return containerTester.controller(); }
 
     public Upgrader upgrader() { return upgrader; }
 
@@ -69,18 +69,18 @@ public class ContainerControllerTester {
 
     public Application createApplication(String athensDomain, String tenant, String application) {
         AthenzDomain domain1 = addTenantAthenzDomain(athensDomain, "mytenant");
-        controller.tenants().addTenant(Tenant.createAthensTenant(new TenantId(tenant), domain1,
+        controller().tenants().addTenant(Tenant.createAthensTenant(new TenantId(tenant), domain1,
                                                                  new Property("property1"),
                                                                  Optional.of(new PropertyId("1234"))),
                                        Optional.of(TestIdentities.userNToken));
         ApplicationId app = ApplicationId.from(tenant, application, "default");
-        return controller.applications().createApplication(app, Optional.of(TestIdentities.userNToken));
+        return controller().applications().createApplication(app, Optional.of(TestIdentities.userNToken));
     }
 
-    public Application deploy(Application application, ApplicationPackage applicationPackage, Zone zone, long projectId) {
+    public Application deploy(Application application, ApplicationPackage applicationPackage, ZoneId zone, long projectId) {
         ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(projectId));
         GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
-        controller.applications().deployApplication(application.id(),
+        controller().applications().deployApplication(application.id(),
                                                     zone,
                                                     applicationPackage,
                                                     new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, false));
@@ -106,7 +106,7 @@ public class ContainerControllerTester {
         AthenzDomain athensDomain = new AthenzDomain(domainName);
         AthenzDbMock.Domain domain = new AthenzDbMock.Domain(athensDomain);
         domain.markAsVespaTenant();
-        domain.admin(new AthenzPrincipal(new AthenzDomain("domain"), new UserId(userName)));
+        domain.admin(AthenzUtils.createAthenzIdentity(new AthenzDomain("domain"), userName));
         mock.getSetup().addDomain(domain);
         return athensDomain;
     }
@@ -119,6 +119,19 @@ public class ContainerControllerTester {
 
     public void assertResponse(Request request, String expectedResponse, int expectedStatusCode) throws IOException {
         containerTester.assertResponse(request, expectedResponse, expectedStatusCode);
+    }
+
+    /*
+     * Authorize action on tenantDomain/application for a given screwdriverId
+     */
+    public void authorize(AthenzDomain tenantDomain, ScrewdriverId screwdriverId, ApplicationAction action, Application application) {
+        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) containerTester.container().components()
+                .getComponent(AthenzClientFactoryMock.class.getName());
+
+        mock.getSetup()
+                .domains.get(tenantDomain)
+                .applications.get(new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(application.id().application().value()))
+                .addRoleMember(action, AthenzService.fromScrewdriverId(screwdriverId));
     }
 
 }

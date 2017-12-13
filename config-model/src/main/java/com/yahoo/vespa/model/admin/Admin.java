@@ -14,6 +14,8 @@ import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.filedistribution.DummyFileDistributionConfigProducer;
+import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProvider;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributor;
 import com.yahoo.vespa.model.filedistribution.FileDistributorService;
@@ -59,12 +61,14 @@ public class Admin extends AbstractConfigProducer implements Serializable {
                  Monitoring monitoring,
                  Metrics metrics,
                  Map<String, MetricsConsumer> legacyMetricsConsumers,
-                 boolean multitenant) {
+                 boolean multitenant,
+                 FileDistributionConfigProducer fileDistributionConfigProducer) {
         super(parent, "admin");
         this.monitoring = monitoring;
         this.metrics = metrics;
         this.legacyMetricsConsumers = legacyMetricsConsumers;
         this.multitenant = multitenant;
+        this.fileDistribution = fileDistributionConfigProducer;
     }
 
     public Configserver getConfigserver() {
@@ -148,10 +152,6 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         zooKeepersConfigProvider.getConfig(builder);
     }
 
-    public void setFileDistribution(FileDistributionConfigProducer fileDistribution) {
-        this.fileDistribution = fileDistribution;
-    }
-
     public FileDistributionConfigProducer getFileDistributionConfigProducer() {
         return fileDistribution;
     }
@@ -215,11 +215,25 @@ public class Admin extends AbstractConfigProducer implements Serializable {
                                        fileDistributor.fileSourceHost() + "'. Hostsystem=" + getHostSystem());
         }
 
-        FileDistributorService fds = new FileDistributorService(fileDistribution, host.getHost().getHostName(),
-            fileDistribution.getFileDistributor(), fileDistribution.getOptions(), host == deployHost);
-        fds.setHostResource(host);
-        fds.initService();
-        fileDistribution.addFileDistributionService(host.getHost(), fds);
+        FileDistributionConfigProvider configProvider =
+                new FileDistributionConfigProvider(fileDistributor,
+                                                   fileDistribution.getOptions(),
+                                                   host == deployHost,
+                                                   host.getHost());
+        if (fileDistribution.getOptions().disableFiledistributor()) {
+            DummyFileDistributionConfigProducer dummyFileDistributionConfigProducer =
+                    new DummyFileDistributionConfigProducer(fileDistribution,
+                                                            host.getHost().getHostName(),
+                                                            configProvider);
+            fileDistribution.addFileDistributionConfigProducer(host.getHost(), dummyFileDistributionConfigProducer);
+        } else {
+            FileDistributorService fds = new FileDistributorService(fileDistribution,
+                                                                    host.getHost().getHostName(),
+                                                                    configProvider);
+            fds.setHostResource(host);
+            fds.initService();
+            fileDistribution.addFileDistributionConfigProducer(host.getHost(), fds);
+        }
     }
 
     private boolean deployHostIsMissing(HostResource deployHost) {

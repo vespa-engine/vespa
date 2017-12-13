@@ -197,7 +197,9 @@ Session::Session(int sId, const SerialNumRange & r, const Domain::SP & d,
     _inSync(false),
     _ok(true),
     _finished(false),
-    _packetQ()
+    _packetQ(),
+    _startTime(),
+    _lock()
 {
     _connection->AddRef();
 }

@@ -41,7 +41,7 @@ public:
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
 
 private:
-    uint16_t getFirstAsterixIndex() const;
+    uint16_t getFirstAsteriskIndex() const;
     uint16_t divideSpecifiedCopies(
             uint16_t start, uint16_t end,
             uint16_t redundancy, const std::vector<uint16_t>& maxValues);

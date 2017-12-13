@@ -2,9 +2,9 @@
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,22 +15,41 @@ import java.util.UUID;
  */
 public class MemoryNameService implements NameService {
 
-    private final List<Record> records = new ArrayList<>();
+    private final Map<RecordId, Record> records = new HashMap<>();
 
-    public List<Record> records() {
-        return Collections.unmodifiableList(records);
+    public Map<RecordId, Record> records() {
+        return Collections.unmodifiableMap(records);
     }
 
     @Override
-    public RecordId createCname(String alias, String canonicalName) {
-        records.add(new Record(Record.Type.CNAME.name(), alias, canonicalName));
-        return new RecordId(UUID.randomUUID().toString());
+    public RecordId createCname(RecordName alias, RecordData canonicalName) {
+        RecordId id = new RecordId(UUID.randomUUID().toString());
+        records.put(id, new Record(id, Record.Type.CNAME, alias, canonicalName));
+        return id;
     }
 
     @Override
-    public Optional<Record> findRecord(Record.Type type, String name) {
-        return records.stream()
+    public Optional<Record> findRecord(Record.Type type, RecordName name) {
+        return records.values().stream()
                 .filter(record -> record.type() == type && record.name().equals(name))
                 .findFirst();
+    }
+
+    @Override
+    public Optional<Record> findRecord(Record.Type type, RecordData data) {
+        return records.values()
+                .stream()
+                .filter(record -> record.type() == type && record.data().equals(data))
+                .findFirst();
+    }
+
+    @Override
+    public void updateRecord(RecordId id, RecordData newData) {
+        records.computeIfPresent(id, (k, record) -> new Record(id, record.type(), record.name(), newData));
+    }
+
+    @Override
+    public void removeRecord(RecordId id) {
+        records.remove(id);
     }
 }

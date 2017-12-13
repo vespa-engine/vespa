@@ -10,7 +10,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -21,7 +21,6 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -53,7 +52,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -66,9 +64,12 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUser;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
@@ -93,7 +94,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 
@@ -241,7 +241,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         String userIdString = request.getProperty("userOverride");
         if (userIdString == null)
             userIdString = userFrom(request)
-                     .orElseThrow(() -> new ForbiddenException("You must be authenticated or specify userOverride"));
+                    .map(UserId::id)
+                    .orElseThrow(() -> new ForbiddenException("You must be authenticated or specify userOverride"));
         UserId userId = new UserId(userIdString);
         
         List<Tenant> tenants = controller.tenants().asList(userId);
@@ -376,13 +377,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Compile version. The version that should be used when building an application
         object.setString("compileVersion", application.oldestDeployedVersion().orElse(controller.systemVersion()).toFullString());
 
-        // Rotations
+        // Rotation
         Cursor globalRotationsArray = object.setArray("globalRotations");
-        Set<URI> rotations = controller.getRotationUris(application.id());
-        Map<String, RotationStatus> rotationHealthStatus =
-                rotations.isEmpty() ? Collections.emptyMap() : controller.getHealthStatus(rotations.iterator().next().getHost());
-        for (URI rotation : rotations)
-            globalRotationsArray.addString(rotation.toString());
+        Map<String, RotationStatus> rotationHealthStatus = application.rotation()
+                           .map(rotation -> controller.getHealthStatus(rotation.dnsName()))
+                           .orElse(Collections.emptyMap());
+        application.rotation().ifPresent(rotation -> globalRotationsArray.addString(rotation.url().toString()));
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments = controller.applications().deploymentTrigger()
@@ -395,7 +395,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             deploymentObject.setString("environment", deployment.zone().environment().value());
             deploymentObject.setString("region", deployment.zone().region().value());
             deploymentObject.setString("instance", application.id().instance().value()); // pointless
-            if ( ! rotations.isEmpty())
+            if (application.rotation().isPresent())
                 setRotationStatus(deployment, rotationHealthStatus, deploymentObject);
 
             if (recurseOverDeployments(request)) // List full deployment information when recursive.
@@ -423,7 +423,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .orElseThrow(() -> new NotExistsException(id + " not found"));
 
         DeploymentId deploymentId = new DeploymentId(application.id(),
-                                                     new Zone(Environment.from(environment), RegionName.from(region)));
+                                                     ZoneId.from(environment, region));
 
         Deployment deployment = application.deployments().get(deploymentId.zone());
         if (deployment == null)
@@ -507,14 +507,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Inspector requestData = toSlime(request.getData()).get();
         String reason = mandatory("reason", requestData).asString();
-        String agent = authorizer.getUserId(request).toString();
+        String agent = authorizer.getIdentity(request).getFullName();
         long timestamp = controller.clock().instant().getEpochSecond();
         EndpointStatus.Status status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
         EndpointStatus endPointStatus = new EndpointStatus(status, reason, agent, timestamp);
 
         // DeploymentId identifies the zone and application we are dealing with
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                new Zone(Environment.from(environment), RegionName.from(region)));
+                                                     ZoneId.from(environment, region));
         try {
             List<String> rotations = controller.applications().setGlobalRotationStatus(deploymentId, endPointStatus);
             return new MessageResponse(String.format("Rotations %s successfully set to %s service", rotations.toString(), inService ? "in" : "out of"));
@@ -526,7 +526,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse getGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region) {
 
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                new Zone(Environment.from(environment), RegionName.from(region)));
+                                                     ZoneId.from(environment, region));
 
         Slime slime = new Slime();
         Cursor c1 = slime.setObject().setArray("globalrotationoverride");
@@ -549,17 +549,16 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse rotationStatus(String tenantName, String applicationName, String instanceName, String environment, String region) {
-
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
-        Set<URI> rotations = controller.getRotationUris(applicationId);
-        if (rotations.isEmpty())
+        Application application = controller.applications().require(applicationId);
+        if (!application.rotation().isPresent()) {
             throw new NotExistsException("global rotation does not exist for '" + environment + "." + region + "'");
+        }
 
         Slime slime = new Slime();
         Cursor response = slime.setObject();
 
-        Map<String, RotationStatus> rotationHealthStatus = controller.getHealthStatus(rotations.iterator().next().getHost());
-
+        Map<String, RotationStatus> rotationHealthStatus = controller.getHealthStatus(application.rotation().get().dnsName());
         for (String rotationEndpoint : rotationHealthStatus.keySet()) {
             if (rotationEndpoint.contains(toDns(environment)) && rotationEndpoint.contains(toDns(region))) {
                 Cursor bcpStatusObject = response.setObject("bcpStatus");
@@ -572,13 +571,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse waitForConvergence(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         return new JacksonJsonResponse(controller.waitForConfigConvergence(new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                                                                                            new Zone(Environment.from(environment), RegionName.from(region))),
+                                                                                            ZoneId.from(environment, region)),
                                                                            asLong(request.getProperty("timeout"), 1000)));
     }
 
     private HttpResponse services(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationView applicationView = controller.getApplicationView(tenantName, applicationName, instanceName, environment, region);
-        ServiceApiResponse response = new ServiceApiResponse(new Zone(Environment.from(environment), RegionName.from(region)),
+        ServiceApiResponse response = new ServiceApiResponse(ZoneId.from(environment, region),
                                                              new ApplicationId.Builder().tenant(tenantName).applicationName(applicationName).instanceName(instanceName).build(),
                                                              controller.getConfigServerUris(Environment.from(environment), RegionName.from(region)),
                                                              request.getUri());
@@ -588,7 +587,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse service(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath, HttpRequest request) {
         Map<?,?> result = controller.getServiceApiResponse(tenantName, applicationName, instanceName, environment, region, serviceName, restPath);
-        ServiceApiResponse response = new ServiceApiResponse(new Zone(Environment.from(environment), RegionName.from(region)),
+        ServiceApiResponse response = new ServiceApiResponse(ZoneId.from(environment, region),
                                                              new ApplicationId.Builder().tenant(tenantName).applicationName(applicationName).instanceName(instanceName).build(),
                                                              controller.getConfigServerUris(Environment.from(environment), RegionName.from(region)),
                                                              request.getUri());
@@ -597,15 +596,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
     
     private HttpResponse createUser(HttpRequest request) {
-        Optional<String> username = userFrom(request);
-        if ( ! username.isPresent() ) throw new ForbiddenException("Not authenticated.");
+        Optional<UserId> user = userFrom(request);
+        if ( ! user.isPresent() ) throw new ForbiddenException("Not authenticated.");
 
         try {
-            controller.tenants().createUserTenant(username.get());
-            return new MessageResponse("Created user '" + username.get() + "'");
+            controller.tenants().createUserTenant(user.get().id());
+            return new MessageResponse("Created user '" + user.get() + "'");
         } catch (AlreadyExistsException e) {
             // Ok
-            return new MessageResponse("User '" + username + "' already exists");
+            return new MessageResponse("User '" + user + "' already exists");
         }
     }
 
@@ -711,7 +710,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                        "Active versions: " + controller.versionStatus().versions());
 
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
-        controller.applications().lockedOrThrow(id, application -> {
+        controller.applications().lockOrThrow(id, application -> {
             if (application.deploying().isPresent())
                 throw new IllegalArgumentException("Can not start a deployment of " + application + " at this time: " +
                                                            application.deploying().get() + " is in progress");
@@ -729,7 +728,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if ( ! change.isPresent())
             return new MessageResponse("No deployment in progress for " + application + " at this time");
 
-        controller.applications().lockedOrThrow(id, lockedApplication ->
+        controller.applications().lockOrThrow(id, lockedApplication ->
             controller.applications().deploymentTrigger().cancelChange(id));
 
         return new MessageResponse("Cancelled " + change.get() + " for " + application);
@@ -738,12 +737,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     /** Schedule restart of deployment, or specific host in a deployment */
     private HttpResponse restart(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                                                     new Zone(Environment.from(environment), RegionName.from(region)));
+                                                     ZoneId.from(environment, region));
         // TODO: Propagate all filters
-        if (request.getProperty("hostname") != null)
-            controller.applications().restartHost(deploymentId, new Hostname(request.getProperty("hostname")));
-        else
-            controller.applications().restart(deploymentId);
+        Optional<Hostname> hostname = Optional.ofNullable(request.getProperty("hostname")).map(Hostname::new);
+        controller.applications().restart(deploymentId, hostname);
 
         // TODO: Change to return JSON
         return new StringResponse("Requested restart of " + path(TenantResource.API_PATH, tenantName,
@@ -761,7 +758,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse log(String tenantName, String applicationName, String instanceName, String environment, String region) {
         try {
             DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                                                         new Zone(Environment.from(environment), RegionName.from(region)));
+                                                         ZoneId.from(environment, region));
             return new JacksonJsonResponse(controller.grabLog(deploymentId));
         }
         catch (RuntimeException e) {
@@ -773,7 +770,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deploy(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
-        Zone zone = new Zone(Environment.from(environment), RegionName.from(region));
+        ZoneId zone = ZoneId.from(environment, region);
 
         Map<String, byte[]> dataParts = new MultipartParser().parse(request);
         if ( ! dataParts.containsKey("deployOptions"))
@@ -783,17 +780,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Inspector deployOptions = SlimeUtils.jsonToSlime(dataParts.get("deployOptions")).get();
 
+        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get("applicationZip"));
         DeployAuthorizer deployAuthorizer = new DeployAuthorizer(controller.zoneRegistry(), athenzClientFactory);
         Tenant tenant = controller.tenants().tenant(new TenantId(tenantName)).orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
         Principal principal = authorizer.getPrincipal(request);
-        deployAuthorizer.throwIfUnauthorizedForDeploy(principal, Environment.from(environment), tenant, applicationId);
+        deployAuthorizer.throwIfUnauthorizedForDeploy(principal, Environment.from(environment), tenant, applicationId, applicationPackage);
 
         // TODO: get rid of the json object
         DeployOptions deployOptionsJsonClass = new DeployOptions(screwdriverBuildJobFromSlime(deployOptions.field("screwdriverBuildJob")),
                                                                  optional("vespaVersion", deployOptions).map(Version::new),
                                                                  deployOptions.field("ignoreValidationErrors").asBool(),
                                                                  deployOptions.field("deployCurrentVersion").asBool());
-        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get("applicationZip"));
         controller.applications().validate(applicationPackage.deploymentSpec());
         ActivateResult result = controller.applications().deployApplication(applicationId,
                                                                             zone,
@@ -824,7 +821,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region) {
         Application application = controller.applications().require(ApplicationId.from(tenantName, applicationName, instanceName));
 
-        Zone zone = new Zone(Environment.from(environment), RegionName.from(region));
+        ZoneId zone = ZoneId.from(environment, region);
         Deployment deployment = application.deployments().get(zone);
         if (deployment == null) {
             // Attempt to deactivate application even if the deployment is not known by the controller
@@ -873,8 +870,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private Optional<String> userFrom(HttpRequest request) {
-        return authorizer.getPrincipalIfAny(request).map(Principal::getName);
+    private Optional<UserId> userFrom(HttpRequest request) {
+        return authorizer.getPrincipalIfAny(request)
+                .map(AthenzPrincipal::getIdentity)
+                .filter(AthenzUser.class::isInstance)
+                .map(AthenzUser.class::cast)
+                .map(AthenzUser::getUserId);
     }
 
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request, boolean listApplications) {
@@ -985,18 +986,22 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void throwIfNotSuperUserOrPartOfOpsDbGroup(UserGroup userGroup, HttpRequest request) {
-        UserId userId = authorizer.getUserId(request);
-        if (!authorizer.isSuperUser(request) && !authorizer.isGroupMember(userId, userGroup) ) {
+        AthenzIdentity identity = authorizer.getIdentity(request);
+        if (!(identity instanceof AthenzUser)) {
+            throw new ForbiddenException("Identity not an user: " + identity.getFullName());
+        }
+        AthenzUser user = (AthenzUser) identity;
+        if (!authorizer.isSuperUser(request) && !authorizer.isGroupMember(user.getUserId(), userGroup) ) {
             throw new ForbiddenException(String.format("User '%s' is not super user or part of the OpsDB user group '%s'",
-                                                       userId.id(), userGroup.id()));
+                                                       user.getUserId().id(), userGroup.id()));
         }
     }
 
     private void throwIfNotAthenzDomainAdmin(AthenzDomain tenantDomain, HttpRequest request) {
-        UserId userId = authorizer.getUserId(request);
-        if ( ! authorizer.isAthenzDomainAdmin(userId, tenantDomain)) {
+        AthenzIdentity identity = authorizer.getIdentity(request);
+        if ( ! authorizer.isAthenzDomainAdmin(identity, tenantDomain)) {
             throw new ForbiddenException(
-                    String.format("The user '%s' is not admin in Athenz domain '%s'", userId.id(), tenantDomain.id()));
+                    String.format("The user '%s' is not admin in Athenz domain '%s'", identity.getFullName(), tenantDomain.id()));
         }
     }
 

@@ -14,7 +14,7 @@ public class RecordId {
         this.id = id;
     }
 
-    public String id() {
+    public String asString() {
         return id;
     }
 

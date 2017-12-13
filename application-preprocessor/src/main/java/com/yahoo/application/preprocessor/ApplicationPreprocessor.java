@@ -39,9 +39,9 @@ public class ApplicationPreprocessor {
         FilesApplicationPackage.Builder applicationPackageBuilder = new FilesApplicationPackage.Builder(applicationDir);
         outputDir.ifPresent(applicationPackageBuilder::preprocessedDir);
         ApplicationPackage preprocessed = applicationPackageBuilder.build().preprocess(
-                new Zone(environment.orElse(Environment.defaultEnvironment()), region.orElse(RegionName.defaultName())),
-                (a, b) -> {
-                }, logger);
+                ZoneId.from(environment.orElse(Environment.defaultEnvironment()), region.orElse(RegionName.defaultName())),
+                (a, b) -> { },
+                logger);
         preprocessed.validateXML();
     }
 

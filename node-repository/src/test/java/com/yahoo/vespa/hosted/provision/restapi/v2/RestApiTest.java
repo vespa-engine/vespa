@@ -308,6 +308,15 @@ public class RestApiTest {
     }
 
     @Test
+    public void setting_node_to_ready_will_reset_certain_fields() throws Exception {
+        final String hostname = "host55.yahoo.com";
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/" + hostname,
+                        new byte[0], Request.Method.PUT),
+                "{\"message\":\"Moved " + hostname + " to ready\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/" + hostname), "node55-after-changes.json");
+    }
+
+    @Test
     public void acl_request_by_tenant_node() throws Exception {
         String hostname = "foo.yahoo.com";
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
@@ -445,6 +454,11 @@ public class RestApiTest {
                                    ),
                                    Request.Method.PATCH),
                        "{\"message\":\"Updated host4.yahoo.com\"}");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/doesnotexist.yahoo.com",
+                                   Utf8.toBytes("{\"currentRestartGeneration\": 1}"),
+                                   Request.Method.PATCH),
+                       404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node found with hostname doesnotexist.yahoo.com\"}");
 
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com",
                                    Utf8.toBytes("{\"currentRestartGeneration\": 1}"),

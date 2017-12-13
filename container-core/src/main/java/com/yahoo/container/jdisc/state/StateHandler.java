@@ -190,7 +190,7 @@ public class StateHandler extends AbstractRequestHandler {
     private JSONObjectWithLegibleException buildJsonForConsumer(String consumer) throws JSONException {
         JSONObjectWithLegibleException ret = new JSONObjectWithLegibleException();
         ret.put("time", timer.currentTimeMillis());
-        ret.put("status", new JSONObjectWithLegibleException().put("code", "up"));
+        ret.put("status", new JSONObjectWithLegibleException().put("code", getStatus().name()));
         ret.put(METRICS_PATH, buildJsonForSnapshot(consumer, getSnapshot()));
         return ret;
     }
@@ -201,6 +201,10 @@ public class StateHandler extends AbstractRequestHandler {
         } else {
             return snapshotPreprocessor.latestSnapshot();
         }
+    }
+
+    private StateMonitor.Status getStatus() {
+        return monitor.status();
     }
 
     private JSONObjectWithLegibleException buildJsonForSnapshot(String consumer, MetricSnapshot metricSnapshot) throws JSONException {

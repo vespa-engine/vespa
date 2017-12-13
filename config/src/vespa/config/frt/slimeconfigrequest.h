@@ -30,7 +30,6 @@ public:
                        const CompressionType & compressionType,
                        const vespalib::string & methodName);
     ~SlimeConfigRequest() {}
-    bool verifyKey(const ConfigKey & key) const override;
     bool verifyState(const ConfigState & state) const override;
     virtual ConfigResponse::UP createResponse(FRT_RPCRequest * request) const override = 0;
 private:

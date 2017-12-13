@@ -157,6 +157,13 @@ public:
      * @param schema The new schema to start using.
      **/
     virtual void setSchema(const Schema &schema, SerialNum serialNum) = 0;
+
+    /*
+     * Sets the max number of flushed indexes before fusion is urgent.
+     *
+     * @param maxFlushed   The max number of flushed indexes before fusion is urgent.
+     */
+    virtual void setMaxFlushed(uint32_t maxFlushed) = 0;
 };
 
 } // namespace searchcorespi

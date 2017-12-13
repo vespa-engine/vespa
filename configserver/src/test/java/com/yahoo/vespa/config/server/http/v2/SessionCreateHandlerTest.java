@@ -45,7 +45,6 @@ import static org.junit.Assert.fail;
 
 /**
  * @author hmusum
- * @since 5.1
  */
 public class SessionCreateHandlerTest extends SessionHandlerTest {
 
@@ -106,7 +105,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         assertThat(factory.applicationName, is("ulfio"));
     }
 
-    protected void assertFromParameter(String expected, String from) throws IOException {
+    private void assertFromParameter(String expected, String from) throws IOException {
         HttpRequest request = post(Collections.singletonMap("from", from));
         MockSessionFactory factory = new MockSessionFactory();
         factory.applicationPackage = testApp;
@@ -120,7 +119,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
                               expected + "/content/\",\"message\":\"Session " + expected + createdMessage + "}"));
     }
 
-    protected void assertIllegalFromParameter(String fromValue) throws IOException {
+    private void assertIllegalFromParameter(String fromValue) throws IOException {
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
         HttpRequest request = post(outFile, postHeaders, Collections.singletonMap("from", fromValue));
         HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(createHandler().handle(request), BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Parameter 'from' has illegal value '" + fromValue + "'");
@@ -218,7 +217,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         assertIllegalFromParameter("http://host:4013/application/v2/tenant/" + tenant + "/application/foo/environment/prod/region/baz/instance");
     }
 
-    public SessionCreateHandler createHandler() {
+    private SessionCreateHandler createHandler() {
         try {
             return createHandler(new MockSessionFactory());
         } catch (Exception e) {
@@ -228,7 +227,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         return null;
     }
 
-    public SessionCreateHandler createHandler(SessionFactory sessionFactory) {
+    private SessionCreateHandler createHandler(SessionFactory sessionFactory) {
         try {
             TestTenantBuilder testBuilder = new TestTenantBuilder();
             testBuilder.createTenant(tenant).withSessionFactory(sessionFactory)
@@ -250,15 +249,15 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
                                                                   Clock.systemUTC()));
     }
 
-    public HttpRequest post() throws FileNotFoundException {
+    private HttpRequest post() throws FileNotFoundException {
         return post(null, postHeaders, new HashMap<>());
     }
 
-    public HttpRequest post(File file) throws FileNotFoundException {
+    private HttpRequest post(File file) throws FileNotFoundException {
         return post(file, postHeaders, new HashMap<>());
     }
 
-    public HttpRequest post(File file, Map<String, String> headers, Map<String, String> parameters) throws FileNotFoundException {
+    private HttpRequest post(File file, Map<String, String> headers, Map<String, String> parameters) throws FileNotFoundException {
         HttpRequest request = HttpRequest.createTestRequest("http://" + hostname + ":" + port + "/application/v2/tenant/" + tenant + "/session",
                 POST,
                 file == null ? null : new FileInputStream(file),
@@ -269,7 +268,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         return request;
     }
 
-    public HttpRequest post(Map<String, String> parameters) throws FileNotFoundException {
+    private HttpRequest post(Map<String, String> parameters) throws FileNotFoundException {
         return post(null, new HashMap<>(), parameters);
     }
 }

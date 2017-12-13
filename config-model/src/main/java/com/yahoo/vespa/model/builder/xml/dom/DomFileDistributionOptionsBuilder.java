@@ -15,6 +15,11 @@ import java.util.Optional;
  * @author hmusum
  */
 public class DomFileDistributionOptionsBuilder {
+    private final FileDistributionOptions fileDistributionOptions;
+
+    public DomFileDistributionOptionsBuilder(FileDistributionOptions fileDistributionOptions) {
+        this.fileDistributionOptions = fileDistributionOptions;
+    }
 
     private static void throwExceptionForElementInFileDistribution(String subElement, String reason) {
         throw new RuntimeException("In element '" + subElement + "' contained in 'filedistribution': " + reason);
@@ -34,15 +39,15 @@ public class DomFileDistributionOptionsBuilder {
     }
 
     public FileDistributionOptions build(Element fileDistributionElement) {
-        FileDistributionOptions options = FileDistributionOptions.defaultOptions();
         if (fileDistributionElement != null) {
-            getAmount("uploadbitrate", fileDistributionElement).ifPresent(options::uploadBitRate);
-            getAmount("downloadbitrate", fileDistributionElement).ifPresent(options::downloadBitRate);
+            getAmount("uploadbitrate", fileDistributionElement).ifPresent(fileDistributionOptions::uploadBitRate);
+            getAmount("downloadbitrate", fileDistributionElement).ifPresent(fileDistributionOptions::downloadBitRate);
             Element disable = XML.getChild(fileDistributionElement, "disabled");
+            if (disable == null) disable = XML.getChild(fileDistributionElement, "disableFiledistributor");
             if (disable != null) {
-                options.disabled(Boolean.valueOf(XML.getValue(disable)));
+                fileDistributionOptions.disableFiledistributor(Boolean.valueOf(XML.getValue(disable)));
             }
         }
-        return options;
+        return fileDistributionOptions;
     }
 }

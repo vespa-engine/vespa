@@ -17,8 +17,8 @@
   "currentRebootGeneration": 0,
   "failCount": 0,
   "hardwareFailure": false,
-  "wantToRetire": false,
-  "wantToDeprovision": false,
+  "wantToRetire": true,
+  "wantToDeprovision": true,
   "history": [
     {
       "event": "provisioned",

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
@@ -131,7 +130,7 @@ public class DeploymentIssueReporter extends Maintainer {
     }
 
     private void store(ApplicationId id, IssueId issueId) {
-        controller().applications().lockedIfPresent(id, application ->
+        controller().applications().lockIfPresent(id, application ->
                 controller().applications().store(application.withDeploymentIssueId(issueId)));
     }
 

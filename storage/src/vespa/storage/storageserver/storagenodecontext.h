@@ -18,7 +18,6 @@
 
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
-#include <vespa/storageframework/defaultimplementation/memory/memorymanager.h>
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 
 namespace storage {
@@ -27,7 +26,6 @@ struct StorageNodeContext {
     // Typedefs to simplify the remainder of the interface
     typedef StorageComponentRegisterImpl ComponentRegister;
     typedef framework::defaultimplementation::RealClock RealClock;
-    typedef framework::defaultimplementation::MemoryManager MemoryManager;
 
     /**
      * Get the actual component register. Available as the actual type as the
@@ -42,14 +40,6 @@ struct StorageNodeContext {
      */
     FastOS_ThreadPool& getThreadPool() { return _threadPool.getThreadPool(); }
 
-    /**
-     * Get the memory manager. Components that wants to print status of memory
-     * manager need access to the actual implementation.
-     */
-    MemoryManager& getMemoryManager() { return _memoryManager; }
-
-    void setMaximumMemoryUsage(uint64_t max);
-
 protected:
         // Initialization has been split in two as subclass needs to initialize
         // component register before sending it on.
@@ -59,8 +49,6 @@ private:
     ComponentRegister::UP _componentRegister;
     framework::Clock::UP _clock;
     framework::defaultimplementation::ThreadPoolImpl _threadPool;
-    framework::defaultimplementation::AllocationLogic* _memoryLogic;
-    MemoryManager _memoryManager;
 
 };
 

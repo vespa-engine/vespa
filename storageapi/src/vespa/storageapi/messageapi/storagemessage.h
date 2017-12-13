@@ -12,7 +12,6 @@
 #pragma once
 
 #include "messagehandler.h"
-#include <vespa/storageframework/generic/memory/memorytoken.h>
 #include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/messagebus/routing/route.h>
 #include <vespa/messagebus/trace.h>
@@ -335,7 +334,6 @@ private:
     StorageMessage(const StorageMessage&);
 
     mutable std::unique_ptr<TransportContext> _transportContext;
-    std::unique_ptr<framework::MemoryToken> _memoryToken;
 
 protected:
     static Id generateMsgId();
@@ -374,10 +372,6 @@ public:
 
     void setAddress(const StorageMessageAddress& address)
         { _address.reset(new StorageMessageAddress(address)); }
-
-    void setMemoryToken(std::unique_ptr<framework::MemoryToken> token) {
-        _memoryToken = std::move(token);
-    }
 
     /**
        Returns the approximate memory footprint of a storage message.

@@ -24,7 +24,6 @@
 #include <vespa/storage/storageserver/framework.h>
 #include <vespa/storage/frameworkimpl/component/distributorcomponentregisterimpl.h>
 #include <vespa/storage/frameworkimpl/component/servicelayercomponentregisterimpl.h>
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/component/testcomponentregister.h>
 #include <vespa/persistence/spi/persistenceprovider.h>

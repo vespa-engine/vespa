@@ -25,6 +25,7 @@ class DocumentSubDbInitializerResult;
 class FeedHandler;
 class FileConfigManager;
 class IAttributeManager;
+class IBucketStateCalculator;
 class IDcoumentRetriever;
 class IDocumentDBReferenceResolver;
 class IDocumentDBReference;
@@ -72,6 +73,7 @@ public:
     virtual IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) = 0;
+    virtual void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc) = 0;
 
     virtual std::shared_ptr<ISearchHandler> getSearchView() const = 0;
     virtual std::shared_ptr<IFeedView> getFeedView() const = 0;

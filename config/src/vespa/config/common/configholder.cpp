@@ -16,14 +16,16 @@ ConfigUpdate::UP
 ConfigHolder::provide()
 {
     vespalib::MonitorGuard guard(_monitor);
-    ConfigUpdate::UP ret(new ConfigUpdate(*_current));
-    return ret;
+    return std::move(_current);
 }
 
 void
 ConfigHolder::handle(ConfigUpdate::UP update)
 {
     vespalib::MonitorGuard guard(_monitor);
+    if (_current) {
+        update->merge(*_current);
+    }
     _current = std::move(update);
     guard.broadcast();
 }
@@ -39,7 +41,7 @@ bool
 ConfigHolder::poll()
 {
     vespalib::MonitorGuard guard(_monitor);
-    return (_current.get() != NULL);
+    return static_cast<bool>(_current);
 }
 
 void

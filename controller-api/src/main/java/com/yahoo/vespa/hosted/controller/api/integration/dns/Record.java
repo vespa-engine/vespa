@@ -4,35 +4,41 @@ package com.yahoo.vespa.hosted.controller.api.integration.dns;
 import java.util.Objects;
 
 /**
- * A basic representation of a DNS resource record, containing only the record type, name and value.
+ * A basic representation of a DNS resource record, containing the record id, type, name and value.
  *
  * @author mpolden
  */
 public class Record {
 
+    private final RecordId id;
     private final Type type;
-    private final String name;
-    private final String value;
+    private final RecordName name;
+    private final RecordData data;
 
-    public Record(Type type, String name, String value) {
-        this.type = type;
-        this.name = name;
-        this.value = value;
+    public Record(RecordId id, Type type, RecordName name, RecordData data) {
+        this.id = Objects.requireNonNull(id, "id cannot be null");
+        this.type = Objects.requireNonNull(type, "type cannot be null");
+        this.name = Objects.requireNonNull(name, "name cannot be null");
+        this.data = Objects.requireNonNull(data, "data cannot be null");
     }
 
-    public Record(String type, String name, String value) {
-        this(Type.valueOf(type), name, value);
+    /** Unique identifier for this */
+    public RecordId id() {
+        return id;
     }
 
+    /** DNS type of this */
     public Type type() {
         return type;
     }
 
-    public String value() {
-        return value;
+    /** Data in this, e.g. IP address for "A" record */
+    public RecordData data() {
+        return data;
     }
 
-    public String name() {
+    /** Name of this, e.g. a FQDN for "A" record */
+    public RecordName name() {
         return name;
     }
 
@@ -51,24 +57,26 @@ public class Record {
     @Override
     public String toString() {
         return "Record{" +
-                "type=" + type +
-                ", name='" + name + '\'' +
-                ", value='" + value + '\'' +
-                '}';
+               "id=" + id +
+               ", type=" + type +
+               ", name='" + name + '\'' +
+               ", data='" + data + '\'' +
+               '}';
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Record)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         Record record = (Record) o;
-        return type == record.type &&
-                Objects.equals(name, record.name);
+        return Objects.equals(id, record.id) &&
+               type == record.type &&
+               Objects.equals(name, record.name) &&
+               Objects.equals(data, record.data);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, name);
+        return Objects.hash(id, type, name, data);
     }
-
 }

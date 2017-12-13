@@ -2,7 +2,6 @@
 
 #include "visitor.h"
 #include "visitormetrics.h"
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storage/persistence/messages.h>
@@ -267,8 +266,7 @@ Visitor::Visitor(StorageComponent& component)
       _id(),
       _controlDestination(),
       _dataDestination(),
-      _documentSelection(),
-      _memoryManager(0)
+      _documentSelection()
 {
 }
 
@@ -603,10 +601,6 @@ Visitor::start(api::VisitorId id, api::StorageMessage::Id cmdId,
     _documentPriority = documentPriority;
 
     _state = STATE_RUNNING;
-    if (_memoryAllocType == 0) {
-        _memoryAllocType = &_component.getMemoryManager()
-                                      .getAllocationType("VISITOR_BUFFER");
-    }
 
     LOG(debug, "Starting visitor '%s' for %" PRIu64 " buckets from %" PRIu64 " to "
                "%" PRIu64 ". First is %s. Max pending replies: %u, include "
@@ -803,17 +797,7 @@ Visitor::onCreateIteratorReply(
 
     LOG(debug, "Visitor '%s' starting to visit bucket %s.",
         _id.c_str(), bucketId.toString().c_str());
-    framework::MemoryToken::UP token(
-            _memoryManager->allocate(
-                *_memoryAllocType, _docBlockSize, _docBlockSize, _priority));
-    if (token.get() == 0) {
-        // Not enough memory
-        return;
-    }
-    std::shared_ptr<GetIterCommand> cmd(
-            new GetIterCommand(std::move(token), bucket,
-                               bucketState.getIteratorId(),
-                               _docBlockSize));
+    auto cmd = std::make_shared<GetIterCommand>(bucket, bucketState.getIteratorId(), _docBlockSize);
     cmd->setLoadType(_initiatingCmd->getLoadType());
     cmd->getTrace().setLevel(_traceLevel);
     cmd->setPriority(_priority);
@@ -1223,19 +1207,8 @@ Visitor::getIterators()
             it = _bucketStates.erase(it);
             continue;
         }
-        framework::MemoryToken::UP token(
-                _memoryManager->allocate(
-                    *_memoryAllocType, _docBlockSize, _docBlockSize,
-                    _priority));
-        if (token.get() == 0) {
-            // Not enough memory
-            return true;
-        }
-        std::shared_ptr<GetIterCommand> cmd(
-                new GetIterCommand(std::move(token),
-                                   bucketState.getBucket(),
-                                   bucketState.getIteratorId(),
-                                   _docBlockSize));
+        auto cmd = std::make_shared<GetIterCommand>(
+                bucketState.getBucket(), bucketState.getIteratorId(), _docBlockSize);
         cmd->setLoadType(_initiatingCmd->getLoadType());
         cmd->getTrace().setLevel(_traceLevel);
         cmd->setPriority(_priority);

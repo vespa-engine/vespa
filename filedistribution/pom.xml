@@ -9,7 +9,8 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
         <version>6-SNAPSHOT</version>
-   </parent>
+        <relativePath>../parent/pom.xml</relativePath>
+  </parent>
 
     <artifactId>filedistribution</artifactId>
     <version>6-SNAPSHOT</version>
@@ -52,6 +53,10 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
         </dependency>
     </dependencies>
 

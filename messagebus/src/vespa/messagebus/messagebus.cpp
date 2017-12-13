@@ -8,6 +8,7 @@
 #include "protocolrepository.h"
 #include <vespa/messagebus/network/inetwork.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/gate.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".messagebus");

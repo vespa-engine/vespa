@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 
 import java.net.URI;
 import java.time.Duration;
@@ -20,8 +20,8 @@ import java.util.Optional;
 public interface ZoneRegistry {
 
     SystemName system();
-    List<Zone> zones();
-    Optional<Zone> getZone(Environment environment, RegionName region);
+    List<ZoneId> zones();
+    Optional<ZoneId> getZone(Environment environment, RegionName region);
     List<URI> getConfigServerUris(Environment environment, RegionName region);
     Optional<URI> getLogServerUri(Environment environment, RegionName region);
     Optional<Duration> getDeploymentTimeToLive(Environment environment, RegionName region);

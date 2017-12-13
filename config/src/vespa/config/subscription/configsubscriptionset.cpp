@@ -38,10 +38,6 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
     int64_t lastGeneration = _currentGeneration;
     bool inSync = false;
 
-    for (const auto & subscription : _subscriptionList) {
-        subscription->reset();
-    }
-
     LOG(debug, "Going into nextConfig loop, time left is %d", timeLeft);
     while (_state != CLOSED && timeLeft >= 0 && !inSync) {
         size_t numChanged = 0;
@@ -52,8 +48,10 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
         // Run nextUpdate on all subscribers to get them in sync.
         for (const auto & subscription : _subscriptionList) {
 
-            if (!subscription->nextUpdate(_currentGeneration, timeLeft))
-                break;
+            if (!subscription->nextUpdate(_currentGeneration, timeLeft) && !subscription->hasGenerationChanged()) {
+                subscription->reset();
+                continue;
+            }
 
             const ConfigKey & key(subscription->getKey());
             if (subscription->hasChanged()) {

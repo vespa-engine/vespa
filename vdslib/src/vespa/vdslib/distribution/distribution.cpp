@@ -1,18 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distribution.h"
+#include <vespa/vdslib/distribution/distribution_config_util.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/random.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/bobhash.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <boost/lexical_cast.hpp>
 #include <vespa/config/config.h>
 #include <vespa/config/print/asciiconfigwriter.h>
 #include <vespa/config/print/asciiconfigreader.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config-stor-distribution.h>
 #include <list>
+#include <algorithm>
+#include <cmath>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".vdslib.distribution");
@@ -115,17 +116,6 @@ Distribution::operator=(const Distribution& d)
 Distribution::~Distribution() { }
 
 namespace {
-    std::vector<uint16_t> getGroupPath(const vespalib::stringref & path) {
-        vespalib::StringTokenizer st(path, ".", "");
-        std::vector<uint16_t> result(st.size());
-        for (uint32_t i=0, n=result.size(); i<n; ++i) {
-            result[i] = boost::lexical_cast<uint16_t>(st[i]);
-        }
-        return result;
-    }
-}
-
-namespace {
     using ConfigDiskDistribution = vespa::config::content::StorDistributionConfig::DiskDistribution;
     Distribution::DiskDistribution fromConfig(ConfigDiskDistribution cfg) {
         switch (cfg) {
@@ -155,8 +145,8 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
     for (uint32_t i=0, n=config.group.size(); i<n; ++i) {
         const ConfigGroup& cg(config.group[i]);
         std::vector<uint16_t> path;
-        if (nodeGraph.get() != 0) {
-            path = getGroupPath(cg.index);
+        if (nodeGraph.get() != nullptr) {
+            path = DistributionConfigUtil::getGroupPath(cg.index);
         }
         bool isLeafGroup = (cg.nodes.size() > 0);
         std::unique_ptr<Group> group;
@@ -179,7 +169,7 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
         if (path.empty()) {
             nodeGraph = std::move(group);
         } else {
-            assert(nodeGraph.get() != 0);
+            assert(nodeGraph.get() != nullptr);
             Group* parent = nodeGraph.get();
             for (uint32_t j=0; j<path.size() - 1; ++j) {
                 parent = parent->getSubGroups()[path[j]];
@@ -187,7 +177,7 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
             parent->addSubGroup(std::move(group));
         }
     }
-    if (nodeGraph.get() == 0) {
+    if (nodeGraph.get() == nullptr) {
         throw vespalib::IllegalStateException(
             "Got config that didn't seem to specify even a root group. Must "
             "have a root group at minimum:\n"
@@ -462,14 +452,14 @@ Distribution::getIdealGroups(const document::BucketId& bucket,
             tmpResults.pop_back();
         }
     }
-    while (tmpResults.back()._group == 0) {
+    while (tmpResults.back()._group == nullptr) {
         tmpResults.pop_back();
     }
     for (uint32_t i=0, n=tmpResults.size(); i<n; ++i) {
         ScoredGroup& group(tmpResults[i]);
             // This should never happen. Config should verify that each group
             // has enough groups beneath them.
-        assert(group._group != 0);
+        assert(group._group != nullptr);
         getIdealGroups(bucket, clusterState, *group._group,
                        redundancyArray[i], results);
     }
@@ -478,14 +468,11 @@ Distribution::getIdealGroups(const document::BucketId& bucket,
 const Group*
 Distribution::getIdealDistributorGroup(const document::BucketId& bucket,
                                        const ClusterState& clusterState,
-                                       const Group& parent,
-                                       uint16_t redundancy) const
+                                       const Group& parent) const
 {
     if (parent.isLeafGroup()) {
         return &parent;
     }
-    const Group::Distribution& redundancyArray(
-            parent.getDistribution(redundancy));
     ScoredGroup result(0, 0);
     uint32_t seed(getGroupSeed(bucket, clusterState, parent));
     RandomGen random(seed);
@@ -497,8 +484,8 @@ Distribution::getIdealDistributorGroup(const document::BucketId& bucket,
         while (it->first < currentIndex++) random.nextDouble();
         double score = random.nextDouble();
         if (it->second->getCapacity() != 1) {
-                // Capacity shouldn't possibly be 0.
-                // Verified in Group::setCapacity()
+            // Capacity shouldn't possibly be 0.
+            // Verified in Group::setCapacity()
             score = std::pow(score, 1.0 / it->second->getCapacity().getValue());
         }
         if (score > result._score) {
@@ -509,11 +496,10 @@ Distribution::getIdealDistributorGroup(const document::BucketId& bucket,
             }
         }
     }
-    if (result._group == 0) {
-        return 0;
+    if (result._group == nullptr) {
+        return nullptr;
     }
-    return getIdealDistributorGroup(
-            bucket, clusterState, *result._group, redundancyArray[0]);
+    return getIdealDistributorGroup(bucket, clusterState, *result._group);
 }
 
 bool
@@ -567,9 +553,8 @@ Distribution::getIdealNodes(const NodeType& nodeType,
                        _groupDistribution);
     } else {
         seed = getDistributorSeed(bucket, clusterState);
-        const Group* group(getIdealDistributorGroup(
-                    bucket, clusterState, *_nodeGraph, redundancy));
-        if (group == 0) {
+        const Group* group(getIdealDistributorGroup(bucket, clusterState, *_nodeGraph));
+        if (group == nullptr) {
             vespalib::asciistream ss;
             ss << "There is no legal distributor target in state with version "
                << clusterState.getVersion();
@@ -679,7 +664,7 @@ Distribution::getIdealDistributorNode(
     std::vector<uint16_t> nodes;
     getIdealNodes(NodeType::DISTRIBUTOR, state, bucket, nodes, upStates);
     assert(nodes.size() <= 1);
-    if (nodes.size() == 0) {
+    if (nodes.empty()) {
         vespalib::asciistream ss;
         ss << "There is no legal distributor target in state with version "
            << state.getVersion();
@@ -695,7 +680,7 @@ Distribution::splitNodesIntoLeafGroups(IndexList nodeList) const
     std::map<uint16_t, IndexList> nodes;
     for (uint32_t i=0, n=nodeList.size(); i<n; ++i) {
         const Group* group(_nodeGraph->getGroupForNode(nodeList[i]));
-        if (group == 0) {
+        if (group == nullptr) {
             LOGBP(warning, "Node %u is not assigned to a group. "
                            "Should not happen?", nodeList[i]);
         } else {

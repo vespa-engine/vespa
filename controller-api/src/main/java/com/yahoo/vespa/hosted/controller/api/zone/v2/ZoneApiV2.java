@@ -8,7 +8,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RegionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -18,7 +17,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -44,32 +42,28 @@ public interface ZoneApiV2 {
     Response proxyGet(
             @PathParam("environment") String env,
             @PathParam("region") String region,
-            @PathParam("proxy_request") String proxyRequest,
-            @Context HttpServletRequest request);
+            @PathParam("proxy_request") String proxyRequest);
 
     @POST
     @Path("/{environment}/{region}/{proxy_request: .+}")
     Response proxyPost(
             @PathParam("environment") String env,
             @PathParam("region") String region,
-            @PathParam("proxy_request") String proxyRequest,
-            @Context HttpServletRequest request);
+            @PathParam("proxy_request") String proxyRequest);
 
     @PUT
     @Path("/{environment}/{region}/{proxy_request: .+}")
     Response proxyPut(
             @PathParam("environment") String env,
             @PathParam("region") String region,
-            @PathParam("proxy_request") String proxyRequest,
-            @Context HttpServletRequest request);
+            @PathParam("proxy_request") String proxyRequest);
 
     @DELETE
     @Path("/{environment}/{region}/{proxy_request: .+}")
     Response proxyDelete(
             @PathParam("environment") String env,
             @PathParam("region") String region,
-            @PathParam("proxy_request") String proxyRequest,
-            @Context HttpServletRequest request);
+            @PathParam("proxy_request") String proxyRequest);
 
     // Explicit mappings of some proxy requests (to enable creation of proxy clients with javax.ws.rs)
 

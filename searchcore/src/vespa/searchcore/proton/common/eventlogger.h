@@ -50,6 +50,7 @@ public:
     static void loadDocumentMetaStoreComplete(const vespalib::string &subDbName, int64_t elapsedTimeMs);
     static void loadDocumentStoreStart(const vespalib::string &subDbName);
     static void loadDocumentStoreComplete(const vespalib::string &subDbName, int64_t elapsedTimeMs);
+    static void transactionLogPruneComplete(const string &domainName, SerialNum prunedSerial);
 };
 
 } // namespace proton

@@ -19,8 +19,7 @@
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/rwlock.h>
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/fastos/time.h>
 #include <cmath>
 #include <mutex>
 #include <shared_mutex>

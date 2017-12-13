@@ -12,14 +12,14 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attributemanager");
 
-using vespalib::LockGuard;
 using vespalib::string;
 using vespalib::IllegalStateException;
 using search::attribute::IAttributeContext;
 
 namespace {
 
-vespalib::Monitor baseDirMonitor;
+std::mutex baseDirLock;
+std::condition_variable baseDirCond;
 typedef std::set<string> BaseDirSet;
 BaseDirSet baseDirSet;
 
@@ -27,7 +27,7 @@ static void
 waitBaseDir(const string &baseDir)
 {
     if (baseDir.empty()) { return; }
-    vespalib::MonitorGuard guard(baseDirMonitor);
+    std::unique_lock<std::mutex> guard(baseDirLock);
     bool waited = false;
 
     BaseDirSet::iterator it = baseDirSet.find(baseDir);
@@ -36,7 +36,7 @@ waitBaseDir(const string &baseDir)
             waited = true;
             LOG(debug, "AttributeManager: Waiting for basedir %s to be available", baseDir.c_str());
         }
-        guard.wait();
+        baseDirCond.wait(guard);
         it = baseDirSet.find(baseDir);
     }
 
@@ -52,7 +52,7 @@ dropBaseDir(const string &baseDir)
 {
     if (baseDir.empty())
         return;
-    vespalib::MonitorGuard guard(baseDirMonitor);
+    std::lock_guard<std::mutex> guard(baseDirLock);
 
     BaseDirSet::iterator it = baseDirSet.find(baseDir);
     if (it == baseDirSet.end()) {
@@ -60,7 +60,7 @@ dropBaseDir(const string &baseDir)
     } else {
         baseDirSet.erase(it);
     }
-    guard.broadcast();
+    baseDirCond.notify_all();
 }
 
 }
@@ -147,7 +147,7 @@ AttributeManager::findAndLoadAttribute(const string & name) const
     if (found != _attributes.end()) {
         AttributeVector & vec = *found->second;
         if ( ! vec.isLoaded() ) {
-            vespalib::LockGuard loadGuard(_loadLock);
+            std::lock_guard<std::mutex> loadGuard(_loadLock);
             if ( ! vec.isLoaded() ) {
                 vec.load();
             } else {

@@ -666,6 +666,42 @@ TEST("require that maintenance controller should change if some config has chang
     TEST_DO(assertMaintenanceControllerShouldChange(CCR().setMaintenanceChanged(true)));
 }
 
+void
+assertSubDbsShouldNotChange(DocumentDBConfig::ComparisonResult result)
+{
+    ReconfigParams params(result);
+    EXPECT_FALSE(params.configHasChanged());
+    EXPECT_FALSE(params.shouldSubDbsChange());
+}
+
+void
+assertSubDbsShouldChange(DocumentDBConfig::ComparisonResult result)
+{
+    ReconfigParams params(result);
+    EXPECT_TRUE(params.configHasChanged());
+    EXPECT_TRUE(params.shouldSubDbsChange());
+}
+
+
+TEST("require that subdbs should change if relevant config changed")
+{
+    TEST_DO(assertSubDbsShouldNotChange(CCR()));
+    EXPECT_FALSE(ReconfigParams(CCR().setMaintenanceChanged(true)).shouldSubDbsChange());
+    TEST_DO(assertSubDbsShouldChange(CCR().setFlushChanged(true)));
+    TEST_DO(assertSubDbsShouldChange(CCR().setStoreChanged(true)));
+    TEST_DO(assertSubDbsShouldChange(CCR().setDocumenttypesChanged(true)));
+    TEST_DO(assertSubDbsShouldChange(CCR().setDocumentTypeRepoChanged(true)));
+    TEST_DO(assertSubDbsShouldChange(CCR().setSummaryChanged(true)));
+    TEST_DO(assertSubDbsShouldChange(CCR().setSummarymapChanged(true)));
+    TEST_DO(assertSubDbsShouldChange(CCR().setJuniperrcChanged(true)));
+    TEST_DO(assertSubDbsShouldChange(CCR().setAttributesChanged(true)));
+    TEST_DO(assertSubDbsShouldChange(CCR().setImportedFieldsChanged(true)));
+    TEST_DO(assertSubDbsShouldChange(CCR().setVisibilityDelayChanged(true)));
+    TEST_DO(assertSubDbsShouldChange(CCR().setRankProfilesChanged(true)));
+    TEST_DO(assertSubDbsShouldChange(CCR().setRankingConstantsChanged(true)));
+    TEST_DO(assertSubDbsShouldChange(CCR().setSchemaChanged(true)));
+}
+
 TEST_MAIN()
 {
     TEST_RUN_ALL();

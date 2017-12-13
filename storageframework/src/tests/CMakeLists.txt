@@ -5,7 +5,6 @@ vespa_add_executable(storageframework_testrunner_app TEST
     DEPENDS
     storageframework_testclock
     storageframework_teststatus
-    storageframework_testmemory
     storageframework_testthread
 )
 

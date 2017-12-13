@@ -7,14 +7,16 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Change.VersionChange;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -38,38 +40,44 @@ public class Application {
     private final ApplicationId id;
     private final DeploymentSpec deploymentSpec;
     private final ValidationOverrides validationOverrides;
-    private final Map<Zone, Deployment> deployments;
+    private final Map<ZoneId, Deployment> deployments;
     private final DeploymentJobs deploymentJobs;
     private final Optional<Change> deploying;
     private final boolean outstandingChange;
     private final Optional<IssueId> ownershipIssueId;
     private final ApplicationMetrics metrics;
+    private final Optional<RotationId> rotation;
 
     /** Creates an empty application */
     public Application(ApplicationId id) {
-        this(id, DeploymentSpec.empty, ValidationOverrides.empty, ImmutableMap.of(),
+        this(id, DeploymentSpec.empty, ValidationOverrides.empty, Collections.emptyMap(),
              new DeploymentJobs(Optional.empty(), Collections.emptyList(), Optional.empty()),
-             Optional.empty(), false, Optional.empty(), new ApplicationMetrics(0, 0));
+             Optional.empty(), false, Optional.empty(), new ApplicationMetrics(0, 0),
+             Optional.empty());
     }
 
     /** Used from persistence layer: Do not use */
     public Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides, 
                        List<Deployment> deployments, DeploymentJobs deploymentJobs, Optional<Change> deploying,
-                       boolean outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics) {
+                       boolean outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
+                       Optional<RotationId> rotation) {
         this(id, deploymentSpec, validationOverrides, 
              deployments.stream().collect(Collectors.toMap(Deployment::zone, d -> d)),
-             deploymentJobs, deploying, outstandingChange, ownershipIssueId, metrics);
+             deploymentJobs, deploying, outstandingChange, ownershipIssueId, metrics, rotation);
     }
 
     Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
-                Map<Zone, Deployment> deployments, DeploymentJobs deploymentJobs, Optional<Change> deploying,
-                boolean outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics) {
+                Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Optional<Change> deploying,
+                boolean outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
+                Optional<RotationId> rotation) {
         Objects.requireNonNull(id, "id cannot be null");
         Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
         Objects.requireNonNull(validationOverrides, "validationOverrides cannot be null");
         Objects.requireNonNull(deployments, "deployments cannot be null");
         Objects.requireNonNull(deploymentJobs, "deploymentJobs cannot be null");
         Objects.requireNonNull(deploying, "deploying cannot be null");
+        Objects.requireNonNull(metrics, "metrics cannot be null");
+        Objects.requireNonNull(rotation, "rotation cannot be null");
         this.id = id;
         this.deploymentSpec = deploymentSpec;
         this.validationOverrides = validationOverrides;
@@ -79,6 +87,7 @@ public class Application {
         this.outstandingChange = outstandingChange;
         this.ownershipIssueId = ownershipIssueId;
         this.metrics = metrics;
+        this.rotation = rotation;
     }
 
     public ApplicationId id() { return id; }
@@ -97,13 +106,13 @@ public class Application {
     public ValidationOverrides validationOverrides() { return validationOverrides; }
     
     /** Returns an immutable map of the current deployments of this */
-    public Map<Zone, Deployment> deployments() { return deployments; }
+    public Map<ZoneId, Deployment> deployments() { return deployments; }
 
     /** 
      * Returns an immutable map of the current *production* deployments of this
      * (deployments also includes manually deployed environments)
      */
-    public Map<Zone, Deployment> productionDeployments() {
+    public Map<ZoneId, Deployment> productionDeployments() {
         return ImmutableMap.copyOf(deployments.values().stream()
                                            .filter(deployment -> deployment.zone().environment() == Environment.prod)
                                            .collect(Collectors.toMap(Deployment::zone, Function.identity())));
@@ -142,7 +151,7 @@ public class Application {
     }
 
     /** Returns the version a new deployment to this zone should use for this application */
-    public Version deployVersionIn(Zone zone, Controller controller) {
+    public Version deployVersionIn(ZoneId zone, Controller controller) {
         if (deploying().isPresent() && deploying().get() instanceof VersionChange)
             return ((Change.VersionChange) deploying().get()).version();
 
@@ -150,13 +159,13 @@ public class Application {
     }
 
     /** Returns the current version this application has, or if none; should use, in the given zone */
-    public Version versionIn(Zone zone, Controller controller) {
+    public Version versionIn(ZoneId zone, Controller controller) {
         return Optional.ofNullable(deployments().get(zone)).map(Deployment::version) // Already deployed in this zone: Use that version
                 .orElse(oldestDeployedVersion().orElse(controller.systemVersion()));
     }
 
     /** Returns the revision a new deployment to this zone should use for this application, or empty if we don't know */
-    public Optional<ApplicationRevision> deployRevisionIn(Zone zone) {
+    public Optional<ApplicationRevision> deployRevisionIn(ZoneId zone) {
         if (deploying().isPresent() && deploying().get() instanceof Change.ApplicationChange)
             return ((Change.ApplicationChange) deploying().get()).revision();
 
@@ -164,8 +173,13 @@ public class Application {
     }
 
     /** Returns the revision this application is or should be deployed with in the given zone, or empty if unknown. */
-    public Optional<ApplicationRevision> revisionIn(Zone zone) {
+    public Optional<ApplicationRevision> revisionIn(ZoneId zone) {
         return Optional.ofNullable(deployments().get(zone)).map(Deployment::revision);
+    }
+
+    /** Returns the global rotation of this, if present */
+    public Optional<ApplicationRotation> rotation() {
+        return rotation.map(rotation -> new ApplicationRotation(id, rotation));
     }
 
     @Override

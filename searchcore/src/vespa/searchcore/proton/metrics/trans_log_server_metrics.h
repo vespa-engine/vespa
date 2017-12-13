@@ -17,6 +17,7 @@ public:
     {
         metrics::LongValueMetric entries;
         metrics::LongValueMetric diskUsage;
+        metrics::DoubleValueMetric replayTime;
 
         typedef std::unique_ptr<DomainMetrics> UP;
         DomainMetrics(metrics::MetricSet *parent, const vespalib::string &documentType);

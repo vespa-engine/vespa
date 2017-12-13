@@ -16,6 +16,8 @@ package com.yahoo.vespa.model;
  */
 public class ConfigProxy extends AbstractService {
 
+    public final static int BASEPORT = 19090;
+
     /**
      * Creates a new ConfigProxy instance.
      *
@@ -31,7 +33,7 @@ public class ConfigProxy extends AbstractService {
     /**
      * Returns the desired base port for this service.
      */
-    public int getWantedPort() { return 19090; }
+    public int getWantedPort() { return BASEPORT; }
 
     /**
      * The desired base port is the only allowed base port.

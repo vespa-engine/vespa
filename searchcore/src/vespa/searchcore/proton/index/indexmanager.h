@@ -115,6 +115,9 @@ public:
     virtual void setSchema(const Schema &schema, SerialNum serialNum) override {
         _maintainer.setSchema(schema, serialNum);
     }
+    virtual void setMaxFlushed(uint32_t maxFlushed) override {
+        _maintainer.setMaxFlushed(maxFlushed);
+    }
 };
 
 } // namespace proton

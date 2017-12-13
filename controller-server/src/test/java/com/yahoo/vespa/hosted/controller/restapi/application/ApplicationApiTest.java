@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
@@ -21,10 +22,12 @@ import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzUtils;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzService;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUser;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -57,17 +60,23 @@ import static com.yahoo.application.container.handler.Request.Method.PUT;
 /**
  * @author bratseth
  * @author mpolden
+ * @author bjorncs
  */
 public class ApplicationApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/application/responses/";
+
     private static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
             .environment(Environment.prod)
+            .globalServiceId("foo")
             .region("corp-us-east-1")
+            .region("us-east-3")
+            .region("us-west-1")
             .build();
-    private static final String athenzUserDomain = "domain1";
-    private static final String athenzScrewdriverDomain = AthenzUtils.SCREWDRIVER_DOMAIN.id();
 
+    private static final AthenzDomain ATHENZ_TENANT_DOMAIN = new AthenzDomain("domain1");
+    private static final ScrewdriverId SCREWDRIVER_ID = new ScrewdriverId("12345");
+    private static final UserId USER_ID = new UserId("myuser");
 
     @Test
     public void testApplicationApi() throws Exception {
@@ -75,7 +84,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ContainerTester tester = controllerTester.containerTester();
         tester.updateSystemVersion();
 
-        addTenantAthenzDomain(athenzUserDomain, "mytenant"); // (Necessary but not provided in this API)
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID); // (Necessary but not provided in this API)
 
         // GET API root
         tester.assertResponse(request("/application/v4/", GET),
@@ -91,14 +100,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("cookiefreshness.json"));
         // POST (add) a tenant without property ID
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
+                                      .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               new File("tenant-without-applications.json"));
         // PUT (modify) a tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", PUT)
+                                      .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               new File("tenant-without-applications.json"));
         // GET the authenticated user (with associated tenants)
-        tester.assertResponse(request("/application/v4/user", GET),
+        tester.assertResponse(request("/application/v4/user", GET).userIdentity(USER_ID),
                               new File("user.json"));
         // GET all tenants
         tester.assertResponse(request("/application/v4/tenant/", GET),
@@ -106,15 +117,17 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
 
         // Add another Athens domain, so we can try to create more tenants
-        addTenantAthenzDomain("domain2", "mytenant"); // New domain to test tenant w/property ID
+        createAthenzDomainWithAdmin(new AthenzDomain("domain2"), USER_ID); // New domain to test tenant w/property ID
         // Add property info for that property id, as well, in the mock organization.
         addPropertyData((MockOrganization) controllerTester.controller().organization(), "1234");
         // POST (add) a tenant with property ID
         tester.assertResponse(request("/application/v4/tenant/tenant2", POST)
+                                      .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain2\", \"property\":\"property2\", \"propertyId\":\"1234\"}"),
                               new File("tenant-without-applications-with-id.json"));
         // PUT (modify) a tenant with property ID
         tester.assertResponse(request("/application/v4/tenant/tenant2", PUT)
+                                      .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain2\", \"property\":\"property2\", \"propertyId\":\"1234\"}"),
                               new File("tenant-without-applications-with-id.json"));
         // GET a tenant with property ID
@@ -124,15 +137,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Test legacy OpsDB tenants
         // POST (add) an OpsDB tenant with property ID
         tester.assertResponse(request("/application/v4/tenant/tenant3", POST)
+                                      .userIdentity(USER_ID)
                                       .data("{\"userGroup\":\"group1\",\"property\":\"property1\",\"propertyId\":\"1234\"}"),
                               new File("opsdb-tenant-with-id-without-applications.json"));
         // PUT (modify) the OpsDB tenant to set another property
         tester.assertResponse(request("/application/v4/tenant/tenant3", PUT)
+                                      .userIdentity(USER_ID)
                                       .data("{\"userGroup\":\"group1\",\"property\":\"property2\",\"propertyId\":\"4321\"}"),
                               new File("opsdb-tenant-with-new-id-without-applications.json"));
 
         // POST (create) an application
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
+                                      .userIdentity(USER_ID),
                               new File("application-reference.json"));
         // GET a tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", GET),
@@ -143,11 +159,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("application-list.json"));
         // POST triggering of a full deployment to an application (if version is omitted, current system version is used)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", POST)
+                                      .userIdentity(USER_ID)
                                       .data("6.1.0"),
                               new File("application-deployment.json"));
 
         // DELETE (cancel) ongoing change
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", DELETE),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", DELETE)
+                                      .userIdentity(USER_ID),
                               new File("application-deployment-cancelled.json"));
 
         // DELETE (cancel) again is a no-op
@@ -158,14 +176,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
         HttpEntity entity = createApplicationDeployData(applicationPackage, Optional.empty());
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
-                                      .domain(athenzUserDomain).user("mytenant"),
+                                      .userIdentity(USER_ID),
                               new File("deploy-result.json"));
 
         // POST (deploy) an application to a zone. This simulates calls done by our tenant pipeline.
         ApplicationId id = ApplicationId.from("tenant1", "application1", "default");
         long screwdriverProjectId = 123;
 
-        addScrewdriverUserToDomain("screwdriveruser1", "domain1"); // (Necessary but not provided in this API)
+        addScrewdriverUserToDeployRole(SCREWDRIVER_ID,
+                                       ATHENZ_TENANT_DOMAIN,
+                                       new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value())); // (Necessary but not provided in this API)
 
         // Trigger deployment
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", POST)
@@ -175,7 +195,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // ... systemtest
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
                                       .data(createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)))
-                                      .domain(athenzScrewdriverDomain).user("screwdriveruser1"),
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default", DELETE),
                               "Deactivated tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default");
@@ -184,7 +204,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // ... staging
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default/", POST)
                                       .data(createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)))
-                                      .domain(athenzScrewdriverDomain).user("screwdriveruser1"),
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default", DELETE),
                               "Deactivated tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default");
@@ -193,7 +213,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // ... prod zone
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/", POST)
                                       .data(createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)))
-                                      .domain(athenzScrewdriverDomain).user("screwdriveruser1"),
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         controllerTester.notifyJobCompletion(id, screwdriverProjectId, false, DeploymentJobs.JobType.productionCorpUsEast1);
 
@@ -211,22 +231,22 @@ public class ApplicationApiTest extends ControllerContainerTest {
         addIssues(controllerTester, ApplicationId.from("tenant1", "application1", "default"));
         // GET at root, with "&recursive=deployment", returns info about all tenants, their applications and their deployments
         tester.assertResponse(request("/application/v4/", GET)
-                                      .domain("domain1").user("mytenant")
+                                      .userIdentity(USER_ID)
                                       .recursive("deployment"),
                               new File("recursive-root.json"));
         // GET at root, with "&recursive=tenant", returns info about all tenants, with limmited info about their applications.
         tester.assertResponse(request("/application/v4/", GET)
-                                      .domain("domain1").user("mytenant")
+                                      .userIdentity(USER_ID)
                                       .recursive("tenant"),
                               new File("recursive-until-tenant-root.json"));
         // GET at a tenant, with "&recursive=true", returns full info about their applications and their deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/", GET)
-                                      .domain("domain1").user("mytenant")
+                                      .userIdentity(USER_ID)
                                       .recursive("true"),
                               new File("tenant1-recursive.json"));
         // GET at an application, with "&recursive=true", returns full info about its deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/", GET)
-                                      .domain("domain1").user("mytenant")
+                                      .userIdentity(USER_ID)
                                       .recursive("true"),
                               new File("application1-recursive.json"));
 
@@ -260,18 +280,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", DELETE),
                               "Deactivated tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default");
 
-        // DELETE an application
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE),
-                              "");
-        // DELETE a tenant
-        tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE),
-                              new File("tenant-without-applications.json"));
-
         // PUT (create) the authenticated user
         byte[] data = new byte[0];
         tester.assertResponse(request("/application/v4/user?user=newuser&domain=by", PUT)
                                       .data(data)
-                                      .domain(athenzUserDomain).user("newuser"),
+                                      .userIdentity(new UserId("newuser")),
                               new File("create-user-response.json"));
         // OPTIONS return 200 OK
         tester.assertResponse(request("/application/v4/", Request.Method.OPTIONS),
@@ -287,11 +300,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // SET global rotation override status
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/environment/prod/region/us-west-1/instance/default/global-rotation/override", PUT)
+                                      .userIdentity(USER_ID)
                                       .data("{\"reason\":\"because i can\"}"),
                               new File("global-rotation-put.json"));
 
         // DELETE global rotation override status
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/environment/prod/region/us-west-1/instance/default/global-rotation/override", DELETE)
+                                      .userIdentity(USER_ID)
                                       .data("{\"reason\":\"because i can\"}"),
                               new File("global-rotation-delete.json"));
 
@@ -300,11 +315,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/promote", POST),
                               "{\"message\":\"Successfully copied environment hosted-instance_tenant1_application1_placeholder_component_default to hosted-instance_tenant1_application1_us-west-1_prod_default\"}");
 
+        // DELETE an application
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE).userIdentity(USER_ID),
+                              "");
+        // DELETE a tenant
+        tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).userIdentity(USER_ID),
+                              new File("tenant-without-applications.json"));
+
         controllerTester.controller().deconstruct();
     }
 
     private void addIssues(ContainerControllerTester tester, ApplicationId id) {
-        tester.controller().applications().lockedOrThrow(id, application ->
+        tester.controller().applications().lockOrThrow(id, application ->
                 tester.controller().applications().store(application
                                                                  .withDeploymentIssueId(IssueId.from("123"))
                                                                  .withOwnershipIssueId(IssueId.from("321"))));
@@ -316,23 +338,28 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
         ContainerTester tester = controllerTester.containerTester();
         tester.updateSystemVersion();
-        addTenantAthenzDomain(athenzUserDomain, "mytenant");
-        addScrewdriverUserToDomain("screwdriveruser1", "domain1");
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
         // Create tenant
-        tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
+        tester.assertResponse(request("/application/v4/tenant/tenant1", POST).userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               new File("tenant-without-applications.json"));
 
         // Create application
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
+                                      .userIdentity(USER_ID),
                               new File("application-reference.json"));
+
+        // Grant deploy access
+        addScrewdriverUserToDeployRole(SCREWDRIVER_ID,
+                                       ATHENZ_TENANT_DOMAIN,
+                                       new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId("application1"));
 
         // POST (deploy) an application to a prod zone - allowed when project ID is not specified
         HttpEntity entity = createApplicationDeployData(applicationPackage, Optional.empty());
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/deploy", POST)
                                       .data(entity)
-                                      .domain(athenzScrewdriverDomain).user("screwdriveruser1"),
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
     }
 
@@ -342,17 +369,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
         ContainerTester tester = controllerTester.containerTester();
         tester.updateSystemVersion();
-        addTenantAthenzDomain(athenzUserDomain, "mytenant");
-        addScrewdriverUserToDomain("screwdriveruser1", "domain1");
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
         // Create tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
+                                      .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               new File("tenant-without-applications.json"));
 
         // Create application
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
+                                      .userIdentity(USER_ID),
                               new File("application-reference.json"));
+
+        // Give Screwdriver project deploy access
+        addScrewdriverUserToDeployRole(SCREWDRIVER_ID, ATHENZ_TENANT_DOMAIN, new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId("application1"));
 
         // Deploy
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -367,12 +398,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // us-east-3
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-east-3/instance/default/deploy", POST)
                                       .data(deployData)
-                                      .domain(athenzScrewdriverDomain).user("screwdriveruser1"),
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         controllerTester.notifyJobCompletion(id, projectId, true, DeploymentJobs.JobType.productionUsEast3);
 
         // New zone is added before us-east-3
         applicationPackage = new ApplicationPackageBuilder()
+                .globalServiceId("foo")
                 // These decides the ordering of deploymentJobs and instances in the response
                 .region("us-west-1")
                 .region("us-east-3")
@@ -383,13 +415,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // us-west-1
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/deploy", POST)
                                       .data(deployData)
-                                      .domain(athenzScrewdriverDomain).user("screwdriveruser1"),
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         controllerTester.notifyJobCompletion(id, projectId, true, DeploymentJobs.JobType.productionUsWest1);
 
         // us-east-3
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-east-3/instance/default/deploy", POST)
-                                      .data(deployData).domain(athenzScrewdriverDomain).user("screwdriveruser1"),
+                                      .data(deployData).screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         controllerTester.notifyJobCompletion(id, projectId, true, DeploymentJobs.JobType.productionUsEast3);
 
@@ -402,7 +434,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     public void testErrorResponses() throws Exception {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         tester.updateSystemVersion();
-        addTenantAthenzDomain("domain1", "mytenant");
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
         // PUT (update) non-existing tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", PUT)
@@ -427,28 +459,33 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // POST (add) a tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
+                                      .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               new File("tenant-without-applications.json"));
 
         // POST (add) another tenant under the same domain
         tester.assertResponse(request("/application/v4/tenant/tenant2", POST)
+                                      .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not create tenant 'tenant2': The Athens domain 'domain1' is already connected to tenant 'tenant1'\"}",
                               400);
 
         // Add the same tenant again
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
+                                      .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'tenant1' already exists\"}",
                               400);
 
         // POST (create) an (empty) application
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
+                                      .userIdentity(USER_ID),
                               new File("application-reference.json"));
 
         // Create the same application again
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"An application with id 'tenant1.application1' already exists\"}",
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
+                                      .userIdentity(USER_ID),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not create 'tenant1.application1': Application already exists\"}",
                               400);
 
         ConfigServerClientMock configServer = (ConfigServerClientMock)container.components().getComponent("com.yahoo.vespa.hosted.controller.ConfigServerClientMock");
@@ -458,44 +495,48 @@ public class ApplicationApiTest extends ControllerContainerTest {
         HttpEntity entity = createApplicationDeployData(applicationPackage, Optional.empty());
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
-                                      .domain(athenzUserDomain).user("mytenant"),
+                                      .userIdentity(USER_ID),
                               new File("deploy-failure.json"), 400);
 
         // POST (deploy) an application without available capacity
         configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Failed to prepare application", ConfigServerException.ErrorCode.OUT_OF_CAPACITY, null));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
-                                      .domain(athenzUserDomain).user("mytenant"),
+                                      .userIdentity(USER_ID),
                               new File("deploy-out-of-capacity.json"), 400);
 
         // POST (deploy) an application where activation fails
         configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Failed to activate application", ConfigServerException.ErrorCode.ACTIVATION_CONFLICT, null));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
-                                      .domain(athenzUserDomain).user("mytenant"),
+                                      .userIdentity(USER_ID),
                               new File("deploy-activation-conflict.json"), 409);
 
         // POST (deploy) an application where we get an internal server error
         configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Internal server error", ConfigServerException.ErrorCode.INTERNAL_SERVER_ERROR, null));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
-                                      .domain(athenzUserDomain).user("mytenant"),
+                                      .userIdentity(USER_ID),
                               new File("deploy-internal-server-error.json"), 500);
 
         // DELETE tenant which has an application
-        tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE),
+        tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)
+                                      .userIdentity(USER_ID),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not delete tenant 'tenant1': This tenant has active applications\"}",
                               400);
 
         // DELETE application
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
+                                      .userIdentity(USER_ID),
                               "");
         // DELETE application again - should produce 404
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
+                                      .userIdentity(USER_ID),
                               "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not delete application 'tenant1.application1': Application not found\"}",
                               404);
         // DELETE tenant
-        tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE),
+        tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)
+                                      .userIdentity(USER_ID),
                               new File("tenant-without-applications.json"));
         // DELETE tenant again - should produce 404
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE),
@@ -511,48 +552,46 @@ public class ApplicationApiTest extends ControllerContainerTest {
     @Test
     public void testAuthorization() throws Exception {
         ContainerTester tester = new ContainerTester(container, responseFiles);
-        String authorizedUser = "mytenant";
-        String unauthorizedUser = "othertenant";
+        UserId authorizedUser = USER_ID;
+        UserId unauthorizedUser = new UserId("othertenant");
         
         // Mutation without an authorized user is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
-                                      .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .domain("domain1").user(null),
+                                      .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               "{\"error-code\":\"FORBIDDEN\",\"message\":\"User is not authenticated\"}",
                               403);
 
         // ... but read methods are allowed
         tester.assertResponse(request("/application/v4/tenant/", GET)
-                                      .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .domain("domain1").user(null),
+                                      .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               "[]",
                               200);
 
-        addTenantAthenzDomain("domain1", "mytenant");
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
         // Creating a tenant for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .domain("domain1").user(unauthorizedUser),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"The user 'othertenant' is not admin in Athenz domain 'domain1'\"}",
+                                      .userIdentity(unauthorizedUser),
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"The user 'user.othertenant' is not admin in Athenz domain 'domain1'\"}",
                               403);
 
         // (Create it with the right tenant id)
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .domain("domain1").user(authorizedUser),
+                                      .userIdentity(authorizedUser),
                               new File("tenant-without-applications.json"),
                               200);
 
         // Creating an application for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
-                                      .domain("domain1").user(unauthorizedUser),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"User othertenant does not have write access to tenant tenant1\"}",
+                                      .userIdentity(unauthorizedUser),
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"User user.othertenant does not have write access to tenant tenant1\"}",
                               403);
 
         // (Create it with the right tenant id)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
-                                      .domain("domain1").user(authorizedUser),
+                                      .userIdentity(authorizedUser),
                               new File("application-reference.json"),
                               200);
 
@@ -560,42 +599,94 @@ public class ApplicationApiTest extends ControllerContainerTest {
         HttpEntity entity = createApplicationDeployData(applicationPackage, Optional.empty());
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
-                                      .domain(athenzUserDomain).user("mytenant"),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Principal 'mytenant' is not a Screwdriver principal. Excepted principal with Athenz domain 'cd.screwdriver.project', got 'domain1'.\"}",
+                                      .userIdentity(USER_ID),
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Principal 'user.myuser' is not a Screwdriver principal. Excepted principal with Athenz domain 'cd.screwdriver.project', got 'user'.\"}",
                               403);
 
         // Deleting an application for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
-                                      .domain("domain1").user(unauthorizedUser),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"User othertenant does not have write access to tenant tenant1\"}",
+                                      .userIdentity(unauthorizedUser),
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"User user.othertenant does not have write access to tenant tenant1\"}",
                               403);
 
         // (Deleting it with the right tenant id)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
-                                      .domain("domain1").user(authorizedUser),
+                                      .userIdentity(authorizedUser),
                               "",
                               200);
 
         // Updating a tenant for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1", PUT)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .domain("domain1").user(unauthorizedUser),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"User othertenant does not have write access to tenant tenant1\"}",
+                                      .userIdentity(unauthorizedUser),
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"User user.othertenant does not have write access to tenant tenant1\"}",
                               403);
         
         // Change Athens domain
-        addTenantAthenzDomain("domain2", "mytenant");
+        createAthenzDomainWithAdmin(new AthenzDomain("domain2"), USER_ID);
         tester.assertResponse(request("/application/v4/tenant/tenant1", PUT)
                                       .data("{\"athensDomain\":\"domain2\", \"property\":\"property1\"}")
-                                      .domain("domain1").user(authorizedUser),
+                                      .userIdentity(authorizedUser),
                               "{\"tenant\":\"tenant1\",\"type\":\"ATHENS\",\"athensDomain\":\"domain2\",\"property\":\"property1\",\"applications\":[]}",
                               200);
 
         // Deleting a tenant for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)
-                                      .domain("domain1").user(unauthorizedUser),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"User othertenant does not have write access to tenant tenant1\"}",
+                                      .userIdentity(unauthorizedUser),
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"User user.othertenant does not have write access to tenant tenant1\"}",
                               403);
+    }
+
+    @Test
+    public void deployment_fails_on_illegal_domain_in_deployment_spec() throws IOException {
+        ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
+        ContainerTester tester = controllerTester.containerTester();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("default")
+                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("invalid.domain"), com.yahoo.config.provision.AthenzService.from("service"))
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+        long screwdriverProjectId = 123;
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+
+        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.id(), "tenant1", "application1");
+        ScrewdriverId screwdriverId = new ScrewdriverId(Long.toString(screwdriverProjectId));
+        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
+
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
+                                      .data(createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)))
+                                      .screwdriverIdentity(screwdriverId),
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Athenz domain in deployment.xml: [invalid.domain] must match tenant domain: [domain1]\"}",
+                              403);
+
+    }
+
+    @Test
+    public void deployment_succeeds_when_correct_domain_is_used() throws IOException {
+        ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
+        ContainerTester tester = controllerTester.containerTester();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("default")
+                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain1"), com.yahoo.config.provision.AthenzService.from("service"))
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+        long screwdriverProjectId = 123;
+        ScrewdriverId screwdriverId = new ScrewdriverId(Long.toString(screwdriverProjectId));
+
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+
+        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.id(), "tenant1", "application1");
+        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
+
+        // Allow systemtest to succeed by notifying completion of system test
+        controllerTester.notifyJobCompletion(application.id(), screwdriverProjectId, true, DeploymentJobs.JobType.component);
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
+                                      .data(createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)))
+                                      .screwdriverIdentity(screwdriverId),
+                              new File("deploy-result.json"));
+
     }
 
     private HttpEntity createApplicationDeployData(ApplicationPackage applicationPackage, Optional<Long> screwdriverJobId) {
@@ -634,8 +725,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         private final String path;
         private final Request.Method method;
         private byte[] data = new byte[0];
-        private String domain = "domain1";
-        private String user = "mytenant";
+        private AthenzIdentity identity;
         private String contentType = "application/json";
         private String recursive;
 
@@ -655,8 +745,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
             }
             return data(out.toByteArray()).contentType(data.getContentType().getValue());
         }
-        private RequestBuilder domain(String domain) { this.domain = domain; return this; }
-        private RequestBuilder user(String user) { this.user = user; return this; }
+        private RequestBuilder userIdentity(UserId userId) { this.identity = AthenzUser.fromUserId(userId); return this; }
+        private RequestBuilder screwdriverIdentity(ScrewdriverId screwdriverId) { this.identity = AthenzService.fromScrewdriverId(screwdriverId); return this; }
         private RequestBuilder contentType(String contentType) { this.contentType = contentType; return this; }
         private RequestBuilder recursive(String recursive) { this.recursive = recursive; return this; }
 
@@ -664,10 +754,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         public Request get() {
             Request request = new Request("http://localhost:8080" + path +
                                           // user and domain parameters are translated to a Principal by MockAuthorizer as we do not run HTTP filters
-                                          "?domain=" + domain + (user == null ? "" : "&user=" + user) +
-                                          (recursive == null ? "" : "&recursive=" + recursive),
+                                          (recursive == null ? "" : "?recursive=" + recursive),
                                           data, method);
             request.getHeaders().put("Content-Type", contentType);
+            if (identity != null) {
+                request.getHeaders().put("Athenz-Identity-Domain", identity.getDomain().id());
+                request.getHeaders().put("Athenz-Identity-Name", identity.getName());
+            }
             return request;
         }
     }
@@ -681,26 +774,27 @@ public class ApplicationApiTest extends ControllerContainerTest {
      * In production this happens outside hosted Vespa, so there is no API for it and we need to reach down into the
      * mock setup to replicate the action.
      */
-    private AthenzDomain addTenantAthenzDomain(String domainName, String userName) {
+    private void createAthenzDomainWithAdmin(AthenzDomain domain, UserId userId) {
         AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
                 .getComponent(AthenzClientFactoryMock.class.getName());
-        AthenzDomain athensDomain = new AthenzDomain(domainName);
-        AthenzDbMock.Domain domain = new AthenzDbMock.Domain(athensDomain);
-        domain.markAsVespaTenant();
-        domain.admin(AthenzUtils.createPrincipal(new UserId(userName)));
-        mock.getSetup().addDomain(domain);
-        return athensDomain;
+        AthenzDbMock.Domain domainMock = new AthenzDbMock.Domain(domain);
+        domainMock.markAsVespaTenant();
+        domainMock.admin(AthenzUser.fromUserId(userId));
+        mock.getSetup().addDomain(domainMock);
     }
 
     /**
      * In production this happens outside hosted Vespa, so there is no API for it and we need to reach down into the
      * mock setup to replicate the action.
      */
-    private void addScrewdriverUserToDomain(String screwdriverUserId, String domainName) {
+    private void addScrewdriverUserToDeployRole(ScrewdriverId screwdriverId,
+                                                AthenzDomain domain,
+                                                com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId applicationId) {
         AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
                 .getComponent(AthenzClientFactoryMock.class.getName());
-        AthenzDbMock.Domain domain = mock.getSetup().domains.get(new AthenzDomain(domainName));
-        domain.admin(new AthenzPrincipal(new AthenzDomain(athenzScrewdriverDomain), new UserId(screwdriverUserId)));
+        AthenzIdentity screwdriverIdentity = AthenzService.fromScrewdriverId(screwdriverId);
+        AthenzDbMock.Application athenzApplication = mock.getSetup().domains.get(domain).applications.get(applicationId);
+        athenzApplication.addRoleMember(ApplicationAction.deploy, screwdriverIdentity);
     }
 
     private void startAndTestChange(ContainerControllerTester controllerTester, ApplicationId application, long projectId,
@@ -715,7 +809,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 application.tenant().value(), application.application().value());
         tester.assertResponse(request(testPath, POST)
                                       .data(deployData)
-                                      .domain(athenzScrewdriverDomain).user("screwdriveruser1"),
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         tester.assertResponse(request(testPath, DELETE),
                 "Deactivated " + testPath.replaceFirst("/application/v4/", ""));
@@ -726,7 +820,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 application.tenant().value(), application.application().value());
         tester.assertResponse(request(stagingPath, POST)
                                       .data(deployData)
-                                      .domain(athenzScrewdriverDomain).user("screwdriveruser1"),
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
         tester.assertResponse(request(stagingPath, DELETE),
                 "Deactivated " + stagingPath.replaceFirst("/application/v4/", ""));
@@ -742,7 +836,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
      */
     private void setDeploymentMaintainedInfo(ContainerControllerTester controllerTester) {
         for (Application application : controllerTester.controller().applications().asList()) {
-            controllerTester.controller().applications().lockedOrThrow(application.id(), lockedApplication -> {
+            controllerTester.controller().applications().lockOrThrow(application.id(), lockedApplication -> {
                 lockedApplication = lockedApplication.with(new ApplicationMetrics(0.5, 0.7));
 
                 for (Deployment deployment : application.deployments().values()) {

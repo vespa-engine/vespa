@@ -3,11 +3,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.yahoo.vespa</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>vespa</artifactId>
     <packaging>pom</packaging>
     <version>6-SNAPSHOT</version>
-    <name>parent</name>
-    <description>Parent artifact for all Vespa maven projects.</description>
+    <description>Aggregator pom for vespa.</description>
     <url>https://github.com/vespa-engine</url>
 
     <licenses>
@@ -24,6 +23,7 @@
         </developer>
     </developers>
 
+<<<<<<< HEAD
     <distributionManagement>
         <repository>
             <id>bintray-vespa-repo</id>
@@ -959,6 +959,8 @@
         <surefire.version>2.19.1</surefire.version> <!-- NOTE bjorncs 15.06.2017: Version 2.20 has OoM issues -->
     </properties>
 
+=======
+>>>>>>> master
     <modules>
         <module>application</module>
         <module>application-deploy-plugin</module>
@@ -989,6 +991,7 @@
         <module>container-core</module>
         <module>container-accesslogging</module>
         <module>container-dependencies-enforcer</module>
+        <module>container-dependency-versions</module>
         <module>container-dev</module>
         <module>container-di</module>
         <module>container-disc</module>
@@ -1033,6 +1036,7 @@
         <module>node-maintainer</module>
         <module>orchestrator-restapi</module>
         <module>orchestrator</module>
+        <module>parent</module>
         <module>predicate-search</module>
         <module>predicate-search-core</module>
         <module>processing</module>

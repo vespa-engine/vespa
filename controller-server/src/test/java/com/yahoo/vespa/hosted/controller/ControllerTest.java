@@ -11,9 +11,8 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.slime.Slime;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
@@ -25,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -32,12 +32,14 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
+import com.yahoo.vespa.hosted.controller.rotation.RotationId;
+import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -494,7 +496,7 @@ public class ControllerTest {
     public void testGlobalRotations() throws IOException {
         // Setup tester and app def
         ControllerTester tester = new ControllerTester();
-        Zone zone = Zone.defaultZone();
+        ZoneId zone = ZoneId.from(Environment.defaultEnvironment(), RegionName.defaultName());
         ApplicationId appId = tester.applicationId("tenant", "app1", "default");
         DeploymentId deployId = new DeploymentId(appId, zone);
 
@@ -523,11 +525,11 @@ public class ControllerTest {
         TenantId tenant = tester.createTenant("tenant1", "domain1", 11L);
         Application app = tester.createApplication(tenant, "app1", "default", 1);
 
-        tester.controller().applications().lockedOrThrow(app.id(), application -> {
+        tester.controller().applications().lockOrThrow(app.id(), application -> {
             application = application.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.3"))));
             applications.store(application);
             try {
-                tester.deploy(app, new Zone(Environment.prod, RegionName.from("us-east-3")));
+                tester.deploy(app, ZoneId.from("prod", "us-east-3"));
                 fail("Expected exception");
             } catch (IllegalArgumentException e) {
                 assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.us-east-3 as version change to 6.3 is not tested", e.getMessage());
@@ -601,16 +603,108 @@ public class ControllerTest {
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
+                .globalServiceId("foo")
                 .region("us-west-1")
                 .region("us-central-1") // Two deployments should result in DNS alias being registered once
                 .build();
 
         tester.deployCompletely(application, applicationPackage);
         assertEquals(1, tester.controllerTester().nameService().records().size());
-        Optional<Record> record = tester.controllerTester().nameService().findRecord(Record.Type.CNAME, "app1.tenant1.global.vespa.yahooapis.com");
+        Optional<Record> record = tester.controllerTester().nameService().findRecord(
+                Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
+        );
         assertTrue(record.isPresent());
-        assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name());
-        assertEquals("fake-global-rotation-tenant1.app1", record.get().value());
+        assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
+        assertEquals("rotation-fqdn-01.", record.get().data().asString());
+    }
+
+    @Test
+    public void testUpdatesExistingDnsAlias() {
+        DeploymentTester tester = new DeploymentTester();
+
+        // Application 1 is deployed and deleted
+        {
+            Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
+            ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                    .environment(Environment.prod)
+                    .globalServiceId("foo")
+                    .region("us-west-1")
+                    .region("us-central-1") // Two deployments should result in DNS alias being registered once
+                    .build();
+
+            tester.deployCompletely(app1, applicationPackage);
+            assertEquals(1, tester.controllerTester().nameService().records().size());
+            Optional<Record> record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
+            );
+            assertTrue(record.isPresent());
+            assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
+            assertEquals("rotation-fqdn-01.", record.get().data().asString());
+
+            // Application is deleted and rotation is unassigned
+            applicationPackage = new ApplicationPackageBuilder()
+                    .environment(Environment.prod)
+                    .allow(ValidationId.deploymentRemoval)
+                    .build();
+            tester.notifyJobCompletion(component, app1, true);
+            tester.deployAndNotify(app1, applicationPackage, true, systemTest);
+            tester.applications().deactivate(app1, ZoneId.from(Environment.test, RegionName.from("us-east-1")));
+            tester.applications().deactivate(app1, ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
+            tester.applications().deleteApplication(app1.id(), Optional.of(new NToken("ntoken")));
+            try (RotationLock lock = tester.applications().rotationRepository().lock()) {
+                assertTrue("Rotation is unassigned",
+                           tester.applications().rotationRepository().availableRotations(lock)
+                                 .containsKey(new RotationId("rotation-id-01")));
+            }
+
+            // Record remains
+            record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
+            );
+            assertTrue(record.isPresent());
+        }
+
+        // Application 2 is deployed and assigned same rotation as application 1 had before deletion
+        {
+            Application app2 = tester.createApplication("app2", "tenant2", 1, 1L);
+            ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                    .environment(Environment.prod)
+                    .globalServiceId("foo")
+                    .region("us-west-1")
+                    .region("us-central-1")
+                    .build();
+            tester.deployCompletely(app2, applicationPackage);
+            assertEquals(2, tester.controllerTester().nameService().records().size());
+            Optional<Record> record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app2.tenant2.global.vespa.yahooapis.com")
+            );
+            assertTrue(record.isPresent());
+            assertEquals("app2.tenant2.global.vespa.yahooapis.com", record.get().name().asString());
+            assertEquals("rotation-fqdn-01.", record.get().data().asString());
+        }
+
+        // Application 1 is recreated, deployed and assigned a new rotation
+        {
+            Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
+            ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                    .environment(Environment.prod)
+                    .globalServiceId("foo")
+                    .region("us-west-1")
+                    .region("us-central-1")
+                    .build();
+            tester.deployCompletely(app1, applicationPackage);
+            app1 = tester.applications().require(app1.id());
+            assertEquals("rotation-id-02", app1.rotation().get().id().asString());
+
+            // Existing DNS record is updated to point to the newly assigned rotation
+            assertEquals(2, tester.controllerTester().nameService().records().size());
+            Optional<Record> record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
+            );
+            assertTrue(record.isPresent());
+            assertEquals("rotation-fqdn-02.", record.get().data().asString());
+        }
+
     }
 
     @Test
@@ -626,7 +720,7 @@ public class ControllerTest {
         Application app = tester.createApplication("app1", "tenant1", 1, 2L);
 
         // Direct deploy is allowed when project ID is missing
-        Zone zone = new Zone(Environment.prod, RegionName.from("cd-us-central-1"));
+        ZoneId zone = ZoneId.from("prod", "cd-us-central-1");
         // Same options as used in our integration tests
         DeployOptions options = new DeployOptions(Optional.empty(), Optional.empty(), false,
                                                   false);

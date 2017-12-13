@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.zone.v2;
 
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -81,7 +81,7 @@ public class ZoneApiHandler extends LoggingRequestHandler {
         }
         Environment environment = Environment.from(path.get("environment"));
         RegionName region = RegionName.from(path.get("region"));
-        Optional<Zone> zone = zoneRegistry.getZone(environment, region);
+        Optional<ZoneId> zone = zoneRegistry.getZone(environment, region);
         if (!zone.isPresent()) {
             throw new IllegalArgumentException("No such zone: " + environment.value() + "." + region.value());
         }

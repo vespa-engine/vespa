@@ -11,7 +11,6 @@ import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 
 import java.io.File;
-import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -47,14 +46,7 @@ public interface ModelContext {
         boolean hostedVespa();
         Zone zone();
         Set<Rotation> rotations();
-
-        /*
-         * DEPRECATED
-         * TODO: Remove when 6.172 and earlier are no longer in use
-         */
-        default URI loadBalancerAddress() {
-            return URI.create("http://localhost");
-        }
+        default boolean disableFileDistributor() { return false; }
     }
 
 }

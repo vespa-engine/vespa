@@ -35,9 +35,8 @@ public:
 
 class NullValueNode : public ValueNode
 {
-    vespalib::string _name;
 public:
-    NullValueNode(const vespalib::stringref & name);
+    NullValueNode();
 
     std::unique_ptr<Value> getValue(const Context&) const override {
         return std::unique_ptr<Value>(new NullValue());
@@ -48,7 +47,7 @@ public:
     void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
-        return wrapParens(new NullValueNode(_name));
+        return wrapParens(new NullValueNode());
     }
 };
 
@@ -56,7 +55,7 @@ class StringValueNode : public ValueNode
 {
     vespalib::string _value;
 public:
-    StringValueNode(const vespalib::stringref & val);
+    explicit StringValueNode(const vespalib::stringref & val);
 
     const vespalib::string& getValue() const { return _value; }
 
@@ -115,6 +114,7 @@ class VariableValueNode : public ValueNode
 {
     vespalib::string _value;
 public:
+    // TODO stringref
     VariableValueNode(const vespalib::string & variableName) : _value(variableName) {}
 
     const vespalib::string& getVariableName() const { return _value; }
@@ -183,6 +183,59 @@ private:
     void initFieldPath(const DocumentType&) const;
 };
 
+class FunctionValueNode;
+
+// Only used by the parser to build a partial field expression. Never part of
+// an AST tree returned to the caller.
+class FieldExprNode final : public ValueNode {
+    std::unique_ptr<FieldExprNode> _left_expr;
+    vespalib::string _right_expr;
+public:
+    explicit FieldExprNode(const vespalib::string& doctype) : _left_expr(), _right_expr(doctype) {}
+    FieldExprNode(std::unique_ptr<FieldExprNode> left_expr, vespalib::stringref right_expr)
+        : _left_expr(std::move(left_expr)), _right_expr(right_expr)
+    {}
+    FieldExprNode(const FieldExprNode &) = delete;
+    FieldExprNode & operator = (const FieldExprNode &) = delete;
+    FieldExprNode(FieldExprNode &&) = default;
+    FieldExprNode & operator = (FieldExprNode &&) = default;
+    ~FieldExprNode();
+
+    std::unique_ptr<FieldValueNode> convert_to_field_value() const;
+    std::unique_ptr<FunctionValueNode> convert_to_function_call() const;
+private:
+    void build_mangled_expression(vespalib::string& dest) const;
+    const vespalib::string& resolve_doctype() const;
+
+    // These are not used, can just return dummy values.
+    std::unique_ptr<Value> getValue(const Context& context) const override {
+        (void) context;
+        return std::unique_ptr<Value>();
+    }
+    std::unique_ptr<Value> traceValue(const Context &context, std::ostream& out) const override {
+        (void) context;
+        (void) out;
+        return std::unique_ptr<Value>();
+    }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override {
+        (void) out;
+        (void) verbose;
+        (void) indent;
+    }
+    void visit(Visitor& visitor) const override {
+        (void) visitor;
+    }
+
+    ValueNode::UP clone() const override {
+        if (_left_expr) {
+            return wrapParens(new FieldExprNode(std::unique_ptr<FieldExprNode>(
+                    static_cast<FieldExprNode*>(_left_expr->clone().release())), _right_expr));
+        } else {
+            return wrapParens(new FieldExprNode(_right_expr));
+        }
+    }
+};
+
 class IdValueNode : public ValueNode
 {
 public:
@@ -220,35 +273,6 @@ private:
     Type _type;
     int _widthBits;
     int _divisionBits;
-};
-
-class SearchColumnValueNode : public ValueNode
-{
-public:
-    SearchColumnValueNode(const BucketIdFactory& bucketIdFactory,
-                          const vespalib::stringref & name,
-                          int numColumns);
-
-    int getColumns() { return _numColumns; }
-
-    std::unique_ptr<Value> getValue(const Context& context) const override;
-    std::unique_ptr<Value> getValue(const DocumentId& id) const;
-    std::unique_ptr<Value> traceValue(const Context& context, std::ostream &out) const override;
-    std::unique_ptr<Value> traceValue(const DocumentId& val, std::ostream& out) const;
-    
-    int64_t getValue(const BucketId& bucketId) const;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void visit(Visitor& visitor) const override;
-
-    ValueNode::UP clone() const override {
-        return wrapParens(new SearchColumnValueNode(_bucketIdFactory, _id, _numColumns));
-}
-
-private:
-    const BucketIdFactory& _bucketIdFactory;
-    vespalib::string _id;
-    int _numColumns;
-    std::unique_ptr<BucketDistribution> _distribution;
 };
 
 class FunctionValueNode : public ValueNode

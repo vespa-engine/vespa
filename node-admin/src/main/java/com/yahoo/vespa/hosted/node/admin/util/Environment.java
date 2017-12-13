@@ -6,6 +6,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,9 +16,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
@@ -31,13 +30,15 @@ public class Environment {
     private static final DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
     public static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
 
-    private static final String ENV_CONFIGSERVERS = "services__addr_configserver";
+    private static final String ENV_CONFIGSERVER_SCHEME = "CONFIG_SERVER_SCHEME";
+    private static final String ENV_CONFIGSERVER_HOSTS = "CONFIG_SERVER_ADDRESS";
+    private static final String ENV_CONFIGSERVER_PORT = "CONFIG_SERVER_PORT";
     private static final String ENVIRONMENT = "ENVIRONMENT";
     private static final String REGION = "REGION";
     private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
     private static final String COREDUMP_FEED_ENDPOINT = "COREDUMP_FEED_ENDPOINT";
 
-    private final Set<String> configServerHosts;
+    private final List<URI> configServerHosts;
     private final String environment;
     private final String region;
     private final String parentHostHostname;
@@ -51,7 +52,7 @@ public class Environment {
     }
 
     public Environment() {
-        this(getConfigServerHostsFromEnvironment(),
+        this(getConfigServerUrlsFromEnvironment(),
              getEnvironmentVariable(ENVIRONMENT),
              getEnvironmentVariable(REGION),
              HostName.getLocalhost(),
@@ -61,7 +62,7 @@ public class Environment {
              getEnvironmentVariable(COREDUMP_FEED_ENDPOINT));
     }
 
-    public Environment(Set<String> configServerHosts,
+    public Environment(List<URI> configServerHosts,
                        String environment,
                        String region,
                        String parentHostHostname,
@@ -79,7 +80,7 @@ public class Environment {
         this.feedEndpoint = feedEndpoint;
     }
 
-    public Set<String> getConfigServerHosts() { return configServerHosts; }
+    public List<URI> getConfigServerUris() { return configServerHosts; }
 
     public String getEnvironment() {
         return environment;
@@ -95,7 +96,9 @@ public class Environment {
 
     private static String getEnvironmentVariable(String name) {
         final String value = System.getenv(name);
-        if (value == null) throw new IllegalStateException(String.format("Environment variable %s not set", name));
+        if (Strings.isNullOrEmpty(value)) {
+            throw new IllegalStateException(String.format("Environment variable %s not set", name));
+        }
         return value;
     }
 
@@ -103,14 +106,14 @@ public class Environment {
         return getEnvironment() + "." + getRegion();
     }
 
-    private static Set<String> getConfigServerHostsFromEnvironment() {
-        String configServerHosts = System.getenv(ENV_CONFIGSERVERS);
-        if (configServerHosts == null) {
-            return Collections.emptySet();
-        }
+    private static List<URI> getConfigServerUrlsFromEnvironment() {
+        String scheme = getEnvironmentVariable(ENV_CONFIGSERVER_SCHEME);
+        String configServerHosts = getEnvironmentVariable(ENV_CONFIGSERVER_HOSTS);
+        String port = getEnvironmentVariable(ENV_CONFIGSERVER_PORT);
 
-        final List<String> hostNameStrings = Arrays.asList(configServerHosts.split("[,\\s]+"));
-        return new HashSet<>(hostNameStrings);
+        return Arrays.stream(configServerHosts.split("[,\\s]+"))
+                .map(hostname -> URI.create(scheme + "://" + hostname + ":" + port))
+                .collect(Collectors.toList());
     }
 
     private static List<String> getLogstashNodesFromEnvironment() {
@@ -188,7 +191,7 @@ public class Environment {
     }
     
     public static class Builder {
-        private Set<String> configServerHosts = Collections.emptySet();
+        private List<URI> configServerHosts = Collections.emptyList();
         private String environment;
         private String region;
         private String parentHostHostname;
@@ -197,8 +200,10 @@ public class Environment {
         private List<String> logstashNodes = Collections.emptyList();
         private String feedEndpoint;
 
-        public Builder configServerHosts(String... hosts) {
-            configServerHosts = Arrays.stream(hosts).collect(Collectors.toSet());
+        public Builder configServerUris(String... hosts) {
+            configServerHosts = Arrays.stream(hosts)
+                    .map(URI::create)
+                    .collect(Collectors.toList());
             return this;
         }
 

@@ -20,7 +20,6 @@ import java.util.logging.Logger;
  *
  * @author hmusum
  */
-// TODO: Rename now that it also support file distribution request
 public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer {
 
     private final static Logger log = Logger.getLogger(ConfigProxyRpcServer.class.getName());
