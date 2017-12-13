@@ -31,6 +31,8 @@ using search::attribute::IAttributeVector;
 using search::aggregation::HitsAggregationResult;
 using search::expression::ConfigureStaticParams;
 using vdslib::Parameters;
+using document::PositionDataType;
+using document::DataType;
 
 class ForceWordfolderInit
 {
@@ -52,25 +54,25 @@ static ForceWordfolderInit _G_forceNormWordFolderInit;
 AttributeVector::SP
 createMultiValueAttribute(const vespalib::string & name, const document::FieldValue & fv, bool arrayType)
 {
-    const document::DataType * ndt = fv.getDataType();
+    const DataType * ndt = fv.getDataType();
     if (ndt->inherits(document::CollectionDataType::classId)) {
         ndt = &(static_cast<const document::CollectionDataType *>(ndt))->getNestedType();
     }
     LOG(debug, "Create %s attribute '%s' with data type '%s' (%s)",
         arrayType ? "array" : "weighted set", name.c_str(), ndt->getName().c_str(), fv.getClass().name());
     AttributeVector::SP attr;
-    if (ndt->getId() == document::DataType::T_BYTE ||
-        ndt->getId() == document::DataType::T_INT ||
-        ndt->getId() == document::DataType::T_LONG)
+    if (ndt->getId() == DataType::T_BYTE ||
+        ndt->getId() == DataType::T_INT ||
+        ndt->getId() == DataType::T_LONG)
     {
         attr.reset(arrayType ? static_cast<AttributeVector *>(new search::MultiIntegerExtAttribute(name))
                              : static_cast<AttributeVector *>(new search::WeightedSetIntegerExtAttribute(name)));
-    } else if (ndt->getId() == document::DataType::T_DOUBLE ||
-               ndt->getId() == document::DataType::T_FLOAT)
+    } else if (ndt->getId() == DataType::T_DOUBLE ||
+               ndt->getId() == DataType::T_FLOAT)
     {
         attr.reset(arrayType ? static_cast<AttributeVector *>(new search::MultiFloatExtAttribute(name))
                              : static_cast<AttributeVector *>(new search::WeightedSetFloatExtAttribute(name)));
-    } else if (ndt->getId() == document::DataType::T_STRING) {
+    } else if (ndt->getId() == DataType::T_STRING) {
         attr.reset(arrayType ? static_cast<AttributeVector *>(new search::MultiStringExtAttribute(name))
                              : static_cast<AttributeVector *>(new search::WeightedSetStringExtAttribute(name)));
     } else {
@@ -385,16 +387,16 @@ SearchVisitor::AttributeInserter::onPrimitive(uint32_t, const Content & c)
     }
 }
 
-SearchVisitor::AttributeInserter::AttributeInserter(search::AttributeVector & attribute, search::AttributeVector::DocId docId) :
+SearchVisitor::AttributeInserter::AttributeInserter(AttributeVector & attribute, AttributeVector::DocId docId) :
     _attribute(attribute),
     _docId(docId)
 {
 }
 
-SearchVisitor::PositionInserter::PositionInserter(search::AttributeVector & attribute, search::AttributeVector::DocId docId) :
+SearchVisitor::PositionInserter::PositionInserter(AttributeVector & attribute, AttributeVector::DocId docId) :
     AttributeInserter(attribute, docId),
-    _fieldX(document::PositionDataType::getInstance().getField(document::PositionDataType::FIELD_X)),
-    _fieldY(document::PositionDataType::getInstance().getField(document::PositionDataType::FIELD_Y))
+    _fieldX(PositionDataType::getInstance().getField(PositionDataType::FIELD_X)),
+    _fieldY(PositionDataType::getInstance().getField(PositionDataType::FIELD_Y))
 {
 }
 
@@ -602,7 +604,7 @@ void
 SearchVisitor::SyntheticFieldsController::onDocumentMatch(StorageDocument & document,
                                                           const vespalib::string & documentId)
 {
-    document.setField(_documentIdFId, document::FieldValue::UP(new document::StringFieldValue(documentId)));
+    document.setField(_documentIdFId, std::make_unique<document::StringFieldValue>(documentId));
 }
 
 void
@@ -614,8 +616,8 @@ SearchVisitor::registerAdditionalFields(const std::vector<vsm::DocsumTools::Fiel
         const std::vector<vespalib::string> & inputNames = spec.getInputNames();
         for (size_t j = 0; j < inputNames.size(); ++j) {
             fieldList.push_back(inputNames[j]);
-            if (document::PositionDataType::isZCurveFieldName(inputNames[j])) {
-                fieldList.push_back(document::PositionDataType::cutZCurveFieldName(inputNames[j]));
+            if (PositionDataType::isZCurveFieldName(inputNames[j])) {
+                fieldList.push_back(PositionDataType::cutZCurveFieldName(inputNames[j]));
             }
         }
     }
@@ -988,16 +990,16 @@ SearchVisitor::fillAttributeVectors(const vespalib::string & documentId, const S
 {
     for (const AttrInfo & finfo : _attributeFields) {
         const AttributeGuard &finfoGuard(*finfo._attr);
-        bool isPosition = finfoGuard->getClass().inherits(search::IntegerAttribute::classId) && document::PositionDataType::isZCurveFieldName(finfoGuard->getName());
+        bool isPosition = finfoGuard->getClass().inherits(search::IntegerAttribute::classId) && PositionDataType::isZCurveFieldName(finfoGuard->getName());
         LOG(debug, "Filling attribute '%s',  isPosition='%s'", finfoGuard->getName().c_str(), isPosition ? "true" : "false");
         uint32_t fieldId = finfo._field;
         if (isPosition) {
-            vespalib::stringref org = document::PositionDataType::cutZCurveFieldName(finfoGuard->getName());
+            vespalib::stringref org = PositionDataType::cutZCurveFieldName(finfoGuard->getName());
             fieldId = _fieldsUnion.find(org)->second;
         }
         const StorageDocument::SubDocument & subDoc = document.getComplexField(fieldId);
-        search::AttributeVector & attrV = const_cast<search::AttributeVector & >(*finfoGuard);
-        search::AttributeVector::DocId docId(0);
+        AttributeVector & attrV = const_cast<AttributeVector & >(*finfoGuard);
+        AttributeVector::DocId docId(0);
         attrV.addDoc(docId);
         if (subDoc.getFieldValue() != NULL) {
             LOG(debug, "value = '%s'", subDoc.getFieldValue()->toString().c_str());
