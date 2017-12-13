@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.content;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
+import com.yahoo.vespa.model.content.utils.DocType;
 import com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder;
 import org.junit.Test;
 
@@ -36,8 +37,8 @@ public class ContentSearchClusterTest {
 
     private static ContentCluster createClusterWithGlobalType() throws Exception {
         return createCluster(new ContentClusterBuilder().docTypes(Arrays.asList(
-                new ContentClusterBuilder.DocType("global", true),
-                new ContentClusterBuilder.DocType("regular"))).getXml(),
+                DocType.indexGlobal("global"),
+                DocType.index("regular"))).getXml(),
                 createSearchDefinitions("global", "regular"));
     }
 
@@ -108,9 +109,9 @@ public class ContentSearchClusterTest {
                 .content("field ref_to_c type reference<c> { indexing: attribute }").build());
         searchDefinitions.add(new SearchDefinitionBuilder().name("c").build());
         return createCluster(new ContentClusterBuilder().docTypes(Arrays.asList(
-                new ContentClusterBuilder.DocType("a"),
-                new ContentClusterBuilder.DocType("b", true),
-                new ContentClusterBuilder.DocType("c", true))).getXml(),
+                DocType.index("a"),
+                DocType.indexGlobal("b"),
+                DocType.indexGlobal("c"))).getXml(),
                 searchDefinitions);
     }
 
