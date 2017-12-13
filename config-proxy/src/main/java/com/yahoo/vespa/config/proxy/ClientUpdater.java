@@ -21,9 +21,7 @@ class ClientUpdater {
     private final RpcServer rpcServer;
     private final DelayedResponses delayedResponses;
 
-    ClientUpdater(RpcServer rpcServer,
-                  ConfigProxyStatistics statistics,
-                  DelayedResponses delayedResponses) {
+    ClientUpdater(RpcServer rpcServer, ConfigProxyStatistics statistics, DelayedResponses delayedResponses) {
         this.rpcServer = rpcServer;
         this.statistics = statistics;
         this.delayedResponses = delayedResponses;
@@ -37,28 +35,20 @@ class ClientUpdater {
      * @param config new config
      */
     void updateSubscribers(RawConfig config) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Config updated for " + config.getKey() + "," + config.getGeneration());
-        }
+        log.log(LogLevel.DEBUG, () -> "Config updated for " + config.getKey() + "," + config.getGeneration());
         sendResponse(config);
     }
 
     private void sendResponse(RawConfig config) {
         if (config.isError()) { statistics.incErrorCount(); }
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Sending response for " + config.getKey() + "," + config.getGeneration());
-        }
+        log.log(LogLevel.DEBUG, () -> "Sending response for " + config.getKey() + "," + config.getGeneration());
         DelayQueue<DelayedResponse> responseDelayQueue = delayedResponses.responses();
-        if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, "Delayed response queue: " + responseDelayQueue);
-        }
+        log.log(LogLevel.SPAM, () -> "Delayed response queue: " + responseDelayQueue);
         if (responseDelayQueue.size() == 0) {
-            log.log(LogLevel.DEBUG, "There exists no matching element on delayed response queue for " + config.getKey());
+            log.log(LogLevel.DEBUG, () -> "There exists no matching element on delayed response queue for " + config.getKey());
             return;
         } else {
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Delayed response queue has " + responseDelayQueue.size() + " elements");
-            }
+            log.log(LogLevel.DEBUG, () -> "Delayed response queue has " + responseDelayQueue.size() + " elements");
         }
         DelayedResponse[] responses = responseDelayQueue.toArray(new DelayedResponse[0]);
         boolean found = false;
@@ -67,21 +57,17 @@ class ClientUpdater {
             if (request.getConfigKey().equals(config.getKey())) {
                 if (delayedResponses.remove(response)) {
                     found = true;
-                    if (log.isLoggable(LogLevel.DEBUG)) {
-                        log.log(LogLevel.DEBUG, "Call returnOkResponse for " + config.getKey() + "," + config.getGeneration());
-                    }
+                    log.log(LogLevel.DEBUG, () -> "Call returnOkResponse for " + config.getKey() + "," + config.getGeneration());
                     rpcServer.returnOkResponse(request, config);
                 } else {
-                    log.log(LogLevel.INFO, "Could not remove " + config.getKey() + " from delayed delayedResponses queue, already removed");
+                    log.log(LogLevel.INFO, "Could not remove " + config.getKey() + " from delayedResponses queue, already removed");
                 }
             }
         }
         if (!found) {
-            log.log(LogLevel.DEBUG, "Found no recipient for " + config.getKey() + " in delayed response queue");
+            log.log(LogLevel.DEBUG, () -> "Found no recipient for " + config.getKey() + " in delayed response queue");
         }
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Finished updating config for " + config.getKey() + "," + config.getGeneration());
-        }
+        log.log(LogLevel.DEBUG, () -> "Finished updating config for " + config.getKey() + "," + config.getGeneration());
     }
 
 }
