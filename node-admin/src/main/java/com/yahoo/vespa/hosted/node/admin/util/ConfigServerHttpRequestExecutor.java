@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpHeaders;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -63,8 +64,19 @@ public class ConfigServerHttpRequestExecutor {
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(getConnectionSocketFactoryRegistry());
         cm.setMaxTotal(200); // Increase max total connections to 200, which should be enough
 
+        // Have experienced hang in socket read, which may have been because of
+        // system defaults, therefore set explicit timeouts. Set arbitrarily to
+        // 15s > 10s used by Orchestrator lock timeout.
+        int timeoutMs = 15_000;
+        RequestConfig requestBuilder = RequestConfig.custom()
+                .setConnectTimeout(timeoutMs) // establishment of connection
+                .setConnectionRequestTimeout(timeoutMs) // connection from connection manager
+                .setSocketTimeout(timeoutMs) // waiting for data
+                .build();
+
         return new ConfigServerHttpRequestExecutor(randomizeConfigServerUris(configServerUris),
                                                    HttpClientBuilder.create()
+                                                           .setDefaultRequestConfig(requestBuilder)
                                                            .disableAutomaticRetries()
                                                            .setUserAgent("node-admin")
                                                            .setConnectionManager(cm).build());
