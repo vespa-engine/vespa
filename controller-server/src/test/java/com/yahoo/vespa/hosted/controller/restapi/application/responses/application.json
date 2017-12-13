@@ -148,6 +148,7 @@
   "globalRotations": [
     "http://application1.tenant1.global.vespa.yahooapis.com:4080/"
   ],
+  "rotationId": "rotation-id-1",
   "instances": [
     {
       "environment": "dev",
