@@ -85,7 +85,7 @@ public class Mnist_SoftmaxTestCase {
     private Tensor tensorFlowExecute(String modelDir, String operationName) {
         SavedModelBundle model = SavedModelBundle.load(modelDir, "serve");
         Session.Runner runner = model.session().runner();
-        org.tensorflow.Tensor placeholder = org.tensorflow.Tensor.create(new long[]{ 1, 784 }, FloatBuffer.allocate(784));
+        org.tensorflow.Tensor<?> placeholder = org.tensorflow.Tensor.create(new long[]{ 1, 784 }, FloatBuffer.allocate(784));
         runner.feed("Placeholder", placeholder);
         List<org.tensorflow.Tensor<?>> results = runner.fetch(operationName).run();
         assertEquals(1, results.size());
