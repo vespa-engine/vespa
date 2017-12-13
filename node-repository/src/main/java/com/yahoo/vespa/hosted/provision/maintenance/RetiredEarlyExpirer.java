@@ -51,7 +51,7 @@ public class RetiredEarlyExpirer extends Maintainer {
             List<Node> retiredNodes = entry.getValue();
 
             try {
-                Optional<Deployment> deployment = deployer.deployFromLocalActive(application, Duration.ofMinutes(30));
+                Optional<Deployment> deployment = deployer.deployFromLocalActive(application);
                 if ( ! deployment.isPresent()) continue; // this will be done at another config server
 
                 List<Node> nodesToRemove = new ArrayList<>();
