@@ -52,7 +52,7 @@ public class RetiredExpirerTest {
     private Curator curator = new MockCurator();
 
     @Test
-    public void ensure_retired_nodes_time_out() throws InterruptedException {
+    public void ensure_retired_nodes_time_out() {
         ManualClock clock = new ManualClock();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
@@ -92,7 +92,7 @@ public class RetiredExpirerTest {
     }
 
     @Test
-    public void ensure_retired_groups_time_out() throws InterruptedException {
+    public void ensure_retired_groups_time_out() {
         ManualClock clock = new ManualClock();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
@@ -170,7 +170,6 @@ public class RetiredExpirerTest {
 
         new RetiredEarlyExpirer(
                 nodeRepository,
-                zone,
                 Duration.ofDays(30),
                 new JobControl(nodeRepository.database()),
                 deployer,
