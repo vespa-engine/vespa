@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.zone.v2;
 
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -20,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 

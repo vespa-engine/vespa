@@ -4,11 +4,11 @@ package com.yahoo.vespa.hosted.controller.proxy;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.Zones;
 import org.apache.http.Header;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -81,15 +81,15 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
     private ProxyResponse createDiscoveryResponse(ProxyRequest proxyRequest) {
         ObjectMapper mapper = new ObjectMapper();
         DiscoveryResponseStructure responseStructure = new DiscoveryResponseStructure();
+        String environmentName = proxyRequest.getEnvironment();
 
-        List<ZoneId> zones = zoneRegistry.zones();
-        for (ZoneId zone : zones) {
-            if (!"".equals(proxyRequest.getEnvironment()) &&
-                !proxyRequest.getEnvironment().equals(zone.environment().value())) {
-                continue;
-            }
+        Zones.List zones = environmentName.isEmpty()
+                ? zoneRegistry.zones().all()
+                : zoneRegistry.zones().in(Environment.from(environmentName));
+
+        for (ZoneId zoneId : zones.ids()) {
             responseStructure.uris.add(proxyRequest.getScheme() + "://" + proxyRequest.getControllerPrefix() +
-                                       zone.environment().name() + "/" + zone.region().value());
+                                       zoneId.environment().name() + "/" + zoneId.region().value());
         }
         JsonNode node = mapper.valueToTree(responseStructure);
         return new ProxyResponse(proxyRequest, node.toString(), 200, Optional.empty(), "application/json");
@@ -111,9 +111,9 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         copyHeaders(proxyRequest.getHeaders(), requestBase, new HashSet<>());
 
         RequestConfig config = RequestConfig.custom()
-                                            .setConnectTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
-                                            .setConnectionRequestTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
-                                            .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
+                .setConnectTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
+                .setConnectionRequestTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
+                .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
         try (
                 CloseableHttpClient client = createHttpClient(config);
                 CloseableHttpResponse response = client.execute(requestBase);
@@ -121,7 +121,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
             if (response.getStatusLine().getStatusCode() / 100 == 5) {
                 errorBuilder.append("Talking to server ").append(uri.getHost());
                 errorBuilder.append(", got ").append(response.getStatusLine().getStatusCode()).append(" ")
-                            .append(streamToString(response.getEntity().getContent())).append("\n");
+                        .append(streamToString(response.getEntity().getContent())).append("\n");
                 return Optional.empty();
             }
             final Header contentHeader = response.getLastHeader("Content-Type");
