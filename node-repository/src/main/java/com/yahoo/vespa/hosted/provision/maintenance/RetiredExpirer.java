@@ -50,7 +50,7 @@ public class RetiredExpirer extends Expirer {
             ApplicationId application = entry.getKey();
             List<Node> nodesToRemove = entry.getValue();
             try {
-                Optional<Deployment> deployment = deployer.deployFromLocalActive(application, Duration.ofMinutes(30));
+                Optional<Deployment> deployment = deployer.deployFromLocalActive(application);
                 if ( ! deployment.isPresent()) continue; // this will be done at another config server
 
                 nodeRepository.setRemovable(application, nodesToRemove);

@@ -67,12 +67,19 @@ public class FileDownloader {
         } else {
             log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found in " +
                     directory.getAbsolutePath() + ", starting download");
-            return queueForDownload(fileReference, timeout);
+            return queueForAsyncDownload(fileReference, timeout);
         }
     }
 
-    public void queueForDownload(List<FileReference> fileReferences) {
-        fileReferences.forEach(this::queueForDownload);
+    // Start downloading, but there is no Future used get file being downloaded
+    public void queueForAsyncDownload(List<FileReference> fileReferences) {
+        fileReferences.forEach(fileReference -> {
+            if (fileReferenceDownloader.isDownloading(fileReference)) {
+                log.log(LogLevel.DEBUG, "Already downloading '" + fileReference.value() + "'");
+            } else {
+                queueForAsyncDownload(fileReference).cancel(false);
+            }
+        });
     }
 
     void receiveFile(FileReferenceData fileReferenceData) {
@@ -107,24 +114,20 @@ public class FileDownloader {
         return Optional.empty();
     }
 
-    private synchronized Future<Optional<File>> queueForDownload(FileReference fileReference, Duration timeout) {
+    private synchronized Future<Optional<File>> queueForAsyncDownload(FileReference fileReference, Duration timeout) {
         Future<Optional<File>> inProgress = fileReferenceDownloader.addDownloadListener(fileReference, () -> getFile(fileReference));
         if (inProgress != null) {
             log.log(LogLevel.DEBUG, "Already downloading '" + fileReference.value() + "'");
             return inProgress;
         }
 
-        Future<Optional<File>> future = queueForDownload(fileReference);
+        Future<Optional<File>> future = queueForAsyncDownload(fileReference);
         log.log(LogLevel.INFO, "Queued '" + fileReference.value() + "' for download with timeout " + timeout);
         return future;
     }
 
-    // We don't care about the future in this call
-    private Future<Optional<File>> queueForDownload(FileReference fileReference) {
-        return queueForDownload(new FileReferenceDownload(fileReference, SettableFuture.create()));
-    }
-
-    private Future<Optional<File>> queueForDownload(FileReferenceDownload fileReferenceDownload) {
+    private Future<Optional<File>> queueForAsyncDownload(FileReference fileReference) {
+        FileReferenceDownload fileReferenceDownload = new FileReferenceDownload(fileReference, SettableFuture.create());
         fileReferenceDownloader.addToDownloadQueue(fileReferenceDownload);
         return fileReferenceDownload.future();
     }

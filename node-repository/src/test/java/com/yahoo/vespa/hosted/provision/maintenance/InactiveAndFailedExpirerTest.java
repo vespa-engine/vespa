@@ -40,7 +40,7 @@ public class InactiveAndFailedExpirerTest {
             InstanceName.from("fuz"));
 
     @Test
-    public void inactive_and_failed_times_out() throws InterruptedException {
+    public void inactive_and_failed_times_out() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
         List<Node> nodes = tester.makeReadyNodes(2, "default");
 

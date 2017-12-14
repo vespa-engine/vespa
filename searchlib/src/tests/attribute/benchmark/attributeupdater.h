@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/util/randomgenerator.h>
-#include "runnable.h"
+#include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/attribute/attribute.h>
 
 #define VALIDATOR_STR(str) #str
@@ -169,7 +169,7 @@ AttributeUpdaterThread<Vector, T, BT>::AttributeUpdaterThread(const AttributePtr
                                                RandomGenerator & rndGen, bool validate, uint32_t commitFreq,
                                                uint32_t minValueCount, uint32_t maxValueCount)
     : AttributeUpdater<Vector, T, BT>(attrPtr, values, rndGen, validate, commitFreq, minValueCount, maxValueCount),
-      Runnable(0)
+      Runnable()
 {}
 template <typename Vector, typename T, typename BT>
 AttributeUpdaterThread<Vector, T, BT>::~AttributeUpdaterThread() { }

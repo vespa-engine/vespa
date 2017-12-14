@@ -29,7 +29,7 @@ BitVectorCache::computeCountVector(KeySet & keys, CountVector & v) const
     std::vector<CondensedBitVector::KeySet> keySets;
     ChunkV chunks;
     {
-        vespalib::LockGuard guard(_lock);
+        std::lock_guard<std::mutex> guard(_lock);
         keySets.resize(_chunks.size());
         Key2Index::const_iterator end(_keys.end());
         for (Key k : keys) {
@@ -61,7 +61,7 @@ BitVectorCache::KeySet
 BitVectorCache::lookupCachedSet(const KeyAndCountSet & keys)
 {
     KeySet cached(keys.size()*3);
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     _lookupCount++;
     if (_lookupCount == 2000) {
         _needPopulation = true;
@@ -101,7 +101,7 @@ BitVectorCache::getSorted(Key2Index & keys)
 }
 
 bool
-BitVectorCache::hasCostChanged(const vespalib::LockGuard & guard)
+BitVectorCache::hasCostChanged(const std::lock_guard<std::mutex> & guard)
 {
     (void) guard;
     if ( ! _chunks.empty()) {
@@ -163,17 +163,17 @@ BitVectorCache::populate(Key2Index & newKeys, CondensedBitVector & chunk, const 
 void
 BitVectorCache::populate(uint32_t sz, const PopulateInterface & lookup)
 {
-    vespalib::LockGuard guard1(_lock);
+    std::unique_lock<std::mutex> guard(_lock);
     if (! _needPopulation) {
         return;
     }
     Key2Index newKeys(_keys);
-    guard1.unlock();
+    guard.unlock();
 
     CondensedBitVector::UP chunk(CondensedBitVector::create(sz, _genHolder));
     populate(newKeys, *chunk, lookup);
 
-    vespalib::LockGuard guard2(_lock);
+    guard.lock();
     _chunks.push_back(std::move(chunk));
     _keys.swap(newKeys);
     _needPopulation = false;
@@ -182,7 +182,7 @@ BitVectorCache::populate(uint32_t sz, const PopulateInterface & lookup)
 void
 BitVectorCache::set(Key key, uint32_t index, bool v)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     auto found = _keys.find(key);
     if (found != _keys.end()) {
         const KeyMeta & m(found->second);
@@ -202,7 +202,7 @@ BitVectorCache::get(Key key, uint32_t index) const
 void
 BitVectorCache::removeIndex(uint32_t index)
 {
-    vespalib::LockGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     for (auto & chunk : _chunks) {
         chunk->clearIndex(index);
     }

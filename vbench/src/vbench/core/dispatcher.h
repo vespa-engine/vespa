@@ -6,6 +6,7 @@
 #include "provider.h"
 #include "closeable.h"
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/gate.h>
 #include <vector>
 
 namespace vbench {

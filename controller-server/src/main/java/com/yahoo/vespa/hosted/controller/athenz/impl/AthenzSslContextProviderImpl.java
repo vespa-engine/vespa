@@ -58,14 +58,15 @@ public class AthenzSslContextProviderImpl implements AthenzSslContextProvider {
         try {
             AthenzIdentityCertificate identityCertificate = ztsClient.getIdentityCertificate();
             KeyStore keyStore = KeyStore.getInstance("JKS");
+            keyStore.load(null);
             keyStore.setKeyEntry("athenz-controller-key",
                                  identityCertificate.getPrivateKey(),
                                  new char[0],
                                  new Certificate[]{identityCertificate.getCertificate()});
-            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("X509");
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             keyManagerFactory.init(keyStore, new char[0]);
             return keyManagerFactory.getKeyManagers();
-        } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
+        } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException | CertificateException | IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -76,7 +77,7 @@ public class AthenzSslContextProviderImpl implements AthenzSslContextProvider {
             try (FileInputStream in = new FileInputStream(config.athenzCaTrustStore())) {
                 trustStore.load(in, "changeit".toCharArray());
             }
-            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("X509");
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             trustManagerFactory.init(trustStore);
             return trustManagerFactory.getTrustManagers();
         } catch (CertificateException | IOException | KeyStoreException | NoSuchAlgorithmException e) {

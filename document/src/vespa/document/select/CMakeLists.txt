@@ -39,3 +39,6 @@ vespa_add_library(document_select OBJECT
     AFTER
     document_documentconfig
 )
+
+#TODO Remove once we have a recently new flex compiler. At least 2.5.38/39 or 2.6
+set_source_files_properties(${FLEX_DocSelLexer_OUTPUTS} PROPERTIES COMPILE_FLAGS -Wno-register)

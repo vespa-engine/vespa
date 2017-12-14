@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -31,7 +32,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
@@ -298,10 +298,14 @@ public class ControllerTest {
 
         // staging deployment
         long app1ProjectId = 22;
-        ApplicationId app1 = tester.createAndDeploy("tenant1",  "domain1", "application1", Environment.staging, app1ProjectId).id();
+        ApplicationId app1 = tester.createAndDeploy("tenant1",  "domain1",
+                                                    "application1", Environment.staging,
+                                                    app1ProjectId).id();
         
         // pull-request deployment - uses different instance id
-        ApplicationId app1pr = tester.createAndDeploy("tenant1",  "domain1", "application1", "default-pr1", Environment.staging, app1ProjectId, null).id();
+        ApplicationId app1pr = tester.createAndDeploy("tenant1",  "domain1",
+                                                      "application1", "default-pr1",
+                                                      Environment.staging, app1ProjectId, null).id();
 
         assertTrue(applications.get(app1).isPresent());
         assertEquals(app1, applications.get(app1).get().id());
@@ -316,6 +320,20 @@ public class ControllerTest {
         assertEquals(app1, applications.get(app1).get().id());
         assertTrue(applications.get(app1pr).isPresent());
         assertEquals(app1pr, applications.get(app1pr).get().id());
+
+        // Deleting application also removes PR instance
+        ApplicationId app2 = tester.createAndDeploy("tenant1",  "domain1",
+                                                    "application2", Environment.staging,
+                                                    33).id();
+        tester.controller().applications().deleteApplication(app1, Optional.of(new NToken("ntoken")));
+        assertEquals("All instances deleted", 0,
+                     tester.controller().applications().asList(app1.tenant()).stream()
+                                                    .filter(app -> app.id().application().equals(app1.application()))
+                                                    .count());
+        assertEquals("Other application survives", 1,
+                     tester.controller().applications().asList(app1.tenant()).stream()
+                           .filter(app -> app.id().application().equals(app2.application()))
+                           .count());
     }
     
     @Test

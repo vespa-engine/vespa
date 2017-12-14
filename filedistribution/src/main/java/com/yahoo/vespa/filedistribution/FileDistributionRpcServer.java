@@ -118,7 +118,7 @@ public class FileDistributionRpcServer {
         List<FileReference> fileReferences = Stream.of(fileReferenceStrings)
                 .map(FileReference::new)
                 .collect(Collectors.toList());
-        downloader.queueForDownload(fileReferences);
+        downloader.queueForAsyncDownload(fileReferences);
 
         req.returnValues().add(new Int32Value(0));
     }

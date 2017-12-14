@@ -33,7 +33,6 @@ public class FileReceiverTest {
 
     @Test
     public void receiveMultiPartFile() throws IOException{
-
         String [] parts  = new String[3];
         parts[0] = "first part\n";
         parts[1] = "second part\n";
@@ -43,16 +42,12 @@ public class FileReceiverTest {
             sb.append(s);
         }
         String all = sb.toString();
-        String allRead = transferParts(new FileReference("ref-a"), "myfile-1", all, 1);
-        assertEquals(all, allRead);
-        allRead = transferParts(new FileReference("ref-a"), "myfile-2", all, 2);
-        assertEquals(all, allRead);
-        allRead = transferParts(new FileReference("ref-a"), "myfile-3", all, 3);
-        assertEquals(all, allRead);
-
+        transferPartsAndAssert(new FileReference("ref-a"), "myfile-1", all, 1);
+        transferPartsAndAssert(new FileReference("ref-a"), "myfile-2", all, 2);
+        transferPartsAndAssert(new FileReference("ref-a"), "myfile-3", all, 3);
     }
 
-    private String transferParts(FileReference ref, String fileName, String all, int numParts) throws IOException {
+    private void transferPartsAndAssert(FileReference ref, String fileName, String all, int numParts) throws IOException {
         byte [] allContent = Utf8.toBytes(all);
 
         FileReceiver.Session session = new FileReceiver.Session(root, tempDir, 1, ref,
@@ -63,12 +58,14 @@ public class FileReceiverTest {
             byte [] buf = new byte[Math.min(partSize, allContent.length - pos)];
             bb.get(buf);
             session.addPart(i, buf);
+            // Small numbers, so need a large delta
+            assertEquals((double)(i+1)/(double)numParts, session.percentageReceived(), 0.04);
             pos += buf.length;
         }
-        File file = session.close(hasher.hash(ByteBuffer.wrap(allContent), 0));
+        File file = session.close(hasher.hash(ByteBuffer.wrap(Utf8.toBytes(all)), 0));
 
         byte [] allReadBytes = Files.readAllBytes(file.toPath());
         file.delete();
-        return Utf8.toString(allReadBytes);
+        assertEquals(all, Utf8.toString(allReadBytes));
     }
 }

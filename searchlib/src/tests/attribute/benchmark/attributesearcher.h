@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "runnable.h"
+#include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/queryeval/hitcollector.h>
@@ -67,8 +67,8 @@ protected:
     AttributeSearcherStatus _status;
 
 public:
-    AttributeSearcher(uint32_t id, const AttributePtr & attrPtr) :
-        Runnable(id), _attrPtr(attrPtr), _timer(), _status()
+    AttributeSearcher(const AttributePtr & attrPtr) :
+        Runnable(), _attrPtr(attrPtr), _timer(), _status()
     {
         _status._numClients = 1;
     }
@@ -108,9 +108,9 @@ private:
     std::vector<char> _query;
 
 public:
-    AttributeFindSearcher(uint32_t id, const AttributePtr & attrPtr, const std::vector<T> & values,
+    AttributeFindSearcher(const AttributePtr & attrPtr, const std::vector<T> & values,
                           uint32_t numQueries) :
-        AttributeSearcher(id, attrPtr), _values(values), _query()
+        AttributeSearcher(attrPtr), _values(values), _query()
     {
         _status._numQueries = numQueries;
     }
@@ -186,9 +186,9 @@ private:
     std::vector<char> _query;
 
 public:
-    AttributeRangeSearcher(uint32_t id, const AttributePtr & attrPtr, const RangeSpec & spec,
+    AttributeRangeSearcher(const AttributePtr & attrPtr, const RangeSpec & spec,
                            uint32_t numQueries) :
-        AttributeSearcher(id, attrPtr), _spec(spec), _query()
+        AttributeSearcher(attrPtr), _spec(spec), _query()
     {
         _status._numQueries = numQueries;
     }
@@ -228,9 +228,9 @@ private:
     std::vector<char> _query;
 
 public:
-    AttributePrefixSearcher(uint32_t id, const AttributePtr & attrPtr,
+    AttributePrefixSearcher(const AttributePtr & attrPtr,
                             const std::vector<vespalib::string> & values, uint32_t numQueries) :
-        AttributeSearcher(id, attrPtr), _values(values), _query()
+        AttributeSearcher(attrPtr), _values(values), _query()
     {
         _status._numQueries = numQueries;
     }

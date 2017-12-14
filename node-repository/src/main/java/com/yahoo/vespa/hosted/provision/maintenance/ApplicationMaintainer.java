@@ -75,7 +75,7 @@ public abstract class ApplicationMaintainer extends Maintainer {
         // Lock is acquired with a low timeout to reduce the chance of colliding with an external deployment.
         try (Mutex lock = nodeRepository().lock(application, Duration.ofSeconds(1))) {
             if ( ! isActive(application)) return; // became inactive since deployment was requested
-            Optional<Deployment> deployment = deployer.deployFromLocalActive(application, Duration.ofMinutes(30));
+            Optional<Deployment> deployment = deployer.deployFromLocalActive(application);
             if ( ! deployment.isPresent()) return; // this will be done at another config server
 
             deployment.get().activate();

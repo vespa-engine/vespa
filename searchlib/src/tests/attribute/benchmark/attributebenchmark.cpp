@@ -8,11 +8,12 @@
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/attrvector.h>
+#include <vespa/fastos/thread.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
 #include <fstream>
-#include "../attributesearcher.h"
-#include "../attributeupdater.h"
+#include "attributesearcher.h"
+#include "attributeupdater.h"
 #include <sys/resource.h>
 
 #include <vespa/log/log.h>
@@ -21,8 +22,6 @@ LOG_SETUP("attributebenchmark");
 
 #include <vespa/searchlib/attribute/attributevector.hpp>
 
-using vespalib::Monitor;
-using vespalib::MonitorGuard;
 using std::shared_ptr;
 
 typedef std::vector<uint32_t> NumVector;
@@ -268,11 +267,11 @@ AttributeBenchmark::benchmarkSearch(const AttributePtr & ptr, const std::vector<
         for (uint32_t i = 0; i < _config._numSearchers; ++i) {
             if (_config._rangeSearch) {
                 RangeSpec spec(_config._rangeStart, _config._rangeEnd, _config._rangeDelta);
-                searchers.push_back(new AttributeRangeSearcher(i, ptr, spec, _config._numQueries));
+                searchers.push_back(new AttributeRangeSearcher(ptr, spec, _config._numQueries));
             } else if (_config._prefixSearch) {
-                searchers.push_back(new AttributePrefixSearcher(i, ptr, prefixStrings, _config._numQueries));
+                searchers.push_back(new AttributePrefixSearcher(ptr, prefixStrings, _config._numQueries));
             } else {
-                searchers.push_back(new AttributeFindSearcher<T>(i, ptr, values, _config._numQueries));
+                searchers.push_back(new AttributeFindSearcher<T>(ptr, values, _config._numQueries));
             }
             _threadPool->NewThread(searchers.back());
         }

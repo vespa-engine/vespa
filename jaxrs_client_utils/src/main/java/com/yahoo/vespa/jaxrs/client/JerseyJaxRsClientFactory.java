@@ -7,7 +7,6 @@ import org.glassfish.jersey.client.HttpUrlConnectorProvider;
 import org.glassfish.jersey.client.proxy.WebResourceFactory;
 
 import javax.net.ssl.SSLContext;
-import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.WebTarget;
@@ -62,6 +61,7 @@ public class JerseyJaxRsClientFactory implements JaxRsClientFactory {
                 .property(ClientProperties.FOLLOW_REDIRECTS, true);
         if (sslContext != null) {
             builder.sslContext(sslContext);
+            builder.hostnameVerifier((s, sslSession) -> true);
         }
         if (userAgent != null) {
             builder.register((ClientRequestFilter) context ->

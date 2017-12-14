@@ -4,7 +4,7 @@
 #include <vespa/persistence/spi/result.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/vespalib/util/sequence.h>
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/count_down_latch.h>
 #include <mutex>
 
 namespace proton {

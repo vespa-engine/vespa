@@ -21,6 +21,10 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
@@ -41,10 +45,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.DeploymentExpirer;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
@@ -270,10 +270,11 @@ public class ApplicationController {
     public ActivateResult deployApplication(ApplicationId applicationId, ZoneId zone,
                                             ApplicationPackage applicationPackage, DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
-            // TODO: Shouldn't this go through the above method? Seems you can cheat the checks here ... ?
-            LockedApplication application = get(applicationId).map(application1 -> new LockedApplication(application1, lock)).orElse(new LockedApplication(
-                    new Application(applicationId), lock)
-                                                                                                                                    );
+            // Not ideal, but since we create on missing and return a result computed inside the lock,
+            // the lock-with-action methods cannot be used
+            LockedApplication application = get(applicationId)
+                    .map(app -> new LockedApplication(app, lock))
+                    .orElseGet(() -> new LockedApplication(new Application(applicationId), lock));
 
             // Determine what we are doing
             Version version;
@@ -504,31 +505,43 @@ public class ApplicationController {
     }
 
     /**
-     * Deletes the application with this id
+     * Deletes the the given application. All known instances of the applications will be deleted,
+     * including PR instances.
      * 
      * @throws IllegalArgumentException if the application has deployments or the caller is not authorized
-     * @throws NotExistsException if the application does not exist
+     * @throws NotExistsException if no instances of the application exist
      */
-    public void deleteApplication(ApplicationId id, Optional<NToken> token) {
-        if ( ! controller.applications().get(id).isPresent())
-            throw new NotExistsException("Could not delete application '" + id + "': Application not found");
+    public void deleteApplication(ApplicationId applicationId, Optional<NToken> token) {
+        // Find all instances of the application
+        List<ApplicationId> instances = controller.applications().asList(applicationId.tenant())
+                                                  .stream()
+                                                  .map(Application::id)
+                                                  .filter(id -> id.application().equals(applicationId.application()) &&
+                                                                id.tenant().equals(applicationId.tenant()))
+                                                  .collect(Collectors.toList());
+        if (instances.isEmpty()) {
+            throw new NotExistsException("Could not delete application '" + applicationId + "': Application not found");
+        }
 
-        lockOrThrow(id, application -> {
+        // TODO: Make this one transaction when database is moved to ZooKeeper
+        instances.forEach(id -> lockOrThrow(id, application -> {
             if ( ! application.deployments().isEmpty())
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments");
-            
+
             Tenant tenant = controller.tenants().tenant(new TenantId(id.tenant().value())).get();
             if (tenant.isAthensTenant() && ! token.isPresent())
                 throw new IllegalArgumentException("Could not delete '" + application + "': No NToken provided");
 
-            // NB: Next 2 lines should have been one transaction
-            if (tenant.isAthensTenant())
+            // Only delete in Athenz once
+            if (id.instance().isDefault() && tenant.isAthensTenant()) {
                 zmsClientFactory.createZmsClientWithAuthorizedServiceToken(token.get())
-                        .deleteApplication(tenant.getAthensDomain().get(), new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
+                                .deleteApplication(tenant.getAthensDomain().get(),
+                                                   new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
+            }
             db.deleteApplication(id);
 
             log.info("Deleted " + application);
-        });
+        }));
     }
 
     /** 

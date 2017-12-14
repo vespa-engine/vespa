@@ -52,7 +52,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone) {
-        this(nodeRepository, flavors, zone, Clock.systemUTC(), (x,y) -> {});
+        this(nodeRepository, flavors, zone, Clock.systemUTC(), (x, y) -> {});
     }
 
     public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone, Clock clock, BiConsumer<List<Node>, String> debugRecorder) {

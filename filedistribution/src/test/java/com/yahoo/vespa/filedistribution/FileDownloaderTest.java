@@ -189,7 +189,7 @@ public class FileDownloaderTest {
         FileReference foo = new FileReference("foo");
         FileReference bar = new FileReference("bar");
         List<FileReference> fileReferences = Arrays.asList(foo, bar);
-        fileDownloader.queueForDownload(fileReferences);
+        fileDownloader.queueForAsyncDownload(fileReferences);
 
         // Verify download status
         assertDownloadStatus(fileDownloader, foo, 0.0);

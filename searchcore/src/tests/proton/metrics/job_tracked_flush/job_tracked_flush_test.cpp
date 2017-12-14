@@ -9,7 +9,7 @@ LOG_SETUP("job_tracked_flush_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/gate.h>
 
 using namespace proton;
 using namespace searchcorespi;
@@ -17,7 +17,6 @@ using search::SerialNum;
 using test::SimpleJobTracker;
 using vespalib::makeTask;
 using vespalib::makeClosure;
-using vespalib::CountDownLatch;
 using vespalib::Gate;
 using vespalib::ThreadStackExecutor;
 
