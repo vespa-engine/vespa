@@ -54,11 +54,10 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
             return createDiscoveryResponse(proxyRequest);
         }
 
-        Environment environment = Environment.from(proxyRequest.getEnvironment());
-        RegionName region = RegionName.from(proxyRequest.getRegion());
+        ZoneId zoneId = ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion());
 
         // Make a local copy of the list as we want to manipulate it in case of ping problems.
-        final List<URI> allServers = new ArrayList<>(zoneRegistry.getConfigServerUris(environment, region));
+        List<URI> allServers = new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId));
 
         StringBuilder errorBuilder = new StringBuilder();
         if (queueFirstServerIfDown(allServers)) {

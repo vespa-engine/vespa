@@ -76,14 +76,12 @@ public class ZoneApiHandler extends LoggingRequestHandler {
 
     private HttpResponse proxy(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
-        if (!path.matches("/zone/v2/{environment}/{region}/{*}")) {
+        if ( ! path.matches("/zone/v2/{environment}/{region}/{*}")) {
             return notFound(path);
         }
-        Environment environment = Environment.from(path.get("environment"));
-        RegionName region = RegionName.from(path.get("region"));
-        Optional<ZoneId> zone = zoneRegistry.getZone(environment, region);
-        if (!zone.isPresent()) {
-            throw new IllegalArgumentException("No such zone: " + environment.value() + "." + region.value());
+        ZoneId zoneId = ZoneId.from(path.get("environment"), path.get("region"));
+        if ( ! zoneRegistry.hasZone(zoneId)) {
+            throw new IllegalArgumentException("No such zone: " + zoneId.value());
         }
         try {
             return proxy.handle(new ProxyRequest(request, "/zone/v2/"));

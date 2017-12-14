@@ -6,9 +6,8 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -153,30 +152,15 @@ public class Controller extends AbstractComponent {
 
     public Clock clock() { return clock; }
 
-    public URI getElkUri(DeploymentId deploymentId) {
-        return elkUrl(zoneRegistry.getLogServerUri(deploymentId.zone().environment(), deploymentId.zone().region()), deploymentId);
+    public Optional<URI> getLogServerUrl(DeploymentId deploymentId) {
+        return zoneRegistry.getLogServerUri(deploymentId);
     }
 
-    public List<URI> getConfigServerUris(Environment environment, RegionName region) {
-        return zoneRegistry.getConfigServerUris(environment, region);
+    public List<URI> getConfigServerUris(ZoneId zoneId) {
+        return zoneRegistry.getConfigServerUris(zoneId);
     }
     
     public ZoneRegistry zoneRegistry() { return zoneRegistry; }
-
-    private URI elkUrl(Optional<URI> kibanaHost, DeploymentId deploymentId) {
-        String kibanaQuery = "/#/discover?_g=()&_a=(columns:!(_source)," +
-                             "index:'logstash-*',interval:auto," +
-                             "query:(query_string:(analyze_wildcard:!t,query:'" +
-                             "HV-tenant:%22" + deploymentId.applicationId().tenant().value() + "%22%20" +
-                             "AND%20HV-application:%22" + deploymentId.applicationId().application().value() + "%22%20" +
-                             "AND%20HV-region:%22" + deploymentId.zone().region().value() + "%22%20" +
-                             "AND%20HV-instance:%22" + deploymentId.applicationId().instance().value() + "%22%20" +
-                             "AND%20HV-environment:%22" + deploymentId.zone().environment().value() + "%22'))," +
-                             "sort:!('@timestamp',desc))";
-
-        URI kibanaPath = URI.create(kibanaQuery);
-        return kibanaHost.map(uri -> uri.resolve(kibanaPath)).orElse(null);
-    }
 
     public Map<String, RotationStatus> getHealthStatus(String hostname) {
         return globalRoutingService.getHealthStatus(hostname);
@@ -202,7 +186,9 @@ public class Controller extends AbstractComponent {
         return configServerClient.grabLog(deploymentId);
     }
 
-    public GitHub gitHub() { return gitHub; }
+    public GitHub gitHub() {
+        return gitHub;
+    }
 
     /** Replace the current version status by a new one */
     public void updateVersionStatus(VersionStatus newStatus) {
@@ -225,7 +211,9 @@ public class Controller extends AbstractComponent {
                 .orElse(Vtag.currentVersion);
     }
 
-    public MetricsService metricsService() { return metricsService; }
+    public MetricsService metricsService() {
+        return metricsService;
+    }
 
     public SystemName system() {
         return zoneRegistry.system();

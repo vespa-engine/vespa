@@ -667,7 +667,7 @@ public class ApplicationController {
         deploymentSpec.zones().stream()
                 .filter(zone -> zone.environment() == Environment.prod)
                 .forEach(zone -> {
-                    if ( ! controller.zoneRegistry().getZone(zone.environment(), zone.region().orElse(null)).isPresent())
+                    if ( ! controller.zoneRegistry().hasZone(ZoneId.from(zone.environment(), zone.region().orElse(null))))
                         throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
                 });
     }
