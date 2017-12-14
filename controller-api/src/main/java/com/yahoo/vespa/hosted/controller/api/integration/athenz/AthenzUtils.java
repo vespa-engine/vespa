@@ -4,6 +4,10 @@ package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 
+import javax.naming.NamingException;
+import javax.naming.ldap.LdapName;
+import java.security.cert.X509Certificate;
+
 /**
  * @author bjorncs
  */
@@ -35,4 +39,20 @@ public class AthenzUtils {
         return createAthenzIdentity(domain, identityName);
     }
 
+    public static AthenzIdentity createAthenzIdentity(X509Certificate certificate) {
+        return createAthenzIdentity(getCommonName(certificate));
+    }
+
+    private static String getCommonName(X509Certificate certificate) {
+        try {
+            String subjectPrincipal = certificate.getSubjectX500Principal().getName();
+            return new LdapName(subjectPrincipal).getRdns().stream()
+                    .filter(rdn -> rdn.getType().equalsIgnoreCase("cn"))
+                    .map(rdn -> rdn.getValue().toString())
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Could not find CN in certificate: " + subjectPrincipal));
+        } catch (NamingException e) {
+            throw new IllegalArgumentException("Invalid CN: " + e, e);
+        }
+    }
 }
