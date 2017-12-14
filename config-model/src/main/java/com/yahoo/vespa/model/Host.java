@@ -67,7 +67,7 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
         runsConfigServer = false;
     }
 
-    public String getHostname() {
+    public String getHostName() {
         return hostname;
     }
 
@@ -77,7 +77,7 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
 
     /** Returns the string representation of this Host object. */
     public String toString() {
-        return "host '" + getHostname() + "'";
+        return "host '" + getHostName() + "'";
     }
 
     @Override

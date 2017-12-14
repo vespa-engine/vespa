@@ -101,7 +101,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     public HostResource getHost(String hostAlias) {
         HostSpec hostSpec = provisioner.allocateHost(hostAlias);
         for (HostResource resource : hostname2host.values()) {
-            if (resource.getHostname().equals(hostSpec.hostname())) {
+            if (resource.getHostName().equals(hostSpec.hostname())) {
                 hostSpec.membership().ifPresent(resource::addClusterMembership);
                 return resource;
             }
@@ -114,8 +114,8 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         HostResource hostResource = new HostResource(host);
         hostResource.setFlavor(hostSpec.flavor());
         hostSpec.membership().ifPresent(hostResource::addClusterMembership);
-        hostname2host.put(host.getHostname(), hostResource);
-        log.log(DEBUG, () -> "Added new host resource for " + host.getHostname() + " with flavor " + hostResource.getFlavor());
+        hostname2host.put(host.getHostName(), hostResource);
+        log.log(DEBUG, () -> "Added new host resource for " + host.getHostName() + " with flavor " + hostResource.getFlavor());
         return hostResource;
     }
 
@@ -136,16 +136,16 @@ public class HostSystem extends AbstractConfigProducer<Host> {
             retAllocatedHosts.put(host, spec.membership().orElse(null));
             if (! host.getFlavor().isPresent()) {
                 host.setFlavor(spec.flavor());
-                log.log(DEBUG, () -> "Host resource " + host.getHostname() + " had no flavor, setting to " + spec.flavor());
+                log.log(DEBUG, () -> "Host resource " + host.getHostName() + " had no flavor, setting to " + spec.flavor());
             }
         }
-        retAllocatedHosts.keySet().forEach(host -> log.log(DEBUG, () -> "Allocated host " + host.getHostname() + " with flavor " + host.getFlavor()));
+        retAllocatedHosts.keySet().forEach(host -> log.log(DEBUG, () -> "Allocated host " + host.getHostName() + " with flavor " + host.getFlavor()));
         return retAllocatedHosts;
     }
 
     private Optional<HostResource> getExistingHost(HostSpec key) {
         List<HostResource> hosts = hostname2host.values().stream()
-                .filter(resource -> resource.getHostname().equals(key.hostname()))
+                .filter(resource -> resource.getHostName().equals(key.hostname()))
                 .collect(Collectors.toList());
         if (hosts.isEmpty()) {
             return Optional.empty();
@@ -156,12 +156,12 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     }
 
     public void addBoundHost(HostResource host) {
-        hostname2host.put(host.getHostname(), host);
+        hostname2host.put(host.getHostName(), host);
     }
 
     Set<HostSpec> getHostSpecs() {
         return getHosts().stream()
-                .map(host -> new HostSpec(host.getHostname(), Collections.emptyList(),
+                .map(host -> new HostSpec(host.getHostName(), Collections.emptyList(),
                                           host.getFlavor(), host.primaryClusterMembership()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }

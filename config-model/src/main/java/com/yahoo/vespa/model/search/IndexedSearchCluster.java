@@ -200,7 +200,7 @@ public abstract class IndexedSearchCluster extends SearchCluster
             String containerClusterName = containerCluster.getName();
             log.log(LogLevel.DEBUG, "Adding tld with index " + containerIndex + " for content cluster " + this.getClusterName() +
                                     ", container cluster " + containerClusterName + " (container id " + containerSubId +
-                                    ") on host " + container.getHostResource().getHostname());
+                                    ") on host " + container.getHostResource().getHostName());
             rootDispatch.addDispatcher(createTld(tldParent, container.getHostResource(), containerClusterName, containerIndex));
         }
     }

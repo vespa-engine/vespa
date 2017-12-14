@@ -18,6 +18,7 @@ import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +29,7 @@ import java.util.Optional;
  * Helper class which sets up a system with multiple hosts.
  * Usage:
  * <code>
- *     VespaModelteser tester = new VespaModelTester();
+ *     VespaModelteser teser = new VespaModelTester();
  *     tester.addHosts(count, flavor);
  *     ... add more nodes
  *     VesoaModel model = tester.createModel(servicesString);
@@ -42,7 +43,7 @@ public class VespaModelTester {
     private final ConfigModelRegistry configModelRegistry;
 
     private boolean hosted = true;
-    private Map<String, Collection<Host>> hostsByFlavor = new HashMap<>();
+    private Map<String, Collection<Host>> hosts = new HashMap<>();
 
     public VespaModelTester() {
         this(new NullConfigModelRegistry());
@@ -54,31 +55,20 @@ public class VespaModelTester {
     
     /** Adds some hosts of the 'default' flavor to this system */
     public Hosts addHosts(int count) { return addHosts("default", count); }
-
     /** Adds some hosts to this system */
     public Hosts addHosts(String flavor, int count) { 
-        return addHosts(Optional.empty(), flavor, count);
-    }
-
-    public void addHosts(Flavor flavor, int count) {
-        addHosts(Optional.of(flavor), flavor.name(), count);
-    }
-
-    private Hosts addHosts(Optional<Flavor> flavor, String flavorName, int count) {
         List<Host> hosts = new ArrayList<>();
-        
-        for (int i = 0; i < count; ++i) {
-            // Let host names sort in the opposite order of the order the hosts are added
-            // This allows us to test index vs. name order selection when subsets of hosts are selected from a cluster
-            // (for e.g cluster controllers and slobrok nodes)
-            String hostname = String.format("%s%02d", flavorName, count - i);
-            hosts.add(new Host(hostname, ImmutableList.of(), flavor));
-        }
-        this.hostsByFlavor.put(flavorName, hosts);
-
-        if (hosts.size() > 100)
-            throw new IllegalStateException("The host naming scheme is nameNN. To test more than 100 hosts, change to nameNNN");
+        for (int i = 0; i < count; i++)
+            hosts.add(new com.yahoo.config.model.provision.Host(flavor + i));
+        this.hosts.put(flavor.isEmpty() ? "default" : flavor, hosts);
         return new Hosts(hosts);
+    }
+    public void addHosts(Flavor flavor, int count) {
+        List<Host> hosts = new ArrayList<>();
+        for (int i = 0; i < count; ++i) {
+            hosts.add(new Host(flavor.name() + i, ImmutableList.of(), Optional.of(flavor)));
+        }
+        this.hosts.put(flavor.name(), hosts);
     }
 
     /** Sets whether this sets up a model for a hosted system. Default: true */
@@ -105,7 +95,7 @@ public class VespaModelTester {
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
 
         HostProvisioner provisioner = hosted ? 
-                                      new InMemoryProvisioner(hostsByFlavor, failOnOutOfCapacity, startIndexForClusters, retiredHostNames) :
+                                      new InMemoryProvisioner(hosts, failOnOutOfCapacity, startIndexForClusters, retiredHostNames) :
                                       new SingleNodeProvisioner();
 
         DeployState deployState = new DeployState.Builder()

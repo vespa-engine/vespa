@@ -19,7 +19,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Builds the admin model from a version 4 XML tag, or as a default when an admin 3 tag or no admin tag is used.
@@ -120,11 +119,12 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
     /** Returns the count first containers in the current model having isRetired set to the given value */
     private List<HostResource> sortedContainerHostsFrom(ContainerModel model, int count, boolean retired) {
-        List<HostResource> hosts = model.getCluster().getContainers().stream()
-                                                                     .filter(container -> retired == container.isRetired())
-                                                                     .map(Container::getHostResource)
-                                                                     .collect(Collectors.toList());
-        return HostResource.pickHosts(hosts, count, 1);
+        List<HostResource> hosts = new ArrayList<>();
+        for (Container container : model.getCluster().getContainers())
+            if (retired == container.isRetired())
+                hosts.add(container.getHostResource());
+        Collections.sort(hosts);
+        return hosts.subList(0, Math.min(count, hosts.size()));
     }
 
     private void createLogserver(Admin admin, Collection<HostResource> hosts) {

@@ -124,7 +124,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
         assertThat(admin.getClusterControllerHosts().size(), is(1));
         assertNotNull(admin.getHostSystem().getHostByHostname("test1"));
         for (Configserver configserver : admin.getConfigservers()) {
-            assertThat(configserver.getHostName(), is(not(admin.getClusterControllerHosts().get(0).getHost().getHostname())));
+            assertThat(configserver.getHostName(), is(not(admin.getClusterControllerHosts().get(0).getHost().getHostName())));
             for (Slobrok slobrok : admin.getSlobroks()) {
                     assertThat(slobrok.getHostName(), is(not(configserver.getHostName())));
             }

@@ -328,11 +328,9 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         }
 
         private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup, Collection<ContainerModel> containers) {
-            List<HostResource> hostsByName = drawContentHostsRecursively(count, false, rootGroup);
-            List<HostResource> hostsByIndex = drawContentHostsRecursively(count, true, rootGroup);
+            List<HostResource> hosts = drawContentHostsRecursively(count, rootGroup);
             // if (hosts.size() < count) // supply with containers TODO: Currently disabled due to leading to topology change problems
             //     hosts.addAll(drawContainerHosts(count - hosts.size(), containers, new HashSet<>(hosts)));
-            List<HostResource> hosts = HostResource.pickHosts(hostsByName, hostsByIndex, count, 1);
             if (hosts.size() % 2 == 0) // ZK clusters of even sizes are less available (even in the size=2 case)
                 hosts = hosts.subList(0, hosts.size()-1);
             return hosts;
@@ -359,7 +357,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             // have one cluster controller
             List<HostResource> uniqueHostsWithoutClusterController = allHosts.stream()
                     .filter(h -> ! usedHosts.contains(h))
-                    .filter(h -> ! hostHasClusterController(h.getHostname(), allHosts))
+                    .filter(h -> ! hostHasClusterController(h.getHostName(), allHosts))
                     .distinct()
                     .collect(Collectors.toList());
 
@@ -383,7 +381,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         /** Returns whether any host having the given hostname has a cluster controller */
         private boolean hostHasClusterController(String hostname, List<HostResource> hosts) {
             for (HostResource host : hosts) {
-                if ( ! host.getHostname().equals(hostname)) continue;
+                if ( ! host.getHostName().equals(hostname)) continue;
 
                 if (hasClusterController(host))
                     return true;
@@ -405,24 +403,20 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
          */
         // Note: This method cannot be changed to draw different nodes without ensuring that it will draw nodes
         //       which overlaps with previously drawn nodes as this will prevent rolling upgrade
-        private List<HostResource> drawContentHostsRecursively(int count, boolean byIndex, StorageGroup group) {
+        private List<HostResource> drawContentHostsRecursively(int count, StorageGroup group) {
             Set<HostResource> hosts = new HashSet<>();
             if (group.getNodes().isEmpty()) {
                 int hostsPerSubgroup = (int)Math.ceil((double)count / group.getSubgroups().size());
                 for (StorageGroup subgroup : group.getSubgroups())
-                    hosts.addAll(drawContentHostsRecursively(hostsPerSubgroup, byIndex, subgroup));
+                    hosts.addAll(drawContentHostsRecursively(hostsPerSubgroup, subgroup));
             }
             else {
                 hosts.addAll(group.getNodes().stream()
-                     .filter(node -> ! node.isRetired()) // Avoid retired controllers to avoid surprises on expiry
-                     .map(StorageNode::getHostResource).collect(Collectors.toList()));
+                    .filter(node -> ! node.isRetired()) // Avoid retired controllers to avoid surprises on expiry
+                    .map(StorageNode::getHostResource).collect(Collectors.toList()));
             }
-
             List<HostResource> sortedHosts = new ArrayList<>(hosts);
-            if (byIndex)
-                sortedHosts.sort((a, b) -> (a.comparePrimarilyByIndexTo(b)));
-            else // by name
-                Collections.sort(sortedHosts);
+            Collections.sort(sortedHosts);
             sortedHosts = sortedHosts.subList(0, Math.min(count, hosts.size()));
             return sortedHosts;
         }
