@@ -72,6 +72,7 @@ struct GlobalIdHasher {
     bool insert(const document::GlobalId & g_id) {
         return seenSet.insert(g_id).second;
     }
+    GlobalIdHasher(size_t expected_size) : seenSet(expected_size * 3) {}
 };
 
 
@@ -97,13 +98,12 @@ FastS_InternalMergeHits(FastS_HitMerger<T> *merger)
         sortItr = sortRef;
     }
 
-    GlobalIdHasher seenGids;
+    GlobalIdHasher seenGids(end - beg);
 
     FastS_make_heap(heap, heapSize, FastS_MergeCompare<T, F>);
 
-    while (pt < end) {
+    while ((pt < end) && (heapSize > 0)) {
         node = *heap;
-        FastS_assert(heapSize > 0);
         bool useHit = seenGids.insert(node->NT_GetHit()->HT_GetGlobalID());
         if (F::UseSortData()) {
             if (!F::DropSortData() && useHit) {
@@ -119,9 +119,6 @@ FastS_InternalMergeHits(FastS_HitMerger<T> *merger)
             FastS_pop_push_heap(heap, heapSize, node, FastS_MergeCompare<T, F>);
         } else {
             FastS_pop_heap(heap, heapSize--, FastS_MergeCompare<T, F>);
-            if (heapSize == 0) {
-                break;
-            }
         }
     }
     if (pt != end) {
