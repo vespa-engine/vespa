@@ -8,13 +8,13 @@ import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
-import java.time.temporal.TemporalAmount;
+import java.time.Duration;
 
 /**
  * <p>A session for synchronous access to a document repository. This class
  * provides simple document access where throughput is not a concern.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  * @author bjorncs
  */
 public interface SyncSession extends Session {
@@ -71,7 +71,7 @@ public interface SyncSession extends Session {
      * @throws DocumentAccessException on any messagebus error, including timeout ({@link com.yahoo.messagebus.ErrorCode#TIMEOUT}).
      */
     // TODO Vespa 7: Remove default implementation. Consider removing get() overloads without timeout.
-    default Document get(DocumentId id, TemporalAmount timeout) {
+    default Document get(DocumentId id, Duration timeout) {
         return get(id);
     }
 
@@ -88,8 +88,7 @@ public interface SyncSession extends Session {
      * @throws DocumentAccessException on any messagebus error, including timeout ({@link com.yahoo.messagebus.ErrorCode#TIMEOUT}).
      */
     // TODO Vespa 7: Remove default implementation. Consider removing get() overloads without timeout.
-    default Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority,
-                         TemporalAmount timeout) {
+    default Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority, Duration timeout) {
         return get(id, fieldSet, priority);
     }
 

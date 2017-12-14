@@ -1,17 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi;
 
-import java.time.temporal.TemporalAmount;
+import java.time.Duration;
 import java.util.Optional;
 
 /**
  * Parameters for creating a synchronous session
  *
  * @author bjorncs
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class SyncParameters extends Parameters {
-    private final TemporalAmount defaultTimeout;
+    private final Duration defaultTimeout;
 
     /**
      * @deprecated Use {@link Builder} instead.
@@ -22,21 +22,21 @@ public class SyncParameters extends Parameters {
         this(null);
     }
 
-    private SyncParameters(TemporalAmount defaultTimeout) {
+    private SyncParameters(Duration defaultTimeout) {
         this.defaultTimeout = defaultTimeout;
     }
 
-    public Optional<TemporalAmount> defaultTimeout() {
+    public Optional<Duration> defaultTimeout() {
         return Optional.ofNullable(defaultTimeout);
     }
 
     public static class Builder {
-        private TemporalAmount defaultTimeout;
+        private Duration defaultTimeout;
 
         /**
          * Set default timeout for all messagebus operations.
          */
-        public void setDefaultTimeout(TemporalAmount defaultTimeout) {
+        public void setDefaultTimeout(Duration defaultTimeout) {
             this.defaultTimeout = defaultTimeout;
         }
 

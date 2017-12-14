@@ -25,19 +25,18 @@ import com.yahoo.messagebus.MessageBus;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.ReplyHandler;
 
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAmount;
+import java.time.Duration;
 
 /**
  * An implementation of the SyncSession interface running over message bus.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  * @author bjorncs
  */
 public class MessageBusSyncSession implements MessageBusSession, SyncSession, ReplyHandler {
 
     private final MessageBusAsyncSession session;
-    private final TemporalAmount defaultTimeout;
+    private final Duration defaultTimeout;
 
     /**
      * Creates a new sync session running on message bus logic.
@@ -87,9 +86,9 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
         return syncSend(msg, defaultTimeout);
     }
 
-    private Reply syncSend(Message msg, TemporalAmount timeout) {
+    private Reply syncSend(Message msg, Duration timeout) {
         if (timeout != null) {
-            msg.setTimeRemaining(timeout.get(ChronoUnit.MILLIS));
+            msg.setTimeRemaining(timeout.toMillis());
         }
         try {
             RequestMonitor monitor = new RequestMonitor();
@@ -135,13 +134,12 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
     }
 
     @Override
-    public Document get(DocumentId id, TemporalAmount timeout) {
+    public Document get(DocumentId id, Duration timeout) {
         return get(id, "[all]", DocumentProtocol.Priority.NORMAL_1, timeout);
     }
 
     @Override
-    public Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority pri,
-                        TemporalAmount timeout) {
+    public Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority pri, Duration timeout) {
         GetDocumentMessage msg = new GetDocumentMessage(id, fieldSet);
         msg.setPriority(pri);
 
