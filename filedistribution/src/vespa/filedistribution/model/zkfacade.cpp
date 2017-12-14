@@ -4,7 +4,7 @@
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/filedistribution/common/logfwd.h>
 #include <vespa/defaults.h>
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <zookeeper/zookeeper.h>
 #include <sstream>

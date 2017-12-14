@@ -5,16 +5,21 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.io.IOUtils;
+import com.yahoo.log.LogLevel;
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.logging.Logger;
 
 public class FileDirectory  {
@@ -30,7 +35,7 @@ public class FileDirectory  {
         try {
             ensureRootExist();
         } catch (IllegalArgumentException e) {
-            log.warning("Failed creating directory in constructor, will retry on demand : " + e.toString());
+            log.log(LogLevel.WARNING, "Failed creating directory in constructor, will retry on demand : " + e.toString());
         }
     }
 
@@ -65,12 +70,8 @@ public class FileDirectory  {
             throw new IllegalArgumentException("File reference '" + reference.toString() + "' with absolute path '" + dir.getAbsolutePath() + "' is not a directory.");
         }
         File [] files = dir.listFiles(new Filter());
-        if (files.length != 1) {
-            StringBuilder msg = new StringBuilder();
-            for (File f: files) {
-                msg.append(f.getName()).append("\n");
-            }
-            throw new IllegalArgumentException("File reference '" + reference.toString() + "' with absolute path '" + dir.getAbsolutePath() + " does not contain exactly one file, but [" + msg.toString() + "]");
+        if (files == null || files.length == 0) {
+            throw new IllegalArgumentException("File reference '" + reference.toString() + "' with absolute path '" + dir.getAbsolutePath() + " does not contain any files");
         }
         return files[0];
     }
@@ -91,30 +92,48 @@ public class FileDirectory  {
         }
     }
 
-    public FileReference addFile(File source, FileReference reference) {
+    FileReference addFile(File source, FileReference reference) {
         ensureRootExist();
         try {
+            logfileInfo(source);
             File destinationDir = new File(root, reference.value());
+            Path tempDestinationDir = Files.createTempDirectory(root.toPath(), "writing");
+            File destination = new File(tempDestinationDir.toFile(), source.getName());
             if (!destinationDir.exists()) {
                 destinationDir.mkdir();
-                Path tempDestinationDir = Files.createTempDirectory(root.toPath(), "writing");
-                File destination = new File(tempDestinationDir.toFile(), source.getName());
-                if (source.isDirectory())
-                    IOUtils.copyDirectory(source, destination);
-                else
-                    IOUtils.copy(source, destination);
+                log.log(LogLevel.DEBUG, "file reference ' " + reference.value() + "', source: " + source.getAbsolutePath() );
+                if (source.isDirectory()) {
+                    log.log(LogLevel.DEBUG, "Copying source " + source.getAbsolutePath() + " to " + destination.getAbsolutePath());
+                    IOUtils.copyDirectory(source, destination, -1);
+                } else
+                    copyFile(source, destination);
                 if (!destinationDir.exists()) {
+                    log.log(LogLevel.DEBUG, "Moving from " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
                     if ( ! tempDestinationDir.toFile().renameTo(destinationDir)) {
-                        log.warning("Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'.");
+                        log.log(LogLevel.WARNING, "Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'.");
                     }
                 } else {
-                    IOUtils.copyDirectory(tempDestinationDir.toFile(), destinationDir, 1);
+                    IOUtils.copyDirectory(tempDestinationDir.toFile(), destinationDir, -1);
                 }
                 IOUtils.recursiveDeleteDir(tempDestinationDir.toFile());
             }
             return reference;
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
+        }
+    }
+
+    private void logfileInfo(File file ) throws IOException {
+        BasicFileAttributes basicFileAttributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+        log.log(LogLevel.DEBUG, "Adding file " + file.getAbsolutePath() + " (created " + basicFileAttributes.creationTime() +
+                ", modified " + basicFileAttributes.lastModifiedTime() +
+                ", size " + basicFileAttributes.size() + ")");
+    }
+
+    private static void copyFile(File source, File dest) throws IOException {
+        try (FileChannel sourceChannel = new FileInputStream(source).getChannel();
+             FileChannel destChannel = new FileOutputStream(dest).getChannel()) {
+            destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
         }
     }
 }

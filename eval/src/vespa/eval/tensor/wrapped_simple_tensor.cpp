@@ -17,12 +17,6 @@ WrappedSimpleTensor::equals(const Tensor &arg) const
     return (lhs_spec == rhs_spec);
 }
 
-vespalib::string
-WrappedSimpleTensor::toString() const
-{
-    return toSpec().to_string();
-}
-
 eval::TensorSpec
 WrappedSimpleTensor::toSpec() const
 {
@@ -30,13 +24,9 @@ WrappedSimpleTensor::toSpec() const
 }
 
 double
-WrappedSimpleTensor::sum() const
+WrappedSimpleTensor::as_double() const
 {
-    double result = 0.0;
-    for (const auto &cell: _tensor.cells()) {
-        result += cell.value;
-    }
-    return result;
+    return _tensor.as_double();
 }
 
 void
@@ -57,12 +47,6 @@ WrappedSimpleTensor::accept(TensorVisitor &visitor) const
     }
 }
 
-void
-WrappedSimpleTensor::print(std::ostream &out) const
-{
-    out << toString();
-}
-
 Tensor::UP
 WrappedSimpleTensor::clone() const
 {
@@ -73,56 +57,7 @@ WrappedSimpleTensor::clone() const
 //-----------------------------------------------------------------------------
 
 Tensor::UP
-WrappedSimpleTensor::add(const Tensor &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
-WrappedSimpleTensor::subtract(const Tensor &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
-WrappedSimpleTensor::multiply(const Tensor &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
-WrappedSimpleTensor::min(const Tensor &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
-WrappedSimpleTensor::max(const Tensor &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
-WrappedSimpleTensor::match(const Tensor &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
 WrappedSimpleTensor::apply(const CellFunction &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
-WrappedSimpleTensor::sum(const vespalib::string &) const
 {
     abort();
     return Tensor::UP();

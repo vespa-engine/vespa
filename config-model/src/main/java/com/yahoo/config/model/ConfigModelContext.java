@@ -5,17 +5,14 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import org.w3c.dom.Element;
 
-import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
  * This class contains a context that is passed to a model builder, and can be used to retrieve the application package,
  * logger etc.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public final class ConfigModelContext {
 

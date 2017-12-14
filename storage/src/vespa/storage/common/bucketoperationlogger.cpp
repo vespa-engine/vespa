@@ -34,7 +34,7 @@ BucketOperationLogger::log(const document::BucketId& id,
     bool hasError = false;
 
     {
-        vespalib::LockGuard lock(_logLock);
+        std::lock_guard<std:.mutex> guard(_logLock);
         BucketMapType::iterator i = _bucketMap.lower_bound(id);
         if (i != _bucketMap.end() && i->first == id) {
             if (i->second._history.size() >= MAX_ENTRIES) {
@@ -145,7 +145,7 @@ void
 BucketOperationLogger::dumpHistoryToLog(const document::BucketId& id) const
 {
     LogWarnAppender handler;
-    vespalib::LockGuard lock(_logLock);
+    std::lock_guard<std::mutex> guard(_logLock);
     processHistory(*this, id, handler);
 }
 
@@ -153,7 +153,7 @@ vespalib::string
 BucketOperationLogger::getHistory(const document::BucketId& id) const
 {
     LogStringBuilder handler;
-    vespalib::LockGuard lock(_logLock);
+    std::lock_guard<std::mutex> lock(_logLock);
     processHistory(*this, id, handler);
     return handler.ss.str();
 }
@@ -167,7 +167,7 @@ BucketOperationLogger::searchBucketHistories(
     ss << "<ul>\n";
     // This may block for a while... Assuming such searches run when system
     // is otherwise idle.
-    vespalib::LockGuard lock(_logLock);
+    std::lock_guard<std::mutex> guard(_logLock);
     for (BucketMapType::const_iterator
              bIt(_bucketMap.begin()), bEnd(_bucketMap.end());
          bIt != bEnd; ++bIt)

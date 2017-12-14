@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
@@ -34,7 +33,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         boolean hasWarned = false;
         for (Application application : ApplicationList.from(controller().applications().asList()).notPullRequest().asList()) {
             try {
-                controller().applications().lockedIfPresent(application.id(), lockedApplication ->
+                controller().applications().lockIfPresent(application.id(), lockedApplication ->
                         controller().applications().store(lockedApplication.with(controller().metricsService().getApplicationMetrics(application.id()))));
 
                 for (Deployment deployment : application.deployments().values()) {
@@ -46,7 +45,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                                                                          deploymentMetrics.queryLatencyMillis(),
                                                                          deploymentMetrics.writeLatencyMillis());
 
-                    controller().applications().lockedIfPresent(application.id(), lockedApplication ->
+                    controller().applications().lockIfPresent(application.id(), lockedApplication ->
                             controller().applications().store(lockedApplication.with(deployment.zone(), appMetrics)));
                 }
             }

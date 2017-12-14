@@ -30,7 +30,7 @@ Tensor::supported(TypeList types)
 std::ostream &
 operator<<(std::ostream &out, const Tensor &value)
 {
-    value.print(out);
+    out << value.toSpec().to_string();
     return out;
 }
 

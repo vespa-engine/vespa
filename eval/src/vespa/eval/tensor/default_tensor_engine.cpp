@@ -12,6 +12,7 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/eval/operation.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <cassert>
 
 
@@ -42,8 +43,9 @@ const Value &to_simple(const Value &value, Stash &stash) {
         if (auto wrapped = dynamic_cast<const WrappedSimpleTensor *>(tensor)) {
             return wrapped->get();
         }
-        TensorSpec spec = tensor->engine().to_spec(*tensor);
-        return *stash.create<Value::UP>(eval::SimpleTensor::create(spec));
+        nbostream data;
+        tensor->engine().encode(*tensor, data);
+        return *stash.create<Value::UP>(eval::SimpleTensor::decode(data));
     }
     return value;
 }
@@ -57,8 +59,9 @@ const Value &to_default(const Value &value, Stash &stash) {
                 return stash.create<WrappedSimpleTensor>(*simple);
             }
         }
-        TensorSpec spec = tensor->engine().to_spec(*tensor);
-        return *stash.create<Value::UP>(default_engine().from_spec(spec));
+        nbostream data;
+        tensor->engine().encode(*tensor, data);
+        return *stash.create<Value::UP>(default_engine().decode(data));
     }
     return value;
 }
@@ -67,7 +70,7 @@ const Value &to_value(std::unique_ptr<Tensor> tensor, Stash &stash) {
     if (!tensor) {
         return ErrorValue::instance;
     }
-    if (tensor->getType().is_tensor()) {
+    if (tensor->type().is_tensor()) {
         return *stash.create<Value::UP>(std::move(tensor));
     }
     return stash.create<DoubleValue>(tensor->as_double());
@@ -218,7 +221,7 @@ DefaultTensorEngine::map(const Value &a, map_fun_t function, Stash &stash) const
     } else if (auto tensor = a.as_tensor()) {
         assert(&tensor->engine() == this);
         const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor);
-        if (!tensor::Tensor::supported({my_a.getType()})) {
+        if (!tensor::Tensor::supported({my_a.type()})) {
             return to_default(simple_engine().map(to_simple(a, stash), function, stash), stash);
         }
         CellFunctionFunAdapter cell_function(function);
@@ -237,7 +240,7 @@ DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, S
         } else if (auto tensor_b = b.as_tensor()) {
             assert(&tensor_b->engine() == this);
             const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(*tensor_b);
-            if (!tensor::Tensor::supported({my_b.getType()})) {
+            if (!tensor::Tensor::supported({my_b.type()})) {
                 return fallback_join(a, b, function, stash);
             }
             CellFunctionBindLeftAdapter cell_function(function, a.as_double());
@@ -249,7 +252,7 @@ DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, S
         assert(&tensor_a->engine() == this);
         const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor_a);
         if (b.is_double()) {
-            if (!tensor::Tensor::supported({my_a.getType()})) {
+            if (!tensor::Tensor::supported({my_a.type()})) {
                 return fallback_join(a, b, function, stash);
             }
             CellFunctionBindRightAdapter cell_function(function, b.as_double());
@@ -257,18 +260,10 @@ DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, S
         } else if (auto tensor_b = b.as_tensor()) {
             assert(&tensor_b->engine() == this);
             const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(*tensor_b);
-            if (!tensor::Tensor::supported({my_a.getType(), my_b.getType()})) {
+            if (!tensor::Tensor::supported({my_a.type(), my_b.type()})) {
                 return fallback_join(a, b, function, stash);
             }
-            if (function == eval::operation::Mul::f) {
-                if (my_a.getType() == my_b.getType()) {
-                    return to_value(my_a.match(my_b), stash);
-                } else {
-                    return to_value(my_a.multiply(my_b), stash);
-                }
-            } else {
-                return to_value(my_a.join(function, my_b), stash);
-            }
+            return to_value(my_a.join(function, my_b), stash);
         } else {
             return ErrorValue::instance;
         }
@@ -291,16 +286,14 @@ DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespali
     } else if (auto tensor = a.as_tensor()) {
         assert(&tensor->engine() == this);
         const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor);
-        if (!tensor::Tensor::supported({my_a.getType()})) {
+        if (!tensor::Tensor::supported({my_a.type()})) {
             return fallback_reduce(a, aggr, dimensions, stash);
         }
         switch (aggr) {
         case Aggr::PROD: return to_value(my_a.reduce(eval::operation::Mul::f, dimensions), stash);
         case Aggr::SUM:
             if (dimensions.empty()) {
-                return stash.create<eval::DoubleValue>(my_a.sum());
-            } else if (dimensions.size() == 1) {
-                return to_value(my_a.sum(dimensions[0]), stash);
+                return stash.create<eval::DoubleValue>(my_a.as_double());
             } else {
                 return to_value(my_a.reduce(eval::operation::Add::f, dimensions), stash);
             }
@@ -314,9 +307,48 @@ DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespali
     }
 }
 
+size_t vector_size(const ValueType &type, const vespalib::string &dimension) {
+    if (type.is_double()) {
+        return 1;
+    } else if ((type.dimensions().size() == 1) &&
+               (type.dimensions()[0].is_indexed()) &&
+               (type.dimensions()[0].name == dimension))
+    {
+        return type.dimensions()[0].size;
+    } else {
+        return 0;
+    }
+}
+
+void append_vector(double *&pos, const Value &value) {
+    if (auto tensor = value.as_tensor()) {
+        const DenseTensorView *view = static_cast<const DenseTensorView *>(tensor);
+        for (double cell: view->cellsRef()) {
+            *pos++ = cell;
+        }
+    } else {
+        *pos++ = value.as_double();
+    }
+}
+
+const Value &concat_vectors(const Value &a, const Value &b, const vespalib::string &dimension, size_t vector_size, Stash &stash) {
+    ArrayRef<double> cells = stash.create_array<double>(vector_size);
+    double *pos = cells.begin();
+    append_vector(pos, a);
+    append_vector(pos, b);
+    assert(pos == cells.end());
+    const ValueType &type = stash.create<ValueType>(ValueType::tensor_type({ValueType::Dimension(dimension, vector_size)}));
+    return stash.create<DenseTensorView>(type, cells);
+}
+
 const Value &
 DefaultTensorEngine::concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const
 {
+    size_t a_size = vector_size(a.type(), dimension);
+    size_t b_size = vector_size(b.type(), dimension);
+    if ((a_size > 0) && (b_size > 0)) {
+        return concat_vectors(a, b, dimension, a_size + b_size, stash);
+    }
     return to_default(simple_engine().concat(to_simple(a, stash), to_simple(b, stash), dimension, stash), stash);
 }
 

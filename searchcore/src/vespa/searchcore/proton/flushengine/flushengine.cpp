@@ -12,10 +12,10 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.flushengine.flushengine");
 
-using vespalib::MonitorGuard;
 typedef vespalib::Executor::Task Task;
 using searchcorespi::IFlushTarget;
 using searchcorespi::FlushStats;
+using namespace std::chrono_literals;
 
 namespace proton {
 
@@ -71,11 +71,13 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory>
       _strategy(strategy),
       _priorityStrategy(),
       _executor(numThreads, 128 * 1024),
-      _monitor(),
+      _lock(),
+      _cond(),
       _handlers(),
       _flushing(),
+      _setStrategyLock(),
       _strategyLock(),
-      _strategyMonitor(),
+      _strategyCond(),
       _tlsStatsFactory(tlsStatsFactory),
       _pendingPrune()
 {
@@ -100,10 +102,10 @@ FlushEngine &
 FlushEngine::close()
 {
     {
-        MonitorGuard strategyGuard(_strategyMonitor);
-        MonitorGuard guard(_monitor);
+        std::lock_guard<std::mutex> strategyGuard(_strategyLock);
+        std::lock_guard<std::mutex> guard(_lock);
         _closed = true;
-        guard.broadcast();
+        _cond.notify_all();
     }
     _threadPool.Close();
     _executor.shutdown();
@@ -120,13 +122,13 @@ FlushEngine::triggerFlush()
 void
 FlushEngine::kick()
 {
-    MonitorGuard guard(_monitor);
+    std::lock_guard<std::mutex> guard(_lock);
     LOG(debug, "Kicking flush engine");
-    guard.broadcast();
+    _cond.notify_all();
 }
 
 bool
-FlushEngine::canFlushMore(const MonitorGuard & guard) const
+FlushEngine::canFlushMore(const std::unique_lock<std::mutex> &guard) const
 {
     (void) guard;
     return _maxConcurrent > _flushing.size();
@@ -135,12 +137,12 @@ FlushEngine::canFlushMore(const MonitorGuard & guard) const
 bool
 FlushEngine::wait(size_t minimumWaitTimeIfReady)
 {
-    MonitorGuard guard(_monitor);
+    std::unique_lock<std::mutex> guard(_lock);
     if ( (minimumWaitTimeIfReady > 0) && canFlushMore(guard) && _pendingPrune.empty()) {
-        guard.wait(minimumWaitTimeIfReady);
+        _cond.wait_for(guard, std::chrono::milliseconds(minimumWaitTimeIfReady));
     }
     while ( ! canFlushMore(guard) && _pendingPrune.empty()) {
-        guard.wait(1000); // broadcast when flush done
+        _cond.wait_for(guard, 1s); // broadcast when flush done
     }
     return !_closed;
 }
@@ -167,6 +169,8 @@ FlushEngine::Run(FastOS_ThreadInterface *thread, void *arg)
         }
         LOG(debug, "Making another wait(idle=%s, timeMS=%d) last was '%s'", shouldIdle ? "true" : "false", shouldIdle ? _idleIntervalMS : 0, prevFlushName.c_str());
     }
+    _executor.sync();
+    prune();
 }
 
 bool
@@ -174,7 +178,7 @@ FlushEngine::prune()
 {
     std::set<IFlushHandler::SP> toPrune;
     {
-        MonitorGuard guard(_monitor);
+        std::lock_guard<std::mutex> guard(_lock);
         if (_pendingPrune.empty()) {
             return false;
         }
@@ -187,7 +191,7 @@ FlushEngine::prune()
     return true;
 }
 
-bool FlushEngine::isFlushing(const MonitorGuard & guard, const vespalib::string & name) const
+bool FlushEngine::isFlushing(const std::lock_guard<std::mutex> & guard, const vespalib::string & name) const
 {
     (void) guard;
     for(const auto & it : _flushing) {
@@ -203,7 +207,7 @@ FlushEngine::getTargetList(bool includeFlushingTargets) const
 {
     FlushContext::List ret;
     {
-        MonitorGuard guard(_monitor);
+        std::lock_guard<std::mutex> guard(_lock);
         for (const auto & it : _handlers) {
             IFlushHandler & handler(*it.second);
             search::SerialNum serial(handler.getCurrentSerialNumber());
@@ -227,12 +231,12 @@ FlushEngine::getTargetList(bool includeFlushingTargets) const
 }
 
 std::pair<FlushContext::List,bool>
-FlushEngine::getSortedTargetList(MonitorGuard &strategyGuard) const
+FlushEngine::getSortedTargetList()
 {
-    (void) strategyGuard;
     FlushContext::List unsortedTargets = getTargetList(false);
-    std::pair<FlushContext::List, bool> ret;
     flushengine::TlsStatsMap tlsStatsMap(_tlsStatsFactory->create());
+    std::lock_guard<std::mutex> strategyGuard(_strategyLock);
+    std::pair<FlushContext::List, bool> ret;
     if (_priorityStrategy) {
         ret = std::make_pair(_priorityStrategy->getFlushTargets(unsortedTargets, tlsStatsMap), true);
     } else {
@@ -291,14 +295,15 @@ FlushEngine::flushAll(const FlushContext::List &lst)
 vespalib::string
 FlushEngine::flushNextTarget(const vespalib::string & name)
 {
-    MonitorGuard strategyGuard(_strategyMonitor);
-    std::pair<FlushContext::List,bool> lst = getSortedTargetList(strategyGuard);
+    std::pair<FlushContext::List,bool> lst = getSortedTargetList();
     if (lst.second) {
         // Everything returned from a priority strategy should be flushed
         flushAll(lst.first);
         _executor.sync();
+        prune();
+        std::lock_guard<std::mutex> strategyGuard(_strategyLock);
         _priorityStrategy.reset();
-        strategyGuard.broadcast();
+        _strategyCond.notify_all();
         return "";
     }
     if (lst.first.empty()) {
@@ -340,7 +345,7 @@ FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
 {
     fastos::TimeStamp duration;
     {
-        MonitorGuard guard(_monitor);
+        std::lock_guard<std::mutex> guard(_lock);
         duration = fastos::TimeStamp(fastos::ClockSystem::now()) - _flushing[taskId].getStart();
     }
     if (LOG_WOULD_LOG(event)) {
@@ -351,20 +356,20 @@ FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
                                    stats.getPathElementsToLog());
     }
     LOG(debug, "FlushEngine::flushDone(taskId='%d') took '%f' secs", taskId, duration.sec());
-    MonitorGuard guard(_monitor);
+    std::lock_guard<std::mutex> guard(_lock);
     _flushing.erase(taskId);
     assert(ctx.getHandler());
     if (_handlers.hasHandler(ctx.getHandler())) {
         _pendingPrune.insert(ctx.getHandler());
     }
-    guard.broadcast();
+    _cond.notify_all();
 }
 
 IFlushHandler::SP
 FlushEngine::putFlushHandler(const DocTypeName &docTypeName,
                              const IFlushHandler::SP &flushHandler)
 {
-    MonitorGuard guard(_monitor);
+    std::lock_guard<std::mutex> guard(_lock);
     IFlushHandler::SP result(_handlers.putHandler(docTypeName, flushHandler));
     if (result) {
         _pendingPrune.erase(result);
@@ -376,14 +381,14 @@ FlushEngine::putFlushHandler(const DocTypeName &docTypeName,
 IFlushHandler::SP
 FlushEngine::getFlushHandler(const DocTypeName &docTypeName) const
 {
-    MonitorGuard guard(_monitor);
+    std::lock_guard<std::mutex> guard(_lock);
     return _handlers.getHandler(docTypeName);
 }
 
 IFlushHandler::SP
 FlushEngine::removeFlushHandler(const DocTypeName &docTypeName)
 {
-    MonitorGuard guard(_monitor);
+    std::lock_guard<std::mutex> guard(_lock);
     IFlushHandler::SP result(_handlers.removeHandler(docTypeName));
     _pendingPrune.erase(result);
     return std::move(result);
@@ -393,7 +398,7 @@ FlushEngine::FlushMetaSet
 FlushEngine::getCurrentlyFlushingSet() const
 {
     FlushMetaSet s;
-    vespalib::LockGuard guard(_monitor);
+    std::lock_guard<std::mutex> guard(_lock);
     for (const auto & it : _flushing) {
         s.insert(it.second);
     }
@@ -405,7 +410,7 @@ FlushEngine::initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP 
 {
     uint32_t taskId(0);
     {
-        vespalib::LockGuard guard(_monitor);
+        std::lock_guard<std::mutex> guard(_lock);
         taskId = _taskId++;
         vespalib::string name(FlushContext::createName(*handler, *target));
         FlushInfo flush(taskId, target, name);
@@ -419,19 +424,19 @@ FlushEngine::initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP 
 void
 FlushEngine::setStrategy(IFlushStrategy::SP strategy)
 {
-    vespalib::LockGuard strategyLock(_strategyLock);
-    MonitorGuard strategyGuard(_strategyMonitor);
+    std::lock_guard<std::mutex> setStrategyGuard(_setStrategyLock);
+    std::unique_lock<std::mutex> strategyGuard(_strategyLock);
     if (_closed) {
         return;
     }
     assert(!_priorityStrategy);
     _priorityStrategy = strategy;
     {
-        MonitorGuard guard(_monitor);
-        guard.broadcast();
+        std::lock_guard<std::mutex> guard(_lock);
+        _cond.notify_all();
     }
     while (_priorityStrategy) {
-        strategyGuard.wait();
+        _strategyCond.wait(strategyGuard);
     }
 }
 

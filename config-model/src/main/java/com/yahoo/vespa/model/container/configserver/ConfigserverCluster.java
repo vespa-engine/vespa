@@ -144,6 +144,9 @@ public class ConfigserverCluster extends AbstractConfigProducer
         if (options.loadBalancerAddress().isPresent()) {
             builder.loadBalancerAddress(options.loadBalancerAddress().get());
         }
+        if (options.disableFiledistributor().isPresent()) {
+            builder.disableFiledistributor(options.disableFiledistributor().get());
+        }
     }
 
     private String[] getConfigModelPluginDirs() {

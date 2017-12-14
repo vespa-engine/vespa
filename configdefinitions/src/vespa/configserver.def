@@ -1,5 +1,6 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=cloud.config
+
 rpcport int default=19070
 httpport int default=19071
 numthreads int default=16
@@ -44,3 +45,7 @@ dockerVespaBaseImage string default=""
 
 # Athenz config
 loadBalancerAddress string default=""
+
+# File distribution
+disableFiledistributor bool default=false
+usechunkedtransfer bool default=true

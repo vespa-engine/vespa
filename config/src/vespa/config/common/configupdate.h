@@ -19,6 +19,7 @@ public:
     const ConfigValue & getValue() const;
     bool hasChanged() const;
     int64_t getGeneration() const;
+    void merge(const ConfigUpdate & b) { _hasChanged = _hasChanged || b.hasChanged(); }
 private:
     ConfigValue _value;
     bool _hasChanged;

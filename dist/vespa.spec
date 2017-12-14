@@ -18,11 +18,11 @@ Source0:        vespa-%{version}.tar.gz
 %if 0%{?centos}
 BuildRequires: epel-release
 BuildRequires: centos-release-scl
-BuildRequires: devtoolset-6-gcc-c++
-BuildRequires: devtoolset-6-libatomic-devel
-BuildRequires: devtoolset-6-binutils
+BuildRequires: devtoolset-7-gcc-c++
+BuildRequires: devtoolset-7-libatomic-devel
+BuildRequires: devtoolset-7-binutils
 BuildRequires: rh-maven33
-%define _devtoolset_enable /opt/rh/devtoolset-6/enable
+%define _devtoolset_enable /opt/rh/devtoolset-7/enable
 %define _rhmaven33_enable /opt/rh/rh-maven33/enable
 %endif
 %if 0%{?fedora}
@@ -68,6 +68,8 @@ BuildRequires: make
 BuildRequires: vespa-cppunit-devel >= 1.12.1-6
 BuildRequires: vespa-libtorrent-devel >= 1.0.11-6
 BuildRequires: systemd
+BuildRequires: flex >= 2.5.0
+BuildRequires: bison >= 3.0.0
 %if 0%{?centos}
 Requires: epel-release
 %endif
@@ -195,13 +197,18 @@ exit 0
 %postun
 %systemd_postun_with_restart vespa.service
 %systemd_postun_with_restart vespa-configserver.service
-rm -f /etc/profile.d/vespa.sh
-userdel vespa
+if [ $1 -eq 0 ]; then # this is an uninstallation
+    rm -f /etc/profile.d/vespa.sh
+    userdel vespa
+fi
 
 %files
 %defattr(-,vespa,vespa,-)
 %doc
 %{_prefix}/*
+%config(noreplace) %{_prefix}/conf/logd/logd.cfg
+%config(noreplace) %{_prefix}/conf/vespa/default-env.txt
+%config(noreplace) %{_prefix}/etc/vespamalloc.conf
 %attr(644,root,root) /usr/lib/systemd/system/vespa.service
 %attr(644,root,root) /usr/lib/systemd/system/vespa-configserver.service
 

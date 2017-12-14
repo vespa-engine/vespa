@@ -25,7 +25,8 @@ public class TestUtils {
                         .zones(ImmutableMap.of(zone.environment().value() + "." + zone.region().value(), zoneConfig))
                         .certDnsSuffix(dnsSuffix)
                         .ztsUrl("localhost/zts")
-                        .athenzPrincipalHeaderName("Athenz-Principal-Auth"));
+                        .athenzPrincipalHeaderName("Athenz-Principal-Auth")
+                        .athenzCaTrustStore("/dummy/path/to/athenz-ca.jks"));
     }
 
 }

@@ -13,8 +13,7 @@ import java.util.concurrent.locks.Lock;
 /**
  * Factory for creating providers that are used to interact with file distribution.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 @SuppressWarnings("WeakerAccess")
 public class FileDistributionFactory {
@@ -33,8 +32,8 @@ public class FileDistributionFactory {
         this.zkSpec = zkSpec;
     }
 
-    public FileDistributionProvider createProvider(File applicationPackage, ApplicationId applicationId) {
-        return new FileDistributionProvider(applicationPackage, zkSpec, applicationId.serializedForm(), lock);
+    public FileDistributionProvider createProvider(File applicationPackage, ApplicationId applicationId, boolean disableFileDistributor) {
+        return new FileDistributionProvider(applicationPackage, zkSpec, applicationId.serializedForm(), lock, disableFileDistributor);
     }
 
 }

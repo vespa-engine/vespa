@@ -5,11 +5,11 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TestIdentities;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
@@ -20,6 +20,7 @@ import java.util.Optional;
  * This is necessary because filters are not currently executed when executing requests with Application.
  * 
  * @author bratseth
+ * @author bjorncs
  */
 @SuppressWarnings("unused") // injected
 public class MockAuthorizer extends Authorizer {
@@ -30,10 +31,14 @@ public class MockAuthorizer extends Authorizer {
 
     /** Returns a principal given by the request parameters 'domain' and 'user' */
     @Override
-    public Optional<Principal> getPrincipalIfAny(HttpRequest request) {
-        if (request.getProperty("user") == null) return Optional.empty();
-        return Optional.of(new AthenzPrincipal(new AthenzDomain(request.getProperty("domain")),
-                                               new UserId(request.getProperty("user"))));
+    public Optional<AthenzPrincipal> getPrincipalIfAny(HttpRequest request) {
+        String domain = request.getHeader("Athenz-Identity-Domain");
+        String name = request.getHeader("Athenz-Identity-Name");
+        if (domain == null || name == null) return Optional.empty();
+        return Optional.of(
+                new AthenzPrincipal(
+                        AthenzUtils.createAthenzIdentity(new AthenzDomain(domain), name),
+                        new NToken("dummy")));
     }
 
     /** Returns the hardcoded NToken of {@link TestIdentities#userId} */
@@ -42,12 +47,6 @@ public class MockAuthorizer extends Authorizer {
         return Optional.of(TestIdentities.userNToken);
     }
 
-    private static class MockPrincipal implements Principal {
-
-        @Override
-        public String getName() { return TestIdentities.userId.id(); }
-
-    }
 
     @Override
     protected Optional<SecurityContext> securityContextOf(HttpRequest request) {

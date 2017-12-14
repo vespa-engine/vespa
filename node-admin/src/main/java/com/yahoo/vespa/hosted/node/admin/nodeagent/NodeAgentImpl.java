@@ -524,6 +524,7 @@ public class NodeAgentImpl implements NodeAgent {
         Docker.ContainerStats stats = containerStats.get();
         final String APP = MetricReceiverWrapper.APPLICATION_NODE;
         final int totalNumCpuCores = ((List<Number>) ((Map) stats.getCpuStats().get("cpu_usage")).get("percpu_usage")).size();
+        final long cpuContainerKernelTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("usage_in_kernelmode")).longValue();
         final long cpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
         final long cpuSystemTotalTime = ((Number) stats.getCpuStats().get("system_cpu_usage")).longValue();
         final long memoryTotalBytes = ((Number) stats.getMemoryStats().get("limit")).longValue();
@@ -532,26 +533,28 @@ public class NodeAgentImpl implements NodeAgent {
         final long diskTotalBytes = (long) (nodeSpec.minDiskAvailableGb * BYTES_IN_GB);
         final Optional<Long> diskTotalBytesUsed = storageMaintainer.getDiskUsageFor(containerName);
 
-        // CPU usage by a container as percentage of total host CPU, cpuPercentageOfHost, is given by dividing used
-        // CPU time by the container with CPU time used by the entire system.
-        // CPU usage by a container as percentage of total CPU allocated to it is given by dividing the
-        // cpuPercentageOfHost with the ratio of container minCpuCores by total number of CPU cores.
-        double cpuPercentageOfHost = lastCpuMetric.getCpuUsagePercentage(cpuContainerTotalTime, cpuSystemTotalTime);
-        double cpuPercentageOfAllocated = totalNumCpuCores * cpuPercentageOfHost / nodeSpec.minCpuCores;
+        lastCpuMetric.updateCpuDeltas(cpuSystemTotalTime, cpuContainerTotalTime, cpuContainerKernelTime);
+
+        // Ratio of CPU cores allocated to this container to total number of CPU cores on this host
+        final double allocatedCpuRatio = nodeSpec.minCpuCores / totalNumCpuCores;
+        double cpuUsageRatioOfAllocated = lastCpuMetric.getCpuUsageRatio() / allocatedCpuRatio;
+        double cpuKernelUsageRatioOfAllocated = lastCpuMetric.getCpuKernelUsageRatio() / allocatedCpuRatio;
+
         long memoryTotalBytesUsed = memoryTotalBytesUsage - memoryTotalBytesCache;
-        double memoryPercentUsed = 100.0 * memoryTotalBytesUsed / memoryTotalBytes;
-        Optional<Double> diskPercentUsed = diskTotalBytesUsed.map(used -> 100.0 * used / diskTotalBytes);
+        double memoryUsageRatio = (double) memoryTotalBytesUsed / memoryTotalBytes;
+        Optional<Double> diskUsageRatio = diskTotalBytesUsed.map(used -> (double) used / diskTotalBytes);
 
         List<DimensionMetrics> metrics = new ArrayList<>();
         DimensionMetrics.Builder systemMetricsBuilder = new DimensionMetrics.Builder(APP, dimensions)
                 .withMetric("mem.limit", memoryTotalBytes)
                 .withMetric("mem.used", memoryTotalBytesUsed)
-                .withMetric("mem.util", memoryPercentUsed)
-                .withMetric("cpu.util", cpuPercentageOfAllocated)
+                .withMetric("mem.util", 100 * memoryUsageRatio)
+                .withMetric("cpu.util", 100 * cpuUsageRatioOfAllocated)
+                .withMetric("cpu.sys.util", 100 * cpuKernelUsageRatioOfAllocated)
                 .withMetric("disk.limit", diskTotalBytes);
 
         diskTotalBytesUsed.ifPresent(diskUsed -> systemMetricsBuilder.withMetric("disk.used", diskUsed));
-        diskPercentUsed.ifPresent(diskUtil -> systemMetricsBuilder.withMetric("disk.util", diskUtil));
+        diskUsageRatio.ifPresent(diskRatio -> systemMetricsBuilder.withMetric("disk.util", 100 * diskRatio));
         metrics.add(systemMetricsBuilder.build());
 
         stats.getNetworks().forEach((interfaceName, interfaceStats) -> {
@@ -612,17 +615,35 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     class CpuUsageReporter {
+        private long containerKernelUsage = 0;
         private long totalContainerUsage = 0;
         private long totalSystemUsage = 0;
 
-        double getCpuUsagePercentage(long currentContainerUsage, long currentSystemUsage) {
-            long deltaSystemUsage = currentSystemUsage - totalSystemUsage;
-            double cpuUsagePct = (deltaSystemUsage == 0 || totalSystemUsage == 0) ?
-                    0 : 100.0 * (currentContainerUsage - totalContainerUsage) / deltaSystemUsage;
+        private long deltaContainerKernelUsage;
+        private long deltaContainerUsage;
+        private long deltaSystemUsage;
 
-            totalContainerUsage = currentContainerUsage;
-            totalSystemUsage = currentSystemUsage;
-            return cpuUsagePct;
+        private void updateCpuDeltas(long totalSystemUsage, long totalContainerUsage, long containerKernelUsage) {
+            deltaSystemUsage = this.totalSystemUsage == 0 ? 0 : (totalSystemUsage - this.totalSystemUsage);
+            deltaContainerUsage = totalContainerUsage - this.totalContainerUsage;
+            deltaContainerKernelUsage = containerKernelUsage - this.containerKernelUsage;
+
+            this.totalSystemUsage = totalSystemUsage;
+            this.totalContainerUsage = totalContainerUsage;
+            this.containerKernelUsage = containerKernelUsage;
+        }
+
+        /**
+         * Returns the CPU usage ratio for the docker container that this NodeAgent is managing
+         * in the time between the last two times updateCpuDeltas() was called. This is calculated
+         * by dividing the CPU time used by the container with the CPU time used by the entire system.
+         */
+        double getCpuUsageRatio() {
+            return deltaSystemUsage == 0 ? Double.NaN : (double) deltaContainerUsage / deltaSystemUsage;
+        }
+
+        double getCpuKernelUsageRatio() {
+            return deltaSystemUsage == 0 ? Double.NaN : (double) deltaContainerKernelUsage / deltaSystemUsage;
         }
     }
 

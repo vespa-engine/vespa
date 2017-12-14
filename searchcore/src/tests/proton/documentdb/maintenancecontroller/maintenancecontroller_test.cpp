@@ -32,8 +32,9 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("maintenancecontroller_test");
@@ -497,7 +498,8 @@ public:
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getBlockableJobConfig()));
+                           _mcCfg->getBlockableJobConfig(),
+                           _mcCfg->getFlushConfig()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -514,7 +516,8 @@ public:
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getBlockableJobConfig()));
+                           _mcCfg->getBlockableJobConfig(),
+                           _mcCfg->getFlushConfig()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -531,7 +534,8 @@ public:
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getBlockableJobConfig()));
+                           _mcCfg->getBlockableJobConfig(),
+                           _mcCfg->getFlushConfig()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -546,7 +550,8 @@ public:
                            cfg,
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getBlockableJobConfig()));
+                           _mcCfg->getBlockableJobConfig(),
+                           _mcCfg->getFlushConfig()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }

@@ -2,7 +2,6 @@
 
 #include "executorthreadingservice.h"
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/sync.h>
 
 using vespalib::ThreadStackExecutorBase;
 

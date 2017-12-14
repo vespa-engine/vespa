@@ -5,10 +5,11 @@
 #include "iflushstrategy.h"
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/fastos/thread.h>
 #include <set>
+#include <mutex>
+#include <condition_variable>
 
 namespace proton {
 
@@ -53,16 +54,18 @@ private:
     IFlushStrategy::SP             _strategy;
     mutable IFlushStrategy::SP     _priorityStrategy;
     vespalib::ThreadStackExecutor  _executor;
-    vespalib::Monitor              _monitor;
+    mutable std::mutex             _lock;
+    std::condition_variable        _cond;
     FlushHandlerMap                _handlers;
     FlushMap                       _flushing;
-    vespalib::Lock                 _strategyLock; // serialize setStrategy calls
-    vespalib::Monitor              _strategyMonitor;
+    std::mutex                     _setStrategyLock; // serialize setStrategy calls
+    std::mutex                     _strategyLock;
+    std::condition_variable        _strategyCond;
     std::shared_ptr<flushengine::ITlsStatsFactory> _tlsStatsFactory;
     std::set<IFlushHandler::SP>    _pendingPrune;
 
     FlushContext::List getTargetList(bool includeFlushingTargets) const;
-    std::pair<FlushContext::List,bool> getSortedTargetList(vespalib::MonitorGuard &strategyGuard) const;
+    std::pair<FlushContext::List,bool> getSortedTargetList();
     FlushContext::SP initNextFlush(const FlushContext::List &lst);
     vespalib::string flushNextTarget(const vespalib::string & name);
     void flushAll(const FlushContext::List &lst);
@@ -70,9 +73,9 @@ private:
     uint32_t initFlush(const FlushContext &ctx);
     uint32_t initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP &target);
     void flushDone(const FlushContext &ctx, uint32_t taskId);
-    bool canFlushMore(const vespalib::MonitorGuard & guard) const;
+    bool canFlushMore(const std::unique_lock<std::mutex> &guard) const;
     bool wait(size_t minimumWaitTimeIfReady);
-    bool isFlushing(const vespalib::MonitorGuard & guard, const vespalib::string & name) const;
+    bool isFlushing(const std::lock_guard<std::mutex> &guard, const vespalib::string & name) const;
 
     friend class FlushTask;
     friend class FlushEngineExplorer;

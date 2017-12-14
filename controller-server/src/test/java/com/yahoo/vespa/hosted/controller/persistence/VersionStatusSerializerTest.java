@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 public class VersionStatusSerializerTest {
 
     @Test
-    public void testSerialization() throws Exception {
+    public void testSerialization() {
         List<VespaVersion> vespaVersions = new ArrayList<>();
         DeploymentStatistics statistics = new DeploymentStatistics(
                 Version.fromString("5.0"),

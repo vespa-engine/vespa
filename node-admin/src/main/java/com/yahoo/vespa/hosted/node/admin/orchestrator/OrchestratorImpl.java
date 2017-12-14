@@ -26,11 +26,9 @@ public class OrchestratorImpl implements Orchestrator {
             = ORCHESTRATOR_PATH_PREFIX + HostSuspensionApi.PATH_PREFIX;
 
     private final ConfigServerHttpRequestExecutor requestExecutor;
-    private final int port;
 
-    public OrchestratorImpl(ConfigServerHttpRequestExecutor requestExecutor, int port) {
+    public OrchestratorImpl(ConfigServerHttpRequestExecutor requestExecutor) {
         this.requestExecutor = requestExecutor;
-        this.port = port;
     }
 
     @Override
@@ -38,7 +36,6 @@ public class OrchestratorImpl implements Orchestrator {
         UpdateHostResponse response;
         try {
             response = requestExecutor.put(getSuspendPath(hostName),
-                    port,
                     Optional.empty(), /* body */
                     UpdateHostResponse.class);
         } catch (HttpException.NotFoundException n) {
@@ -61,7 +58,6 @@ public class OrchestratorImpl implements Orchestrator {
         try {
             batchOperationResult = requestExecutor.put(
                     ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                    port,
                     Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                     BatchOperationResult.class);
         } catch (HttpException e) {
@@ -81,7 +77,7 @@ public class OrchestratorImpl implements Orchestrator {
         UpdateHostResponse response;
         try {
             String path = getSuspendPath(hostName);
-            response = requestExecutor.delete(path, port, UpdateHostResponse.class);
+            response = requestExecutor.delete(path, UpdateHostResponse.class);
         } catch (HttpException.NotFoundException n) {
             throw new OrchestratorNotFoundException("Failed to resume " + hostName + ", host not found");
         } catch (HttpException e) {

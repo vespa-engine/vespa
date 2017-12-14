@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.RESUMED;
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN;
+import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.TRANSITIONING;
 
 /**
  * Pulls information from node repository and forwards containers to run to node admin.
@@ -110,15 +111,15 @@ public class NodeAdminStateUpdater {
         return this.getClass().getSimpleName() + "@" + Integer.toString(System.identityHashCode(this));
     }
 
-    public enum State { RESUMED, SUSPENDED_NODE_ADMIN, SUSPENDED}
+    public enum State { TRANSITIONING, RESUMED, SUSPENDED_NODE_ADMIN, SUSPENDED}
 
     public Map<String, Object> getDebugPage() {
         Map<String, Object> debug = new LinkedHashMap<>();
         synchronized (monitor) {
             debug.put("dockerHostHostName", dockerHostHostName);
+            debug.put("wantedState", wantedState);
+            debug.put("currentState", currentState);
             debug.put("NodeAdmin", nodeAdmin.debugInfo());
-            debug.put("Wanted State: ", wantedState);
-            debug.put("Current State: ", currentState);
         }
         return debug;
     }
@@ -185,7 +186,7 @@ public class NodeAdminStateUpdater {
             log.log(LogLevel.ERROR, "Error while trying to converge to " + wantedStateCopy, e);
         }
 
-        if (wantedStateCopy != RESUMED && currentState == RESUMED) {
+        if (wantedStateCopy != RESUMED && currentState == TRANSITIONING) {
             Duration subsystemFreezeDuration = nodeAdmin.subsystemFreezeDuration();
             if (subsystemFreezeDuration.compareTo(FREEZE_CONVERGENCE_TIMEOUT) > 0) {
                 // We have spent too much time trying to freeze and node admin is still not frozen.
@@ -203,8 +204,9 @@ public class NodeAdminStateUpdater {
      * with respect to: freeze, Orchestrator, and services running.
      */
     private void convergeState(State wantedState) {
-        if (currentState == wantedState) {
-            return;
+        if (currentState == wantedState) return;
+        synchronized (monitor) {
+            currentState = TRANSITIONING;
         }
 
         boolean wantFrozen = wantedState != RESUMED;

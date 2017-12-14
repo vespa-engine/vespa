@@ -46,6 +46,7 @@ public:
         bool maintenanceChanged;
         bool storeChanged;
         bool visibilityDelayChanged;
+        bool flushChanged;
 
         ComparisonResult();
         ComparisonResult &setRankProfilesChanged(bool val) { rankProfilesChanged = val; return *this; }
@@ -63,7 +64,20 @@ public:
         ComparisonResult &setMaintenanceChanged(bool val) { maintenanceChanged = val; return *this; }
         ComparisonResult &setStoreChanged(bool val) { storeChanged = val; return *this; }
 
-        ComparisonResult &setVisibilityDelayChanged(bool val) { visibilityDelayChanged = val; return *this; }
+        ComparisonResult &setVisibilityDelayChanged(bool val) {
+            visibilityDelayChanged = val;
+            if (val) {
+                maintenanceChanged = true;
+            }
+            return *this;
+        }
+        ComparisonResult &setFlushChanged(bool val) {
+            flushChanged = val;
+            if (val) {
+                maintenanceChanged = true;
+            }
+            return *this;
+        }
     };
 
     using SP = std::shared_ptr<DocumentDBConfig>;
@@ -116,6 +130,14 @@ private:
             return rhs == NULL;
         }
         return rhs != NULL && *lhs == *rhs;
+    }
+    template <typename T, typename Func>
+    bool equals(const T *lhs, const T *rhs, Func isEqual) const
+    {
+        if (lhs == NULL) {
+            return rhs == NULL;
+        }
+        return rhs != NULL && isEqual(*lhs, *rhs);
     }
 public:
     DocumentDBConfig(int64_t generation,

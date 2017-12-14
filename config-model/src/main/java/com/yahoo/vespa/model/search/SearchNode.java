@@ -19,6 +19,7 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.ContentNode;
+import com.yahoo.vespa.model.filedistribution.DummyFileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributorService;
 import org.w3c.dom.Element;
@@ -112,7 +113,6 @@ public class SearchNode extends AbstractService implements
         portsMeta.on(UNUSED_3).tag("unused");
         portsMeta.on(HEALTH_PORT).tag("http").tag("json").tag("health").tag("state");
         // Properties are set in DomSearchBuilder
-        monitorService();
         this.tuning = tuning;
     }
 
@@ -229,10 +229,12 @@ public class SearchNode extends AbstractService implements
     public void getConfig(FiledistributorrpcConfig.Builder builder) {
         FileDistributionConfigProducer fileDistribution = getRoot().getFileDistributionConfigProducer();
         if (fileDistribution != null) {
-            FileDistributorService fds = fileDistribution.getFileDistributorService(getHost());
-            if (fds != null) {
-                fds.getConfig(builder);
-            }
+            AbstractConfigProducer configProducer = fileDistribution.getConfigProducer(getHost());
+            // TODO: Hack, will be fixed when FileDistributorService is gone
+            if (configProducer instanceof DummyFileDistributionConfigProducer)
+                ((DummyFileDistributionConfigProducer) configProducer).getConfig(builder);
+            else
+                ((FileDistributorService) configProducer).getConfig(builder);
         }
     }
 

@@ -96,13 +96,6 @@ StorageTransportContext::StorageTransportContext(std::unique_ptr<RPCRequestWrapp
 
 StorageTransportContext::~StorageTransportContext() { }
 
-const framework::MemoryAllocationType&
-CommunicationManager::getAllocationType(api::StorageMessage& msg) const
-{
-    return _messageAllocTypes.getType(msg.getType().getId());
-}
-
-
 void
 CommunicationManager::receiveStorageReply(const std::shared_ptr<api::StorageReply>& reply)
 {
@@ -296,8 +289,7 @@ CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, co
       _configUri(configUri),
       _closed(false),
       _bucketResolver(std::make_unique<PlaceHolderBucketResolver>()),
-      _docApiConverter(configUri, *_bucketResolver),
-      _messageAllocTypes(_component.getMemoryManager())
+      _docApiConverter(configUri, *_bucketResolver)
 {
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
     _component.registerMetric(_metrics);
@@ -483,33 +475,9 @@ CommunicationManager::process(const std::shared_ptr<api::StorageMessage>& msg)
 void
 CommunicationManager::enqueue(const std::shared_ptr<api::StorageMessage> & msg)
 {
-    using MemoryToken = framework::MemoryToken;
     assert(msg.get());
-
-    const uint32_t memoryFootprint = msg->getMemoryFootprint();
-    MemoryToken::UP token = _component.getMemoryManager().allocate(getAllocationType(*msg), memoryFootprint * 2,
-                                                                   memoryFootprint * 2, msg->getPriority());
-
-    if (token) {
-        msg->setMemoryToken(std::move(token));
-
-        LOG(spam, "Enq storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
-        _eventQueue.enqueue(msg);
-    } else {
-        _metrics.failedDueToTooLittleMemory.inc();
-        std::ostringstream ost;
-        ost << "Failed to aquire " << (memoryFootprint * 2)
-            << " bytes of memory to handle command of type "
-            << msg->getType() << "\n";
-        LOG(spam, "%s", ost.str().c_str());
-        api::StorageCommand* cmd(dynamic_cast<api::StorageCommand*>(msg.get()));
-
-        if (cmd) {
-            std::shared_ptr<api::StorageReply> reply(cmd->makeReply());
-            reply->setResult(api::ReturnCode(api::ReturnCode::BUSY, ost.str()));
-            sendReply(reply);
-        }
-    }
+    LOG(spam, "Enq storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
+    _eventQueue.enqueue(msg);
 }
 
 bool
@@ -770,10 +738,11 @@ CommunicationManager::run(framework::ThreadHandle& thread)
         if (_eventQueue.getNext(msg, 100)) {
             process(msg);
         }
-        for (Protocols::iterator it(_earlierGenerations.begin());
+        std::lock_guard<std::mutex> guard(_earlierGenerationsLock);
+        for (EarlierProtocols::iterator it(_earlierGenerations.begin());
              !_earlierGenerations.empty() &&
              ((it->first + TEN_MINUTES) < _component.getClock().getTimeInSeconds());
-             _earlierGenerations.begin())
+             it = _earlierGenerations.begin())
         {
             _earlierGenerations.erase(it);
         }
@@ -798,8 +767,8 @@ void CommunicationManager::updateMessagebusProtocol(
     if (_mbus.get()) {
         framework::SecondTime now(_component.getClock().getTimeInSeconds());
         mbus::IProtocol::SP newDocumentProtocol(new documentapi::DocumentProtocol( *_component.getLoadTypes(), repo));
+        std::lock_guard<std::mutex> guard(_earlierGenerationsLock);
         _earlierGenerations.push_back(std::make_pair(now, _mbus->getMessageBus().putProtocol(newDocumentProtocol)));
-
         mbus::IProtocol::SP newStorageProtocol(new mbusprot::StorageProtocol(repo, *_component.getLoadTypes()));
         _earlierGenerations.push_back(std::make_pair(now, _mbus->getMessageBus().putProtocol(newStorageProtocol)));
     }

@@ -130,4 +130,32 @@ public class ConfigSetSubscriptionTest {
         assertEquals(hS.getConfig().stringVal(), "new StringVal");
     }
 
+    @Test
+    public void requireThatWeGetLatestConfigWhenTwoUpdatesBeforeClientChecks() {
+        ConfigSet myConfigs = new ConfigSet();
+        AppConfig.Builder a0builder = new AppConfig.Builder().message("A message, 1");
+        myConfigs.addBuilder("app/0", a0builder);
+        ConfigSubscriber subscriber = new ConfigSubscriber(myConfigs);
+        ConfigHandle<AppConfig> hA0 = subscriber.subscribe(AppConfig.class, "app/0");
+
+        assertTrue(subscriber.nextConfig(0));
+        assertTrue(hA0.isChanged());
+        assertEquals(hA0.getConfig().message(), "A message, 1");
+
+        assertFalse(subscriber.nextConfig(10));
+        assertFalse(hA0.isChanged());
+        assertEquals(hA0.getConfig().message(), "A message, 1");
+
+        //Reconfigure two times in a row
+        a0builder.message("A new message, 2");
+        subscriber.reload(1);
+        a0builder.message("An even newer message, 3");
+        subscriber.reload(2);
+
+        // Should pick up the last one
+        assertTrue(subscriber.nextConfig(0));
+        assertTrue(hA0.isChanged());
+        assertEquals(hA0.getConfig().message(), "An even newer message, 3");
+    }
+
 }

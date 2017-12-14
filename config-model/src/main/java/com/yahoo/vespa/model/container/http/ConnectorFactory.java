@@ -5,6 +5,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ssl.DefaultSslKeyStoreConfigurator;
+import com.yahoo.jdisc.http.ssl.DefaultSslTrustStoreConfigurator;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
@@ -24,10 +25,14 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     private final Element legacyConfig;
 
     public ConnectorFactory(String name, int listenPort) {
-        this(name, listenPort, null, null);
+        this(name, listenPort, null, null, null);
     }
 
-    public ConnectorFactory(String name, int listenPort, Element legacyConfig, Element sslKeystoreConfigurator) {
+    public ConnectorFactory(String name,
+                            int listenPort,
+                            Element legacyConfig,
+                            Element sslKeystoreConfigurator,
+                            Element sslTruststoreConfigurator) {
         super(new ComponentModel(
                 new BundleInstantiationSpecification(new ComponentId(name),
                                                      fromString("com.yahoo.jdisc.http.server.jetty.ConnectorFactory"),
@@ -35,9 +40,8 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         this.name = name;
         this.listenPort = listenPort;
         this.legacyConfig = legacyConfig;
-        SimpleComponent sslKeyStoreConfigurator = getSslKeyStoreConfigurator(name, sslKeystoreConfigurator);
-        addChild(sslKeyStoreConfigurator);
-        inject(sslKeyStoreConfigurator);
+        addSslKeyStoreConfigurator(name, sslKeystoreConfigurator);
+        addSslTrustStoreConfigurator(name, sslTruststoreConfigurator);
     }
 
     @Override
@@ -149,16 +153,30 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         }
     }
 
-    private static SimpleComponent getSslKeyStoreConfigurator(String name, Element sslKeystoreConfigurator) {
-        String idSpec = "ssl-keystore-configurator@" + name;
-        if (sslKeystoreConfigurator != null) {
-            String className = sslKeystoreConfigurator.getAttribute("class");
-            String bundleName = sslKeystoreConfigurator.getAttribute("bundle");
-            return new SimpleComponent(new ComponentModel(idSpec, className, bundleName));
+    private void addSslKeyStoreConfigurator(String name, Element sslKeystoreConfigurator) {
+        addSslConfigurator("ssl-keystore-configurator@" + name,
+                           DefaultSslKeyStoreConfigurator.class,
+                           sslKeystoreConfigurator);
+    }
+
+    private void addSslTrustStoreConfigurator(String name, Element sslKeystoreConfigurator) {
+        addSslConfigurator("ssl-truststore-configurator@" + name,
+                           DefaultSslTrustStoreConfigurator.class,
+                           sslKeystoreConfigurator);
+    }
+
+    private void addSslConfigurator(String idSpec, Class<?> defaultImplementation, Element configuratorElement) {
+        SimpleComponent configuratorComponent;
+        if (configuratorElement != null) {
+            String className = configuratorElement.getAttribute("class");
+            String bundleName = configuratorElement.getAttribute("bundle");
+            configuratorComponent = new SimpleComponent(new ComponentModel(idSpec, className, bundleName));
         } else {
-            return new SimpleComponent(
-                    new ComponentModel(idSpec, DefaultSslKeyStoreConfigurator.class.getName(), "jdisc_http_service"));
+            configuratorComponent =
+                    new SimpleComponent(new ComponentModel(idSpec, defaultImplementation.getName(), "jdisc_http_service"));
         }
+        addChild(configuratorComponent);
+        inject(configuratorComponent);
     }
 
 }

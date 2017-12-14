@@ -13,8 +13,9 @@ import org.junit.Test;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -50,25 +51,12 @@ public class NodeAdminStateUpdaterTest {
 
     @Test
     public void testStateConvergence() throws IOException {
-        List<ContainerNodeSpec> containersToRun = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            containersToRun.add(
-                    new ContainerNodeSpec.Builder()
-                            .hostname("host" + i + ".test.yahoo.com")
-                            .nodeState(i % 3 == 0 ? Node.State.active : Node.State.ready)
-                            .nodeType("tenant")
-                            .nodeFlavor("docker")
-                            .minCpuCores(1)
-                            .minMainMemoryAvailableGb(1)
-                            .minDiskAvailableGb(1)
-                            .build());
-        }
-        List<String> activeHostnames = Arrays.asList(
-                "host0.test.yahoo.com", "host3.test.yahoo.com", "host6.test.yahoo.com", "host9.test.yahoo.com");
+        mockNodeRepo(4);
+        List<String> activeHostnames = nodeRepository.getContainersToRun(parentHostname).stream()
+                .map(node -> node.hostname)
+                .collect(Collectors.toList());
         List<String> suspendHostnames = new ArrayList<>(activeHostnames);
         suspendHostnames.add(parentHostname);
-
-        when(nodeRepository.getContainersToRun(eq(parentHostname))).thenReturn(containersToRun);
 
         // Initially everything is frozen to force convergence
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
@@ -148,7 +136,7 @@ public class NodeAdminStateUpdaterTest {
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED));
         verify(refresher, times(2)).signalWorkToBeDone(); // No change in desired state
         verifyNoMoreInteractions(nodeAdmin);
-        
+
         // Lets try going back to resumed
         when(nodeAdmin.setFrozen(eq(false))).thenReturn(false).thenReturn(true); // NodeAgents not converged to yet
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
@@ -161,6 +149,50 @@ public class NodeAdminStateUpdaterTest {
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
         tickAfter(35);
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
+    }
+
+    @Test
+    public void half_transition_revert() throws IOException {
+        mockNodeRepo(3);
+
+        // Initially everything is frozen to force convergence
+        when(nodeAdmin.setFrozen(eq(false))).thenReturn(true);
+        doNothing().when(orchestrator).resume(parentHostname);
+        tickAfter(0); // The first tick should unfreeze
+        assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
+        verify(nodeAdmin, times(1)).setFrozen(eq(false));
+
+        // Let's start suspending, we are able to freeze the nodes, but orchestrator denies suspension
+        when(nodeAdmin.subsystemFreezeDuration()).thenReturn(Duration.ofSeconds(1));
+        when(nodeAdmin.setFrozen(eq(true))).thenReturn(true);
+        doThrow(new RuntimeException("Cannot allow to suspend because some reason"))
+                .when(orchestrator).suspend(eq(parentHostname));
+
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
+        tickAfter(0);
+        verify(nodeAdmin, times(1)).setFrozen(eq(true));
+
+        // We change our mind, want to remain resumed
+        assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
+        tickAfter(0);
+        assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));
+        verify(nodeAdmin, times(2)).setFrozen(eq(false)); // Make sure that we unfreeze!
+    }
+
+    private void mockNodeRepo(int numberOfNodes) throws IOException {
+        List<ContainerNodeSpec> containersToRun = IntStream.range(0, numberOfNodes)
+                .mapToObj(i -> new ContainerNodeSpec.Builder()
+                        .hostname("host" + i + ".test.yahoo.com")
+                        .nodeState(Node.State.active)
+                        .nodeType("tenant")
+                        .nodeFlavor("docker")
+                        .minCpuCores(1)
+                        .minMainMemoryAvailableGb(1)
+                        .minDiskAvailableGb(1)
+                        .build())
+                .collect(Collectors.toList());
+
+        when(nodeRepository.getContainersToRun(eq(parentHostname))).thenReturn(containersToRun);
     }
 
     private void tickAfter(int seconds) {

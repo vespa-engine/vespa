@@ -1,6 +1,0 @@
-{
-  "nodes": [
-    @include(node10.json),
-    @include(node5.json)
-  ]
-}

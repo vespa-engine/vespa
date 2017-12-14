@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.hosted.controller.proxy.ConfigServerRestExecutor;
-import com.yahoo.vespa.hosted.controller.proxy.ProxyException;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 
@@ -21,7 +20,7 @@ public class ConfigServerProxyMock extends AbstractComponent implements ConfigSe
     private volatile String requestBody = null;
 
     @Override
-    public HttpResponse handle(ProxyRequest proxyRequest) throws ProxyException {
+    public HttpResponse handle(ProxyRequest proxyRequest) {
         lastReceived = proxyRequest;
         // Copy request body as the input stream is drained once the request completes
         requestBody = asString(proxyRequest.getData());

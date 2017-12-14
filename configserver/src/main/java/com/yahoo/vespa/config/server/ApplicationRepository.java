@@ -112,6 +112,18 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * Creates a new deployment from the active application, if available.
      *
      * @param application the active application to be redeployed
+     * @return a new deployment from the local active, or empty if a local active application
+     *         was not present for this id (meaning it either is not active or active on another
+     *         node in the config server cluster)
+     */
+    public Optional<com.yahoo.config.provision.Deployment> deployFromLocalActive(ApplicationId application) {
+        return deployFromLocalActive(application, Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout()).plus(Duration.ofSeconds(5)));
+    }
+
+    /**
+     * Creates a new deployment from the active application, if available.
+     *
+     * @param application the active application to be redeployed
      * @param timeout the timeout to use for each individual deployment operation
      * @return a new deployment from the local active, or empty if a local active application
      *         was not present for this id (meaning it either is not active or active on another
@@ -352,7 +364,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private void redeployApplication(ApplicationId applicationId, Deployer deployer, ExecutorService deploymentExecutor) {
         log.log(LogLevel.DEBUG, () -> "Redeploying " + applicationId);
-        deployer.deployFromLocalActive(applicationId, Duration.ofMinutes(30))
+        deployer.deployFromLocalActive(applicationId)
                 .ifPresent(deployment -> deploymentExecutor.execute(() -> {
                     try {
                         deployment.activate();

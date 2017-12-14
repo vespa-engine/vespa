@@ -35,6 +35,7 @@ public:
         return l;
     }
     virtual void setSchema(const Schema &, SerialNum) override { }
+    virtual void setMaxFlushed(uint32_t) override { }
 };
 
 class IndexManagerFactory : public searchcorespi::IIndexManagerFactory

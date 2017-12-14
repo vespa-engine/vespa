@@ -10,9 +10,8 @@ import java.util.*;
 /**
  * Implements invoker of filedistribution using manager with JNI.
  *
- * @author tonytv
- * @author lulf
- * @since 5.1.14
+ * @author Tony Vaagenes
+ * @author Ulf Lilleengen
  */
 public class FileDBHandler implements FileDistribution {
     private final FileDistributionManager manager;
@@ -28,6 +27,11 @@ public class FileDBHandler implements FileDistribution {
             referencesAsString.add(reference.value());
         }
         manager.setDeployedFiles(hostName, referencesAsString);
+    }
+
+    @Override
+    public void startDownload(String hostName, Set<FileReference> fileReferences) {
+        throw new UnsupportedOperationException("Not valid for this Filedistribution implementation");
     }
 
     @Override

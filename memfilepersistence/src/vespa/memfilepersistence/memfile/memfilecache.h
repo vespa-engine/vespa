@@ -21,7 +21,6 @@
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/storageframework/generic/component/component.h>
 
 
@@ -191,8 +190,6 @@ private:
 
     LRUCache _entries;
     uint64_t _lastUsedCounter;
-    const framework::MemoryAllocationType& _allocationType;
-    framework::MemoryToken::UP _memoryToken;
 
     MemFilePersistenceCacheMetrics& _metrics;
 
@@ -273,7 +270,6 @@ public:
     /**
      * Used for unit testing only.
      */
-    framework::MemoryToken& getMemoryToken() { return *_memoryToken; }
     const MemFilePersistenceCacheMetrics& getMetrics() const {
         return _metrics;
     }
@@ -283,7 +279,7 @@ public:
      */
     void setCacheSize(MemoryUsage limits);
 
-    uint64_t getCacheSize() { return _memoryToken->getSize(); }
+    uint64_t getCacheSize() { return _cacheLimit.sum(); }
 
     /**
      * NOTE: takes lock, never call from within memfilecache code.

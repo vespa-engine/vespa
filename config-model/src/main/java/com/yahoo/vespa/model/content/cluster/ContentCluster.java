@@ -11,6 +11,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
+import com.yahoo.vespa.config.content.core.BucketspacesConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
@@ -57,7 +58,8 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         StorDistributormanagerConfig.Producer,
         FleetcontrollerConfig.Producer,
         MetricsmanagerConfig.Producer,
-        MessagetyperouteselectorpolicyConfig.Producer {
+        MessagetyperouteselectorpolicyConfig.Producer,
+        BucketspacesConfig.Producer {
 
     // TODO: Make private
     private String documentSelection;
@@ -697,5 +699,19 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             }
         }
 
+    }
+
+    private static final String DEFAULT_BUCKET_SPACE = "default";
+    private static final String GLOBAL_BUCKET_SPACE = "global";
+
+    @Override
+    public void getConfig(BucketspacesConfig.Builder builder) {
+        for (NewDocumentType docType : getDocumentDefinitions().values()) {
+            BucketspacesConfig.Documenttype.Builder docTypeBuilder = new BucketspacesConfig.Documenttype.Builder();
+            docTypeBuilder.name(docType.getName());
+            String bucketSpace = (isGloballyDistributed(docType) ? GLOBAL_BUCKET_SPACE : DEFAULT_BUCKET_SPACE);
+            docTypeBuilder.bucketspace(bucketSpace);
+            builder.documenttype(docTypeBuilder);
+        }
     }
 }

@@ -123,7 +123,7 @@ public class NodeRetirer extends Maintainer {
                             entry -> filterRetireableNodes(entry.getValue())));
             if (retireableNodesByCluster.values().stream().mapToInt(Set::size).sum() == 0) continue;
 
-            Optional<Deployment> deployment = deployer.deployFromLocalActive(applicationId, Duration.ofMinutes(30));
+            Optional<Deployment> deployment = deployer.deployFromLocalActive(applicationId);
             if ( ! deployment.isPresent()) continue; // this will be done at another config server
 
             Set<Node> replaceableNodes = retireableNodesByCluster.entrySet().stream()

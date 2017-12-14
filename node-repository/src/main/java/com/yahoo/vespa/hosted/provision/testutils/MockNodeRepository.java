@@ -45,8 +45,12 @@ public class MockNodeRepository extends NodeRepository {
      */
     public MockNodeRepository(MockCurator curator, NodeFlavors flavors) throws Exception {
         super(flavors, curator, Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")), Zone.defaultZone(),
-              new MockNameResolver().mockAnyLookup(), new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
+              new MockNameResolver()
+                      .addRecord("test-container-1", "::2")
+                      .mockAnyLookup(),
+              new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
         this.flavors = flavors;
+
         curator.setConnectionSpec("cfg1:1234,cfg2:1234,cfg3:1234");
         populate();
     }
@@ -91,9 +95,10 @@ public class MockNodeRepository extends NodeRepository {
         node10 = node10.with(node10newStatus);
         nodes.add(node10);
 
-        nodes.add(createNode("node55", "host55.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
+        Node node55 = createNode("node55", "host55.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant);
+        nodes.add(node55.with(node55.status().withWantToRetire(true).withWantToDeprovision(true)));
 
-        /** Setup docker hosts (two of these will be reserved for spares */
+        /* Setup docker hosts (two of these will be reserved for spares */
         nodes.add(createNode("dockerhost1", "dockerhost1.yahoo.com", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
         nodes.add(createNode("dockerhost2", "dockerhost2.yahoo.com", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
         nodes.add(createNode("dockerhost3", "dockerhost3.yahoo.com", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.zone.v1;
 
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -70,7 +70,7 @@ public class ZoneApiHandler extends LoggingRequestHandler {
 
     private HttpResponse root(HttpRequest request) {
         List<Environment> environments = zoneRegistry.zones().stream()
-                                                     .map(Zone::environment)
+                                                     .map(ZoneId::environment)
                                                      .distinct()
                                                      .sorted(Comparator.comparing(Environment::value))
                                                      .collect(Collectors.toList());
@@ -89,7 +89,7 @@ public class ZoneApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse environment(HttpRequest request, Environment environment) {
-        List<Zone> zones = zoneRegistry.zones().stream()
+        List<ZoneId> zones = zoneRegistry.zones().stream()
                                        .filter(zone -> zone.environment() == environment)
                                        .collect(Collectors.toList());
         Slime slime = new Slime();
@@ -109,9 +109,7 @@ public class ZoneApiHandler extends LoggingRequestHandler {
 
     private HttpResponse defaultRegion(HttpRequest request, Environment environment) {
         RegionName region = zoneRegistry.getDefaultRegion(environment)
-                                        .orElseThrow(() -> new IllegalArgumentException(
-                                                "No default region for environment: " + environment
-                                        ));
+                .orElseThrow(() -> new IllegalArgumentException("No default region for environment: " + environment));
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString("name", region.value());

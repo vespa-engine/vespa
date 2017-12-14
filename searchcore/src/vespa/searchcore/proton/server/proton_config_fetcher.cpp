@@ -24,7 +24,9 @@ ProtonConfigFetcher::ProtonConfigFetcher(const config::ConfigUri & configUri, IP
       _owner(owner),
       _mutex(),
       _dbManagerMap(),
-      _threadPool(128 * 1024, 1)
+      _threadPool(128 * 1024, 1),
+      _oldDocumentTypeRepos(),
+      _currentDocumentTypeRepo()
 {
 }
 
@@ -100,10 +102,11 @@ ProtonConfigFetcher::reconfigure()
             assert(insres.first->second->getGeneration() == generation);
         }
     }
-    auto configSnapshot = std::make_shared<ProtonConfigSnapshot>(std::move(bootstrapConfig), std::move(dbConfigs));
+    auto configSnapshot = std::make_shared<ProtonConfigSnapshot>(bootstrapConfig, std::move(dbConfigs));
     LOG(debug, "Reconfiguring proton with gen %" PRId64, generation);
     _owner.reconfigure(std::move(configSnapshot));
     LOG(debug, "Reconfigured proton with gen %" PRId64, generation);
+    rememberDocumentTypeRepo(bootstrapConfig->getDocumentTypeRepoSP());
 }
 
 void
@@ -187,6 +190,24 @@ ProtonConfigFetcher::getDocumentDBConfig(const DocTypeName & docTypeName) const
         return DocumentDBConfig::SP();
 
     return it->second->getConfig();
+}
+
+void
+ProtonConfigFetcher::rememberDocumentTypeRepo(std::shared_ptr<document::DocumentTypeRepo> repo)
+{
+    // Ensure that previous document type repo is kept alive, and also
+    // any document type repo that was current within last 10 minutes.
+    using namespace std::chrono_literals;
+    if (repo == _currentDocumentTypeRepo) {
+        return; // no change
+    }
+    auto &repos = _oldDocumentTypeRepos;
+    TimePoint now = Clock::now();
+    while (!repos.empty() && repos.front().first < now) {
+        repos.pop_front();
+    }
+    repos.emplace_back(now + 10min, _currentDocumentTypeRepo);
+    _currentDocumentTypeRepo = repo;
 }
 
 } // namespace proton

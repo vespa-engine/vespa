@@ -121,8 +121,6 @@ private:
 
         // Depends on bucket databases and stop() functionality
     std::unique_ptr<DeadLockDetector>          _deadLockDetector;
-        // Depends on dead lock detector and threadpool
-    std::unique_ptr<MemoryStatusViewer>        _memoryStatusViewer;
         // Depends on metric manager
     std::unique_ptr<StatusMetricConsumer>      _statusMetrics;
         // Depends on metric manager

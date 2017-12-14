@@ -21,7 +21,7 @@ public class FileDistributionOptions implements FiledistributorConfig.Producer {
 
     private BinaryScaledAmount uploadBitRate = new BinaryScaledAmount();
     private BinaryScaledAmount downloadBitRate = new BinaryScaledAmount();
-    private boolean disabled = false;
+    private boolean disableFiledistributor = false;
 
 
     public void downloadBitRate(BinaryScaledAmount amount) {
@@ -34,12 +34,12 @@ public class FileDistributionOptions implements FiledistributorConfig.Producer {
         uploadBitRate = amount;
     }
 
-    public void disabled(boolean value) {
-        disabled = value;
+    public void disableFiledistributor(boolean value) {
+        disableFiledistributor = value;
     }
 
-    public boolean disabled() {
-        return disabled;
+    public boolean disableFiledistributor() {
+        return disableFiledistributor;
     }
 
     private void ensureNonNegative(BinaryScaledAmount amount) {

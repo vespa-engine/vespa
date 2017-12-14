@@ -63,16 +63,6 @@ ComponentRegisterImpl::setMetricManager(metrics::MetricManager& mm)
 }
 
 void
-ComponentRegisterImpl::setMemoryManager(MemoryManagerInterface& mm)
-{
-    vespalib::LockGuard lock(_componentLock);
-    _memoryManager = &mm;
-    for (uint32_t i=0; i<_components.size(); ++i) {
-        _components[i]->setMemoryManager(mm);
-    }
-}
-
-void
 ComponentRegisterImpl::setClock(Clock& c)
 {
     vespalib::LockGuard lock(_componentLock);

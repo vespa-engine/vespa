@@ -4,7 +4,6 @@
 #include "documentdb_tagged_metrics.h"
 #include "job_tracker.h"
 #include <vespa/searchcorespi/flush/iflushtarget.h>
-#include <vespa/vespalib/util/sync.h>
 #include <chrono>
 #include <mutex>
 

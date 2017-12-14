@@ -8,7 +8,6 @@ import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
 import com.yahoo.config.provision.ApplicationId;
@@ -24,11 +23,9 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.StatisticsComponent;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Set;
-import java.util.stream.IntStream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -288,7 +285,7 @@ public class AdminTestCase {
                 "  <admin version='2.0'>" +
                 "    <adminserver hostalias='node0' />" +
                 "    <filedistribution>" +
-                "      <disabled>true</disabled>" +
+                "      <disableFiledistributor>true</disableFiledistributor>" +
                 "    </filedistribution>" +
                 "  </admin>" +
                 "</services>";
@@ -307,4 +304,24 @@ public class AdminTestCase {
         assertThat(sentinelConfig.service(2).name(), is("logd"));
         // No filedistributor service
     }
+
+    @Test
+    public void testDisableFileDistributorForAllApps() {
+        DeployState state = new DeployState.Builder()
+                .disableFiledistributor(true)
+                .properties(
+                        new DeployProperties.Builder().
+                                zone(new Zone(Environment.dev, RegionName.from("baz"))).
+                                applicationId(new ApplicationId.Builder().
+                                        tenant("quux").
+                                        applicationName("foo").instanceName("bim").build()).build()).build();
+        TestRoot root = new TestDriver().buildModel(state);
+        String localhost = HostName.getLocalhost();
+        SentinelConfig sentinelConfig = root.getConfig(SentinelConfig.class, "hosts/" + localhost);
+        assertThat(sentinelConfig.service().size(), is(3));
+        assertThat(sentinelConfig.service(0).name(), is("logserver"));
+        assertThat(sentinelConfig.service(1).name(), is("slobrok"));
+        assertThat(sentinelConfig.service(2).name(), is("logd"));
+    }
+
 }

@@ -15,7 +15,6 @@
 
 #include "componentregisterimpl.h"
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
-#include <vespa/storageframework/defaultimplementation/memory/nomemorymanager.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 
 namespace storage::framework::defaultimplementation {
@@ -24,7 +23,6 @@ class TestComponentRegister {
     ComponentRegisterImpl::UP _compReg;
     FakeClock _clock;
     ThreadPoolImpl _threadPool;
-    NoMemoryManager _memoryManager;
 
 public:
     TestComponentRegister(ComponentRegisterImpl::UP compReg);
@@ -34,7 +32,6 @@ public:
     FakeClock& getClock() { return _clock; }
     ThreadPoolImpl& getThreadPoolImpl() { return _threadPool; }
     FastOS_ThreadPool& getThreadPool() { return _threadPool.getThreadPool(); }
-    NoMemoryManager& getMemoryManager() { return _memoryManager; }
 };
 
 }

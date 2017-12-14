@@ -1,17 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.filter;
 
+import com.yahoo.athenz.auth.token.PrincipalToken;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.InvalidTokenException;
-import com.yahoo.vespa.hosted.controller.athenz.NToken;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsKeystore;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.InvalidTokenException;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsKeystore;
 
 import java.security.PublicKey;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.hosted.controller.athenz.AthenzUtils.ZMS_ATHENZ_SERVICE;
+import static com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils.ZMS_ATHENZ_SERVICE;
 
 /**
  * Validates the content of an NToken:
@@ -21,6 +25,9 @@ import static com.yahoo.vespa.hosted.controller.athenz.AthenzUtils.ZMS_ATHENZ_SE
  * @author bjorncs
  */
 class NTokenValidator {
+
+        // Max allowed skew in token timestamp (only for creation, not expiry timestamp)
+    private static final long ALLOWED_TIMESTAMP_OFFSET = Duration.ofMinutes(5).getSeconds();
 
     private static final Logger log = Logger.getLogger(NTokenValidator.class.getName());
 
@@ -35,10 +42,15 @@ class NTokenValidator {
     }
 
     AthenzPrincipal validate(NToken token) throws InvalidTokenException {
-        PublicKey zmsPublicKey = getPublicKey(token.getKeyId())
+        PrincipalToken principalToken = new PrincipalToken(token.getRawToken());
+        PublicKey zmsPublicKey = getPublicKey(principalToken.getKeyId())
                 .orElseThrow(() -> new InvalidTokenException("NToken has an unknown keyId"));
-        validateSignatureAndExpiration(token, zmsPublicKey);
-        return token.getPrincipal();
+        validateSignatureAndExpiration(principalToken, zmsPublicKey);
+        return new AthenzPrincipal(
+                AthenzUtils.createAthenzIdentity(
+                        new AthenzDomain(principalToken.getDomain()),
+                        principalToken.getName()),
+                token);
     }
 
     private Optional<PublicKey> getPublicKey(String keyId) throws InvalidTokenException {
@@ -50,13 +62,13 @@ class NTokenValidator {
         }
     }
 
-    private static void validateSignatureAndExpiration(NToken token, PublicKey zmsPublicKey) throws InvalidTokenException {
-        try {
-            token.validateSignatureAndExpiration(zmsPublicKey);
-        } catch (InvalidTokenException e) {
-            // The underlying error message is not user friendly
-            logDebug(e.getMessage());
-            throw new InvalidTokenException("NToken is expired or has invalid signature");
+    private static void validateSignatureAndExpiration(PrincipalToken token,
+                                                       PublicKey zmsPublicKey) throws InvalidTokenException {
+        StringBuilder errorMessageBuilder = new StringBuilder();
+        if (!token.validate(zmsPublicKey, (int) ALLOWED_TIMESTAMP_OFFSET, true, errorMessageBuilder)) {
+            String message = "NToken is expired or has invalid signature: " + errorMessageBuilder.toString();
+            logDebug(message);
+            throw new InvalidTokenException(message);
         }
     }
 

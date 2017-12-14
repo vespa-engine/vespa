@@ -12,9 +12,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
@@ -109,7 +107,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
                 .orElse(JobType.component);
 
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
-        controller.applications().lockedOrThrow(applicationId, application -> {
+        controller.applications().lockOrThrow(applicationId, application -> {
             // Since this is a manual operation we likely want it to trigger as soon as possible so we add it at to the
             // front of the queue
             application = controller.applications().deploymentTrigger().triggerAllowParallel(

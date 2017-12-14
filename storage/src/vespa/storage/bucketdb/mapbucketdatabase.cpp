@@ -4,6 +4,7 @@
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <ostream>
+#include <cassert>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".mapbucketdatabase");

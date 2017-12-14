@@ -13,6 +13,8 @@ GetBucketListMessage::GetBucketListMessage(const document::BucketId &bucketId) :
 {
 }
 
+GetBucketListMessage::~GetBucketListMessage() = default;
+
 DocumentReply::UP
 GetBucketListMessage::doCreateReply() const
 {

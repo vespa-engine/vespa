@@ -7,7 +7,6 @@ import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -60,7 +59,7 @@ public class RedeployTest {
         modelFactories.add(DeployTester.createModelFactory(Clock.systemUTC()));
         modelFactories.add(DeployTester.createFailingModelFactory(Version.fromIntValues(1, 0, 0)));
         DeployTester tester = new DeployTester("ignored/app/path", modelFactories);
-        ApplicationId id = ApplicationId.from(TenantName.from("default"),
+        ApplicationId id = ApplicationId.from(tester.tenant().getName(),
                                               ApplicationName.from("default"),
                                               InstanceName.from("default"));
         assertFalse(tester.redeployFromLocalActive(id).isPresent());

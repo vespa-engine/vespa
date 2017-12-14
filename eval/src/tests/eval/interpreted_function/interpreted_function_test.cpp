@@ -151,73 +151,152 @@ TEST("require that basic addition works") {
 
 //-----------------------------------------------------------------------------
 
-TEST("require that dot product like expression is not optimized for unknown types") {
-    const TensorEngine &engine = SimpleTensorEngine::ref();
-    Function function = Function::parse("reduce(a*b,sum)");
-    DoubleValue a(2.0);
-    DoubleValue b(3.0);
-    double expect = (2.0 * 3.0);
-    InterpretedFunction interpreted(engine, function, NodeTypes());
-    EXPECT_EQUAL(4u, interpreted.program_size());
-    InterpretedFunction::Context ctx(interpreted);
-    InterpretedFunction::SimpleObjectParams params({a,b});
-    const Value &result = interpreted.eval(ctx, params);
-    EXPECT_TRUE(result.is_double());
-    EXPECT_EQUAL(expect, result.as_double());
+struct InnerProduct {
+    const TensorEngine &engine;
+    Function            function;
+    TensorSpec          a;
+    TensorSpec          b;
+    TensorSpec          expect;
+    NodeTypes           types;
+    InterpretedFunction interpreted;
+    ~InnerProduct() {}
+    InnerProduct(const vespalib::string &expr)
+        : engine(SimpleTensorEngine::ref()),
+          function(Function::parse({"a", "b"}, expr)),
+          a("null"), b("null"), expect("null"),
+          types(),
+          interpreted(engine, function, types) {}
+    InnerProduct(const vespalib::string &expr,
+              TensorSpec a_in,
+              TensorSpec b_in,
+              TensorSpec expect_in)
+        : engine(SimpleTensorEngine::ref()),
+          function(Function::parse(expr)),
+          a(a_in), b(b_in), expect(expect_in),
+          types(function, {ValueType::from_spec(a.type()), ValueType::from_spec(a.type())}),
+          interpreted(engine, function, types) {}
+    void verify_optimized() const {
+        EXPECT_EQUAL(1u, interpreted.program_size());
+        InterpretedFunction::Context ctx(interpreted);
+        Value::UP va = engine.from_spec(a);
+        Value::UP vb = engine.from_spec(b);
+        InterpretedFunction::SimpleObjectParams params({*va,*vb});
+        const Value &result = interpreted.eval(ctx, params);
+        EXPECT_EQUAL(engine.to_spec(result), expect);
+    }
+    void verify_not_optimized() const {
+        EXPECT_EQUAL(4u, interpreted.program_size());
+    }
+};
+
+struct UntypedIP : InnerProduct {
+    UntypedIP(const vespalib::string &expr) : InnerProduct(expr) {
+        a = TensorSpec("double").add({}, 2.0);
+        b = TensorSpec("double").add({}, 3.0);
+        expect = TensorSpec("double").add({}, 6.0);
+    }
+};
+
+struct DotProduct : InnerProduct {
+    DotProduct(const vespalib::string &expr)
+        : InnerProduct(expr,
+                       TensorSpec("tensor(x[3])")
+                       .add({{"x", 0}}, 5.0)
+                       .add({{"x", 1}}, 3.0)
+                       .add({{"x", 2}}, 2.0),
+                       TensorSpec("tensor(x[3])")
+                       .add({{"x", 0}}, 7.0)
+                       .add({{"x", 1}}, 11.0)
+                       .add({{"x", 2}}, 13.0),
+                       TensorSpec("double")
+                       .add({}, (5.0 * 7.0) + (3.0 * 11.0) + (2.0 * 13.0))) {}
+};
+
+struct XW : InnerProduct {
+    XW(const vespalib::string &expr)
+        : InnerProduct(expr,
+                       TensorSpec("tensor(x[2])")
+                       .add({{"x", 0}},  1.0)
+                       .add({{"x", 1}},  2.0),
+                       TensorSpec("tensor(x[2],y[3])")
+                       .add({{"y", 0},{"x", 0}},  3.0)
+                       .add({{"y", 0},{"x", 1}},  5.0)
+                       .add({{"y", 1},{"x", 0}},  7.0)
+                       .add({{"y", 1},{"x", 1}}, 11.0)
+                       .add({{"y", 2},{"x", 0}}, 13.0)
+                       .add({{"y", 2},{"x", 1}}, 17.0),
+                       TensorSpec("tensor(y[3])")
+                       .add({{"y", 0}}, (1.0 *  3.0) + (2.0 *  5.0))
+                       .add({{"y", 1}}, (1.0 *  7.0) + (2.0 * 11.0))
+                       .add({{"y", 2}}, (1.0 * 13.0) + (2.0 * 17.0))) {}
+};
+
+struct MatMul : InnerProduct {
+    MatMul(const vespalib::string &expr)
+        : InnerProduct(expr,
+                       TensorSpec("tensor(x[2],y[2])")
+                       .add({{"x", 0},{"y", 0}},  1.0)
+                       .add({{"x", 0},{"y", 1}},  2.0)
+                       .add({{"x", 1},{"y", 0}},  3.0)
+                       .add({{"x", 1},{"y", 1}},  5.0),
+                       TensorSpec("tensor(y[2],z[2])")
+                       .add({{"y", 0},{"z", 0}},  7.0)
+                       .add({{"y", 0},{"z", 1}}, 11.0)
+                       .add({{"y", 1},{"z", 0}}, 13.0)
+                       .add({{"y", 1},{"z", 1}}, 17.0),
+                       TensorSpec("tensor(x[2],z[2])")
+                       .add({{"x", 0},{"z", 0}}, (1.0 *  7.0) + (2.0 * 13.0))
+                       .add({{"x", 0},{"z", 1}}, (1.0 * 11.0) + (2.0 * 17.0))
+                       .add({{"x", 1},{"z", 0}}, (3.0 *  7.0) + (5.0 * 13.0))
+                       .add({{"x", 1},{"z", 1}}, (3.0 * 11.0) + (5.0 * 17.0))) {}
+};
+
+TEST("require that inner product is not optimized for unknown types") {
+    TEST_DO(UntypedIP("reduce(a*b,sum)").verify_not_optimized());
+    TEST_DO(UntypedIP("reduce(join(a,b,f(x,y)(x*y)),sum)").verify_not_optimized());
 }
 
 TEST("require that dot product works with tensor function") {
-    const TensorEngine &engine = SimpleTensorEngine::ref();
-    Function function = Function::parse("reduce(a*b,sum)");
-    auto a = TensorSpec("tensor(x[3])")
-             .add({{"x", 0}}, 5.0)
-             .add({{"x", 1}}, 3.0)
-             .add({{"x", 2}}, 2.0);
-    auto b = TensorSpec("tensor(x[3])")
-             .add({{"x", 0}}, 7.0)
-             .add({{"x", 1}}, 11.0)
-             .add({{"x", 2}}, 13.0);
-    double expect = ((5.0 * 7.0) + (3.0 * 11.0) + (2.0 * 13.0));
-    NodeTypes types(function, {ValueType::from_spec(a.type()), ValueType::from_spec(a.type())});
-    InterpretedFunction interpreted(engine, function, types);
-    EXPECT_EQUAL(1u, interpreted.program_size());
-    InterpretedFunction::Context ctx(interpreted);
-    Value::UP va = engine.from_spec(a);
-    Value::UP vb = engine.from_spec(b);
-    InterpretedFunction::SimpleObjectParams params({*va,*vb});
-    const Value &result = interpreted.eval(ctx, params);
-    EXPECT_TRUE(result.is_double());
-    EXPECT_EQUAL(expect, result.as_double());
+    TEST_DO(DotProduct("reduce(a*b,sum)").verify_optimized());
+    TEST_DO(DotProduct("reduce(join(a,b,f(x,y)(x*y)),sum)").verify_optimized());
+    TEST_DO(DotProduct("reduce(b*a,sum)").verify_optimized());
+    TEST_DO(DotProduct("reduce(join(b,a,f(x,y)(x*y)),sum)").verify_optimized());
+    TEST_DO(DotProduct("reduce(join(a,b,f(x,y)(y*x)),sum)").verify_optimized());
+    TEST_DO(DotProduct("reduce(join(b,a,f(x,y)(y*x)),sum)").verify_optimized());
+    TEST_DO(DotProduct("reduce(a*b,sum,x)").verify_optimized());
+    TEST_DO(DotProduct("reduce(join(a,b,f(x,y)(x*y)),sum,x)").verify_optimized());
+    TEST_DO(DotProduct("reduce(b*a,sum,x)").verify_optimized());
+    TEST_DO(DotProduct("reduce(join(b,a,f(x,y)(x*y)),sum,x)").verify_optimized());
+    TEST_DO(DotProduct("reduce(join(a,b,f(x,y)(y*x)),sum,x)").verify_optimized());
+    TEST_DO(DotProduct("reduce(join(b,a,f(x,y)(y*x)),sum,x)").verify_optimized());
+}
+
+TEST("require that vector matrix multiplication works with tensor function") {
+    TEST_DO(XW("reduce(a*b,sum,x)").verify_optimized());
+    TEST_DO(XW("reduce(join(a,b,f(x,y)(x*y)),sum,x)").verify_optimized());
+    TEST_DO(XW("reduce(b*a,sum,x)").verify_optimized());
+    TEST_DO(XW("reduce(join(b,a,f(x,y)(x*y)),sum,x)").verify_optimized());
+    TEST_DO(XW("reduce(join(a,b,f(x,y)(y*x)),sum,x)").verify_optimized());
+    TEST_DO(XW("reduce(join(b,a,f(x,y)(y*x)),sum,x)").verify_optimized());
 }
 
 TEST("require that matrix multiplication works with tensor function") {
-    const TensorEngine &engine = SimpleTensorEngine::ref();
-    Function function = Function::parse("reduce(a*b,sum,y)");
-    auto a = TensorSpec("tensor(x[2],y[2])")
-             .add({{"x", 0},{"y", 0}},  1.0)
-             .add({{"x", 0},{"y", 1}},  2.0)
-             .add({{"x", 1},{"y", 0}},  3.0)
-             .add({{"x", 1},{"y", 1}},  5.0);
-    auto b = TensorSpec("tensor(y[2],z[2])")
-             .add({{"y", 0},{"z", 0}},  7.0)
-             .add({{"y", 0},{"z", 1}}, 11.0)
-             .add({{"y", 1},{"z", 0}}, 13.0)
-             .add({{"y", 1},{"z", 1}}, 17.0);
-    auto expect = TensorSpec("tensor(x[2],z[2])")
-                  .add({{"x", 0},{"z", 0}}, (1.0 *  7.0) + (2.0 * 13.0))
-                  .add({{"x", 0},{"z", 1}}, (1.0 * 11.0) + (2.0 * 17.0))
-                  .add({{"x", 1},{"z", 0}}, (3.0 *  7.0) + (5.0 * 13.0))
-                  .add({{"x", 1},{"z", 1}}, (3.0 * 11.0) + (5.0 * 17.0));
-    NodeTypes types(function, {ValueType::from_spec(a.type()), ValueType::from_spec(a.type())});
-    InterpretedFunction interpreted(engine, function, types);
-    EXPECT_EQUAL(1u, interpreted.program_size());
-    InterpretedFunction::Context ctx(interpreted);
-    Value::UP va = engine.from_spec(a);
-    Value::UP vb = engine.from_spec(b);
-    InterpretedFunction::SimpleObjectParams params({*va,*vb});
-    const Value &result = interpreted.eval(ctx, params);
-    ASSERT_TRUE(result.is_tensor());
-    EXPECT_EQUAL(expect, engine.to_spec(result));
+    TEST_DO(MatMul("reduce(a*b,sum,y)").verify_optimized());
+    TEST_DO(MatMul("reduce(join(a,b,f(x,y)(x*y)),sum,y)").verify_optimized());
+    TEST_DO(MatMul("reduce(b*a,sum,y)").verify_optimized());
+    TEST_DO(MatMul("reduce(join(b,a,f(x,y)(x*y)),sum,y)").verify_optimized());
+    TEST_DO(MatMul("reduce(join(a,b,f(x,y)(y*x)),sum,y)").verify_optimized());
+    TEST_DO(MatMul("reduce(join(b,a,f(x,y)(y*x)),sum,y)").verify_optimized());
+}
+
+TEST("require that expressions similar to inner product are not optimized") {
+    TEST_DO(DotProduct("reduce(a*b,prod)").verify_not_optimized());
+    TEST_DO(DotProduct("reduce(a*b,max)").verify_not_optimized());
+    TEST_DO(DotProduct("reduce(a+b,sum)").verify_not_optimized());
+    TEST_DO(DotProduct("reduce(join(a,b,f(x,y)(x+y)),sum)").verify_not_optimized());
+    TEST_DO(DotProduct("reduce(join(a,b,f(x,y)(x*x)),sum)").verify_not_optimized());
+    TEST_DO(DotProduct("reduce(join(a,b,f(x,y)(y*y)),sum)").verify_not_optimized());
+    TEST_DO(DotProduct("reduce(join(a,b,f(x,y)(x*y*1)),sum)").verify_not_optimized());
 }
 
 //-----------------------------------------------------------------------------

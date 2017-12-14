@@ -4,11 +4,11 @@
 
 #include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 
 #include <vespa/searchlib/fef/matchdata.h>
+#include <mutex>
 
 namespace proton {
 namespace matching {
@@ -43,7 +43,7 @@ private:
     vespalib::string                           _attribute_name;
     bool                                       _descending;
     vespalib::string                           _diversity_attribute;
-    vespalib::Lock                             _lock;
+    std::mutex                                 _lock;
     std::vector<search::fef::MatchData::UP>    _match_datas;
     search::queryeval::Blueprint::UP           _blueprint;
     ssize_t                                    _estimatedHits;

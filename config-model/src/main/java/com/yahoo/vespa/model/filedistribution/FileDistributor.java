@@ -9,11 +9,10 @@ import com.yahoo.vespa.model.Host;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
 /**
  * Responsible for directing distribution of files to hosts.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class FileDistributor {
 
@@ -97,6 +96,7 @@ public class FileDistributor {
         for (Host host : getTargetHosts()) {
             if ( ! host.getHostname().equals(fileSourceHost)) {
                 dbHandler.sendDeployedFiles(host.getHostname(), filesToSendToHost(host));
+                dbHandler.startDownload(host.getHostname(), filesToSendToHost(host));
             }
         }
         dbHandler.sendDeployedFiles(fileSourceHost, allFilesToSend());
@@ -108,5 +108,5 @@ public class FileDistributor {
     public void reloadDeployFileDistributor(FileDistribution dbHandler) {
         dbHandler.reloadDeployFileDistributor();
     }
-    
+
 }

@@ -11,7 +11,6 @@
 #pragma once
 
 #include "communicationmanagermetrics.h"
-#include "messageallocationtypes.h"
 #include "documentapiconverter.h"
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/common/storagecomponent.h>
@@ -27,6 +26,7 @@
 #include <map>
 #include <queue>
 #include <atomic>
+#include <mutex>
 
 namespace mbus {
     class RPCMessageBus;
@@ -139,8 +139,10 @@ private:
     PriorityQueue _eventQueue;
     // XXX: Should perhaps use a configsubscriber and poll from StorageComponent ?
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
-    typedef std::vector< std::pair<framework::SecondTime, mbus::IProtocol::SP> > Protocols;
-    Protocols _earlierGenerations;
+    using EarlierProtocol = std::pair<framework::SecondTime, mbus::IProtocol::SP>;
+    using EarlierProtocols = std::vector<EarlierProtocol>;
+    std::mutex       _earlierGenerationsLock;
+    EarlierProtocols _earlierGenerations;
 
     void onOpen() override;
     void onClose() override;
@@ -171,10 +173,7 @@ private:
     std::unique_ptr<BucketResolver> _bucketResolver;
     DocumentApiConverter _docApiConverter;
     framework::Thread::UP _thread;
-    MessageAllocationTypes _messageAllocTypes;
 
-    const framework::MemoryAllocationType&
-    getAllocationType(api::StorageMessage& msg) const;
     void updateMetrics(const MetricLockGuard &) override;
 
     // Test needs access to configure() for live reconfig testing.

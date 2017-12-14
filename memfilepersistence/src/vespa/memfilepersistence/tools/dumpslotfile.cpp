@@ -11,7 +11,6 @@
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovidermetrics.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
-#include <vespa/storageframework/defaultimplementation/memory/nomemorymanager.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/config/subscription/configuri.h>
@@ -139,7 +138,6 @@ namespace {
         framework::defaultimplementation::ComponentRegisterImpl _compReg;
         framework::Component _component;
         framework::defaultimplementation::RealClock _clock;
-        framework::defaultimplementation::NoMemoryManager _memoryMan;
         MemFilePersistenceMetrics _metrics;
         MemFilePersistenceThreadMetrics* _threadMetrics;
         std::unique_ptr<MemFileCache> _cache;
@@ -177,7 +175,6 @@ namespace {
         _docType("foo", 1)
     {
         _compReg.setClock(_clock);
-        _compReg.setMemoryManager(_memoryMan);
         _cache.reset(new MemFileCache(_compReg, _metrics._cache));
         if (documentConfigId == 0) {
             _repo.reset(new DocumentTypeRepo(_docType));

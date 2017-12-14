@@ -6,10 +6,8 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -25,12 +23,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingSe
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
-import com.yahoo.vespa.hosted.rotation.RotationRepository;
+import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.net.URI;
@@ -39,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -64,7 +61,6 @@ public class Controller extends AbstractComponent {
     private final ApplicationController applicationController;
     private final TenantController tenantController;
     private final Clock clock;
-    private final RotationRepository rotationRepository;
     private final GitHub gitHub;
     private final EntityService entityService;
     private final GlobalRoutingService globalRoutingService;
@@ -82,19 +78,19 @@ public class Controller extends AbstractComponent {
      * @param curator the curator instance storing working state shared between controller instances
      */
     @Inject
-    public Controller(ControllerDb db, CuratorDb curator, RotationRepository rotationRepository,
+    public Controller(ControllerDb db, CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, ConfigServerClient configServerClient,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chefClient, AthenzClientFactory athenzClientFactory) {
-        this(db, curator, rotationRepository,
+        this(db, curator, rotationsConfig,
              gitHub, entityService, organization, globalRoutingService, zoneRegistry,
              configServerClient, metricsService, nameService, routingGenerator, chefClient,
              Clock.systemUTC(), athenzClientFactory);
     }
 
-    public Controller(ControllerDb db, CuratorDb curator, RotationRepository rotationRepository,
+    public Controller(ControllerDb db, CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, ConfigServerClient configServerClient,
@@ -103,7 +99,7 @@ public class Controller extends AbstractComponent {
                       AthenzClientFactory athenzClientFactory) {
         Objects.requireNonNull(db, "Controller db cannot be null");
         Objects.requireNonNull(curator, "Curator cannot be null");
-        Objects.requireNonNull(rotationRepository, "Rotation repository cannot be null");
+        Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null");
         Objects.requireNonNull(gitHub, "GitHubClient cannot be null");
         Objects.requireNonNull(entityService, "EntityService cannot be null");
         Objects.requireNonNull(organization, "Organization cannot be null");
@@ -117,7 +113,6 @@ public class Controller extends AbstractComponent {
         Objects.requireNonNull(clock, "Clock cannot be null");
         Objects.requireNonNull(athenzClientFactory, "Athens cannot be null");
 
-        this.rotationRepository = rotationRepository;
         this.curator = curator;
         this.gitHub = gitHub;
         this.entityService = entityService;
@@ -130,7 +125,8 @@ public class Controller extends AbstractComponent {
         this.clock = clock;
         this.athenzClientFactory = athenzClientFactory;
 
-        applicationController = new ApplicationController(this, db, curator, rotationRepository, athenzClientFactory,
+        applicationController = new ApplicationController(this, db, curator, athenzClientFactory,
+                                                          rotationsConfig,
                                                           nameService, configServerClient, routingGenerator, clock);
         tenantController = new TenantController(this, db, curator, entityService, athenzClientFactory);
     }
@@ -156,34 +152,15 @@ public class Controller extends AbstractComponent {
 
     public Clock clock() { return clock; }
 
-    public URI getElkUri(DeploymentId deploymentId) {
-        return elkUrl(zoneRegistry.getLogServerUri(deploymentId.zone().environment(), deploymentId.zone().region()), deploymentId);
+    public Optional<URI> getLogServerUrl(DeploymentId deploymentId) {
+        return zoneRegistry.getLogServerUri(deploymentId);
     }
 
-    public List<URI> getConfigServerUris(Environment environment, RegionName region) {
-        return zoneRegistry.getConfigServerUris(environment, region);
+    public List<URI> getConfigServerUris(ZoneId zoneId) {
+        return zoneRegistry.getConfigServerUris(zoneId);
     }
     
     public ZoneRegistry zoneRegistry() { return zoneRegistry; }
-
-    private URI elkUrl(Optional<URI> kibanaHost, DeploymentId deploymentId) {
-        String kibanaQuery = "/#/discover?_g=()&_a=(columns:!(_source)," +
-                             "index:'logstash-*',interval:auto," +
-                             "query:(query_string:(analyze_wildcard:!t,query:'" +
-                             "HV-tenant:%22" + deploymentId.applicationId().tenant().value() + "%22%20" +
-                             "AND%20HV-application:%22" + deploymentId.applicationId().application().value() + "%22%20" +
-                             "AND%20HV-region:%22" + deploymentId.zone().region().value() + "%22%20" +
-                             "AND%20HV-instance:%22" + deploymentId.applicationId().instance().value() + "%22%20" +
-                             "AND%20HV-environment:%22" + deploymentId.zone().environment().value() + "%22'))," +
-                             "sort:!('@timestamp',desc))";
-
-        URI kibanaPath = URI.create(kibanaQuery);
-        return kibanaHost.map(uri -> uri.resolve(kibanaPath)).orElse(null);
-    }
-
-    public Set<URI> getRotationUris(ApplicationId id) {
-        return rotationRepository.getRotationUris(id);
-    }
 
     public Map<String, RotationStatus> getHealthStatus(String hostname) {
         return globalRoutingService.getHealthStatus(hostname);
@@ -209,7 +186,9 @@ public class Controller extends AbstractComponent {
         return configServerClient.grabLog(deploymentId);
     }
 
-    public GitHub gitHub() { return gitHub; }
+    public GitHub gitHub() {
+        return gitHub;
+    }
 
     /** Replace the current version status by a new one */
     public void updateVersionStatus(VersionStatus newStatus) {
@@ -232,7 +211,9 @@ public class Controller extends AbstractComponent {
                 .orElse(Vtag.currentVersion);
     }
 
-    public MetricsService metricsService() { return metricsService; }
+    public MetricsService metricsService() {
+        return metricsService;
+    }
 
     public SystemName system() {
         return zoneRegistry.system();

@@ -329,6 +329,7 @@ StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, Ser
 
     LidReuseDelayerConfig lidReuseDelayerConfig(configSnapshot);
     result->writableResult().setLidReuseDelayerConfig(lidReuseDelayerConfig);
+    result->writableResult().setFlushConfig(configSnapshot.getMaintenanceConfigSP()->getFlushConfig());
     return result;
 }
 
@@ -452,6 +453,11 @@ void
 StoreOnlyDocSubDB::reconfigure(const search::LogDocumentStore::Config & config)
 {
     _rSummaryMgr->reconfigure(config);
+}
+
+void
+StoreOnlyDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &)
+{
 }
 
 proton::IAttributeManager::SP

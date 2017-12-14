@@ -341,22 +341,22 @@ TEST_FF("requireThatHandlesAreMarkedAsChanged", MyManager, APIFixture(f1)) {
     ConfigSubscriber s(IConfigContext::SP(new APIFixture(f2)));
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid2");
     ConfigHandle<BarConfig>::UP h2 = s.subscribe<BarConfig>("myid2");
-    ASSERT_FALSE(s.nextConfig(0));
+    EXPECT_FALSE(s.nextConfig(0));
 
     f1.updateValue(0, createFooValue("foo"), 1);
     f1.updateValue(1, createFooValue("bar"), 1);
-    ASSERT_TRUE(s.nextConfig(100));
-    ASSERT_TRUE(h1->isChanged());
-    ASSERT_TRUE(h2->isChanged());
+    EXPECT_TRUE(s.nextConfig(100));
+    EXPECT_TRUE(h1->isChanged());
+    EXPECT_TRUE(h2->isChanged());
 
-    ASSERT_FALSE(s.nextConfig(100));
-    ASSERT_FALSE(h1->isChanged());
-    ASSERT_FALSE(h2->isChanged());
+    EXPECT_FALSE(s.nextConfig(100));
+    EXPECT_FALSE(h1->isChanged());
+    EXPECT_FALSE(h2->isChanged());
     f1.updateValue(0, createFooValue("bar"), 2);
     f1.updateGeneration(1, 2);
-    ASSERT_TRUE(s.nextConfig(100));
-    ASSERT_TRUE(h1->isChanged());
-    ASSERT_FALSE(h2->isChanged());
+    EXPECT_TRUE(s.nextConfig(100));
+    EXPECT_TRUE(h1->isChanged());
+    EXPECT_FALSE(h2->isChanged());
 }
 
 TEST_FF("requireThatNextGenerationMarksChanged", MyManager, APIFixture(f1)) {

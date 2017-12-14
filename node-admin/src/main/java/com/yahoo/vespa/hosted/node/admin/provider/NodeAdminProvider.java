@@ -29,8 +29,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.function.Function;
 
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
-
 /**
  * Set up node admin for production.
  *
@@ -38,7 +36,6 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  */
 public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
 
-    private static final int WEB_SERVICE_PORT = getDefaults().vespaWebServicePort();
     private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofSeconds(30);
     private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofSeconds(30);
 
@@ -51,9 +48,9 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
         ProcessExecuter processExecuter = new ProcessExecuter();
         Environment environment = new Environment();
 
-        ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(environment.getConfigServerHosts());
-        NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor, WEB_SERVICE_PORT);
-        Orchestrator orchestrator = new OrchestratorImpl(requestExecutor, WEB_SERVICE_PORT);
+        ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(environment.getConfigServerUris());
+        NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor);
+        Orchestrator orchestrator = new OrchestratorImpl(requestExecutor);
         DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, processExecuter);
 
         StorageMaintainer storageMaintainer = new StorageMaintainer(docker, processExecuter, metricReceiver, environment, clock);

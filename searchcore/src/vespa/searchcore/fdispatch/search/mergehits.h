@@ -64,6 +64,7 @@ struct FastS_MergeHits_DummySearch
     bool               ST_ShouldDropSortData()         {   return false; }
     bool               ST_ShouldLimitHitsPerNode()     {   return false; }
     void               ST_SetNumHits(uint32_t numHits) { (void) numHits; }
+    void               ST_AdjustNumHits(uint32_t nH)   {      (void) nH; }
     uint32_t           ST_GetAlignedSearchOffset()     {       return 0; }
     uint32_t           ST_GetAlignedMaxHits()          {       return 0; }
     uint32_t           ST_GetAlignedHitCount()         {       return 0; }

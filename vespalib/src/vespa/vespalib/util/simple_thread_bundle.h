@@ -3,6 +3,7 @@
 #pragma once
 
 #include "sync.h"
+#include "count_down_latch.h"
 #include "thread.h"
 #include "runnable.h"
 #include "thread_bundle.h"

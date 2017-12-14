@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  */
 class ServiceApiResponse extends HttpResponse {
 
-    private final Zone zone;
+    private final ZoneId zone;
     private final ApplicationId application;
     private final List<URI> configServerURIs;
     private final Slime slime;
@@ -40,7 +40,7 @@ class ServiceApiResponse extends HttpResponse {
     private String serviceName = null;
     private String restPath = null;
     
-    public ServiceApiResponse(Zone zone, ApplicationId application, List<URI> configServerURIs, URI requestUri) {
+    public ServiceApiResponse(ZoneId zone, ApplicationId application, List<URI> configServerURIs, URI requestUri) {
         super(200);
         this.zone = zone;
         this.application = application;

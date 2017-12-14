@@ -21,3 +21,6 @@ ztsUrl                                    string
 
 # Certificate DNS suffix
 certDnsSuffix                             string
+
+# Path to Athenz CA JKS trust store
+athenzCaTrustStore                        string

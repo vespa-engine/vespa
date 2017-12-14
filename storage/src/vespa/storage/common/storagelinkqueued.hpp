@@ -7,6 +7,7 @@
 #include <vespa/storageframework/generic/component/component.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
+#include <chrono>
 
 namespace storage {
 
@@ -16,8 +17,8 @@ StorageLinkQueued::Dispatcher<Message>::terminate() {
     if (_thread.get()) {
         _thread->interrupt();
         {
-            vespalib::MonitorGuard sync(_sync);
-            sync.signal();
+            std::lock_guard<std::mutex> guard(_sync);
+            _syncCond.notify_one();
         }
         _thread->join();
         _thread.reset(0);
@@ -29,6 +30,7 @@ StorageLinkQueued::Dispatcher<Message>::Dispatcher(StorageLinkQueued& parent, un
     : _parent(parent),
       _maxQueueSize(maxQueueSize),
       _sync(),
+      _syncCond(),
       _messages(),
       _replyDispatcher(replyDispatcher)
 {
@@ -58,34 +60,28 @@ template<typename Message>
 void StorageLinkQueued::Dispatcher<Message>::add(
         const std::shared_ptr<Message>& m)
 {
-    vespalib::MonitorGuard sync(_sync);
+    using namespace std::chrono_literals;
+    std::unique_lock<std::mutex> guard(_sync);
 
     if (_thread.get() == 0) start();
     while ((_messages.size() > _maxQueueSize) && !_thread->interrupted()) {
-        sync.wait(100);
+        _syncCond.wait_for(guard, 100ms);
     }
     _messages.push_back(m);
-    sync.signal();
-}
-
-template<typename Message>
-void StorageLinkQueued::Dispatcher<Message>::addWithoutLocking(
-        const std::shared_ptr<Message>& m)
-{
-    if (_thread.get() == 0) start();
-    _messages.push_back(m);
+    _syncCond.notify_one();
 }
 
 template<typename Message>
 void StorageLinkQueued::Dispatcher<Message>::run(framework::ThreadHandle& h)
 {
+    using namespace std::chrono_literals;
     while (!h.interrupted()) {
         h.registerTick(framework::PROCESS_CYCLE);
         std::shared_ptr<Message> message;
         {
-            vespalib::MonitorGuard sync(_sync);
+            std::unique_lock<std::mutex> guard(_sync);
             while (!h.interrupted() && _messages.empty()) {
-                sync.wait(100);
+                _syncCond.wait_for(guard, 100ms);
                 h.registerTick(framework::WAIT_CYCLE);
             }
             if (h.interrupted()) break;
@@ -104,9 +100,9 @@ void StorageLinkQueued::Dispatcher<Message>::run(framework::ThreadHandle& h)
         {
             // Since flush() only waits for stack to be empty, we must
             // pop stack AFTER send have been called.
-            vespalib::MonitorGuard sync(_sync);
+            std::lock_guard<std::mutex> guard(_sync);
             _messages.pop_front();
-            sync.signal();
+            _syncCond.notify_one();
         }
     }
     _parent.logDebug("Finished storage link queued thread");
@@ -115,9 +111,10 @@ void StorageLinkQueued::Dispatcher<Message>::run(framework::ThreadHandle& h)
 template<typename Message>
 void StorageLinkQueued::Dispatcher<Message>::flush()
 {
-    vespalib::MonitorGuard sync(_sync);
+    using namespace std::chrono_literals;
+    std::unique_lock<std::mutex> guard(_sync);
     while (!_messages.empty()) {
-        sync.wait(100);
+        _syncCond.wait_for(guard, 100ms);
     }
 }
 

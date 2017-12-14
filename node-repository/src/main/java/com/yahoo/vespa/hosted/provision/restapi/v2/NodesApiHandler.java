@@ -184,8 +184,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
     }
 
     private Node nodeFromRequest(HttpRequest request) {
-        String path = request.getUri().getPath();
-        String hostname = path.substring(path.lastIndexOf("/"));
+        String hostname = lastElement(request.getUri().getPath());
 
         return nodeRepository.getNode(hostname).orElseThrow(() ->
                 new NotFoundException("No node found with hostname " + hostname));

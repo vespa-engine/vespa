@@ -11,6 +11,7 @@
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/transport_latch.h>
+#include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -32,8 +33,6 @@ using vespalib::Executor;
 using vespalib::IllegalStateException;
 using vespalib::makeLambdaTask;
 using vespalib::make_string;
-using vespalib::MonitorGuard;
-using vespalib::LockGuard;
 using std::make_unique;
 using std::make_shared;
 
@@ -80,7 +79,7 @@ void
 FeedHandler::doHandleOperation(FeedToken token, FeedOperation::UP op)
 {
     assert(_writeService.master().isCurrentThread());
-    LockGuard guard(_feedLock);
+    std::lock_guard<std::mutex> guard(_feedLock);
     _feedState->handleOperation(std::move(token), std::move(op));
 }
 
@@ -261,6 +260,7 @@ FeedHandler::performPrune(SerialNum flushedSerial)
         tlsPrune(flushedSerial);  // throws on error
         LOG(debug, "Pruned TLS to token %" PRIu64 ".", flushedSerial);
         _owner.onPerformPrune(flushedSerial);
+        EventLogger::transactionLogPruneComplete(_tlsMgr.getDomainName(), flushedSerial);
     } catch (const IllegalStateException & e) {
         LOG(warning, "FeedHandler::performPrune failed due to '%s'.", e.what());
     }
@@ -282,7 +282,7 @@ FeedHandler::getFeedState() const
 {
     FeedState::SP state;
     {
-        LockGuard guard(_feedLock);
+        std::lock_guard<std::mutex> guard(_feedLock);
         state = _feedState;
     }
     return state;
@@ -292,13 +292,13 @@ FeedHandler::getFeedState() const
 void
 FeedHandler::changeFeedState(FeedState::SP newState)
 {
-    LockGuard guard(_feedLock);
+    std::lock_guard<std::mutex> guard(_feedLock);
     changeFeedState(std::move(newState), guard);
 }
 
 
 void
-FeedHandler::changeFeedState(FeedState::SP newState, const LockGuard &)
+FeedHandler::changeFeedState(FeedState::SP newState, const std::lock_guard<std::mutex> &)
 {
     LOG(debug, "Change feed state from '%s' -> '%s'", _feedState->getName().c_str(), newState->getName().c_str());
     _feedState = newState;
@@ -390,8 +390,9 @@ FeedHandler::replayTransactionLog(SerialNum flushedIndexMgrSerial, SerialNum flu
 void
 FeedHandler::flushDone(SerialNum flushedSerial)
 {
-    // Called by flush worker thread after performing a flush task
+    // Called by flush scheduler thread after flush worker thread has completed a flush task
     _writeService.master().execute(makeLambdaTask([this, flushedSerial]() { performFlushDone(flushedSerial); }));
+    _writeService.master().sync();
 
 }
 
@@ -588,7 +589,7 @@ void
 FeedHandler::syncTls(SerialNum syncTo)
 {
     {
-        LockGuard guard(_syncLock);
+        std::lock_guard<std::mutex> guard(_syncLock);
         if (_syncedSerialNum >= syncTo)
             return;
     }
@@ -597,7 +598,7 @@ FeedHandler::syncTls(SerialNum syncTo)
     }
     SerialNum syncedTo(_tlsWriter.sync(syncTo));
     {
-        LockGuard guard(_syncLock);
+        std::lock_guard<std::mutex> guard(_syncLock);
         if (_syncedSerialNum < syncedTo) 
             _syncedSerialNum = syncedTo;
     }

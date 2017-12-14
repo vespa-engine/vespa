@@ -52,6 +52,7 @@ public class VespaMetricSet {
     private static Set<Metric> getOtherMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
         metrics.add(new Metric("slobrok.heartbeats.failed.count", "slobrok.heartbeats.failed"));
+        metrics.add(new Metric("logd.processed.lines.count", "logd.processed.lines"));
         return metrics;
     }
 
@@ -220,7 +221,9 @@ public class VespaMetricSet {
 
         // resource usage
         metrics.add(new Metric("content.proton.resource_usage.disk.average"));
+        metrics.add(new Metric("content.proton.resource_usage.disk_utilization.average"));
         metrics.add(new Metric("content.proton.resource_usage.memory.average"));
+        metrics.add(new Metric("content.proton.resource_usage.memory_utilization.average"));
         metrics.add(new Metric("content.proton.resource_usage.memory_mappings.max"));
         metrics.add(new Metric("content.proton.resource_usage.open_file_descriptors.max"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.enum_store.average"));
@@ -230,6 +233,7 @@ public class VespaMetricSet {
         // transaction log
         metrics.add(new Metric("content.proton.transactionlog.entries.average"));
         metrics.add(new Metric("content.proton.transactionlog.disk_usage.average"));
+        metrics.add(new Metric("content.proton.transactionlog.replay_time.last"));
 
         // document store
         metrics.add(new Metric("content.proton.documentdb.ready.document_store.disk_usage.average"));

@@ -7,6 +7,7 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchcorespi.index.indexwriteutilities");

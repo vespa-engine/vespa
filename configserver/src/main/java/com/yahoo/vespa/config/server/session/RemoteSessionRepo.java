@@ -28,12 +28,11 @@ import org.apache.curator.framework.recipes.cache.*;
 /**
  * Will watch/prepare sessions (applications) based on watched nodes in ZooKeeper, set for example
  * by the prepare HTTP handler on another configserver. The zookeeper state watched in this class is shared
- * between all configservers, so it should not modify any global state, because the operation will be performed
+ * between all config servers, so it should not modify any global state, because the operation will be performed
  * on all servers. The repo can be regarded as read only from the POV of the configserver.
  *
- * @author vegardh
- * @author lulf
- * @since 5.1
+ * @author Vegard Havdal
+ * @author Ulf Lilleengen
  */
 public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements NodeCacheListener, PathChildrenCacheListener {
 
@@ -72,6 +71,17 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         this.directoryCache.start();
         this.directoryCache.addListener(this);
         sessionsChanged();
+    }
+
+    // For testing only
+    public RemoteSessionRepo(TenantName tenantName) {
+        this.curator = null;
+        this.remoteSessionFactory = null;
+        this.reloadHandler = null;
+        this.sessionsPath = Tenants.getSessionsPath(tenantName);
+        this.metrics = null;
+        this.directoryCache = null;
+        this.applicationRepo = null;
     }
 
     //---------- START overrides to keep sessions changed in sync 
@@ -120,17 +130,6 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         } catch (Exception e) {
             log.log(LogLevel.WARNING, logPre+"Skipping loading of application '" + applicationSet.getId() + "': " + Exceptions.toMessageString(e));
         }
-    }
-
-    // For testing only
-    public RemoteSessionRepo() {
-        this.curator = null;
-        this.remoteSessionFactory = null;
-        this.reloadHandler = null;
-        this.sessionsPath = Path.createRoot();
-        this.metrics = null;
-        this.directoryCache = null;
-        this.applicationRepo = null;
     }
 
     private List<Long> getSessionList(List<ChildData> children) {

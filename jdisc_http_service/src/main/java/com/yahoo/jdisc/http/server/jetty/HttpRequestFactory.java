@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
+import com.yahoo.jdisc.http.servlet.ServletRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
 
 import javax.servlet.http.HttpServletRequest;
@@ -27,7 +28,7 @@ class HttpRequestFactory {
                 HttpRequest.Version.fromString(servletRequest.getProtocol()),
                 new InetSocketAddress(servletRequest.getRemoteAddr(), servletRequest.getRemotePort()),
                 getConnection(servletRequest).getCreatedTimeStamp());
-        httpRequest.context().put("jdisc.request.X509Certificate", getCertChain(servletRequest));
+        httpRequest.context().put(ServletRequest.JDISC_REQUEST_X509CERT, getCertChain(servletRequest));
         return httpRequest;
     }
 

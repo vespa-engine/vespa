@@ -13,12 +13,12 @@ import com.yahoo.athenz.zms.ZMSClientException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzPublicKey;
-import com.yahoo.vespa.hosted.controller.athenz.AthenzService;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsClient;
-import com.yahoo.vespa.hosted.controller.athenz.ZmsException;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPublicKey;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzService;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
 import java.util.Arrays;
@@ -49,16 +49,16 @@ public class ZmsClientImpl implements ZmsClient {
         runOrThrow(() -> {
             Tenancy tenancy = new Tenancy()
                     .setDomain(tenantDomain.id())
-                    .setService(service.toFullServiceName())
+                    .setService(service.getFullName())
                     .setResourceGroups(Collections.emptyList());
-            zmsClient.putTenancy(tenantDomain.id(), service.toFullServiceName(), /*auditref*/null, tenancy);
+            zmsClient.putTenancy(tenantDomain.id(), service.getFullName(), /*auditref*/null, tenancy);
         });
     }
 
     @Override
     public void deleteTenant(AthenzDomain tenantDomain) {
         log("deleteTenancy(tenantDomain=%s, service=%s)", tenantDomain, service);
-        runOrThrow(() -> zmsClient.deleteTenancy(tenantDomain.id(), service.toFullServiceName(), /*auditref*/null));
+        runOrThrow(() -> zmsClient.deleteTenancy(tenantDomain.id(), service.getFullName(), /*auditref*/null));
     }
 
     @Override
@@ -66,16 +66,16 @@ public class ZmsClientImpl implements ZmsClient {
         List<TenantRoleAction> tenantRoleActions = createTenantRoleActions();
         log("putProviderResourceGroupRoles(" +
                         "tenantDomain=%s, providerDomain=%s, service=%s, resourceGroup=%s, roleActions=%s)",
-                tenantDomain, service.getDomain().id(), service.getServiceName(), applicationName, tenantRoleActions);
+                tenantDomain, service.getDomain().id(), service.getName(), applicationName, tenantRoleActions);
         runOrThrow(() -> {
             ProviderResourceGroupRoles resourceGroupRoles = new ProviderResourceGroupRoles()
                     .setDomain(service.getDomain().id())
-                    .setService(service.getServiceName())
+                    .setService(service.getName())
                     .setTenant(tenantDomain.id())
                     .setResourceGroup(applicationName.id())
                     .setRoles(tenantRoleActions);
             zmsClient.putProviderResourceGroupRoles(
-                    tenantDomain.id(), service.getDomain().id(), service.getServiceName(),
+                    tenantDomain.id(), service.getDomain().id(), service.getName(),
                     applicationName.id(), /*auditref*/null, resourceGroupRoles);
         });
     }
@@ -83,34 +83,34 @@ public class ZmsClientImpl implements ZmsClient {
     @Override
     public void deleteApplication(AthenzDomain tenantDomain, ApplicationId applicationName) {
         log("deleteProviderResourceGroupRoles(tenantDomain=%s, providerDomain=%s, service=%s, resourceGroup=%s)",
-                tenantDomain, service.getDomain().id(), service.getServiceName(), applicationName);
+                tenantDomain, service.getDomain().id(), service.getName(), applicationName);
         runOrThrow(() -> {
             zmsClient.deleteProviderResourceGroupRoles(
-                    tenantDomain.id(), service.getDomain().id(), service.getServiceName(), applicationName.id(), /*auditref*/null);
+                    tenantDomain.id(), service.getDomain().id(), service.getName(), applicationName.id(), /*auditref*/null);
         });
     }
 
     @Override
     public boolean hasApplicationAccess(
-            AthenzPrincipal principal, ApplicationAction action, AthenzDomain tenantDomain, ApplicationId applicationName) {
+            AthenzIdentity identity, ApplicationAction action, AthenzDomain tenantDomain, ApplicationId applicationName) {
         return hasAccess(
-                action.name(), applicationResourceString(tenantDomain, applicationName), principal);
+                action.name(), applicationResourceString(tenantDomain, applicationName), identity);
     }
 
     @Override
-    public boolean hasTenantAdminAccess(AthenzPrincipal principal, AthenzDomain tenantDomain) {
-        return hasAccess(TenantAction._modify_.name(), tenantResourceString(tenantDomain), principal);
+    public boolean hasTenantAdminAccess(AthenzIdentity identity, AthenzDomain tenantDomain) {
+        return hasAccess(TenantAction._modify_.name(), tenantResourceString(tenantDomain), identity);
     }
 
     /**
      * Used when creating tenancies. As there are no tenancy policies at this point,
-     * we cannot use {@link #hasTenantAdminAccess(AthenzPrincipal, AthenzDomain)}
+     * we cannot use {@link #hasTenantAdminAccess(AthenzIdentity, AthenzDomain)}
      */
     @Override
-    public boolean isDomainAdmin(AthenzPrincipal principal, AthenzDomain domain) {
-        log("getMembership(domain=%s, role=%s, principal=%s)", domain, "admin", principal);
+    public boolean isDomainAdmin(AthenzIdentity identity, AthenzDomain domain) {
+        log("getMembership(domain=%s, role=%s, principal=%s)", domain, "admin", identity);
         return getOrThrow(
-                () -> zmsClient.getMembership(domain.id(), "admin", principal.toYRN()).getIsMember());
+                () -> zmsClient.getMembership(domain.id(), "admin", identity.getFullName()).getIsMember());
     }
 
     @Override
@@ -127,18 +127,18 @@ public class ZmsClientImpl implements ZmsClient {
 
     @Override
     public AthenzPublicKey getPublicKey(AthenzService service, String keyId) {
-        log("getPublicKeyEntry(domain=%s, service=%s, keyId=%s)", service.getDomain().id(), service.getServiceName(), keyId);
+        log("getPublicKeyEntry(domain=%s, service=%s, keyId=%s)", service.getDomain().id(), service.getName(), keyId);
         return getOrThrow(() -> {
-            PublicKeyEntry entry = zmsClient.getPublicKeyEntry(service.getDomain().id(), service.getServiceName(), keyId);
+            PublicKeyEntry entry = zmsClient.getPublicKeyEntry(service.getDomain().id(), service.getName(), keyId);
             return fromYbase64EncodedKey(entry.getKey(), keyId);
         });
     }
 
     @Override
     public List<AthenzPublicKey> getPublicKeys(AthenzService service) {
-        log("getServiceIdentity(domain=%s, service=%s)", service.getDomain().id(), service.getServiceName());
+        log("getServiceIdentity(domain=%s, service=%s)", service.getDomain().id(), service.getName());
         return getOrThrow(() -> {
-            ServiceIdentity serviceIdentity = zmsClient.getServiceIdentity(service.getDomain().id(), service.getServiceName());
+            ServiceIdentity serviceIdentity = zmsClient.getServiceIdentity(service.getDomain().id(), service.getName());
             return toAthenzPublicKeys(serviceIdentity.getPublicKeys());
         });
     }
@@ -163,10 +163,11 @@ public class ZmsClientImpl implements ZmsClient {
                 .collect(toList());
     }
 
-    private boolean hasAccess(String action, String resource, AthenzPrincipal principal) {
-        log("getAccess(action=%s, resource=%s, principal=%s)", action, resource, principal);
+    private boolean hasAccess(String action, String resource, AthenzIdentity identity) {
+        log("getAccess(action=%s, resource=%s, principal=%s)", action, resource, identity);
         return getOrThrow(
-                () -> zmsClient.getAccess(action, resource, /*trustDomain*/null, principal.toYRN()).getGranted());
+                () -> zmsClient.getAccess(action, resource, /*trustDomain*/null, identity.getFullName())
+                        .getGranted());
     }
 
     private static void log(String format, Object... args) {
@@ -178,7 +179,7 @@ public class ZmsClientImpl implements ZmsClient {
             wrappedCode.run();
         } catch (ZMSClientException e) {
             logWarning(e);
-            throw new ZmsException(e);
+            throw new ZmsException(e.getCode(), e);
         }
     }
 
@@ -187,7 +188,7 @@ public class ZmsClientImpl implements ZmsClient {
             return wrappedCode.get();
         } catch (ZMSClientException e) {
             logWarning(e);
-            throw new ZmsException(e);
+            throw new ZmsException(e.getCode(), e);
         }
     }
 
@@ -197,7 +198,7 @@ public class ZmsClientImpl implements ZmsClient {
 
     private String resourceStringPrefix(AthenzDomain tenantDomain) {
         return String.format("%s:service.%s.tenant.%s",
-                             service.getDomain().id(), service.getServiceName(), tenantDomain.id());
+                             service.getDomain().id(), service.getName(), tenantDomain.id());
     }
 
     private String tenantResourceString(AthenzDomain tenantDomain) {

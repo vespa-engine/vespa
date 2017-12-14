@@ -8,7 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
+import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -55,6 +56,7 @@ public class ApplicationSerializer {
     private final String ownershipIssueIdField = "ownershipIssueId";
     private final String writeQualityField = "writeQuality";
     private final String queryQualityField = "queryQuality";
+    private final String rotationField = "rotation";
 
     // Deployment fields
     private final String zoneField = "zone";
@@ -114,7 +116,7 @@ public class ApplicationSerializer {
     private final String deploymentMetricsQueryLatencyField = "queryLatencyMillis";
     private final String deploymentMetricsWriteLatencyField = "writeLatencyMillis";
 
-    
+
     // ------------------ Serialization
     
     public Slime toSlime(Application application) {
@@ -130,6 +132,7 @@ public class ApplicationSerializer {
         application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
+        application.rotation().ifPresent(rotation -> root.setString(rotationField, rotation.id().asString()));
         return slime;
     }
 
@@ -139,7 +142,7 @@ public class ApplicationSerializer {
     }
     
     private void deploymentToSlime(Deployment deployment, Cursor object) {
-        zoneToSlime(deployment.zone(), object.setObject(zoneField));
+        zoneIdToSlime(deployment.zone(), object.setObject(zoneField));
         object.setString(versionField, deployment.version().toString());
         object.setLong(deployTimeField, deployment.at().toEpochMilli());
         toSlime(deployment.revision(), object.setObject(applicationPackageRevisionField));
@@ -191,7 +194,7 @@ public class ApplicationSerializer {
         object.setDouble(clusterUtilsDiskBusyField, utils.getDiskBusy());
     }
 
-    private void zoneToSlime(Zone zone, Cursor object) {
+    private void zoneIdToSlime(ZoneId zone, Cursor object) {
         object.setString(environmentField, zone.environment().value());
         object.setString(regionField, zone.region().value());
     }
@@ -267,9 +270,10 @@ public class ApplicationSerializer {
         Optional<IssueId> ownershipIssueId = optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
+        Optional<RotationId> rotation = rotationFromSlime(root.field(rotationField));
 
-        return new Application(id, deploymentSpec, validationOverrides, deployments,
-                               deploymentJobs, deploying, outstandingChange, ownershipIssueId, metrics);
+        return new Application(id, deploymentSpec, validationOverrides, deployments, deploymentJobs, deploying,
+                               outstandingChange, ownershipIssueId, metrics, rotation);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {
@@ -279,13 +283,13 @@ public class ApplicationSerializer {
     }
 
     private Deployment deploymentFromSlime(Inspector deploymentObject) {
-        return new Deployment(zoneFromSlime(deploymentObject.field(zoneField)),
+        return new Deployment(zoneIdFromSlime(deploymentObject.field(zoneField)),
                               applicationRevisionFromSlime(deploymentObject.field(applicationPackageRevisionField)).get(),
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
-                clusterUtilsMapFromSlime(deploymentObject.field(clusterUtilsField)),
-                clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)),
-                deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)));
+                              clusterUtilsMapFromSlime(deploymentObject.field(clusterUtilsField)),
+                              clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)),
+                              deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)));
     }
 
     private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {
@@ -334,9 +338,8 @@ public class ApplicationSerializer {
         return new ClusterInfo(flavor, cost, flavorCpu, flavorMem, flavorDisk, ClusterSpec.Type.from(type), hostnames);
     }
 
-    private Zone zoneFromSlime(Inspector object) {
-        return new Zone(Environment.from(object.field(environmentField).asString()),
-                        RegionName.from(object.field(regionField).asString()));
+    private ZoneId zoneIdFromSlime(Inspector object) {
+        return ZoneId.from(object.field(environmentField).asString(), object.field(regionField).asString());
     }
 
     private Optional<ApplicationRevision> applicationRevisionFromSlime(Inspector object) {
@@ -401,6 +404,10 @@ public class ApplicationSerializer {
                                                 object.field(upgradeField).asBool(),
                                                 optionalString(object.field(reasonField)).orElse(""), // TODO: Make non-optional after November 2017
                                                 Instant.ofEpochMilli(object.field(atField).asLong())));
+    }
+
+    private Optional<RotationId> rotationFromSlime(Inspector field) {
+        return field.valid() ? optionalString(field).map(RotationId::new) : Optional.empty();
     }
 
     private Optional<Long> optionalLong(Inspector field) {

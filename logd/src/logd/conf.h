@@ -19,7 +19,8 @@ private:
     Forwarder& _fw;
     config::ConfigSubscriber _subscriber;
     config::ConfigHandle<cloud::config::log::LogdConfig>::UP _handle;
-    bool _newConf;
+    bool _hasAvailable;
+    bool _needToConnect;
 
     void connectToLogserver();
     void connectToDevNull();
@@ -27,6 +28,7 @@ private:
     ConfSub(const ConfSub& other);
     ConfSub& operator=(const ConfSub& other);
 public:
+    bool checkAvailable();
     void latch();
     void closeConn();
     ConfSub(Forwarder &fw, const config::ConfigUri & configUri);

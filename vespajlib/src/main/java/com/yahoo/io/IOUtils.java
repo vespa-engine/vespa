@@ -3,6 +3,7 @@ package com.yahoo.io;
 
 
 import java.io.*;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.List;
@@ -155,33 +156,22 @@ public abstract class IOUtils {
     /**
      * Copies a file to another file.
      * If the out file exists it will be overwritten.
-     * NOTE: Not an optimal implementation currently.
      *
      * @throws IOException if copying fails
      */
     public static void copy(String inFile, String outFile) throws IOException {
-        BufferedReader reader=null;
-        BufferedWriter writer=null;
-
-        try {
-            reader = createReader(inFile);
-            writer = createWriter(outFile, false);
-            int c;
-            while (-1 != (c = reader.read()) )
-                writer.write(c);
-        } finally {
-            closeReader(reader);
-            closeWriter(writer);
-        }
+        copy(new File(inFile), new File(outFile));
     }
 
     /**
      * Copies a file to another file.
      * If the out file exists it will be overwritten.
-     * NOTE: Not an optimal implementation currently.
      */
     public static void copy(File inFile, File outFile) throws IOException {
-        copy(inFile.toString(),outFile.toString());
+        try (FileChannel sourceChannel = new FileInputStream(inFile).getChannel();
+             FileChannel destChannel = new FileOutputStream(outFile).getChannel()) {
+            destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
+        }
     }
 
     /**
@@ -275,8 +265,8 @@ public abstract class IOUtils {
     }
 
     /**
-     * Returns the number of line in a file.
-     * If the files does not exists, 0 is returned
+     * Returns the number of lines in a file.
+     * If the file does not exists, 0 is returned
      */
     public static int countLines(String file) {
         BufferedReader reader = null;
@@ -292,7 +282,6 @@ public abstract class IOUtils {
         } finally {
             closeReader(reader);
         }
-
     }
 
     /**

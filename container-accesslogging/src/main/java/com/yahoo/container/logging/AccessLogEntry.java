@@ -4,6 +4,7 @@ package com.yahoo.container.logging;
 import com.yahoo.collections.ListMap;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 
+import javax.security.auth.x500.X500Principal;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -94,6 +95,7 @@ public class AccessLogEntry {
     private String scheme;
     private int localPort;
     private Principal principal;
+    private X500Principal sslPrincipal;
 
     private ListMap<String,String> keyValues=null;
 
@@ -721,6 +723,19 @@ public class AccessLogEntry {
         synchronized (monitor) {
             requireNull(this.principal);
             this.principal = principal;
+        }
+    }
+
+    public Principal getSslPrincipal() {
+        synchronized (monitor) {
+            return sslPrincipal;
+        }
+    }
+
+    public void setSslPrincipal(X500Principal sslPrincipal) {
+        synchronized (monitor) {
+            requireNull(this.sslPrincipal);
+            this.sslPrincipal = sslPrincipal;
         }
     }
 

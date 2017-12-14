@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ClusterSpec.Id;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -18,7 +19,7 @@ import java.util.Objects;
  */
 public class Deployment {
 
-    private final Zone zone;
+    private final ZoneId zone;
     private final ApplicationRevision revision;
     private final Version version;
     private final Instant deployTime;
@@ -26,11 +27,11 @@ public class Deployment {
     private final Map<Id, ClusterInfo> clusterInfo;
     private final DeploymentMetrics metrics;
 
-    public Deployment(Zone zone, ApplicationRevision revision, Version version, Instant deployTime) {
+    public Deployment(ZoneId zone, ApplicationRevision revision, Version version, Instant deployTime) {
         this(zone, revision, version, deployTime, new HashMap<>(), new HashMap<>(), new DeploymentMetrics());
     }
 
-    public Deployment(Zone zone, ApplicationRevision revision, Version version, Instant deployTime,
+    public Deployment(ZoneId zone, ApplicationRevision revision, Version version, Instant deployTime,
                       Map<Id, ClusterUtilization> clusterUtils, Map<Id, ClusterInfo> clusterInfo, DeploymentMetrics metrics) {
         Objects.requireNonNull(zone, "zone cannot be null");
         Objects.requireNonNull(revision, "revision cannot be null");
@@ -49,7 +50,7 @@ public class Deployment {
     }
 
     /** Returns the zone this was deployed to */
-    public Zone zone() { return zone; }
+    public ZoneId zone() { return zone; }
 
     /** Returns the revision of the application which was deployed */
     public ApplicationRevision revision() { return revision; }

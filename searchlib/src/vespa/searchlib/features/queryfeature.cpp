@@ -122,7 +122,7 @@ createTensorExecutor(const search::fef::IQueryEnvironment &env,
         const vespalib::string &value = prop.get();
         vespalib::nbostream stream(value.data(), value.size());
         vespalib::tensor::Tensor::UP tensor = vespalib::tensor::TypedBinaryFormat::deserialize(stream);
-        if (tensor->getType() != valueType) {
+        if (tensor->type() != valueType) {
             vespalib::tensor::TensorMapper mapper(valueType);
             vespalib::tensor::Tensor::UP mappedTensor = mapper.map(*tensor);
             tensor = std::move(mappedTensor);

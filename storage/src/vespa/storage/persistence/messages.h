@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storageframework/generic/memory/memorytoken.h>
 #include <vespa/storageapi/message/internal.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/bucket.h>
@@ -14,7 +13,6 @@ namespace storage {
 
 class GetIterCommand : public api::InternalCommand {
 private:
-    mutable framework::MemoryToken::UP _token;
     document::Bucket _bucket;
     spi::IteratorId _iteratorId;
     uint32_t _maxByteSize;
@@ -24,8 +22,7 @@ public:
     typedef std::unique_ptr<GetIterCommand> UP;
     typedef std::shared_ptr<GetIterCommand> SP;
 
-    GetIterCommand(framework::MemoryToken::UP token,
-                   const document::Bucket &bucket,
+    GetIterCommand(const document::Bucket &bucket,
                    const spi::IteratorId iteratorId,
                    uint32_t maxByteSize);
     ~GetIterCommand();
@@ -44,13 +41,11 @@ public:
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 private:
-    framework::MemoryToken::UP releaseMemoryToken() { return std::move(_token); }
     friend class GetIterReply;
 };
 
 class GetIterReply : public api::InternalReply {
 private:
-    framework::MemoryToken::UP _token;
     document::Bucket _bucket;
     std::vector<spi::DocEntry::UP> _entries;
     bool _completed;

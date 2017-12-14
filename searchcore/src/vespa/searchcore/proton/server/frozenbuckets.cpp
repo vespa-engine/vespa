@@ -9,13 +9,13 @@
 using document::BucketId;
 using vespalib::makeClosure;
 using vespalib::makeTask;
-using vespalib::MonitorGuard;
 
 namespace proton {
 
-FrozenBucketsMap::FrozenBucketsMap() :
-    _lock(),
-    _map()
+FrozenBucketsMap::FrozenBucketsMap()
+    : _lock(),
+      _cond(),
+      _map()
 { }
 
 FrozenBucketsMap::~FrozenBucketsMap() {
@@ -25,12 +25,12 @@ FrozenBucketsMap::~FrozenBucketsMap() {
 void
 FrozenBucketsMap::freezeBucket(BucketId bucket) {
 
-    MonitorGuard guard(_lock);
+    std::unique_lock<std::mutex> guard(_lock);
     std::pair<BucketId, FrozenBucket> tryVal(std::make_pair(bucket, FrozenBucket(FrozenBucket::Reader)));
 
     std::pair<Map::iterator, bool> res;
     for (res = _map.insert(tryVal); !res.second && (res.first->second.isExclusive()); res = _map.insert(tryVal)) {
-        guard.wait();
+        _cond.wait(guard);
     }
 
     if (!res.second) {
@@ -42,7 +42,7 @@ FrozenBucketsMap::freezeBucket(BucketId bucket) {
 bool
 FrozenBucketsMap::thawBucket(BucketId bucket)
 {
-    MonitorGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     Map::iterator it(_map.find(bucket));
     assert(it != _map.end());
     assert(it->second.hasReaders());
@@ -52,7 +52,7 @@ FrozenBucketsMap::thawBucket(BucketId bucket)
             isLastAndContended = true;
         }
         _map.erase(it);
-        guard.broadcast();
+        _cond.notify_all();
     } else {
         it->second.removeReader();
     }
@@ -63,7 +63,7 @@ FrozenBucketsMap::thawBucket(BucketId bucket)
 IFrozenBucketHandler::ExclusiveBucketGuard::UP
 FrozenBucketsMap::acquireExclusiveBucket(document::BucketId bucket)
 {
-    MonitorGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     Map::iterator it(_map.find(bucket));
     if (it != _map.end()) {
         assert(it->second.hasReaders());
@@ -77,11 +77,11 @@ FrozenBucketsMap::acquireExclusiveBucket(document::BucketId bucket)
 void
 FrozenBucketsMap::releaseExclusiveBucket(document::BucketId bucket)
 {
-    MonitorGuard guard(_lock);
+    std::lock_guard<std::mutex> guard(_lock);
     Map::const_iterator it(_map.find(bucket));
     assert ((it != _map.end()) && (it->second.isExclusive()));
     _map.erase(it);
-    guard.broadcast();
+    _cond.notify_all();
 }
 
 FrozenBuckets::FrozenBuckets(IThreadService &masterThread) :

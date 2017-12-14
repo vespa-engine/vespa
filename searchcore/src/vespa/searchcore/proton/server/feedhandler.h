@@ -13,6 +13,7 @@
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
+#include <mutex>
 
 namespace searchcorespi { namespace index { class IThreadingService; } }
 
@@ -85,12 +86,12 @@ private:
     SerialNum                              _serialNum;
     SerialNum                              _prunedSerialNum;
     bool                                   _delayedPrune;
-    vespalib::Lock                         _feedLock;
+    mutable std::mutex                     _feedLock;
     FeedStateSP                            _feedState;
     // used by master write thread tasks
     IFeedView                             *_activeFeedView;
     bucketdb::IBucketDBHandler            *_bucketDBHandler;
-    vespalib::Lock                         _syncLock;
+    std::mutex                             _syncLock;
     SerialNum                              _syncedSerialNum; 
     bool                                   _allowSync; // Sanity check
 
@@ -129,7 +130,7 @@ private:
 
     FeedStateSP getFeedState() const;
     void changeFeedState(FeedStateSP newState);
-    void changeFeedState(FeedStateSP newState, const vespalib::LockGuard &feedGuard);
+    void changeFeedState(FeedStateSP newState, const std::lock_guard<std::mutex> &feedGuard);
 public:
     FeedHandler(const FeedHandler &) = delete;
     FeedHandler & operator = (const FeedHandler &) = delete;

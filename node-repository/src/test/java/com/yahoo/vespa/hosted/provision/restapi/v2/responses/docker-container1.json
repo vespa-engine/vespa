@@ -1,0 +1,56 @@
+{
+  "url": "http://localhost:8080/nodes/v2/node/test-container-1",
+  "id": "test-container-1",
+  "state": "active",
+  "type": "tenant",
+  "hostname": "test-container-1",
+  "parentHostname": "dockerhost3.yahoo.com",
+  "openStackId": "fake-test-container-1",
+  "flavor": "docker",
+  "canonicalFlavor": "docker",
+  "minDiskAvailableGb": 100.0,
+  "minMainMemoryAvailableGb": 0.5,
+  "description": "Flavor-name-is-docker",
+  "minCpuCores": 0.2,
+  "fastDisk": true,
+  "environment": "DOCKER_CONTAINER",
+  "owner": {
+    "tenant": "tenant3",
+    "application": "application3",
+    "instance": "instance3"
+  },
+  "membership": {
+    "clustertype": "content",
+    "clusterid": "id3",
+    "group": "0",
+    "index": 1,
+    "retired": false
+  },
+  "restartGeneration": 0,
+  "currentRestartGeneration": 0,
+  "wantedDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.42.0",
+  "wantedVespaVersion": "6.42.0",
+  "allowedToBeDown": false,
+  "rebootGeneration": 0,
+  "currentRebootGeneration": 0,
+  "failCount": 0,
+  "hardwareFailure": false,
+  "wantToRetire": false,
+  "wantToDeprovision": false,
+  "history": [
+    {
+      "event": "reserved",
+      "at": 123,
+      "agent": "system"
+    },
+    {
+      "event": "activated",
+      "at": 123,
+      "agent": "application"
+    }
+  ],
+  "ipAddresses": [
+    "::2"
+  ],
+  "additionalIpAddresses": []
+}

@@ -4,10 +4,9 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.curator.Lock;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeList;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
@@ -46,7 +45,7 @@ public class ClusterInfoMaintainer extends Maintainer {
         return node.membership.clusterId;
     }
 
-    private Map<ClusterSpec.Id, ClusterInfo> getClusterInfo(NodeList nodes, Zone zone) {
+    private Map<ClusterSpec.Id, ClusterInfo> getClusterInfo(NodeList nodes, ZoneId zone) {
         Map<ClusterSpec.Id, ClusterInfo> infoMap = new HashMap<>();
 
         // Group nodes by clusterid
@@ -65,7 +64,8 @@ public class ClusterInfoMaintainer extends Maintainer {
             double cpu = 0;
             double mem = 0;
             double disk = 0;
-            if (zone.nodeFlavors().isPresent()) {
+            // TODO: This code was never run. Reenable when flavours are available from a FlavorRegistry or something, or remove.
+            /*if (zone.nodeFlavors().isPresent()) {
                 Optional<Flavor> flavorOptional = zone.nodeFlavors().get().getFlavor(node.flavor);
                 if ((flavorOptional.isPresent())) {
                     Flavor flavor = flavorOptional.get();
@@ -73,7 +73,7 @@ public class ClusterInfoMaintainer extends Maintainer {
                     mem = flavor.getMinMainMemoryAvailableGb();
                     disk = flavor.getMinMainMemoryAvailableGb();
                 }
-            }
+            }*/
 
             // Add to map
             List<String> hostnames = clusterNodes.stream().map(node1 -> node1.hostname).collect(Collectors.toList());
@@ -93,7 +93,7 @@ public class ClusterInfoMaintainer extends Maintainer {
                 try {
                     NodeList nodes = controller().applications().configserverClient().getNodeList(deploymentId);
                     Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes, deployment.zone());
-                    controller().applications().lockedIfPresent(application.id(), lockedApplication ->
+                    controller().applications().lockIfPresent(application.id(), lockedApplication ->
                         controller.applications().store(lockedApplication.withClusterInfo(deployment.zone(), clusterInfo)));
                 }
                 catch (IOException | IllegalArgumentException e) {

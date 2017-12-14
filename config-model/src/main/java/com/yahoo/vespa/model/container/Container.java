@@ -165,7 +165,6 @@ public class Container extends AbstractService implements
         }
 
         tagServers();
-        monitorService();
     }
 
     private void tagServers() {
@@ -331,7 +330,7 @@ public class Container extends AbstractService implements
 
         FileDistributionConfigProducer fileDistribution = getRoot().getFileDistributionConfigProducer();
         if (fileDistribution != null) {
-            builder.configid(fileDistribution.getFileDistributorService(getHost()).getConfigId());
+            builder.configid(fileDistribution.getConfigProducer(getHost()).getConfigId());
         }
         return builder;
     }

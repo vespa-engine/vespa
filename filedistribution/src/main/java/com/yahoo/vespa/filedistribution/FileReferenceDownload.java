@@ -8,7 +8,7 @@ import com.yahoo.config.FileReference;
 import java.io.File;
 import java.util.Optional;
 
-public class FileReferenceDownload {
+class FileReferenceDownload {
     private final FileReference fileReference;
     private final SettableFuture<Optional<File>> future;
 
@@ -20,9 +20,7 @@ public class FileReferenceDownload {
     FileReference fileReference() {
         return fileReference;
     }
-
     SettableFuture<Optional<File>> future() {
         return future;
     }
-
 }

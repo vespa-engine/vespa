@@ -20,8 +20,6 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
-#include <vespa/storageframework/defaultimplementation/memory/memorymanager.h>
-
 
 namespace storage {
 namespace memfile {
@@ -70,7 +68,6 @@ private:
     document::BucketIdFactory _bucketIdFactory;
     framework::defaultimplementation::ComponentRegisterImpl::UP _componentRegister;
     FakeClock::UP _clock;
-    framework::defaultimplementation::MemoryManager::UP _memoryManager;
     std::unique_ptr<MemFileTestEnvironment> _env;
 
 public:
@@ -82,7 +79,6 @@ public:
     void tearDown() override{
         _env.reset();
         _componentRegister.reset();
-        _memoryManager.reset();
         _clock.reset();
     }
 

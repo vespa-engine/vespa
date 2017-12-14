@@ -6,7 +6,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.container.jdisc.config.HealthMonitorConfig;
+import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.io.IOUtils;
+import com.yahoo.jdisc.core.SystemTimer;
 import com.yahoo.vespa.config.server.deploy.MockDeployer;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
@@ -26,7 +29,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
@@ -67,7 +69,9 @@ public class ConfigServerBootstrapTest extends TestWithTenant {
         assertFalse(myServer.stopped);
         VersionState versionState = new VersionState(versionFile);
         assertTrue(versionState.isUpgraded());
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(applicationRepository, rpc, (application, timeout) -> Optional.empty(), versionState);
+        ConfigServerBootstrap bootstrap =
+                new ConfigServerBootstrap(applicationRepository, rpc,  new MockDeployer(), versionState,
+                                          new StateMonitor(new HealthMonitorConfig(new HealthMonitorConfig.Builder()), new SystemTimer()));
         waitUntilStarted(rpc, 60000);
         assertFalse(versionState.isUpgraded());
         assertThat(versionState.currentVersion(), is(versionState.storedVersion()));

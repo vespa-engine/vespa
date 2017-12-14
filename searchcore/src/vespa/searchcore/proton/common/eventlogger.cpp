@@ -303,4 +303,18 @@ EventLogger::loadDocumentStoreComplete(const vespalib::string &subDbName, int64_
     loadComponentComplete(subDbName, "documentstore", elapsedTimeMs);
 }
 
+void
+EventLogger::transactionLogPruneComplete(const string &domainName, SerialNum prunedSerial)
+{
+    JSONStringer jstr;
+    jstr.beginObject();
+    jstr.appendKey("domain").appendString(domainName);
+    jstr.appendKey("serialnum")
+        .beginObject()
+        .appendKey("pruned").appendInt64(prunedSerial)
+        .endObject();
+    jstr.endObject();
+    EV_STATE("transactionlog.prune.complete", jstr.toString().c_str());
+}
+
 } // namespace proton

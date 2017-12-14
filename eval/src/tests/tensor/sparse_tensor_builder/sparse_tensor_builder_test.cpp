@@ -91,7 +91,7 @@ TEST("require that dimensions are extracted")
     EXPECT_EQUAL("a", dims[0].name);
     EXPECT_EQUAL("b", dims[1].name);
     EXPECT_EQUAL("c", dims[2].name);
-    EXPECT_EQUAL("tensor(a{},b{},c{})", sparseTensor.getType().to_spec());
+    EXPECT_EQUAL("tensor(a{},b{},c{})", sparseTensor.type().to_spec());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

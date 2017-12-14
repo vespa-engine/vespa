@@ -39,6 +39,8 @@ public class CuratorDb {
 
     private static final Path root = Path.fromString("/controller/v1");
 
+    private static final Path lockRoot = root.append("locks");
+
     private static final Duration defaultLockTimeout = Duration.ofMinutes(5);
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
@@ -67,6 +69,10 @@ public class CuratorDb {
         return lock(lockPath(id), timeout);
     }
 
+    public Lock lockRotations() {
+        return lock(lockRoot.append("rotations"), defaultLockTimeout);
+    }
+
     /** Create a reentrant lock */
     private Lock lock(Path path, Duration timeout) {
         Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), curator));
@@ -75,18 +81,18 @@ public class CuratorDb {
     }
 
     public Lock lockInactiveJobs() {
-        return lock(root.append("locks").append("inactiveJobsLock"), defaultLockTimeout);
+        return lock(lockRoot.append("inactiveJobsLock"), defaultLockTimeout);
     }
 
     public Lock lockJobQueues() {
-        return lock(root.append("locks").append("jobQueuesLock"), defaultLockTimeout);
+        return lock(lockRoot.append("jobQueuesLock"), defaultLockTimeout);
     }
 
     public Lock lockMaintenanceJob(String jobName) {
         // Use a short timeout such that if maintenance jobs are started at about the same time on different nodes
         // and the maintenance job takes a long time to complete, only one of the nodes will run the job
         // in each maintenance interval
-        return lock(root.append("locks").append("maintenanceJobLocks").append(jobName), Duration.ofSeconds(1));
+        return lock(lockRoot.append("maintenanceJobLocks").append(jobName), Duration.ofSeconds(1));
     }
 
     public Lock lockProvisionState(String provisionStateId) {
@@ -94,11 +100,11 @@ public class CuratorDb {
     }
 
     public Lock lockVespaServerPool() {
-        return lock(root.append("locks").append("vespaServerPoolLock"), Duration.ofSeconds(1));
+        return lock(lockRoot.append("vespaServerPoolLock"), Duration.ofSeconds(1));
     }
 
     public Lock lockOpenStackServerPool() {
-        return lock(root.append("locks").append("openStackServerPoolLock"), Duration.ofSeconds(1));
+        return lock(lockRoot.append("openStackServerPoolLock"), Duration.ofSeconds(1));
     }
 
     // -------------- Read and write --------------------------------------------------
@@ -222,19 +228,15 @@ public class CuratorDb {
 
     // -------------- Paths --------------------------------------------------
 
-    private Path systemVersionPath() {
-        return root.append("systemVersion");
-    }
-
     private Path lockPath(TenantId tenant) {
-        Path lockPath = root.append("locks")
+        Path lockPath = lockRoot
                 .append(tenant.id());
         curator.create(lockPath);
         return lockPath;
     }
 
     private Path lockPath(ApplicationId application) {
-        Path lockPath = root.append("locks")
+        Path lockPath = lockRoot
                 .append(application.tenant().value())
                 .append(application.application().value())
                 .append(application.instance().value());
@@ -243,7 +245,7 @@ public class CuratorDb {
     }
 
     private Path lockPath(String provisionId) {
-        Path lockPath = root.append("locks")
+        Path lockPath = lockRoot
                 .append(provisionStatePath())
                 .append(provisionId);
         curator.create(lockPath);

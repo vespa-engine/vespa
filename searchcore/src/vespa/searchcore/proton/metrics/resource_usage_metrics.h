@@ -12,7 +12,9 @@ namespace proton {
 struct ResourceUsageMetrics : metrics::MetricSet
 {
     metrics::DoubleValueMetric disk;
+    metrics::DoubleValueMetric diskUtilization;
     metrics::DoubleValueMetric memory;
+    metrics::DoubleValueMetric memoryUtilization;
     metrics::LongValueMetric memoryMappings;
     metrics::LongValueMetric openFileDescriptors;
     metrics::LongValueMetric feedingBlocked;
