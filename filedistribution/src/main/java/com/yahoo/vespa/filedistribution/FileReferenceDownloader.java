@@ -77,7 +77,7 @@ public class FileReferenceDownloader {
     }
 
     void addToDownloadQueue(FileReferenceDownload fileReferenceDownload) {
-        log.log(LogLevel.DEBUG, "Will download file reference '" + fileReferenceDownload.fileReference().value() + "'");
+        log.log(LogLevel.DEBUG, "Will download file reference '" + fileReferenceDownload.fileReference().value() + "' with timeout " + downloadTimeout);
         downloadExecutor.submit(() -> startDownload(downloadTimeout, fileReferenceDownload));
     }
 
@@ -140,7 +140,6 @@ public class FileReferenceDownloader {
             }
         }
         return null;
-
     }
 
     private void execute(Request request, Connection connection) {

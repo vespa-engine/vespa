@@ -23,9 +23,11 @@ public class CombinedLegacyDistribution implements FileDistribution {
 
     private final Supervisor supervisor = new Supervisor(new Transport());
     private final FileDistribution legacy;
+    private final boolean disableFileDistributor;
 
-    CombinedLegacyDistribution(FileDBHandler legacy) {
+    CombinedLegacyDistribution(FileDBHandler legacy, boolean disableFileDistributor) {
         this.legacy = legacy;
+        this.disableFileDistributor = disableFileDistributor;
     }
 
     @Override
@@ -35,8 +37,8 @@ public class CombinedLegacyDistribution implements FileDistribution {
 
     @Override
     public void startDownload(String hostName, Set<FileReference> fileReferences) {
-        // TODO: Not active for now
-        // startDownloadingFileReferences(hostName, fileReferences);
+        if (disableFileDistributor)
+            startDownloadingFileReferences(hostName, fileReferences);
     }
 
     @Override
@@ -56,7 +58,7 @@ public class CombinedLegacyDistribution implements FileDistribution {
         double timeout = 0.1;
         Request request = new Request("filedistribution.setFileReferencesToDownload");
         request.parameters().add(new StringArray(fileReferences.stream().map(FileReference::value).toArray(String[]::new)));
-        log.log(LogLevel.INFO, "Executing " + request.methodName() + " against " + target.toString());
+        log.log(LogLevel.DEBUG, "Executing " + request.methodName() + " against " + target.toString());
         target.invokeSync(request, timeout);
         if (request.isError()) {
             log.log(LogLevel.INFO, request.methodName() + " failed: " + request.errorCode() + " (" + request.errorMessage() + ")");
