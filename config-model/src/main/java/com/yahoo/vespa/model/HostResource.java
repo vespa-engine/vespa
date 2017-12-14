@@ -7,9 +7,7 @@ import com.yahoo.config.provision.Flavor;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -207,7 +205,7 @@ public class HostResource implements Comparable<HostResource> {
     }
 
     public HostInfo getHostInfo() {
-        return new HostInfo(getHostname(), services.values().stream()
+        return new HostInfo(getHostName(), services.values().stream()
                 .map(Service::getServiceInfo)
                 .collect(Collectors.toSet()));
     }
@@ -244,11 +242,11 @@ public class HostResource implements Comparable<HostResource> {
 
     @Override
     public String toString() {
-        return "host '" + host.getHostname() + "'";
+        return "host '" + host.getHostName() + "'";
     }
 
-    public String getHostname() {
-        return host.getHostname();
+    public String getHostName() {
+        return host.getHostName();
     }
 
     @Override
@@ -264,45 +262,6 @@ public class HostResource implements Comparable<HostResource> {
     @Override
     public int compareTo(HostResource other) {
         return this.host.compareTo(other.host);
-    }
-
-    /**
-     * Compares by the index of the primary membership, if both hosts are members in at least one cluster at this time.
-     * Compare by hostname otherwise.
-     */
-    public int comparePrimarilyByIndexTo(HostResource other) {
-        Optional<ClusterMembership> thisMembership = this.primaryClusterMembership();
-        Optional<ClusterMembership> otherMembership = other.primaryClusterMembership();
-        if (thisMembership.isPresent() && otherMembership.isPresent())
-            return Integer.compare(thisMembership.get().index(), otherMembership.get().index());
-        else
-            return this.getHostname().compareTo(other.getHostname());
-    }
-
-    /**
-     * Picks hosts by some mixture of host name and index 
-     * (where the mix of one or the other is decided by the last parameter).
-     */
-    public static List<HostResource> pickHosts(Collection<HostResource> hosts, int count, int targetHostsSelectedByIndex) {
-        targetHostsSelectedByIndex = Math.min(Math.min(targetHostsSelectedByIndex, count), hosts.size());
-
-        List<HostResource> hostsSortedByName = new ArrayList<>(hosts);
-        Collections.sort(hostsSortedByName);
-
-        List<HostResource> hostsSortedByIndex = new ArrayList<>(hosts);
-        hostsSortedByIndex.sort((a, b) -> a.comparePrimarilyByIndexTo(b));
-        return pickHosts(hostsSortedByName, hostsSortedByIndex, count, targetHostsSelectedByIndex);
-    }
-    public static List<HostResource> pickHosts(List<HostResource> hostsSelectedByName, List<HostResource> hostsSelectedByIndex, 
-                                               int count, int targetHostsSelectedByIndex) {
-        hostsSelectedByName = hostsSelectedByName.subList(0, Math.min(count - targetHostsSelectedByIndex, hostsSelectedByName.size()));
-        hostsSelectedByIndex.removeAll(hostsSelectedByName);
-        hostsSelectedByIndex = hostsSelectedByIndex.subList(0, Math.min(targetHostsSelectedByIndex, hostsSelectedByIndex.size()));
-
-        List<HostResource> finalHosts = new ArrayList<>();
-        finalHosts.addAll(hostsSelectedByName);
-        finalHosts.addAll(hostsSelectedByIndex);
-        return finalHosts;
     }
 
 }

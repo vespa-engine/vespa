@@ -315,7 +315,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      * @return The hostname on which this service runs.
      */
     public String getHostName() {
-        return hostResource.getHostname();
+        return hostResource.getHostName();
     }
 
     /**

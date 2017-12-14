@@ -183,7 +183,7 @@ public class SearchNode extends AbstractService implements
      * @return The connection string.
      */
     public String getDispatcherConnectSpec() {
-        return "tcp/" + getHost().getHostname() + ":" + getDispatchPort();
+        return "tcp/" + getHost().getHostName() + ":" + getDispatchPort();
     }
 
     public int getDispatchPort() {
@@ -247,7 +247,7 @@ public class SearchNode extends AbstractService implements
             partition(getNodeSpec().partitionId()).
             clustername(getClusterName()).
             basedir(getBaseDir()).
-            tlsspec("tcp/" + getHost().getHostname() + ":" + getTransactionLogServer().getTlsPort()).
+            tlsspec("tcp/" + getHost().getHostName() + ":" + getTransactionLogServer().getTlsPort()).
             tlsconfigid(getConfigId()).
             slobrokconfigid(getClusterConfigId()).
             routingconfigid(getClusterConfigId()).
