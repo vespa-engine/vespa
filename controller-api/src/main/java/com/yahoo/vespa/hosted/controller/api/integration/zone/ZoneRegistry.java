@@ -42,8 +42,8 @@ public interface ZoneRegistry {
     /** Returns a URL with the logs for the given deployment, if loggin is configured for its zone. */
     Optional<URI> getLogServerUri(DeploymentId deploymentId);
 
-    /** Returns the time to live for deployments in the given zone. */
-    Duration getDeploymentTimeToLive(ZoneId zoneId);
+    /** Returns the time to live for deployments in the given zone, or empty if this is infinite. */
+    Optional<Duration> getDeploymentTimeToLive(ZoneId zoneId);
 
     /** Returns a URL pointing at monitoring resources for the given deployment. */
     URI getMonitoringSystemUri(DeploymentId deploymentId);

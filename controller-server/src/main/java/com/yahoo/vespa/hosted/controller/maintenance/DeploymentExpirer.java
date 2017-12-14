@@ -53,7 +53,9 @@ public class DeploymentExpirer extends Maintainer {
     }
 
     public static boolean hasExpired(ZoneRegistry zoneRegistry, Deployment deployment, Instant now) {
-        return deployment.at().plus(zoneRegistry.getDeploymentTimeToLive(deployment.zone())).isBefore(now);
+        return zoneRegistry.getDeploymentTimeToLive(deployment.zone())
+                .map(timeToLive -> deployment.at().plus(timeToLive).isBefore(now))
+                .orElse(false);
     }
 
 }

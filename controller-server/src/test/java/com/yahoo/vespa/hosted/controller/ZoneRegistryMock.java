@@ -102,10 +102,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public Duration getDeploymentTimeToLive(ZoneId zoneId) {
-        return deploymentTimeToLive.containsKey(zoneId)
-                ? deploymentTimeToLive.get(zoneId)
-                : Duration.ofMillis(Long.MAX_VALUE / 2);
+    public Optional<Duration> getDeploymentTimeToLive(ZoneId zoneId) {
+        return Optional.ofNullable(deploymentTimeToLive.get(zoneId));
     }
 
     @Override

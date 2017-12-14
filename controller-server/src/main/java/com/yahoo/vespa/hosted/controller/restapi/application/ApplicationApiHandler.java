@@ -452,8 +452,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         response.setString("version", deployment.version().toFullString());
         response.setString("revision", deployment.revision().id());
         response.setLong("deployTimeEpochMs", deployment.at().toEpochMilli());
-        Duration deploymentTimeToLive = controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId());
-        response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli());
+        controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
+                .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli()));
 
         controller.applications().get(deploymentId.applicationId()).flatMap(application -> application.deploymentJobs().projectId())
                 .ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
