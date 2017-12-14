@@ -47,7 +47,7 @@ public abstract class VespaFeedHandlerBase extends ThreadedHttpRequestHandler {
     }
 
     public VespaFeedHandlerBase(FeedContext context, Executor executor, long defaultTimeoutMillis) throws Exception {
-        super(executor);
+        super(executor, context.getMetricAPI());
         this.context = context;
         this.defaultTimeoutMillis = defaultTimeoutMillis;
     }
