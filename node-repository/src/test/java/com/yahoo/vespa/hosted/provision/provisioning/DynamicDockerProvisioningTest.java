@@ -97,11 +97,11 @@ public class DynamicDockerProvisioningTest {
      * Test relocation of nodes from spare hosts.
      * <p>
      * Setup 4 docker hosts and allocate one container on each (from two different applications)
-     * No headroom defined - only 2 spares.
+     * No headroom defined - only getSpareCapacityProd() spares.
      * <p>
-     * Check that it relocates containers away from the 2 spares
+     * Check that it relocates containers away from the getSpareCapacityProd() spares
      * <p>
-     * Initial allocation of app 1 and 2 --> final allocation:
+     * Initial allocation of app 1 and 2 --> final allocation (example using 2 spares):
      * <p>
      * |    |    |    |    |        |    |    |    |    |
      * |    |    |    |    |   -->  | 2a | 2b |    |    |
@@ -139,7 +139,8 @@ public class DynamicDockerProvisioningTest {
                 hostsWithChildren.add(node.parentHostname().get());
             }
         }
-        Assert.assertEquals(2, hostsWithChildren.size());
+        Assert.assertEquals(4 - tester.provisioner().getSpareCapacityProd(), hostsWithChildren.size());
+
     }
 
     /**
@@ -389,8 +390,14 @@ public class DynamicDockerProvisioningTest {
         // Verify that there is still capacity (available spare)
         // Fail one node and redeploy, Verify that one less node is empty.
 
-        // Setup test
+
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
+        // Only run test if there _is_ spare capacity
+        if (tester.provisioner().getSpareCapacityProd() == 0) {
+            return;
+        }
+
+        // Setup test
         enableDynamicAllocation(tester);
         ApplicationId application1 = tester.makeApplicationId();
         tester.makeReadyNodes(5, "host-small", NodeType.host, 32);
