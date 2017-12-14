@@ -54,7 +54,7 @@ public class FileDownloader {
         }
     }
 
-    public Future<Optional<File>> getFutureFile(FileReference fileReference) {
+    private Future<Optional<File>> getFutureFile(FileReference fileReference) {
         Objects.requireNonNull(fileReference, "file reference cannot be null");
         File directory = new File(downloadDirectory, fileReference.value());
         log.log(LogLevel.DEBUG, "Checking if there is a file in '" + directory.getAbsolutePath() + "' ");
@@ -77,7 +77,7 @@ public class FileDownloader {
             if (fileReferenceDownloader.isDownloading(fileReference)) {
                 log.log(LogLevel.DEBUG, "Already downloading '" + fileReference.value() + "'");
             } else {
-                queueForAsyncDownload(fileReference).cancel(false);
+                queueForAsyncDownload(fileReference);
             }
         });
     }

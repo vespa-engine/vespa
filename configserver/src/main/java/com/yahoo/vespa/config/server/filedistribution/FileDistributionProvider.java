@@ -12,8 +12,7 @@ import java.util.concurrent.locks.Lock;
 /**
  * Provides file distribution registry and invoker.
  *
- * @author lulf
- * @since 5.1.14
+ * @author Ulf Lilleengen
  */
 public class FileDistributionProvider {
 
@@ -37,18 +36,19 @@ public class FileDistributionProvider {
     }
 
     public FileDistributionProvider(File applicationDir, String zooKeepersSpec,
-                                    String applicationId, Lock fileDistributionLock)
-    {
+                                    String applicationId, Lock fileDistributionLock,
+                                    boolean disableFileDistributor) {
         ensureDirExists(FileDistribution.getDefaultFileDBPath());
         final FileDistributionManager manager = new FileDistributionManager(
                 FileDistribution.getDefaultFileDBPath(), applicationDir,
                 zooKeepersSpec, applicationId, fileDistributionLock);
-        this.fileDistribution = new CombinedLegacyDistribution(new FileDBHandler(manager));
+        this.fileDistribution = new CombinedLegacyDistribution(new FileDBHandler(manager), disableFileDistributor);
         this.fileRegistry = new CombinedLegacyRegistry(new FileDBRegistry(new ManagerWrapper(manager)),
                 new FileDBRegistry(new ApplicationFileManager(applicationDir, new FileDirectory())));
     }
 
-    public FileDistributionProvider(FileRegistry fileRegistry, FileDistribution fileDistribution) {
+    // For testing only
+    FileDistributionProvider(FileRegistry fileRegistry, FileDistribution fileDistribution) {
         this.fileRegistry = fileRegistry;
         this.fileDistribution = fileDistribution;
     }
