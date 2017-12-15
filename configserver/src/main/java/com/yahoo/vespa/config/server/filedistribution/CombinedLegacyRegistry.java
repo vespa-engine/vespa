@@ -21,6 +21,12 @@ public class CombinedLegacyRegistry implements FileRegistry {
     }
 
     @Override
+    public FileReference addUri(String uri) {
+        FileReference reference = legacy.addUri(uri);
+        return future.addUri(uri, reference);
+    }
+
+    @Override
     public String fileSourceHost() {
         return future.fileSourceHost();
     }

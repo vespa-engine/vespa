@@ -12,6 +12,7 @@ import com.yahoo.config.FileReference;
 public interface FileRegistry {
 
     FileReference addFile(String relativePath);
+    FileReference addUri(String uri);
 
     /**
      * Returns the name of the host which is the source of the files

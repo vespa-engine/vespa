@@ -35,4 +35,9 @@ public class MockFileRegistry implements FileRegistry {
         return result;
     }
 
+    @Override
+    public FileReference addUri(String uri) {
+        throw new IllegalArgumentException("FileReference addUri(String uri) is not implemented for " + getClass().getCanonicalName());
+    }
+
 }
