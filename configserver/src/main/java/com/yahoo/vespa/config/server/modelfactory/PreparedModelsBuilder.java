@@ -88,7 +88,8 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         log.log(LogLevel.DEBUG, "Building model " + modelVersion + " for " + applicationId);
         FileDistributionProvider fileDistributionProvider = fileDistributionFactory.createProvider(
                 context.getServerDBSessionDir(),
-                applicationId);
+                applicationId,
+                properties.disableFileDistributor());
 
         // Use empty on non-hosted systems, use already allocated hosts if available, create connection to a host provisioner otherwise
         Optional<HostProvisioner> hostProvisioner = createHostProvisioner(allocatedHosts);        

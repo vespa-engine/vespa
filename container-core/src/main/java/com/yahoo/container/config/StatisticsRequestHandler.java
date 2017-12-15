@@ -2,6 +2,7 @@
 package com.yahoo.container.config;
 
 import com.google.inject.Inject;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.container.ConfigHack;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -25,8 +26,8 @@ import java.util.concurrent.Executor;
 public class StatisticsRequestHandler extends ThreadedHttpRequestHandler {
 
     @Inject
-    public StatisticsRequestHandler(Executor executor) {
-        super(executor);
+    public StatisticsRequestHandler(Executor executor, Metric metric) {
+        super(executor, metric);
     }
 
     @Override

@@ -33,14 +33,14 @@ public class FileDistributionConfigProvider {
         fileDistributionOptions.getConfig(builder);
         builder.torrentport(FileDistributorService.BASEPORT + 1);
         builder.stateport(FileDistributorService.BASEPORT + 2);
-        builder.hostname(host.getHostName());
+        builder.hostname(host.getHostname());
         builder.filedbpath(FileDistribution.getDefaultFileDBPath().toString());
     }
 
     public void getConfig(FiledistributorrpcConfig.Builder builder) {
         // If disabled config proxy should act as file distributor, so use config proxy port
         int port = (fileDistributionOptions.disableFiledistributor()) ? ConfigProxy.BASEPORT : FileDistributorService.BASEPORT;
-        builder.connectionspec("tcp/" + host.getHostName() + ":" + port);
+        builder.connectionspec("tcp/" + host.getHostname() + ":" + port);
     }
 
     public void getConfig(FilereferencesConfig.Builder builder) {

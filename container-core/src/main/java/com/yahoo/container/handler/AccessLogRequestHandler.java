@@ -1,8 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
+import com.google.inject.Inject;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -22,8 +25,9 @@ public class AccessLogRequestHandler extends ThreadedHttpRequestHandler {
     private final CircularArrayAccessLogKeeper circularArrayAccessLogKeeper;
     private final JsonFactory jsonFactory = new JsonFactory();
 
-    public AccessLogRequestHandler(Executor executor, CircularArrayAccessLogKeeper circularArrayAccessLogKeeper) {
-        super(executor);
+    @Inject
+    public AccessLogRequestHandler(Executor executor, Metric metric, CircularArrayAccessLogKeeper circularArrayAccessLogKeeper) {
+        super(executor, metric);
         this.circularArrayAccessLogKeeper = circularArrayAccessLogKeeper;
     }
 
