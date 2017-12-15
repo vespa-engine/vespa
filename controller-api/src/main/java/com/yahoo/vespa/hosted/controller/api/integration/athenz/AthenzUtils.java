@@ -40,7 +40,15 @@ public class AthenzUtils {
     }
 
     public static AthenzIdentity createAthenzIdentity(X509Certificate certificate) {
-        return createAthenzIdentity(getCommonName(certificate));
+        String commonName = getCommonName(certificate);
+        if (isAthenzRoleIdentity(commonName)) {
+            throw new IllegalArgumentException("Athenz role certificate not supported");
+        }
+        return createAthenzIdentity(commonName);
+    }
+
+    private static boolean isAthenzRoleIdentity(String commonName) {
+        return commonName.contains(":role.");
     }
 
     private static String getCommonName(X509Certificate certificate) {
