@@ -74,6 +74,10 @@ public class VespaMetricSet {
     private static Set<Metric> getContainerMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
+        metrics.add(new Metric("handled.requests.count", "handled.requests"));
+        metrics.add(new Metric("handled.latency.average"));
+        metrics.add(new Metric("handled.latency.max"));
+
         metrics.add(new Metric("serverRejectedRequests.rate"));
         metrics.add(new Metric("serverRejectedRequests.count"));
 

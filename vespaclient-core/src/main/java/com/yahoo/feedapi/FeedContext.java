@@ -41,6 +41,10 @@ public class FeedContext {
         return metrics;
     }
 
+    public Metric getMetricAPI() {
+        return metric;
+    }
+
     public ClusterList getClusterList() {
         return clusterList;
     }

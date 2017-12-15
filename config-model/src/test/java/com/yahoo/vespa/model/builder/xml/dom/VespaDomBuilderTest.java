@@ -122,9 +122,9 @@ public class VespaDomBuilderTest {
         System.out.println(hostSystem);
         assertThat(hostSystem.getHosts().size(), is(1));
         HostResource host = hostSystem.getHosts().get(0);
-        assertThat(host, is(hostSystem.getHostByHostname(host.getHostName())));
+        assertThat(host, is(hostSystem.getHostByHostname(host.getHostname())));
         assertNotNull(hostSystem.getHost("node1"));
-        assertThat(hostSystem.toString(), is("host '" + host.getHostName() + "'"));
+        assertThat(hostSystem.toString(), is("host '" + host.getHostname() + "'"));
     }
 
     private VespaModel createModel(String hosts, String services) {

@@ -17,7 +17,7 @@ public class AccessLogRequestHandlerTest {
 
     private final CircularArrayAccessLogKeeper keeper = new CircularArrayAccessLogKeeper();
     private final Executor executor = mock(Executor.class);
-    private final AccessLogRequestHandler handler = new AccessLogRequestHandler(executor, keeper);
+    private final AccessLogRequestHandler handler = new AccessLogRequestHandler(executor, null, keeper);
     private final ByteArrayOutputStream out = new ByteArrayOutputStream();
 
     @Test

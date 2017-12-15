@@ -101,7 +101,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
      */
     @Override
     public final ContentChannel handleRequest(Request request, ResponseHandler responseHandler) {
-        metric.add("container.handled.requests", 1, contextFor(request.getBindingMatch()));
+        metric.add("handled.requests", 1, contextFor(request.getBindingMatch()));
         if (request.getTimeout(TimeUnit.SECONDS) == null) {
             Duration timeout = getTimeout();
             if (timeout != null) {
@@ -195,7 +195,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
             if ( tryHasResponded()) throw new IllegalStateException("Response already handled");
             ContentChannel cc = responseHandler.handleResponse(response);
             long millis = request.timeElapsed(TimeUnit.MILLISECONDS);
-            metric.set("container.handled.latency", millis, contextFor(request.getBindingMatch()));
+            metric.set("handled.latency", millis, contextFor(request.getBindingMatch()));
             return cc;
         }
 

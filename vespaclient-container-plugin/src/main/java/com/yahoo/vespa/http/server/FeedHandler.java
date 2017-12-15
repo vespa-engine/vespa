@@ -68,7 +68,7 @@ public class FeedHandler extends LoggingRequestHandler {
             AccessLog accessLog,
             ThreadpoolConfig threadpoolConfig,
             MetricReceiver metricReceiver) throws Exception {
-        super(executor, accessLog);
+        super(executor, accessLog, metric);
         DocumentApiMetrics metricsHelper = new DocumentApiMetrics(metricReceiver, "vespa.http.server");
         feedHandlerV3 = new FeedHandlerV3(executor, documentManagerConfig, sessionCache, metric, accessLog, threadpoolConfig, metricsHelper);
         docTypeManager = createDocumentManager(documentManagerConfig);

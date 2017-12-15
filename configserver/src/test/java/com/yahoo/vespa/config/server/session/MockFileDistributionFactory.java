@@ -10,8 +10,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import java.io.File;
 
 /**
-* @author lulf
-* @since 5.1
+* @author Ulf Lilleengen
 */
 public class MockFileDistributionFactory extends FileDistributionFactory {
 
@@ -27,7 +26,7 @@ public class MockFileDistributionFactory extends FileDistributionFactory {
     }
 
     @Override
-    public FileDistributionProvider createProvider(File applicationFile, ApplicationId applicationId) {
+    public FileDistributionProvider createProvider(File applicationFile, ApplicationId applicationId, boolean disableFileDistributor) {
         return mockFileDistributionProvider;
     }
 }

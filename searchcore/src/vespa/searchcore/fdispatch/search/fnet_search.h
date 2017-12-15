@@ -329,6 +329,10 @@ public:
         _util.CalcHitCount();
         _util.AllocAlignedHitBuf();
     }
+    void ST_AdjustNumHits(uint32_t numHits) {
+        _util.SetAlignedHitCount(numHits);
+        _util.CalcHitCount();
+    }
     uint32_t ST_GetAlignedSearchOffset() const { return _util.GetAlignedSearchOffset(); }
     uint32_t ST_GetAlignedMaxHits() const { return _util.GetAlignedMaxHits(); }
     uint32_t ST_GetAlignedHitCount() const { return _util.GetAlignedHitCount(); }
