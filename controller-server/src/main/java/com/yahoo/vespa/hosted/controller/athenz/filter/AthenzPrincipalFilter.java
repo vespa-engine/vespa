@@ -7,17 +7,24 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.InvalidTokenException;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsKeystore;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
+import java.security.cert.X509Certificate;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 
 import static com.yahoo.vespa.hosted.controller.athenz.filter.SecurityFilterUtils.sendErrorResponse;
 
 /**
- * Performs authentication by validating the principal token (NToken) header.
+ * Authenticates Athenz principal, either through:
+ *  1. TLS client authentication (based on Athenz x509 identity certficiate).
+ *  2. The principal token (NToken) header.
+ * The TLS authentication is based on the following assumptions:
+ *  - The underlying connector is configured with 'clientAuth' set to either WANT_AUTH or NEED_AUTH.
+ *  - The trust store is configured with the Athenz CA certificates only.
  *
  * @author bjorncs
  */
@@ -43,18 +50,45 @@ public class AthenzPrincipalFilter implements SecurityRequestFilter {
 
     @Override
     public void filter(DiscFilterRequest request, ResponseHandler responseHandler) {
-        String rawToken = request.getHeader(principalTokenHeader);
-        if (rawToken == null || rawToken.isEmpty()) {
-            sendErrorResponse(responseHandler, Response.Status.UNAUTHORIZED, "NToken is missing");
-            return;
-        }
         try {
-            AthenzPrincipal principal = validator.validate(new NToken(rawToken));
+            Optional<AthenzPrincipal> certificatePrincipal = getClientCertificate(request)
+                    .map(AthenzUtils::createAthenzIdentity)
+                    .map(AthenzPrincipal::new);
+            Optional<AthenzPrincipal> nTokenPrincipal = getPrincipalToken(request, principalTokenHeader)
+                    .map(validator::validate);
+
+            if (!certificatePrincipal.isPresent() && !nTokenPrincipal.isPresent()) {
+                String errorMessage = "Unable to authenticate Athenz identity. " +
+                        "Both client certificate missing and principal token header are missing.";
+                sendErrorResponse(responseHandler, Response.Status.UNAUTHORIZED, errorMessage);
+                return;
+            }
+            if (certificatePrincipal.isPresent() && nTokenPrincipal.isPresent()
+                    && !certificatePrincipal.get().equals(nTokenPrincipal.get())) {
+                String errorMessage = String.format(
+                        "Identity in principal token does not match x509 CN: token-identity=%s, cert-identity=%s",
+                        nTokenPrincipal.get().getIdentity().getFullName(),
+                        certificatePrincipal.get().getIdentity().getFullName());
+                sendErrorResponse(responseHandler, Response.Status.UNAUTHORIZED, errorMessage);
+                return;
+            }
+            AthenzPrincipal principal = nTokenPrincipal.orElseGet(certificatePrincipal::get);
             request.setUserPrincipal(principal);
             request.setRemoteUser(principal.getName());
-        } catch (InvalidTokenException e) {
+        } catch (Exception e) {
             sendErrorResponse(responseHandler,Response.Status.UNAUTHORIZED, e.getMessage());
         }
+    }
+
+    private static Optional<X509Certificate> getClientCertificate(DiscFilterRequest request) {
+        return Optional.ofNullable((X509Certificate[]) request.getAttribute("jdisc.request.X509Certificate"))
+                .map(chain -> chain[0]);
+    }
+
+    private static Optional<NToken> getPrincipalToken(DiscFilterRequest request, String principalTokenHeaderName) {
+        return Optional.ofNullable(request.getHeader(principalTokenHeaderName))
+                .filter(token -> !token.isEmpty())
+                .map(NToken::new);
     }
 
 }
