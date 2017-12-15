@@ -339,6 +339,7 @@ TOKEN :
 | < RANKSCOREDROPLIMIT: "rank-score-drop-limit" >
 | < CONSTANTS: "constants" >
 | < FILE: "file" >
+| < URI: "uri" >
 | < IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])* >
 | < QUOTEDSTRING: "\"" ( ~["\""] )* "\"" >
 | < CONTEXT: ["a"-"z","A"-"Z"] (["a"-"z", "A"-"Z", "0"-"9"])* >
@@ -347,6 +348,8 @@ TOKEN :
 | < LONG: ("-")? (["0"-"9"])+"L" >
 | < STRING: (["a"-"z","A"-"Z","_","0"-"9","."])+ >
 | < FILE_PATH: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-", "/", "."])+ >
+| < HTTP: ["h","H"] ["t","T"] ["t","T"] ["p","P"] >
+| < URI_PATH: <HTTP> <COLON> ("//")? (["a"-"z","A"-"Z","0"-"9","_","-", "/", ".",":"])+ >
 | < LESSTHAN: "<" >
 | < GREATERTHAN: ">" >
 | < VARIABLE: "$" <IDENTIFIER> >
@@ -1805,11 +1808,12 @@ void rankingConstant(Search search) :
  */
 Object rankingConstantItem(RankingConstant constant) :
 {
-    String fileName = null;
+    String path = null;
     TensorType type = null;
 }
 {
-    ( (<FILE> <COLON> fileName = filePath() { } (<NL>)*) { constant.setFileName(fileName); }
+    ( (<FILE> <COLON> path = filePath() { } (<NL>)*) { constant.setFileName(path); }
+      | (<URI> <COLON> path = uriPath() { } (<NL>)*) { constant.setUri(path); }
       | type = tensorTypeWithPrefix(rankingConstantErrorMessage(constant.getName())) (<NL>)* { constant.setType(type); }
     )
     {
@@ -1825,6 +1829,12 @@ String rankingConstantErrorMessage(String name) : {}
 String filePath() : { }
 {
     ( <FILE_PATH> | <STRING> | <IDENTIFIER>)
+    { return token.image; }
+}
+
+String uriPath() : { }
+{
+    ( <URI_PATH> )
     { return token.image; }
 }
 
@@ -2550,6 +2560,7 @@ String identifier() : { }
       | <TRUE>
       | <TYPE>
       | <UCA>
+      | <URI>
       | <UPPERBOUND>
       | <USEDOCUMENT>
       | <VARIABLE>
