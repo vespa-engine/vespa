@@ -62,6 +62,13 @@ StorageComponent::setDistribution(DistributionSP distribution)
 }
 
 void
+StorageComponent::enableMultipleBucketSpaces(bool value)
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    _enableMultipleBucketSpaces = value;
+}
+
+void
 StorageComponent::setNodeStateUpdater(NodeStateUpdater& updater)
 {
     std::lock_guard<std::mutex> guard(_lock);
@@ -76,10 +83,16 @@ StorageComponent::StorageComponent(StorageComponentRegister& compReg,
                                    vespalib::stringref name)
     : Component(compReg, name),
       _clusterName(),
-      _nodeType(0),
+      _nodeType(nullptr),
       _index(0),
+      _docTypeRepo(),
+      _loadTypes(),
       _priorityMapper(new PriorityMapper),
-      _nodeStateUpdater(0)
+      _bucketIdFactory(),
+      _distribution(),
+      _nodeStateUpdater(nullptr),
+      _lock(),
+      _enableMultipleBucketSpaces(false)
 {
     compReg.registerStorageComponent(*this);
 }
@@ -130,6 +143,13 @@ StorageComponent::getDistribution() const
 {
     std::lock_guard<std::mutex> guard(_lock);
     return _distribution;
+}
+
+bool
+StorageComponent::enableMultipleBucketSpaces() const
+{
+    std::lock_guard<std::mutex> guard(_lock);
+    return _enableMultipleBucketSpaces;
 }
 
 } // storage

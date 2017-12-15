@@ -10,11 +10,20 @@ LOG_SETUP(".storage.component.register");
 namespace storage {
 
 StorageComponentRegisterImpl::StorageComponentRegisterImpl()
-    : _nodeType(0),
+    : _componentLock(),
+      _components(),
+      _clusterName(),
+      _nodeType(nullptr),
       _index(0xffff),
+      _docTypeRepo(),
       _loadTypes(new documentapi::LoadTypeSet),
-      _nodeStateUpdater(0)
-{ }
+      _priorityConfig(),
+      _bucketIdFactory(),
+      _distribution(),
+      _nodeStateUpdater(nullptr),
+      _bucketSpacesConfig()
+{
+}
 
 StorageComponentRegisterImpl::~StorageComponentRegisterImpl() { }
 
@@ -33,6 +42,7 @@ StorageComponentRegisterImpl::registerStorageComponent(StorageComponent& smc)
     smc.setPriorityConfig(_priorityConfig);
     smc.setBucketIdFactory(_bucketIdFactory);
     smc.setDistribution(_distribution);
+    smc.enableMultipleBucketSpaces(_bucketSpacesConfig.enableMultipleBucketSpaces);
 }
 
 void
@@ -112,6 +122,16 @@ StorageComponentRegisterImpl::setDistribution(lib::Distribution::SP distribution
     _distribution = distribution;
     for (uint32_t i=0; i<_components.size(); ++i) {
         _components[i]->setDistribution(distribution);
+    }
+}
+
+void
+StorageComponentRegisterImpl::setBucketSpacesConfig(const BucketspacesConfig& config)
+{
+    vespalib::LockGuard lock(_componentLock);
+    _bucketSpacesConfig = config;
+    for (size_t i = 0; i < _components.size(); ++i) {
+        _components[i]->enableMultipleBucketSpaces(config.enableMultipleBucketSpaces);
     }
 }
 
