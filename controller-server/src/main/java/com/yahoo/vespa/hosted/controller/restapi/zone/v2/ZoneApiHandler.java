@@ -91,13 +91,13 @@ public class ZoneApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         Cursor uris = root.setArray("uris");
-        zoneRegistry.zones().forEach(zone -> uris.addString(request.getUri()
+        zoneRegistry.zones().all().ids().forEach(zone -> uris.addString(request.getUri()
                                                                .resolve("/zone/v2/")
                                                                .resolve(zone.environment().value() + "/")
                                                                .resolve(zone.region().value())
                                                                .toString()));
         Cursor zones = root.setArray("zones");
-        zoneRegistry.zones().forEach(zone -> {
+        zoneRegistry.zones().all().ids().forEach(zone -> {
             Cursor object = zones.addObject();
             object.setString("environment", zone.environment().value());
             object.setString("region", zone.region().value());

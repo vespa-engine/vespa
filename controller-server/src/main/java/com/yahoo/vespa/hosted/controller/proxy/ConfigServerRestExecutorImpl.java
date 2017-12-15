@@ -83,9 +83,9 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         DiscoveryResponseStructure responseStructure = new DiscoveryResponseStructure();
         String environmentName = proxyRequest.getEnvironment();
 
-        Zones.List zones = environmentName.isEmpty()
-                ? zoneRegistry.zones().all()
-                : zoneRegistry.zones().in(Environment.from(environmentName));
+        Zones.List zones = zoneRegistry.zones().all();
+        if ( ! environmentName.isEmpty())
+            zones = zones.in(Environment.from(environmentName));
 
         for (ZoneId zoneId : zones.ids()) {
             responseStructure.uris.add(proxyRequest.getScheme() + "://" + proxyRequest.getControllerPrefix() +

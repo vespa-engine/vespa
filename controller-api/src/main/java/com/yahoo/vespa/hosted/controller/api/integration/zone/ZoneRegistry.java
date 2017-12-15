@@ -22,7 +22,7 @@ public interface ZoneRegistry {
     boolean hasZone(ZoneId zoneId);
 
     /** Returns a list containing the id of all zones in this registry. */
-    List<ZoneId> zones();
+    Zones zones();
 
     /** Returns the default region for the given environment, if one is configured. */
     Optional<RegionName> getDefaultRegion(Environment environment);
