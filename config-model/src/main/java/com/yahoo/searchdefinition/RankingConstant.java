@@ -12,11 +12,19 @@ import java.util.Objects;
  */
 public class RankingConstant {
 
+    public enum PathType {FILE, URI};
+
     /** The search definition-unique name of this constant */
     private final String name;
     private TensorType tensorType = null;
-    private String fileName = null;
-    private String fileReference = "";
+    private String path = null;
+    private String fileRef = "";
+
+    public PathType getPathType() {
+        return pathType;
+    }
+
+    private PathType pathType = PathType.FILE;
 
     public RankingConstant(String name) {
         this.name = name;
@@ -31,7 +39,14 @@ public class RankingConstant {
 
     public void setFileName(String fileName) {
         Objects.requireNonNull(fileName, "Filename cannot be null");
-        this.fileName = fileName;
+        this.path = fileName;
+        this.pathType = PathType.FILE;
+    }
+
+    public void setUri(String uri) {
+        Objects.requireNonNull(uri, "uri cannot be null");
+        this.path = uri;
+        this.pathType = PathType.URI;
     }
 
     /**
@@ -43,14 +58,15 @@ public class RankingConstant {
     public void setType(TensorType tensorType) { this.tensorType = tensorType; }
 
     public String getName() { return name; }
-    public String getFileName() { return fileName; }
-    public String getFileReference() { return fileReference; }
+    public String getFileName() { return path; }
+    public String getUri() { return path; }
+    public String getFileReference() { return fileRef; }
     public TensorType getTensorType() { return tensorType; }
     public String getType() { return tensorType.toString(); }
 
     public void validate() {
-        if (fileName == null || fileName.isEmpty())
-            throw new IllegalArgumentException("Ranking constants must have a file.");
+        if (path == null || path.isEmpty())
+            throw new IllegalArgumentException("Ranking constants must have a file or uri.");
         if (tensorType == null)
             throw new IllegalArgumentException("Ranking constant '" + name + "' must have a type.");
     }
@@ -58,8 +74,8 @@ public class RankingConstant {
     public String toString() {
         StringBuilder b = new StringBuilder();
         b.append("constant '").append(name)
-         .append("' from file '").append(fileName)
-         .append("' with ref '").append(fileReference)
+         .append(pathType == PathType.FILE ? "' from file '" : " from uri ").append(path)
+         .append("' with ref '").append(fileRef)
          .append("' of type '").append(tensorType)
          .append("'");
         return b.toString();
