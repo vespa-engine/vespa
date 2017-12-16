@@ -9,8 +9,8 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.Zones;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZonesMock;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneFilter;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneFilterMock;
 
 import java.net.URI;
 import java.time.Duration;
@@ -64,8 +64,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public Zones zones() {
-        return ZonesMock.from(Collections.unmodifiableList(zones));
+    public ZoneFilter zones() {
+        return ZoneFilterMock.from(Collections.unmodifiableList(zones));
     }
 
     @Override

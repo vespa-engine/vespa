@@ -7,8 +7,8 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.Zones;
 import org.apache.http.Header;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -83,7 +83,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         DiscoveryResponseStructure responseStructure = new DiscoveryResponseStructure();
         String environmentName = proxyRequest.getEnvironment();
 
-        Zones.List zones = zoneRegistry.zones().all();
+        ZoneList zones = zoneRegistry.zones().all();
         if ( ! environmentName.isEmpty())
             zones = zones.in(Environment.from(environmentName));
 

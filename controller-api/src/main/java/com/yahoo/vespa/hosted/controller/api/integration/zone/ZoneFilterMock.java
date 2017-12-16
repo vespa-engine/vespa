@@ -4,8 +4,10 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -14,43 +16,48 @@ import java.util.stream.Collectors;
  *
  * @author jvenstad
  */
-public class ZonesMock implements Zones.List {
+public class ZoneFilterMock implements ZoneList {
 
     private final java.util.List<ZoneId> zones;
     private final boolean negate;
 
-    private ZonesMock(java.util.List<ZoneId> zones, boolean negate) {
+    private ZoneFilterMock(java.util.List<ZoneId> zones, boolean negate) {
         this.negate = negate;
         this.zones = zones;
     }
 
-    public static Zones from(Collection<ZoneId> zones) {
-        return new ZonesMock(new ArrayList<>(zones), false);
+    public static ZoneFilter from(Collection<ZoneId> zones) {
+        return new ZoneFilterMock(new ArrayList<>(zones), false);
     }
 
     @Override
-    public Zones.List not() {
-        return new ZonesMock(zones, ! negate);
+    public ZoneList not() {
+        return new ZoneFilterMock(zones, ! negate);
     }
 
     @Override
-    public Zones.List all() {
+    public ZoneList all() {
         return filter(zoneId -> true);
     }
 
     @Override
-    public Zones.List controllerManaged() {
+    public ZoneList controllerManaged() {
         return all();
     }
 
     @Override
-    public Zones.List in(Environment environment) {
+    public ZoneList in(Environment environment) {
         return filter(zoneId -> zoneId.environment() == environment);
     }
 
     @Override
-    public Zones.List in(RegionName region) {
+    public ZoneList in(RegionName region) {
         return filter(zoneId -> zoneId.region().equals(region));
+    }
+
+    @Override
+    public ZoneList zones(ZoneId... zones) {
+        return filter(zoneId -> new HashSet<>(Arrays.asList(zones)).contains(zoneId));
     }
 
     @Override
@@ -58,8 +65,8 @@ public class ZonesMock implements Zones.List {
         return Collections.unmodifiableList(zones);
     }
 
-    private ZonesMock filter(Predicate<ZoneId> condition) {
-        return new ZonesMock(zones.stream().filter(negate ? condition.negate() : condition).collect(Collectors.toList()), false);
+    private ZoneFilterMock filter(Predicate<ZoneId> condition) {
+        return new ZoneFilterMock(zones.stream().filter(negate ? condition.negate() : condition).collect(Collectors.toList()), false);
     }
 
 }

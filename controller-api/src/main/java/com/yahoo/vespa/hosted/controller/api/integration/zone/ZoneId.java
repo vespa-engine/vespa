@@ -14,7 +14,7 @@ import java.util.Objects;
  * @author jvenstad
  */
 public class ZoneId {
-    // TODO: Replace usages of zone + region with usages of this.
+    // TODO: Replace usages of environment + region with usages of this.
 
     private final Environment environment;
     private final RegionName region;
