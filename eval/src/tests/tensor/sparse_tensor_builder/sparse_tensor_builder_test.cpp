@@ -95,9 +95,9 @@ TEST("require that dimensions are extracted")
 }
 
 TEST("Test essential object sizes") {
-    EXPECT_EQUAL(24u, sizeof(SparseTensorAddressRef));
-    EXPECT_EQUAL(32u, sizeof(std::pair<SparseTensorAddressRef, double>));
-    EXPECT_EQUAL(40u, sizeof(vespalib::hash_node<std::pair<SparseTensorAddressRef, double>>));
+    EXPECT_EQUAL(16u, sizeof(SparseTensorAddressRef));
+    EXPECT_EQUAL(24u, sizeof(std::pair<SparseTensorAddressRef, double>));
+    EXPECT_EQUAL(32u, sizeof(vespalib::hash_node<std::pair<SparseTensorAddressRef, double>>));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

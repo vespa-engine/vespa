@@ -18,15 +18,15 @@ namespace tensor {
 class SparseTensorAddressRef
 {
     const void *_start;
-    size_t _size;
-    size_t _hash;
+    uint32_t _size;
+    uint32_t _hash;
 public:
     SparseTensorAddressRef()
         : _start(nullptr), _size(0u), _hash(0u)
     {
     }
 
-    SparseTensorAddressRef(const void *start_in, size_t size_in)
+    SparseTensorAddressRef(const void *start_in, uint32_t size_in)
         : _start(start_in), _size(size_in),
           _hash(calcHash())
     {
@@ -42,9 +42,9 @@ public:
         _start = res;
     }
 
-    size_t hash() const { return _hash; }
+    uint32_t hash() const { return _hash; }
 
-    size_t calcHash() const { return hashValue(_start, _size); }
+    uint32_t calcHash() const { return hashValue(_start, _size); }
 
     bool operator<(const SparseTensorAddressRef &rhs) const {
         size_t minSize = std::min(_size, rhs._size);
@@ -64,7 +64,7 @@ public:
     }
 
     const void *start() const { return _start; }
-    size_t size() const { return _size; }
+    uint32_t size() const { return _size; }
 };
 
 } // namespace vespalib::tensor
