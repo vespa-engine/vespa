@@ -4,9 +4,10 @@ package com.yahoo.config.application.api;
 import java.util.logging.Level;
 
 /**
- * Used during application deployment to propagate messages to the end user
+ * Used during application deployment to persist and propagate messages to end user
  * 
- * @author Ulf Lillengen
+ * @author lulf
+ * @since 5.1
  */
 public interface DeployLogger {
 

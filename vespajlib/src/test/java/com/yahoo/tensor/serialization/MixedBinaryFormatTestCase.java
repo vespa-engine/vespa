@@ -84,7 +84,7 @@ public class MixedBinaryFormatTestCase {
     private void assertSerialization(Tensor tensor) {
         assertSerialization(tensor, tensor.type());
     }
-
+    
     private void assertSerialization(Tensor tensor, TensorType expectedType) {
         byte[] encodedTensor = TypedBinaryFormat.encode(tensor);
         Tensor decodedTensor = TypedBinaryFormat.decode(Optional.of(expectedType), GrowableByteBuffer.wrap(encodedTensor));

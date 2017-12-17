@@ -10,18 +10,18 @@ import java.util.List;
 
 /**
  * A function which returns a constant tensor.
- *
+ * 
  * @author bratseth
  */
 @Beta
 public class ConstantTensor extends PrimitiveTensorFunction {
 
     private final Tensor constant;
-
+    
     public ConstantTensor(String tensorString) {
         this.constant = Tensor.from(tensorString);
     }
-
+    
     public ConstantTensor(Tensor tensor) {
         this.constant = tensor;
     }

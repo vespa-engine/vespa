@@ -64,7 +64,7 @@ public class RankingConstantsValidator extends Validator {
 
     private void validateRankingConstant(RankingConstant rankingConstant, ApplicationPackage applicationPackage) throws FileNotFoundException {
         ApplicationFile tensorApplicationFile = applicationPackage.getFile(Path.fromString(rankingConstant.getFileName()));
-        new ConstantTensorJsonValidator().validate(rankingConstant.getFileName(),
+        new ConstantTensorJsonValidator().validate(rankingConstant.getFileName(), 
                                                    rankingConstant.getTensorType(),
                                                    tensorApplicationFile.createReader());
     }

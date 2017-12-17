@@ -4,14 +4,9 @@ package com.yahoo.searchlib.rankingexpression.evaluation;
 import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
-import com.yahoo.searchlib.rankingexpression.rule.Arguments;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
-import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
-import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
-import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
-import com.yahoo.searchlib.rankingexpression.rule.IfNode;
+import com.yahoo.searchlib.rankingexpression.rule.*;
+import com.yahoo.tensor.Tensor;
 import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -88,7 +83,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates(0, "sin(0)");
         tester.assertEvaluates(1, "cos(0)");
         tester.assertEvaluates(8, "pow(4/2,min(cos(0)*3,5))");
-
+        
         // Random feature (which is also a tensor function) (We expect to be able to parse it and look up a zero)
         tester.assertEvaluates(0, "random(1)");
         tester.assertEvaluates(0, "random(foo)");
@@ -157,7 +152,7 @@ public class EvaluationTestCase {
                                "tensor0 && 1 == map(tensor0, f(x) (x && 1))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
         tester.assertEvaluates("{ {d1:0}:1, {d1:1}:1, {d1:2 }:1 }",
                                "!tensor0 == map(tensor0, f(x) (!x))", "{ {d1:0}:0, {d1:1}:1, {d1:2}:0 }");
-
+        
         // -- explicitly implemented functions (not foolproof tests as we don't bother testing float value equivalence)
         tester.assertEvaluates("{ {x:0}:1, {x:1}:2 }",     "abs(tensor0)",    "{ {x:0}:1, {x:1}:-2 }");
         tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "acos(tensor0)",   "{ {x:0}:1, {x:1}:1 }");

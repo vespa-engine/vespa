@@ -34,7 +34,7 @@ public class EvaluationTester {
     }
 
     // TODO: Test both bound and unbound indexed
-    public RankingExpression assertEvaluates(String expectedTensor, String expressionString, boolean mappedTensors,
+    public RankingExpression assertEvaluates(String expectedTensor, String expressionString, boolean mappedTensors, 
                                              String ... tensorArgumentStrings) {
         MapContext context = defaultContext.thawedCopy();
         int argumentIndex = 0;
@@ -46,7 +46,7 @@ public class EvaluationTester {
                 argument = Tensor.from(typeFrom(argumentString, mappedTensors), argumentString);
             context.put("tensor" + (argumentIndex++), new TensorValue(argument));
         }
-        return assertEvaluates(new TensorValue(Tensor.from(expectedTensor)), expressionString, context,
+        return assertEvaluates(new TensorValue(Tensor.from(expectedTensor)), expressionString, context, 
                                mappedTensors ? "Mapped tensors" : "Indexed tensors");
     }
 
