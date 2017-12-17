@@ -12,7 +12,7 @@ import java.util.List;
  * A representation of a tensor function which is able to be translated to a set of primitive
  * tensor functions if necessary.
  * All tensor functions are immutable.
- * 
+ *
  * @author bratseth
  */
 @Beta
@@ -48,11 +48,11 @@ public abstract class TensorFunction {
 
     /**
      * Return a string representation of this context.
-     * 
+     *
      * @param context a context which must be passed to all nexted functions when requesting the string value
      */
     public abstract String toString(ToStringContext context);
-    
+
     @Override
     public String toString() { return toString(ToStringContext.empty()); }
 

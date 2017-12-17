@@ -51,7 +51,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
     public final static PrimitiveDataType URI = new PrimitiveDataType("uri", 10, UriFieldValue.class, new UriFieldValue.Factory());
     public final static NumericDataType BYTE = new NumericDataType("byte", 16, ByteFieldValue.class, ByteFieldValue.getFactory());
     public final static PrimitiveDataType PREDICATE = new PrimitiveDataType("predicate", 20, PredicateFieldValue.class, PredicateFieldValue.getFactory());
-    public final static int tensorDataTypeCode = 21; // All TensorDataType instances have id=21 but carries additional type information serialized separately 
+    public final static int tensorDataTypeCode = 21; // All TensorDataType instances have id=21 but carries additional type information serialized separately
     // ADDITIONAL parametrized types added at runtime: map, struct, array, weighted set, annotation reference, tensor
 
     // Tags are converted to weightedset<string> when reading the search definition TODO: Remove it
@@ -99,7 +99,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
 
     /**
      * Creates a field value by reflection
-     * 
+     *
      * @param arg the value of the newly created field value
      * @return a fully constructed value
      */
@@ -201,7 +201,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
     public static TensorDataType getTensor(TensorType type) {
         return new TensorDataType(type);
     }
-    
+
     public String getName() {
         return name;
     }
@@ -267,7 +267,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
      */
     public FieldPath buildFieldPath(String fieldPathString) {
         if (fieldPathString.length() > 0) {
-            throw new IllegalArgumentException("Datatype " + toString() + 
+            throw new IllegalArgumentException("Datatype " + toString() +
                                                " does not support further recursive structure: " + fieldPathString);
         }
         return new FieldPath();

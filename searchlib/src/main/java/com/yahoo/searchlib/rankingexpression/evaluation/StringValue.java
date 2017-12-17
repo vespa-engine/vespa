@@ -4,12 +4,14 @@ package com.yahoo.searchlib.rankingexpression.evaluation;
 import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.TensorType;
 
 /**
  * A string value.
  *
  * @author bratseth
- * @since 5.1.21
  */
 public class StringValue extends Value {
 
@@ -32,6 +34,11 @@ public class StringValue extends Value {
     @Override
     public double asDouble() {
         return UnicodeUtilities.unquote(value).hashCode();
+    }
+
+    @Override
+    public Tensor asTensor() {
+        return doubleAsTensor(asDouble());
     }
 
     @Override

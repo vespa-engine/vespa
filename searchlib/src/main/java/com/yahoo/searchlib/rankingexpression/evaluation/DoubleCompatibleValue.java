@@ -3,6 +3,9 @@ package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.TensorType;
 
 /**
  * A value which acts as a double in numerical context.
@@ -14,6 +17,11 @@ public abstract class DoubleCompatibleValue extends Value {
 
     @Override
     public boolean hasDouble() { return true; }
+
+    @Override
+    public Tensor asTensor() {
+        return doubleAsTensor(asDouble());
+    }
 
     @Override
     public Value negate() { return new DoubleValue(-asDouble()); }

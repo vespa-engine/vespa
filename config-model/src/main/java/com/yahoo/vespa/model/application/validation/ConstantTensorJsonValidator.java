@@ -45,7 +45,7 @@ public class ConstantTensorJsonValidator {
             throw new IllegalArgumentException("Ranking constant file names must end with either '.json' or '.json.lz4'");
         }
     }
-    
+
     private void validateTensor(TensorType type, Reader tensorData) {
         wrapIOException(() -> {
             this.parser = jsonFactory.createParser(tensorData);

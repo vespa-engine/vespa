@@ -59,7 +59,7 @@ public class TensorConformanceTest {
         try {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode node = mapper.readTree(test);
-            
+
             if (node.has("num_tests")) {
                 Assert.assertEquals(node.get("num_tests").asInt(), count);
                 return true;
@@ -67,7 +67,7 @@ public class TensorConformanceTest {
             if (!node.has("expression")) {
                 return true; // ignore
             }
-            
+
             String expression = node.get("expression").asText();
             MapContext context = getInput(node.get("inputs"));
             Tensor expect = getTensor(node.get("result").get("expect").asText());
