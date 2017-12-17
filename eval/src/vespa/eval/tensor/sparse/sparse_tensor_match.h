@@ -4,8 +4,7 @@
 
 #include <vespa/eval/tensor/tensor_operation.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * Returns the match product of two tensors.
@@ -27,5 +26,4 @@ public:
     SparseTensorMatch(const TensorImplType &lhs, const TensorImplType &rhs);
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
