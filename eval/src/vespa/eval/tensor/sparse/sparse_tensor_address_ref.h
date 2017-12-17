@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <vespa/vespalib/util/stash.h>
 
