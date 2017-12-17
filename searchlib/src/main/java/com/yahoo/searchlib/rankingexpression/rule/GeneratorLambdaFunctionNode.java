@@ -14,23 +14,23 @@ import java.util.function.*;
 
 /**
  * A tensor generating function, whose arguments are determined by a tensor type
- *
+ * 
  * @author bratseth
  */
 public class GeneratorLambdaFunctionNode extends CompositeNode {
 
     private final TensorType type;
     private final ExpressionNode generator;
-
+    
     public GeneratorLambdaFunctionNode(TensorType type, ExpressionNode generator) {
         if ( ! type.dimensions().stream().allMatch(d -> d.size().isPresent()))
-            throw new IllegalArgumentException("A tensor generator function can only generate tensors with bound " +
+            throw new IllegalArgumentException("A tensor generator function can only generate tensors with bound " + 
                                                "dimensions, but tried to generate " + type);
         // TODO: Verify that the function only accesses the given arguments
         this.type = type;
         this.generator = generator;
     }
-
+    
     @Override
     public List<ExpressionNode> children() {
         return Collections.singletonList(generator);
@@ -53,8 +53,8 @@ public class GeneratorLambdaFunctionNode extends CompositeNode {
     public Value evaluate(Context context) {
         return generator.evaluate(context);
     }
-
-    /**
+    
+    /** 
      * Returns this as an operator which converts a list of integers into a double
      */
     public IntegerListToDoubleLambda asIntegerListToDoubleOperator() {
@@ -70,7 +70,7 @@ public class GeneratorLambdaFunctionNode extends CompositeNode {
                 context.put(type.dimensions().get(i).name(), arguments.get(i));
             return evaluate(context).asDouble();
         }
-
+        
         @Override
         public String toString() {
             return GeneratorLambdaFunctionNode.this.toString();

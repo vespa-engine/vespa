@@ -24,7 +24,7 @@ interface BinaryFormat {
 
     /**
      * Deserialize the given binary data into a Tensor object.
-     *
+     * 
      * @param type the expected abstract type of the tensor to serialize, or empty to use type information from the data
      * @param buffer the buffer containing the tensor binary data
      */

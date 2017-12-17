@@ -121,18 +121,6 @@
           <groupId>org.bouncycastle</groupId>
           <artifactId>bcprov-jdk15on</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.tensorflow</groupId>
-          <artifactId>proto</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.tensorflow</groupId>
-          <artifactId>tensorflow</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.google.protobuf</groupId>
-          <artifactId>protobuf-java</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -200,18 +188,6 @@
         <exclusion>
           <groupId>xerces</groupId>
           <artifactId>xercesImpl</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.tensorflow</groupId>
-          <artifactId>proto</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.tensorflow</groupId>
-          <artifactId>tensorflow</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.google.protobuf</groupId>
-          <artifactId>protobuf-java</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

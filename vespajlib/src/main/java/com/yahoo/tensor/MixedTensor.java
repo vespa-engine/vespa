@@ -117,7 +117,7 @@ public class MixedTensor implements Tensor {
         return index.denseSubspaceSize();
     }
 
-
+    
     /**
      * Base class for building mixed tensors.
      */
@@ -286,7 +286,7 @@ public class MixedTensor implements Tensor {
             }
             return typeBuilder.build();
         }
-
+        
     }
 
     /**
@@ -360,7 +360,7 @@ public class MixedTensor implements Tensor {
             }
             return denseSubspaceSize;
         }
-
+        
         private TensorAddress sparsePartialAddress(TensorAddress address) {
             if (type.dimensions().size() != address.size()) {
                 throw new IllegalArgumentException("Tensor type and address are not of same size.");

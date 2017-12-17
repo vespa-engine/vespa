@@ -19,7 +19,7 @@ import java.util.Optional;
 public class TensorFieldValue extends FieldValue {
 
     private Optional<Tensor> tensor;
-
+    
     private final TensorDataType dataType;
 
     /** Create an empty tensor field value */
@@ -66,7 +66,7 @@ public class TensorFieldValue extends FieldValue {
                                                o.getClass().getName() + "'.");
         }
     }
-
+    
     public void assignTensor(Optional<Tensor> tensor) {
         if (tensor.isPresent() && ! tensor.get().type().isAssignableTo(dataType.getTensorType()))
             throw new IllegalArgumentException("Type mismatch: Cannot assign tensor of type " + tensor.get().type() +
