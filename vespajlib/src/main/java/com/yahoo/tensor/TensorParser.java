@@ -96,7 +96,7 @@ class TensorParser {
                 if (valueEnd < 0)
                     throw new IllegalArgumentException("A tensor string must end by '}'");
             }
-
+            
             TensorAddress address = addressBuilder.build();
             Double value = asDouble(address, s.substring(0, valueEnd).trim());
             builder.cell(address, value);

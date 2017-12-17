@@ -123,7 +123,7 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     public void testIndexinfoFieldsets() throws IOException, ParseException {
         assertCorrectDeriving("indexinfo_fieldsets");
     }
-
+    
     @Test
     public void testStreamingJuniper() throws IOException, ParseException {
         assertCorrectDeriving("streamingjuniper");

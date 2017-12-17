@@ -29,7 +29,7 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public <T extends Expression> boolean containsExpression(Class<T> searchFor) {
-        throw createUnsupportedException(searchFor.getSimpleName());
+        throw createUnsupportedException();
     }
 
     @Override
@@ -79,9 +79,9 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public Index getIndex(String name) {
-        if ( ! importedField.fieldName().equals(name)) {
+        if (!importedField.fieldName().equals(name)) {
             throw new IllegalArgumentException("Getting an index (" + name + ") with different name than the imported field ("
-                                               + importedField.fieldName() + ") is not supported");
+                    + importedField.fieldName() + ") is not supported");
         }
         String targetIndexName = importedField.targetField().getName();
         return importedField.targetField().getIndex(targetIndexName);
@@ -104,7 +104,7 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public ScriptExpression getIndexingScript() {
-        throw createUnsupportedException("indexing");
+        throw createUnsupportedException();
     }
 
     @Override
@@ -119,12 +119,12 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public ImmutableSDField getStructField(String name) {
-        throw createUnsupportedException("struct");
+        throw createUnsupportedException();
     }
 
     @Override
     public Collection<? extends ImmutableSDField> getStructFields() {
-        throw createUnsupportedException("struct");
+        throw createUnsupportedException();
     }
 
     @Override
@@ -134,12 +134,12 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public Stemming getStemming(Search search) {
-        throw createUnsupportedException("stemming");
+        throw createUnsupportedException();
     }
 
     @Override
     public Ranking getRanking() {
-        throw createUnsupportedException("ranking");
+        throw createUnsupportedException();
     }
 
     @Override
@@ -158,8 +158,8 @@ public class ImmutableImportedSDField implements ImmutableSDField {
                 importedField.targetField().getDataType());
     }
 
-    private static UnsupportedOperationException createUnsupportedException(String aspect) {
-        return new UnsupportedOperationException("'" + aspect + "' is not meaningful or relevant for an imported field.");
+    private static UnsupportedOperationException createUnsupportedException() {
+        return new UnsupportedOperationException("This aspect is not meaningful or relevant for an imported field.");
     }
 
 }

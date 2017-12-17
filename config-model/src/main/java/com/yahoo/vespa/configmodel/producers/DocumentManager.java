@@ -20,7 +20,7 @@ import java.util.Set;
  */
 public class DocumentManager {
 
-    public DocumentmanagerConfig.Builder produce(DocumentModel model,
+    public DocumentmanagerConfig.Builder produce(DocumentModel model, 
                                                  DocumentmanagerConfig.Builder documentConfigBuilder) {
         documentConfigBuilder.enablecompression(false);
         Set<DataType> handled = new HashSet<>();

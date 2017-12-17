@@ -259,7 +259,7 @@ public final class Attribute implements Cloneable, Serializable {
             throw new IllegalArgumentException("Field " + fieldType + " not supported in convertCollectionType");
         }
     }
-
+    
     private static Optional<TensorType> convertTensorType(DataType fieldType) {
         if ( ! ( fieldType instanceof TensorDataType)) return Optional.empty();
         return Optional.of(((TensorDataType)fieldType).getTensorType());

@@ -146,9 +146,9 @@ public class JsonReaderTestCase {
         }
         {
             DocumentType x = new DocumentType("testtensor");
-            x.addField(new Field("mappedtensorfield",
+            x.addField(new Field("mappedtensorfield", 
                                  new TensorDataType(new TensorType.Builder().mapped("x").mapped("y").build())));
-            x.addField(new Field("indexedtensorfield",
+            x.addField(new Field("indexedtensorfield", 
                                  new TensorDataType(new TensorType.Builder().indexed("x").indexed("y").build())));
             types.registerDocumentType(x);
         }
@@ -1280,8 +1280,8 @@ public class JsonReaderTestCase {
         return (DocumentPut) reader.next();
     }
 
-    private DocumentPut createPutWithMappedTensor(String inputTensor) {
-        return createPutWithTensor(inputTensor, "mappedtensorfield");
+    private DocumentPut createPutWithMappedTensor(String inputTensor) { 
+        return createPutWithTensor(inputTensor, "mappedtensorfield"); 
     }
     private DocumentPut createPutWithTensor(String inputTensor, String tensorFieldName) {
         InputStream rawDoc = new ByteArrayInputStream(
