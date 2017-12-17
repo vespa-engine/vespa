@@ -2,8 +2,7 @@
 
 #include "sparse_tensor_match.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 namespace {
 
@@ -73,9 +72,9 @@ transformAddress(SparseTensorAddressBuilder &builder,
 
 
 void
-SparseTensorMatch::fastMatch(const TensorImplType &lhs,
-                                const TensorImplType &rhs)
+SparseTensorMatch::fastMatch(const TensorImplType &lhs, const TensorImplType &rhs)
 {
+    _builder.reserve(lhs.cells().size());
     for (const auto &lhsCell : lhs.cells()) {
         auto rhsItr = rhs.cells().find(lhsCell.first);
         if (rhsItr != rhs.cells().end()) {
@@ -85,13 +84,11 @@ SparseTensorMatch::fastMatch(const TensorImplType &lhs,
 }
 
 void
-SparseTensorMatch::slowMatch(const TensorImplType &lhs,
-                                const TensorImplType &rhs)
+SparseTensorMatch::slowMatch(const TensorImplType &lhs, const TensorImplType &rhs)
 {
     std::vector<AddressOp> ops;
     SparseTensorAddressBuilder addressBuilder;
-    SparseTensorAddressPadder addressPadder(_builder.fast_type(),
-                                            lhs.fast_type());
+    SparseTensorAddressPadder addressPadder(_builder.fast_type(), lhs.fast_type());
     buildTransformOps(ops, lhs.fast_type(), rhs.fast_type());
     for (const auto &lhsCell : lhs.cells()) {
         if (!transformAddress(addressBuilder, lhsCell.first, ops)) {
@@ -106,8 +103,7 @@ SparseTensorMatch::slowMatch(const TensorImplType &lhs,
     }
 }
 
-SparseTensorMatch::SparseTensorMatch(const TensorImplType &lhs,
-                                           const TensorImplType &rhs)
+SparseTensorMatch::SparseTensorMatch(const TensorImplType &lhs, const TensorImplType &rhs)
     : Parent(lhs.combineDimensionsWith(rhs))
 {
     if ((lhs.fast_type().dimensions().size() == rhs.fast_type().dimensions().size()) &&
@@ -123,6 +119,4 @@ SparseTensorMatch::SparseTensorMatch(const TensorImplType &lhs,
     }
 }
 
-
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
