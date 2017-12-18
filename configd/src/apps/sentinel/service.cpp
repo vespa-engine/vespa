@@ -113,8 +113,7 @@ Service::terminate(bool catchable, bool dumpState)
                 ret == 0 ? "OK" : strerror(errno));
             return ret;
         } else {
-            setState(KILLING);
-            if (dumpState) {
+            if (dumpState && _state != KILLING) {
                 vespalib::string pstackCmd = make_string("pstack %d > %s/%s.pstack.%d",
                                                          _pid, getVespaTempDir().c_str(), name().c_str(), _pid);
                 LOG(info, "%s:%d failed to stop. Stack dumped at %s", name().c_str(), _pid, pstackCmd.c_str());
@@ -123,6 +122,7 @@ Service::terminate(bool catchable, bool dumpState)
                     LOG(warning, "'%s' failed with return value %d", pstackCmd.c_str(), pstackRet);
                 }
             }
+            setState(KILLING);
             kill(_pid, SIGCONT); // if it was stopped for some reason
             int ret = kill(_pid, SIGKILL);
             LOG(debug, "%s: kill -SIGKILL %d: %s", name().c_str(), (int)_pid,

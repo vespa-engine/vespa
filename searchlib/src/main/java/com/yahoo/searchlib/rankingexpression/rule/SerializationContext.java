@@ -17,7 +17,7 @@ import java.util.Map;
  * @author bratseth
  */
 public class SerializationContext {
-
+    
     /** Expression functions indexed by name */
     private final ImmutableMap<String, ExpressionFunction> functions;
 

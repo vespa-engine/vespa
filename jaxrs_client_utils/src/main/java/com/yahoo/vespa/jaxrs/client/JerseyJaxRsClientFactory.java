@@ -6,6 +6,7 @@ import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.HttpUrlConnectorProvider;
 import org.glassfish.jersey.client.proxy.WebResourceFactory;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.ClientRequestFilter;
@@ -25,23 +26,26 @@ public class JerseyJaxRsClientFactory implements JaxRsClientFactory {
     private final int readTimeoutMs;
     private final SSLContext sslContext;
     private final String userAgent;
+    private final HostnameVerifier hostnameVerifier;
 
     public JerseyJaxRsClientFactory() {
         this(DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_READ_TIMEOUT_MS);
     }
 
-    public JerseyJaxRsClientFactory(SSLContext sslContext, String userAgent) {
-        this(DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_READ_TIMEOUT_MS, sslContext, userAgent);
+    public JerseyJaxRsClientFactory(SSLContext sslContext, HostnameVerifier hostnameVerifier, String userAgent) {
+        this(DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_READ_TIMEOUT_MS, sslContext, hostnameVerifier, userAgent);
     }
 
     public JerseyJaxRsClientFactory(final int connectTimeoutMs, final int readTimeoutMs) {
-        this(connectTimeoutMs, readTimeoutMs, null, null);
+        this(connectTimeoutMs, readTimeoutMs, null, null, null);
     }
 
-    public JerseyJaxRsClientFactory(int connectTimeoutMs, int readTimeoutMs, SSLContext sslContext, String userAgent) {
+    public JerseyJaxRsClientFactory(int connectTimeoutMs, int readTimeoutMs, SSLContext sslContext,
+                                    HostnameVerifier hostnameVerifier, String userAgent) {
         this.connectTimeoutMs = connectTimeoutMs;
         this.readTimeoutMs = readTimeoutMs;
         this.sslContext = sslContext;
+        this.hostnameVerifier = hostnameVerifier;
         this.userAgent = userAgent;
     }
 
@@ -61,7 +65,9 @@ public class JerseyJaxRsClientFactory implements JaxRsClientFactory {
                 .property(ClientProperties.FOLLOW_REDIRECTS, true);
         if (sslContext != null) {
             builder.sslContext(sslContext);
-            builder.hostnameVerifier((s, sslSession) -> true);
+        }
+        if (hostnameVerifier != null) {
+            builder.hostnameVerifier(hostnameVerifier);
         }
         if (userAgent != null) {
             builder.register((ClientRequestFilter) context ->

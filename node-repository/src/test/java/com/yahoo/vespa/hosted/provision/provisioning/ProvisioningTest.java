@@ -181,7 +181,7 @@ public class ProvisioningTest {
         SystemState state5 = prepare(application1, 2, 2, 3, 3, "default", tester);
         tester.activate(application1, state5.allHosts);
         assertEquals("Superfluous container nodes are also deactivated",
-                     4-2 + 5-2 + 1, tester.getNodes(application1, Node.State.inactive).size()); // 
+                     4-2 + 5-2 + 1, tester.getNodes(application1, Node.State.inactive).size()); //
         assertEquals("Superfluous content nodes are retired",
                      5-3 + 6-3 - 1, tester.getNodes(application1, Node.State.active).retired().size());
 
@@ -231,6 +231,8 @@ public class ProvisioningTest {
                      0, tester.getNodes(application1, Node.State.active).retired().flavor("large").size());
     }
 
+    // TODO: Enable when this feature is re-enabled
+    @Ignore
     @Test
     public void application_deployment_with_inplace_downsize() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
@@ -761,7 +763,7 @@ public class ProvisioningTest {
         if (nodeCount == 0) return Collections.emptySet(); // this is a shady practice
         return new HashSet<>(tester.prepare(application, cluster, nodeCount, groups, flavor));
     }
-    
+
     private static class SystemState {
 
         private Set<HostSpec> allHosts;
@@ -781,7 +783,7 @@ public class ProvisioningTest {
             this.content0 = content0;
             this.content1 = content1;
         }
-        
+
         /** Returns a host by cluster name and index, or null if there is no host with the given values in this */
         public HostSpec hostByMembership(String clusterId, int group, int index) {
             for (HostSpec host : allHosts) {
@@ -794,7 +796,7 @@ public class ProvisioningTest {
             }
             return null;
         }
-        
+
         private boolean groupMatches(Optional<ClusterSpec.Group> clusterGroup, int group) {
             if ( ! clusterGroup.isPresent()) return group==0;
             return clusterGroup.get().index() == group;

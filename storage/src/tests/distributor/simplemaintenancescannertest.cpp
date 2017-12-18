@@ -92,7 +92,7 @@ void
 SimpleMaintenanceScannerTest::testPrioritizeSingleBucket()
 {
     addBucketToDb(1);
-    std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000001)), pri VERY_HIGH)\n");
+    std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n");
 
     auto scanResult = _scanner->scanNext();
     CPPUNIT_ASSERT(!scanResult.isDone());
@@ -141,9 +141,9 @@ SimpleMaintenanceScannerTest::testPrioritizeMultipleBuckets()
     addBucketToDb(1);
     addBucketToDb(2);
     addBucketToDb(3);
-    std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
-                         "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000002)), pri VERY_HIGH)\n"
-                         "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000003)), pri VERY_HIGH)\n");
+    std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
+                         "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)), pri VERY_HIGH)\n"
+                         "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)), pri VERY_HIGH)\n");
 
     CPPUNIT_ASSERT(scanEntireDatabase(3));
     CPPUNIT_ASSERT_EQUAL(sortLines(expected),
@@ -168,8 +168,8 @@ SimpleMaintenanceScannerTest::testReset()
     addBucketToDb(3);
 
     CPPUNIT_ASSERT(scanEntireDatabase(2));
-    std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
-                         "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000003)), pri VERY_HIGH)\n");
+    std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
+                         "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)), pri VERY_HIGH)\n");
     CPPUNIT_ASSERT_EQUAL(expected, _priorityDb->toString());
 
     addBucketToDb(2);
@@ -179,9 +179,9 @@ SimpleMaintenanceScannerTest::testReset()
     _scanner->reset();
     CPPUNIT_ASSERT(scanEntireDatabase(3));
 
-    expected = "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
-               "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000002)), pri VERY_HIGH)\n"
-               "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000003)), pri VERY_HIGH)\n";
+    expected = "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
+               "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)), pri VERY_HIGH)\n"
+               "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)), pri VERY_HIGH)\n";
     CPPUNIT_ASSERT_EQUAL(sortLines(expected), sortLines(_priorityDb->toString()));
 }
 

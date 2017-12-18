@@ -47,6 +47,18 @@
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-lang3</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.tensorflow</groupId>
+          <artifactId>proto</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.tensorflow</groupId>
+          <artifactId>tensorflow</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
   </dependencies>

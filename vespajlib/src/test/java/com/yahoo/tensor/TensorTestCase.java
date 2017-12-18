@@ -25,7 +25,7 @@ import static org.junit.Assert.fail;
 
 /**
  * Tests tensor functionality
- * 
+ *
  * @author bratseth
  */
 public class TensorTestCase {
@@ -108,7 +108,7 @@ public class TensorTestCase {
                      Tensor.diag(new TensorType.Builder().indexed("x", 3).indexed("y", 2).indexed("z", 2).build()));
         assertEquals(Tensor.from("{ {x:1}:0, {x:3}:1, {x:9}:0 }"), Tensor.from("{ {x:1}:1, {x:3}:5, {x:9}:3 }").argmax("x"));
     }
-    
+
     /** Test the same computation made in various ways which are implemented with special-case optimizations */
     @Test
     public void testOptimizedComputation() {
@@ -130,7 +130,7 @@ public class TensorTestCase {
         assertEquals("Mixed vector",           42, (int)dotProduct(vector(Type.indexedUnbound), vectors(Type.mapped, 2)));
         assertEquals("Mixed matrix",           42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.mapped, 2)));
         assertEquals("Mixed matrix",           42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.mapped, 2)));
-        
+
         // Test the unoptimized path by joining in another dimension
         Tensor unitJ = Tensor.Builder.of(new TensorType.Builder().mapped("j").build()).cell().label("j", 0).value(1).build();
         Tensor unitK = Tensor.Builder.of(new TensorType.Builder().mapped("k").build()).cell().label("k", 0).value(1).build();
@@ -138,7 +138,7 @@ public class TensorTestCase {
         Tensor matrixInKSpace = matrix(Type.mapped, 2).get(0).multiply(unitK);
         assertEquals("Generic computation implementation", 42, (int)dotProduct(vectorInJSpace, Collections.singletonList(matrixInKSpace)));
     }
-    
+
     private double dotProduct(Tensor tensor, List<Tensor> tensors) {
         double sum = 0;
         TensorFunction dotProductFunction = new Reduce(new Join(new ConstantTensor(tensor),
@@ -161,7 +161,7 @@ public class TensorTestCase {
     private Tensor vector(int vectorSize, TensorType.Dimension.Type dimensionType) {
         return vectors(vectorSize, dimensionType, 1).get(0);
     }
-    
+
     /** Create a list of vectors having a single dimension x */
     private List<Tensor> vectors(TensorType.Dimension.Type dimensionType, int vectorCount) {
         return vectors(3, dimensionType, vectorCount);
@@ -179,8 +179,8 @@ public class TensorTestCase {
         }
         return tensors;
     }
-    
-    /** 
+
+    /**
      * Create a matrix of vectors (in dimension i) where each vector has the dimension x.
      * This matrix contains the same vectors as returned by createVectors, in a single list element for convenience.
      */

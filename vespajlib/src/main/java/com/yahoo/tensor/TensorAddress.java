@@ -32,10 +32,10 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     /** Returns the number of labels in this */
     public abstract int size();
-    
+
     /**
-     * Returns the i'th label in this 
-     * 
+     * Returns the i'th label in this
+     *
      * @throws IllegalArgumentException if there is no label at this index
      */
     public abstract String label(int i);
@@ -102,23 +102,23 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         private StringTensorAddress(String ... labels) {
             this.labels = Arrays.copyOf(labels, labels.length);
         }
-        
+
         @Override
         public int size() { return labels.length; }
-        
+
         @Override
         public String label(int i) { return labels[i]; }
-        
+
         @Override
-        public int intLabel(int i) { 
+        public int intLabel(int i) {
             try {
                 return Integer.parseInt(labels[i]);
-            } 
+            }
             catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Expected an int label in " + this + " at position " + i);
             }
         }
-        
+
         @Override
         public TensorAddress withLabel(int index, int label) {
             String[] labels = Arrays.copyOf(this.labels, this.labels.length);
@@ -169,7 +169,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         private final TensorType type;
         private final String[] labels;
-        
+
         public Builder(TensorType type) {
             this(type, new String[type.dimensions().size()]);
         }
@@ -193,7 +193,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             labels[labelIndex.get()] = label;
             return this;
         }
-        
+
         /** Creates a copy of this which can be modified separately */
         public Builder copy() {
             return new Builder(type, Arrays.copyOf(labels, labels.length));
@@ -202,7 +202,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         public TensorAddress build() {
             for (int i = 0; i < labels.length; i++)
                 if (labels[i] == null)
-                    throw new IllegalArgumentException("Missing a value for dimension " + 
+                    throw new IllegalArgumentException("Missing a value for dimension " +
                                                        type.dimensions().get(i).name() + " for " + type);
             return TensorAddress.of(labels);
         }

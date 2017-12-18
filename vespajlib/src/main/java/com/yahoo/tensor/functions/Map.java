@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.Collections;
@@ -31,6 +32,8 @@ public class Map extends PrimitiveTensorFunction {
         this.argument = argument;
         this.mapper = mapper;
     }
+
+    public static TensorType outputType(TensorType inputType) { return inputType; }
 
     public TensorFunction argument() { return argument; }
     public DoubleUnaryOperator mapper() { return mapper; }

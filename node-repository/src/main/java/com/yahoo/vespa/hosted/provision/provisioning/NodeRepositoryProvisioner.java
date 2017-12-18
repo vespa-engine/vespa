@@ -50,6 +50,10 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private final Activator activator;
     private final BiConsumer<List<Node>, String> debugRecorder;
 
+    int getSpareCapacityProd() {
+        return SPARE_CAPACITY_PROD;
+    }
+
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone) {
         this(nodeRepository, flavors, zone, Clock.systemUTC(), (x, y) -> {});

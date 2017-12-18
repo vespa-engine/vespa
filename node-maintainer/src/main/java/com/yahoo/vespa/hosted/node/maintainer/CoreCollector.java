@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.maintainer;
 
 import com.yahoo.collections.Pair;
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.system.ProcessExecuter;
 
 import java.io.IOException;
@@ -18,6 +17,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * Takes in a compressed (lz4) or uncompressed core dump and collects relevant metadata.
@@ -166,7 +167,7 @@ public class CoreCollector {
 
             Path decompressedPath = Paths.get(coredumpPath.toString().replaceFirst("\\.lz4$", ""));
             Pair<Integer, String> result = processExecuter.exec(
-                    new String[]{LZ4_PATH, "-d", coredumpPath.toString(), decompressedPath.toString()});
+                    new String[]{LZ4_PATH, "-f", "-d", coredumpPath.toString(), decompressedPath.toString()});
             if (result.getFirst() != 0) {
                 throw new RuntimeException("Failed to decompress file " + coredumpPath + ": " + result);
             }

@@ -6,6 +6,7 @@ vespa_add_library(storage_storageserver
     changedbucketownershiphandler.cpp
     communicationmanager.cpp
     communicationmanagermetrics.cpp
+    configurable_bucket_resolver.cpp
     distributornode.cpp
     distributornodecontext.cpp
     documentapiconverter.cpp

@@ -202,5 +202,5 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
         }
         return b.toString();
     }
-    
+
 }

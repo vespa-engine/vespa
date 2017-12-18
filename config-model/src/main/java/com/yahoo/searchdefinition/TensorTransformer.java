@@ -118,7 +118,7 @@ public class TensorTransformer extends ExpressionTransformer {
     private ExpressionNode replaceMaxAndMinFunction(FunctionNode node) {
         ExpressionNode arg1 = node.children().get(0);
         ExpressionNode arg2 = node.children().get(1);
-        
+
         TensorFunctionNode.TensorFunctionExpressionNode expression = TensorFunctionNode.wrapArgument(arg1);
         Reduce.Aggregator aggregator = Reduce.Aggregator.valueOf(node.getFunction().name());
         String dimension = ((ReferenceNode) arg2).getName();

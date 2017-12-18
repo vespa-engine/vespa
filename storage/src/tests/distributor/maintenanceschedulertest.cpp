@@ -70,7 +70,7 @@ MaintenanceSchedulerTest::testOperationIsScheduled()
 {
     _priorityDb->setPriority(PrioritizedBucket(makeDocumentBucket(BucketId(16, 1)), Priority::MEDIUM));
     _scheduler->tick(MaintenanceScheduler::NORMAL_SCHEDULING_MODE);
-    CPPUNIT_ASSERT_EQUAL(std::string("Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000001)), pri 100\n"),
+    CPPUNIT_ASSERT_EQUAL(std::string("Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri 100\n"),
                          _operationStarter->toString());
 }
 
@@ -89,9 +89,9 @@ MaintenanceSchedulerTest::testSuppressLowPrioritiesInEmergencyMode()
     _priorityDb->setPriority(PrioritizedBucket(makeDocumentBucket(BucketId(16, 2)), Priority::VERY_HIGH));
     CPPUNIT_ASSERT_EQUAL(WaitTimeMs(0), _scheduler->tick(MaintenanceScheduler::RECOVERY_SCHEDULING_MODE));
     CPPUNIT_ASSERT_EQUAL(WaitTimeMs(1), _scheduler->tick(MaintenanceScheduler::RECOVERY_SCHEDULING_MODE));
-    CPPUNIT_ASSERT_EQUAL(std::string("Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000002)), pri 0\n"),
+    CPPUNIT_ASSERT_EQUAL(std::string("Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)), pri 0\n"),
                          _operationStarter->toString());
-    CPPUNIT_ASSERT_EQUAL(std::string("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000001)), pri HIGH)\n"),
+    CPPUNIT_ASSERT_EQUAL(std::string("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri HIGH)\n"),
                          _priorityDb->toString());
 }
 
@@ -102,7 +102,7 @@ MaintenanceSchedulerTest::testPriorityNotClearedIfOperationNotStarted()
     _operationStarter->setShouldStartOperations(false);
     WaitTimeMs waitMs(_scheduler->tick(MaintenanceScheduler::NORMAL_SCHEDULING_MODE));
     CPPUNIT_ASSERT_EQUAL(WaitTimeMs(1), waitMs);
-    CPPUNIT_ASSERT_EQUAL(std::string("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000001)), pri HIGH)\n"),
+    CPPUNIT_ASSERT_EQUAL(std::string("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri HIGH)\n"),
                          _priorityDb->toString());
 }
 

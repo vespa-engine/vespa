@@ -21,20 +21,30 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
- @Beta
+@Beta
 public class TensorFunctionNode extends CompositeNode {
 
     private final TensorFunction function;
-    
+
     public TensorFunctionNode(TensorFunction function) {
         this.function = function;
     }
 
+    /** Returns the tensor function wrapped by this */
+    public TensorFunction function() { return function; }
+
     @Override
     public List<ExpressionNode> children() {
         return function.functionArguments().stream()
-                                           .map(f -> ((TensorFunctionExpressionNode)f).expression)
+                                           .map(this::toExpressionNode)
                                            .collect(Collectors.toList());
+    }
+
+    private ExpressionNode toExpressionNode(TensorFunction f) {
+        if (f instanceof TensorFunctionExpressionNode)
+            return ((TensorFunctionExpressionNode)f).expression;
+        else
+            return new TensorFunctionNode(f);
     }
 
     @Override
@@ -50,7 +60,7 @@ public class TensorFunctionNode extends CompositeNode {
         // Serialize as primitive
         return function.toPrimitive().toString(new ExpressionNodeToStringContext(context, path, this));
     }
-    
+
     @Override
     public Value evaluate(Context context) {
         return new TensorValue(function.evaluate(context));
@@ -59,8 +69,8 @@ public class TensorFunctionNode extends CompositeNode {
     public static TensorFunctionExpressionNode wrapArgument(ExpressionNode node) {
         return new TensorFunctionExpressionNode(node);
     }
-    
-    /** 
+
+    /**
      * A tensor function implemented by an expression.
      * This allows us to pass expressions as tensor function arguments.
      */
@@ -68,13 +78,13 @@ public class TensorFunctionNode extends CompositeNode {
 
         /** An expression which produces a tensor */
         private final ExpressionNode expression;
-        
+
         public TensorFunctionExpressionNode(ExpressionNode expression) {
             this.expression = expression;
         }
-        
+
         @Override
-        public List<TensorFunction> functionArguments() { 
+        public List<TensorFunction> functionArguments() {
             if (expression instanceof CompositeNode)
                 return ((CompositeNode)expression).children().stream()
                                                              .map(TensorFunctionExpressionNode::new)
@@ -108,7 +118,7 @@ public class TensorFunctionNode extends CompositeNode {
         public String toString() {
             return toString(ExpressionNodeToStringContext.empty);
         }
-        
+
         @Override
         public String toString(ToStringContext c) {
             if (c instanceof ExpressionNodeToStringContext) {
@@ -121,14 +131,14 @@ public class TensorFunctionNode extends CompositeNode {
         }
 
     }
-    
+
     /** Allows passing serialization context arguments through TensorFunctions */
     private static class ExpressionNodeToStringContext implements ToStringContext {
-        
+
         final SerializationContext context;
         final Deque<String> path;
         final CompositeNode parent;
-        
+
         public static final ExpressionNodeToStringContext empty = new ExpressionNodeToStringContext(null, null, null);
 
         public ExpressionNodeToStringContext(SerializationContext context, Deque<String> path, CompositeNode parent) {
