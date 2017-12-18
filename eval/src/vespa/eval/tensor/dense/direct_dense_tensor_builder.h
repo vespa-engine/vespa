@@ -4,8 +4,7 @@
 
 #include "dense_tensor.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * Class for building a dense tensor by inserting cell values directly into underlying array of cells.
@@ -27,5 +26,5 @@ public:
     Tensor::UP build();
 };
 
-} // namespace tensor
-} // namespace vespalib
+}
+

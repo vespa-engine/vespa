@@ -2,8 +2,7 @@
 
 #include "dense_tensor_cells_iterator.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 void
 DenseTensorCellsIterator::next()
@@ -20,5 +19,4 @@ DenseTensorCellsIterator::next()
     }
 }
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

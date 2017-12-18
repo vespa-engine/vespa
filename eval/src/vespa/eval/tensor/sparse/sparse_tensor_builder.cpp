@@ -3,8 +3,7 @@
 #include "sparse_tensor_builder.h"
 #include <cassert>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 SparseTensorBuilder::SparseTensorBuilder()
     : TensorBuilder(),
@@ -19,10 +18,7 @@ SparseTensorBuilder::SparseTensorBuilder()
 {
 }
 
-SparseTensorBuilder::~SparseTensorBuilder()
-{
-}
-
+SparseTensorBuilder::~SparseTensorBuilder() = default;
 
 void
 SparseTensorBuilder::makeType()
@@ -103,6 +99,5 @@ SparseTensorBuilder::build()
     return ret;
 }
 
+}
 
-} // namespace vespalib::tensor
-} // namespace vespalib

@@ -4,9 +4,7 @@
 
 #include "dense_tensor.h"
 
-namespace vespalib {
-namespace tensor {
-namespace dense {
+namespace vespalib::tensor::dense {
 
 /**
  * Returns a tensor with the given dimension(s) removed and the cell values in that dimension(s)
@@ -16,6 +14,5 @@ template<typename Function>
 std::unique_ptr<Tensor>
 reduce(const DenseTensorView &tensor, const std::vector<vespalib::string> &dimensions, Function &&func);
 
-} // namespace dense
-} // namespace tensor
-} // namespace vespalib
+}
+

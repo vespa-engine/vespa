@@ -33,6 +33,7 @@ private:
 public:
     explicit SparseTensor(const eval::ValueType &type_in, const Cells &cells_in);
     SparseTensor(eval::ValueType &&type_in, Cells &&cells_in, Stash &&stash_in);
+    ~SparseTensor() override;
     const Cells &cells() const { return _cells; }
     const eval::ValueType &fast_type() const { return _type; }
     bool operator==(const SparseTensor &rhs) const;

@@ -4,8 +4,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <cassert>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 using Address = DenseTensorAddressCombiner::Address;
 
@@ -83,8 +82,6 @@ DenseTensorAddressCombiner::combine(const CellsIterator &lhsItr,
             _combinedAddress.emplace_back(lhsLabel);
         }
     }
-    assert(!lhsReader.valid());
-    assert(!rhsReader.valid());
     return true;
 }
 
@@ -120,5 +117,4 @@ DenseTensorAddressCombiner::combineDimensions(const eval::ValueType &lhs,
             eval::ValueType::tensor_type(std::move(result)));
 }
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

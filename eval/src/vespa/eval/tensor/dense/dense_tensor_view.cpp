@@ -13,8 +13,7 @@
 
 using vespalib::eval::TensorSpec;
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 namespace {
 
@@ -264,5 +263,4 @@ DenseTensorView::reduce(join_fun_t op,
                          op);
 }
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

@@ -6,8 +6,7 @@
 #include "dense_tensor_view.h"
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 using XWInput = DenseTensorView::CellsRef;
 using XWOutput = ArrayRef<double>;
@@ -49,5 +48,5 @@ public:
     const eval::Value &eval(ConstArrayRef<eval::Value::CREF> params, Stash &stash) const override;
 };
 
-} // namespace tensor
-} // namespace vespalib
+}
+

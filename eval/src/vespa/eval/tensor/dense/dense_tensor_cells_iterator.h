@@ -8,8 +8,7 @@
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/vespalib/util/arrayref.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * Utility class to iterate over cells in a dense tensor.
@@ -20,7 +19,7 @@ private:
     using CellsRef = vespalib::ConstArrayRef<double>;
     const eval::ValueType &_type;
     CellsRef _cells;
-    size_t _cellIdx;
+    size_t   _cellIdx;
     std::vector<size_t> _address;
 
 public:
@@ -37,5 +36,4 @@ public:
     const eval::ValueType &fast_type() const { return _type; }
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
