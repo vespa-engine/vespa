@@ -8,8 +8,7 @@
 #include <map>
 #include <vector>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * A sparse immutable address to a tensor cell.
@@ -87,5 +86,4 @@ public:
 std::ostream &operator<<(std::ostream &out, const TensorAddress::Elements &elements);
 std::ostream &operator<<(std::ostream &out, const TensorAddress &value);
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

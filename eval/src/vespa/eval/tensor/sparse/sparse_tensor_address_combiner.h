@@ -7,8 +7,7 @@
 
 namespace vespalib {
 namespace eval { class ValueType; }
-namespace tensor {
-namespace sparse {
+namespace tensor::sparse {
 
 /**
  * Combine two tensor addresses to a new tensor address.  Common dimensions
@@ -36,5 +35,4 @@ public:
 
 
 } // namespace vespalib::tensor::sparse
-} // namespace vespalib::tensor
 } // namespace vespalib

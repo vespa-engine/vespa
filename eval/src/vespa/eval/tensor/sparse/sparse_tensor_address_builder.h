@@ -6,8 +6,7 @@
 #include <vector>
 #include "sparse_tensor_address_ref.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 
 /**
@@ -22,17 +21,12 @@ class SparseTensorAddressBuilder
 private:
     std::vector<char> _address;
 
-    void
-    append(vespalib::stringref str)
-    {
+    void append(vespalib::stringref str) {
         const char *cstr = str.c_str();
         _address.insert(_address.end(), cstr, cstr + str.size() + 1);
     }
 public:
-    SparseTensorAddressBuilder()
-        : _address()
-    {
-    }
+    SparseTensorAddressBuilder() : _address() {}
     void add(vespalib::stringref label) { append(label); }
     void addUndefined() { _address.emplace_back('\0'); }
     void clear() { _address.clear(); }
@@ -42,6 +36,4 @@ public:
     bool empty() const { return _address.empty(); }
 };
 
-
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
