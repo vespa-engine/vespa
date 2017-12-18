@@ -6,8 +6,7 @@
 #include <vector>
 #include <memory>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 /**
  * The type of a Value. This is used for type-resolution during
@@ -91,5 +90,4 @@ public:
 
 std::ostream &operator<<(std::ostream &os, const ValueType &type);
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

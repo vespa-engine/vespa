@@ -5,12 +5,9 @@
 #include <vespa/eval/eval/value_type.h>
 #include <cassert>
 
-namespace vespalib {
-namespace tensor {
-namespace sparse {
+namespace vespalib::tensor::sparse {
 
-TensorAddressCombiner::TensorAddressCombiner(const eval::ValueType &lhs,
-                                             const eval::ValueType &rhs)
+TensorAddressCombiner::TensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs)
 {
     auto rhsItr = rhs.dimensions().cbegin();
     auto rhsItrEnd = rhs.dimensions().cend();
@@ -32,8 +29,17 @@ TensorAddressCombiner::TensorAddressCombiner(const eval::ValueType &lhs,
     }
 }
 
-TensorAddressCombiner::~TensorAddressCombiner()
-{
+TensorAddressCombiner::~TensorAddressCombiner() = default;
+
+size_t
+TensorAddressCombiner::numOverlappingDimensions() const {
+    size_t count = 0;
+    for (AddressOp op : _ops) {
+        if (op == AddressOp::BOTH) {
+            count++;
+        }
+    }
+    return count;
 }
 
 bool
@@ -60,11 +66,7 @@ TensorAddressCombiner::combine(SparseTensorAddressRef lhsRef,
             add(lhsLabel);
         }
     }
-    assert(!lhs.valid());
-    assert(!rhs.valid());
     return true;
 }
 
-} // namespace vespalib::tensor::sparse
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

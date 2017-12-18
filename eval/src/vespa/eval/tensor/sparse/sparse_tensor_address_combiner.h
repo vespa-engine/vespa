@@ -7,8 +7,7 @@
 
 namespace vespalib {
 namespace eval { class ValueType; }
-namespace tensor {
-namespace sparse {
+namespace tensor::sparse {
 
 /**
  * Combine two tensor addresses to a new tensor address.  Common dimensions
@@ -26,15 +25,14 @@ class TensorAddressCombiner : public SparseTensorAddressBuilder
     std::vector<AddressOp> _ops;
 
 public:
-    TensorAddressCombiner(const eval::ValueType &lhs,
-                          const eval::ValueType &rhs);
-
+    TensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs);
     ~TensorAddressCombiner();
 
     bool combine(SparseTensorAddressRef lhsRef, SparseTensorAddressRef rhsRef);
+    size_t numOverlappingDimensions() const;
+    size_t numDimensions() const { return _ops.size(); }
 };
 
 
 } // namespace vespalib::tensor::sparse
-} // namespace vespalib::tensor
 } // namespace vespalib

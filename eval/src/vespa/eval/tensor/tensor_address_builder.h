@@ -4,8 +4,7 @@
 
 #include "tensor_address.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 
 /**
@@ -27,5 +26,4 @@ public:
 };
 
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

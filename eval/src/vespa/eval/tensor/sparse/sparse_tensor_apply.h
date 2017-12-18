@@ -2,8 +2,7 @@
 
 #pragma once
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 class Tensor;
 class SparseTensor;
 namespace sparse {
@@ -20,4 +19,3 @@ apply(const SparseTensor &lhs, const SparseTensor &rhs, Function &&func);
 
 } // namespace vespalib::tensor::sparse
 } // namespace vespalib::tensor
-} // namespace vespalib

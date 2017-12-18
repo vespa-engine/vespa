@@ -7,9 +7,7 @@
 #include <vespa/eval/tensor/direct_tensor_builder.h>
 #include "direct_sparse_tensor_builder.h"
 
-namespace vespalib {
-namespace tensor {
-namespace sparse {
+namespace vespalib::tensor::sparse {
 
 template <typename Function>
 std::unique_ptr<Tensor>
@@ -17,10 +15,14 @@ apply(const SparseTensor &lhs, const SparseTensor &rhs, Function &&func)
 {
     DirectTensorBuilder<SparseTensor> builder(lhs.combineDimensionsWith(rhs));
     TensorAddressCombiner addressCombiner(lhs.fast_type(), rhs.fast_type());
+    size_t estimatedCells = (lhs.cells().size() * rhs.cells().size());
+    if (addressCombiner.numOverlappingDimensions() != 0) {
+        estimatedCells = std::min(lhs.cells().size(), rhs.cells().size());
+    }
+    builder.reserve(estimatedCells*2);
     for (const auto &lhsCell : lhs.cells()) {
         for (const auto &rhsCell : rhs.cells()) {
-            bool combineSuccess = addressCombiner.combine(lhsCell.first,
-                                                          rhsCell.first);
+            bool combineSuccess = addressCombiner.combine(lhsCell.first, rhsCell.first);
             if (combineSuccess) {
                 builder.insertCell(addressCombiner.getAddressRef(),
                                    func(lhsCell.second, rhsCell.second));
@@ -30,6 +32,4 @@ apply(const SparseTensor &lhs, const SparseTensor &rhs, Function &&func)
     return builder.build();
 }
 
-} // namespace vespalib::tensor::sparse
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
