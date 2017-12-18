@@ -12,7 +12,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
 import java.security.Principal;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,8 +48,6 @@ public class JSONFormatter {
             generator.writeStartObject();
             generator.writeStringField("ip", accessLogEntry.getIpV4Address());
             generator.writeNumberField("time", toTimestampInSeconds(accessLogEntry.getTimeStampMillis()));
-            generator.writeStringField("time-iso8601",
-                                       Instant.ofEpochMilli(accessLogEntry.getTimeStampMillis()).toString());
             generator.writeNumberField("duration",
                                        durationAsSeconds(accessLogEntry.getDurationBetweenRequestResponseMillis()));
             generator.writeNumberField("responsesize", accessLogEntry.getReturnedContentSize());
