@@ -254,7 +254,7 @@ PendingMessageTrackerTest::testSimple()
 
         CPPUNIT_ASSERT_CONTAIN(
                 std::string(
-                        "<b>Bucket(BucketSpace(0x0000000000000000), BucketId(0x40000000000004d2))</b>\n"
+                        "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000004d2))</b>\n"
                         "<ul>\n"
                         "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> "
                         "Remove(BucketId(0x40000000000004d2), "
@@ -341,14 +341,14 @@ PendingMessageTrackerTest::testMultipleMessages()
 
         CPPUNIT_ASSERT_CONTAIN(
                 std::string(
-                        "<b>Bucket(BucketSpace(0x0000000000000000), BucketId(0x40000000000004d2))</b>\n"
+                        "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000004d2))</b>\n"
                         "<ul>\n"
                         "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), userdoc:footype:1234:0, timestamp 1000)</li>\n"
                         "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), userdoc:footype:1234:2, timestamp 1002)</li>\n"
                         "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), userdoc:footype:1234:1, timestamp 1001)</li>\n"
                         "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), userdoc:footype:1234:3, timestamp 1003)</li>\n"
                         "</ul>\n"
-                        "<b>Bucket(BucketSpace(0x0000000000000000), BucketId(0x40000000000011d7))</b>\n"
+                        "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000011d7))</b>\n"
                         "<ul>\n"
                         "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), userdoc:footype:4567:0, timestamp 2000)</li>\n"
                         "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), userdoc:footype:4567:2, timestamp 2002)</li>\n"

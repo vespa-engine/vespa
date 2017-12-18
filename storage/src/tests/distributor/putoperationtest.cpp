@@ -282,7 +282,7 @@ PutOperationTest::testNodeRemovedOnReply()
     CPPUNIT_ASSERT_EQUAL(std::string(
                                  "PutReply(doc:test:test, BucketId(0x0000000000000000), "
                                  "timestamp 100) ReturnCode(BUCKET_DELETED, "
-                                 "Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000008b13)) was deleted from nodes [0] "
+                                 "Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000008b13)) was deleted from nodes [0] "
                                  "after message was sent but before it was done. "
                                  "Sent to [1,0])"),
                          _sender.getLastReply());

@@ -369,7 +369,7 @@ Timestamp tstamp2(2);
 Timestamp tstamp3(3);
 DocumentSelection doc_sel("");
 Selection selection(doc_sel);
-BucketSpace altBucketSpace(1);
+BucketSpace altBucketSpace(2);
 
 
 void

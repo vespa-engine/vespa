@@ -60,7 +60,7 @@ BlockingOperationStarterTest::testOperationNotBlockedWhenNoMessagesPending()
 {
     CPPUNIT_ASSERT(_operationStarter->start(createMockOperation(),
                                             OperationStarter::Priority(0)));
-    CPPUNIT_ASSERT_EQUAL(std::string("Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000001)), pri 0\n"),
+    CPPUNIT_ASSERT_EQUAL(std::string("Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri 0\n"),
                          _starterImpl->toString());
 }
 
