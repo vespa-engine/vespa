@@ -7,8 +7,7 @@
 #include "sparse_tensor_address_builder.h"
 #include "sparse_tensor_address_padder.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * Utility class to build tensors of type SparseTensor, to be used by
@@ -129,7 +128,7 @@ public:
 
     eval::ValueType &fast_type() { return _type; }
     Cells &cells() { return _cells; }
+    void reserve(uint32_t estimatedCells) { _cells.resize(estimatedCells*2); }
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

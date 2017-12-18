@@ -94,4 +94,10 @@ TEST("require that dimensions are extracted")
     EXPECT_EQUAL("tensor(a{},b{},c{})", sparseTensor.type().to_spec());
 }
 
+TEST("Test essential object sizes") {
+    EXPECT_EQUAL(16u, sizeof(SparseTensorAddressRef));
+    EXPECT_EQUAL(24u, sizeof(std::pair<SparseTensorAddressRef, double>));
+    EXPECT_EQUAL(32u, sizeof(vespalib::hash_node<std::pair<SparseTensorAddressRef, double>>));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -11,8 +11,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * A tensor implementation using serialized tensor addresses to
@@ -32,28 +31,22 @@ private:
     Stash _stash;
 
 public:
-    explicit SparseTensor(const eval::ValueType &type_in,
-                             const Cells &cells_in);
-    SparseTensor(eval::ValueType &&type_in,
-                    Cells &&cells_in, Stash &&stash_in);
+    explicit SparseTensor(const eval::ValueType &type_in, const Cells &cells_in);
+    SparseTensor(eval::ValueType &&type_in, Cells &&cells_in, Stash &&stash_in);
     const Cells &cells() const { return _cells; }
     const eval::ValueType &fast_type() const { return _type; }
     bool operator==(const SparseTensor &rhs) const;
     eval::ValueType combineDimensionsWith(const SparseTensor &rhs) const;
 
-    virtual const eval::ValueType &type() const override;
-    virtual double as_double() const override;
-    virtual Tensor::UP apply(const CellFunction &func) const override;
-    virtual Tensor::UP join(join_fun_t function,
-                            const Tensor &arg) const override;
-    virtual Tensor::UP reduce(join_fun_t op,
-                              const std::vector<vespalib::string> &dimensions)
-        const override;
-    virtual bool equals(const Tensor &arg) const override;
-    virtual Tensor::UP clone() const override;
-    virtual eval::TensorSpec toSpec() const override;
-    virtual void accept(TensorVisitor &visitor) const override;
+    const eval::ValueType &type() const override;
+    double as_double() const override;
+    Tensor::UP apply(const CellFunction &func) const override;
+    Tensor::UP join(join_fun_t function, const Tensor &arg) const override;
+    Tensor::UP reduce(join_fun_t op, const std::vector<vespalib::string> &dimensions) const override;
+    bool equals(const Tensor &arg) const override;
+    Tensor::UP clone() const override;
+    eval::TensorSpec toSpec() const override;
+    void accept(TensorVisitor &visitor) const override;
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
