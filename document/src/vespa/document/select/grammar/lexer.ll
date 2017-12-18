@@ -1,9 +1,5 @@
  /* Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. */
 
- /* We use the .*xx-suffix to denote a build-time generated file */
-%option outfile="lexer.cxx"
-%option header-file="lexer.hxx"
-
 %option c++
  /* Uncomment to enable debug tracing of parsing */
  /* %option debug */
