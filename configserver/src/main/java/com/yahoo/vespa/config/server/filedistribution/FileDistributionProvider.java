@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.jrt.Supervisor;
 import com.yahoo.vespa.filedistribution.FileDistributionManager;
 
 import java.io.File;
@@ -35,16 +36,17 @@ public class FileDistributionProvider {
         }
     }
 
-    public FileDistributionProvider(File applicationDir, String zooKeepersSpec,
+    public FileDistributionProvider(Supervisor supervisor, File applicationDir, String zooKeepersSpec,
                                     String applicationId, Lock fileDistributionLock,
                                     boolean disableFileDistributor) {
         ensureDirExists(FileDistribution.getDefaultFileDBPath());
         final FileDistributionManager manager = new FileDistributionManager(
                 FileDistribution.getDefaultFileDBPath(), applicationDir,
                 zooKeepersSpec, applicationId, fileDistributionLock);
-        this.fileDistribution = new CombinedLegacyDistribution(new FileDBHandler(manager), disableFileDistributor);
+        this.fileDistribution = new CombinedLegacyDistribution(supervisor, new FileDBHandler(manager), disableFileDistributor);
         this.fileRegistry = new CombinedLegacyRegistry(new FileDBRegistry(new ManagerWrapper(manager)),
                 new FileDBRegistry(new ApplicationFileManager(applicationDir, new FileDirectory())));
+
     }
 
     // For testing only

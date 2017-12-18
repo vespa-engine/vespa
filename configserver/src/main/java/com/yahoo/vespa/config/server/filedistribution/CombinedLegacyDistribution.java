@@ -21,11 +21,12 @@ import java.util.logging.Logger;
 public class CombinedLegacyDistribution implements FileDistribution {
     private final static Logger log = Logger.getLogger(CombinedLegacyDistribution.class.getName());
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor;
     private final FileDistribution legacy;
     private final boolean disableFileDistributor;
 
-    CombinedLegacyDistribution(FileDBHandler legacy, boolean disableFileDistributor) {
+    CombinedLegacyDistribution(Supervisor supervisor, FileDBHandler legacy, boolean disableFileDistributor) {
+        this.supervisor = supervisor;
         this.legacy = legacy;
         this.disableFileDistributor = disableFileDistributor;
     }

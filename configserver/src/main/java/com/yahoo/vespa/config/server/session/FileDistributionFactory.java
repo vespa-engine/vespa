@@ -3,6 +3,8 @@ package com.yahoo.vespa.config.server.session;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionLock;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 import com.yahoo.vespa.curator.Curator;
@@ -21,6 +23,7 @@ public class FileDistributionFactory {
     private static final String lockPath = "/vespa/filedistribution/lock";
     private final String zkSpec;
     private final Lock lock;
+    private final Supervisor supervisor = new Supervisor(new Transport());
 
     @Inject
     public FileDistributionFactory(Curator curator) {
@@ -33,7 +36,12 @@ public class FileDistributionFactory {
     }
 
     public FileDistributionProvider createProvider(File applicationPackage, ApplicationId applicationId, boolean disableFileDistributor) {
-        return new FileDistributionProvider(applicationPackage, zkSpec, applicationId.serializedForm(), lock, disableFileDistributor);
+        return new FileDistributionProvider(supervisor, applicationPackage, zkSpec, applicationId.serializedForm(), lock, disableFileDistributor);
     }
 
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        supervisor.transport().shutdown().join();
+    }
 }
