@@ -288,8 +288,7 @@ CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, co
       _count(0),
       _configUri(configUri),
       _closed(false),
-      _bucketResolver(std::make_unique<PlaceHolderBucketResolver>()),
-      _docApiConverter(configUri, *_bucketResolver)
+      _docApiConverter(configUri, std::make_shared<PlaceHolderBucketResolver>())
 {
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
     _component.registerMetric(_metrics);

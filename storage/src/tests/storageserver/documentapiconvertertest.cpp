@@ -60,13 +60,13 @@ struct MockBucketResolver : public BucketResolver {
 
 struct DocumentApiConverterTest : public CppUnit::TestFixture
 {
-    MockBucketResolver _bucketResolver;
+    std::shared_ptr<MockBucketResolver> _bucketResolver;
     std::unique_ptr<DocumentApiConverter> _converter;
     const DocumentTypeRepo::SP _repo;
     const DataType& _html_type;
 
     DocumentApiConverterTest()
-        : _bucketResolver(),
+        : _bucketResolver(std::make_shared<MockBucketResolver>()),
           _repo(std::make_shared<DocumentTypeRepo>(readDocumenttypesConfig(
                     TEST_PATH("config-doctypes.cfg")))),
           _html_type(*_repo->getDocumentType("text/html"))
@@ -120,6 +120,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     void testStatBucket();
     void testGetBucketList();
     void testRemoveLocation();
+    void can_replace_bucket_resolver_after_construction();
 
     CPPUNIT_TEST_SUITE(DocumentApiConverterTest);
     CPPUNIT_TEST(testPut);
@@ -138,6 +139,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     CPPUNIT_TEST(testStatBucket);
     CPPUNIT_TEST(testGetBucketList);
     CPPUNIT_TEST(testRemoveLocation);
+    CPPUNIT_TEST(can_replace_bucket_resolver_after_construction);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -461,6 +463,31 @@ DocumentApiConverterTest::testRemoveLocation()
 
     auto cmd = toStorageAPI<api::RemoveLocationCommand>(msg);
     CPPUNIT_ASSERT_EQUAL(defaultBucket, cmd->getBucket());
+}
+
+namespace {
+
+struct ReplacementMockBucketResolver : public MockBucketResolver {
+    Bucket bucketFromId(const DocumentId& id) const override {
+        if (id.getDocType() == "testdoctype1") {
+            return defaultBucket;
+        }
+        return Bucket(BucketSpace(0), BucketId(0));
+    }
+};
+
+}
+
+void DocumentApiConverterTest::can_replace_bucket_resolver_after_construction() {
+    documentapi::GetDocumentMessage get_msg(DocumentId("id::testdoctype1::baz"), "foo bar");
+    auto cmd = toStorageAPI<api::GetCommand>(get_msg);
+
+    CPPUNIT_ASSERT_EQUAL(BucketSpace(0), cmd->getBucket().getBucketSpace());
+
+    _converter->setBucketResolver(std::make_shared<ReplacementMockBucketResolver>());
+
+    cmd = toStorageAPI<api::GetCommand>(get_msg);
+    CPPUNIT_ASSERT_EQUAL(defaultBucketSpace, cmd->getBucket().getBucketSpace());
 }
 
 }
