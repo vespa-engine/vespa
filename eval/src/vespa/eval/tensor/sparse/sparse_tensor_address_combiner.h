@@ -25,12 +25,12 @@ class TensorAddressCombiner : public SparseTensorAddressBuilder
     std::vector<AddressOp> _ops;
 
 public:
-    TensorAddressCombiner(const eval::ValueType &lhs,
-                          const eval::ValueType &rhs);
-
+    TensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs);
     ~TensorAddressCombiner();
 
     bool combine(SparseTensorAddressRef lhsRef, SparseTensorAddressRef rhsRef);
+    size_t numOverlappingDimensions() const;
+    size_t numDimensions() const { return _ops.size(); }
 };
 
 

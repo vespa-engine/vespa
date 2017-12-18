@@ -15,7 +15,11 @@ apply(const SparseTensor &lhs, const SparseTensor &rhs, Function &&func)
 {
     DirectTensorBuilder<SparseTensor> builder(lhs.combineDimensionsWith(rhs));
     TensorAddressCombiner addressCombiner(lhs.fast_type(), rhs.fast_type());
-    builder.reserve((lhs.cells().size() * rhs.cells())*2);
+    size_t estimatedCells = (lhs.cells().size() * rhs.cells().size());
+    if (addressCombiner.numOverlappingDimensions() != 0) {
+        estimatedCells = std::min(lhs.cells().size(), rhs.cells().size());
+    }
+    builder.reserve(estimatedCells*2);
     for (const auto &lhsCell : lhs.cells()) {
         for (const auto &rhsCell : rhs.cells()) {
             bool combineSuccess = addressCombiner.combine(lhsCell.first, rhsCell.first);
