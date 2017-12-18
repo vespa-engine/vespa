@@ -23,4 +23,16 @@ public class AthenzUtils {
         }
     }
 
+    public static AthenzIdentity createAthenzIdentity(String fullName) {
+        int domainIdentityNameSeparatorIndex = fullName.lastIndexOf('.');
+        if (domainIdentityNameSeparatorIndex == -1
+                || domainIdentityNameSeparatorIndex == 0
+                || domainIdentityNameSeparatorIndex == fullName.length() - 1) {
+            throw new IllegalArgumentException("Invalid Athenz identity: " + fullName);
+        }
+        AthenzDomain domain = new AthenzDomain(fullName.substring(0, domainIdentityNameSeparatorIndex));
+        String identityName = fullName.substring(domainIdentityNameSeparatorIndex + 1, fullName.length());
+        return createAthenzIdentity(domain, identityName);
+    }
+
 }
