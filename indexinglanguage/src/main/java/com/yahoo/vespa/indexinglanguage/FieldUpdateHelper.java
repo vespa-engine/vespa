@@ -56,7 +56,7 @@ public abstract class FieldUpdateHelper {
         } else if (upd instanceof ArithmeticValueUpdate) {
             if (((ArithmeticValueUpdate)upd).getOperator() == ArithmeticValueUpdate.Operator.DIV &&
                 ((ArithmeticValueUpdate)upd).getOperand().doubleValue() == 0) {
-                throw new IllegalArgumentException("Div by zero.");
+                throw new IllegalArgumentException("Division by zero.");
             }
             val.assign(upd.getValue());
             return val;
