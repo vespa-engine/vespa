@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 /**
  * @author bjorncs
  */
-public class InvalidTokenException extends Exception {
+public class InvalidTokenException extends RuntimeException {
     public InvalidTokenException(String message) {
         super(message);
     }

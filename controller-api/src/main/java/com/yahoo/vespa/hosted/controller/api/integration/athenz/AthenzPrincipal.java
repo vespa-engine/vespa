@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 
 import java.security.Principal;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @author bjorncs
@@ -13,6 +14,10 @@ public class AthenzPrincipal implements Principal {
 
     private final AthenzIdentity athenzIdentity;
     private final NToken nToken;
+
+    public AthenzPrincipal(AthenzIdentity athenzIdentity) {
+        this(athenzIdentity, null);
+    }
 
     public AthenzPrincipal(AthenzIdentity athenzIdentity,
                            NToken nToken) {
@@ -33,8 +38,8 @@ public class AthenzPrincipal implements Principal {
         return athenzIdentity.getDomain();
     }
 
-    public NToken getNToken() {
-        return nToken;
+    public Optional<NToken> getNToken() {
+        return Optional.ofNullable(nToken);
     }
 
     @Override
