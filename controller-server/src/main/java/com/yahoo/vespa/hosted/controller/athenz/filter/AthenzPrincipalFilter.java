@@ -64,7 +64,7 @@ public class AthenzPrincipalFilter implements SecurityRequestFilter {
                 return;
             }
             if (certificatePrincipal.isPresent() && nTokenPrincipal.isPresent()
-                    && !certificatePrincipal.get().equals(nTokenPrincipal.get())) {
+                    && !certificatePrincipal.get().getIdentity().equals(nTokenPrincipal.get().getIdentity())) {
                 String errorMessage = String.format(
                         "Identity in principal token does not match x509 CN: token-identity=%s, cert-identity=%s",
                         nTokenPrincipal.get().getIdentity().getFullName(),
