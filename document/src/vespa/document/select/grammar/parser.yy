@@ -1,8 +1,5 @@
  /* Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. */
 
-%output "parser.cxx"
-%defines "parser.hxx"
-
  /* Skeleton implementation included as part of the generated source. Note: _not_ covered by the GPL. */
 %skeleton "lalr1.cc"
 

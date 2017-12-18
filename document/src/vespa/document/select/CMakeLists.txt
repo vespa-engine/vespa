@@ -1,10 +1,14 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-find_package(BISON REQUIRED)
-find_package(FLEX REQUIRED)
+find_package(BISON REQUIRED 3.0)
+find_package(FLEX REQUIRED 2.5)
 
-BISON_TARGET(DocSelParser grammar/parser.yy ${CMAKE_CURRENT_BINARY_DIR}/parser.cxx)
-FLEX_TARGET(DocSelLexer grammar/lexer.ll ${CMAKE_CURRENT_BINARY_DIR}/lexer.cxx)
+BISON_TARGET(DocSelParser grammar/parser.yy
+             ${CMAKE_CURRENT_BINARY_DIR}/parser.cxx
+             DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/parser.hxx)
+FLEX_TARGET(DocSelLexer grammar/lexer.ll
+            ${CMAKE_CURRENT_BINARY_DIR}/lexer.cxx
+            DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/lexer.hxx)
 
 ADD_FLEX_BISON_DEPENDENCY(DocSelLexer DocSelParser)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
