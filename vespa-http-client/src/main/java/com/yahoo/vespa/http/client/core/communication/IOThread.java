@@ -5,6 +5,7 @@ import com.google.common.annotations.Beta;
 import com.yahoo.vespa.http.client.Result;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.core.Document;
+import com.yahoo.vespa.http.client.core.Exceptions;
 import com.yahoo.vespa.http.client.core.operationProcessor.EndPointResultFactory;
 import com.yahoo.vespa.http.client.core.EndpointResult;
 import com.yahoo.vespa.http.client.core.ServerResponseException;
@@ -318,29 +319,28 @@ class IOThread implements Runnable, AutoCloseable {
                     successfullHandshakes.getAndIncrement();
                 } catch (ServerResponseException ser) {
                     executeProblemsCounter.incrementAndGet();
-                    log.log(Level.INFO, "Handshake did not work out " + endpoint, ser.getMessage());
+                    log.log(Level.INFO, "Handshake did not work out " + endpoint, Exceptions.toMessageString(ser));
                     drainFirstDocumentsInQueueIfOld();
                     return ThreadState.CONNECTED;
                 } catch (Throwable throwable) { // This cover IOException as well
                     executeProblemsCounter.incrementAndGet();
-                    log.log(Level.INFO, "Problem with Handshake " + endpoint, throwable.getMessage());
+                    log.log(Level.INFO, "Problem with Handshake " + endpoint, Exceptions.toMessageString(throwable));
                     drainFirstDocumentsInQueueIfOld();
                     client.close();
                     return ThreadState.DISCONNECTED;
                 }
                 return ThreadState.SESSION_SYNCED;
             case SESSION_SYNCED:
-                final int maxWaitTimeMilliSecs = 100;
                 try {
-                    ProcessResponse processResponse = pullAndProcessData(maxWaitTimeMilliSecs);
+                    ProcessResponse processResponse = pullAndProcessData(100);
                     gatewayThrottler.handleCall(processResponse.transitiveErrorCount);
                 }
                 catch (ServerResponseException ser) {
-                    log.info("Problems while handing data over to gateway " + endpoint + " " + ser.getMessage());
+                    log.info("Problems while handing data over to gateway " + endpoint + ": " + Exceptions.toMessageString(ser));
                     return ThreadState.CONNECTED;
                 }
                 catch (Throwable e) { // Covers IOException as well
-                    log.info("Problems while handing data over to gateway  " + endpoint + " " + e.getMessage());
+                    log.info("Problems while handing data over to gateway  " + endpoint + ": " + Exceptions.toMessageString(e));
                     client.close();
                     return ThreadState.DISCONNECTED;
                 }
