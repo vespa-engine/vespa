@@ -13,7 +13,7 @@ import java.util.Optional;
 /**
  * A tensor field. Tensors are encoded as a data field where the data (following the length)
  * is encoded in a tensor binary format defined by com.yahoo.tensor.serialization.TypedBinaryFormat
- * 
+ *
  * @author bratseth
  */
 public class TensorField extends DocsumField implements VariableLengthField {

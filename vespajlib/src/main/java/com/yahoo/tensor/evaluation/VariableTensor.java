@@ -12,18 +12,18 @@ import java.util.List;
 
 /**
  * A tensor variable name which resolves to a tensor in the context at evaluation time
- * 
+ *
  * @author bratseth
  */
 @Beta
 public class VariableTensor extends PrimitiveTensorFunction {
 
     private final String name;
-    
+
     public VariableTensor(String name) {
         this.name = name;
     }
-    
+
     @Override
     public List<TensorFunction> functionArguments() { return Collections.emptyList(); }
 
@@ -35,7 +35,7 @@ public class VariableTensor extends PrimitiveTensorFunction {
 
     @Override
     public Tensor evaluate(EvaluationContext context) {
-        return ((MapEvaluationContext)context).get(name);
+        return context.getTensor(name);
     }
 
     @Override

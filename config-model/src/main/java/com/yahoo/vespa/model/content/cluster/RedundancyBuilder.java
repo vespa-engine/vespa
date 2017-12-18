@@ -8,6 +8,7 @@ import com.yahoo.vespa.model.content.Redundancy;
  * Builds redundancy config for a content cluster.
  */
 public class RedundancyBuilder {
+
     Redundancy build(ModelElement clusterXml) {
         Integer initialRedundancy = 2;
         Integer finalRedundancy = 3;
@@ -37,4 +38,5 @@ public class RedundancyBuilder {
 
         return new Redundancy(initialRedundancy, finalRedundancy, readyCopies);
     }
+
 }

@@ -18,7 +18,7 @@ public class MapEvaluationContext implements EvaluationContext {
 
     public void put(String name, Tensor tensor) { bindings.put(name, tensor); }
 
-    /** Returns the tensor bound to this name, or null if none */
-    public Tensor get(String name) { return bindings.get(name); }
+    @Override
+    public Tensor getTensor(String name) { return bindings.get(name); }
 
 }

@@ -21,53 +21,71 @@ import java.util.stream.Collectors;
 @Beta
 public class ScalarFunctions {
 
-    public static DoubleBinaryOperator add() { return new Addition(); }
-    public static DoubleBinaryOperator multiply() { return new Multiplication(); }
-    public static DoubleBinaryOperator divide() { return new Division(); }
+    public static DoubleBinaryOperator add() { return new Add(); }
+    public static DoubleBinaryOperator divide() { return new Divide(); }
     public static DoubleBinaryOperator equal() { return new Equal(); }
-    public static DoubleUnaryOperator square() { return new Square(); }
+    public static DoubleBinaryOperator multiply() { return new Multiply(); }
+
+    public static DoubleUnaryOperator acos() { return new Acos(); }
+    public static DoubleUnaryOperator exp() { return new Exp(); }
     public static DoubleUnaryOperator sqrt() { return new Sqrt(); }
-    public static DoubleUnaryOperator exp() { return new Exponent(); }
+    public static DoubleUnaryOperator square() { return new Square(); }
+
     public static Function<List<Integer>, Double> random() { return new Random(); }
     public static Function<List<Integer>, Double> equal(List<String> argumentNames) { return new EqualElements(argumentNames); }
     public static Function<List<Integer>, Double> sum(List<String> argumentNames) { return new SumElements(argumentNames); }
 
-    public static class Addition implements DoubleBinaryOperator {
+    // Binary operators -----------------------------------------------------------------------------
 
+    public static class Add implements DoubleBinaryOperator {
         @Override
         public double applyAsDouble(double left, double right) { return left + right; }
-
         @Override
         public String toString() { return "f(a,b)(a + b)"; }
-
     }
 
-    public static class Multiplication implements DoubleBinaryOperator {
-
+    public static class Equal implements DoubleBinaryOperator {
         @Override
-        public double applyAsDouble(double left, double right) { return left * right; }
-        
+        public double applyAsDouble(double left, double right) { return left == right ? 1 : 0; }
+        @Override
+        public String toString() { return "f(a,b)(a==b)"; }
+    }
+
+    public static class Exp implements DoubleUnaryOperator {
+        @Override
+        public double applyAsDouble(double operand) { return Math.exp(operand); }
+        @Override
+        public String toString() { return "f(a)(exp(a))"; }
+    }
+
+    public static class Multiply implements DoubleBinaryOperator {
+        @Override
+        public double applyAsDouble(double left, double right) { return left * right; }        
         @Override
         public String toString() { return "f(a,b)(a * b)"; }
-
     }
 
-    public static class Division implements DoubleBinaryOperator {
-
+    public static class Divide implements DoubleBinaryOperator {
         @Override
         public double applyAsDouble(double left, double right) { return left / right; }
-
         @Override
         public String toString() { return "f(a,b)(a / b)"; }
     }
 
-    public static class Equal implements DoubleBinaryOperator {
+    // Unary operators ------------------------------------------------------------------------------
 
+    public static class Acos implements DoubleUnaryOperator {
         @Override
-        public double applyAsDouble(double left, double right) { return left == right ? 1 : 0; }
+        public double applyAsDouble(double operand) { return Math.acos(operand); }
+        @Override
+        public String toString() { return "f(a)(acos(a))"; }
+    }
 
+    public static class Sqrt implements DoubleUnaryOperator {
         @Override
-        public String toString() { return "f(a,b)(a==b)"; }
+        public double applyAsDouble(double operand) { return Math.sqrt(operand); }
+        @Override
+        public String toString() { return "f(a)(sqrt(a))"; }
     }
 
     public static class Square implements DoubleUnaryOperator {
@@ -80,42 +98,10 @@ public class ScalarFunctions {
 
     }
 
-    public static class Sqrt implements DoubleUnaryOperator {
+    // Variable-length operators -----------------------------------------------------------------------------
 
-        @Override
-        public double applyAsDouble(double operand) { return Math.sqrt(operand); }
-
-        @Override
-        public String toString() { return "f(a)(sqrt(a))"; }
-
-    }
-
-    public static class Exponent implements DoubleUnaryOperator {
-
-        @Override
-        public double applyAsDouble(double operand) { return Math.exp(operand); }
-
-        @Override
-        public String toString() { return "f(a)(exp(a))"; }
-
-    }
-
-    public static class Random implements Function<List<Integer>, Double> {
-
-        @Override
-        public Double apply(List<Integer> values) {
-            return ThreadLocalRandom.current().nextDouble();
-        }
-
-        @Override
-        public String toString() { return "random"; }
-
-    }
-
-    public static class EqualElements implements Function<List<Integer>, Double> {
-        
-        private final ImmutableList<String> argumentNames;
-        
+    public static class EqualElements implements Function<List<Integer>, Double> {        
+        private final ImmutableList<String> argumentNames;        
         private EqualElements(List<String> argumentNames) {
             this.argumentNames = ImmutableList.copyOf(argumentNames);
         }
@@ -128,7 +114,6 @@ public class ScalarFunctions {
                     return 0.0;
             return 1.0;
         }
-
         @Override
         public String toString() { 
             if (argumentNames.size() == 0) return "1";
@@ -143,13 +128,19 @@ public class ScalarFunctions {
             }
             return b.toString();
         }
+    }
 
+    public static class Random implements Function<List<Integer>, Double> {
+        @Override
+        public Double apply(List<Integer> values) {
+            return ThreadLocalRandom.current().nextDouble();
+        }
+        @Override
+        public String toString() { return "random"; }
     }
 
     public static class SumElements implements Function<List<Integer>, Double> {
-
         private final ImmutableList<String> argumentNames;
-
         private SumElements(List<String> argumentNames) {
             this.argumentNames = ImmutableList.copyOf(argumentNames);
         }
@@ -161,12 +152,10 @@ public class ScalarFunctions {
                 sum += value;
             return (double)sum;
         }
-
         @Override
         public String toString() {
             return argumentNames.stream().collect(Collectors.joining("+"));
         }
-
     }
 
 }

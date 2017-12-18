@@ -65,7 +65,7 @@ public class SparseBinaryFormatTestCase {
 
     private void assertSerialization(Tensor tensor, TensorType expectedType) {
         byte[] encodedTensor = TypedBinaryFormat.encode(tensor);
-        Tensor decodedTensor = TypedBinaryFormat.decode(Optional.of(expectedType), 
+        Tensor decodedTensor = TypedBinaryFormat.decode(Optional.of(expectedType),
                                                         GrowableByteBuffer.wrap(encodedTensor));
         assertEquals(tensor, decodedTensor);
     }

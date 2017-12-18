@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 /**
  * Concatenation of two tensors along an (indexed) dimension
- * 
+ *
  * @author bratseth
  */
 @Beta
@@ -74,7 +74,7 @@ public class Concat extends PrimitiveTensorFunction {
         concatenateTo(bIndexed, aIndexed, 0, concatType, bToIndexes, aToIndexes, builder);
         return builder.build();
     }
-    
+
     private void concatenateTo(IndexedTensor a, IndexedTensor b, int offset, TensorType concatType,
                                int[] aToIndexes, int[] bToIndexes, Tensor.Builder builder) {
         Set<String> otherADimensions = a.type().dimensionNames().stream().filter(d -> !d.equals(dimension)).collect(Collectors.toSet());
@@ -112,7 +112,7 @@ public class Concat extends PrimitiveTensorFunction {
             Tensor unitTensor = Tensor.Builder.of(new TensorType.Builder().indexed(dimensionName, 1).build()).cell(1,0).build();
             return tensor.multiply(unitTensor);
         }
-        
+
     }
 
     /** Returns the type resulting from concatenating a and b */
@@ -144,7 +144,7 @@ public class Concat extends PrimitiveTensorFunction {
     /**
      * Combine two addresses, adding the offset to the concat dimension
      *
-     * @return the combined address or null if the addresses are incompatible 
+     * @return the combined address or null if the addresses are incompatible
      *         (in some other dimension than the concat dimension)
      */
     private TensorAddress combineAddresses(TensorAddress a, int[] aToIndexes, TensorAddress b, int[] bToIndexes,
@@ -161,7 +161,7 @@ public class Concat extends PrimitiveTensorFunction {
     /**
      * Returns the an array having one entry in order for each dimension of fromType
      * containing the index at which toType contains the same dimension name.
-     * That is, if the returned array contains n at index i then 
+     * That is, if the returned array contains n at index i then
      * fromType.dimensions().get(i).name.equals(toType.dimensions().get(n).name())
      * If some dimension in fromType is not present in toType, the corresponding index will be -1
      */

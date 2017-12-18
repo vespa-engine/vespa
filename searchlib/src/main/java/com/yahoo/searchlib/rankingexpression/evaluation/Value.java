@@ -5,6 +5,8 @@ import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.TensorType;
 
 /**
  * The result of a ranking expression evaluation.
@@ -23,6 +25,14 @@ public abstract class Value {
     /** Returns this value as a double value, or throws UnsupportedOperationException if it cannot be represented as a double */
     public DoubleValue asDoubleValue() {
         return new DoubleValue(asDouble());
+    }
+
+    /** Returns this as a tensor value */
+    public abstract Tensor asTensor();
+
+    /** A utility method for wrapping a sdouble in a rank 0 tensor */
+    protected Tensor doubleAsTensor(double value) {
+        return Tensor.Builder.of(TensorType.empty).cell(TensorAddress.of(), value).build();
     }
 
     /** Returns true if this value can return itself as a double, i.e asDoubleValue will return a value and not throw */

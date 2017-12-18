@@ -13,14 +13,14 @@ import java.util.stream.Collectors;
 
 /**
  * Microbenchmark of tensor operations.
- * 
+ *
  * @author bratseth
  */
 public class TensorFunctionBenchmark {
 
     private final static Random random = new Random();
-    
-    public double benchmark(int iterations, List<Tensor> modelVectors, TensorType.Dimension.Type dimensionType, 
+
+    public double benchmark(int iterations, List<Tensor> modelVectors, TensorType.Dimension.Type dimensionType,
                             boolean extraSpace) {
         Tensor queryVector = vectors(1, 300, dimensionType).get(0);
         if (extraSpace) {
@@ -34,7 +34,7 @@ public class TensorFunctionBenchmark {
         long totalTime = System.currentTimeMillis() - startTime;
         return (double)totalTime / (double)iterations;
     }
-    
+
     private Tensor unitVector(String dimension) {
         return Tensor.Builder.of(new TensorType.Builder().indexed(dimension, 1).build())
                 .cell().label(dimension, 0).value(1).build();
@@ -49,11 +49,11 @@ public class TensorFunctionBenchmark {
 
     private double dotProduct(Tensor tensor, List<Tensor> tensors) {
         double largest = Double.MIN_VALUE;
-        TensorFunction dotProductFunction = new Reduce(new Join(new ConstantTensor(tensor), 
-                                                                new VariableTensor("argument"), (a, b) -> a * b), 
+        TensorFunction dotProductFunction = new Reduce(new Join(new ConstantTensor(tensor),
+                                                                new VariableTensor("argument"), (a, b) -> a * b),
                                                        Reduce.Aggregator.sum).toPrimitive();
         MapEvaluationContext context = new MapEvaluationContext();
-        
+
         for (Tensor tensorElement : tensors) { // tensors.size() = 1 for larger tensor
             context.put("argument", tensorElement);
             double dotProduct = dotProductFunction.evaluate(context).asDouble();

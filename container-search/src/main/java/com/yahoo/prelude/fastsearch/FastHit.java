@@ -109,7 +109,7 @@ public class FastHit extends Hit {
 
     /**
      * Returns the explicitly set uri if available, returns "index:[source]/[partid]/[id]" otherwise
-     * 
+     *
      * @return uri of hit
      */
     public URI getUri() {
@@ -128,9 +128,9 @@ public class FastHit extends Hit {
     }
 
     /**
-     * The uri of the index location of this hit ("index:[source]/[partid]/[id]"). 
+     * The uri of the index location of this hit ("index:[source]/[partid]/[id]").
      * This is the uri if no other uri is assigned
-     * 
+     *
      * @return uri to the index.
      */
     public URI getIndexUri() {
@@ -215,7 +215,7 @@ public class FastHit extends Hit {
      *     The empty string ("") if no value is assigned in the document.
      *
      *     <li><b>Dynamic summary string fields</b>: A Java String before JuniperSearcher and a HitField after.</li>
-     *     
+     *
      *     <li><b>Numerics</b>: The corresponding numeric Java type.<br>
      *     If the field has <i>no value</i> assigned in the document,
      *     the special numeric {@link com.yahoo.search.result.NanNumber#NaN} is returned.

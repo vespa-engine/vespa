@@ -1,16 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
+import com.yahoo.container.search.LegacyEmulationConfig;
+import com.yahoo.data.access.Inspector;
+import com.yahoo.log.LogLevel;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
-import com.yahoo.data.access.Inspector;
-import com.yahoo.container.search.LegacyEmulationConfig;
-
-import com.yahoo.log.LogLevel;
 
 /**
  * @author Bjørn Borud
@@ -25,7 +25,7 @@ public abstract class DocsumField {
 
         Map<String, Constructor<? extends DocsumField>> constructors = new HashMap<>();
 
-        void put(String typename, Class<? extends DocsumField> fieldClass) 
+        void put(String typename, Class<? extends DocsumField> fieldClass)
                 throws NoSuchMethodException, SecurityException {
             Constructor<? extends DocsumField> constructor = fieldClass.getConstructor(String.class);
             constructors.put(typename, constructor);
@@ -106,7 +106,7 @@ public abstract class DocsumField {
     public abstract Object decode(ByteBuffer b);
 
     /**
-     * Get the number of bytes this field occupies in the given buffer 
+     * Get the number of bytes this field occupies in the given buffer
      * AND SET(!) the position to the first byte after this field.
      */
     public abstract int getLength(ByteBuffer b);

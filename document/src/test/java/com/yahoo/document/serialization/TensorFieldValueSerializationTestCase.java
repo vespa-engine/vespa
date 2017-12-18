@@ -24,7 +24,7 @@ public class TensorFieldValueSerializationTestCase {
     private final static TensorType tensorType = new TensorType.Builder().mapped("dimX").mapped("dimY").build();
     private final static String TENSOR_FIELD = "my_tensor";
     private final static String TENSOR_FILES = "src/test/resources/tensor/";
-    private final static TestDocumentFactory docFactory = new TestDocumentFactory(createDocType(), 
+    private final static TestDocumentFactory docFactory = new TestDocumentFactory(createDocType(),
                                                                                   "id:test:my_type::foo");
 
     private static DocumentType createDocType() {
