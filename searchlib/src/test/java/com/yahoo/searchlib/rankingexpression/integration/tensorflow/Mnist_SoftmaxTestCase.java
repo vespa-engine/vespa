@@ -7,6 +7,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.Session;
@@ -22,6 +23,7 @@ import static org.junit.Assert.assertNotNull;
  */
 public class Mnist_SoftmaxTestCase {
 
+    @Ignore
     @Test
     public void testImporting() {
         String modelDir = "src/test/files/integration/tensorflow/mnist_softmax/saved";
