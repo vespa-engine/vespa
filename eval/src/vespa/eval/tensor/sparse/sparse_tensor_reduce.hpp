@@ -48,6 +48,7 @@ reduce(const SparseTensor &tensor,
         return reduceAll(tensor, builder, func);
     }
     TensorAddressReducer addressReducer(tensor.fast_type(), dimensions);
+    builder.reserve(tensor.cells().size()*2);
     for (const auto &cell : tensor.cells()) {
         addressReducer.reduce(cell.first);
         builder.insertCell(addressReducer.getAddressRef(), cell.second, func);

@@ -15,10 +15,10 @@ apply(const SparseTensor &lhs, const SparseTensor &rhs, Function &&func)
 {
     DirectTensorBuilder<SparseTensor> builder(lhs.combineDimensionsWith(rhs));
     TensorAddressCombiner addressCombiner(lhs.fast_type(), rhs.fast_type());
+    builder.reserve((lhs.cells().size() * rhs.cells())*2);
     for (const auto &lhsCell : lhs.cells()) {
         for (const auto &rhsCell : rhs.cells()) {
-            bool combineSuccess = addressCombiner.combine(lhsCell.first,
-                                                          rhsCell.first);
+            bool combineSuccess = addressCombiner.combine(lhsCell.first, rhsCell.first);
             if (combineSuccess) {
                 builder.insertCell(addressCombiner.getAddressRef(),
                                    func(lhsCell.second, rhsCell.second));
