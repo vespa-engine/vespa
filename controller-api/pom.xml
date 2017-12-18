@@ -18,24 +18,9 @@
     <dependencies>
 
         <!-- provided -->
-
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>component</artifactId>
-            <scope>provided</scope>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>annotations</artifactId>
-            <scope>provided</scope>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>vespajlib</artifactId>
+            <artifactId>container-dev</artifactId>
             <scope>provided</scope>
             <version>${project.version}</version>
         </dependency>
@@ -52,56 +37,6 @@
             <artifactId>config-provisioning</artifactId>
             <scope>provided</scope>
             <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jdk8</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-multipart</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-server</artifactId>
-            <version>${jersey2.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <classifier>no_aop</classifier>
-            <scope>provided</scope>
         </dependency>
 
         <!-- compile -->
