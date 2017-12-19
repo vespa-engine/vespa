@@ -35,7 +35,42 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
         this(executor, accessLog, null);
     }
 
+    public static class Context {
+        final Executor executor;
+        final AccessLog accessLog;
+        final Metric metric;
+        @Inject
+        public Context(Executor executor, AccessLog accessLog, Metric metric) {
+            this.executor = executor;
+            this.accessLog = accessLog;
+            this.metric = metric;
+        }
+        public Context(Context other) {
+            this.executor = other.executor;
+            this.accessLog = other.accessLog;
+            this.metric = other.metric;
+        }
+    }
+    public static Context testOnlyContext() {
+        return new Context(new Executor() {
+                @Override
+                public void execute(Runnable command) {
+                    command.run();
+                }
+            },
+            AccessLog.voidAccessLog(),
+            null);
+    }
+
     @Inject
+    public LoggingRequestHandler(Context ctx) {
+        this(ctx.executor, ctx.accessLog, ctx.metric);
+    }
+
+    public LoggingRequestHandler(Context ctx, boolean allowAsyncResponse) {
+        this(ctx.executor, ctx.accessLog, ctx.metric, allowAsyncResponse);
+    }
+
     public LoggingRequestHandler(Executor executor, AccessLog accessLog, Metric metric) {
         this(executor, accessLog, metric, false);
     }
