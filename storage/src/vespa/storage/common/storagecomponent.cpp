@@ -28,14 +28,14 @@ StorageComponent::setNodeInfo(vespalib::stringref clusterName,
 void
 StorageComponent::setDocumentTypeRepo(DocumentTypeRepoSP repo)
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     _docTypeRepo = repo;
 }
 
 void
 StorageComponent::setLoadTypes(LoadTypeSetSP loadTypes)
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     _loadTypes = loadTypes;
 }
 
@@ -57,21 +57,21 @@ StorageComponent::setBucketIdFactory(const document::BucketIdFactory& factory)
 void
 StorageComponent::setDistribution(DistributionSP distribution)
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     _distribution = distribution;
 }
 
 void
 StorageComponent::enableMultipleBucketSpaces(bool value)
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     _enableMultipleBucketSpaces = value;
 }
 
 void
 StorageComponent::setNodeStateUpdater(NodeStateUpdater& updater)
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     if (_nodeStateUpdater != 0) {
         throw vespalib::IllegalStateException(
                 "Node state updater is already set", VESPA_STRLOC);
@@ -100,7 +100,7 @@ StorageComponent::StorageComponent(StorageComponentRegister& compReg,
 NodeStateUpdater&
 StorageComponent::getStateUpdater() const
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     if (_nodeStateUpdater == 0) {
         throw vespalib::IllegalStateException(
                 "Component need node state updater at this time, but it has "
@@ -127,28 +127,28 @@ StorageComponent::getPriority(const documentapi::LoadType& lt) const
 StorageComponent::DocumentTypeRepoSP
 StorageComponent::getTypeRepo() const
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     return _docTypeRepo;
 }
 
 StorageComponent::LoadTypeSetSP
 StorageComponent::getLoadTypes() const
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     return _loadTypes;
 }
 
 StorageComponent::DistributionSP
 StorageComponent::getDistribution() const
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     return _distribution;
 }
 
 bool
 StorageComponent::enableMultipleBucketSpaces() const
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     return _enableMultipleBucketSpaces;
 }
 
