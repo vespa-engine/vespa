@@ -27,7 +27,18 @@ private:
 public:
     DenseTensorCellsIterator(const eval::ValueType &type_in, CellsRef cells);
     ~DenseTensorCellsIterator();
-    void next();
+    void next() {
+        ++_cellIdx;
+        for (int64_t i = (_address.size() - 1); i >= 0; --i) {
+            _address[i]++;
+            if (__builtin_expect((_address[i] != _type.dimensions()[i].size), true)) {
+                // Outer dimension labels can only be increased when this label wraps around.
+                break;
+            } else {
+                _address[i] = 0;
+            }
+        }
+    }
     bool valid() const { return _cellIdx < _cells.size(); }
     double cell() const { return _cells[_cellIdx]; }
     const Address &address() const { return _address; }
