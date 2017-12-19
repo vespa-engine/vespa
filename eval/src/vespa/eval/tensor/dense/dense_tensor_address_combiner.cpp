@@ -6,31 +6,6 @@
 
 namespace vespalib::tensor {
 
-using Address = DenseTensorAddressCombiner::Address;
-
-namespace {
-
-class AddressReader
-{
-private:
-    const Address &_address;
-    size_t _idx;
-
-public:
-    AddressReader(const Address &address)
-        : _address(address),
-          _idx(0)
-    {}
-    Address::value_type nextLabel() {
-        return _address[_idx++];
-    }
-    bool valid() {
-        return _idx < _address.size();
-    }
-};
-
-}
-
 DenseTensorAddressCombiner::~DenseTensorAddressCombiner() { }
 
 DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lhs,
@@ -57,34 +32,6 @@ DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lh
         ++rhsItr;
     }
     _combinedAddress.resize(_ops.size());
-}
-
-bool
-DenseTensorAddressCombiner::combine(const CellsIterator &lhsItr,
-                                    const CellsIterator &rhsItr)
-{
-    uint32_t index(0);
-    AddressReader lhsReader(lhsItr.address());
-    AddressReader rhsReader(rhsItr.address());
-    for (const auto &op : _ops) {
-        switch (op) {
-        case AddressOp::LHS:
-            _combinedAddress[index] = lhsReader.nextLabel();
-            break;
-        case AddressOp::RHS:
-            _combinedAddress[index] = rhsReader.nextLabel();
-            break;
-        case AddressOp::BOTH:
-            Address::value_type lhsLabel = lhsReader.nextLabel();
-            Address::value_type rhsLabel = rhsReader.nextLabel();
-            if (lhsLabel != rhsLabel) {
-                return false;
-            }
-            _combinedAddress[index] = lhsLabel;
-        }
-        index++;
-    }
-    return true;
 }
 
 eval::ValueType
