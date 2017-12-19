@@ -11,8 +11,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
@@ -21,7 +19,6 @@ import org.junit.Test;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
@@ -31,7 +28,6 @@ import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobTy
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -61,7 +57,7 @@ public class VersionStatusTest {
     public void testSystemVersionIsVersionOfOldestConfigServer() throws URISyntaxException {
         ControllerTester tester = new ControllerTester();
         Version oldest = new Version(5);
-        tester.configServer().versions().put(new URI("http://cfg.prod.corp-us-east-1.test"), oldest);
+        tester.configServer().versions().put(new URI("https://cfg.prod.corp-us-east-1.test:4443"), oldest);
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
         assertEquals(oldest, versionStatus.systemVersion().get().versionNumber());
     }
