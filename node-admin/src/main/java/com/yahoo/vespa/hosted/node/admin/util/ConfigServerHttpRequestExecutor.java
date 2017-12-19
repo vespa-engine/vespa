@@ -48,6 +48,7 @@ public class ConfigServerHttpRequestExecutor {
     private final ObjectMapper mapper = new ObjectMapper();
     private final CloseableHttpClient client;
     private final List<URI> configServerHosts;
+    private int pauseBetweenRetriesMs = 10_000;
 
     @Override
     public void finalize() throws Throwable {
@@ -58,6 +59,10 @@ public class ConfigServerHttpRequestExecutor {
         }
 
         super.finalize();
+    }
+
+    public void eliminatePauseBetweenRetriesForTesting() {
+        pauseBetweenRetriesMs = 0;
     }
 
     public static ConfigServerHttpRequestExecutor create(Collection<URI> configServerUris) {
@@ -110,6 +115,15 @@ public class ConfigServerHttpRequestExecutor {
         Exception lastException = null;
         for (int loopRetry = 0; loopRetry < MAX_LOOPS; loopRetry++) {
             for (URI configServer : configServerHosts) {
+                if (lastException != null) {
+                    try {
+                        // Avoid overloading the config server
+                        Thread.sleep(pauseBetweenRetriesMs);
+                    } catch (InterruptedException e) {
+                        // Ignore
+                    }
+                }
+
                 final CloseableHttpResponse response;
                 try {
                     response = client.execute(requestFactory.createRequest(configServer));
