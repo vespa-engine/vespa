@@ -4,7 +4,6 @@ package com.yahoo.tensor;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.evaluation.MapEvaluationContext;
 import com.yahoo.tensor.evaluation.VariableTensor;
-import com.yahoo.tensor.functions.Argmax;
 import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.Reduce;
@@ -12,14 +11,12 @@ import com.yahoo.tensor.functions.TensorFunction;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
 import static com.yahoo.tensor.TensorType.Dimension.Type;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -99,7 +96,7 @@ public class TensorTestCase {
                                                                                                ImmutableList.of("y", "x")));
         assertEquals(Tensor.from("{ {x:0,y:0}:0, {x:0,y:1}:0, {x:1,y:0}:0, {x:1,y:1}:1, {x:2,y:0}:0, {x:2,y:1}:2, }"),
                      Tensor.generate(new TensorType.Builder().indexed("x", 3).indexed("y", 2).build(),
-                                     (List<Integer> indexes) -> (double)indexes.get(0)*indexes.get(1)));
+                                     (List<Long> indexes) -> (double)indexes.get(0)*indexes.get(1)));
         assertEquals(Tensor.from("{ {x:0,y:0,z:0}:0, {x:0,y:1,z:0}:1, {x:1,y:0,z:0}:1, {x:1,y:1,z:0}:2, {x:2,y:0,z:0}:2, {x:2,y:1,z:0}:3, "+
                                  "  {x:0,y:0,z:1}:1, {x:0,y:1,z:1}:2, {x:1,y:0,z:1}:2, {x:1,y:1,z:1}:3, {x:2,y:0,z:1}:3, {x:2,y:1,z:1}:4 }"),
                      Tensor.range(new TensorType.Builder().indexed("x", 3).indexed("y", 2).indexed("z", 2).build()));

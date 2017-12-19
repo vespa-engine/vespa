@@ -139,7 +139,7 @@ public class TensorType {
         public final String name() { return name; }
 
         /** Returns the size of this dimension if it is bound, empty otherwise */
-        public abstract Optional<Integer> size();
+        public abstract Optional<Long> size();
 
         public abstract Type type();
 
@@ -189,7 +189,7 @@ public class TensorType {
             return this.name.compareTo(other.name);
         }
 
-        public static Dimension indexed(String name, int size) {
+        public static Dimension indexed(String name, long size) {
             return new IndexedBoundDimension(name, size);
         }
 
@@ -197,17 +197,19 @@ public class TensorType {
 
     public static class IndexedBoundDimension extends TensorType.Dimension {
 
-        private final Integer size;
+        private final Long size;
 
-        private IndexedBoundDimension(String name, int size) {
+        private IndexedBoundDimension(String name, long size) {
             super(name);
             if (size < 1)
                 throw new IllegalArgumentException("Size of bound dimension '" + name + "' must be at least 1");
+            if (size > Integer.MAX_VALUE)
+                throw new IllegalArgumentException("Size of bound dimension '" + name + "' cannot be larger than " + Integer.MAX_VALUE);
             this.size = size;
         }
 
         @Override
-        public Optional<Integer> size() { return Optional.of(size); }
+        public Optional<Long> size() { return Optional.of(size); }
 
         @Override
         public Type type() { return Type.indexedBound; }
@@ -248,7 +250,7 @@ public class TensorType {
         }
 
         @Override
-        public Optional<Integer> size() { return Optional.empty(); }
+        public Optional<Long> size() { return Optional.empty(); }
 
         @Override
         public Type type() { return Type.indexedUnbound; }
@@ -269,7 +271,7 @@ public class TensorType {
         }
 
         @Override
-        public Optional<Integer> size() { return Optional.empty(); }
+        public Optional<Long> size() { return Optional.empty(); }
 
         @Override
         public Type type() { return Type.mapped; }
@@ -357,7 +359,7 @@ public class TensorType {
          *
          * @throws IllegalArgumentException if the dimension is already present
          */
-        public Builder indexed(String name, int size) { return add(new IndexedBoundDimension(name, size)); }
+        public Builder indexed(String name, long size) { return add(new IndexedBoundDimension(name, size)); }
 
         /**
          * Adds an unbound indexed dimension to this

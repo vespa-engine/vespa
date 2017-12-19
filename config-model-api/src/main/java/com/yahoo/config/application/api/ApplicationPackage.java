@@ -3,11 +3,10 @@ package com.yahoo.config.application.api;
 
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneId;
-import com.yahoo.path.Path;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
+import com.yahoo.path.Path;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import org.w3c.dom.Element;
@@ -15,8 +14,17 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -229,9 +237,9 @@ public interface ApplicationPackage {
         throw new UnsupportedOperationException("This application package cannot write its metadata");
     }
 
-    /** 
-     * Returns the single host allocation info of this, or an empty map if no allocation is available 
-     * 
+    /**
+     * Returns the single host allocation info of this, or an empty map if no allocation is available
+     *
      * @deprecated please use #getAllocatedHosts
      */
     // TODO: Remove on Vespa 7

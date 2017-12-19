@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -10,7 +9,6 @@ import com.yahoo.tensor.TensorType;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
-import java.util.function.*;
 
 /**
  * A tensor generating function, whose arguments are determined by a tensor type
@@ -57,14 +55,14 @@ public class GeneratorLambdaFunctionNode extends CompositeNode {
     /**
      * Returns this as an operator which converts a list of integers into a double
      */
-    public IntegerListToDoubleLambda asIntegerListToDoubleOperator() {
-        return new IntegerListToDoubleLambda();
+    public LongListToDoubleLambda asLongListToDoubleOperator() {
+        return new LongListToDoubleLambda();
     }
 
-    private class IntegerListToDoubleLambda implements java.util.function.Function<List<Integer>, Double> {
+    private class LongListToDoubleLambda implements java.util.function.Function<List<Long>, Double> {
 
         @Override
-        public Double apply(List<Integer> arguments) {
+        public Double apply(List<Long> arguments) {
             MapContext context = new MapContext();
             for (int i = 0; i < type.dimensions().size(); i++)
                 context.put(type.dimensions().get(i).name(), arguments.get(i));

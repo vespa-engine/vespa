@@ -59,7 +59,7 @@ public interface Tensor {
     default boolean isEmpty() { return size() == 0; }
 
     /** Returns the number of cells in this */
-    int size();
+    long size();
 
     /** Returns the value of a cell, or NaN if this cell does not exist/have no value */
     double get(TensorAddress address);
@@ -124,7 +124,7 @@ public interface Tensor {
         return new Rename(new ConstantTensor(this), fromDimensions, toDimensions).evaluate();
     }
 
-    static Tensor generate(TensorType type, Function<List<Integer>, Double> valueSupplier) {
+    static Tensor generate(TensorType type, Function<List<Long>, Double> valueSupplier) {
         return new Generate(type, valueSupplier).evaluate();
     }
 
@@ -333,7 +333,7 @@ public interface Tensor {
          * This is for optimizations mapping between tensors where this is possible without creating a
          * TensorAddress.
          */
-        int getDirectIndex() { return -1; }
+        long getDirectIndex() { return -1; }
 
         @Override
         public Double getValue() { return value; }
@@ -396,7 +396,7 @@ public interface Tensor {
         Builder cell(TensorAddress address, double value);
 
         /** Add a cell */
-        Builder cell(double value, int ... labels);
+        Builder cell(double value, long ... labels);
 
         /**
          * Add a cell
@@ -425,7 +425,7 @@ public interface Tensor {
                 return this;
             }
 
-            public CellBuilder label(String dimension, int label) {
+            public CellBuilder label(String dimension, long label) {
                 return label(dimension, String.valueOf(label));
             }
 
