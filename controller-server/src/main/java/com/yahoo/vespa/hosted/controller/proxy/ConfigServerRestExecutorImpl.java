@@ -3,10 +3,13 @@ package com.yahoo.vespa.hosted.controller.proxy;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentityVerifier;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzSslContextProvider;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import org.apache.http.Header;
@@ -34,8 +37,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static java.util.Collections.singleton;
+
 /**
  * @author Haakon Dybdahl
+ * @author bjorncs
  */
 @SuppressWarnings("unused") // Injected
 public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
@@ -43,9 +49,13 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
     private static final Duration PROXY_REQUEST_TIMEOUT = Duration.ofSeconds(10);
 
     private final ZoneRegistry zoneRegistry;
+    private final AthenzSslContextProvider sslContextProvider;
 
-    public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry) {
+    @Inject
+    public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry,
+                                        AthenzSslContextProvider sslContextProvider) {
         this.zoneRegistry = zoneRegistry;
+        this.sslContextProvider = sslContextProvider;
     }
 
     @Override
@@ -57,10 +67,10 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         ZoneId zoneId = ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion());
 
         // Make a local copy of the list as we want to manipulate it in case of ping problems.
-        List<URI> allServers = new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId));
+        List<URI> allServers = new ArrayList<>(zoneRegistry.getConfigServerSecureUris(zoneId));
 
         StringBuilder errorBuilder = new StringBuilder();
-        if (queueFirstServerIfDown(allServers)) {
+        if (queueFirstServerIfDown(allServers, proxyRequest)) {
             errorBuilder.append("Change ordering due to failed ping.");
         }
         for (URI uri : allServers) {
@@ -115,7 +125,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 .setConnectionRequestTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
                 .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
         try (
-                CloseableHttpClient client = createHttpClient(config);
+                CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
                 CloseableHttpResponse response = client.execute(requestBase);
         ) {
             if (response.getStatusLine().getStatusCode() / 100 == 5) {
@@ -202,7 +212,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
      * if it is not responding, we try the other servers first. False positive/negatives are not critical,
      * but will increase latency to some extent.
      */
-    private boolean queueFirstServerIfDown(List<URI> allServers) {
+    private boolean queueFirstServerIfDown(List<URI> allServers, ProxyRequest proxyRequest) {
         if (allServers.size() < 2) {
             return false;
         }
@@ -215,7 +225,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 .setConnectionRequestTimeout(timeout)
                 .setSocketTimeout(timeout).build();
         try (
-                CloseableHttpClient client = createHttpClient(config);
+                CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
                 CloseableHttpResponse response = client.execute(httpget);
 
         ) {
@@ -232,9 +242,19 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         return true;
     }
 
-    private static CloseableHttpClient createHttpClient(RequestConfig config) {
+    private static CloseableHttpClient createHttpClient(RequestConfig config,
+                                                        AthenzSslContextProvider sslContextProvider,
+                                                        ZoneRegistry zoneRegistry,
+                                                        ProxyRequest proxyRequest) {
+        AthenzIdentityVerifier hostnameVerifier =
+                new AthenzIdentityVerifier(
+                        singleton(
+                                zoneRegistry.getConfigserverAthenzService(
+                                        ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getEnvironment()))));
         return HttpClientBuilder.create()
                 .setUserAgent("config-server-client")
+                .setSslcontext(sslContextProvider.get())
+                .setHostnameVerifier(hostnameVerifier)
                 .setDefaultRequestConfig(config)
                 .build();
     }
