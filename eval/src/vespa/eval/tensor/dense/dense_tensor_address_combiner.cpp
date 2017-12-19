@@ -21,7 +21,7 @@ public:
         : _address(address),
           _idx(0)
     {}
-    size_t nextLabel() {
+    Address::value_type nextLabel() {
         return _address[_idx++];
     }
     bool valid() {
@@ -56,31 +56,33 @@ DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lh
         _ops.push_back(AddressOp::RHS);
         ++rhsItr;
     }
+    _combinedAddress.resize(_ops.size());
 }
 
 bool
 DenseTensorAddressCombiner::combine(const CellsIterator &lhsItr,
                                     const CellsIterator &rhsItr)
 {
-    _combinedAddress.clear();
+    uint32_t index(0);
     AddressReader lhsReader(lhsItr.address());
     AddressReader rhsReader(rhsItr.address());
     for (const auto &op : _ops) {
         switch (op) {
         case AddressOp::LHS:
-            _combinedAddress.emplace_back(lhsReader.nextLabel());
+            _combinedAddress[index] = lhsReader.nextLabel();
             break;
         case AddressOp::RHS:
-            _combinedAddress.emplace_back(rhsReader.nextLabel());
+            _combinedAddress[index] = rhsReader.nextLabel();
             break;
         case AddressOp::BOTH:
-            size_t lhsLabel = lhsReader.nextLabel();
-            size_t rhsLabel = rhsReader.nextLabel();
+            Address::value_type lhsLabel = lhsReader.nextLabel();
+            Address::value_type rhsLabel = rhsReader.nextLabel();
             if (lhsLabel != rhsLabel) {
                 return false;
             }
-            _combinedAddress.emplace_back(lhsLabel);
+            _combinedAddress[index] = lhsLabel;
         }
+        index++;
     }
     return true;
 }
