@@ -464,7 +464,7 @@ void StorageNode::configure(std::unique_ptr<StorServerConfig> config)
         // updates
     {
         vespalib::LockGuard configLockGuard(_configLock);
-        _newServerConfig.reset(config.release());
+        _newServerConfig = std::move(config);
     }
     if (_serverConfig) {
         InitialGuard concurrent_config_guard(_initial_config_mutex);
@@ -481,7 +481,7 @@ StorageNode::configure(std::unique_ptr<UpgradingConfig> config)
         // updates
     {
         vespalib::LockGuard configLockGuard(_configLock);
-        _newClusterConfig.reset(config.release());
+        _newClusterConfig = std::move(config);
     }
     if (_clusterConfig) {
         InitialGuard concurrent_config_guard(_initial_config_mutex);
@@ -498,7 +498,7 @@ StorageNode::configure(std::unique_ptr<StorDistributionConfig> config)
         // updates
     {
         vespalib::LockGuard configLockGuard(_configLock);
-        _newDistributionConfig.reset(config.release());
+        _newDistributionConfig = std::move(config);
     }
     if (_distributionConfig) {
         InitialGuard concurrent_config_guard(_initial_config_mutex);
@@ -511,7 +511,7 @@ StorageNode::configure(std::unique_ptr<StorPrioritymappingConfig> config)
 {
     {
         vespalib::LockGuard configLockGuard(_configLock);
-        _newPriorityConfig.reset(config.release());
+        _newPriorityConfig = std::move(config);
     }
     if (_priorityConfig) {
         InitialGuard concurrent_config_guard(_initial_config_mutex);
@@ -528,7 +528,7 @@ StorageNode::configure(std::unique_ptr<document::DocumenttypesConfig> config,
         return;
     {
         vespalib::LockGuard configLockGuard(_configLock);
-        _newDoctypesConfig.reset(config.release());
+        _newDoctypesConfig = std::move(config);
     }
     if (_doctypesConfig) {
         InitialGuard concurrent_config_guard(_initial_config_mutex);
@@ -541,7 +541,7 @@ StorageNode::configure(std::unique_ptr<BucketspacesConfig> config)
 {
     {
         vespalib::LockGuard configLockGuard(_configLock);
-        _newBucketSpacesConfig.reset(config.release());
+        _newBucketSpacesConfig = std::move(config);
     }
     if (_bucketSpacesConfig) {
         InitialGuard concurrent_config_guard(_initial_config_mutex);
