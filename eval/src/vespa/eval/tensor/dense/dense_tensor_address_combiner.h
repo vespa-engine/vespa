@@ -7,8 +7,7 @@
 #include <vespa/eval/tensor/types.h>
 #include <vespa/eval/eval/value_type.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 
 /**
@@ -46,5 +45,4 @@ public:
 
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

@@ -7,8 +7,7 @@
 #include <vespa/eval/eval/value_type.h>
 #include "dense_tensor_cells_iterator.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 class DenseTensor;
 
@@ -61,5 +60,5 @@ public:
     virtual void accept(TensorVisitor &visitor) const override;
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
+

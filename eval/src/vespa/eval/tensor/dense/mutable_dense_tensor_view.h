@@ -5,8 +5,7 @@
 #include "dense_tensor_view.h"
 #include <cassert>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * A mutable view to a dense tensor where all dimensions are indexed.
@@ -55,5 +54,5 @@ public:
     }
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
+

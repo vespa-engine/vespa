@@ -4,20 +4,16 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
-namespace vespalib {
-namespace tensor {
-namespace sparse {
+namespace vespalib::tensor::sparse {
 
 TensorAddressReducer::TensorAddressReducer(const eval::ValueType &type,
-                                           const std::vector<vespalib::string> &
-                                           removeDimensions)
+                                           const std::vector<vespalib::string> & removeDimensions)
     : SparseTensorAddressBuilder(),
       _ops()
 {
-    TensorDimensionsSet removeSet(removeDimensions.cbegin(),
-                                  removeDimensions.cend());
+    TensorDimensionsSet removeSet(removeDimensions.cbegin(), removeDimensions.cend());
     _ops.reserve(type.dimensions().size());
-    for (auto &dim : type.dimensions()) {
+    for (const auto &dim : type.dimensions()) {
         if (removeSet.find(dim.name) != removeSet.end()) {
             _ops.push_back(AddressOp::REMOVE);
         } else {
@@ -26,10 +22,7 @@ TensorAddressReducer::TensorAddressReducer(const eval::ValueType &type,
     }
 }
 
-TensorAddressReducer::~TensorAddressReducer()
-{
+TensorAddressReducer::~TensorAddressReducer() = default;
+
 }
 
-} // namespace vespalib::tensor::sparse
-} // namespace vespalib::tensor
-} // namespace vespalib

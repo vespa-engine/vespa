@@ -10,8 +10,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * A builder of sparse tensors.
@@ -30,17 +29,13 @@ class SparseTensorBuilder : public TensorBuilder
     void makeType();
 public:
     SparseTensorBuilder();
-    virtual ~SparseTensorBuilder();
+    ~SparseTensorBuilder() override;
 
-    virtual Dimension
-    define_dimension(const vespalib::string &dimension) override;
-    virtual TensorBuilder &
-    add_label(Dimension dimension,
-              const vespalib::string &label) override;
-    virtual TensorBuilder &add_cell(double value) override;
-
-    virtual Tensor::UP build() override;
+    Dimension define_dimension(const vespalib::string &dimension) override;
+    TensorBuilder & add_label(Dimension dimension, const vespalib::string &label) override;
+    TensorBuilder &add_cell(double value) override;
+    Tensor::UP build() override;
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
+

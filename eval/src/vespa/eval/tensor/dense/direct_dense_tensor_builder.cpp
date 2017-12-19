@@ -3,8 +3,7 @@
 #include "direct_dense_tensor_builder.h"
 #include <cassert>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 using Address = DirectDenseTensorBuilder::Address;
 using eval::ValueType;
@@ -35,7 +34,7 @@ calculateCellAddress(const Address &address, const ValueType &type)
 
 }
 
-DirectDenseTensorBuilder::~DirectDenseTensorBuilder() { }
+DirectDenseTensorBuilder::~DirectDenseTensorBuilder() = default;
 
 DirectDenseTensorBuilder::DirectDenseTensorBuilder(const ValueType &type_in)
     : _type(type_in),
@@ -57,5 +56,5 @@ DirectDenseTensorBuilder::build()
     return std::make_unique<DenseTensor>(std::move(_type), std::move(_cells));
 }
 
-} // namespace tensor
-} // namesapce vespalib
+}
+

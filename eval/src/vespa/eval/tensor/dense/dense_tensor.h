@@ -8,8 +8,7 @@
 #include "dense_tensor_cells_iterator.h"
 #include "dense_tensor_view.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * A dense tensor where all dimensions are indexed.
@@ -40,5 +39,5 @@ public:
 
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
+

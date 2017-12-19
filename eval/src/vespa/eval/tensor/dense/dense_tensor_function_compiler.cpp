@@ -11,8 +11,7 @@ using namespace vespalib::eval;
 using namespace vespalib::eval::tensor_function;
 using namespace vespalib::eval::operation;
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 namespace {
 
@@ -89,5 +88,5 @@ DenseTensorFunctionCompiler::compile(const eval::tensor_function::Node &expr, St
     return InnerProductFunctionCompiler::compile(expr, stash);
 }
 
-} // namespace tensor
-} // namespace vespalib
+}
+
