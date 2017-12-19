@@ -12,20 +12,19 @@
 
 #pragma once
 
-#include <vespa/storage/storageutil/resumeguard.h>
-#include <vespa/storage/common/doneinitializehandler.h>
-#include <vespa/storageframework/generic/metric/metricupdatehook.h>
-#include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
-
-#include <vespa/config/subscription/configuri.h>
-#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/config-stor-distribution.h>
+#include <vespa/config-upgrading.h>
 #include <vespa/config/helper/configfetcher.h>
-
+#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/document/config/config-documenttypes.h>
+#include <vespa/storage/common/doneinitializehandler.h>
+#include <vespa/storage/config/config-bucketspaces.h>
 #include <vespa/storage/config/config-stor-prioritymapping.h>
 #include <vespa/storage/config/config-stor-server.h>
-#include <vespa/document/config/config-documenttypes.h>
-#include <vespa/config-upgrading.h>
-#include <vespa/config-stor-distribution.h>
+#include <vespa/storage/storageutil/resumeguard.h>
+#include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
+#include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <mutex>
 
 namespace document { class DocumentTypeRepo; }
@@ -54,6 +53,7 @@ class StorageNode : private config::IFetcherCallback<vespa::config::content::cor
                     private config::IFetcherCallback<vespa::config::content::StorDistributionConfig>,
                     private config::IFetcherCallback<vespa::config::content::UpgradingConfig>,
                     private config::IFetcherCallback<vespa::config::content::core::StorPrioritymappingConfig>,
+                    private config::IFetcherCallback<vespa::config::content::core::BucketspacesConfig>,
                     private framework::MetricUpdateHook,
                     private DoneInitializeHandler,
                     private framework::defaultimplementation::ShutdownListener
@@ -101,6 +101,7 @@ protected:
     using UpgradingConfig = vespa::config::content::UpgradingConfig;
     using StorDistributionConfig = vespa::config::content::StorDistributionConfig;
     using StorPrioritymappingConfig = vespa::config::content::core::StorPrioritymappingConfig;
+    using BucketspacesConfig = vespa::config::content::core::BucketspacesConfig;
 private:
     bool _singleThreadedDebugMode;
         // Subscriptions to config
@@ -137,6 +138,7 @@ private:
     void configure(std::unique_ptr<StorPrioritymappingConfig>) override;
     virtual void configure(std::unique_ptr<document::DocumenttypesConfig> config,
                            bool hasChanged, int64_t generation);
+    void configure(std::unique_ptr<BucketspacesConfig>) override;
     void updateUpgradeFlag(const UpgradingConfig&);
 
 protected:
@@ -151,12 +153,14 @@ protected:
     std::unique_ptr<StorDistributionConfig> _distributionConfig;
     std::unique_ptr<StorPrioritymappingConfig> _priorityConfig;
     std::unique_ptr<document::DocumenttypesConfig> _doctypesConfig;
+    std::unique_ptr<BucketspacesConfig> _bucketSpacesConfig;
         // New configs gotten that has yet to have been handled
     std::unique_ptr<StorServerConfig> _newServerConfig;
     std::unique_ptr<UpgradingConfig> _newClusterConfig;
     std::unique_ptr<StorDistributionConfig> _newDistributionConfig;
     std::unique_ptr<StorPrioritymappingConfig> _newPriorityConfig;
     std::unique_ptr<document::DocumenttypesConfig> _newDoctypesConfig;
+    std::unique_ptr<BucketspacesConfig> _newBucketSpacesConfig;
     std::unique_ptr<StorageComponent> _component;
     config::ConfigUri _configUri;
     CommunicationManager* _communicationManager;
