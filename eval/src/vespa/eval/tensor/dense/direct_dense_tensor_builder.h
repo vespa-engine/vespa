@@ -13,7 +13,7 @@ class DirectDenseTensorBuilder
 {
 public:
     using Cells = DenseTensor::Cells;
-    using Address = std::vector<size_t>;
+    using Address = DenseTensor::Address;
 
 private:
     eval::ValueType _type;

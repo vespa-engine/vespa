@@ -147,7 +147,7 @@ TEST_F("require that builder can be re-used", Fixture)
 }
 
 void
-assertTensorCell(const std::vector<size_t> &expAddress,
+assertTensorCell(const DenseTensor::Address &expAddress,
                  double expCell,
                  const DenseTensor::CellsIterator &itr)
 {
