@@ -21,6 +21,7 @@ public:
     using Cells = std::vector<double>;
     using CellsRef = ConstArrayRef<double>;
     using CellsIterator = DenseTensorCellsIterator;
+    using Address = std::vector<eval::ValueType::Dimension::size_type>;
 
 private:
     const eval::ValueType &_typeRef;
