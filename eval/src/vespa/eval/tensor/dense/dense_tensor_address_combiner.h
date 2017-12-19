@@ -18,7 +18,7 @@ namespace vespalib::tensor {
 class DenseTensorAddressCombiner
 {
 public:
-    using Address = std::vector<size_t>;
+    using Address = DenseTensorCellsIterator::Address;
 
 private:
     enum class AddressOp {
@@ -33,16 +33,13 @@ private:
     Address _combinedAddress;
 
 public:
-    DenseTensorAddressCombiner(const eval::ValueType &lhs,
-                               const eval::ValueType &rhs);
+    DenseTensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs);
     ~DenseTensorAddressCombiner();
 
-    bool combine(const CellsIterator &lhsItr,
-                 const CellsIterator &rhsItr);
+    bool combine(const CellsIterator &lhsItr, const CellsIterator &rhsItr);
     const Address &address() const { return _combinedAddress; }
 
     static eval::ValueType combineDimensions(const eval::ValueType &lhs, const eval::ValueType &rhs);
-
 };
 
 }

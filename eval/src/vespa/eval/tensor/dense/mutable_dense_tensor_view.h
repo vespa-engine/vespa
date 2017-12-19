@@ -17,7 +17,7 @@ private:
     {
     private:
         eval::ValueType _type;
-        std::vector<size_t *> _unboundDimSizes;
+        std::vector<eval::ValueType::Dimension::size_type *> _unboundDimSizes;
 
     public:
         MutableValueType(eval::ValueType type_in);
