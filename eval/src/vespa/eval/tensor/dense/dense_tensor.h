@@ -28,12 +28,9 @@ private:
 public:
     DenseTensor();
     ~DenseTensor() {}
-    DenseTensor(const eval::ValueType &type_in,
-                const Cells &cells_in);
-    DenseTensor(const eval::ValueType &type_in,
-                Cells &&cells_in);
-    DenseTensor(eval::ValueType &&type_in,
-                Cells &&cells_in);
+    DenseTensor(const eval::ValueType &type_in, const Cells &cells_in);
+    DenseTensor(const eval::ValueType &type_in, Cells &&cells_in);
+    DenseTensor(eval::ValueType &&type_in, Cells &&cells_in);
     bool operator==(const DenseTensor &rhs) const;
     const Cells &cells() const { return _cells; }
 
