@@ -40,7 +40,6 @@ public class JSONLogTestCase extends junit.framework.TestCase {
          String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
-            "\"time-iso8601\":\"1999-03-08T08:00:05.023Z\"," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
             "\"code\":200," +
@@ -69,7 +68,6 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
-            "\"time-iso8601\":\"1999-03-08T08:00:05.023Z\"," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
             "\"code\":200," +
@@ -102,7 +100,6 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
-            "\"time-iso8601\":\"1999-03-08T08:00:05.023Z\"," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
             "\"code\":200," +
@@ -128,7 +125,6 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
-            "\"time-iso8601\":\"1999-03-08T08:00:05.023Z\"," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
             "\"code\":200," +
@@ -175,7 +171,6 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
-            "\"time-iso8601\":\"1999-03-08T08:00:05.023Z\"," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
             "\"code\":200," +
