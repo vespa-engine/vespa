@@ -101,9 +101,9 @@ struct Renamer {
 
 } // namespace vespalib::tensor::<unnamed>
 
-constexpr size_t ValueType::Dimension::npos;
+constexpr ValueType::Dimension::size_type ValueType::Dimension::npos;
 
-ValueType::~ValueType() { }
+ValueType::~ValueType() = default;
 bool
 ValueType::is_sparse() const
 {

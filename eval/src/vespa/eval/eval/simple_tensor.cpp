@@ -57,14 +57,14 @@ Address select(const Address &a, const Address &b, const IndexList &selector) {
     return result;
 }
 
-size_t get_dimension_size(const ValueType &type, size_t dim_idx) {
+size_t get_dimension_size(const ValueType &type, ValueType::Dimension::size_type dim_idx) {
     if (dim_idx == ValueType::Dimension::npos) {
         return 1;
     }
     return type.dimensions()[dim_idx].size;
 }
 
-size_t get_dimension_index(const Address &addr, size_t dim_idx) {
+size_t get_dimension_index(const Address &addr, ValueType::Dimension::size_type dim_idx) {
     if (dim_idx == ValueType::Dimension::npos) {
         return 0;
     }

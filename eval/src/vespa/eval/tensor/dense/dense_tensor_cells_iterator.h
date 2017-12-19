@@ -15,24 +15,22 @@ namespace vespalib::tensor {
  */
 class DenseTensorCellsIterator
 {
+public:
+    using size_type = eval::ValueType::Dimension::size_type;
+    using Address = std::vector<size_type>;
 private:
     using CellsRef = vespalib::ConstArrayRef<double>;
     const eval::ValueType &_type;
     CellsRef _cells;
     size_t   _cellIdx;
-    std::vector<size_t> _address;
-
+    Address  _address;
 public:
-    DenseTensorCellsIterator(const eval::ValueType &type_in, CellsRef cells)
-        : _type(type_in),
-          _cells(cells),
-          _cellIdx(0),
-          _address(type_in.dimensions().size(), 0)
-    {}
-    bool valid() const { return _cellIdx < _cells.size(); }
+    DenseTensorCellsIterator(const eval::ValueType &type_in, CellsRef cells);
+    ~DenseTensorCellsIterator();
     void next();
+    bool valid() const { return _cellIdx < _cells.size(); }
     double cell() const { return _cells[_cellIdx]; }
-    const std::vector<size_t> &address() const { return _address; }
+    const Address &address() const { return _address; }
     const eval::ValueType &fast_type() const { return _type; }
 };
 
