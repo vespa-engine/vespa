@@ -8,6 +8,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneFilterMock;
@@ -66,6 +67,10 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public ZoneFilter zones() {
         return ZoneFilterMock.from(Collections.unmodifiableList(zones));
+    }
+
+    public AthenzService getConfigserverAthenzService(ZoneId zone) {
+        return new AthenzService("vespadomain", "provider-" + zone.environment().value() + "-" + zone.region().value());
     }
 
     @Override
