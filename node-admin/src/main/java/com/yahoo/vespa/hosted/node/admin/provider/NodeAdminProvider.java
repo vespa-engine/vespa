@@ -36,7 +36,8 @@ import java.util.function.Function;
  */
 public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
 
-    private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofSeconds(30);
+    // WARNING: reducing the node agent interval will increase the load on the config servers
+    private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofSeconds(60);
     private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofSeconds(30);
 
     private final NodeAdminStateUpdater nodeAdminStateUpdater;
