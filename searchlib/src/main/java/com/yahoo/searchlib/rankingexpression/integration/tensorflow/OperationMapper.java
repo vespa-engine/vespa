@@ -86,9 +86,9 @@ class OperationMapper {
         return new TypedTensorFunction(resultType, function);
     }
 
-    TypedTensorFunction placeholder(NodeDef tfNode, ImportResult.Signature signature) {
+    TypedTensorFunction placeholder(NodeDef tfNode, ImportResult result) {
         String name = tfNode.getName();
-        TensorType type = signature.owner().arguments().get(name);
+        TensorType type = result.arguments().get(name);
         if (type == null)
             throw new IllegalArgumentException("A 'placeholder' node is referencing placeholder '" + name +
                                                "', but there is no such placeholder");
@@ -96,7 +96,7 @@ class OperationMapper {
         return new TypedTensorFunction(type, new VariableTensor(name));
     }
 
-    TypedTensorFunction identity(NodeDef tfNode, SavedModelBundle model, ImportResult.Signature signature) {
+    TypedTensorFunction identity(NodeDef tfNode, SavedModelBundle model, ImportResult result) {
         if ( ! tfNode.getName().endsWith("/read"))
             throw new IllegalArgumentException("Encountered identity node " + tfNode.getName() + ", but identify " +
                                                "nodes are only supported when reading variables");
@@ -114,7 +114,7 @@ class OperationMapper {
             throw new IllegalStateException("Expected 1 tensor from reading Variable " + name + ", but got " +
                                             importedTensors.size());
         Tensor constant = tensorConverter.toVespaTensor(importedTensors.get(0));
-        signature.owner().constant(name, constant);
+        result.constant(name, constant);
         return new TypedTensorFunction(constant.type(),
                                        new TensorFunctionNode.TensorFunctionExpressionNode(new ReferenceNode("constant(" + name + ")")));
     }

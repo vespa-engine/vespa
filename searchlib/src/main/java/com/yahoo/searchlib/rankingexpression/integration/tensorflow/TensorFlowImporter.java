@@ -54,7 +54,7 @@ public class TensorFlowImporter {
             ImportResult.Signature signature = result.signature(signatureName);
             importInputs(signatureDef.getInputsMap(), signature);
             signature.output(nodeName,
-                             new RankingExpression(nodeName, importNode(nodeName, graph.getGraphDef(), model, signature)));
+                             new RankingExpression(nodeName, importNode(nodeName, graph.getGraphDef(), model, result)));
             return result;
         }
         catch (IOException e) {
@@ -71,7 +71,7 @@ public class TensorFlowImporter {
             for (Map.Entry<String, TensorInfo> output : signatureEntry.getValue().getOutputsMap().entrySet()) {
                 String outputName = output.getKey();
                 try {
-                    ExpressionNode node = importOutput(output.getValue(), graph.getGraphDef(), model, signature);
+                    ExpressionNode node = importOutput(output.getValue(), graph.getGraphDef(), model, result);
                     signature.output(outputName, new RankingExpression(outputName, node));
                 }
                 catch (IllegalArgumentException e) {
@@ -105,42 +105,38 @@ public class TensorFlowImporter {
         return b.build();
     }
 
-    private ExpressionNode importOutput(TensorInfo output, GraphDef graph, SavedModelBundle model,
-                                        ImportResult.Signature signature) {
-        return importNode(nameOf(output.getName()), graph, model, signature);
+    private ExpressionNode importOutput(TensorInfo output, GraphDef graph, SavedModelBundle model, ImportResult result) {
+        return importNode(nameOf(output.getName()), graph, model, result);
     }
 
-    private ExpressionNode importNode(String nodeName, GraphDef graph, SavedModelBundle model,
-                                      ImportResult.Signature signature) {
-        TensorFunction function = importNode(getNode(nodeName, graph), graph, model, signature).function();
+    private ExpressionNode importNode(String nodeName, GraphDef graph, SavedModelBundle model, ImportResult result) {
+        TensorFunction function = importNode(getNode(nodeName, graph), graph, model, result).function();
         return new TensorFunctionNode(function); // wrap top level (only) as an expression
     }
 
     /** Recursively convert a graph of TensorFlow nodes into a Vespa tensor function expression tree */
-    private TypedTensorFunction importNode(NodeDef tfNode, GraphDef graph, SavedModelBundle model,
-                                           ImportResult.Signature signature) {
-        return tensorFunctionOf(tfNode, graph, model, signature);
+    private TypedTensorFunction importNode(NodeDef tfNode, GraphDef graph, SavedModelBundle model, ImportResult result) {
+        return tensorFunctionOf(tfNode, graph, model, result);
     }
 
-    private TypedTensorFunction tensorFunctionOf(NodeDef tfNode, GraphDef graph, SavedModelBundle model,
-                                                 ImportResult.Signature signature) {
+    private TypedTensorFunction tensorFunctionOf(NodeDef tfNode, GraphDef graph, SavedModelBundle model, ImportResult result) {
         // Import arguments lazily below, as some nodes have arguments unused arguments leading to unsupported ops
         // TODO: Implement mapping of more functions from https://www.tensorflow.org/api_docs/python/
         switch (tfNode.getOp().toLowerCase()) {
-            case "add" : case "add_n" : return operationMapper.join(importArguments(tfNode, graph, model, signature), ScalarFunctions.add());
-            case "acos" : return operationMapper.map(importArguments(tfNode, graph, model, signature), ScalarFunctions.acos());
-            case "placeholder" : return operationMapper.placeholder(tfNode, signature);
-            case "identity" : return operationMapper.identity(tfNode, model, signature);
-            case "matmul" : return operationMapper.matmul(importArguments(tfNode, graph, model, signature));
-            case "softmax" : return operationMapper.softmax(importArguments(tfNode, graph, model, signature));
+            case "add" : case "add_n" : return operationMapper.join(importArguments(tfNode, graph, model, result), ScalarFunctions.add());
+            case "acos" : return operationMapper.map(importArguments(tfNode, graph, model, result), ScalarFunctions.acos());
+            case "placeholder" : return operationMapper.placeholder(tfNode, result);
+            case "identity" : return operationMapper.identity(tfNode, model, result);
+            case "matmul" : return operationMapper.matmul(importArguments(tfNode, graph, model, result));
+            case "softmax" : return operationMapper.softmax(importArguments(tfNode, graph, model, result));
             default : throw new IllegalArgumentException("Conversion of TensorFlow operation '" + tfNode.getOp() + "' is not supported");
         }
     }
 
     private List<TypedTensorFunction> importArguments(NodeDef tfNode, GraphDef graph, SavedModelBundle model,
-                                                      ImportResult.Signature signature) {
+                                                      ImportResult result) {
         return tfNode.getInputList().stream()
-                                    .map(argNode -> importNode(getNode(nameOf(argNode), graph), graph, model, signature))
+                                    .map(argNode -> importNode(getNode(nameOf(argNode), graph), graph, model, result))
                                     .collect(Collectors.toList());
     }
 
