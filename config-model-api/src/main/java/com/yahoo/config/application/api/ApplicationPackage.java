@@ -270,8 +270,19 @@ public interface ApplicationPackage {
      *
      * @return A new application package instance pointing to a new location
      */
-    default ApplicationPackage preprocess(ZoneId zone, RuleConfigDeriver ruleConfigDeriver, DeployLogger logger) throws IOException, TransformerException, ParserConfigurationException, SAXException {
+    default ApplicationPackage preprocess(ZoneId zone, RuleConfigDeriver ruleConfigDeriver, DeployLogger logger)
+            throws IOException, TransformerException, ParserConfigurationException, SAXException {
         throw new UnsupportedOperationException("This application package does not support preprocessing");
+    }
+
+    /**
+     * @deprecated pass a ZoneId as first parameter instead
+     */
+    // TODO: Remove on Vespa 7
+    @Deprecated
+    default ApplicationPackage preprocess(Zone zone, RuleConfigDeriver ruleConfigDeriver, DeployLogger logger)
+            throws IOException, TransformerException, ParserConfigurationException, SAXException {
+        return preprocess(zone.id(), ruleConfigDeriver, logger);
     }
 
 }

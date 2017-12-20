@@ -32,9 +32,9 @@ import java.util.logging.Logger;
 /**
  * Responsible for scheduling deployment jobs in a build system and keeping
  * Application.deploying() in sync with what is scheduled.
- * 
+ *
  * This class is multithread safe.
- * 
+ *
  * @author bratseth
  * @author mpolden
  */
@@ -60,7 +60,7 @@ public class DeploymentTrigger {
         this.order = new DeploymentOrder(controller);
         this.jobTimeout = controller.system().equals(SystemName.main) ? Duration.ofHours(12) : Duration.ofHours(1);
     }
-    
+
     /** Returns the time in the past before which jobs are at this moment considered unresponsive */
     public Instant jobTimeoutLimit() { return clock.instant().minus(jobTimeout); }
 
@@ -70,10 +70,10 @@ public class DeploymentTrigger {
 
     //--- Start of methods which triggers deployment jobs -------------------------
 
-    /** 
+    /**
      * Called each time a job completes (successfully or not) to cause triggering of one or more follow-up jobs
      * (which may possibly the same job once over).
-     * 
+     *
      * @param report information about the job that just completed
      */
     public void triggerFromCompletion(JobReport report) {
@@ -143,10 +143,11 @@ public class DeploymentTrigger {
             JobStatus systemTestStatus = application.deploymentJobs().jobStatus().get(JobType.systemTest);
             if (application.deploying().get() instanceof Change.VersionChange) {
                 Version target = ((Change.VersionChange) application.deploying().get()).version();
-                if (systemTestStatus == null 
+                if (systemTestStatus == null
                     || ! systemTestStatus.lastTriggered().isPresent()
                     || ! systemTestStatus.isSuccess()
-                    || ! systemTestStatus.lastTriggered().get().version().equals(target)) {
+                    || ! systemTestStatus.lastTriggered().get().version().equals(target)
+                    || systemTestStatus.isHanging(jobTimeoutLimit())) {
                     application = trigger(JobType.systemTest, application, false, "Upgrade to " + target);
                     controller.applications().store(application);
                 }
@@ -170,7 +171,7 @@ public class DeploymentTrigger {
             List<JobType> nextToTrigger = new ArrayList<>();
             for (JobType nextJobType : order.nextAfter(jobType, application)) {
                 JobStatus nextStatus = application.deploymentJobs().jobStatus().get(nextJobType);
-                if (changesAvailable(application, jobStatus, nextStatus))
+                if (changesAvailable(application, jobStatus, nextStatus) || nextStatus.isHanging(jobTimeoutLimit()))
                     nextToTrigger.add(nextJobType);
             }
             // Trigger them in parallel
@@ -209,10 +210,10 @@ public class DeploymentTrigger {
             return true;
         return false;
     }
-    
+
     /**
      * Triggers a change of this application
-     * 
+     *
      * @param applicationId the application to trigger
      * @throws IllegalArgumentException if this application already have an ongoing change
      */
@@ -267,7 +268,7 @@ public class DeploymentTrigger {
     }
 
     /**
-     * Trigger a job for an application 
+     * Trigger a job for an application
      *
      * @param jobType the type of the job to trigger, or null to trigger nothing
      * @param application the application to trigger the job for
@@ -289,7 +290,7 @@ public class DeploymentTrigger {
 
     /**
      * Trigger a job for an application, if allowed
-     * 
+     *
      * @param jobType the type of the job to trigger, or null to trigger nothing
      * @param application the application to trigger the job for
      * @param first whether to trigger the job before other jobs
@@ -323,7 +324,7 @@ public class DeploymentTrigger {
 
     /** Returns true if the given proposed job triggering should be effected */
     private boolean allowedTriggering(JobType jobType, LockedApplication application) {
-        // Note: We could make a more fine-grained and more correct determination about whether to block 
+        // Note: We could make a more fine-grained and more correct determination about whether to block
         //       by instead basing the decision on what is currently deployed in the zone. However,
         //       this leads to some additional corner cases, and the possibility of blocking an application
         //       fix to a version upgrade, so not doing it now
@@ -341,7 +342,7 @@ public class DeploymentTrigger {
 
         return true;
     }
-    
+
     private boolean isRunningProductionJob(Application application) {
         return JobList.from(application)
                 .production()
@@ -364,7 +365,7 @@ public class DeploymentTrigger {
         if (existingDeployment == null) return false;
         return existingDeployment.version().isAfter(version);
     }
-    
+
     private boolean acceptNewRevisionNow(LockedApplication application) {
         if ( ! application.deploying().isPresent()) return true;
 
@@ -377,5 +378,5 @@ public class DeploymentTrigger {
         // Otherwise, the application is currently upgrading, without failures, and we should wait with the revision.
         return false;
     }
-    
+
 }

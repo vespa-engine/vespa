@@ -8,8 +8,7 @@
 #include "dense_tensor_cells_iterator.h"
 #include "dense_tensor_view.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * A dense tensor where all dimensions are indexed.
@@ -29,16 +28,13 @@ private:
 public:
     DenseTensor();
     ~DenseTensor() {}
-    DenseTensor(const eval::ValueType &type_in,
-                const Cells &cells_in);
-    DenseTensor(const eval::ValueType &type_in,
-                Cells &&cells_in);
-    DenseTensor(eval::ValueType &&type_in,
-                Cells &&cells_in);
+    DenseTensor(const eval::ValueType &type_in, const Cells &cells_in);
+    DenseTensor(const eval::ValueType &type_in, Cells &&cells_in);
+    DenseTensor(eval::ValueType &&type_in, Cells &&cells_in);
     bool operator==(const DenseTensor &rhs) const;
     const Cells &cells() const { return _cells; }
 
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
+

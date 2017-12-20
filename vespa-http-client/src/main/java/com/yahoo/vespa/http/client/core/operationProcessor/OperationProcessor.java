@@ -177,10 +177,14 @@ public class OperationProcessor {
             docSendInfoByOperationId.remove(endpointResult.getOperationId());
 
             String documentId = documentSendInfo.getDocument().getDocumentId();
-            inflightDocumentIds.remove(documentId);
-
+            /**
+             * If we got a pending operation against this document
+             * dont't remove it from inflightDocuments and send blocked document operation
+             */
             List<Document> blockedDocuments = blockedDocumentsByDocumentId.get(documentId);
-            if (! blockedDocuments.isEmpty()) {
+            if (blockedDocuments.isEmpty()) {
+                inflightDocumentIds.remove(documentId);
+            } else {
                 sendToClusters(blockedDocuments.remove(0));
             }
             return result;

@@ -5,8 +5,7 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * Tensor function for a dot product between two 1-dimensional dense tensors.
@@ -27,5 +26,5 @@ public:
     const eval::Value &eval(ConstArrayRef<eval::Value::CREF> params, Stash &stash) const override;
 };
 
-} // namespace tensor
-} // namespace vespalib
+}
+

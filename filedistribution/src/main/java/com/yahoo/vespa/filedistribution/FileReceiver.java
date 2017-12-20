@@ -85,7 +85,7 @@ public class FileReceiver {
             try {
                 inprogressFile = Files.createTempFile(tmpDirectory.toPath(), fileName, ".inprogress").toFile();
             } catch (IOException e) {
-                String msg = "Failed creating tempfile for inprogress file for(" + fileName + ") in '" + fileReferenceDir.toPath() + "': ";
+                String msg = "Failed creating temp file for inprogress file for(" + fileName + ") in '" + fileReferenceDir.toPath() + "': ";
                 log.log(LogLevel.ERROR, msg + e.getMessage(), e);
                 throw new RuntimeException(msg, e);
             }

@@ -6,8 +6,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/tensor/tensor.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 using CellsRef = DenseTensorView::CellsRef;
 
@@ -39,5 +38,5 @@ DenseDotProductFunction::eval(ConstArrayRef<eval::Value::CREF> params, Stash &st
     return stash.create<eval::DoubleValue>(result);
 }
 
-} // namespace tensor
-} // namespace vespalib
+}
+

@@ -5,9 +5,8 @@
 #include "sparse_tensor_address_builder.h"
 #include <vespa/eval/tensor/types.h>
 
-namespace vespalib {
-namespace eval { class ValueType; }
-namespace tensor::sparse {
+namespace vespalib::eval { class ValueType; }
+namespace vespalib::tensor::sparse {
 
 /**
  * Combine two tensor addresses to a new tensor address.  Common dimensions
@@ -15,12 +14,7 @@ namespace tensor::sparse {
  */
 class TensorAddressCombiner : public SparseTensorAddressBuilder
 {
-    enum class AddressOp
-    {
-        LHS,
-        RHS,
-        BOTH
-    };
+    enum class AddressOp { LHS, RHS, BOTH };
 
     std::vector<AddressOp> _ops;
 
@@ -33,6 +27,5 @@ public:
     size_t numDimensions() const { return _ops.size(); }
 };
 
+}
 
-} // namespace vespalib::tensor::sparse
-} // namespace vespalib

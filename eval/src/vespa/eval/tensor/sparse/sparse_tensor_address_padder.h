@@ -6,8 +6,7 @@
 #include "sparse_tensor_address_decoder.h"
 #include <cassert>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 
 /**
@@ -16,11 +15,7 @@ namespace tensor {
  */
 class SparseTensorAddressPadder : public SparseTensorAddressBuilder
 {
-    enum class PadOp
-    {
-        PAD,
-        COPY
-    };
+    enum class PadOp { PAD, COPY };
 
     std::vector<PadOp> _padOps;
 
@@ -67,6 +62,5 @@ public:
     }
 };
 
+}
 
-} // namespace vespalib::tensor
-} // namespace vespalib

@@ -4,11 +4,9 @@
 
 #include <vespa/eval/eval/tensor_function.h>
 
-namespace vespalib {
+namespace vespalib { class Stash; }
 
-class Stash;
-
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * Class that recognizes calculations over dense tensors (in tensor function intermediate representation)
@@ -19,5 +17,5 @@ struct DenseTensorFunctionCompiler
     static const eval::TensorFunction &compile(const eval::tensor_function::Node &expr, Stash &stash);
 };
 
-} // namespace tensor
-} // namespace vespalib
+}
+

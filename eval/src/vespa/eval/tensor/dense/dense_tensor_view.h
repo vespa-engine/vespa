@@ -7,8 +7,7 @@
 #include <vespa/eval/eval/value_type.h>
 #include "dense_tensor_cells_iterator.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 class DenseTensor;
 
@@ -22,6 +21,7 @@ public:
     using Cells = std::vector<double>;
     using CellsRef = ConstArrayRef<double>;
     using CellsIterator = DenseTensorCellsIterator;
+    using Address = std::vector<eval::ValueType::Dimension::size_type>;
 
 private:
     const eval::ValueType &_typeRef;
@@ -61,5 +61,5 @@ public:
     virtual void accept(TensorVisitor &visitor) const override;
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
+

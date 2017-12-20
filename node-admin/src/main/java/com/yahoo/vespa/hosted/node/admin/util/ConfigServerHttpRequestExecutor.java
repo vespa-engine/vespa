@@ -43,7 +43,6 @@ import java.util.Optional;
  */
 public class ConfigServerHttpRequestExecutor {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(ConfigServerHttpRequestExecutor.class);
-    private static final int MAX_LOOPS = 2;
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final CloseableHttpClient client;
@@ -108,43 +107,41 @@ public class ConfigServerHttpRequestExecutor {
 
     private <T> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) {
         Exception lastException = null;
-        for (int loopRetry = 0; loopRetry < MAX_LOOPS; loopRetry++) {
-            for (URI configServer : configServerHosts) {
-                final CloseableHttpResponse response;
-                try {
-                    response = client.execute(requestFactory.createRequest(configServer));
-                } catch (Exception e) {
-                    // Failure to communicate with a config server is not abnormal, as they are
-                    // upgraded at the same time as Docker hosts.
-                    if (e.getMessage().indexOf("(Connection refused)") > 0) {
-                        NODE_ADMIN_LOGGER.info("Connection refused to " + configServer + " (upgrading?), will try next");
-                    } else {
-                        NODE_ADMIN_LOGGER.warning("Failed to communicate with " + configServer + ", will try next: " + e.getMessage());
-                    }
-                    lastException = e;
+        for (URI configServer : configServerHosts) {
+            final CloseableHttpResponse response;
+            try {
+                response = client.execute(requestFactory.createRequest(configServer));
+            } catch (Exception e) {
+                // Failure to communicate with a config server is not abnormal, as they are
+                // upgraded at the same time as Docker hosts.
+                if (e.getMessage().indexOf("(Connection refused)") > 0) {
+                    NODE_ADMIN_LOGGER.info("Connection refused to " + configServer + " (upgrading?), will try next");
+                } else {
+                    NODE_ADMIN_LOGGER.warning("Failed to communicate with " + configServer + ", will try next: " + e.getMessage());
+                }
+                lastException = e;
+                continue;
+            }
+
+            try {
+                Optional<HttpException> retryableException = HttpException.handleStatusCode(
+                        response.getStatusLine().getStatusCode(),
+                        "Config server " + configServer);
+                if (retryableException.isPresent()) {
+                    lastException = retryableException.get();
                     continue;
                 }
 
                 try {
-                    Optional<HttpException> retryableException = HttpException.handleStatusCode(
-                            response.getStatusLine().getStatusCode(),
-                            "Config server " + configServer);
-                    if (retryableException.isPresent()) {
-                        lastException = retryableException.get();
-                        continue;
-                    }
-
-                    try {
-                        return mapper.readValue(response.getEntity().getContent(), wantedReturnType);
-                    } catch (IOException e) {
-                        throw new RuntimeException("Response didn't contain nodes element, failed parsing?", e);
-                    }
-                } finally {
-                    try {
-                        response.close();
-                    } catch (IOException e) {
-                        NODE_ADMIN_LOGGER.warning("Ignoring exception from closing response", e);
-                    }
+                    return mapper.readValue(response.getEntity().getContent(), wantedReturnType);
+                } catch (IOException e) {
+                    throw new RuntimeException("Response didn't contain nodes element, failed parsing?", e);
+                }
+            } finally {
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    NODE_ADMIN_LOGGER.warning("Ignoring exception from closing response", e);
                 }
             }
         }

@@ -21,7 +21,7 @@ namespace vespalib::tensor {
 class SparseTensor : public Tensor
 {
 public:
-    using Cells = vespalib::hash_map<SparseTensorAddressRef, double>;
+    using Cells = hash_map<SparseTensorAddressRef, double>;
 
     static constexpr size_t STASH_CHUNK_SIZE = 16384u;
 
@@ -33,6 +33,7 @@ private:
 public:
     explicit SparseTensor(const eval::ValueType &type_in, const Cells &cells_in);
     SparseTensor(eval::ValueType &&type_in, Cells &&cells_in, Stash &&stash_in);
+    ~SparseTensor() override;
     const Cells &cells() const { return _cells; }
     const eval::ValueType &fast_type() const { return _type; }
     bool operator==(const SparseTensor &rhs) const;

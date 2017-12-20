@@ -65,7 +65,7 @@ public class FileReferenceDownloader {
                     Thread.sleep(10);
                 }
             }
-            catch (InterruptedException e) {}
+            catch (InterruptedException e) { /* ignored */}
         }
 
         if ( !downloadStarted) {
@@ -107,7 +107,7 @@ public class FileReferenceDownloader {
         if (validateResponse(request)) {
             log.log(LogLevel.DEBUG, "Request callback, OK. Req: " + request + "\nSpec: " + connection);
             if (request.returnValues().get(0).asInt32() == 0) {
-                log.log(LogLevel.INFO, "Found file reference '" + fileReference.value() + "' available at " + connection.getAddress());
+                log.log(LogLevel.DEBUG, "Found file reference '" + fileReference.value() + "' available at " + connection.getAddress());
                 return true;
             } else {
                 log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found for " + connection.getAddress());
@@ -167,10 +167,6 @@ public class FileReferenceDownloader {
             }
         }
         return status;
-    }
-
-    void setDownloadStatus(String file, double completeness) {
-        setDownloadStatus(new FileReference(file), completeness);
     }
 
     void setDownloadStatus(FileReference fileReference, double completeness) {

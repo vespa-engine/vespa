@@ -5,10 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "sparse_tensor_address_ref.h"
 
-namespace vespalib {
-
-
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * A decoder for a serialized tensor address, with only labels present.
@@ -40,5 +37,5 @@ public:
 
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
+

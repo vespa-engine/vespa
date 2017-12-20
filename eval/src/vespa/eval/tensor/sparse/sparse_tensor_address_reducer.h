@@ -7,21 +7,15 @@
 #include "sparse_tensor_address_decoder.h"
 #include <cassert>
 
-namespace vespalib {
-namespace eval { class ValueType; }
-namespace tensor {
-namespace sparse {
+namespace vespalib::eval { class ValueType; }
+namespace vespalib::tensor::sparse {
 
 /**
  * Reduce sparse tensor address by removing one or more dimensions.
  */
 class TensorAddressReducer : public SparseTensorAddressBuilder
 {
-    enum AddressOp
-    {
-        REMOVE,
-        COPY
-    };
+    enum AddressOp { REMOVE, COPY };
 
     using AddressOps = std::vector<AddressOp>;
 
@@ -50,7 +44,5 @@ public:
     }
 };
 
+}
 
-} // namespace vespalib::tensor::sparse
-} // namespace vespalib::tensor
-} // namespace vespalib

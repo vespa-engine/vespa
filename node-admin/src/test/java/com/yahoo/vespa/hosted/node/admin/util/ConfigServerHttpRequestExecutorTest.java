@@ -117,8 +117,7 @@ public class ConfigServerHttpRequestExecutorTest {
         }
 
         String[] log = mockLog.toString().split("  ");
-        assertThat(log, arrayContainingInAnyOrder("GET http://host1:666/path", "GET http://host2:666/path",
-                                         "GET http://host1:666/path", "GET http://host2:666/path"));
+        assertThat(log, arrayContainingInAnyOrder("GET http://host1:666/path", "GET http://host2:666/path"));
     }
 
     @Test
@@ -134,7 +133,6 @@ public class ConfigServerHttpRequestExecutorTest {
 
         String[] log = mockLog.toString().split("  ");
         assertThat(log, arrayContainingInAnyOrder(
-                "GET http://host1:666/path", "GET http://host2:666/path",
                 "GET http://host1:666/path", "GET http://host2:666/path"));
     }
 

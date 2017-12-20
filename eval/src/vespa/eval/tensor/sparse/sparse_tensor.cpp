@@ -33,8 +33,7 @@ copyCells(Cells &cells, const Cells &cells_in, Stash &stash)
 
 }
 
-SparseTensor::SparseTensor(const eval::ValueType &type_in,
-                           const Cells &cells_in)
+SparseTensor::SparseTensor(const eval::ValueType &type_in, const Cells &cells_in)
     : _type(type_in),
       _cells(),
       _stash(STASH_CHUNK_SIZE)
@@ -43,14 +42,13 @@ SparseTensor::SparseTensor(const eval::ValueType &type_in,
 }
 
 
-SparseTensor::SparseTensor(eval::ValueType &&type_in,
-                           Cells &&cells_in, Stash &&stash_in)
+SparseTensor::SparseTensor(eval::ValueType &&type_in, Cells &&cells_in, Stash &&stash_in)
     : _type(std::move(type_in)),
       _cells(std::move(cells_in)),
       _stash(std::move(stash_in))
-{
-}
+{ }
 
+SparseTensor::~SparseTensor() = default;
 
 bool
 SparseTensor::operator==(const SparseTensor &rhs) const

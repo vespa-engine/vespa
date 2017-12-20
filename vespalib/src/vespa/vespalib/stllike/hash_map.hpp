@@ -64,12 +64,18 @@ hash_map<K, V, H, EQ, M>::getMemoryUsed() const
 
 }
 
-#define VESPALIB_HASH_MAP_INSTANTIATE_H(K, V, H) \
-    template class vespalib::hash_map<K, V, H>; \
-    template class vespalib::hashtable<K, std::pair<K,V>, H, std::equal_to<K>, std::_Select1st<std::pair<K,V>>>; \
-    template vespalib::hashtable<K, std::pair<K,V>, H, std::equal_to<K>, std::_Select1st<std::pair<K,V>>>::insert_result \
-             vespalib::hashtable<K, std::pair<K,V>, H, std::equal_to<K>, std::_Select1st<std::pair<K,V>>>::insert(std::pair<K,V> &&); \
+
+#define VESPALIB_HASH_MAP_INSTANTIATE_H_E_M(K, V, H, E, M) \
+    template class vespalib::hash_map<K, V, H, E, M>; \
+    template class vespalib::hashtable<K, std::pair<K,V>, H, E, std::_Select1st<std::pair<K,V>>, M>; \
+    template vespalib::hashtable<K, std::pair<K,V>, H, E, std::_Select1st<std::pair<K,V>>, M>::insert_result \
+             vespalib::hashtable<K, std::pair<K,V>, H, E, std::_Select1st<std::pair<K,V>>, M>::insert(std::pair<K,V> &&); \
     template class vespalib::Array<vespalib::hash_node<std::pair<K,V>>>;
+
+#define VESPALIB_HASH_MAP_INSTANTIATE_H_E(K, V, H, E) \
+    VESPALIB_HASH_MAP_INSTANTIATE_H_E_M(K, V, H, E, vespalib::hashtable_base::prime_modulator)
+
+#define VESPALIB_HASH_MAP_INSTANTIATE_H(K, V, H) VESPALIB_HASH_MAP_INSTANTIATE_H_E(K, V, H, std::equal_to<K>)
 
 #define VESPALIB_HASH_MAP_INSTANTIATE(K, V) VESPALIB_HASH_MAP_INSTANTIATE_H(K, V, vespalib::hash<K>)
 
