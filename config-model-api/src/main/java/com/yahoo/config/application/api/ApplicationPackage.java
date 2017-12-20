@@ -3,6 +3,7 @@ package com.yahoo.config.application.api;
 
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
