@@ -243,10 +243,13 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     private SessionCreateHandler createHandler(Tenants tenants) throws Exception {
         TestTenantBuilder testTenantBuilder = new TestTenantBuilder();
         final ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
-        return new SessionCreateHandler(Runnable::run, AccessLog.voidAccessLog(), tenants, configserverConfig,
-                                        new ApplicationRepository(testTenantBuilder.createTenants(),
-                                                                  new SessionHandlerTest.MockProvisioner(),
-                                                                  Clock.systemUTC()));
+        return new SessionCreateHandler(
+                SessionCreateHandler.testOnlyContext(),
+                new ApplicationRepository(testTenantBuilder.createTenants(),
+                                          new SessionHandlerTest.MockProvisioner(),
+                                          Clock.systemUTC()),
+                tenants, configserverConfig);
+
     }
 
     private HttpRequest post() throws FileNotFoundException {

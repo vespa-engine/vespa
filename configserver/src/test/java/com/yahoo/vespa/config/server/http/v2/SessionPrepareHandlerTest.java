@@ -383,10 +383,13 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     private SessionHandler createHandler(TestTenantBuilder builder) {
         final ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
-        return new SessionPrepareHandler(Runnable::run, AccessLog.voidAccessLog(), builder.createTenants(), configserverConfig,
-                                         new ApplicationRepository(builder.createTenants(),
-                                                                   new MockProvisioner(),
-                                                                   Clock.systemUTC()));
+        return new SessionPrepareHandler(
+                SessionPrepareHandler.testOnlyContext(),
+                new ApplicationRepository(builder.createTenants(),
+                                          new MockProvisioner(),
+                                          Clock.systemUTC()),
+                builder.createTenants(), configserverConfig);
+
     }
 
     private TestTenantBuilder addTenant(TenantName tenantName,

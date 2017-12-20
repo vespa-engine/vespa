@@ -49,9 +49,9 @@ public class HttpGetConfigHandlerTest {
         TestTenantBuilder tb = new TestTenantBuilder();
         tb.createTenant(tenant).withRequestHandler(mockRequestHandler).build();
         Tenants tenants = tb.createTenants();        
-        handler = new HttpGetConfigHandler(command -> {
-            command.run();
-        }, AccessLog.voidAccessLog(), tenants);
+        handler = new HttpGetConfigHandler(
+                HttpGetConfigHandler.testOnlyContext(),
+                tenants);
     }
 
     @Test

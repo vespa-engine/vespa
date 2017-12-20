@@ -25,14 +25,16 @@ import java.util.concurrent.Executor;
 public class HttpListNamedConfigsHandler extends HttpHandler {
     private final RequestHandler requestHandler;
 
-    public HttpListNamedConfigsHandler(Executor executor, RequestHandler requestHandler, AccessLog accessLog) {
-        super(executor, accessLog);
+    public HttpListNamedConfigsHandler(HttpHandler.Context ctx,
+                                       RequestHandler requestHandler) {
+        super(ctx);
         this.requestHandler = requestHandler;
     }
 
     @Inject
-    public HttpListNamedConfigsHandler(Executor executor, Tenants tenants, AccessLog accessLog) {
-        this(executor, tenants.defaultTenant().getRequestHandler(), accessLog);
+    public HttpListNamedConfigsHandler(HttpHandler.Context ctx,
+                                       Tenants tenants) {
+        this(ctx, tenants.defaultTenant().getRequestHandler());
     }
     
     @Override

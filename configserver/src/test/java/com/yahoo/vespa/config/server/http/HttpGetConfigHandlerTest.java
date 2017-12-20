@@ -44,13 +44,9 @@ public class HttpGetConfigHandlerTest {
         mockRequestHandler.setAllConfigs(new HashSet<ConfigKey<?>>() {{ 
             add(new ConfigKey<>("bar", "myid", "foo"));
             }} );
-        handler = new HttpGetConfigHandler(new Executor() {
-            @SuppressWarnings("NullableProblems")
-            @Override
-            public void execute(Runnable command) {
-                command.run();
-            }
-        }, mockRequestHandler, AccessLog.voidAccessLog());
+        handler = new HttpGetConfigHandler(
+                HttpGetConfigHandler.testOnlyContext(),
+                mockRequestHandler);
     }
 
     @Test

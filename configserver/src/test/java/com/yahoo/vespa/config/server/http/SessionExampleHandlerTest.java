@@ -54,7 +54,7 @@ public class SessionExampleHandlerTest {
     public static class SessionExampleHandler extends ThreadedHttpRequestHandler {
 
         public SessionExampleHandler(Executor executor) {
-            super(executor);
+            super(executor, null);
         }
 
         @Override

@@ -161,15 +161,11 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     private SessionContentHandler createHandler() throws Exception {
         TestTenantBuilder testTenantBuilder = new TestTenantBuilder();
         testTenantBuilder.createTenant(tenant).getLocalSessionRepo().addSession(new MockSession(1l, FilesApplicationPackage.fromFile(createTestApp())));
-        return new SessionContentHandler(new Executor() {
-            @SuppressWarnings("NullableProblems")
-            @Override
-            public void execute(Runnable command) {
-                command.run();
-            }
-        }, AccessLog.voidAccessLog(), testTenantBuilder.createTenants(),
-                                         new ApplicationRepository(testTenantBuilder.createTenants(),
-                                                                   new SessionHandlerTest.MockProvisioner(),
-                                                                   Clock.systemUTC()));
+        return new SessionContentHandler(
+                SessionContentHandler.testOnlyContext(),
+                new ApplicationRepository(testTenantBuilder.createTenants(),
+                                          new SessionHandlerTest.MockProvisioner(),
+                                          Clock.systemUTC()),
+                testTenantBuilder.createTenants());
     }
 }

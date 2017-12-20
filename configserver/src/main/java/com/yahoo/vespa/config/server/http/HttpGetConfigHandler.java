@@ -23,14 +23,14 @@ import java.util.concurrent.Executor;
 public class HttpGetConfigHandler extends HttpHandler {
     private final RequestHandler requestHandler;
 
-    public HttpGetConfigHandler(Executor executor, RequestHandler requestHandler, AccessLog accessLog) {
-        super(executor, accessLog);
+    public HttpGetConfigHandler(HttpHandler.Context ctx, RequestHandler requestHandler) {
+        super(ctx);
         this.requestHandler = requestHandler;
     }
 
     @Inject
-    public HttpGetConfigHandler(Executor executor, Tenants tenants, AccessLog accesslog) {
-        this(executor, tenants.defaultTenant().getRequestHandler(), accesslog);
+    public HttpGetConfigHandler(HttpHandler.Context ctx, Tenants tenants) {
+        this(ctx, tenants.defaultTenant().getRequestHandler());
     }
     
     @Override
