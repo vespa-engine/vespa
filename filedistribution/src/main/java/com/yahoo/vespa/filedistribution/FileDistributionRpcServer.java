@@ -80,13 +80,13 @@ public class FileDistributionRpcServer {
         try {
             if (pathToFile.isPresent()) {
                 req.returnValues().add(new StringValue(pathToFile.get().getAbsolutePath()));
-                log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' available at " + pathToFile.get());
+                log.log(LogLevel.DEBUG, "File reference '" + fileReference.value() + "' available at " + pathToFile.get());
             } else {
                 log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
                 req.setError(fileReferenceDoesNotExists, "File reference '" + fileReference.value() + "' not found");
             }
         } catch (Throwable e) {
-            log.log(LogLevel.WARNING, "File reference '" + fileReference.value() + "' got exeption: " + e.getMessage());
+            log.log(LogLevel.WARNING, "File reference '" + fileReference.value() + "' got exception: " + e.getMessage());
             req.setError(fileReferenceInternalError, "File reference '" + fileReference.value() + "' removed");
         }
         req.returnRequest();
@@ -122,6 +122,5 @@ public class FileDistributionRpcServer {
 
         req.returnValues().add(new Int32Value(0));
     }
-
 
 }
