@@ -229,7 +229,7 @@ public class RunInContainerTest {
         }
     }
 
-    public class NodeAdminProviderWithMocks implements Provider<NodeAdminStateUpdater> {
+    public class NodeAdminComponentWithMocks implements Provider<NodeAdminStateUpdater> {
         private final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofMillis(100);
         private final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofMillis(5);
 
@@ -244,7 +244,7 @@ public class RunInContainerTest {
         private final NodeAdminStateUpdater nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepositoryMock,
                 orchestratorMock, storageMaintainer, nodeAdmin, "localhost.test.yahoo.com", Clock.systemUTC(), NODE_ADMIN_CONVERGE_STATE_INTERVAL, new ClassLocking());
 
-        public NodeAdminProviderWithMocks() {
+        public NodeAdminComponentWithMocks() {
             nodeAdminStateUpdater.start();
         }
 
