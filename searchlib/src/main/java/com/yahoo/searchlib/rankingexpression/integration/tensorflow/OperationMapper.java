@@ -86,17 +86,17 @@ class OperationMapper {
         return new TypedTensorFunction(resultType, function);
     }
 
-    TypedTensorFunction placeholder(NodeDef tfNode, ImportResult result) {
+    TypedTensorFunction placeholder(NodeDef tfNode, ImportResult.Signature signature) {
         String name = tfNode.getName();
-        TensorType type = result.arguments().get(name);
+        TensorType type = signature.owner().arguments().get(name);
         if (type == null)
-            throw new IllegalArgumentException("An placeholder operation node is referencing input '" + name +
-                                               "', but there is no such input");
+            throw new IllegalArgumentException("A 'placeholder' node is referencing placeholder '" + name +
+                                               "', but there is no such placeholder");
         // Included literally in the expression and so must be produced by a separate macro in the rank profile
         return new TypedTensorFunction(type, new VariableTensor(name));
     }
 
-    TypedTensorFunction identity(NodeDef tfNode, SavedModelBundle model, ImportResult result) {
+    TypedTensorFunction identity(NodeDef tfNode, SavedModelBundle model, ImportResult.Signature signature) {
         if ( ! tfNode.getName().endsWith("/read"))
             throw new IllegalArgumentException("Encountered identity node " + tfNode.getName() + ", but identify " +
                                                "nodes are only supported when reading variables");
@@ -114,7 +114,7 @@ class OperationMapper {
             throw new IllegalStateException("Expected 1 tensor from reading Variable " + name + ", but got " +
                                             importedTensors.size());
         Tensor constant = tensorConverter.toVespaTensor(importedTensors.get(0));
-        result.set(name, constant);
+        signature.owner().constant(name, constant);
         return new TypedTensorFunction(constant.type(),
                                        new TensorFunctionNode.TensorFunctionExpressionNode(new ReferenceNode("constant(" + name + ")")));
     }

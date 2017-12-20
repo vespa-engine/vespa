@@ -33,12 +33,6 @@ public class Mnist_SoftmaxTestCase {
         result.warnings().forEach(System.err::println);
         assertEquals(0, result.warnings().size());
 
-        // Check arguments
-        assertEquals(1, result.arguments().size());
-        TensorType argument0 = result.arguments().get("Placeholder");
-        assertNotNull(argument0);
-        assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(), argument0);
-
         // Check constants
         assertEquals(2, result.constants().size());
 
@@ -54,18 +48,31 @@ public class Mnist_SoftmaxTestCase {
                      constant1.type());
         assertEquals(10, constant1.size());
 
-        // Check resulting Vespa expression
-        assertEquals(1, result.expressions().size());
-        assertEquals("y", result.expressions().get(0).getName());
+        // Check signatures
+        assertEquals(1, result.signatures().size());
+        ImportResult.Signature signature = result.signatures().get("serving_default");
+        assertNotNull(signature);
+
+        // ... signature inputs
+        assertEquals(1, signature.inputs().size());
+        TensorType argument0 = signature.inputType("x");
+        assertNotNull(argument0);
+        assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(), argument0);
+
+        // ... signature outputs
+        assertEquals(1, signature.outputs().size());
+        RankingExpression output = signature.outputs().get("y");
+        assertNotNull(output);
+        assertEquals("y", output.getName());
         assertEquals("" +
                      "join(rename(matmul(Placeholder, rename(constant(Variable), (d0, d1), (d1, d3)), d1), d3, d1), " +
                      "rename(constant(Variable_1), d0, d1), " +
                      "f(a,b)(a + b))",
-                     toNonPrimitiveString(result.expressions().get(0)));
+                     toNonPrimitiveString(output));
 
         // Test execution
+        // TODO: Pass imported result instead of re-importing
         String signatureName = "serving_default";
-
         assertEqualResult(modelDir, signatureName, "Variable/read");
         assertEqualResult(modelDir, signatureName, "Variable_1/read");
         // TODO: Assert that argument fed is as expected assertEqualResult(modelDir, signatureName, "Placeholder");
@@ -80,7 +87,7 @@ public class Mnist_SoftmaxTestCase {
         Context context = contextFrom(result);
         Tensor placeholder = placeholderArgument();
         context.put("Placeholder", new TensorValue(placeholder));
-        Tensor vespaResult = result.expressions().get(0).evaluate(context).asTensor();
+        Tensor vespaResult = result.signatures().get(signatureName).outputs().get(operationName).evaluate(context).asTensor();
         assertEquals("Operation '" + operationName + "' produces equal results", vespaResult, tfResult);
     }
 
