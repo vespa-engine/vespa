@@ -38,27 +38,20 @@ public class TensorFlowImporter {
      */
     public ImportResult importModel(String modelDir) {
         try (SavedModelBundle model = SavedModelBundle.load(modelDir, "serve")) {
-            return importGraph(MetaGraphDef.parseFrom(model.metaGraphDef()), model);
+            return importModel(model);
         }
-        catch (IOException e) {
-            throw new IllegalArgumentException("Could not read TensorFlow model from directory '" + modelDir + "'", e);
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Could not import TensorFlow model from directory '" + modelDir + "'", e);
         }
     }
 
-    /** Imports a specific node as an putput given the name of that node. Useful for testing */
-    public ImportResult importNode(String modelDir, String signatureName, String nodeName) {
-        try (SavedModelBundle model = SavedModelBundle.load(modelDir, "serve")) {
-            MetaGraphDef graph = MetaGraphDef.parseFrom(model.metaGraphDef());
-            SignatureDef signatureDef = graph.getSignatureDefMap().get(signatureName);
-            ImportResult result = new ImportResult();
-            ImportResult.Signature signature = result.signature(signatureName);
-            importInputs(signatureDef.getInputsMap(), signature);
-            signature.output(nodeName,
-                             new RankingExpression(nodeName, importNode(nodeName, graph.getGraphDef(), model, result)));
-            return result;
+    /** Imports a TensorFlow model */
+    public ImportResult importModel(SavedModelBundle model) {
+        try {
+            return importGraph(MetaGraphDef.parseFrom(model.metaGraphDef()), model);
         }
         catch (IOException e) {
-            throw new IllegalArgumentException("Could not read TensorFlow model from directory '" + modelDir + "'", e);
+            throw new IllegalArgumentException("Could not import TensorFlow model '" + model + "'", e);
         }
     }
 
@@ -72,7 +65,7 @@ public class TensorFlowImporter {
                 String outputName = output.getKey();
                 try {
                     ExpressionNode node = importOutput(output.getValue(), graph.getGraphDef(), model, result);
-                    signature.output(outputName, new RankingExpression(outputName, node));
+                    signature.output(outputName, nameOf(output.getValue().getName()));
                 }
                 catch (IllegalArgumentException e) {
                     result.warn("Skipping output '" + outputName + "' of " + signature +
@@ -111,12 +104,15 @@ public class TensorFlowImporter {
 
     private ExpressionNode importNode(String nodeName, GraphDef graph, SavedModelBundle model, ImportResult result) {
         TensorFunction function = importNode(getNode(nodeName, graph), graph, model, result).function();
-        return new TensorFunctionNode(function); // wrap top level (only) as an expression
+        result.expression(nodeName, new RankingExpression(nodeName, new TensorFunctionNode(function)));
+        return new TensorFunctionNode(function); // wrap top level (only) as an expression // TODO: waht to return
     }
 
     /** Recursively convert a graph of TensorFlow nodes into a Vespa tensor function expression tree */
     private TypedTensorFunction importNode(NodeDef tfNode, GraphDef graph, SavedModelBundle model, ImportResult result) {
-        return tensorFunctionOf(tfNode, graph, model, result);
+        TypedTensorFunction function = tensorFunctionOf(tfNode, graph, model, result);
+        result.expression(tfNode.getName(), new RankingExpression(tfNode.getName(), new TensorFunctionNode(function.function())));
+        return function; // TODO: waht to return
     }
 
     private TypedTensorFunction tensorFunctionOf(NodeDef tfNode, GraphDef graph, SavedModelBundle model, ImportResult result) {

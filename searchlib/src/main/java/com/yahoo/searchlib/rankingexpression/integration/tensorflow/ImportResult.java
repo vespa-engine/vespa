@@ -25,10 +25,12 @@ public class ImportResult {
     private final Map<String, Signature> signatures = new HashMap<>();
     private final Map<String, TensorType> arguments = new HashMap<>();
     private final Map<String, Tensor> constants = new HashMap<>();
+    private final Map<String, RankingExpression> expressions = new HashMap<>();
     private final List<String> warnings = new ArrayList<>();
 
     void argument(String name, TensorType argumentType) { arguments.put(name, argumentType); }
     void constant(String name, Tensor constant) { constants.put(name, constant); }
+    void expression(String name, RankingExpression expression) { expressions.put(name, expression); }
     void warn(String warning) { warnings.add(warning); }
 
     /** Returns the given signature. If it does not already exist it is added to this. */
@@ -42,31 +44,37 @@ public class ImportResult {
     /** Returns an immutable map of the constants of this */
     public Map<String, Tensor> constants() { return Collections.unmodifiableMap(constants); }
 
-    /** Returns an immutable map of the signatures of this */
-    public Map<String, Signature> signatures() { return Collections.unmodifiableMap(signatures); }
+    /**
+     * Returns an immutable map of the expressions of this - corresponding to TensorFlow nodes
+     * which are not Placeholders or Variables (which instead become respectively arguments and constants).
+     * Note that only nodes recursively referenced by a placeholder are added.
+     */
+    public Map<String, RankingExpression> expressions() { return Collections.unmodifiableMap(expressions); }
 
     /** Returns an immutable list, in natural sort order of the warnings generated while importing this */
     public List<String> warnings() {
         return warnings.stream().sorted().collect(Collectors.toList());
     }
 
+    /** Returns an immutable map of the signatures of this */
+    public Map<String, Signature> signatures() { return Collections.unmodifiableMap(signatures); }
+
     /**
      * A signature is a set of named inputs and outputs, where the inputs maps to argument ("placeholder") names+types,
-     * and outputs maps to ranking expressions stemming from conversion of TensorFlow nodes and the inputs make up the
-     * context which is needed to evaluate the expression.
+     * and outputs maps to expressions nodes.
      */
     public class Signature {
 
         private final String name;
         private final Map<String, String> inputs = new HashMap<>();
-        private final Map<String, RankingExpression> outputs = new HashMap<>();
+        private final Map<String, String> outputs = new HashMap<>();
 
         Signature(String name) {
             this.name = name;
         }
 
         void input(String inputName, String argumentName) { inputs.put(inputName, argumentName); }
-        void output(String name, RankingExpression expression) { outputs.put(name, expression); }
+        void output(String name, String expressionName) { outputs.put(name, expressionName); }
 
         /** Returns the result this is part of */
         ImportResult owner() { return ImportResult.this; }
@@ -78,10 +86,13 @@ public class ImportResult {
         public Map<String, String> inputs() { return Collections.unmodifiableMap(inputs); }
 
         /** Returns owner().arguments().get(inputs.get(name)), e.g the type of the argument this input references */
-        public TensorType inputType(String inputName) { return owner().arguments().get(inputs.get(inputName)); }
+        public TensorType inputArgument(String inputName) { return owner().arguments().get(inputs.get(inputName)); }
 
-        /** Returns an immutable list of the expressions of this */
-        public Map<String, RankingExpression> outputs() { return Collections.unmodifiableMap(outputs); }
+        /** Returns an immutable list of the expression names of this */
+        public Map<String, String> outputs() { return Collections.unmodifiableMap(outputs); }
+
+        /** Returns owner().expressions().get(outputs.get(outputName)), e.g the expression this output references */
+        public RankingExpression outputExpression(String outputName) { return owner().expressions().get(outputs.get(outputName)); }
 
         @Override
         public String toString() { return "signature '" + name + "'"; }
