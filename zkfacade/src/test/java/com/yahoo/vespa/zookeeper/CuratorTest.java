@@ -12,8 +12,8 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Sets up actual ZooKeeper servers and verifies we can talk to them.
@@ -80,10 +80,12 @@ public class CuratorTest {
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
         builder.zookeeperserver(createZKBuilder("localhost", port1));
         builder.zookeeperserver(createZKBuilder(HostName.getLocalhost(), port2));
+        builder.zookeeperserver(createZKBuilder("localhost", 1234));
+        builder.zookeeperserver(createZKBuilder("localhost", 6789));
         try (Curator curator = createCurator(new ConfigserverConfig(builder))) {
-            assertThat(curator.serverCount(), is(2));
+            assertThat(curator.serverCount(), is(4));
             // host this is running on should come first
-            assertEquals(HostName.getLocalhost() + ":" + port2 + ",localhost:" + port1, curator.connectionSpec());
+            assertTrue(curator.connectionSpec().startsWith(HostName.getLocalhost() + ":" + port2 + ",localhost:1234"));
         }
     }
 

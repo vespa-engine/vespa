@@ -87,7 +87,8 @@ public class Curator implements AutoCloseable {
                 indexForThisConfigServer = i;
         }
         // Rotate list of servers so that config server on this host is first in the list
-        Collections.rotate(servers, configServerCount - indexForThisConfigServer);
+        if (indexForThisConfigServer != 0)
+            Collections.rotate(servers, configServerCount - indexForThisConfigServer);
         return servers;
     }
 
