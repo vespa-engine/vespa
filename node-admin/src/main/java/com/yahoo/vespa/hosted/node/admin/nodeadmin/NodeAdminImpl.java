@@ -179,9 +179,10 @@ public class NodeAdminImpl implements NodeAdmin {
             }
         }, 0, 55, TimeUnit.SECONDS);
 
+        int delay = 120; // WARNING: Reducing this will increase the load on config servers.
         aclScheduler.scheduleWithFixedDelay(() -> {
             if (!isFrozen()) aclMaintainer.run();
-        }, 30, 60, TimeUnit.SECONDS);
+        }, 30, delay, TimeUnit.SECONDS);
     }
 
     @Override
