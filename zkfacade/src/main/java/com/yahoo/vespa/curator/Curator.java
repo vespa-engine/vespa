@@ -3,7 +3,6 @@ package com.yahoo.vespa.curator;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.zookeeper.ZooKeeperServer;
@@ -22,8 +21,8 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 
+import java.io.Closeable;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -70,26 +69,17 @@ public class Curator implements AutoCloseable {
     }
     
     private static String createConnectionSpec(ConfigserverConfig config) {
-        List<String> servers = createAndOrderServerList(config);
-        return String.join(",", servers);
-    }
-
-    private static List<String> createAndOrderServerList(ConfigserverConfig config) {
-        String hostName = HostName.getLocalhost();
-        int configServerCount = config.zookeeperserver().size();
-        List<String> servers = new ArrayList<>();
-
-        int indexForThisConfigServer = 0;
-        for (int i = 0; i < configServerCount; i++) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < config.zookeeperserver().size(); i++) {
             ConfigserverConfig.Zookeeperserver server = config.zookeeperserver(i);
-            servers.add(server.hostname() + ":" + server.port());
-            if (server.hostname().equals(hostName))
-                indexForThisConfigServer = i;
+            sb.append(server.hostname());
+            sb.append(":");
+            sb.append(server.port());
+            if (i < config.zookeeperserver().size() - 1) {
+                sb.append(",");
+            }
         }
-        // Rotate list of servers so that config server on this host is first in the list
-        if (indexForThisConfigServer != 0)
-            Collections.rotate(servers, configServerCount - indexForThisConfigServer);
-        return servers;
+        return sb.toString();
     }
 
     /** 
