@@ -71,15 +71,12 @@ public class Curator implements AutoCloseable {
     
     private static String createConnectionSpec(ConfigserverConfig config) {
         List<String> servers = createAndOrderServerList(config);
-        System.out.println(servers);
         return String.join(",", servers);
     }
 
     private static List<String> createAndOrderServerList(ConfigserverConfig config) {
         String hostName = HostName.getLocalhost();
         int configServerCount = config.zookeeperserver().size();
-
-        System.out.println(config);
         List<String> servers = new ArrayList<>();
 
         int indexForThisConfigServer = 0;
