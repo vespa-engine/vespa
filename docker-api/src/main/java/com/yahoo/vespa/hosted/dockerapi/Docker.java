@@ -12,6 +12,11 @@ import java.util.Optional;
  * and to avoid OSGi exporting those classes.
  */
 public interface Docker {
+    /**
+     * Must be called before any other method. May be called more than once.
+     */
+    void start();
+
     interface CreateContainerCommand {
         CreateContainerCommand withLabel(String name, String value);
         CreateContainerCommand withEnvironment(String name, String value);
