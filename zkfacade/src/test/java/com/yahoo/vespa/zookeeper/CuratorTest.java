@@ -2,6 +2,7 @@
 package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.test.TestingServer;
 import org.junit.After;
@@ -11,8 +12,8 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Sets up actual ZooKeeper servers and verifies we can talk to them.
@@ -71,6 +72,20 @@ public class CuratorTest {
         builder.zookeeperserver(createZKBuilder("localhost", port1));
         try (Curator curator = createCurator(new ConfigserverConfig(builder))) {
             assertThat(curator.serverCount(), is(1));
+        }
+    }
+
+    @Test
+    public void require_that_server_order_is_correct() {
+        ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
+        builder.zookeeperserver(createZKBuilder("localhost", port1));
+        builder.zookeeperserver(createZKBuilder(HostName.getLocalhost(), port2));
+        builder.zookeeperserver(createZKBuilder("localhost", 1234));
+        builder.zookeeperserver(createZKBuilder("localhost", 6789));
+        try (Curator curator = createCurator(new ConfigserverConfig(builder))) {
+            assertThat(curator.serverCount(), is(4));
+            // host this is running on should come first
+            assertTrue(curator.connectionSpec().startsWith(HostName.getLocalhost() + ":" + port2 + ",localhost:1234"));
         }
     }
 
