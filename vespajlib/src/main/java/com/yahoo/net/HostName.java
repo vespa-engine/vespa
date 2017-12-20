@@ -27,7 +27,7 @@ public class HostName {
 
     private static final Logger logger = Logger.getLogger(HostName.class.getName());
 
-    private static String cachedHostName = null;
+    private static String preferredHostName = null;
 
     /**
      * Return a public and fully qualified hostname for localhost that resolves to an IP address on
@@ -38,14 +38,14 @@ public class HostName {
      * @throws RuntimeException if accessing the network or the 'hostname' command fails
      */
     public static synchronized String getLocalhost() {
-        if (cachedHostName == null) {
+        if (preferredHostName == null) {
             try {
-                cachedHostName = getPreferredHostName();
+                preferredHostName = getPreferredHostName();
             } catch (Exception e) {
                 throw new RuntimeException("Failed to find a preferred hostname", e);
             }
         }
-        return cachedHostName;
+        return preferredHostName;
     }
 
     private static String getPreferredHostName() throws Exception {
@@ -178,4 +178,7 @@ public class HostName {
         }
     }
 
+    public static void setHostNameForTestingOnly(String hostName) {
+        preferredHostName = hostName;
+    }
 }
