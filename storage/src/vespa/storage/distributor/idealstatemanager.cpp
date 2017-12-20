@@ -95,7 +95,7 @@ IdealStateManager::getEntryForPrimaryBucket(StateChecker::Context& c) const
 {
     for (uint32_t j = 0; j < c.entries.size(); ++j) {
         BucketDatabase::Entry& e = c.entries[j];
-        if (e.getBucketId() == c.getBucketId()) {
+        if (e.getBucketId() == c.getBucketId() && ! e->getNodes().empty()) {
             return &e;
         }
     }
