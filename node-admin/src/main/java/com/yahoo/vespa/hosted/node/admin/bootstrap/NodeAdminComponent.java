@@ -11,9 +11,9 @@ public class NodeAdminComponent implements Provider<NodeAdminMain> {
     private final NodeAdminMain nodeAdminMain;
 
     @Inject
-    NodeAdminComponent(Docker docker,
-                       MetricReceiverWrapper metricReceiver,
-                       ClassLocking classLocking) {
+    public NodeAdminComponent(Docker docker,
+                              MetricReceiverWrapper metricReceiver,
+                              ClassLocking classLocking) {
         this.nodeAdminMain = new NodeAdminMain(docker, metricReceiver, classLocking);
     }
 
