@@ -27,17 +27,12 @@ public class Mnist_SoftmaxTestCase {
     @Test
     public void testImporting() {
         String modelDir = "src/test/files/integration/tensorflow/mnist_softmax/saved";
-        ImportResult result = new TensorFlowImporter().importModel(modelDir);
+        SavedModelBundle model = SavedModelBundle.load(modelDir, "serve");
+        ImportResult result = new TensorFlowImporter().importModel(model);
 
         // Check logged messages
         result.warnings().forEach(System.err::println);
         assertEquals(0, result.warnings().size());
-
-        // Check arguments
-        assertEquals(1, result.arguments().size());
-        TensorType argument0 = result.arguments().get("Placeholder");
-        assertNotNull(argument0);
-        assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(), argument0);
 
         // Check constants
         assertEquals(2, result.constants().size());
@@ -54,38 +49,45 @@ public class Mnist_SoftmaxTestCase {
                      constant1.type());
         assertEquals(10, constant1.size());
 
-        // Check resulting Vespa expression
-        assertEquals(1, result.expressions().size());
-        assertEquals("y", result.expressions().get(0).getName());
+        // Check signatures
+        assertEquals(1, result.signatures().size());
+        ImportResult.Signature signature = result.signatures().get("serving_default");
+        assertNotNull(signature);
+
+        // ... signature inputs
+        assertEquals(1, signature.inputs().size());
+        TensorType argument0 = signature.inputArgument("x");
+        assertNotNull(argument0);
+        assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(), argument0);
+
+        // ... signature outputs
+        assertEquals(1, signature.outputs().size());
+        RankingExpression output = signature.outputExpression("y");
+        assertNotNull(output);
+        assertEquals("add", output.getName());
         assertEquals("" +
                      "join(rename(matmul(Placeholder, rename(constant(Variable), (d0, d1), (d1, d3)), d1), d3, d1), " +
                      "rename(constant(Variable_1), d0, d1), " +
                      "f(a,b)(a + b))",
-                     toNonPrimitiveString(result.expressions().get(0)));
+                     toNonPrimitiveString(output));
 
         // Test execution
-        String signatureName = "serving_default";
-
-        assertEqualResult(modelDir, signatureName, "Variable/read");
-        assertEqualResult(modelDir, signatureName, "Variable_1/read");
-        // TODO: Assert that argument fed is as expected assertEqualResult(modelDir, signatureName, "Placeholder");
-        assertEqualResult(modelDir, signatureName, "MatMul");
-        assertEqualResult(modelDir, signatureName, "add");
+        assertEqualResult(model, result, "Variable/read");
+        assertEqualResult(model, result, "Variable_1/read");
+        assertEqualResult(model, result, "MatMul");
+        assertEqualResult(model, result, "add");
     }
 
-    private void assertEqualResult(String modelDir, String signatureName, String operationName) {
-        ImportResult result = new TensorFlowImporter().importNode(modelDir, signatureName, operationName);
-
-        Tensor tfResult = tensorFlowExecute(modelDir, operationName);
+    private void assertEqualResult(SavedModelBundle model, ImportResult result, String operationName) {
+        Tensor tfResult = tensorFlowExecute(model, operationName);
         Context context = contextFrom(result);
         Tensor placeholder = placeholderArgument();
         context.put("Placeholder", new TensorValue(placeholder));
-        Tensor vespaResult = result.expressions().get(0).evaluate(context).asTensor();
+        Tensor vespaResult = result.expressions().get(operationName).evaluate(context).asTensor();
         assertEquals("Operation '" + operationName + "' produces equal results", vespaResult, tfResult);
     }
 
-    private Tensor tensorFlowExecute(String modelDir, String operationName) {
-        SavedModelBundle model = SavedModelBundle.load(modelDir, "serve");
+    private Tensor tensorFlowExecute(SavedModelBundle model, String operationName) {
         Session.Runner runner = model.session().runner();
         org.tensorflow.Tensor<?> placeholder = org.tensorflow.Tensor.create(new long[]{ 1, 784 }, FloatBuffer.allocate(784));
         runner.feed("Placeholder", placeholder);

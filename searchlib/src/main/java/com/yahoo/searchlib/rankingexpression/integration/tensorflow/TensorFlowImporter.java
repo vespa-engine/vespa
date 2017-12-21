@@ -1,11 +1,9 @@
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.ScalarFunctions;
-import com.yahoo.tensor.functions.TensorFunction;
 import com.yahoo.yolean.Exceptions;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.framework.GraphDef;
@@ -38,49 +36,53 @@ public class TensorFlowImporter {
      */
     public ImportResult importModel(String modelDir) {
         try (SavedModelBundle model = SavedModelBundle.load(modelDir, "serve")) {
-            return importGraph(MetaGraphDef.parseFrom(model.metaGraphDef()), model);
+            return importModel(model);
         }
-        catch (IOException e) {
-            throw new IllegalArgumentException("Could not read TensorFlow model from directory '" + modelDir + "'", e);
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Could not import TensorFlow model from directory '" + modelDir + "'", e);
         }
     }
 
-    public ImportResult importNode(String modelDir, String inputSignatureName, String nodeName) {
-        try (SavedModelBundle model = SavedModelBundle.load(modelDir, "serve")) {
-            MetaGraphDef graph = MetaGraphDef.parseFrom(model.metaGraphDef());
-            SignatureDef signature = graph.getSignatureDefMap().get(inputSignatureName);
-            ImportResult result = new ImportResult();
-            importInputs(signature.getInputsMap(), result);
-            result.add(new RankingExpression(nodeName, importNode(nodeName, graph.getGraphDef(), model, result)));
-            return result;
+    /** Imports a TensorFlow model */
+    public ImportResult importModel(SavedModelBundle model) {
+        try {
+            return importGraph(MetaGraphDef.parseFrom(model.metaGraphDef()), model);
         }
         catch (IOException e) {
-            throw new IllegalArgumentException("Could not read TensorFlow model from directory '" + modelDir + "'", e);
+            throw new IllegalArgumentException("Could not import TensorFlow model '" + model + "'", e);
         }
     }
 
     private ImportResult importGraph(MetaGraphDef graph, SavedModelBundle model) {
         ImportResult result = new ImportResult();
         for (Map.Entry<String, SignatureDef> signatureEntry : graph.getSignatureDefMap().entrySet()) {
-            importInputs(signatureEntry.getValue().getInputsMap(), result);
+            ImportResult.Signature signature = result.signature(signatureEntry.getKey()); // Prefer key over "methodName"
+
+            importInputs(signatureEntry.getValue().getInputsMap(), signature);
             for (Map.Entry<String, TensorInfo> output : signatureEntry.getValue().getOutputsMap().entrySet()) {
+                String outputName = output.getKey();
                 try {
-                    ExpressionNode node = importOutput(output.getValue(), graph.getGraphDef(), model, result);
-                    result.add(new RankingExpression(output.getKey(), node));
+                    NodeDef node = getNode(nameOf(output.getValue().getName()), graph.getGraphDef());
+                    importNode(node, graph.getGraphDef(), model, result);
+                    signature.output(outputName, nameOf(output.getValue().getName()));
                 }
                 catch (IllegalArgumentException e) {
-                    result.warn("Skipping output '" + output.getValue().getName() + "' of signature '" +
-                                signatureEntry.getValue().getMethodName() +
-                                "': " + Exceptions.toMessageString(e));
+                    result.warn("Skipping output '" + outputName + "' of " + signature +
+                                ": " + Exceptions.toMessageString(e));
                 }
             }
         }
         return result;
     }
 
-    private void importInputs(Map<String, TensorInfo> inputInfoMap, ImportResult result) {
-        inputInfoMap.forEach((key, value) -> result.set(nameOf(value.getName()),
-                                                        importTensorType(value.getTensorShape())));
+    private void importInputs(Map<String, TensorInfo> inputInfoMap, ImportResult.Signature signature) {
+        inputInfoMap.forEach((key, value) -> {
+            String argumentName = nameOf(value.getName());
+            TensorType argumentType = importTensorType(value.getTensorShape());
+            // Arguments are (Placeholder) nodes, so not local to the signature:
+            signature.owner().argument(argumentName, argumentType);
+            signature.input(key, argumentName);
+        });
     }
 
     private TensorType importTensorType(TensorShapeProto tensorShape) {
@@ -95,18 +97,13 @@ public class TensorFlowImporter {
         return b.build();
     }
 
-    private ExpressionNode importOutput(TensorInfo output, GraphDef graph, SavedModelBundle model, ImportResult result) {
-        return importNode(nameOf(output.getName()), graph, model, result);
-    }
-
-    private ExpressionNode importNode(String nodeName, GraphDef graph, SavedModelBundle model, ImportResult result) {
-        TensorFunction function = importNode(getNode(nodeName, graph), graph, model, result).function();
-        return new TensorFunctionNode(function); // wrap top level (only) as an expression
-    }
-
     /** Recursively convert a graph of TensorFlow nodes into a Vespa tensor function expression tree */
     private TypedTensorFunction importNode(NodeDef tfNode, GraphDef graph, SavedModelBundle model, ImportResult result) {
-        return tensorFunctionOf(tfNode, graph, model, result);
+        TypedTensorFunction function = tensorFunctionOf(tfNode, graph, model, result);
+        // We add all intermediate nodes imported as separate expressions. Only those referenced in a signature output
+        // will be used
+        result.expression(tfNode.getName(), new RankingExpression(tfNode.getName(), new TensorFunctionNode(function.function())));
+        return function;
     }
 
     private TypedTensorFunction tensorFunctionOf(NodeDef tfNode, GraphDef graph, SavedModelBundle model, ImportResult result) {
@@ -123,7 +120,8 @@ public class TensorFlowImporter {
         }
     }
 
-    private List<TypedTensorFunction> importArguments(NodeDef tfNode, GraphDef graph, SavedModelBundle model, ImportResult result) {
+    private List<TypedTensorFunction> importArguments(NodeDef tfNode, GraphDef graph, SavedModelBundle model,
+                                                      ImportResult result) {
         return tfNode.getInputList().stream()
                                     .map(argNode -> importNode(getNode(nameOf(argNode), graph), graph, model, result))
                                     .collect(Collectors.toList());
