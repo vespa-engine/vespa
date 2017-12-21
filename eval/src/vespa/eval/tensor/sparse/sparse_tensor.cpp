@@ -188,4 +188,5 @@ SparseTensor::reduce(join_fun_t op,
 
 }
 
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::tensor::SparseTensorAddressRef, double);
+VESPALIB_HASH_MAP_INSTANTIATE_H_E_M(vespalib::tensor::SparseTensorAddressRef, double, vespalib::hash<vespalib::tensor::SparseTensorAddressRef>,
+        std::equal_to<vespalib::tensor::SparseTensorAddressRef>, vespalib::hashtable_base::and_modulator);
