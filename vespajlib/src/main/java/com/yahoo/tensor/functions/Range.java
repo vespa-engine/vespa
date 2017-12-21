@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 public class Range extends CompositeTensorFunction {
 
     private final TensorType type;
-    private final Function<List<Integer>, Double> rangeFunction;
+    private final Function<List<Long>, Double> rangeFunction;
 
     public Range(TensorType type) {
         this.type = type;

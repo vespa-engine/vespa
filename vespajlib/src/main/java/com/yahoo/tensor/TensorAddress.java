@@ -2,16 +2,10 @@
 package com.yahoo.tensor;
 
 import com.google.common.annotations.Beta;
-import com.google.common.collect.ImmutableList;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * An immutable address to a tensor cell. This simply supplies a value to each dimension
@@ -26,8 +20,8 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         return new StringTensorAddress(labels);
     }
 
-    public static TensorAddress of(int ... labels) {
-        return new IntTensorAddress(labels);
+    public static TensorAddress of(long ... labels) {
+        return new NumericTensorAddress(labels);
     }
 
     /** Returns the number of labels in this */
@@ -41,14 +35,14 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     public abstract String label(int i);
 
     /**
-     * Returns the i'th label in this as an int.
-     * Prefer this if you know that this is an integer address, but not otherwise.
+     * Returns the i'th label in this as a long.
+     * Prefer this if you know that this is a numeric address, but not otherwise.
      *
      * @throws IllegalArgumentException if there is no label at this index
      */
-    public abstract int intLabel(int i);
+    public abstract long numericLabel(int i);
 
-    public abstract TensorAddress withLabel(int labelIndex, int label);
+    public abstract TensorAddress withLabel(int labelIndex, long label);
 
     public final boolean isEmpty() { return size() == 0; }
 
@@ -110,17 +104,17 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         public String label(int i) { return labels[i]; }
 
         @Override
-        public int intLabel(int i) {
+        public long numericLabel(int i) {
             try {
-                return Integer.parseInt(labels[i]);
+                return Long.parseLong(labels[i]);
             }
             catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Expected an int label in " + this + " at position " + i);
+                throw new IllegalArgumentException("Expected a long label in " + this + " at position " + i);
             }
         }
 
         @Override
-        public TensorAddress withLabel(int index, int label) {
+        public TensorAddress withLabel(int index, long label) {
             String[] labels = Arrays.copyOf(this.labels, this.labels.length);
             labels[index] = String.valueOf(label);
             return new StringTensorAddress(labels);
@@ -133,11 +127,11 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     }
 
-    private static final class IntTensorAddress extends TensorAddress {
+    private static final class NumericTensorAddress extends TensorAddress {
 
-        private final int[] labels;
+        private final long[] labels;
 
-        private IntTensorAddress(int[] labels) {
+        private NumericTensorAddress(long[] labels) {
             this.labels = Arrays.copyOf(labels, labels.length);
         }
 
@@ -148,13 +142,13 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         public String label(int i) { return String.valueOf(labels[i]); }
 
         @Override
-        public int intLabel(int i) { return labels[i]; }
+        public long numericLabel(int i) { return labels[i]; }
 
         @Override
-        public TensorAddress withLabel(int index, int label) {
-            int[] labels = Arrays.copyOf(this.labels, this.labels.length);
+        public TensorAddress withLabel(int index, long label) {
+            long[] labels = Arrays.copyOf(this.labels, this.labels.length);
             labels[index] = label;
-            return new IntTensorAddress(labels);
+            return new NumericTensorAddress(labels);
         }
 
         @Override

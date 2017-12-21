@@ -26,7 +26,7 @@ public class TensorConverter {
         int dimensionIndex = 0;
         for (long dimensionSize : shape) {
             if (dimensionSize == 0) dimensionSize = 1; // TensorFlow ...
-            b.indexed("d" + (dimensionIndex++), (int) dimensionSize);
+            b.indexed("d" + (dimensionIndex++), dimensionSize);
         }
         return b.build();
     }

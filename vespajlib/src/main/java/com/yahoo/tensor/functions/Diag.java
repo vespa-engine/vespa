@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 public class Diag extends CompositeTensorFunction {
 
     private final TensorType type;
-    private final Function<List<Integer>, Double> diagFunction;
+    private final Function<List<Long>, Double> diagFunction;
 
     public Diag(TensorType type) {
         this.type = type;

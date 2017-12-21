@@ -13,7 +13,7 @@ import java.util.Arrays;
 @Beta
 public final class DimensionSizes {
 
-    private final int[] sizes;
+    private final long[] sizes;
 
     private DimensionSizes(Builder builder) {
         this.sizes = builder.sizes;
@@ -25,15 +25,15 @@ public final class DimensionSizes {
      *
      * @throws IndexOutOfBoundsException if the index is larger than the number of dimensions in this tensor minus one
      */
-    public int size(int dimensionIndex) { return sizes[dimensionIndex]; }
+    public long size(int dimensionIndex) { return sizes[dimensionIndex]; }
 
     /** Returns the number of dimensions this provides the size of */
     public int dimensions() { return sizes.length; }
 
     /** Returns the product of the sizes of this */
-    public int totalSize() {
-        int productSize = 1;
-        for (int dimensionSize : sizes )
+    public long totalSize() {
+        long productSize = 1;
+        for (long dimensionSize : sizes )
             productSize *= dimensionSize;
         return productSize;
     }
@@ -54,13 +54,13 @@ public final class DimensionSizes {
      */
     public final static class Builder {
 
-        private int[] sizes;
+        private long[] sizes;
 
         public Builder(int dimensions) {
-            this.sizes = new int[dimensions];
+            this.sizes = new long[dimensions];
         }
 
-        public Builder set(int dimensionIndex, int size) {
+        public Builder set(int dimensionIndex, long size) {
             sizes[dimensionIndex] = size;
             return this;
         }
@@ -70,7 +70,7 @@ public final class DimensionSizes {
          *
          * @throws IndexOutOfBoundsException if the index is larger than the number of dimensions in this tensor minus one
          */
-        public int size(int dimensionIndex) { return sizes[dimensionIndex]; }
+        public long size(int dimensionIndex) { return sizes[dimensionIndex]; }
 
         /** Returns the number of dimensions this provides the size of */
         public int dimensions() { return sizes.length; }

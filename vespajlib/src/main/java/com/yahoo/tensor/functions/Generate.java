@@ -22,17 +22,17 @@ import java.util.function.Function;
 public class Generate extends PrimitiveTensorFunction {
 
     private final TensorType type;
-    private final Function<List<Integer>, Double> generator;
+    private final Function<List<Long>, Double> generator;
 
     /**
      * Creates a generated tensor
      *
      * @param type the type of the tensor
-     * @param generator the function generating values from a list of ints specifying the indexes of the
+     * @param generator the function generating values from a list of numbers specifying the indexes of the
      *                  tensor cell which will receive the value
      * @throws IllegalArgumentException if any of the tensor dimensions are not indexed bound
      */
-    public Generate(TensorType type, Function<List<Integer>, Double> generator) {
+    public Generate(TensorType type, Function<List<Long>, Double> generator) {
         Objects.requireNonNull(type, "The argument tensor type cannot be null");
         Objects.requireNonNull(generator, "The argument function cannot be null");
         validateType(type);

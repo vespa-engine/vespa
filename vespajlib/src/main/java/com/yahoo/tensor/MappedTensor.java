@@ -29,7 +29,7 @@ public class MappedTensor implements Tensor {
     public TensorType type() { return type; }
 
     @Override
-    public int size() { return cells.size(); }
+    public long size() { return cells.size(); }
 
     @Override
     public double get(TensorAddress address) { return cells.getOrDefault(address, Double.NaN); }
@@ -80,7 +80,7 @@ public class MappedTensor implements Tensor {
         }
 
         @Override
-        public Builder cell(double value, int... labels) {
+        public Builder cell(double value, long... labels) {
             cells.put(TensorAddress.of(labels), value);
             return this;
         }

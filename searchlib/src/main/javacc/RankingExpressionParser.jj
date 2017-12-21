@@ -467,7 +467,7 @@ ExpressionNode tensorGenerate() :
 }
 {
     <TENSOR> type = tensorTypeArgument() <LBRACE> generator = expression() <RBRACE>
-    { return new TensorFunctionNode(new Generate(type, new GeneratorLambdaFunctionNode(type, generator).asIntegerListToDoubleOperator())); }
+    { return new TensorFunctionNode(new Generate(type, new GeneratorLambdaFunctionNode(type, generator).asLongListToDoubleOperator())); }
 }
 
 ExpressionNode tensorRange() :
