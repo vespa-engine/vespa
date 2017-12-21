@@ -122,7 +122,7 @@ lrucache_map<P>::erase(const K & key) {
         } else {
             _tail = v._prev;
         }
-        HashTable::erase(*this, it);
+        HashTable::erase(*this, HashTable::hash(key), it);
     }
 }
 
@@ -202,7 +202,7 @@ lrucache_map<P>::removeOld() {
         {
             _tail = last->second._prev;
             HashTable::getByInternalIndex(_tail).second._next = LinkedValueBase::npos;
-            HashTable::erase(*this, HashTable::find(last->first));
+            HashTable::erase(*this, HashTable::hash(last->first), HashTable::find(last->first));
         }
     }
 }
