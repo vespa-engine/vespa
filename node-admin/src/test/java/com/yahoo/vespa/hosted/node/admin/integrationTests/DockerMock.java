@@ -33,9 +33,6 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public void start() { }
-
-    @Override
     public CreateContainerCommand createContainerCommand(
             DockerImage dockerImage,
             ContainerResources containerResources,
