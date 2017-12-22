@@ -90,7 +90,7 @@ public class NodeAdminMain implements AutoCloseable {
         docker.start();
         DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, processExecuter);
 
-        StorageMaintainer storageMaintainer = new StorageMaintainer(docker, processExecuter, metricReceiver, environment, clock);
+        StorageMaintainer storageMaintainer = new StorageMaintainer(dockerOperations, processExecuter, metricReceiver, environment, clock);
         AclMaintainer aclMaintainer = new AclMaintainer(dockerOperations, nodeRepository, dockerHostHostName);
 
         Function<String, NodeAgent> nodeAgentFactory =

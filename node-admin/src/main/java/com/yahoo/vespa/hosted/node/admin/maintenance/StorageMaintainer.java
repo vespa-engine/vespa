@@ -9,11 +9,11 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.logging.FilebeatConfigProvider;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
@@ -50,7 +50,7 @@ public class StorageMaintainer {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private final CounterWrapper numberOfNodeAdminMaintenanceFails;
-    private final Docker docker;
+    private final DockerOperations dockerOperations;
     private final ProcessExecuter processExecuter;
     private final Environment environment;
     private final Clock clock;
@@ -58,8 +58,8 @@ public class StorageMaintainer {
     private Map<ContainerName, MaintenanceThrottler> maintenanceThrottlerByContainerName = new ConcurrentHashMap<>();
 
 
-    public StorageMaintainer(Docker docker, ProcessExecuter processExecuter, MetricReceiverWrapper metricReceiver, Environment environment, Clock clock) {
-        this.docker = docker;
+    public StorageMaintainer(DockerOperations dockerOperations, ProcessExecuter processExecuter, MetricReceiverWrapper metricReceiver, Environment environment, Clock clock) {
+        this.dockerOperations = dockerOperations;
         this.processExecuter = processExecuter;
         this.environment = environment;
         this.clock = clock;
@@ -99,7 +99,7 @@ public class StorageMaintainer {
             vespaSchedule.writeTo(yamasAgentFolder);
             hostLifeSchedule.writeTo(yamasAgentFolder);
             final String[] restartYamasAgent = new String[]{"service", "yamas-agent", "restart"};
-            docker.executeInContainerAsRoot(containerName, restartYamasAgent);
+            dockerOperations.executeCommandInContainerAsRoot(containerName, restartYamasAgent);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write secret-agent schedules for " + containerName, e);
         }
