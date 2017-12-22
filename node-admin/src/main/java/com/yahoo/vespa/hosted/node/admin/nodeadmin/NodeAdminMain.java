@@ -48,6 +48,7 @@ public class NodeAdminMain implements AutoCloseable {
         this.docker = docker;
         this.metricReceiver = metricReceiver;
         this.classLocking = classLocking;
+        start();
     }
 
     @Override
