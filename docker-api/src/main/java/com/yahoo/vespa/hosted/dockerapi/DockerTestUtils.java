@@ -46,11 +46,13 @@ public class DockerTestUtils {
 
     public static DockerImpl getDocker() {
         if (docker == null) {
-            docker = new DockerImpl(
+            DockerImpl tmpDocker = new DockerImpl(
                     dockerConfig,
                     false, /* fallback to 1.23 on errors */
                     new MetricReceiverWrapper(MetricReceiver.nullImplementation));
-            createDockerTestNetworkIfNeeded(docker);
+            tmpDocker.start();
+            createDockerTestNetworkIfNeeded(tmpDocker);
+            docker = tmpDocker;
         }
 
         return docker;
