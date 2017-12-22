@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_apply.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 template <class TensorT>
 TensorApply<TensorT>::TensorApply(const TensorImplType &tensor,
@@ -17,5 +17,4 @@ TensorApply<TensorT>::TensorApply(const TensorImplType &tensor,
 
 template class TensorApply<SparseTensor>;
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
