@@ -26,7 +26,11 @@ protected:
             _address.push_back_fast(str[i]);
         }
     }
-    void ensure_room(size_t additional) { _address.reserve(_address.size() + additional); }
+    void ensure_room(size_t additional) {
+        if (_address.capacity() < (_address.size() + additional)) {
+            _address.reserve(_address.size() + additional);
+        }
+    }
 public:
     SparseTensorAddressBuilder() : _address() {}
     void add(vespalib::stringref label) {

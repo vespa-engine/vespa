@@ -17,13 +17,7 @@ hash_map<K, V, H, EQ, M>::hash_map(size_t reserveSize, H hasher, EQ equality) :
 { }
 
 template <typename K, typename V, typename H, typename EQ, typename M>
-hash_map<K, V, H, EQ, M>::~hash_map() { }
-
-template <typename K, typename V, typename H, typename EQ, typename M>
-typename hash_map<K, V, H, EQ, M>::insert_result
-hash_map<K, V, H, EQ, M>::insert(const value_type & value) {
-    return _ht.insert(value);
-}
+hash_map<K, V, H, EQ, M>::~hash_map() = default;
 
 template <typename K, typename V, typename H, typename EQ, typename M>
 void
