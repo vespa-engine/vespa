@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vector>
 #include <vespa/vespalib/util/stash.h>
+#include <cstring>
 
 namespace vespalib {
 

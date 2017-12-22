@@ -47,15 +47,16 @@ TensorAddressCombiner::combine(SparseTensorAddressRef lhsRef,
                                SparseTensorAddressRef rhsRef)
 {
     clear();
+    ensure_room(lhsRef.size() + rhsRef.size());
     SparseTensorAddressDecoder lhs(lhsRef);
     SparseTensorAddressDecoder rhs(rhsRef);
     for (auto op : _ops) {
         switch (op) {
         case AddressOp::LHS:
-            add(lhs.decodeLabel());
+            append(lhs.decodeLabel());
             break;
         case AddressOp::RHS:
-            add(rhs.decodeLabel());
+            append(rhs.decodeLabel());
             break;
         case AddressOp::BOTH:
             auto lhsLabel(lhs.decodeLabel());
@@ -63,7 +64,7 @@ TensorAddressCombiner::combine(SparseTensorAddressRef lhsRef,
             if (lhsLabel != rhsLabel) {
                 return false;
             }
-            add(lhsLabel);
+            append(lhsLabel);
         }
     }
     return true;
