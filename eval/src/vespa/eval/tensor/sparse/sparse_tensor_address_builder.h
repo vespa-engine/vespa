@@ -22,7 +22,7 @@ private:
 
 protected:
     void append(vespalib::stringref str) {
-        for (size_t i(0); i < str.size(); i++) {
+        for (size_t i(0); i < str.size() + 1; i++) {
             _address.push_back_fast(str[i]);
         }
     }
