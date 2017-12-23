@@ -36,8 +36,9 @@ public class StandaloneMain {
 
     void run(String bundleLocation) {
         try {
+            // We're not logging at this point since the application is responsible
+            // for setting up logging.
             System.out.println("debug\tInitializing application without privileges.");
-            log.log(Level.INFO, "JDisc starting with bundle location " + bundleLocation);
             loader.init(bundleLocation, false);
             loader.start();
             setupSigTermHandler();
