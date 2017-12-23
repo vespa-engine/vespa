@@ -37,20 +37,23 @@ public class StandaloneMain {
     void run(String bundleLocation) {
         try {
             System.out.println("debug\tInitializing application without privileges.");
+            log.log(Level.INFO, "JDisc starting with bundle location " + bundleLocation);
             loader.init(bundleLocation, false);
             loader.start();
             setupSigTermHandler();
             waitForShutdown();
             System.out.println("debug\tTrying to shutdown in a controlled manner.");
+            log.log(Level.INFO, "JDisc shutting down");
             loader.stop();
             System.out.println("debug\tTrying to clean up in a controlled manner.");
             loader.destroy();
             System.out.println("debug\tStopped ok.");
+            log.log(Level.INFO, "JDisc exiting");
             System.exit(0);
         } catch (Throwable e) {
             System.out.print("debug\tUnexpected: ");
             e.printStackTrace();
-            log.log(Level.SEVERE, "Unexpected: ", e);
+            log.log(Level.SEVERE, "JDisc exiting: Throwable caught: ", e);
             System.exit(6);
         }
     }
