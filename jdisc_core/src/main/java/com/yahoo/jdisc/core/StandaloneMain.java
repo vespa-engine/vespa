@@ -49,7 +49,6 @@ public class StandaloneMain {
             System.out.println("debug\tTrying to clean up in a controlled manner.");
             loader.destroy();
             System.out.println("debug\tStopped ok.");
-            log.log(Level.INFO, "JDisc exiting");
             System.exit(0);
         } catch (Throwable e) {
             System.out.print("debug\tUnexpected: ");
