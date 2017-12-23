@@ -37,7 +37,6 @@ public class Deconstructor implements ComponentDeconstructor {
         if (component instanceof AbstractComponent) {
             AbstractComponent abstractComponent = (AbstractComponent) component;
             if (abstractComponent.isDeconstructable()) {
-                log.info("Scheduling deconstruction of " + abstractComponent);
                 executor.schedule(new DestructComponentTask(abstractComponent), delay, TimeUnit.SECONDS);
             }
         } else if (component instanceof Provider) {
