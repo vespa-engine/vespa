@@ -64,6 +64,8 @@ hash_map<K, V, H, EQ, M>::getMemoryUsed() const
     template class vespalib::hashtable<K, std::pair<K,V>, H, E, std::_Select1st<std::pair<K,V>>, M>; \
     template vespalib::hashtable<K, std::pair<K,V>, H, E, std::_Select1st<std::pair<K,V>>, M>::insert_result \
              vespalib::hashtable<K, std::pair<K,V>, H, E, std::_Select1st<std::pair<K,V>>, M>::insert(std::pair<K,V> &&); \
+    template vespalib::hashtable<K, std::pair<K,V>, H, E, std::_Select1st<std::pair<K,V>>, M>::insert_result \
+             vespalib::hashtable<K, std::pair<K,V>, H, E, std::_Select1st<std::pair<K,V>>, M>::insertInternal(std::pair<K,V> &&); \
     template class vespalib::Array<vespalib::hash_node<std::pair<K,V>>>;
 
 #define VESPALIB_HASH_MAP_INSTANTIATE_H_E(K, V, H, E) \
