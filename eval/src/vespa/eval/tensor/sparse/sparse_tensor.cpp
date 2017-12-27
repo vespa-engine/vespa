@@ -82,9 +82,7 @@ double
 SparseTensor::as_double() const
 {
     double result = 0.0;
-    for (const auto &cell : _cells) {
-        result += cell.second;
-    }
+    _cells.for_each([&result](const auto & v) { result += v.second; });
     return result;
 }
 

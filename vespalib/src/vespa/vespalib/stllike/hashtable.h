@@ -249,6 +249,9 @@ public:
     insert_result insert(V && node) {
         return insertInternal(std::forward<V>(node));
     }
+    template <typename Func>
+    void for_each(Func func) const;
+
     void erase(const Key & key);
     void reserve(size_t sz) {
         if (sz > _nodes.capacity()) {

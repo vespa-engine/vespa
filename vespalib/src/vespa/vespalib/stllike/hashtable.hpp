@@ -201,6 +201,21 @@ void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::reclaim(MoveHand
 }
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
+template <typename Func>
+void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::for_each(Func func) const
+{
+    uint32_t i(0);
+    for (; i < _modulator.getTableSize(); i++) {
+        if (_nodes[i].valid()) {
+            func(_nodes[i].getValue());
+        }
+    }
+    for (; i < _nodes.size(); i++) {
+        func(_nodes[i].getValue());
+    }
+}
+
+template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 template <typename MoveHandler>
 void
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::erase(MoveHandler & moveHandler, next_t h, const const_iterator & it)

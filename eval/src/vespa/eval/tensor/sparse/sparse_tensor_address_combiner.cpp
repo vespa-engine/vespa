@@ -3,7 +3,6 @@
 #include "sparse_tensor_address_combiner.h"
 #include "sparse_tensor_address_decoder.h"
 #include <vespa/eval/eval/value_type.h>
-#include <cassert>
 
 namespace vespalib::tensor::sparse {
 
