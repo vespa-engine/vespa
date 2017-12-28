@@ -16,6 +16,11 @@ class SparseTensorAddressRef
     const void *_start;
     uint32_t    _size;
     uint32_t    _hash;
+    static void * copy(const SparseTensorAddressRef rhs, Stash &stash) {
+        void *res = stash.alloc(rhs._size);
+        memcpy(res, rhs._start, rhs._size);
+        return res;
+    }
 public:
     SparseTensorAddressRef()
         : _start(nullptr), _size(0u), _hash(0u)
@@ -29,14 +34,10 @@ public:
     }
 
     SparseTensorAddressRef(const SparseTensorAddressRef rhs, Stash &stash)
-        : _start(nullptr),
+        : _start(copy(rhs, stash)),
           _size(rhs._size),
           _hash(rhs._hash)
-    {
-        void *res = stash.alloc(rhs._size);
-        memcpy(res, rhs._start, rhs._size);
-        _start = res;
-    }
+    {}
 
     uint32_t hash() const { return _hash; }
 
