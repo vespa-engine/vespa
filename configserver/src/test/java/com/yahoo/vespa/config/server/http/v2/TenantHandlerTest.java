@@ -27,7 +27,9 @@ public class TenantHandlerTest extends TenantTest {
 
     @Before
     public void setup() throws Exception {
-        handler = new TenantHandler(testExecutor(), null, tenants);
+        handler = new TenantHandler(
+                TenantHandler.testOnlyContext(),
+                tenants);
     }
 
     @Test

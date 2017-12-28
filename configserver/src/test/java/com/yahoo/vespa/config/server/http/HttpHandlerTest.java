@@ -25,7 +25,7 @@ public class HttpHandlerTest {
     @Test
     public void testResponse() throws IOException {
         final String message = "failed";
-        HttpHandler httpHandler = new HttpTestHandler(Executors.newSingleThreadExecutor(), AccessLog.voidAccessLog(), new InvalidApplicationException(message));
+        HttpHandler httpHandler = new HttpTestHandler(new InvalidApplicationException(message));
         HttpResponse response = httpHandler.handle(HttpRequest.createTestRequest("foo", com.yahoo.jdisc.http.HttpRequest.Method.GET));
         assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST));
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -38,8 +38,8 @@ public class HttpHandlerTest {
 
     private static class HttpTestHandler extends HttpHandler {
         private RuntimeException exception;
-        public HttpTestHandler(Executor executor, AccessLog accessLog, RuntimeException exception) {
-            super(executor, accessLog);
+        public HttpTestHandler(RuntimeException exception) {
+            super(HttpHandler.testOnlyContext());
             this.exception = exception;
         }
 

@@ -39,10 +39,10 @@ public class ListApplicationsHandlerTest {
         applicationRepo = testBuilder.tenants().get(mytenant).getApplicationRepo();
         applicationRepo2 = testBuilder.tenants().get(foobar).getApplicationRepo();
         Tenants tenants = testBuilder.createTenants();
-        handler = new ListApplicationsHandler(Runnable::run,
-                                              AccessLog.voidAccessLog(),
-                                              tenants,
-                                              new Zone(Environment.dev, RegionName.from("us-east")));
+        handler = new ListApplicationsHandler(
+                ListApplicationsHandler.testOnlyContext(),
+                tenants,
+                new Zone(Environment.dev, RegionName.from("us-east")));
     }
 
     @Test

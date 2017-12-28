@@ -45,12 +45,12 @@ public class HttpListConfigsHandlerTest {
         TestTenantBuilder tb = new TestTenantBuilder();
         tb.createTenant(TenantName.from("mytenant")).withRequestHandler(mockRequestHandler).build();
         Tenants tenants = tb.createTenants();
-        handler = new HttpListConfigsHandler(command -> {
-            command.run();
-        }, AccessLog.voidAccessLog(), tenants, Zone.defaultZone());
-        namedHandler = new HttpListNamedConfigsHandler(command -> {
-            command.run();
-        }, AccessLog.voidAccessLog(), tenants, Zone.defaultZone());
+        handler = new HttpListConfigsHandler(
+                HttpListConfigsHandler.testOnlyContext(),
+                tenants, Zone.defaultZone());
+        namedHandler = new HttpListNamedConfigsHandler(
+                HttpListConfigsHandler.testOnlyContext(),
+                tenants, Zone.defaultZone());
     }
     
     @Test

@@ -373,13 +373,12 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
                 .withApplicationRepo(applicationRepo)
                 .build();
         return new SessionActiveHandler(
-                Runnable::run,
-                AccessLog.voidAccessLog(),
-                testTenantBuilder.createTenants(),
-                Zone.defaultZone(),
+                SessionActiveHandler.testOnlyContext(),
                 new ApplicationRepository(testTenantBuilder.createTenants(),
                                           hostProvisioner,
-                                          Clock.systemUTC()));
+                                          Clock.systemUTC()),
+                testTenantBuilder.createTenants(),
+                Zone.defaultZone());
     }
 
 }

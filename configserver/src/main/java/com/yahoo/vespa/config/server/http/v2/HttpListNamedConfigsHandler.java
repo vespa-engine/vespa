@@ -29,8 +29,10 @@ public class HttpListNamedConfigsHandler extends HttpHandler {
     private final Zone zone;
     
     @Inject
-    public HttpListNamedConfigsHandler(Executor executor, AccessLog accesslog, Tenants tenants, Zone zone) {
-        super(executor, accesslog);
+    public HttpListNamedConfigsHandler(HttpHandler.Context ctx,
+                                       Tenants tenants, Zone zone)
+    {
+        super(ctx);
         this.tenants = tenants;
         this.zone = zone;
     }

@@ -28,11 +28,11 @@ public class SessionContentHandler extends SessionHandler {
     private final ContentHandler contentHandler = new ContentHandler();
 
     @Inject
-    public SessionContentHandler(Executor executor,
-                                 AccessLog accessLog,
-                                 Tenants tenants,
-                                 ApplicationRepository applicationRepository) {
-        super(executor, accessLog, applicationRepository);
+    public SessionContentHandler(SessionHandler.Context ctx,
+                                 ApplicationRepository applicationRepository,
+                                 Tenants tenants)
+    {
+        super(ctx, applicationRepository);
         this.tenants = tenants;
     }
 

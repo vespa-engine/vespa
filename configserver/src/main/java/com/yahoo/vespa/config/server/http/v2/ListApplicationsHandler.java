@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.google.inject.Inject;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.yahoo.config.provision.TenantName;
@@ -29,8 +30,11 @@ import java.util.concurrent.Executor;
 public class ListApplicationsHandler extends HttpHandler {
     private final Tenants tenants;
     private final Zone zone;
-    public ListApplicationsHandler(Executor executor, AccessLog accessLog, Tenants tenants, Zone zone) {
-        super(executor, accessLog);
+
+    @Inject
+    public ListApplicationsHandler(HttpHandler.Context ctx,
+                                   Tenants tenants, Zone zone) {
+        super(ctx);
         this.tenants = tenants;
         this.zone = zone;
     }

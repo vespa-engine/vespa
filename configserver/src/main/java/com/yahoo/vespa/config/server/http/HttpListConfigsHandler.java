@@ -32,12 +32,12 @@ public class HttpListConfigsHandler extends HttpHandler {
     private final RequestHandler requestHandler;
 
     @Inject
-    public HttpListConfigsHandler(Executor executor, AccessLog accessLog, Tenants tenants) {
-        this(executor, accessLog, tenants.defaultTenant().getRequestHandler());
+    public HttpListConfigsHandler(HttpHandler.Context ctx, Tenants tenants) {
+        this(ctx, tenants.defaultTenant().getRequestHandler());
     }
 
-    public HttpListConfigsHandler(Executor executor, AccessLog accessLog, RequestHandler requestHandler) {
-        super(executor, accessLog);
+    public HttpListConfigsHandler(HttpHandler.Context ctx, RequestHandler requestHandler) {
+        super(ctx);
         this.requestHandler = requestHandler;
     }
     
