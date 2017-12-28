@@ -9,6 +9,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
 #include <vespa/storage/distributor/operations/external/visitororder.h>
+#include <vespa/storage/distributor/distributormetricsset.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <tests/common/dummystoragelink.h>
@@ -21,8 +22,7 @@ using namespace storage::lib;
 using namespace std::string_literals;
 using document::test::makeBucketSpace;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class VisitorOperationTest : public CppUnit::TestFixture,
                              public DistributorTestUtil {
@@ -1674,5 +1674,4 @@ VisitorOperationTest::statistical_metrics_not_updated_on_wrong_distribution()
     CPPUNIT_ASSERT_EQUAL(0.0, defaultVisitorMetrics().latency.getCount());
 }
 
-} // distributor
-} // storage
+}

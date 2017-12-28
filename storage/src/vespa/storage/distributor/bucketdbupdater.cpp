@@ -2,9 +2,9 @@
 
 #include "bucketdbupdater.h"
 #include "distributor.h"
-#include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
 #include "simpleclusterinformation.h"
+#include "distributormetricsset.h"
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>

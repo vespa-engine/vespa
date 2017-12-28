@@ -6,8 +6,7 @@
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/vdslib/state/clusterstate.h>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 /**
  * @class GetNodeStateCommand
@@ -90,5 +89,4 @@ public:
     DECLARE_STORAGEREPLY(SetSystemStateReply, onSetSystemStateReply)
 };
 
-} // api
-} // storage
+}

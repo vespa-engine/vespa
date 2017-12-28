@@ -4,8 +4,7 @@
 #include <chrono>
 #include <vespa/document/bucket/bucketid.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 /**
  * Semantics are basically as follows:
@@ -51,6 +50,4 @@ private:
     std::chrono::seconds _checkInterval;
 };
 
-} // distributor
-} // storage
-
+}

@@ -11,11 +11,10 @@
 
 namespace document { class Document; }
 
-namespace storage {
+namespace storage { class VisitorMetricSet; }
+namespace storage::lib { class ClusterState; }
 
-class VisitorMetricSet;
-
-namespace distributor {
+namespace storage::distributor {
 
 class DistributorComponent;
 class DistributorBucketSpace;
@@ -179,7 +178,5 @@ private:
     mbus::TraceNode trace;
     framework::MilliSecTimer _operationTimer;
 };
-
-}
 
 }

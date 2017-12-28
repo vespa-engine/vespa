@@ -2,7 +2,7 @@
 #include "mergeoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
-#include <array>
+#include <vespa/storage/distributor/pendingmessagetracker.h>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.operation.idealstate.merge");

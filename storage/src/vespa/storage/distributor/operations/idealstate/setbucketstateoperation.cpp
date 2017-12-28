@@ -3,6 +3,7 @@
 #include "setbucketstateoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storageapi/message/bucket.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation.idealstate.setactive");
