@@ -26,6 +26,17 @@ public class FileDistributionProvider {
         ManagerWrapper(FileDistributionManager manager) {
             this.manager = manager;
         }
+
+        @Override
+        public FileReference addUri(String uri, String relativePath) {
+            throw new IllegalStateException("addUri is not possible with legacy filedistribution.");
+        }
+
+        @Override
+        public FileReference addUri(String uri, String relativePath, FileReference reference) {
+            throw new IllegalStateException("addUri is not possible with legacy filedistribution.");
+        }
+
         @Override
         public FileReference addFile(String relativePath) {
             return new FileReference(manager.addFile(relativePath));
