@@ -58,6 +58,10 @@ class LocalFileDb(appPath: Path) extends FileAcquirer with FileRegistry {
   override def export(): util.List[Entry] = {
     new java.util.ArrayList(fileReferenceToFile.keys.map{ (ref: FileReference) => new Entry(fileReferenceToFile.get(ref).get.getPath, ref)}.asJavaCollection)
   }
+
+  override def addUri(uri: String): FileReference = {
+    throw new RuntimeException("addUri(uri: String) is not implemented here.");
+  }
 }
 
 object LocalFileDb {
