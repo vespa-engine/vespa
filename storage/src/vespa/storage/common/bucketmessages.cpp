@@ -2,6 +2,7 @@
 
 #include "bucketmessages.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <ostream>
 
 using document::BucketSpace;
 

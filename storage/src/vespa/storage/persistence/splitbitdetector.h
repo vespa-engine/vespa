@@ -18,6 +18,7 @@
 #pragma once
 
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/vespalib/util/printable.h>
 
 namespace storage {
 
