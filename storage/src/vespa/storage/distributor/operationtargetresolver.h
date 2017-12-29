@@ -10,8 +10,7 @@
 #include <vespa/vdslib/state/node.h>
 #include <vespa/vespalib/util/printable.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class OperationTarget : public vespalib::AsciiPrintable
 {
@@ -68,5 +67,4 @@ public:
                                            const document::BucketId& id) = 0;
 };
 
-} // distributor
-} // storage
+}

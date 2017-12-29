@@ -3,6 +3,7 @@
 
 #include <vespa/storage/distributor/distributormessagesender.h>
 #include <cassert>
+#include <vector>
 
 namespace storage {
 

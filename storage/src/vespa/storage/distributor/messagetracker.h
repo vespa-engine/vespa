@@ -1,10 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "distributormetricsset.h"
 #include <vespa/storage/common/messagesender.h>
-#include <vespa/storageapi/messageapi/bucketcommand.h>
-#include <vespa/storageapi/messageapi/bucketreply.h>
+#include <vector>
+#include <map>
+
+namespace storage::api {
+    class BucketCommand;
+    class BucketReply;
+}
 
 namespace storage::distributor {
 

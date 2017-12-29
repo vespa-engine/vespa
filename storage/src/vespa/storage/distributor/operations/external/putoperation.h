@@ -5,22 +5,21 @@
 #include <vespa/storage/distributor/operations/sequenced_operation.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storage/distributor/persistencemessagetracker.h>
-#include <vespa/storage/distributor/operationtargetresolver.h>
 
 namespace document {
     class Document;
 }
-namespace storage {
-namespace lib {
+namespace storage::lib {
     class Distribution;
 }
-namespace api {
+namespace storage::api {
     class CreateBucketReply;
     class PutCommand;
 }
-namespace distributor {
+namespace storage::distributor {
 
 class DistributorBucketSpace;
+class OperationTargetList;
 
 class PutOperation : public SequencedOperation
 {
@@ -78,5 +77,4 @@ private:
     DistributorBucketSpace &_bucketSpace;
 };
 
-} // distributor
-} // storage
+}

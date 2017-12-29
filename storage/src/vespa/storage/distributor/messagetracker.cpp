@@ -1,19 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "messagetracker.h"
+#include <vespa/storageapi/messageapi/bucketcommand.h>
+#include <vespa/storageapi/messageapi/bucketreply.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".messagetracker");
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 MessageTracker::MessageTracker(const std::string& clusterName)
     : _clusterName(clusterName)
 {}
 
-MessageTracker::~MessageTracker() {}
+MessageTracker::~MessageTracker() = default;
 
 void
 MessageTracker::flushQueue(MessageSender& sender)
@@ -46,9 +46,6 @@ bool
 MessageTracker::finished()
 {
     return _sentMessages.empty();
-}
-
-
 }
 
 }

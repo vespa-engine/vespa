@@ -5,21 +5,17 @@
 #include "throttlingoperationstarter.h"
 #include "idealstatemetricsset.h"
 #include "ownership_transfer_safe_time_point_calculator.h"
-#include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
-#include <vespa/storage/bucketdb/mapbucketdatabase.h>
-#include <vespa/storage/distributor/maintenance/simplemaintenancescanner.h>
+#include "distributormetricsset.h"
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 
-
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor-main");
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class Distributor::Status {
     const DelegatedStatusRequest& _request;
@@ -68,34 +64,25 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _compReg(compReg),
       _component(compReg, "distributor"),
       _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
-      _metrics(new DistributorMetricSet(
-   	       _component.getLoadTypes()->getMetricLoadTypes())),
+      _metrics(new DistributorMetricSet(_component.getLoadTypes()->getMetricLoadTypes())),
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
       _pendingMessageTracker(compReg),
       _bucketDBUpdater(*this, *_bucketSpaceRepo, *this, compReg),
       _distributorStatusDelegate(compReg, *this, *this),
       _bucketDBStatusDelegate(compReg, *this, _bucketDBUpdater),
-      _idealStateManager(*this, *_bucketSpaceRepo, compReg,
-                         manageActiveBucketCopies),
-      _externalOperationHandler(*this, *_bucketSpaceRepo,
-                                _idealStateManager, compReg),
+      _idealStateManager(*this, *_bucketSpaceRepo, compReg, manageActiveBucketCopies),
+      _externalOperationHandler(*this, *_bucketSpaceRepo, _idealStateManager, compReg),
       _threadPool(threadPool),
       _initializingIsUp(true),
       _doneInitializeHandler(doneInitHandler),
       _doneInitializing(false),
       _messageSender(messageSender),
       _bucketPriorityDb(new SimpleBucketPriorityDatabase()),
-      _scanner(new SimpleMaintenanceScanner(
-            *_bucketPriorityDb, _idealStateManager,
-            *_bucketSpaceRepo)),
-      _throttlingStarter(new ThrottlingOperationStarter(
-            _maintenanceOperationOwner)),
-      _blockingStarter(new BlockingOperationStarter(_pendingMessageTracker,
-                                                    *_throttlingStarter)),
-      _scheduler(new MaintenanceScheduler(_idealStateManager,
-                                          *_bucketPriorityDb,
-                                          *_blockingStarter)),
+      _scanner(new SimpleMaintenanceScanner(*_bucketPriorityDb, _idealStateManager, *_bucketSpaceRepo)),
+      _throttlingStarter(new ThrottlingOperationStarter(_maintenanceOperationOwner)),
+      _blockingStarter(new BlockingOperationStarter(_pendingMessageTracker, *_throttlingStarter)),
+      _scheduler(new MaintenanceScheduler(_idealStateManager, *_bucketPriorityDb, *_blockingStarter)),
       _schedulingMode(MaintenanceScheduler::NORMAL_SCHEDULING_MODE),
       _recoveryTimeStarted(_component.getClock()),
       _tickResult(framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN),
@@ -105,8 +92,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _metricLock(),
       _maintenanceStats(),
       _bucketDbStats(),
-      _hostInfoReporter(_pendingMessageTracker.getLatencyStatisticsProvider(),
-                        *this),
+      _hostInfoReporter(_pendingMessageTracker.getLatencyStatisticsProvider(), *this),
       _ownershipSafeTimeCalc(
             std::make_unique<OwnershipTransferSafeTimePointCalculator>(
                 std::chrono::seconds(0))) // Set by config later
@@ -162,10 +148,8 @@ void
 Distributor::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd)
 {
     if (cmd->getType() == api::MessageType::MERGEBUCKET) {
-        api::MergeBucketCommand& merge(
-                static_cast<api::MergeBucketCommand&>(*cmd));
-        _idealStateManager.getMetrics().nodesPerMerge.addValue(
-                merge.getNodes().size());
+        api::MergeBucketCommand& merge(static_cast<api::MergeBucketCommand&>(*cmd));
+        _idealStateManager.getMetrics().nodesPerMerge.addValue(merge.getNodes().size());
     }
     sendUp(cmd);
 }
@@ -179,10 +163,8 @@ Distributor::sendReply(const std::shared_ptr<api::StorageReply>& reply)
 void
 Distributor::setNodeStateUp()
 {
-    NodeStateUpdater::Lock::SP lock(
-            _component.getStateUpdater().grabStateChangeLock());
-    lib::NodeState ns(
-            *_component.getStateUpdater().getReportedNodeState());
+    NodeStateUpdater::Lock::SP lock(_component.getStateUpdater().grabStateChangeLock());
+    lib::NodeState ns(*_component.getStateUpdater().getReportedNodeState());
     ns.setState(lib::State::UP);
     _component.getStateUpdater().setReportedNodeState(ns);
 }
@@ -832,5 +814,4 @@ Distributor::handleStatusRequest(const DelegatedStatusRequest& request) const
     return true;    
 }
 
-} // distributor
-} // storage
+}

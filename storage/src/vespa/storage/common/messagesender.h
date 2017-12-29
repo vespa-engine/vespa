@@ -18,12 +18,13 @@
 
 #include <memory>
 
-namespace storage {
-namespace api {
+namespace storage::api {
     class StorageCommand;
     class StorageReply;
     class StorageMessage;
 }
+
+namespace storage {
 
 struct MessageSender {
     virtual ~MessageSender() {}

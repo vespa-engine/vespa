@@ -1,18 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <deque>
-#include <map>
-#include <set>
-#include <vespa/storage/distributor/distributorcomponent.h>
-#include <vespa/storage/distributor/statechecker.h>
+#include "distributorcomponent.h"
+#include "statechecker.h"
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vector>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class IdealStateMetricSet;
 class IdealStateOperation;
@@ -116,8 +112,7 @@ private:
     DistributorComponent            _distributorComponent;
     DistributorBucketSpaceRepo     &_bucketSpaceRepo;
 
-    std::vector<IdealStateOperation::SP> generateOperationsForBucket(
-            StateChecker::Context& c) const;
+    std::vector<IdealStateOperation::SP> generateOperationsForBucket(StateChecker::Context& c) const;
 
     bool iAmUp() const;
 
@@ -125,9 +120,9 @@ private:
         // Stats tracker to use for all generateAll() calls to avoid having
         // to create a new hash map for each single bucket processed.
         NodeMaintenanceStatsTracker _statsTracker;
-        const IdealStateManager& _ism;
-        document::BucketSpace _bucketSpace;
-        std::ostream& _out;
+        const IdealStateManager   & _ism;
+        document::BucketSpace       _bucketSpace;
+        std::ostream              & _out;
     public:
         StatusBucketVisitor(const IdealStateManager& ism, document::BucketSpace bucketSpace, std::ostream& out)
             : _statsTracker(), _ism(ism), _bucketSpace(bucketSpace), _out(out) {}
@@ -139,11 +134,8 @@ private:
     };
     friend class StatusBucketVisitor;
 
-    void getBucketStatus(document::BucketSpace bucketSpace,
-                         const BucketDatabase::Entry& entry,
-                         NodeMaintenanceStatsTracker& statsTracker,
-                         std::ostream& out) const;
+    void getBucketStatus(document::BucketSpace bucketSpace, const BucketDatabase::Entry& entry,
+                         NodeMaintenanceStatsTracker& statsTracker, std::ostream& out) const;
 };
 
-} // distributor
-} // storage
+}

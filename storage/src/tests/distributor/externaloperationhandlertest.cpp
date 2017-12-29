@@ -2,15 +2,14 @@
 
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>
-#include <vespa/storage/distributor/operation_sequencer.h>
-#include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributormetricsset.h>
+#include <vespa/storageapi/message/persistence.h>
 #include <vespa/document/test/make_document_bucket.h>
 
 using document::test::makeDocumentBucket;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class ExternalOperationHandlerTest : public CppUnit::TestFixture,
                                      public DistributorTestUtil
@@ -471,5 +470,4 @@ void ExternalOperationHandlerTest::sequencing_can_be_explicitly_config_disabled(
 // pseudo-locks in the sequencer. I.e. if we get a RemoveLocation with id.user==123456, this
 // prevents any handles from being acquired to any GID under location BucketId(32, 123456).
 
-} // distributor
-} // storage
+}
