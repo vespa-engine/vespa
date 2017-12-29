@@ -246,7 +246,9 @@ public:
     const_iterator find(const AltKey & key) const { return find<AltKey, AltExtract, AltHash, AltEqual>(key, AltExtract()); }
     const_iterator find(const Key & key) const;
     template <typename V>
-    insert_result insert(V && node);
+    insert_result insert(V && node) {
+        return insertInternal(std::forward<V>(node));
+    }
     void erase(const Key & key);
     void reserve(size_t sz) {
         if (sz > _nodes.capacity()) {

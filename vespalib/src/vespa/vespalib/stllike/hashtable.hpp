@@ -133,13 +133,6 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & k
 }
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-template<typename V>
-typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert_result
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insert(V && node) {
-    return insertInternal(std::forward<V>(node));
-}
-
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 void
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::erase(const Key & key) {
     const_iterator found(find(key));

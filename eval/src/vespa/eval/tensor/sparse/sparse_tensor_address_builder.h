@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include "sparse_tensor_address_ref.h"
+#include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib::tensor {
 
@@ -19,16 +18,26 @@ namespace vespalib::tensor {
 class SparseTensorAddressBuilder
 {
 private:
-    std::vector<char> _address;
+    vespalib::Array<char> _address;
 
+protected:
     void append(vespalib::stringref str) {
-        const char *cstr = str.c_str();
-        _address.insert(_address.end(), cstr, cstr + str.size() + 1);
+        for (size_t i(0); i < str.size() + 1; i++) {
+            _address.push_back_fast(str[i]);
+        }
+    }
+    void ensure_room(size_t additional) {
+        if (_address.capacity() < (_address.size() + additional)) {
+            _address.reserve(_address.size() + additional);
+        }
     }
 public:
     SparseTensorAddressBuilder() : _address() {}
-    void add(vespalib::stringref label) { append(label); }
-    void addUndefined() { _address.emplace_back('\0'); }
+    void add(vespalib::stringref label) {
+        ensure_room(label.size()+1);
+        append(label);
+    }
+    void addUndefined() { _address.push_back('\0'); }
     void clear() { _address.clear(); }
     SparseTensorAddressRef getAddressRef() const {
         return SparseTensorAddressRef(&_address[0], _address.size());

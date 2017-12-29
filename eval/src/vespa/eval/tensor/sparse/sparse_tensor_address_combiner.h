@@ -3,7 +3,8 @@
 #pragma once
 
 #include "sparse_tensor_address_builder.h"
-#include <vespa/eval/tensor/types.h>
+
+#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
 
 namespace vespalib::eval { class ValueType; }
 namespace vespalib::tensor::sparse {
@@ -17,12 +18,11 @@ class TensorAddressCombiner : public SparseTensorAddressBuilder
     enum class AddressOp { LHS, RHS, BOTH };
 
     std::vector<AddressOp> _ops;
-
 public:
     TensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs);
     ~TensorAddressCombiner();
 
-    bool combine(SparseTensorAddressRef lhsRef, SparseTensorAddressRef rhsRef);
+    VESPA_DLL_LOCAL bool combine(SparseTensorAddressRef lhsRef, SparseTensorAddressRef rhsRef);
     size_t numOverlappingDimensions() const;
     size_t numDimensions() const { return _ops.size(); }
 };

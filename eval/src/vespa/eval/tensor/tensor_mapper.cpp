@@ -8,6 +8,7 @@
 #include "wrapped_simple_tensor.h"
 #include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <limits>
 
 using vespalib::eval::ValueType;

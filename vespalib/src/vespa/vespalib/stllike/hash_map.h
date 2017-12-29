@@ -35,7 +35,7 @@ public:
     size_t capacity()                  const { return _ht.capacity(); }
     size_t size()                      const { return _ht.size(); }
     bool empty()                       const { return _ht.empty(); }
-    insert_result insert(const value_type & value);
+    insert_result insert(const value_type & value) { return _ht.insert(value); }
     template <typename InputIt>
     void insert(InputIt first, InputIt last);
     const V & operator [] (const K & key) const { return _ht.find(key)->second; }

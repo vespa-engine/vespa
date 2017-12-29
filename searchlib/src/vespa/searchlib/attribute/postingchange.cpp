@@ -6,6 +6,7 @@
 #include "postinglistattribute.h"
 #include <vespa/searchlib/common/growablebitvector.h>
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search {
 
