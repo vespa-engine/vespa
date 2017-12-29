@@ -29,7 +29,6 @@
 
 #pragma once
 
-#include <vespa/metrics/loadmetric.h>
 #include <persistence/spi/types.h>
 #include <vespa/persistence/spi/read_consistency.h>
 #include <vespa/vespalib/trace/trace.h>
@@ -38,8 +37,7 @@ namespace metrics {
     class LoadType;
 }
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 using LoadType = metrics::LoadType;
 
@@ -93,6 +91,4 @@ public:
         { _trace.trace(level, msg, addTime); }
 };
 
-} // spi
-} // storage
-
+}

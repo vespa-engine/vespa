@@ -67,11 +67,10 @@ typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::iterator
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key)
 {
     next_t h = hash(key);
-    if (_nodes[h].valid()) {
-        next_t start(h);
+    if (__builtin_expect(_nodes[h].valid(), true)) {
         do {
-            if (_equal(_keyExtractor(_nodes[h].getValue()), key)) {
-                return iterator(this, start, h);
+            if (__builtin_expect(_equal(_keyExtractor(_nodes[h].getValue()), key), true)) {
+                return iterator(this, h);
             }
             h = _nodes[h].getNext();
         } while (h != Node::npos);
@@ -84,11 +83,10 @@ typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::const_iterat
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key) const
 {
     next_t h = hash(key);
-    if (_nodes[h].valid()) {
-        next_t start(h);
+    if (__builtin_expect(_nodes[h].valid(), true)) {
         do {
-            if (_equal(_keyExtractor(_nodes[h].getValue()), key)) {
-                return const_iterator(this, start, h);
+            if (__builtin_expect(_equal(_keyExtractor(_nodes[h].getValue()), key), true)) {
+                return const_iterator(this, h);
             }
             h = _nodes[h].getNext();
         } while (h != Node::npos);
@@ -104,11 +102,10 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & k
     AltHash altHasher;
     next_t h = modulator(altHasher(key));
     if (_nodes[h].valid()) {
-        next_t start(h);
         AltEqual altEqual;
         do {
             if (altEqual(altExtract(_keyExtractor(_nodes[h].getValue())), key)) {
-                return const_iterator(this, start, h);
+                return const_iterator(this, h);
             }
             h = _nodes[h].getNext();
         } while (h != Node::npos);
@@ -124,11 +121,10 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & k
     AltHash altHasher;
     next_t h = modulator(altHasher(key));
     if (_nodes[h].valid()) {
-        next_t start(h);
         AltEqual altEqual;
         do {
             if (altEqual(altExtract(_keyExtractor(_nodes[h].getValue())), key)) {
-                return iterator(this, start, h);
+                return iterator(this, h);
             }
             h = _nodes[h].getNext();
         } while (h != Node::npos);
@@ -149,7 +145,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::erase(const Key & key
     const_iterator found(find(key));
     if (found != end()) {
         DefaultMoveHandler moveHandler;
-        erase(moveHandler, found);
+        erase(moveHandler, hash(key), found);
     }
 }
 
@@ -169,11 +165,11 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insertInternal(V && n
     if ( ! _nodes[h].valid() ) {
         _nodes[h] = std::forward<V>(node);
         _count++;
-        return insert_result(iterator(this, h, h), true);
+        return insert_result(iterator(this, h), true);
     } else if (_nodes.size() <= _nodes.capacity()) {
         for (next_t c(h); c != Node::npos; c = _nodes[c].getNext()) {
             if (_equal(_keyExtractor(_nodes[c].getValue()), _keyExtractor(node))) {
-                return insert_result(iterator(this, h, c), false);
+                return insert_result(iterator(this, c), false);
             }
         }
         if (_nodes.size() < _nodes.capacity()) {
@@ -182,7 +178,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insertInternal(V && n
             _nodes[h].setNext(newIdx);
             new (_nodes.push_back_fast()) Node(std::forward<V>(node), p);
             _count++;
-            return insert_result(iterator(this, h, newIdx), true);
+            return insert_result(iterator(this, newIdx), true);
         } else {
             resize(_nodes.capacity()*2);
             return insertInternal(std::forward<V>(node));
@@ -214,9 +210,8 @@ void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::reclaim(MoveHand
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 template <typename MoveHandler>
 void
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::erase(MoveHandler & moveHandler, const const_iterator & it)
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::erase(MoveHandler & moveHandler, next_t h, const const_iterator & it)
 {
-    next_t h = it.getHash();
     next_t prev = Node::npos;
     do {
         if (h == it.getInternalIndex()) {

@@ -209,8 +209,7 @@ VisitCache::Cache::locateAndInvalidateOtherSubsets(const LockGuard & cacheGuard,
 
 CompressedBlobSet
 VisitCache::read(const IDocumentStore::LidVector & lids) const {
-    KeySet key(lids);
-    return _cache->readSet(lids);
+    return _cache->readSet(KeySet(lids));
 }
 
 void
