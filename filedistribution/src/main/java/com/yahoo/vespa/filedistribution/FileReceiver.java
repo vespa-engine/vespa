@@ -103,6 +103,7 @@ public class FileReceiver {
                 Files.write(inprogressFile.toPath(), part, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
             } catch (IOException e) {
                 log.log(LogLevel.ERROR, "Failed writing to file(" + inprogressFile.toPath() + "): " + e.getMessage(), e);
+                inprogressFile.delete();
                 throw new RuntimeException("Failed writing to file(" + inprogressFile.toPath() + "): ", e);
             }
             currentFileSize += part.length;
@@ -295,7 +296,7 @@ public class FileReceiver {
         try {
             session.addPart(partId, part);
         } catch (Exception e) {
-            log.severe("Got exception + " + e);
+            log.severe("Got exception " + e);
             retval = 1;
         }
         double completeness = (double) session.currentFileSize / (double) session.fileSize;
