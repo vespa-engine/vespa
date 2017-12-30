@@ -17,17 +17,22 @@ DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lh
     auto rhsItrEnd = rhs.dimensions().cend();
     for (const auto &lhsDim : lhs.dimensions()) {
         while ((rhsItr != rhsItrEnd) && (rhsItr->name < lhsDim.name)) {
+            _right.emplace_back(_ops.size(), rhsItr-rhs.dimensions().cbegin());
             _ops.push_back(AddressOp::RHS);
             ++rhsItr;
         }
         if ((rhsItr != rhsItrEnd) && (rhsItr->name == lhsDim.name)) {
+            _left.emplace_back(_ops.size(), _left.size());
+            _commonRight.emplace_back(_ops.size(), rhsItr-rhs.dimensions().cbegin());
             _ops.push_back(AddressOp::BOTH);
             ++rhsItr;
         } else {
+            _left.emplace_back(_ops.size(), _left.size());
             _ops.push_back(AddressOp::LHS);
         }
     }
     while (rhsItr != rhsItrEnd) {
+        _right.emplace_back(_ops.size(), rhsItr-rhs.dimensions().cbegin());
         _ops.push_back(AddressOp::RHS);
         ++rhsItr;
     }
