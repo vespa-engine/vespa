@@ -1,14 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "operation.h"
-#include "value.h"
-#include <cmath>
-#include <assert.h>
+#include <vespa/vespalib/util/approx.h>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval::operation {
 
-namespace operation {
 double Neg::f(double a) { return -a; }
 double Not::f(double a) { return (a != 0.0) ? 0.0 : 1.0; }
 double Add::f(double a, double b) { return (a + b); }
@@ -50,7 +46,5 @@ double IsNan::f(double a) { return std::isnan(a) ? 1.0 : 0.0; }
 double Relu::f(double a) { return std::max(a, 0.0); }
 double Sigmoid::f(double a) { return 1.0 / (1.0 + std::exp(-1.0 * a)); }
 double Elu::f(double a) { return (a < 0) ? std::exp(a) - 1 : a; }
-} // namespace vespalib::eval::operation
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}
