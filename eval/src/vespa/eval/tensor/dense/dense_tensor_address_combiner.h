@@ -35,18 +35,35 @@ private:
         Address::value_type nextLabel() { return _address[_idx++]; }
     };
 
+    using Mapping = std::vector<std::pair<uint32_t, uint32_t>>;
     std::vector<AddressOp> _ops;
     Address                _combinedAddress;
+    Mapping                _left;
+    Mapping                _commonRight;
+    Mapping                _right;
+    void update(const Address & addr, const Mapping & mapping) {
+        for (const auto & m : mapping) {
+            _combinedAddress[m.first] = addr[m.second];
+        }
+    }
 public:
     DenseTensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs);
     ~DenseTensorAddressCombiner();
+    void updateLeftAndCommon(const Address & addr) { update(addr, _left); }
+    void updateRight(const Address & addr) { update(addr, _right); }
+    bool hasCommonWithRight(const Address & addr) const {
+        for (const auto & m : _commonRight) {
+            if (_combinedAddress[m.first] != addr[m.second]) return false;
+        }
+        return true;
+    }
 
     const Address &address() const { return _combinedAddress; }
 
-    bool combine(const CellsIterator &lhsItr, const CellsIterator &rhsItr) {
+    bool combine(const Address & lhs, const Address & rhs) {
         uint32_t index(0);
-        AddressReader lhsReader(lhsItr.address());
-        AddressReader rhsReader(rhsItr.address());
+        AddressReader lhsReader(lhs);
+        AddressReader rhsReader(rhs);
         for (const auto &op : _ops) {
             switch (op) {
                 case AddressOp::LHS:

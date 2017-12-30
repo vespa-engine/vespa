@@ -15,9 +15,10 @@ apply(const DenseTensorView &lhs, const DenseTensorView &rhs, Function &&func)
     DenseTensorAddressCombiner combiner(lhs.fast_type(), rhs.fast_type());
     DirectDenseTensorBuilder builder(DenseTensorAddressCombiner::combineDimensions(lhs.fast_type(), rhs.fast_type()));
     for (DenseTensorCellsIterator lhsItr = lhs.cellsIterator(); lhsItr.valid(); lhsItr.next()) {
+        combiner.updateLeftAndCommon(lhsItr.address());
         for (DenseTensorCellsIterator rhsItr = rhs.cellsIterator(); rhsItr.valid(); rhsItr.next()) {
-            bool combineSuccess = combiner.combine(lhsItr, rhsItr);
-            if (combineSuccess) {
+            if (combiner.hasCommonWithRight(rhsItr.address())) {
+                combiner.updateRight(rhsItr.address());
                 builder.insertCell(combiner.address(), func(lhsItr.cell(), rhsItr.cell()));
             }
         }
