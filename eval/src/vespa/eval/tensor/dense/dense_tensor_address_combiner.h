@@ -25,18 +25,18 @@ private:
 
     using CellsIterator = DenseTensorCellsIterator;
 
-    std::vector<AddressOp> _ops;
-    Address _combinedAddress;
-
     class AddressReader
     {
     private:
         const Address &_address;
-        uint32_t _idx;
+        uint32_t       _idx;
     public:
         AddressReader(const Address &address) : _address(address), _idx(0) {}
         Address::value_type nextLabel() { return _address[_idx++]; }
     };
+
+    std::vector<AddressOp> _ops;
+    Address                _combinedAddress;
 public:
     DenseTensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs);
     ~DenseTensorAddressCombiner();
