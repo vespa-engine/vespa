@@ -2,11 +2,6 @@
 
 #pragma once
 
-#include "value.h"
-#include <cmath>
-#include <vespa/vespalib/util/approx.h>
-#include <vespa/vespalib/util/stash.h>
-
 namespace vespalib::eval::operation {
 
 struct Neg { static double f(double a); };

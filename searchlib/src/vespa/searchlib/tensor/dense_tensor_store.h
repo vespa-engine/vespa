@@ -7,9 +7,7 @@
 
 namespace vespalib { namespace tensor { class MutableDenseTensorView; }}
 
-namespace search {
-
-namespace tensor {
+namespace search::tensor {
 
 /**
  * Class for storing dense tensors with known bounds in memory, used
@@ -39,13 +37,13 @@ public:
         uint32_t _unboundDimSizesSize;
     public:
         BufferType();
-        virtual ~BufferType();
-        virtual void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) override;
+        ~BufferType() override;
+        void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) override;
         uint32_t unboundDimSizesSize() const { return _unboundDimSizesSize; }
         void setUnboundDimSizesSize(uint32_t unboundDimSizesSize_in) {
             _unboundDimSizesSize = unboundDimSizesSize_in;
         }
-        virtual size_t getReservedElements(uint32_t bufferId) const override;
+        size_t getReservedElements(uint32_t bufferId) const override;
     };
 private:
     DataStoreType _concreteStore;
@@ -68,7 +66,7 @@ private:
 
 public:
     DenseTensorStore(const ValueType &type);
-    virtual ~DenseTensorStore();
+    ~DenseTensorStore() override;
 
     const ValueType &type() const { return _type; }
     uint32_t unboundDimSizesSize() const { return _bufferType.unboundDimSizesSize(); }
@@ -76,14 +74,11 @@ public:
     uint32_t getCellSize() const { return _cellSize; }
     const void *getRawBuffer(RefType ref) const;
     datastore::Handle<char> allocRawBuffer(size_t numCells, const std::vector<uint32_t> &unboundDimSizes);
-    virtual void holdTensor(EntryRef ref) override;
-    virtual EntryRef move(EntryRef ref) override;
+    void holdTensor(EntryRef ref) override;
+    EntryRef move(EntryRef ref) override;
     std::unique_ptr<Tensor> getTensor(EntryRef ref) const;
     void getTensor(EntryRef ref, vespalib::tensor::MutableDenseTensorView &tensor) const;
     EntryRef setTensor(const Tensor &tensor);
 };
 
-
-}  // namespace search::tensor
-
-}  // namespace search
+}
