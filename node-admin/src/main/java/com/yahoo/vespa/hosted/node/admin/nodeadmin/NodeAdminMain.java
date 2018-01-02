@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import java.io.File;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -42,22 +43,21 @@ public class NodeAdminMain implements AutoCloseable {
     private final MetricReceiverWrapper metricReceiver;
     private final ClassLocking classLocking;
 
-    private NodeAdminStateUpdater nodeAdminStateUpdater;
+    private Optional<NodeAdminStateUpdater> nodeAdminStateUpdater = Optional.empty();
 
     public NodeAdminMain(Docker docker, MetricReceiverWrapper metricReceiver, ClassLocking classLocking) {
         this.docker = docker;
         this.metricReceiver = metricReceiver;
         this.classLocking = classLocking;
-        start();
     }
 
     @Override
     public void close() {
-        nodeAdminStateUpdater.stop();
+        nodeAdminStateUpdater.ifPresent(NodeAdminStateUpdater::stop);
     }
 
     public NodeAdminStateUpdater getNodeAdminStateUpdater() {
-        return nodeAdminStateUpdater;
+        return nodeAdminStateUpdater.get();
     }
 
     public void start() {
@@ -78,6 +78,11 @@ public class NodeAdminMain implements AutoCloseable {
     }
 
     private void setupTenantHostNodeAdmin() {
+        nodeAdminStateUpdater = Optional.of(createNodeAdminStateUpdater());
+        nodeAdminStateUpdater.get().start();
+    }
+
+    private NodeAdminStateUpdater createNodeAdminStateUpdater() {
         Clock clock = Clock.systemUTC();
         String dockerHostHostName = HostName.getLocalhost();
         ProcessExecuter processExecuter = new ProcessExecuter();
@@ -99,10 +104,8 @@ public class NodeAdminMain implements AutoCloseable {
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer,
                 metricReceiver, clock);
 
-        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, orchestrator, storageMaintainer, nodeAdmin,
+        return new NodeAdminStateUpdater(nodeRepository, orchestrator, storageMaintainer, nodeAdmin,
                 dockerHostHostName, clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL, classLocking);
-
-        nodeAdminStateUpdater.start();
     }
 
     private void setupConfigServerHostNodeAdmin() {
