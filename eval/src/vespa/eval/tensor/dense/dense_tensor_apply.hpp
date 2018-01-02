@@ -11,6 +11,11 @@ namespace vespalib::tensor::dense {
 template <typename Function>
 std::unique_ptr<Tensor>
 apply(DenseTensorAddressCombiner & combiner, DirectDenseTensorBuilder & builder,
+      CommonDenseTensorCellsIterator & rhsIter, const DenseTensorView &lhs, Function &&func) __attribute__((noinline));
+
+template <typename Function>
+std::unique_ptr<Tensor>
+apply(DenseTensorAddressCombiner & combiner, DirectDenseTensorBuilder & builder,
       CommonDenseTensorCellsIterator & rhsIter, const DenseTensorView &lhs, Function &&func)
 {
     for (DenseTensorCellsIterator lhsItr = lhs.cellsIterator(); lhsItr.valid(); lhsItr.next()) {
@@ -23,6 +28,13 @@ apply(DenseTensorAddressCombiner & combiner, DirectDenseTensorBuilder & builder,
     }
     return builder.build();
 }
+
+
+template <typename Function>
+std::unique_ptr<Tensor>
+apply_no_rightonly_dimensions(DenseTensorAddressCombiner & combiner, DirectDenseTensorBuilder & builder,
+                              CommonDenseTensorCellsIterator & rhsIter,
+                              const DenseTensorView &lhs, Function &&func)  __attribute__((noinline));
 
 template <typename Function>
 std::unique_ptr<Tensor>

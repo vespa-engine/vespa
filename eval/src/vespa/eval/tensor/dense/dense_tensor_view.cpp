@@ -251,6 +251,12 @@ DenseTensorView::join(join_fun_t function, const Tensor &arg) const
         }
         return joinDenseTensors(*this, arg, "join", function);
     }
+    if (function == eval::operation::Mul::f) {
+        return dense::apply(*this, arg, [](double a, double b) { return (a * b); });
+    }
+    if (function == eval::operation::Add::f) {
+        return dense::apply(*this, arg, [](double a, double b) { return (a + b); });
+    }
     return dense::apply(*this, arg, function);
 }
 
