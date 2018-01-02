@@ -9,19 +9,6 @@ namespace vespalib::tensor::dense {
 using Cells = DenseTensorView::Cells;
 using CellsRef = DenseTensorView::CellsRef;
 
-namespace {
-
-size_t
-calcCellsSize(const eval::ValueType &type)
-{
-    size_t cellsSize = 1;
-    for (const auto &dim : type.dimensions()) {
-        cellsSize *= dim.size;
-    }
-    return cellsSize;
-}
-
-
 class DimensionReducer
 {
 private:
@@ -31,37 +18,11 @@ private:
     size_t _sumDimSize;
     size_t _outerDimSize;
 
-    void setup(const eval::ValueType &oldType,
-               const vespalib::string &dimensionToRemove) {
-        auto itr = std::lower_bound(oldType.dimensions().cbegin(),
-                                    oldType.dimensions().cend(),
-                                    dimensionToRemove,
-                                    [](const auto &dim, const auto &dimension)
-                                    { return dim.name < dimension; });
-        if ((itr != oldType.dimensions().end()) && (itr->name == dimensionToRemove)) {
-            for (auto outerItr = oldType.dimensions().cbegin(); outerItr != itr; ++outerItr) {
-                _outerDimSize *= outerItr->size;
-            }
-            _sumDimSize = itr->size;
-            for (++itr; itr != oldType.dimensions().cend(); ++itr) {
-                _innerDimSize *= itr->size;
-            }
-        } else {
-            _outerDimSize = calcCellsSize(oldType);
-        }
-    }
+    void setup(const eval::ValueType &oldType, const vespalib::string &dimensionToRemove);
 
 public:
-    DimensionReducer(const eval::ValueType &oldType,
-                     const string &dimensionToRemove)
-        : _type(oldType.reduce({ dimensionToRemove })),
-          _cellsResult(calcCellsSize(_type)),
-          _innerDimSize(1),
-          _sumDimSize(1),
-          _outerDimSize(1)
-    {
-        setup(oldType, dimensionToRemove);
-    }
+    DimensionReducer(const eval::ValueType &oldType, const string &dimensionToRemove);
+    ~DimensionReducer();
 
     template <typename Function>
     DenseTensor::UP
@@ -90,6 +51,8 @@ public:
     }
 };
 
+namespace {
+
 template <typename Function>
 DenseTensor::UP
 reduce(const DenseTensorView &tensor, const vespalib::string &dimensionToRemove, Function &&func)
@@ -109,8 +72,7 @@ reduce(const DenseTensorView &tensor, const std::vector<vespalib::string> &dimen
     } else if (dimensions.size() > 0) {
         DenseTensor::UP result = reduce(tensor, dimensions[0], func);
         for (size_t i = 1; i < dimensions.size(); ++i) {
-            DenseTensor::UP tmpResult = reduce(DenseTensorView(*result),
-                                               dimensions[i], func);
+            DenseTensor::UP tmpResult = reduce(DenseTensorView(*result), dimensions[i], func);
             result = std::move(tmpResult);
         }
         return result;
