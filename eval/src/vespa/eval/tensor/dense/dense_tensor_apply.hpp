@@ -13,14 +13,15 @@ std::unique_ptr<Tensor>
 apply(const DenseTensorView &lhs, const DenseTensorView &rhs, Function &&func)
 {
     DenseTensorAddressCombiner combiner(lhs.fast_type(), rhs.fast_type());
+    CommonDenseTensorCellsIterator rhsIter(combiner.commonRight(), rhs.fast_type(), rhs.cellsRef());
     DirectDenseTensorBuilder builder(DenseTensorAddressCombiner::combineDimensions(lhs.fast_type(), rhs.fast_type()));
     for (DenseTensorCellsIterator lhsItr = lhs.cellsIterator(); lhsItr.valid(); lhsItr.next()) {
         combiner.updateLeftAndCommon(lhsItr.address());
-        for (DenseTensorCellsIterator rhsItr = rhs.cellsIterator(); rhsItr.valid(); rhsItr.next()) {
-            if (combiner.hasCommonWithRight(rhsItr.address())) {
-                combiner.updateRight(rhsItr.address());
-                builder.insertCell(combiner.address(), func(lhsItr.cell(), rhsItr.cell()));
-            }
+        if (rhsIter.updateCommon(combiner.address())) {
+            rhsIter.for_each([&combiner, &func, &builder, &lhsItr](const DenseTensorCellsIterator::Address & right, double rhsCell) {
+                combiner.updateRight(right);
+                builder.insertCell(combiner.address(), func(lhsItr.cell(), rhsCell));
+            });
         }
     }
     return builder.build();
