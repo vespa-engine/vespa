@@ -16,9 +16,8 @@ apply(DenseTensorAddressCombiner & combiner, DirectDenseTensorBuilder & builder,
     for (DenseTensorCellsIterator lhsItr = lhs.cellsIterator(); lhsItr.valid(); lhsItr.next()) {
         combiner.updateLeftAndCommon(lhsItr.address());
         if (rhsIter.updateCommon(combiner.address())) {
-            rhsIter.for_each([&combiner, &func, &builder, &lhsItr](const DenseTensorCellsIterator::Address & right, double rhsCell) {
-                combiner.updateRight(right);
-                builder.insertCell(combiner.address(), func(lhsItr.cell(), rhsCell));
+            rhsIter.for_each(combiner.address(), [&combiner, &func, &builder, &lhsItr](const DenseTensorCellsIterator::Address & combined, double rhsCell) {
+                builder.insertCell(combined, func(lhsItr.cell(), rhsCell));
             });
         }
     }
@@ -46,7 +45,7 @@ apply(const DenseTensorView &lhs, const DenseTensorView &rhs, Function &&func)
 {
     DenseTensorAddressCombiner combiner(lhs.fast_type(), rhs.fast_type());
     DirectDenseTensorBuilder builder(DenseTensorAddressCombiner::combineDimensions(lhs.fast_type(), rhs.fast_type()));
-    CommonDenseTensorCellsIterator rhsIter(combiner.commonRight(), rhs.fast_type(), rhs.cellsRef());
+    CommonDenseTensorCellsIterator rhsIter(combiner.getCommonRight(), combiner.getRight(), rhs.fast_type(), rhs.cellsRef());
     if (combiner.hasAnyRightOnlyDimensions()) {
         return apply(combiner, builder, rhsIter, lhs, std::move(func));
     } else {
