@@ -1,5 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.config.provision;
+package com.yahoo.vespa.hosted.controller.api.integration.zone;
+
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
 
 import java.util.Objects;
 
@@ -11,7 +14,7 @@ import java.util.Objects;
  * @author jvenstad
  */
 public class ZoneId {
-    // TODO: Replace usages of zone + region with usages of this.
+    // TODO: Replace usages of environment + region with usages of this.
 
     private final Environment environment;
     private final RegionName region;
