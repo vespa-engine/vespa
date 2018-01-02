@@ -10,11 +10,9 @@ namespace vespalib::tensor::dense {
 
 template <typename Function>
 std::unique_ptr<Tensor>
-apply(const DenseTensorView &lhs, const DenseTensorView &rhs, Function &&func)
+apply(DenseTensorAddressCombiner & combiner, DirectDenseTensorBuilder & builder,
+      CommonDenseTensorCellsIterator & rhsIter, const DenseTensorView &lhs, Function &&func)
 {
-    DenseTensorAddressCombiner combiner(lhs.fast_type(), rhs.fast_type());
-    CommonDenseTensorCellsIterator rhsIter(combiner.commonRight(), rhs.fast_type(), rhs.cellsRef());
-    DirectDenseTensorBuilder builder(DenseTensorAddressCombiner::combineDimensions(lhs.fast_type(), rhs.fast_type()));
     for (DenseTensorCellsIterator lhsItr = lhs.cellsIterator(); lhsItr.valid(); lhsItr.next()) {
         combiner.updateLeftAndCommon(lhsItr.address());
         if (rhsIter.updateCommon(combiner.address())) {
@@ -25,6 +23,35 @@ apply(const DenseTensorView &lhs, const DenseTensorView &rhs, Function &&func)
         }
     }
     return builder.build();
+}
+
+template <typename Function>
+std::unique_ptr<Tensor>
+apply_no_rightonly_dimensions(DenseTensorAddressCombiner & combiner, DirectDenseTensorBuilder & builder,
+                              CommonDenseTensorCellsIterator & rhsIter,
+                              const DenseTensorView &lhs, Function &&func)
+{
+    for (DenseTensorCellsIterator lhsItr = lhs.cellsIterator(); lhsItr.valid(); lhsItr.next()) {
+        combiner.updateLeftAndCommon(lhsItr.address());
+        if (rhsIter.updateCommon(combiner.address())) {
+            builder.insertCell(combiner.address(), func(lhsItr.cell(), rhsIter.cell()));
+        }
+    }
+    return builder.build();
+}
+
+template <typename Function>
+std::unique_ptr<Tensor>
+apply(const DenseTensorView &lhs, const DenseTensorView &rhs, Function &&func)
+{
+    DenseTensorAddressCombiner combiner(lhs.fast_type(), rhs.fast_type());
+    DirectDenseTensorBuilder builder(DenseTensorAddressCombiner::combineDimensions(lhs.fast_type(), rhs.fast_type()));
+    CommonDenseTensorCellsIterator rhsIter(combiner.commonRight(), rhs.fast_type(), rhs.cellsRef());
+    if (combiner.hasAnyRightOnlyDimensions()) {
+        return apply(combiner, builder, rhsIter, lhs, std::move(func));
+    } else {
+        return apply_no_rightonly_dimensions(combiner, builder, rhsIter, lhs, std::move(func));
+    }
 }
 
 template <typename Function>

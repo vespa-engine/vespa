@@ -60,6 +60,8 @@ public:
 
     const Mapping & commonRight() const { return _commonRight; }
 
+    bool hasAnyRightOnlyDimensions() const { return ! _right.empty(); }
+
     const Address &address() const { return _combinedAddress; }
 
     bool combine(const Address & lhs, const Address & rhs) {
@@ -123,10 +125,6 @@ public:
     ~CommonDenseTensorCellsIterator();
     template <typename Func>
     void for_each(Func && func) {
-        if (_mutable.empty()) {
-            func(_address, cell(index(_address)));
-            return;
-        }
         const int32_t lastDimension = _mutable.size() - 1;
         int32_t curDimension = lastDimension;
         size_t cellIdx = index(_address);
@@ -160,6 +158,9 @@ public:
             _address[m.second] = combined[m.first];
         }
         return true;
+    }
+    double cell() const {
+        return cell(index(_address));
     }
 
     const eval::ValueType &fast_type() const { return _type; }
