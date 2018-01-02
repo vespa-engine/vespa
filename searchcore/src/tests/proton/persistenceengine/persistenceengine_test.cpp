@@ -13,6 +13,7 @@
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/metrics/loadmetric.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <algorithm>
 #include <set>
@@ -369,7 +370,7 @@ Timestamp tstamp2(2);
 Timestamp tstamp3(3);
 DocumentSelection doc_sel("");
 Selection selection(doc_sel);
-BucketSpace altBucketSpace(1);
+BucketSpace altBucketSpace(2);
 
 
 void

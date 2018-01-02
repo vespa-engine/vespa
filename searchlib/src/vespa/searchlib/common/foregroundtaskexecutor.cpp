@@ -2,6 +2,7 @@
 
 #include "foregroundtaskexecutor.h"
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using vespalib::ThreadStackExecutor;
 

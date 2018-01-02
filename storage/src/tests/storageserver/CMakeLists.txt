@@ -5,6 +5,7 @@ vespa_add_library(storage_teststorageserver TEST
     bucketintegritycheckertest.cpp
     changedbucketownershiphandlertest.cpp
     communicationmanagertest.cpp
+    configurable_bucket_resolver_test.cpp
     documentapiconvertertest.cpp
     mergethrottlertest.cpp
     priorityconvertertest.cpp

@@ -8,6 +8,20 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.log.LogLevel;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -103,6 +117,52 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     @Override
     public String getService() {
         return service;
+    }
+
+    @Override
+    public SSLContext getSslContext() {
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+            sslContext.init(createKeyManagersWithServiceCertificate(),
+                        createTrustManagersWithAthenzCa(),
+                        null);
+            return sslContext;
+        } catch (NoSuchAlgorithmException | KeyManagementException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private KeyManager[] createKeyManagersWithServiceCertificate() {
+        try {
+            credentialsRetrievedSignal.await();
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+            keyStore.load(null);
+            keyStore.setKeyEntry("instance-key",
+                                 credentials.get().getKeyPair().getPrivate(),
+                                 new char[0],
+                                 new Certificate[]{credentials.get().getCertificate()});
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyManagerFactory.init(keyStore, new char[0]);
+            return keyManagerFactory.getKeyManagers();
+        } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException | CertificateException | IOException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new AthenzIdentityProviderException("Failed to register instance credentials", lastThrowable.get());
+        }
+    }
+
+    private static TrustManager[] createTrustManagersWithAthenzCa() {
+        try {
+            KeyStore trustStore = KeyStore.getInstance("JKS");
+            try (FileInputStream in = new FileInputStream("/home/y/share/ssl/certs/yahoo_certificate_bundle.jks")) {
+                trustStore.load(in, null);
+            }
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init(trustStore);
+            return trustManagerFactory.getTrustManagers();
+        } catch (CertificateException | IOException | KeyStoreException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

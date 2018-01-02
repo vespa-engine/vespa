@@ -96,7 +96,8 @@ public class ApplicationHandlerTest {
                 mockHttpProxy,
                 new MockLogServerLogGrabber());
         listApplicationsHandler = new ListApplicationsHandler(
-                Runnable::run, AccessLog.voidAccessLog(), tenants, Zone.defaultZone());
+                ListApplicationsHandler.testOnlyContext(),
+                tenants, Zone.defaultZone());
     }
 
     private ApplicationHandler createMockApplicationHandler(
@@ -105,8 +106,7 @@ public class ApplicationHandlerTest {
             HttpProxy httpProxy,
             LogServerLogGrabber logServerLogGrabber) {
         return new ApplicationHandler(
-                Runnable::run,
-                AccessLog.voidAccessLog(),
+                ApplicationHandler.testOnlyContext(),
                 Zone.defaultZone(),
                 new ApplicationRepository(tenants,
                                           HostProvisionerProvider.withProvisioner(provisioner),
@@ -118,8 +118,7 @@ public class ApplicationHandlerTest {
 
     private ApplicationHandler createApplicationHandler(Tenants tenants) {
         return new ApplicationHandler(
-                Runnable::run,
-                AccessLog.voidAccessLog(),
+                ApplicationHandler.testOnlyContext(),
                 Zone.defaultZone(),
                 new ApplicationRepository(tenants,
                                           HostProvisionerProvider.withProvisioner(provisioner),

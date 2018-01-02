@@ -2,11 +2,9 @@
 #pragma once
 
 #include <vespa/storage/common/messagesender.h>
-#include <vespa/vdslib/distribution/distribution.h>
 
-namespace storage {
-
-namespace distributor {
+namespace storage::lib { class NodeType; }
+namespace storage::distributor {
 
 class PendingMessageTracker;
 
@@ -16,21 +14,12 @@ public:
       Sends the storage command to the given node,
       returns message id.
      */
-    virtual uint64_t sendToNode(const lib::NodeType& nodeType,
-            uint16_t node,
-            const std::shared_ptr<api::StorageCommand>& cmd,
-            bool useDocumentAPI = false);
+    virtual uint64_t sendToNode(const lib::NodeType& nodeType, uint16_t node,
+                                const std::shared_ptr<api::StorageCommand>& cmd, bool useDocumentAPI = false);
 
     virtual int getDistributorIndex() const = 0;
-
     virtual const std::string& getClusterName() const = 0;
-
     virtual const PendingMessageTracker& getPendingMessageTracker() const = 0;
 };
 
-} // distributor
-
-} // storage
-
-
-
+}

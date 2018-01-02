@@ -170,7 +170,6 @@ private:
 
     config::ConfigUri _configUri;
     std::atomic<bool> _closed;
-    std::unique_ptr<BucketResolver> _bucketResolver;
     DocumentApiConverter _docApiConverter;
     framework::Thread::UP _thread;
 

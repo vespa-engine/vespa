@@ -4,13 +4,12 @@
 #include "getoperation.h"
 #include "putoperation.h"
 #include "updateoperation.h"
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/select/parser.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/batch.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/select/parser.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/storage/distributor/distributor_bucket_space.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.twophaseupdate");
@@ -18,8 +17,7 @@ LOG_SETUP(".distributor.callback.twophaseupdate");
 using namespace std::literals::string_literals;
 using document::BucketSpace;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
         DistributorComponent& manager,
@@ -570,5 +568,4 @@ TwoPhaseUpdateOperation::onClose(DistributorMessageSender& sender) {
     }
 }
 
-} // distributor
-} // storage
+}

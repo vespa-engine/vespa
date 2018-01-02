@@ -6,8 +6,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "types.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * Class for visiting a tensor.  First visit must specify dimensions,
@@ -20,5 +19,4 @@ public:
     virtual void visit(const TensorAddress &address, double value) = 0;
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

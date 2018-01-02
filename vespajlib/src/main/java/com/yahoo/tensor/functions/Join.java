@@ -28,12 +28,12 @@ import java.util.function.DoubleBinaryOperator;
  * The <i>join</i> tensor operation produces a tensor from the argument tensors containing the set of cells
  * given by the cross product of the cells of the given tensors, having as values the value produced by
  * applying the given combinator function on the values from the two source cells.
- * 
+ *
  * @author bratseth
  */
 @Beta
 public class Join extends PrimitiveTensorFunction {
-    
+
     private final TensorFunction argumentA, argumentB;
     private final DoubleBinaryOperator combinator;
 
@@ -44,6 +44,30 @@ public class Join extends PrimitiveTensorFunction {
         this.argumentA = argumentA;
         this.argumentB = argumentB;
         this.combinator = combinator;
+    }
+
+    /** Returns the type resulting from applying Join to the two given types */
+    public static TensorType outputType(TensorType a, TensorType b) {
+        TensorType.Builder typeBuilder = new TensorType.Builder();
+        for (int i = 0; i < a.dimensions().size(); ++i) {
+            TensorType.Dimension aDim = a.dimensions().get(i);
+            for (int j = 0; j < b.dimensions().size(); ++j) {
+                TensorType.Dimension bDim = b.dimensions().get(j);
+                if (aDim.name().equals(bDim.name())) { // include
+                    if (aDim.isIndexed() && bDim.isIndexed()) {
+                        if (aDim.size().isPresent() || bDim.size().isPresent())
+                            typeBuilder.indexed(aDim.name(), Math.min(aDim.size().orElse(Long.MAX_VALUE),
+                                                                      bDim.size().orElse(Long.MAX_VALUE)));
+                        else
+                            typeBuilder.indexed(aDim.name());
+                    }
+                    else {
+                        typeBuilder.mapped(aDim.name());
+                    }
+                }
+            }
+        }
+        return typeBuilder.build();
     }
 
     public TensorFunction argumentA() { return argumentA; }
@@ -88,17 +112,17 @@ public class Join extends PrimitiveTensorFunction {
         else
             return generalJoin(a, b, joinedType);
     }
-    
+
     private boolean hasSingleIndexedDimension(Tensor tensor) {
         return tensor.type().dimensions().size() == 1 && tensor.type().dimensions().get(0).isIndexed();
     }
-    
+
     private Tensor indexedVectorJoin(IndexedTensor a, IndexedTensor b, TensorType type) {
-        int joinedLength = Math.min(a.dimensionSizes().size(0), b.dimensionSizes().size(0));
+        long joinedRank = Math.min(a.dimensionSizes().size(0), b.dimensionSizes().size(0));
         Iterator<Double> aIterator = a.valueIterator();
         Iterator<Double> bIterator = b.valueIterator();
-        IndexedTensor.Builder builder = IndexedTensor.Builder.of(type, new DimensionSizes.Builder(1).set(0, joinedLength).build());
-        for (int i = 0; i < joinedLength; i++)
+        IndexedTensor.Builder builder = IndexedTensor.Builder.of(type, new DimensionSizes.Builder(1).set(0, joinedRank).build());
+        for (int i = 0; i < joinedRank; i++)
             builder.cell(combinator.applyAsDouble(aIterator.next(), bIterator.next()), i);
         return builder.build();
     }
@@ -114,7 +138,7 @@ public class Join extends PrimitiveTensorFunction {
         }
         return builder.build();
     }
-    
+
     /** Join a tensor into a superspace */
     private Tensor subspaceJoin(Tensor subspace, Tensor superspace, TensorType joinedType, boolean reversedArgumentOrder) {
         if (subspace instanceof IndexedTensor && superspace instanceof IndexedTensor)
@@ -126,7 +150,7 @@ public class Join extends PrimitiveTensorFunction {
     private Tensor indexedSubspaceJoin(IndexedTensor subspace, IndexedTensor superspace, TensorType joinedType, boolean reversedArgumentOrder) {
         if (subspace.size() == 0 || superspace.size() == 0) // special case empty here to avoid doing it when finding sizes
             return Tensor.Builder.of(joinedType, new DimensionSizes.Builder(joinedType.dimensions().size()).build()).build();
-        
+
         DimensionSizes joinedSizes = joinedSize(joinedType, subspace, superspace);
 
         IndexedTensor.Builder builder = (IndexedTensor.Builder)Tensor.Builder.of(joinedType, joinedSizes);
@@ -134,21 +158,21 @@ public class Join extends PrimitiveTensorFunction {
         // Find dimensions which are only in the supertype
         Set<String> superDimensionNames = new HashSet<>(superspace.type().dimensionNames());
         superDimensionNames.removeAll(subspace.type().dimensionNames());
-        
+
         for (Iterator<IndexedTensor.SubspaceIterator> i = superspace.subspaceIterator(superDimensionNames, joinedSizes); i.hasNext(); ) {
             IndexedTensor.SubspaceIterator subspaceInSuper = i.next();
             joinSubspaces(subspace.valueIterator(), subspace.size(),
                           subspaceInSuper, subspaceInSuper.size(),
                           reversedArgumentOrder, builder);
         }
-        
+
         return builder.build();
     }
 
-    private void joinSubspaces(Iterator<Double> subspace, int subspaceSize,
-                               Iterator<Tensor.Cell> superspace, int superspaceSize,
+    private void joinSubspaces(Iterator<Double> subspace, long subspaceSize,
+                               Iterator<Tensor.Cell> superspace, long superspaceSize,
                                boolean reversedArgumentOrder, IndexedTensor.Builder builder) {
-        int joinedLength = Math.min(subspaceSize, superspaceSize);
+        long joinedLength = Math.min(subspaceSize, superspaceSize);
         if (reversedArgumentOrder) {
             for (int i = 0; i < joinedLength; i++) {
                 Tensor.Cell supercell = superspace.next();
@@ -200,7 +224,7 @@ public class Join extends PrimitiveTensorFunction {
             subspaceIndexes[i] = supertype.indexOfDimension(subtype.dimensions().get(i).name()).get();
         return subspaceIndexes;
     }
-    
+
     private TensorAddress mapAddressToSubspace(TensorAddress superAddress, int[] subspaceIndexes) {
         String[] subspaceLabels = new String[subspaceIndexes.length];
         for (int i = 0; i < subspaceIndexes.length; i++)
@@ -235,7 +259,7 @@ public class Join extends PrimitiveTensorFunction {
         DimensionSizes bIterateSize = joinedSizeOf(b.type(), joinedType, joinedSize);
 
         // for each combination of dimensions only in a
-        for (Iterator<IndexedTensor.SubspaceIterator> ia = a.subspaceIterator(dimensionsOnlyInA, aIterateSize); ia.hasNext(); ) { 
+        for (Iterator<IndexedTensor.SubspaceIterator> ia = a.subspaceIterator(dimensionsOnlyInA, aIterateSize); ia.hasNext(); ) {
             IndexedTensor.SubspaceIterator aSubspace = ia.next();
             // for each combination of dimensions in a which is also in b
             while (aSubspace.hasNext()) {
@@ -252,15 +276,15 @@ public class Join extends PrimitiveTensorFunction {
             }
         }
     }
-    
+
     private PartialAddress partialAddress(TensorType addressType, TensorAddress address, Set<String> retainDimensions) {
         PartialAddress.Builder builder = new PartialAddress.Builder(retainDimensions.size());
         for (int i = 0; i < addressType.dimensions().size(); i++)
             if (retainDimensions.contains(addressType.dimensions().get(i).name()))
-                builder.add(addressType.dimensions().get(i).name(), address.intLabel(i));
+                builder.add(addressType.dimensions().get(i).name(), address.numericLabel(i));
         return builder.build();
     }
-    
+
     /** Returns the sizes from the joined sizes which are present in the type argument */
     private DimensionSizes joinedSizeOf(TensorType type, TensorType joinedType, DimensionSizes joinedSizes) {
         DimensionSizes.Builder builder = new DimensionSizes.Builder(type.dimensions().size());
@@ -271,7 +295,7 @@ public class Join extends PrimitiveTensorFunction {
         }
         return builder.build();
     }
-    
+
     private Tensor mappedGeneralJoin(Tensor a, Tensor b, TensorType joinedType) {
         int[] aToIndexes = mapIndexes(a.type(), joinedType);
         int[] bToIndexes = mapIndexes(b.type(), joinedType);
@@ -340,7 +364,7 @@ public class Join extends PrimitiveTensorFunction {
     /**
      * Returns the an array having one entry in order for each dimension of fromType
      * containing the index at which toType contains the same dimension name.
-     * That is, if the returned array contains n at index i then 
+     * That is, if the returned array contains n at index i then
      * fromType.dimensions().get(i).name.equals(toType.dimensions().get(n).name())
      * If some dimension in fromType is not present in toType, the corresponding index will be -1
      */
@@ -360,7 +384,7 @@ public class Join extends PrimitiveTensorFunction {
         return TensorAddress.of(joinedLabels);
     }
 
-    /** 
+    /**
      * Maps the content in the given list to the given array, using the given index map.
      *
      * @return true if the mapping was successful, false if one of the destination positions was

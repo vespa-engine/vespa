@@ -14,12 +14,10 @@ SparseTensorUnsortedAddressBuilder::SparseTensorUnsortedAddressBuilder()
 {
 }
 
-SparseTensorUnsortedAddressBuilder::~SparseTensorUnsortedAddressBuilder() {
-}
+SparseTensorUnsortedAddressBuilder::~SparseTensorUnsortedAddressBuilder() = default;
 
 void
-SparseTensorUnsortedAddressBuilder::buildTo(SparseTensorAddressBuilder &
-                                            builder,
+SparseTensorUnsortedAddressBuilder::buildTo(SparseTensorAddressBuilder & builder,
                                             const eval::ValueType &type)
 {
     const char *base = &_elementStrings[0];
@@ -47,3 +45,4 @@ SparseTensorUnsortedAddressBuilder::buildTo(SparseTensorAddressBuilder &
 }
 
 }
+

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <vespa/metrics/valuemetric.h>
+#include "valuemetric.h"
 #include <chrono>
 
 namespace metrics {

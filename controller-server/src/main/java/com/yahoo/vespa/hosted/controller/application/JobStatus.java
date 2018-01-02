@@ -11,14 +11,14 @@ import java.util.Optional;
 /**
  * The last known build status of a particular deployment job for a particular application.
  * This is immutable.
- * 
+ *
  * @author bratseth
  * @author mpolden
  */
 public class JobStatus {
-    
+
     private final DeploymentJobs.JobType type;
-    
+
     private final Optional<JobRun> lastTriggered;
     private final Optional<JobRun> lastCompleted;
     private final Optional<JobRun> firstFailing;
@@ -42,7 +42,7 @@ public class JobStatus {
 
         this.type = type;
         this.jobError = jobError;
-        
+
         // Never say we triggered component because we don't:
         this.lastTriggered = type == DeploymentJobs.JobType.component ? Optional.empty() : lastTriggered;
         this.lastCompleted = lastCompleted;
@@ -52,7 +52,7 @@ public class JobStatus {
 
     /** Returns an empty job status */
     public static JobStatus initial(DeploymentJobs.JobType type) {
-        return new JobStatus(type, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty()); 
+        return new JobStatus(type, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     public JobStatus withTriggering(Version version, Optional<ApplicationRevision> revision,
@@ -89,13 +89,13 @@ public class JobStatus {
         Optional<JobRun> firstFailing = this.firstFailing;
         if (jobError.isPresent() &&  ! this.firstFailing.isPresent())
             firstFailing = Optional.of(thisCompletion);
-            
+
         Optional<JobRun> lastSuccess = this.lastSuccess;
         if ( ! jobError.isPresent()) {
             lastSuccess = Optional.of(thisCompletion);
             firstFailing = Optional.empty();
         }
-        
+
         return new JobStatus(type, jobError, lastTriggered, Optional.of(thisCompletion), firstFailing, lastSuccess);
     }
 
@@ -105,13 +105,18 @@ public class JobStatus {
     public boolean isSuccess() {
         return lastCompleted().isPresent() && ! jobError.isPresent();
     }
-    
+
     /** Returns true if last triggered is newer than last completed and was started after timeoutLimit */
     public boolean isRunning(Instant timeoutLimit) {
         if ( ! lastTriggered.isPresent()) return false;
         if (lastTriggered.get().at().isBefore(timeoutLimit)) return false;
         if ( ! lastCompleted.isPresent()) return true;
         return ! lastTriggered.get().at().isBefore(lastCompleted.get().at());
+    }
+
+    /** Returns true if this is running and has been so since before the given limit */
+    public boolean isHanging(Instant timeoutLimit) {
+        return isRunning(Instant.MIN) && lastTriggered.get().at().isBefore(timeoutLimit.plusMillis(1));
     }
 
     /** The error of the last completion, or empty if the last run succeeded */
@@ -140,10 +145,10 @@ public class JobStatus {
                ", first failing: " + firstFailing.map(JobRun::toString).orElse("(not failing)") +
                ", lastSuccess: " + lastSuccess.map(JobRun::toString).orElse("(never)") + "]";
     }
-    
+
     @Override
     public int hashCode() { return Objects.hash(type, jobError, lastTriggered, lastCompleted, firstFailing, lastSuccess); }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
@@ -159,15 +164,15 @@ public class JobStatus {
 
     /** Information about a particular triggering or completion of a run of a job. This is immutable. */
     public static class JobRun {
-        
+
         private final long id;
         private final Version version;
         private final Optional<ApplicationRevision> revision;
         private final boolean upgrade;
         private final String reason;
         private final Instant at;
-        
-        public JobRun(long id, Version version, Optional<ApplicationRevision> revision, 
+
+        public JobRun(long id, Version version, Optional<ApplicationRevision> revision,
                       boolean upgrade, String reason, Instant at) {
             Objects.requireNonNull(version, "version cannot be null");
             Objects.requireNonNull(revision, "revision cannot be null");
@@ -188,16 +193,16 @@ public class JobStatus {
         // TODO: Fix how this is set, and add an applicationChange() method as well, in the same vein.
         /** Returns whether this job run was a Vespa upgrade */
         public boolean upgrade() { return upgrade; }
-        
+
         /** Returns the Vespa version used on this run */
         public Version version() { return version; }
-        
+
         /** Returns the application revision used for this run, or empty when not known */
         public Optional<ApplicationRevision> revision() { return revision; }
-        
+
         /** Returns a human-readable reason for this particular job run */
         public String reason() { return reason; }
-        
+
         /** Returns the time if this triggering or completion */
         public Instant at() { return at; }
 
@@ -218,7 +223,7 @@ public class JobStatus {
         public int hashCode() {
             return Objects.hash(version, revision, upgrade, at);
         }
-        
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -234,7 +239,7 @@ public class JobStatus {
         @Override
         public String toString() { return "job run " + id + " of version " + (upgrade() ? "upgrade " : "") + version + " "
                                           + revision + " at " + at; }
-        
+
     }
 
 }

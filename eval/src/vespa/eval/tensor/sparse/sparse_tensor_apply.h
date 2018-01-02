@@ -2,11 +2,12 @@
 
 #pragma once
 
-namespace vespalib {
-namespace tensor {
-class Tensor;
-class SparseTensor;
-namespace sparse {
+namespace vespalib::tensor {
+    class Tensor;
+    class SparseTensor;
+}
+
+namespace vespalib::tensor::sparse {
 
 /**
  * Create new tensor using all combinations of input tensor cells with matching
@@ -17,7 +18,5 @@ template <typename Function>
 std::unique_ptr<Tensor>
 apply(const SparseTensor &lhs, const SparseTensor &rhs, Function &&func);
 
+}
 
-} // namespace vespalib::tensor::sparse
-} // namespace vespalib::tensor
-} // namespace vespalib

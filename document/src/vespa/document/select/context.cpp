@@ -38,10 +38,14 @@ Context::~Context() { }
 
 std::unique_ptr<Value>
 Context::getValue(const vespalib::string & value) const {
-    VariableMap::const_iterator iter = _variables->find(value);
+    if (_variables) {
+        VariableMap::const_iterator iter = _variables->find(value);
 
-    if (iter != _variables->end()) {
-        return std::make_unique<FloatValue>(iter->second);
+        if (iter != _variables->end()) {
+            return std::make_unique<FloatValue>(iter->second);
+        } else {
+            return std::make_unique<FloatValue>(0.0);
+        }
     } else {
         return std::make_unique<FloatValue>(0.0);
     }

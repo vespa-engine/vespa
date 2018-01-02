@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.google.inject.Inject;
+
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -37,11 +39,11 @@ public class ApplicationHandler extends HttpHandler {
     private final Zone zone;
     private final ApplicationRepository applicationRepository;
 
-    public ApplicationHandler(Executor executor,
-                              AccessLog accessLog,
+    @Inject
+    public ApplicationHandler(HttpHandler.Context ctx,
                               Zone zone,
                               ApplicationRepository applicationRepository) {
-        super(executor, accessLog);
+        super(ctx);
         this.zone = zone;
         this.applicationRepository = applicationRepository;
     }

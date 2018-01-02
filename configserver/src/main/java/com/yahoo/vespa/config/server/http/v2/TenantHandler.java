@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import java.util.List;
 import java.util.concurrent.Executor;
+import com.google.inject.Inject;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -29,8 +30,10 @@ public class TenantHandler extends HttpHandler {
     private static final String TENANT_NAME_REGEXP = "[\\w-]+";
     private final Tenants tenants;
 
-    public TenantHandler(Executor executor, AccessLog accessLog, Tenants tenants) {
-        super(executor, accessLog);
+    @Inject
+    public TenantHandler(HttpHandler.Context ctx,
+                         Tenants tenants) {
+        super(ctx);
         this.tenants = tenants;
     }
 

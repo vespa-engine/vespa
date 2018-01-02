@@ -27,9 +27,9 @@ public class MappedTensor implements Tensor {
 
     @Override
     public TensorType type() { return type; }
-    
+
     @Override
-    public int size() { return cells.size(); }
+    public long size() { return cells.size(); }
 
     @Override
     public double get(TensorAddress address) { return cells.getOrDefault(address, Double.NaN); }
@@ -56,16 +56,16 @@ public class MappedTensor implements Tensor {
     }
 
     public static class Builder implements Tensor.Builder {
-    
+
         private final TensorType type;
         private final ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
-    
+
         public static Builder of(TensorType type) { return new Builder(type); }
 
         private Builder(TensorType type) {
             this.type = type;
         }
-        
+
         public CellBuilder cell() {
             return new CellBuilder(type, this);
         }
@@ -80,7 +80,7 @@ public class MappedTensor implements Tensor {
         }
 
         @Override
-        public Builder cell(double value, int... labels) {
+        public Builder cell(double value, long... labels) {
             cells.put(TensorAddress.of(labels), value);
             return this;
         }
@@ -89,24 +89,24 @@ public class MappedTensor implements Tensor {
         public MappedTensor build() {
             return new MappedTensor(type, cells.build());
         }
-    
+
     }
 
     private static class CellIteratorAdaptor implements Iterator<Cell> {
 
         private final Iterator<Map.Entry<TensorAddress, Double>> adaptedIterator;
-        
+
         private CellIteratorAdaptor(Iterator<Map.Entry<TensorAddress, Double>> adaptedIterator) {
             this.adaptedIterator = adaptedIterator;
         }
-        
+
         @Override
         public boolean hasNext() { return adaptedIterator.hasNext(); }
 
         @Override
         public Cell next() {
             Map.Entry<TensorAddress, Double> entry = adaptedIterator.next();
-            return new Cell(entry.getKey(), entry.getValue()); 
+            return new Cell(entry.getKey(), entry.getValue());
         }
 
     }

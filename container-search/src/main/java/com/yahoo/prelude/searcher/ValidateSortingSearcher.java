@@ -25,7 +25,7 @@ import static com.yahoo.prelude.querytransform.NormalizingSearcher.ACCENT_REMOVA
  * Check sorting specification makes sense to the search cluster before
  * passing it on to the backend.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @Before(PhaseNames.BACKEND)
 @After(ACCENT_REMOVAL)
@@ -118,6 +118,7 @@ public class ValidateSortingSearcher extends Searcher {
         for (Sorting.FieldOrder f : l) {
             String name = f.getFieldName();
             if ("[rank]".equals(name) || "[docid]".equals(name)) {
+                // built-in constants - ok
             } else if (names.containsKey(name)) {
                 AttributesConfig.Attribute attrConfig = names.get(name);
                 if (attrConfig != null) {
@@ -166,18 +167,13 @@ public class ValidateSortingSearcher extends Searcher {
                             locale = "en_US";
                         }
 
-                        // getLogger().info("locale = " + locale + " attrConfig.sortlocale.value() = " + attrConfig.sortlocale.value() + " query.getLanguage() = " + query.getModel().getLanguage());
-                        // getLogger().info("locale = " + locale);
-
                         Sorting.UcaSorter.Strength strength = sorter.getStrength();
                         if (sorter.getStrength() == Sorting.UcaSorter.Strength.UNDEFINED) {
                             strength = config2Strength(attrConfig.sortstrength());
                         }
                         if ((sorter.getStrength() == Sorting.UcaSorter.Strength.UNDEFINED) || (sorter.getLocale() == null) || sorter.getLocale().isEmpty()) {
-                            // getLogger().info("locale = " + locale + " strength = " + strength.toString());
                             sorter.setLocale(locale, strength);
                         }
-                        //getLogger().info("locale = " + locale + " strength = " + strength.toString() + "decompose = " + sorter.getDecomposition());
                     }
                 } else {
                     return ErrorMessage.createInvalidQueryParameter("The cluster " + getClusterName() + " has attribute config for field: " + name);

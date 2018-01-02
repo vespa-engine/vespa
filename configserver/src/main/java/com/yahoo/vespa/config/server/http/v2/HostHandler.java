@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -28,8 +29,10 @@ public class HostHandler extends HttpHandler {
     final HostRegistries hostRegistries;
     private final Zone zone;
 
-    public HostHandler(Executor executor, AccessLog accessLog, GlobalComponentRegistry globalComponentRegistry) {
-        super(executor, accessLog);
+    @Inject
+    public HostHandler(HttpHandler.Context ctx,
+                       GlobalComponentRegistry globalComponentRegistry) {
+        super(ctx);
         this.hostRegistries = globalComponentRegistry.getHostRegistries();
         this.zone = globalComponentRegistry.getZone();
     }

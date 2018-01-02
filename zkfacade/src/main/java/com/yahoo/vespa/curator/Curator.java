@@ -3,6 +3,7 @@ package com.yahoo.vespa.curator;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.zookeeper.ZooKeeperServer;
@@ -21,7 +22,6 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 
-import java.io.Closeable;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -68,16 +68,26 @@ public class Curator implements AutoCloseable {
         this(createConnectionSpec(configserverConfig));
     }
     
-    private static String createConnectionSpec(ConfigserverConfig config) {
+    static String createConnectionSpec(ConfigserverConfig config) {
+        String thisServer = HostName.getLocalhost();
+
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < config.zookeeperserver().size(); i++) {
             ConfigserverConfig.Zookeeperserver server = config.zookeeperserver(i);
-            sb.append(server.hostname());
-            sb.append(":");
-            sb.append(server.port());
-            if (i < config.zookeeperserver().size() - 1) {
-                sb.append(",");
+
+            String spec = String.format("%s:%d", server.hostname(), server.port());
+
+            if (config.zookeeperLocalhostAffinity() && server.hostname().equals(thisServer)) {
+                // Only connect to localhost server if possible, to save network traffic
+                // and balance load.
+                return spec;
             }
+
+            if (sb.length() > 0) {
+                sb.append(',');
+            }
+
+            sb.append(spec);
         }
         return sb.toString();
     }

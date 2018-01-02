@@ -6,9 +6,7 @@
 #include "dense_tensor_address_combiner.h"
 #include "direct_dense_tensor_builder.h"
 
-namespace vespalib {
-namespace tensor {
-namespace dense {
+namespace vespalib::tensor::dense {
 
 template <typename Function>
 std::unique_ptr<Tensor>
@@ -42,6 +40,4 @@ apply(const DenseTensorView &lhs, const Tensor &rhs, Function &&func)
     return Tensor::UP();
 }
 
-} // namespace vespalib::tensor::dense
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

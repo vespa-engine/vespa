@@ -16,15 +16,16 @@ class BucketSpace {
 public:
     using Type = uint64_t;
 
-    BucketSpace(const BucketSpace&) noexcept = default;
-    BucketSpace& operator=(const BucketSpace&) noexcept = default;
-    explicit BucketSpace(Type id) noexcept : _id(id) {}
+    constexpr BucketSpace(const BucketSpace&) noexcept = default;
+    constexpr BucketSpace& operator=(const BucketSpace&) noexcept = default;
+    constexpr explicit BucketSpace(Type id) noexcept : _id(id) {}
 
-    bool operator <(const BucketSpace& bucket) const noexcept { return _id < bucket._id; }
-    bool operator==(const BucketSpace& bucket) const noexcept { return _id == bucket._id; }
-    bool operator!=(const BucketSpace& bucket) const noexcept { return _id != bucket._id; }
+    constexpr bool operator <(const BucketSpace& bucket) const noexcept { return _id < bucket._id; }
+    constexpr bool operator==(const BucketSpace& bucket) const noexcept { return _id == bucket._id; }
+    constexpr bool operator!=(const BucketSpace& bucket) const noexcept { return _id != bucket._id; }
 
-    Type getId() const noexcept { return _id; }
+    constexpr Type getId() const noexcept { return _id; }
+    constexpr bool valid() const noexcept { return (_id != 0); }
     vespalib::string toString() const;
 
     struct hash {
@@ -36,7 +37,8 @@ public:
     /*
      * Temporary placeholder value while wiring in use of BucketSpace in APIs.
      */
-    static BucketSpace placeHolder() { return BucketSpace(0); }
+    static constexpr BucketSpace placeHolder() noexcept { return BucketSpace(1); }
+    static constexpr BucketSpace invalid() noexcept { return BucketSpace(0); }
 private:
     Type _id;
 };

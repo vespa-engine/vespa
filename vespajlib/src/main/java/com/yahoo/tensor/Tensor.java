@@ -52,14 +52,14 @@ import java.util.function.Function;
 public interface Tensor {
 
     // ----------------- Accessors
-    
+
     TensorType type();
 
     /** Returns whether this have any cells */
     default boolean isEmpty() { return size() == 0; }
 
     /** Returns the number of cells in this */
-    int size();
+    long size();
 
     /** Returns the value of a cell, or NaN if this cell does not exist/have no value */
     double get(TensorAddress address);
@@ -70,13 +70,13 @@ public interface Tensor {
     /** Returns the values of this in some undefined order */
     Iterator<Double> valueIterator();
 
-    /** 
+    /**
      * Returns an immutable map of the cells of this in no particular order.
-     * This may be expensive for some implementations - avoid when possible 
+     * This may be expensive for some implementations - avoid when possible
      */
     Map<TensorAddress, Double> cells();
 
-    /** 
+    /**
      * Returns the value of this as a double if it has no dimensions and one value
      *
      * @throws IllegalStateException if this does not have zero dimensions and one value
@@ -87,9 +87,9 @@ public interface Tensor {
         if (size() == 0) return Double.NaN;
         return valueIterator().next();
     }
-    
+
     // ----------------- Primitive tensor functions
-    
+
     default Tensor map(DoubleUnaryOperator mapper) {
         return new com.yahoo.tensor.functions.Map(new ConstantTensor(this), mapper).evaluate();
     }
@@ -108,7 +108,7 @@ public interface Tensor {
     }
 
     default Tensor rename(String fromDimension, String toDimension) {
-        return new Rename(new ConstantTensor(this), Collections.singletonList(fromDimension), 
+        return new Rename(new ConstantTensor(this), Collections.singletonList(fromDimension),
                                                     Collections.singletonList(toDimension)).evaluate();
     }
 
@@ -123,13 +123,13 @@ public interface Tensor {
     default Tensor rename(List<String> fromDimensions, List<String> toDimensions) {
         return new Rename(new ConstantTensor(this), fromDimensions, toDimensions).evaluate();
     }
-    
-    static Tensor generate(TensorType type, Function<List<Integer>, Double> valueSupplier) {
+
+    static Tensor generate(TensorType type, Function<List<Long>, Double> valueSupplier) {
         return new Generate(type, valueSupplier).evaluate();
     }
-    
+
     // ----------------- Composite tensor functions which have a defined primitive mapping
-    
+
     default Tensor l1Normalize(String dimension) {
         return new L1Normalize(new ConstantTensor(this), dimension).evaluate();
     }
@@ -231,7 +231,7 @@ public interface Tensor {
             if (cellEntries.isEmpty()) return "{}";
             return "{" + cellEntries.get(0).getValue() +"}";
         }
-        
+
         Collections.sort(cellEntries, java.util.Map.Entry.<TensorAddress, Double>comparingByKey());
 
         StringBuilder b = new StringBuilder("{");
@@ -253,7 +253,7 @@ public interface Tensor {
      */
     boolean equals(Object o);
 
-    /** 
+    /**
      * Implement here to make this work across implementations.
      * Implementations must override equals and call this because this is an interface and cannot override equals.
      */
@@ -328,13 +328,13 @@ public interface Tensor {
         @Override
         public TensorAddress getKey() { return address; }
 
-        /** 
+        /**
          * Returns the direct index which can be used to locate this cell, or -1 if not available.
          * This is for optimizations mapping between tensors where this is possible without creating a
          * TensorAddress.
          */
-        int getDirectIndex() { return -1; }
-        
+        long getDirectIndex() { return -1; }
+
         @Override
         public Double getValue() { return value; }
 
@@ -388,20 +388,20 @@ public interface Tensor {
 
         /** Returns the type this is building */
         TensorType type();
-        
+
         /** Return a cell builder */
         CellBuilder cell();
 
         /** Add a cell */
         Builder cell(TensorAddress address, double value);
-        
-        /** Add a cell */
-        Builder cell(double value, int ... labels);
 
-        /** 
-         * Add a cell 
-         * 
-         * @param cell a cell providing the location at which to add this cell 
+        /** Add a cell */
+        Builder cell(double value, long ... labels);
+
+        /**
+         * Add a cell
+         *
+         * @param cell a cell providing the location at which to add this cell
          * @param value the value to assign to the cell
          */
         default Builder cell(Cell cell, double value) {
@@ -409,12 +409,12 @@ public interface Tensor {
         }
 
         Tensor build();
-        
+
         class CellBuilder {
 
             private final TensorAddress.Builder addressBuilder;
             private final Tensor.Builder tensorBuilder;
-            
+
             CellBuilder(TensorType type, Tensor.Builder tensorBuilder) {
                 addressBuilder = new TensorAddress.Builder(type);
                 this.tensorBuilder = tensorBuilder;
@@ -425,7 +425,7 @@ public interface Tensor {
                 return this;
             }
 
-            public CellBuilder label(String dimension, int label) {
+            public CellBuilder label(String dimension, long label) {
                 return label(dimension, String.valueOf(label));
             }
 
@@ -436,5 +436,5 @@ public interface Tensor {
         }
 
     }
-    
+
 }

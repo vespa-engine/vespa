@@ -46,9 +46,9 @@ public class TypedBinaryFormat {
         return result;
     }
 
-    /** 
-     * Decode some data to a tensor 
-     * 
+    /**
+     * Decode some data to a tensor
+     *
      * @param type the type to decode and validate to, or empty to use the type given in the data
      * @param buffer the buffer containing the data, use GrowableByteByffer.wrap(byte[]) if you have a byte array
      * @return the resulting tensor

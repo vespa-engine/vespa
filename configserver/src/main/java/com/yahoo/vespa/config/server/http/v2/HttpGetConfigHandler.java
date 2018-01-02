@@ -27,8 +27,10 @@ public class HttpGetConfigHandler extends HttpHandler {
     private final Tenants tenants;
 
     @Inject
-    public HttpGetConfigHandler(Executor executor, AccessLog accesslog, Tenants tenants) {
-        super(executor, accesslog);
+    public HttpGetConfigHandler(HttpHandler.Context ctx,
+                                Tenants tenants)
+    {
+        super(ctx);
         this.tenants = tenants;
     }
     

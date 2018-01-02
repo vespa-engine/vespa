@@ -20,7 +20,7 @@ class KeySet {
 public:
     KeySet() : _keys() { }
     KeySet(uint32_t key);
-    KeySet(const IDocumentStore::LidVector &keys);
+    explicit KeySet(const IDocumentStore::LidVector &keys);
     uint32_t hash() const { return _keys.empty() ? 0 : _keys[0]; }
     bool operator==(const KeySet &rhs) const { return _keys == rhs._keys; }
     bool operator<(const KeySet &rhs) const { return _keys < rhs._keys; }

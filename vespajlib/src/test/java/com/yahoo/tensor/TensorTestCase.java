@@ -4,7 +4,6 @@ package com.yahoo.tensor;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.evaluation.MapEvaluationContext;
 import com.yahoo.tensor.evaluation.VariableTensor;
-import com.yahoo.tensor.functions.Argmax;
 import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.Reduce;
@@ -12,20 +11,18 @@ import com.yahoo.tensor.functions.TensorFunction;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
 import static com.yahoo.tensor.TensorType.Dimension.Type;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
  * Tests tensor functionality
- * 
+ *
  * @author bratseth
  */
 public class TensorTestCase {
@@ -99,7 +96,7 @@ public class TensorTestCase {
                                                                                                ImmutableList.of("y", "x")));
         assertEquals(Tensor.from("{ {x:0,y:0}:0, {x:0,y:1}:0, {x:1,y:0}:0, {x:1,y:1}:1, {x:2,y:0}:0, {x:2,y:1}:2, }"),
                      Tensor.generate(new TensorType.Builder().indexed("x", 3).indexed("y", 2).build(),
-                                     (List<Integer> indexes) -> (double)indexes.get(0)*indexes.get(1)));
+                                     (List<Long> indexes) -> (double)indexes.get(0)*indexes.get(1)));
         assertEquals(Tensor.from("{ {x:0,y:0,z:0}:0, {x:0,y:1,z:0}:1, {x:1,y:0,z:0}:1, {x:1,y:1,z:0}:2, {x:2,y:0,z:0}:2, {x:2,y:1,z:0}:3, "+
                                  "  {x:0,y:0,z:1}:1, {x:0,y:1,z:1}:2, {x:1,y:0,z:1}:2, {x:1,y:1,z:1}:3, {x:2,y:0,z:1}:3, {x:2,y:1,z:1}:4 }"),
                      Tensor.range(new TensorType.Builder().indexed("x", 3).indexed("y", 2).indexed("z", 2).build()));
@@ -108,7 +105,7 @@ public class TensorTestCase {
                      Tensor.diag(new TensorType.Builder().indexed("x", 3).indexed("y", 2).indexed("z", 2).build()));
         assertEquals(Tensor.from("{ {x:1}:0, {x:3}:1, {x:9}:0 }"), Tensor.from("{ {x:1}:1, {x:3}:5, {x:9}:3 }").argmax("x"));
     }
-    
+
     /** Test the same computation made in various ways which are implemented with special-case optimizations */
     @Test
     public void testOptimizedComputation() {
@@ -130,7 +127,7 @@ public class TensorTestCase {
         assertEquals("Mixed vector",           42, (int)dotProduct(vector(Type.indexedUnbound), vectors(Type.mapped, 2)));
         assertEquals("Mixed matrix",           42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.mapped, 2)));
         assertEquals("Mixed matrix",           42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.mapped, 2)));
-        
+
         // Test the unoptimized path by joining in another dimension
         Tensor unitJ = Tensor.Builder.of(new TensorType.Builder().mapped("j").build()).cell().label("j", 0).value(1).build();
         Tensor unitK = Tensor.Builder.of(new TensorType.Builder().mapped("k").build()).cell().label("k", 0).value(1).build();
@@ -138,7 +135,7 @@ public class TensorTestCase {
         Tensor matrixInKSpace = matrix(Type.mapped, 2).get(0).multiply(unitK);
         assertEquals("Generic computation implementation", 42, (int)dotProduct(vectorInJSpace, Collections.singletonList(matrixInKSpace)));
     }
-    
+
     private double dotProduct(Tensor tensor, List<Tensor> tensors) {
         double sum = 0;
         TensorFunction dotProductFunction = new Reduce(new Join(new ConstantTensor(tensor),
@@ -161,7 +158,7 @@ public class TensorTestCase {
     private Tensor vector(int vectorSize, TensorType.Dimension.Type dimensionType) {
         return vectors(vectorSize, dimensionType, 1).get(0);
     }
-    
+
     /** Create a list of vectors having a single dimension x */
     private List<Tensor> vectors(TensorType.Dimension.Type dimensionType, int vectorCount) {
         return vectors(3, dimensionType, vectorCount);
@@ -179,8 +176,8 @@ public class TensorTestCase {
         }
         return tensors;
     }
-    
-    /** 
+
+    /**
      * Create a matrix of vectors (in dimension i) where each vector has the dimension x.
      * This matrix contains the same vectors as returned by createVectors, in a single list element for convenience.
      */

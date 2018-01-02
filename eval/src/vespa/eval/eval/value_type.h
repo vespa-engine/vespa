@@ -6,8 +6,7 @@
 #include <vector>
 #include <memory>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 /**
  * The type of a Value. This is used for type-resolution during
@@ -19,12 +18,13 @@ class ValueType
 public:
     enum class Type { ANY, ERROR, DOUBLE, TENSOR };
     struct Dimension {
-        static constexpr size_t npos = -1;
+        using size_type = uint32_t;
+        static constexpr size_type npos = -1;
         vespalib::string name;
-        size_t size;
+        size_type size;
         Dimension(const vespalib::string &name_in)
             : name(name_in), size(npos) {}
-        Dimension(const vespalib::string &name_in, size_t size_in)
+        Dimension(const vespalib::string &name_in, size_type size_in)
             : name(name_in), size(size_in) {}
         bool operator==(const Dimension &rhs) const {
             return ((name == rhs.name) && (size == rhs.size));
@@ -91,5 +91,4 @@ public:
 
 std::ostream &operator<<(std::ostream &os, const ValueType &type);
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

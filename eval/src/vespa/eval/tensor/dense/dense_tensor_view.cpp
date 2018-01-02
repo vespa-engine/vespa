@@ -13,8 +13,7 @@
 
 using vespalib::eval::TensorSpec;
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 namespace {
 
@@ -228,7 +227,7 @@ DenseTensorView::accept(TensorVisitor &visitor) const
         addressBuilder.clear();
         auto rawIndex = iterator.address().begin();
         for (const auto &dimension : _typeRef.dimensions()) {
-            label = vespalib::make_string("%zu", *rawIndex);
+            label = vespalib::make_string("%u", *rawIndex);
             addressBuilder.add(dimension.name, label);
             ++rawIndex;
         }
@@ -264,5 +263,4 @@ DenseTensorView::reduce(join_fun_t op,
                          op);
 }
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

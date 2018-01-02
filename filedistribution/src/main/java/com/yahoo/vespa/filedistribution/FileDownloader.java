@@ -107,7 +107,7 @@ public class FileDownloader {
             } else if (!file.canRead()) {
                 throw new RuntimeException("File with reference '" + fileReference.value() + "'exists, but unable to read it");
             } else {
-                fileReferenceDownloader.setDownloadStatus(fileReference.value(), 100.0);
+                fileReferenceDownloader.setDownloadStatus(fileReference, 100.0);
                 return Optional.of(file);
             }
         }

@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.zookeeper;
+package com.yahoo.vespa.curator;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.vespa.curator.Curator;
+import com.yahoo.net.HostName;
 import org.apache.curator.test.TestingServer;
 import org.junit.After;
 import org.junit.Before;
@@ -11,7 +11,6 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -72,6 +71,23 @@ public class CuratorTest {
         try (Curator curator = createCurator(new ConfigserverConfig(builder))) {
             assertThat(curator.serverCount(), is(1));
         }
+    }
+
+    @Test
+    public void localhost_affinity() {
+        String localhostHostName = "myhost";
+        int localhostPort = 123;
+        String localhostSpec = localhostHostName + ":" + localhostPort;
+
+        ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
+        builder.zookeeperserver(createZKBuilder(localhostHostName, localhostPort));
+        builder.zookeeperserver(createZKBuilder("otherhost", 345));
+        builder.zookeeperLocalhostAffinity(true);
+        ConfigserverConfig config = new ConfigserverConfig(builder);
+
+        HostName.setHostNameForTestingOnly(localhostHostName);
+
+        assertThat(Curator.createConnectionSpec(config), is(localhostSpec));
     }
 
     private ConfigserverConfig createTestConfig() {

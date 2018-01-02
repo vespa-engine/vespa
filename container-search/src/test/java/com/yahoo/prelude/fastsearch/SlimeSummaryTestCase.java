@@ -102,7 +102,7 @@ public class SlimeSummaryTestCase {
     public void testDecoding() {
         Tensor tensor1 = Tensor.from("tensor(x{},y{}):{{x:foo,y:bar}:0.1}");
         Tensor tensor2 = Tensor.from("tensor(x[],y[1]):{{x:0,y:0}:-0.3}");
-                
+
         String summary_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/summary.cfg";
         DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
         byte[] docsum = makeDocsum(tensor1, tensor2);

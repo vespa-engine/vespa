@@ -2,8 +2,7 @@
 
 #pragma once
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * Forward declaration of utility class to build tensor of type TensorT,
@@ -11,5 +10,4 @@ namespace tensor {
  */
 template <typename TensorT> class DirectTensorBuilder;
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

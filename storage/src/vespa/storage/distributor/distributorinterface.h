@@ -1,32 +1,28 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/common/distributorcomponent.h>
-#include <vespa/storage/common/messagesender.h>
-#include <vespa/storage/distributor/pendingmessagetracker.h>
-#include <vespa/storageapi/message/state.h>
+#include "bucketgctimecalculator.h"
+#include "distributormessagesender.h"
+#include "bucketownership.h"
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/storage/distributor/bucketgctimecalculator.h>
-#include <vespa/storage/distributor/distributormetricsset.h>
-#include <vespa/storage/config/distributorconfiguration.h>
-#include <vespa/storage/distributor/distributormessagesender.h>
-#include <vespa/storage/distributor/bucketownership.h>
+#include <vespa/document/bucket/bucket.h>
 
+namespace storage::api { class MergeBucketReply; }
 namespace storage {
+   class DistributorConfiguration;
+   class DistributorMetricSet;
+}
+namespace storage::distributor {
 
-namespace distributor {
+class PendingMessageTracker;
 
 class DistributorInterface : public DistributorMessageSender
 {
 public:
     virtual PendingMessageTracker& getPendingMessageTracker() = 0;
-
     virtual DistributorMetricSet& getMetrics() = 0;
-
     virtual void enableClusterState(const lib::ClusterState& state) = 0;
-
     virtual BucketOwnership checkOwnershipInPendingState(const document::Bucket &bucket) const = 0;
-
     virtual void notifyDistributionChangeEnabled() = 0;
 
     /**
@@ -55,19 +51,11 @@ public:
      * Returns true if the node is currently initializing.
      */
     virtual bool initializing() const = 0;
-
     virtual void handleCompletedMerge(const std::shared_ptr<api::MergeBucketReply>&) = 0;
-
     virtual const char* getStorageNodeUpStates() const = 0;
-    
     virtual const DistributorConfiguration& getConfig() const = 0;
-
     virtual ChainedMessageSender& getMessageSender() = 0;
-
     virtual const BucketGcTimeCalculator::BucketIdHasher& getBucketIdHasher() const = 0;
 };
 
 }
-
-}
-

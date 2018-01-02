@@ -12,19 +12,19 @@ import java.util.stream.Stream;
 /**
  * A tensor generator which returns a tensor of any dimension filled with the sum of the tensor
  * indexes of each position.
- * 
+ *
  * @author bratseth
  */
 public class Range extends CompositeTensorFunction {
 
     private final TensorType type;
-    private final Function<List<Integer>, Double> rangeFunction;
-    
+    private final Function<List<Long>, Double> rangeFunction;
+
     public Range(TensorType type) {
         this.type = type;
         this.rangeFunction = ScalarFunctions.sum(dimensionNames().collect(Collectors.toList()));
     }
-    
+
     @Override
     public List<TensorFunction> functionArguments() { return Collections.emptyList(); }
 
@@ -44,7 +44,7 @@ public class Range extends CompositeTensorFunction {
     public String toString(ToStringContext context) {
         return "range(" + dimensionNames().collect(Collectors.joining(",")) + ")" + rangeFunction;
     }
-    
+
     private Stream<String> dimensionNames() {
         return type.dimensions().stream().map(TensorType.Dimension::toString);
     }

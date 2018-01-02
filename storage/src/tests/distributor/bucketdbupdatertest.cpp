@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
+#include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/pending_bucket_space_db_transition.h>
 #include <vespa/storage/distributor/outdated_nodes_map.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -22,8 +23,7 @@ using namespace storage::lib;
 using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class BucketDBUpdaterTest : public CppUnit::TestFixture,
                             public DistributorTestUtil
@@ -2499,5 +2499,4 @@ void BucketDBUpdaterTest::batch_update_from_distributor_change_does_not_mark_div
                     "0:5/1/2/3|1:5/7/8/9", true));
 }
 
-} // distributor
-} // storage
+}

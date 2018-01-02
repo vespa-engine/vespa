@@ -4,8 +4,7 @@
 
 #include <functional>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * Interface for a function to be applied on cells in a tensor.
@@ -17,5 +16,4 @@ struct CellFunction
     virtual double apply(double value) const = 0;
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

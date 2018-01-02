@@ -3,12 +3,11 @@
 #pragma once
 
 #include "sparse_tensor_address_builder.h"
-#include <vespa/eval/tensor/types.h>
 
-namespace vespalib {
-namespace eval { class ValueType; }
-namespace tensor {
-namespace sparse {
+#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
+
+namespace vespalib::eval { class ValueType; }
+namespace vespalib::tensor::sparse {
 
 /**
  * Combine two tensor addresses to a new tensor address.  Common dimensions
@@ -16,25 +15,17 @@ namespace sparse {
  */
 class TensorAddressCombiner : public SparseTensorAddressBuilder
 {
-    enum class AddressOp
-    {
-        LHS,
-        RHS,
-        BOTH
-    };
+    enum class AddressOp { LHS, RHS, BOTH };
 
     std::vector<AddressOp> _ops;
-
 public:
-    TensorAddressCombiner(const eval::ValueType &lhs,
-                          const eval::ValueType &rhs);
-
+    TensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs);
     ~TensorAddressCombiner();
 
-    bool combine(SparseTensorAddressRef lhsRef, SparseTensorAddressRef rhsRef);
+    VESPA_DLL_LOCAL bool combine(SparseTensorAddressRef lhsRef, SparseTensorAddressRef rhsRef);
+    size_t numOverlappingDimensions() const;
+    size_t numDimensions() const { return _ops.size(); }
 };
 
+}
 
-} // namespace vespalib::tensor::sparse
-} // namespace vespalib::tensor
-} // namespace vespalib

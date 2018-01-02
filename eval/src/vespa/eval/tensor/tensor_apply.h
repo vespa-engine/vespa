@@ -5,8 +5,7 @@
 #include "cell_function.h"
 #include "tensor_operation.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * Returns a tensor with the given function applied to all cells in the input tensor.
@@ -23,5 +22,4 @@ public:
 
 extern template class TensorApply<SparseTensor>;
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

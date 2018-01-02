@@ -141,19 +141,18 @@ public:
         typedef Value* pointer;
         typedef std::forward_iterator_tag iterator_category;
 
-        iterator(hashtable * hash, next_t start) : _hash(start), _subNode(start), _hashTable(hash) {
-            advanceToNextValidHash();
-        }
-        iterator(hashtable * hash, next_t start, next_t subNode) : _hash(start), _subNode(subNode), _hashTable(hash) { }
-        Value & operator * ()  const { return _hashTable->get(_subNode); }
-        Value * operator -> () const { return & _hashTable->get(_subNode); }
-        iterator & operator ++ () {
-            if (_hashTable->_nodes[_subNode].hasNext()) {
-                _subNode = _hashTable->_nodes[_subNode].getNext();
-            } else {
-                _hash++;
+        iterator(hashtable * hash) : _current(0), _hashTable(hash) {
+            if ((_current < _hashTable->initializedSize()) && ! _hashTable->_nodes[_current].valid()) {
                 advanceToNextValidHash();
             }
+        }
+        iterator(hashtable * hash, next_t pos) : _current(pos), _hashTable(hash) { }
+        static iterator end(hashtable *hash) { return iterator(hash, Node::npos); }
+
+        Value & operator * ()  const { return _hashTable->get(_current); }
+        Value * operator -> () const { return & _hashTable->get(_current); }
+        iterator & operator ++ () {
+            advanceToNextValidHash();
             return *this;
         }
         iterator operator ++ (int) {
@@ -161,19 +160,19 @@ public:
             ++(*this);
             return prev;
         }
-        bool operator==(const iterator& rhs) const { return (_subNode == rhs._subNode); }
-        bool operator!=(const iterator& rhs) const { return (_subNode != rhs._subNode); }
+        bool operator==(const iterator& rhs) const { return (_current == rhs._current); }
+        bool operator!=(const iterator& rhs) const { return (_current != rhs._current); }
         /// Carefull about this one. Only used by lrucache.
-        next_t getInternalIndex() const  { return _subNode; }
-        void setInternalIndex(next_t n)  { _subNode = n; }
-        next_t getHash() const { return _hash; }
+        next_t getInternalIndex() const  { return _current; }
+        void setInternalIndex(next_t n)  { _current = n; }
     private:
         void advanceToNextValidHash() {
-            for (;(_hash < _hashTable->getTableSize()) && ! _hashTable->_nodes[_hash].valid(); _hash++) { }
-            _subNode = (_hash < _hashTable->getTableSize()) ? _hash : Node::npos;
+            for (_current++;(_current < _hashTable->initializedSize()) && ! _hashTable->_nodes[_current].valid(); _current++) { }
+            if (_current >= _hashTable->initializedSize()) {
+                _current = Node::npos;
+            }
         }
-        next_t      _hash;
-        next_t      _subNode;
+        next_t      _current;
         hashtable * _hashTable;
 
         friend class hashtable::const_iterator;
@@ -186,21 +185,19 @@ public:
         typedef const Value* pointer;
         typedef std::forward_iterator_tag iterator_category;
 
-        const_iterator(const hashtable * hash, next_t start) : _hash(start), _subNode(start), _hashTable(hash) {
-            advanceToNextValidHash();
-        }
-        const_iterator(const hashtable * hash, next_t start, next_t subNode) : _hash(start), _subNode(subNode), _hashTable(hash) { }
-        const_iterator(const iterator &i)
-            : _hash(i._hash), _subNode(i._subNode), _hashTable(i._hashTable) {}
-        const Value & operator * ()  const { return _hashTable->get(_subNode); }
-        const Value * operator -> () const { return & _hashTable->get(_subNode); }
-        const_iterator & operator ++ () {
-            if (_hashTable->_nodes[_subNode].hasNext()) {
-                _subNode = _hashTable->_nodes[_subNode].getNext();
-            } else {
-                _hash++;
+        const_iterator(const hashtable * hash) : _current(0), _hashTable(hash) {
+            if ((_current < _hashTable->initializedSize()) && ! _hashTable->_nodes[_current].valid()) {
                 advanceToNextValidHash();
             }
+        }
+        const_iterator(const hashtable * hash, next_t pos) : _current(pos), _hashTable(hash) { }
+        const_iterator(const iterator &i) :  _current(i._current), _hashTable(i._hashTable) {}
+        static const_iterator end(const hashtable *hash) { return const_iterator(hash, Node::npos); }
+
+        const Value & operator * ()  const { return _hashTable->get(_current); }
+        const Value * operator -> () const { return & _hashTable->get(_current); }
+        const_iterator & operator ++ () {
+            advanceToNextValidHash();
             return *this;
         }
         const_iterator operator ++ (int) {
@@ -208,17 +205,17 @@ public:
             ++(*this);
             return prev;
         }
-        bool operator==(const const_iterator& rhs) const { return (_subNode == rhs._subNode); }
-        bool operator!=(const const_iterator& rhs) const { return (_subNode != rhs._subNode); }
-        next_t getInternalIndex() const  { return _subNode; }
-        next_t getHash() const { return _hash; }
+        bool operator==(const const_iterator& rhs) const { return (_current == rhs._current); }
+        bool operator!=(const const_iterator& rhs) const { return (_current != rhs._current); }
+        next_t getInternalIndex() const  { return _current; }
     private:
         void advanceToNextValidHash() {
-            for (;(_hash < _hashTable->getTableSize()) && ! _hashTable->_nodes[_hash].valid(); _hash++) { }
-            _subNode = (_hash < _hashTable->getTableSize()) ? _hash : Node::npos;
+            for (_current++;(_current < _hashTable->initializedSize()) && ! _hashTable->_nodes[_current].valid(); _current++) { }
+            if (_current >= _hashTable->initializedSize()) {
+                _current = Node::npos;
+            }
         }
-        next_t            _hash;
-        next_t            _subNode;
+        next_t            _current;
         const hashtable * _hashTable;
     };
     typedef std::pair<iterator, bool> insert_result;
@@ -231,10 +228,10 @@ public:
     hashtable(size_t reservedSpace);
     hashtable(size_t reservedSpace, const Hash & hasher, const Equal & equal);
     virtual ~hashtable();
-    iterator begin()             { return iterator(this, 0); }
-    iterator end()               { return iterator(this, Node::npos); }
-    const_iterator begin() const { return const_iterator(this, 0); }
-    const_iterator end()   const { return const_iterator(this, Node::npos); }
+    iterator begin()             { return iterator(this); }
+    iterator end()               { return iterator::end(this); }
+    const_iterator begin() const { return const_iterator(this); }
+    const_iterator end()   const { return const_iterator::end(this); }
     size_t capacity()      const { return _nodes.capacity(); }
     size_t size()          const { return _count; }
     bool empty()           const { return _count == 0; }
@@ -249,7 +246,9 @@ public:
     const_iterator find(const AltKey & key) const { return find<AltKey, AltExtract, AltHash, AltEqual>(key, AltExtract()); }
     const_iterator find(const Key & key) const;
     template <typename V>
-    insert_result insert(V && node);
+    insert_result insert(V && node) {
+        return insertInternal(std::forward<V>(node));
+    }
     void erase(const Key & key);
     void reserve(size_t sz) {
         if (sz > _nodes.capacity()) {
@@ -280,7 +279,8 @@ protected:
     Value & getByInternalIndex(size_t index)             { return _nodes[index].getValue(); }
     const Value & getByInternalIndex(size_t index) const { return _nodes[index].getValue(); }
     template <typename MoveHandler>
-    void erase(MoveHandler & moveHandler, const const_iterator & key);
+    void erase(MoveHandler & moveHandler, next_t h, const const_iterator & key);
+    next_t hash(const Key & key) const { return modulator(_hasher(key)); }
 private:
     Modulator   _modulator;
     size_t      _count;
@@ -292,7 +292,7 @@ private:
     const Value & get(size_t index) const { return _nodes[index].getValue(); }
     next_t modulator(next_t key) const { return _modulator.modulo(key); }
     next_t getTableSize() const { return _modulator.getTableSize(); }
-    next_t hash(const Key & key) const { return modulator(_hasher(key)); }
+    size_t initializedSize() const { return _nodes.size(); }
     template <typename MoveHandler>
     void move(MoveHandler & moveHandler, next_t from, next_t to) {
         _nodes[to] = std::move(_nodes[from]);

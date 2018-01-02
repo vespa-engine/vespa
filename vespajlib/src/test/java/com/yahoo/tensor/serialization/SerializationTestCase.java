@@ -50,7 +50,7 @@ public class SerializationTestCase {
             JsonNode node = mapper.readTree(test);
             if (node.has("tensor") && node.has("binary")) {
                 System.out.println("Running test: " + test);
-                
+
                 Tensor tensor = buildTensor(node.get("tensor"));
                 String spec = getSpec(node.get("tensor"));
                 byte[] encodedTensor = TypedBinaryFormat.encode(tensor);
@@ -123,7 +123,7 @@ public class SerializationTestCase {
     private byte[] getBytes(String binaryRepresentation) {
         return parseHexValue(binaryRepresentation.substring(2));
     }
-    
+
     private byte[] parseHexValue(String s) {
         final int len = s.length();
         byte[] bytes = new byte[len/2];

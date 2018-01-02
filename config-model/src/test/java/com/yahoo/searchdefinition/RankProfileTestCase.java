@@ -173,7 +173,7 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
         assertFalse(findProperty(rawProfile.configProperties(), "vespa.type.query.tensor3").isPresent());
         assertFalse(findProperty(rawProfile.configProperties(), "vespa.type.query.numeric").isPresent());
     }
-    
+
     private static Optional<String> findProperty(List<Pair<String, String>> properties, String key) {
         for (Pair<String, String> property : properties)
             if (property.getFirst().equals(key))

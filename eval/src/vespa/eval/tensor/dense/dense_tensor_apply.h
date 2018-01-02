@@ -2,13 +2,12 @@
 
 #pragma once
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
+    class Tensor;
+    class DenseTensor;
+}
 
-class Tensor;
-class DenseTensor;
-
-namespace dense {
+namespace vespalib::tensor::dense {
 
 /**
  * Creates a new tensor using all combinations of input tensor cells with matching
@@ -22,7 +21,4 @@ template <typename Function>
 std::unique_ptr<Tensor>
 apply(const DenseTensorView &lhs, const DenseTensorView &rhs, Function &&func);
 
-} // namespace vespalib::tensor::dense
-} // namespace vespalib::tensor
-} // namespace vespalib
-
+}

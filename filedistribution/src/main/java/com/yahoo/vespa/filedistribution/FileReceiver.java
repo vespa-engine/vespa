@@ -85,7 +85,7 @@ public class FileReceiver {
             try {
                 inprogressFile = Files.createTempFile(tmpDirectory.toPath(), fileName, ".inprogress").toFile();
             } catch (IOException e) {
-                String msg = "Failed creating tempfile for inprogress file for(" + fileName + ") in '" + fileReferenceDir.toPath() + "': ";
+                String msg = "Failed creating temp file for inprogress file for(" + fileName + ") in '" + fileReferenceDir.toPath() + "': ";
                 log.log(LogLevel.ERROR, msg + e.getMessage(), e);
                 throw new RuntimeException(msg, e);
             }
@@ -103,6 +103,7 @@ public class FileReceiver {
                 Files.write(inprogressFile.toPath(), part, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
             } catch (IOException e) {
                 log.log(LogLevel.ERROR, "Failed writing to file(" + inprogressFile.toPath() + "): " + e.getMessage(), e);
+                inprogressFile.delete();
                 throw new RuntimeException("Failed writing to file(" + inprogressFile.toPath() + "): ", e);
             }
             currentFileSize += part.length;
@@ -247,8 +248,11 @@ public class FileReceiver {
             log.log(LogLevel.DEBUG, "File moved from " + tempFile.getAbsolutePath()+ " to " + destination.getAbsolutePath());
         } catch (FileAlreadyExistsException e) {
             // Don't fail if it already exists (we might get the file from several config servers when retrying, servers are down etc.
-            // so it might be written already)
+            // so it might be written already). Delete temp file in that case, to avoid filling the disk.
             log.log(LogLevel.DEBUG, "File '" + destination.getAbsolutePath() + "' already exists, continuing: " + e.getMessage());
+            try {
+                Files.delete(tempFile.toPath());
+            } catch (IOException ioe) { /* ignore failure */}
         } catch (IOException e) {
             String message = "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'";
             log.log(LogLevel.ERROR, message, e);
@@ -295,7 +299,7 @@ public class FileReceiver {
         try {
             session.addPart(partId, part);
         } catch (Exception e) {
-            log.severe("Got exception + " + e);
+            log.severe("Got exception " + e);
             retval = 1;
         }
         double completeness = (double) session.currentFileSize / (double) session.fileSize;

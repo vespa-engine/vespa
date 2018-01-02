@@ -7,8 +7,7 @@
 #include "sparse_tensor_address_builder.h"
 #include "sparse_tensor_address_padder.h"
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * Utility class to build tensors of type SparseTensor, to be used by
@@ -91,9 +90,7 @@ public:
     ~DirectTensorBuilder() {}
 
     Tensor::UP build() {
-        return std::make_unique<SparseTensor>(std::move(_type),
-                                                 std::move(_cells),
-                                                 std::move(_stash));
+        return std::make_unique<SparseTensor>(std::move(_type), std::move(_cells), std::move(_stash));
     }
 
     template <class Function>
@@ -129,7 +126,7 @@ public:
 
     eval::ValueType &fast_type() { return _type; }
     Cells &cells() { return _cells; }
+    void reserve(uint32_t estimatedCells) { _cells.resize(estimatedCells*2); }
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

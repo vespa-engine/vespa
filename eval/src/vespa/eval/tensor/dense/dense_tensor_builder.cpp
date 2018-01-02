@@ -83,7 +83,7 @@ DenseTensorBuilder::calculateCellAddress()
         const auto &dim = _dimensions[i];
         if (label == UNDEFINED_LABEL) {
             throw IllegalArgumentException(make_string("Label for dimension '%s' is undefined. "
-                    "Expected a value in the range [0, %zu>",
+                    "Expected a value in the range [0, %u>",
                     dim.name.c_str(), dim.size));
         }
         result += (label * multiplier);

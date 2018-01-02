@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("dense_dot_product_function_test");
-
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/tensor/dense/dense_dot_product_function.h>
@@ -12,15 +9,12 @@ LOG_SETUP("dense_dot_product_function_test");
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("dense_dot_product_function_test");
+
 using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::tensor;
-
-ValueType
-makeType(size_t numCells)
-{
-    return ValueType::tensor_type({{"x", numCells}});
-}
 
 tensor::Tensor::UP
 makeTensor(size_t numCells, double cellBias)

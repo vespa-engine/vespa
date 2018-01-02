@@ -5,8 +5,7 @@
 #include "dense_tensor_view.h"
 #include <cassert>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * A mutable view to a dense tensor where all dimensions are indexed.
@@ -18,7 +17,7 @@ private:
     {
     private:
         eval::ValueType _type;
-        std::vector<size_t *> _unboundDimSizes;
+        std::vector<eval::ValueType::Dimension::size_type *> _unboundDimSizes;
 
     public:
         MutableValueType(eval::ValueType type_in);
@@ -55,5 +54,5 @@ public:
     }
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
+

@@ -3,9 +3,8 @@
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
-#include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
-#include <vespa/storageapi/messageapi/maintenancecommand.h>
+#include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation");
@@ -26,17 +25,15 @@ const uint32_t IdealStateOperation::MAINTENANCE_MESSAGE_TYPES[] =
 };
 
 IdealStateOperation::IdealStateOperation(const BucketAndNodes& bucketAndNodes)
-        : _manager(nullptr),
-          _bucketSpace(nullptr),
-          _bucketAndNodes(bucketAndNodes),
-          _ok(true),
-          _priority(255)
+    : _manager(nullptr),
+      _bucketSpace(nullptr),
+      _bucketAndNodes(bucketAndNodes),
+      _ok(true),
+      _priority(255)
 {
 }
 
-IdealStateOperation::~IdealStateOperation()
-{
-}
+IdealStateOperation::~IdealStateOperation() = default;
 
 BucketAndNodes::BucketAndNodes(const document::Bucket &bucket, uint16_t node)
     : _bucket(bucket)
@@ -108,8 +105,7 @@ IdealStateOperation::setCommandMeta(api::MaintenanceCommand& cmd) const
 {
     cmd.setPriority(_priority);
     cmd.setReason(_detailedReason);
-    cmd.setLoadType(
-            (*_manager->getLoadTypes())["maintenance"]);
+    cmd.setLoadType((*_manager->getLoadTypes())["maintenance"]);
 }
 
 std::string

@@ -6,8 +6,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/eval/tensor/tensor_builder.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * A builder of for dense tensors.
@@ -38,5 +37,5 @@ public:
     Tensor::UP build();
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
+

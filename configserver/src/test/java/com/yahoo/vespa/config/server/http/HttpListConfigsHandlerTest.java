@@ -37,18 +37,9 @@ public class HttpListConfigsHandlerTest {
         mockRequestHandler.setAllConfigs(new HashSet<ConfigKey<?>>() {{ 
             add(new ConfigKey<>("bar", "conf/id/", "foo"));
             }} );
-        handler = new HttpListConfigsHandler(new Executor() {
-            @Override
-            public void execute(Runnable command) {
-                command.run();
-            }
-        }, AccessLog.voidAccessLog(), mockRequestHandler);
-        namedHandler = new HttpListNamedConfigsHandler(new Executor() {
-            @Override
-            public void execute(Runnable command) {
-                command.run();
-            }
-        }, mockRequestHandler, AccessLog.voidAccessLog());
+        HttpListConfigsHandler.Context ctx = HttpListConfigsHandler.testOnlyContext();
+        handler = new HttpListConfigsHandler(ctx, mockRequestHandler);
+        namedHandler = new HttpListNamedConfigsHandler(ctx, mockRequestHandler);
     }
     
     @Test

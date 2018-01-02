@@ -16,9 +16,9 @@ import java.util.Optional;
  *
  * Sorted dimensions = num_dimensions [dimension_str_len dimension_str_bytes dimension_size_int]*
  * Cell_values = [double, double, double, ...]*
- * where values are encoded in order of increasing indexes in each dimension, increasing 
+ * where values are encoded in order of increasing indexes in each dimension, increasing
  * indexes of later dimensions in the dimension type before earlier.
- * 
+ *
  * @author bratseth
  */
 @Beta
@@ -36,7 +36,7 @@ public class DenseBinaryFormat implements BinaryFormat {
         buffer.putInt1_4Bytes(tensor.type().dimensions().size());
         for (int i = 0; i < tensor.type().dimensions().size(); i++) {
             buffer.putUtf8String(tensor.type().dimensions().get(i).name());
-            buffer.putInt1_4Bytes(tensor.dimensionSizes().size(i));
+            buffer.putInt1_4Bytes((int)tensor.dimensionSizes().size(i)); // XXX: Size truncation
         }
     }
 
@@ -54,7 +54,7 @@ public class DenseBinaryFormat implements BinaryFormat {
             type = optionalType.get();
             TensorType serializedType = decodeType(buffer);
             if ( ! serializedType.isAssignableTo(type))
-                throw new IllegalArgumentException("Type/instance mismatch: A tensor of type " + serializedType + 
+                throw new IllegalArgumentException("Type/instance mismatch: A tensor of type " + serializedType +
                                                    " cannot be assigned to type " + type);
             sizes = sizesFromType(serializedType);
         }
@@ -71,7 +71,7 @@ public class DenseBinaryFormat implements BinaryFormat {
         int dimensionCount = buffer.getInt1_4Bytes();
         TensorType.Builder builder = new TensorType.Builder();
         for (int i = 0; i < dimensionCount; i++)
-            builder.indexed(buffer.getUtf8String(), buffer.getInt1_4Bytes());
+            builder.indexed(buffer.getUtf8String(), buffer.getInt1_4Bytes()); // XXX: Size truncation
         return builder.build();
     }
 
@@ -84,7 +84,7 @@ public class DenseBinaryFormat implements BinaryFormat {
     }
 
     private void decodeCells(DimensionSizes sizes, GrowableByteBuffer buffer, IndexedTensor.BoundBuilder builder) {
-        for (int i = 0; i < sizes.totalSize(); i++)
+        for (long i = 0; i < sizes.totalSize(); i++)
             builder.cellByDirectIndex(i, buffer.getDouble());
     }
 

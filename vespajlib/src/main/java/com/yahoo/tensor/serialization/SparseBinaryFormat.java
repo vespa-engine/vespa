@@ -3,13 +3,14 @@ package com.yahoo.tensor.serialization;
 
 import com.google.common.annotations.Beta;
 import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.text.Utf8;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Implementation of a sparse binary format for a tensor on the form:
@@ -39,7 +40,7 @@ class SparseBinaryFormat implements BinaryFormat {
     }
 
     private void encodeCells(GrowableByteBuffer buffer, Tensor tensor) {
-        buffer.putInt1_4Bytes(tensor.size());
+        buffer.putInt1_4Bytes((int)tensor.size()); // XXX: Size truncation
         for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
             encodeAddress(buffer, cell.getKey());
@@ -79,8 +80,8 @@ class SparseBinaryFormat implements BinaryFormat {
     }
 
     private void decodeCells(GrowableByteBuffer buffer, Tensor.Builder builder, TensorType type) {
-        int numCells = buffer.getInt1_4Bytes();
-        for (int i = 0; i < numCells; ++i) {
+        long numCells = buffer.getInt1_4Bytes(); // XXX: Size truncation
+        for (long i = 0; i < numCells; ++i) {
             Tensor.Builder.CellBuilder cellBuilder = builder.cell();
             decodeAddress(buffer, cellBuilder, type);
             cellBuilder.value(buffer.getDouble());

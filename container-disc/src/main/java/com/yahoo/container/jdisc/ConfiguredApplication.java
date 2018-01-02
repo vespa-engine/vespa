@@ -29,6 +29,7 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.jrt.ListenFailedException;
+import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogSetup;
 import com.yahoo.osgi.OsgiImpl;
 import com.yahoo.vespa.config.ConfigKey;
@@ -88,6 +89,7 @@ public final class ConfiguredApplication implements Application {
 
     static {
         LogSetup.initVespaLogging("Container");
+        log.log(LogLevel.INFO, "Starting container");
     }
 
     /**

@@ -4,12 +4,10 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/eval/eval/operation.h>
-#include <sstream>
 
 using vespalib::eval::TensorSpec;
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 namespace {
 
@@ -84,5 +82,5 @@ DenseTensor::operator==(const DenseTensor &rhs) const
             (_cells == rhs._cells);
 }
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
+

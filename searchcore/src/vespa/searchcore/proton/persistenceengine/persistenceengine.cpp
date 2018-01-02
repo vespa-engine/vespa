@@ -3,8 +3,8 @@
 #include "persistenceengine.h"
 #include "ipersistenceengineowner.h"
 #include "transport_latch.h"
+#include <vespa/metrics/loadmetric.h>
 #include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.persistenceengine.persistenceengine");
@@ -22,6 +22,8 @@ using storage::spi::Result;
 using vespalib::IllegalStateException;
 using vespalib::Sequence;
 using vespalib::make_string;
+
+using namespace std::chrono_literals;
 
 namespace proton {
 
@@ -623,7 +625,7 @@ PersistenceEngine::destroyIterators()
         Result res(destroyIterator(id, context));
         if (res.hasError()) {
             LOG(debug, "%ld iterator left. Can not destroy iterator '%ld'. Reason='%s'", _iterators.size(), id.getValue(), res.toString().c_str());
-            FastOS_Thread::Sleep(100); // Sleep 0.1 seconds
+            std::this_thread::sleep_for(100ms);
         }
     }
 }

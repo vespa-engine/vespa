@@ -143,9 +143,9 @@ IdealStateManagerTest::testClearActiveOnNodeDown()
     }
 
     CPPUNIT_ASSERT_EQUAL(
-            std::string("setbucketstate to [0] Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000001)) (pri 100)\n"
-                        "setbucketstate to [0] Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000002)) (pri 100)\n"
-                        "setbucketstate to [0] Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000003)) (pri 100)\n"),
+            std::string("setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n"
+                        "setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)) (pri 100)\n"
+                        "setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)) (pri 100)\n"),
                          _distributor->getActiveIdealStateOperations());
 
     setSystemState(lib::ClusterState("distributor:1 storage:3 .0.s:d"));
@@ -169,19 +169,19 @@ IdealStateManagerTest::testRecheckWhenActive()
     tick();
 
     CPPUNIT_ASSERT_EQUAL(
-            std::string("setbucketstate to [0] Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000001)) (pri 100)\n"),
+            std::string("setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n"),
             _distributor->getActiveIdealStateOperations());
 
     tick();
 
     CPPUNIT_ASSERT_EQUAL(
-            std::string("setbucketstate to [0] Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000001)) (pri 100)\n"),
+            std::string("setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n"),
             _distributor->getActiveIdealStateOperations());
 
     tick();
 
     CPPUNIT_ASSERT_EQUAL(
-            std::string("setbucketstate to [0] Bucket(BucketSpace(0x0000000000000000), BucketId(0x4000000000000001)) (pri 100)\n"),
+            std::string("setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n"),
             _distributor->getActiveIdealStateOperations());
 }
 

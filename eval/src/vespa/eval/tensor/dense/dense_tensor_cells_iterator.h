@@ -8,34 +8,41 @@
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/vespalib/util/arrayref.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * Utility class to iterate over cells in a dense tensor.
  */
 class DenseTensorCellsIterator
 {
+public:
+    using size_type = eval::ValueType::Dimension::size_type;
+    using Address = std::vector<size_type>;
 private:
     using CellsRef = vespalib::ConstArrayRef<double>;
     const eval::ValueType &_type;
     CellsRef _cells;
-    size_t _cellIdx;
-    std::vector<size_t> _address;
-
+    size_t   _cellIdx;
+    Address  _address;
 public:
-    DenseTensorCellsIterator(const eval::ValueType &type_in, CellsRef cells)
-        : _type(type_in),
-          _cells(cells),
-          _cellIdx(0),
-          _address(type_in.dimensions().size(), 0)
-    {}
+    DenseTensorCellsIterator(const eval::ValueType &type_in, CellsRef cells);
+    ~DenseTensorCellsIterator();
+    void next() {
+        ++_cellIdx;
+        for (int64_t i = (_address.size() - 1); i >= 0; --i) {
+            _address[i]++;
+            if (__builtin_expect((_address[i] != _type.dimensions()[i].size), true)) {
+                // Outer dimension labels can only be increased when this label wraps around.
+                break;
+            } else {
+                _address[i] = 0;
+            }
+        }
+    }
     bool valid() const { return _cellIdx < _cells.size(); }
-    void next();
     double cell() const { return _cells[_cellIdx]; }
-    const std::vector<size_t> &address() const { return _address; }
+    const Address &address() const { return _address; }
     const eval::ValueType &fast_type() const { return _type; }
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

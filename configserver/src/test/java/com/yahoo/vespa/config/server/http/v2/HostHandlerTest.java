@@ -52,9 +52,9 @@ public class HostHandlerTest {
         hostRegistries = testComponentRegistry.getHostRegistries();
         hostRegistries.createApplicationHostRegistry(mytenant).update(ApplicationId.from(mytenant, ApplicationName.defaultName(), InstanceName.defaultName()), Collections.singletonList(hostname));
         hostRegistries.getTenantHostRegistry().update(mytenant, Collections.singletonList(hostname));
-        hostHandler = new HostHandler(command -> {
-            command.run();
-        }, AccessLog.voidAccessLog(), testComponentRegistry);
+        hostHandler = new HostHandler(
+                HostHandler.testOnlyContext(),
+                testComponentRegistry);
         return hostHandler;
     }
 

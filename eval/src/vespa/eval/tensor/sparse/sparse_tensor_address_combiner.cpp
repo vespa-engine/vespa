@@ -5,12 +5,9 @@
 #include <vespa/eval/eval/value_type.h>
 #include <cassert>
 
-namespace vespalib {
-namespace tensor {
-namespace sparse {
+namespace vespalib::tensor::sparse {
 
-TensorAddressCombiner::TensorAddressCombiner(const eval::ValueType &lhs,
-                                             const eval::ValueType &rhs)
+TensorAddressCombiner::TensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs)
 {
     auto rhsItr = rhs.dimensions().cbegin();
     auto rhsItrEnd = rhs.dimensions().cend();
@@ -32,8 +29,17 @@ TensorAddressCombiner::TensorAddressCombiner(const eval::ValueType &lhs,
     }
 }
 
-TensorAddressCombiner::~TensorAddressCombiner()
-{
+TensorAddressCombiner::~TensorAddressCombiner() = default;
+
+size_t
+TensorAddressCombiner::numOverlappingDimensions() const {
+    size_t count = 0;
+    for (AddressOp op : _ops) {
+        if (op == AddressOp::BOTH) {
+            count++;
+        }
+    }
+    return count;
 }
 
 bool
@@ -41,15 +47,16 @@ TensorAddressCombiner::combine(SparseTensorAddressRef lhsRef,
                                SparseTensorAddressRef rhsRef)
 {
     clear();
+    ensure_room(lhsRef.size() + rhsRef.size());
     SparseTensorAddressDecoder lhs(lhsRef);
     SparseTensorAddressDecoder rhs(rhsRef);
     for (auto op : _ops) {
         switch (op) {
         case AddressOp::LHS:
-            add(lhs.decodeLabel());
+            append(lhs.decodeLabel());
             break;
         case AddressOp::RHS:
-            add(rhs.decodeLabel());
+            append(rhs.decodeLabel());
             break;
         case AddressOp::BOTH:
             auto lhsLabel(lhs.decodeLabel());
@@ -57,14 +64,10 @@ TensorAddressCombiner::combine(SparseTensorAddressRef lhsRef,
             if (lhsLabel != rhsLabel) {
                 return false;
             }
-            add(lhsLabel);
+            append(lhsLabel);
         }
     }
-    assert(!lhs.valid());
-    assert(!rhs.valid());
     return true;
 }
 
-} // namespace vespalib::tensor::sparse
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

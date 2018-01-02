@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
+import com.google.inject.Inject;
+
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -25,8 +27,8 @@ import java.util.concurrent.Executor;
  */
 public class HttpHandler extends LoggingRequestHandler {
 
-    public HttpHandler(Executor executor, AccessLog accessLog) {
-        super(executor, accessLog);
+    public HttpHandler(HttpHandler.Context ctx) {
+        super(ctx);
     }
 
     @Override

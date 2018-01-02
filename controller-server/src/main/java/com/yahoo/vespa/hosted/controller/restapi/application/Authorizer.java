@@ -9,14 +9,13 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUser;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.common.ContextAttributes;
-import com.yahoo.vespa.hosted.controller.restapi.filter.NTokenRequestFilter;
 
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.HttpMethod;
@@ -78,8 +77,7 @@ public class Authorizer {
     }
 
     public Optional<NToken> getNToken(HttpRequest request) {
-        String nTokenHeader = (String)request.getJDiscRequest().context().get(NTokenRequestFilter.NTOKEN_HEADER);
-        return Optional.ofNullable(nTokenHeader).map(NToken::new);
+        return getPrincipalIfAny(request).flatMap(AthenzPrincipal::getNToken);
     }
 
     public boolean isSuperUser(HttpRequest request) {

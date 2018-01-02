@@ -7,10 +7,8 @@
 #include <vespa/vespalib/util/approx.h>
 #include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval::operation {
 
-namespace operation {
 struct Neg { static double f(double a); };
 struct Not { static double f(double a); };
 struct Add { static double f(double a, double b); };
@@ -52,7 +50,5 @@ struct IsNan { static double f(double a); };
 struct Relu { static double f(double a); };
 struct Sigmoid { static double f(double a); };
 struct Elu { static double f(double a); };
-} // namespace vespalib::eval::operation
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

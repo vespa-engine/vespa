@@ -2,9 +2,9 @@
 #pragma once
 
 #include <vespa/vdslib/state/clusterstate.h>
+#include <cassert>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class BucketOwnership
 {
@@ -14,8 +14,7 @@ class BucketOwnership
     BucketOwnership(const lib::ClusterState& checkedState)
         : _checkedState(&checkedState),
           _owned(false)
-    {
-    }
+    { }
 
     BucketOwnership() : _checkedState(nullptr), _owned(true) {}
 
@@ -44,6 +43,4 @@ public:
     }
 };
 
-} // distributor
-} // storage
-
+}

@@ -8,8 +8,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <assert.h>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 DenseXWProductFunction::DenseXWProductFunction(const eval::ValueType &resultType,
                                                size_t vectorId,
@@ -87,5 +86,5 @@ DenseXWProductFunction::eval(ConstArrayRef<eval::Value::CREF> params, Stash &sta
     return stash.create<DenseTensorView>(_resultType, outputCells);
 }
 
-} // namespace tensor
-} // namespace vespalib
+}
+

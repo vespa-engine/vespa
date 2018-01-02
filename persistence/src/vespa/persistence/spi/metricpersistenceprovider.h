@@ -6,10 +6,10 @@
 #pragma once
 
 #include "persistenceprovider.h"
-#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/metricset.h>
+#include <vespa/metrics/valuemetric.h>
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 class MetricPersistenceProvider : public PersistenceProvider,
                                   public metrics::MetricSet
@@ -61,5 +61,5 @@ private:
     void defineResultMetrics(int index, const char* name);
 };
 
-} // spi
-} // storage
+}
+

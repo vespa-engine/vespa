@@ -46,16 +46,16 @@ class MixedBinaryFormat implements BinaryFormat {
         buffer.putInt1_4Bytes(denseDimensions.size());
         for (TensorType.Dimension dimension : denseDimensions) {
             buffer.putUtf8String(dimension.name());
-            buffer.putInt1_4Bytes(dimension.size().orElseThrow(() ->
-                    new IllegalArgumentException("Unknown size of indexed dimension.")));
+            buffer.putInt1_4Bytes((int)dimension.size().orElseThrow(() ->
+                                  new IllegalArgumentException("Unknown size of indexed dimension.")).longValue());  // XXX: Size truncation
         }
     }
 
     private void encodeCells(GrowableByteBuffer buffer, MixedTensor tensor) {
         List<TensorType.Dimension> sparseDimensions = tensor.type().dimensions().stream().filter(d -> !d.isIndexed()).collect(Collectors.toList());
-        int denseSubspaceSize = tensor.denseSubspaceSize();
+        long denseSubspaceSize = tensor.denseSubspaceSize();
         if (sparseDimensions.size() > 0) {
-            buffer.putInt1_4Bytes(tensor.size() / denseSubspaceSize);
+            buffer.putInt1_4Bytes((int)(tensor.size() / denseSubspaceSize));  // XXX: Size truncation
         }
         Iterator<Tensor.Cell> cellIterator = tensor.cellIterator();
         while (cellIterator.hasNext()) {
@@ -98,7 +98,7 @@ class MixedBinaryFormat implements BinaryFormat {
         }
         int numIndexedDimensions = buffer.getInt1_4Bytes();
         for (int i = 0; i < numIndexedDimensions; ++i) {
-            builder.indexed(buffer.getUtf8String(), buffer.getInt1_4Bytes());
+            builder.indexed(buffer.getUtf8String(), buffer.getInt1_4Bytes());  // XXX: Size truncation
         }
         return builder.build();
     }
@@ -106,21 +106,21 @@ class MixedBinaryFormat implements BinaryFormat {
     private void decodeCells(GrowableByteBuffer buffer, MixedTensor.BoundBuilder builder, TensorType type) {
         List<TensorType.Dimension> sparseDimensions = type.dimensions().stream().filter(d -> !d.isIndexed()).collect(Collectors.toList());
         TensorType sparseType = MixedTensor.createPartialType(sparseDimensions);
-        int denseSubspaceSize = builder.denseSubspaceSize();
+        long denseSubspaceSize = builder.denseSubspaceSize();
 
         int numBlocks = 1;
         if (sparseDimensions.size() > 0) {
             numBlocks = buffer.getInt1_4Bytes();
         }
 
-        double[] denseSubspace = new double[denseSubspaceSize];
+        double[] denseSubspace = new double[(int)denseSubspaceSize];
         for (int i = 0; i < numBlocks; ++i) {
             TensorAddress.Builder sparseAddress = new TensorAddress.Builder(sparseType);
             for (TensorType.Dimension sparseDimension : sparseDimensions) {
                 sparseAddress.add(sparseDimension.name(), buffer.getUtf8String());
             }
-            for (int denseOffset = 0; denseOffset < denseSubspaceSize; denseOffset++) {
-                denseSubspace[denseOffset] = buffer.getDouble();
+            for (long denseOffset = 0; denseOffset < denseSubspaceSize; denseOffset++) {
+                denseSubspace[(int)denseOffset] = buffer.getDouble();
             }
             builder.block(sparseAddress.build(), denseSubspace);
         }

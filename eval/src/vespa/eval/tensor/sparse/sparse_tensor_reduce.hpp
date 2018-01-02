@@ -6,9 +6,7 @@
 #include <vespa/eval/tensor/direct_tensor_builder.h>
 #include "direct_sparse_tensor_builder.h"
 
-namespace vespalib {
-namespace tensor {
-namespace sparse {
+namespace vespalib::tensor::sparse {
 
 template <typename Function>
 std::unique_ptr<Tensor>
@@ -50,6 +48,7 @@ reduce(const SparseTensor &tensor,
         return reduceAll(tensor, builder, func);
     }
     TensorAddressReducer addressReducer(tensor.fast_type(), dimensions);
+    builder.reserve(tensor.cells().size()*2);
     for (const auto &cell : tensor.cells()) {
         addressReducer.reduce(cell.first);
         builder.insertCell(addressReducer.getAddressRef(), cell.second, func);
@@ -57,6 +56,4 @@ reduce(const SparseTensor &tensor,
     return builder.build();
 }
 
-} // namespace vespalib::tensor::sparse
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
