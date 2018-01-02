@@ -1,0 +1,22 @@
+package com.yahoo.vespa.hosted.controller.api.integration.zone;
+
+/**
+ * A ZoneId list which can be filtered in various ways; elements can be accessed after at least one filter.
+ *
+ * The methods here return instances of {@link ZoneList}, which extends ZoneFilter, but with accessors and additional filters.
+ * This forces the developer to consider which of the filters in this class to apply, prior to processing any zones.
+ *
+ * @author jvenstad
+ */
+public interface ZoneFilter {
+
+    /** Negates the next filter. */
+    ZoneFilter not();
+
+    /** All zones from the initial pool. */
+    ZoneList all();
+
+    /** Zones where which are managed by the controller. */
+    ZoneList controllerManaged();
+
+}

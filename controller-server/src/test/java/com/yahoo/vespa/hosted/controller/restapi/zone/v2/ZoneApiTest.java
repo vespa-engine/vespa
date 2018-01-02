@@ -4,7 +4,7 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Request.Method;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.hosted.controller.ConfigServerProxyMock;
 import com.yahoo.vespa.hosted.controller.ZoneRegistryMock;

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.zone.v1;
 
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -69,7 +69,7 @@ public class ZoneApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse root(HttpRequest request) {
-        List<Environment> environments = zoneRegistry.zones().stream()
+        List<Environment> environments = zoneRegistry.zones().all().ids().stream()
                                                      .map(ZoneId::environment)
                                                      .distinct()
                                                      .sorted(Comparator.comparing(Environment::value))
@@ -89,9 +89,7 @@ public class ZoneApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse environment(HttpRequest request, Environment environment) {
-        List<ZoneId> zones = zoneRegistry.zones().stream()
-                                       .filter(zone -> zone.environment() == environment)
-                                       .collect(Collectors.toList());
+        List<ZoneId> zones = zoneRegistry.zones().all().in(environment).ids();
         Slime slime = new Slime();
         Cursor root = slime.setArray();
         zones.forEach(zone -> {
