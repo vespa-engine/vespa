@@ -55,15 +55,6 @@ public class StatusHandler extends HttpHandler {
             modelVersions.forEach(modelVersionsCursor::addString);
         }
 
-        @Override
-        public void render(OutputStream outputStream) throws IOException {
-            new JsonFormat(true).encode(outputStream, object);
-        }
-
-        @Override
-        public String getContentType() {
-            return HttpConfigResponse.JSON_CONTENT_TYPE;
-        }
     }
 
 }
