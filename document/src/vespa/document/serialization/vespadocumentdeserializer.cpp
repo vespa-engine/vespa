@@ -85,6 +85,7 @@ void VespaDocumentDeserializer::readDocument(Document &value) {
         Document newDoc(*type, value.getId(), true);
         value.swap(newDoc);
     }
+    value.setRepo(_repo.getDocumentTypeRepo());
 
     FixedTypeRepo repo(_repo.getDocumentTypeRepo(), value.getType());
     VarScope<FixedTypeRepo> repo_scope(_repo, repo);
