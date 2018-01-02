@@ -58,11 +58,13 @@ public:
         return true;
     }
 
-    const Mapping & commonRight() const { return _commonRight; }
+    const Mapping & getCommonRight() const { return _commonRight; }
+    const Mapping & getRight() const { return _right; }
 
     bool hasAnyRightOnlyDimensions() const { return ! _right.empty(); }
 
     const Address &address() const { return _combinedAddress; }
+    Address &address() { return _combinedAddress; }
 
     bool combine(const Address & lhs, const Address & rhs) {
         uint32_t index(0);
@@ -108,8 +110,8 @@ private:
     const eval::ValueType &_type;
     CellsRef               _cells;
     Address                _address;
-    Mapping                _common;
-    std::vector<uint32_t>  _mutable;
+    const Mapping         &_common;
+    const Mapping         &_mutable;
     std::vector<size_t>    _accumulatedSize;
 
     double cell(size_t cellIdx) const { return _cells[cellIdx]; }
@@ -121,32 +123,35 @@ private:
         return cellIdx;
     }
 public:
-    CommonDenseTensorCellsIterator(const Mapping & common, const eval::ValueType &type_in, CellsRef cells);
+    CommonDenseTensorCellsIterator(const Mapping & common, const Mapping & right,
+                                   const eval::ValueType &type_in, CellsRef cells);
     ~CommonDenseTensorCellsIterator();
     template <typename Func>
-    void for_each(Func && func) {
+    void for_each(Address & combined, Func && func) {
         const int32_t lastDimension = _mutable.size() - 1;
         int32_t curDimension = lastDimension;
         size_t cellIdx = index(_address);
         while (curDimension >= 0) {
-            const uint32_t dim = _mutable[curDimension];
-            size_type & index = _address[dim];
+            const uint32_t rdim = _mutable[curDimension].second;
+            const uint32_t cdim = _mutable[curDimension].first;
+            size_type & rindex = _address[rdim];
+            size_type & cindex = combined[cdim];
             if (curDimension == lastDimension) {
-                for (index = 0; index < _type.dimensions()[dim].size; index++) {
-                    func(_address, cell(cellIdx));
-                    cellIdx += _accumulatedSize[dim];
+                for (rindex = 0, cindex = 0; rindex < _type.dimensions()[rdim].size; rindex++, cindex++) {
+                    func(combined, cell(cellIdx));
+                    cellIdx += _accumulatedSize[rdim];
                 }
-                index = 0;
-                cellIdx -= _accumulatedSize[dim] * _type.dimensions()[dim].size;
+                rindex = 0; cindex = 0;
+                cellIdx -= _accumulatedSize[rdim] * _type.dimensions()[rdim].size;
                 curDimension--;
             } else {
-                if (index < _type.dimensions()[dim].size) {
-                    index++;
-                    cellIdx += _accumulatedSize[dim];
+                if (rindex < _type.dimensions()[rdim].size) {
+                    rindex++; cindex++;
+                    cellIdx += _accumulatedSize[rdim];
                     curDimension++;
                 } else {
-                    cellIdx -= _accumulatedSize[dim] * _type.dimensions()[dim].size;
-                    index = 0;
+                    cellIdx -= _accumulatedSize[rdim] * _type.dimensions()[rdim].size;
+                    rindex = 0; cindex = 0;
                     curDimension--;
                 }
             }

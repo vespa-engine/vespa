@@ -73,21 +73,16 @@ DenseTensorAddressCombiner::combineDimensions(const eval::ValueType &lhs,
 
 
 CommonDenseTensorCellsIterator::CommonDenseTensorCellsIterator(const Mapping & common,
+                                                               const Mapping & right,
                                                                const eval::ValueType &type_in,
                                                                CellsRef cells)
     : _type(type_in),
       _cells(cells),
       _address(type_in.dimensions().size(), 0),
       _common(common),
-      _mutable(_address.size()),
+      _mutable(right),
       _accumulatedSize(_address.size())
 {
-    for (uint32_t i(0); i < _address.size(); i++) {
-        _mutable[i] = i;
-    }
-    for (auto cur = _common.rbegin(); cur != _common.rend(); cur++) {
-        _mutable.erase(_mutable.begin() + cur->second);
-    }
     size_t multiplier = 1;
     for (int32_t i(_address.size() - 1); i >= 0; i--) {
         _accumulatedSize[i] = multiplier;
