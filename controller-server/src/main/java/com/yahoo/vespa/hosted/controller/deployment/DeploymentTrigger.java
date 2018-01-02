@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;

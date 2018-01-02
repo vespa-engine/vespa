@@ -3,7 +3,8 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ClusterSpec.Id;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneId;
 
 import java.time.Instant;
 import java.util.HashMap;
