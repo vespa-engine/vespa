@@ -59,48 +59,77 @@ public class DockerImpl implements Docker {
     static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
 
     private final int SECONDS_TO_WAIT_BEFORE_KILLING;
+    private final boolean fallbackTo123OnErrors;
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
+    private final DockerConfig config;
+    private final boolean inProduction;
     private Optional<DockerImageGarbageCollector> dockerImageGC = Optional.empty();
     private CounterWrapper numberOfDockerDaemonFails;
+    private boolean started = false;
 
     private final Object monitor = new Object();
     @GuardedBy("monitor")
     private final Set<DockerImage> scheduledPulls = new HashSet<>();
 
     // Exposed for testing.
-    final DockerClient dockerClient;
-
-    // For testing
-    DockerImpl(final DockerClient dockerClient) {
-        this.dockerClient = dockerClient;
-        this.SECONDS_TO_WAIT_BEFORE_KILLING = 10;
-    }
-
-    DockerImpl(
-            final DockerConfig config,
-            boolean fallbackTo123OnErrors,
-            MetricReceiverWrapper metricReceiverWrapper) {
-        SECONDS_TO_WAIT_BEFORE_KILLING = config.secondsToWaitBeforeKillingContainer();
-
-        dockerClient = initDockerConnection(config, fallbackTo123OnErrors);
-        setMetrics(metricReceiverWrapper);
-    }
+    DockerClient dockerClient;
 
     @Inject
     public DockerImpl(final DockerConfig config, MetricReceiverWrapper metricReceiver) {
-        this(
-                config,
+        this(config,
                 true, /* fallback to 1.23 on errors */
-                metricReceiver);
+                metricReceiver,
+                !config.isRunningLocally());
+    }
 
-        if (!config.isRunningLocally()) {
-            Duration minAgeToDelete = Duration.ofMinutes(config.imageGCMinTimeToLiveMinutes());
-            dockerImageGC = Optional.of(new DockerImageGarbageCollector(minAgeToDelete));
+    private DockerImpl(final DockerConfig config,
+                       boolean fallbackTo123OnErrors,
+                       MetricReceiverWrapper metricReceiverWrapper,
+                       boolean inProduction) {
+        this.config = config;
+        this.fallbackTo123OnErrors = fallbackTo123OnErrors;
+        this.inProduction = inProduction;
+        if (config == null) {
+            this.SECONDS_TO_WAIT_BEFORE_KILLING = 10;
+        } else {
+            SECONDS_TO_WAIT_BEFORE_KILLING = config.secondsToWaitBeforeKillingContainer();
+        }
+        if (metricReceiverWrapper != null) {
+            setMetrics(metricReceiverWrapper);
+        }
+    }
 
-            try {
-                setupDockerNetworkIfNeeded();
-            } catch (Exception e) {
-                throw new DockerException("Could not setup docker network", e);
+    // For testing
+    DockerImpl(final DockerClient dockerClient) {
+        this(null, false, null, false);
+        this.dockerClient = dockerClient;
+    }
+
+    // For testing
+    DockerImpl(final DockerConfig config,
+               boolean fallbackTo123OnErrors,
+               MetricReceiverWrapper metricReceiverWrapper) {
+        this(config, fallbackTo123OnErrors, metricReceiverWrapper, false);
+    }
+
+    @Override
+    public void start() {
+        if (started) return;
+        started = true;
+
+        if (config != null) {
+            if (dockerClient == null) {
+                dockerClient = initDockerConnection();
+            }
+            if (inProduction) {
+                Duration minAgeToDelete = Duration.ofMinutes(config.imageGCMinTimeToLiveMinutes());
+                dockerImageGC = Optional.of(new DockerImageGarbageCollector(minAgeToDelete));
+
+                try {
+                    setupDockerNetworkIfNeeded();
+                } catch (Exception e) {
+                    throw new DockerException("Could not setup docker network", e);
+                }
             }
         }
     }
@@ -489,7 +518,7 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private DockerClient initDockerConnection(final DockerConfig config, boolean fallbackTo123orErrors) {
+    private DockerClient initDockerConnection() {
         JerseyDockerCmdExecFactory dockerFactory = new JerseyDockerCmdExecFactory()
                 .withMaxPerRouteConnections(config.maxPerRouteConnections())
                 .withMaxTotalConnections(config.maxTotalConnections())
@@ -508,7 +537,7 @@ public class DockerImpl implements Docker {
                 logger.info("Found version 1.24 or newer of remote API, using 1.23.");
             }
         } catch (Exception e) {
-            if (!fallbackTo123orErrors) {
+            if (!fallbackTo123OnErrors) {
                 throw e;
             }
             logger.log(LogLevel.ERROR, "Failed when trying to figure out remote API version of docker, using 1.23", e);
