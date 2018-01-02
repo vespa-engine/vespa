@@ -4,7 +4,7 @@ package com.yahoo.config.application.api;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.path.Path;
+import com.yahoo.config.provision.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
@@ -265,15 +265,25 @@ public interface ApplicationPackage {
      * application package. This is the entry point for the multi environment application package support. This method
      * will not mutate the existing application package.
      *
-     * @param zone A valid {@link Zone} instance, used to decide which parts of services to keep and remove
+     * @param zone A valid {@link ZoneId} instance, used to decide which parts of services to keep and remove
      * @param ruleConfigDeriver ignored
      * @param logger A {@link DeployLogger} to add output that will be returned to the user
      *
      * @return A new application package instance pointing to a new location
      */
-    default ApplicationPackage preprocess(Zone zone, RuleConfigDeriver ruleConfigDeriver, DeployLogger logger) 
-        throws IOException, TransformerException, ParserConfigurationException, SAXException {
+    default ApplicationPackage preprocess(ZoneId zone, RuleConfigDeriver ruleConfigDeriver, DeployLogger logger)
+            throws IOException, TransformerException, ParserConfigurationException, SAXException {
         throw new UnsupportedOperationException("This application package does not support preprocessing");
+    }
+
+    /**
+     * @deprecated pass a ZoneId as first parameter instead
+     */
+    // TODO: Remove on Vespa 7
+    @Deprecated
+    default ApplicationPackage preprocess(Zone zone, RuleConfigDeriver ruleConfigDeriver, DeployLogger logger)
+            throws IOException, TransformerException, ParserConfigurationException, SAXException {
+        return preprocess(zone.id(), ruleConfigDeriver, logger);
     }
 
 }
