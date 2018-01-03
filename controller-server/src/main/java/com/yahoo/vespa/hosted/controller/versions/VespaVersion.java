@@ -156,4 +156,5 @@ public class VespaVersion implements Comparable<VespaVersion> {
         int brokenByThisVersion = failingNonCanaries.size();
         return brokenByThisVersion >= 4 && brokenByThisVersion >= productionOnThis.size() * 0.1;
      }
+
 }

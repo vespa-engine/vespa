@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -75,17 +76,23 @@ public class DeploymentIssueReporter extends Maintainer {
      * longer than the set grace period, or update this list if the issue already exists.
      */
     private void maintainPlatformIssue(List<Application> applications) {
-        if ( ! (controller().versionStatus().version(controller().systemVersion()).confidence() == broken))
+        Version systemVersion = controller().systemVersion();
+
+        if ((controller().versionStatus().version(systemVersion).confidence() != broken))
+            return;
+
+        if (ApplicationList.from(applications)
+                .failingUpgradeToVersionSince(systemVersion, controller().clock().instant().minus(upgradeGracePeriod))
+                .isEmpty())
             return;
 
         List<ApplicationId> failingApplications = ApplicationList.from(applications)
-                .failingUpgradeToVersionSince(controller().systemVersion(), controller().clock().instant().minus(upgradeGracePeriod))
+                .failingUpgradeToVersionSince(systemVersion, controller().clock().instant())
                 .asList().stream()
                 .map(Application::id)
                 .collect(Collectors.toList());
 
-        if ( ! failingApplications.isEmpty())
-            deploymentIssues.fileUnlessOpen(failingApplications, controller().systemVersion());
+        deploymentIssues.fileUnlessOpen(failingApplications, systemVersion);
     }
 
     private Tenant ownerOf(ApplicationId applicationId) {
