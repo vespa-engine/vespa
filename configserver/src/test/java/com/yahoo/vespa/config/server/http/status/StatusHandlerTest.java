@@ -34,7 +34,7 @@ public class StatusHandlerTest {
         assertEquals(expectedConfig.rpcport(), jsonNode.get("configserverConfig").get("rpcport").asInt());
         assertEquals(expectedConfig.applicationDirectory(), jsonNode.get("configserverConfig").get("applicationDirectory").asText());
 
-        assertEquals("6.10.0", jsonNode.get("modelVersions").get(0).asText());
+        assertEquals(1, jsonNode.get("modelVersions").size());
     }
 
 }
