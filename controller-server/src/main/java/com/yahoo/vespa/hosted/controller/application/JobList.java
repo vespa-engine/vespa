@@ -57,8 +57,6 @@ public class JobList {
 
     public boolean isEmpty() { return list.isEmpty(); }
 
-    public boolean anyMatch() { return ! isEmpty(); }
-
     public int size() { return list.size(); }
 
     // ----------------------------------- Basic filters
