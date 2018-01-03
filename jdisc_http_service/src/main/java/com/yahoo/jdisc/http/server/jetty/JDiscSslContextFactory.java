@@ -9,6 +9,8 @@ import java.security.KeyStore;
 import java.util.Objects;
 
 /**
+ * A modified {@link SslContextFactory} that allows passwordless truststore in combination with password protected keystore.
+ *
  * @author bjorncs
  */
 class JDiscSslContextFactory extends SslContextFactory {
