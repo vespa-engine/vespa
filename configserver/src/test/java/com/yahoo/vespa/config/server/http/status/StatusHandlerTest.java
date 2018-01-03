@@ -19,8 +19,8 @@ import static org.junit.Assert.assertEquals;
  * @author hmusum
  */
 public class StatusHandlerTest {
-    private final ObjectMapper mapper = new ObjectMapper();
 
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @Test
     public void require_that_handler_works() throws IOException {
