@@ -344,10 +344,10 @@ public class DeploymentTrigger {
     }
 
     private boolean isRunningProductionJob(Application application) {
-        return JobList.from(application)
+        return ! JobList.from(application)
                 .production()
                 .running(jobTimeoutLimit())
-                .anyMatch();
+                .isEmpty();
     }
 
     /**

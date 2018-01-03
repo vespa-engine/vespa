@@ -101,12 +101,12 @@ public class DeploymentJobs {
 
     /** Returns whether this has some job status which is not a success */
     public boolean hasFailures() {
-        return JobList.from(status.values()).failing().anyMatch();
+        return ! JobList.from(status.values()).failing().isEmpty();
     }
 
     /** Returns whether any job is currently in progress */
     public boolean isRunning(Instant timeoutLimit) {
-        return JobList.from(status.values()).running(timeoutLimit).anyMatch();
+        return ! JobList.from(status.values()).running(timeoutLimit).isEmpty();
     }
 
     /** Returns whether the given job type is currently running and was started after timeoutLimit */

@@ -123,7 +123,7 @@ public class ApplicationList {
 
     /** Returns the subset of applications which started failing after the given instant */
     public ApplicationList startedFailingOnVersionAfter(Version version) {
-        return listOf(list.stream().filter(application -> JobList.from(application).firstFailing().on(version).anyMatch()));
+        return listOf(list.stream().filter(application -> ! JobList.from(application).firstFailing().on(version).isEmpty()));
     }
 
     /** Returns the subset of applications which has the given upgrade policy */
@@ -209,32 +209,32 @@ public class ApplicationList {
     }
 
     private static boolean failingOn(Version version, Application application) {
-        return JobList.from(application)
+        return ! JobList.from(application)
                 .failing()
                 .lastCompleted().on(version)
-                .anyMatch();
+                .isEmpty();
     }
 
     private static boolean currentlyUpgrading(Change.VersionChange change, Application application, Instant jobTimeoutLimit) {
-        return JobList.from(application)
+        return ! JobList.from(application)
                 .running(jobTimeoutLimit)
                 .lastTriggered().on(change.version())
-                .anyMatch();
+                .isEmpty();
     }
 
     private static boolean failingUpgradeToVersionSince(Application application, Version version, Instant threshold) {
-        return JobList.from(application)
+        return ! JobList.from(application)
                 .not().failingApplicationChange()
                 .firstFailing().before(threshold)
                 .lastCompleted().on(version)
-                .anyMatch();
+                .isEmpty();
     }
 
     private static boolean failingApplicationChangeSince(Application application, Instant threshold) {
-        return JobList.from(application)
+        return ! JobList.from(application)
                 .failingApplicationChange()
                 .firstFailing().before(threshold)
-                .anyMatch();
+                .isEmpty();
     }
 
     /** Convenience converter from a stream to an ApplicationList */
