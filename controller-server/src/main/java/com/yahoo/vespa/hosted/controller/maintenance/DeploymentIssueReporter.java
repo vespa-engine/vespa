@@ -88,9 +88,7 @@ public class DeploymentIssueReporter extends Maintainer {
 
         List<ApplicationId> failingApplications = ApplicationList.from(applications)
                 .failingUpgradeToVersionSince(systemVersion, controller().clock().instant())
-                .asList().stream()
-                .map(Application::id)
-                .collect(Collectors.toList());
+                .idList();
 
         deploymentIssues.fileUnlessOpen(failingApplications, systemVersion);
     }

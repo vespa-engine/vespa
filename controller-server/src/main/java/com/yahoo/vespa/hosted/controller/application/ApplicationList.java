@@ -121,8 +121,8 @@ public class ApplicationList {
         return listOf(list.stream().filter(a -> !a.productionDeployments().isEmpty()));
     }
 
-    /** Returns the subset of applications which started failing after the given instant */
-    public ApplicationList startedFailingOnVersionAfter(Version version) {
+    /** Returns the subset of applications which started failing on the given version */
+    public ApplicationList startedFailingOn(Version version) {
         return listOf(list.stream().filter(application -> ! JobList.from(application).firstFailing().on(version).isEmpty()));
     }
 

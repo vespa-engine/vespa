@@ -145,7 +145,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
                                                        ApplicationList failingOnThis,
                                                        ApplicationList productionOnThis,
                                                        CuratorDb curator) {
-        ApplicationList failingNonCanaries = failingOnThis.without(UpgradePolicy.canary).startedFailingOnVersionAfter(version);
+        ApplicationList failingNonCanaries = failingOnThis.without(UpgradePolicy.canary).startedFailingOn(version);
         ApplicationList productionNonCanaries = productionOnThis.without(UpgradePolicy.canary);
 
         if (productionNonCanaries.size() + failingNonCanaries.size() == 0 || curator.readIgnoreConfidence()) return false;
