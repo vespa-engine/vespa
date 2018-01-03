@@ -57,12 +57,12 @@ public class DockerTester implements AutoCloseable {
                 .inetAddressResolver(inetAddressResolver)
                 .pathResolver(new PathResolver(Paths.get("/tmp"), Paths.get("/tmp"))).build();
         Clock clock = Clock.systemUTC();
-        StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(dockerMock, null, environment, callOrderVerifier, clock);
+        DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, null);
+        StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(dockerOperations, null, environment, callOrderVerifier, clock);
         AclMaintainer aclMaintainer = mock(AclMaintainer.class);
 
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, null);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock,
                 orchestratorMock, dockerOperations, storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL);
         nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer, mr, Clock.systemUTC());

@@ -6,9 +6,9 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PathResolver;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -35,7 +35,7 @@ public class StorageMaintainerTest {
     private final ManualClock clock = new ManualClock();
     private final Environment environment = new Environment.Builder()
             .pathResolver(new PathResolver()).build();
-    private final Docker docker = mock(Docker.class);
+    private final DockerOperations docker = mock(DockerOperations.class);
     private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
     private final StorageMaintainer storageMaintainer = new StorageMaintainer(docker, processExecuter,
             new MetricReceiverWrapper(MetricReceiver.nullImplementation), environment, clock);

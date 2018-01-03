@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 
@@ -19,8 +19,8 @@ import java.util.Optional;
 public class StorageMaintainerMock extends StorageMaintainer {
     private final CallOrderVerifier callOrderVerifier;
 
-    public StorageMaintainerMock(Docker docker, ProcessExecuter processExecuter, Environment environment, CallOrderVerifier callOrderVerifier, Clock clock) {
-        super(docker, processExecuter, new MetricReceiverWrapper(MetricReceiver.nullImplementation), environment, clock);
+    public StorageMaintainerMock(DockerOperations dockerOperations, ProcessExecuter processExecuter, Environment environment, CallOrderVerifier callOrderVerifier, Clock clock) {
+        super(dockerOperations, processExecuter, new MetricReceiverWrapper(MetricReceiver.nullImplementation), environment, clock);
         this.callOrderVerifier = callOrderVerifier;
     }
 
