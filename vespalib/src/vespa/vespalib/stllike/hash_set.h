@@ -43,6 +43,9 @@ public:
     iterator find(const K & key)             { return _ht.find(key); }
     const_iterator find(const K & key) const { return _ht.find(key); }
 
+    template <typename Func>
+    void for_each(Func func) const { _ht.for_each(func); }
+
     template< typename AltKey, typename AltExtract, typename AltHash, typename AltEqual >
     const_iterator find(const AltKey & key) const { return _ht.template find<AltKey, AltExtract, AltHash, AltEqual>(key); }
 

@@ -39,9 +39,7 @@ public:
     template <typename InputIt>
     void insert(InputIt first, InputIt last);
     template <typename Func>
-    void for_each(Func func) const {
-        _ht.for_each(func);
-    }
+    void for_each(Func func) const { _ht.for_each(func); }
     const V & operator [] (const K & key) const { return _ht.find(key)->second; }
     V & operator [] (const K & key)             { return _ht.insert(value_type(key, V())).first->second; }
     void erase(const K & key);
