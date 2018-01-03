@@ -38,6 +38,8 @@ public:
     insert_result insert(const value_type & value) { return _ht.insert(value); }
     template <typename InputIt>
     void insert(InputIt first, InputIt last);
+
+    /// This gives faster iteration than can be achieved by the iterators.
     template <typename Func>
     void for_each(Func func) const { _ht.for_each(func); }
     const V & operator [] (const K & key) const { return _ht.find(key)->second; }

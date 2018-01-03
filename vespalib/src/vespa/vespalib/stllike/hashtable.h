@@ -249,6 +249,8 @@ public:
     insert_result insert(V && node) {
         return insertInternal(std::forward<V>(node));
     }
+    
+    /// This gives faster iteration than can be achieved by the iterators.
     template <typename Func>
     void for_each(Func func) const;
 

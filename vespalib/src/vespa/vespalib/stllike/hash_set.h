@@ -43,6 +43,7 @@ public:
     iterator find(const K & key)             { return _ht.find(key); }
     const_iterator find(const K & key) const { return _ht.find(key); }
 
+    /// This gives faster iteration than can be achieved by the iterators.
     template <typename Func>
     void for_each(Func func) const { _ht.for_each(func); }
 
