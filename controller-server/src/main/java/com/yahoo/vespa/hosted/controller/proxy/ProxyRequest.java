@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
-import com.yahoo.config.provision.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.net.HostName;
 
@@ -88,10 +87,6 @@ public class ProxyRequest {
 
     public String getEnvironment() {
         return environment;
-    }
-
-    public ZoneId getZoneId() {
-        return ZoneId.from(environment, region);
     }
 
     public String getConfigServerRequest() {
