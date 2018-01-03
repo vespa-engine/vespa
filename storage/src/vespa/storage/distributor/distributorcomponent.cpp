@@ -281,6 +281,11 @@ DistributorComponent::updateBucketDatabase(
     if (updateFlags & DatabaseUpdate::RESET_TRUSTED) {
         dbentry->resetTrusted();
     }
+    if (dbentry->getNodeCount() == 0) {
+        LOG(warning, "all nodes in changedNodes set (size %zu) are down, removing dbentry", changedNodes.size());
+        bucketSpace.getBucketDatabase().remove(bucket.getBucketId());
+        return;
+    }
     bucketSpace.getBucketDatabase().update(dbentry);
 }
 
