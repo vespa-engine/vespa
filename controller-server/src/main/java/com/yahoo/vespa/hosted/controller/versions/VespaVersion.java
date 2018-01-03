@@ -42,8 +42,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
         this.confidence = confidence;
     }
 
-    public static Confidence confidenceFrom(DeploymentStatistics statistics, Controller controller,
-                                            Instant releasedAt) {
+    public static Confidence confidenceFrom(DeploymentStatistics statistics, Controller controller) {
         // 'production on this': All deployment jobs upgrading to this version have completed without failure
         ApplicationList productionOnThis = ApplicationList.from(statistics.production(), controller.applications())
                                                           .notUpgradingTo(statistics.version())
@@ -58,7 +57,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
             return Confidence.broken;
 
         // 'broken' if 4 non-canary was broken by this, and that is at least 10% of all
-        if (nonCanaryApplicationsBroken(statistics.version(), failingOnThis, productionOnThis, releasedAt, controller.curator()))
+        if (nonCanaryApplicationsBroken(statistics.version(), failingOnThis, productionOnThis, controller.curator()))
             return Confidence.broken;
 
         // 'low' unless all canary applications are upgraded
@@ -145,9 +144,8 @@ public class VespaVersion implements Comparable<VespaVersion> {
     private static boolean nonCanaryApplicationsBroken(Version version,
                                                        ApplicationList failingOnThis,
                                                        ApplicationList productionOnThis,
-                                                       Instant releasedAt,
                                                        CuratorDb curator) {
-        ApplicationList failingNonCanaries = failingOnThis.without(UpgradePolicy.canary).startedFailingOnVersionAfter(version, releasedAt);
+        ApplicationList failingNonCanaries = failingOnThis.without(UpgradePolicy.canary).startedFailingOnVersionAfter(version);
         ApplicationList productionNonCanaries = productionOnThis.without(UpgradePolicy.canary);
 
         if (productionNonCanaries.size() + failingNonCanaries.size() == 0 || curator.readIgnoreConfidence()) return false;

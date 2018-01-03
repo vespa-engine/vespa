@@ -122,8 +122,8 @@ public class ApplicationList {
     }
 
     /** Returns the subset of applications which started failing after the given instant */
-    public ApplicationList startedFailingOnVersionAfter(Version version, Instant instant) {
-        return listOf(list.stream().filter(application -> JobList.from(application).firstFailing().on(version).firstFailing().after(instant).anyMatch()));
+    public ApplicationList startedFailingOnVersionAfter(Version version) {
+        return listOf(list.stream().filter(application -> JobList.from(application).firstFailing().on(version).anyMatch()));
     }
 
     /** Returns the subset of applications which has the given upgrade policy */

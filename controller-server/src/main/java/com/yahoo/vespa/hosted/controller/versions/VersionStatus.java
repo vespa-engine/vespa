@@ -184,11 +184,11 @@ public class VersionStatus {
         VespaVersion.Confidence confidence;
         // Always compute confidence for system version
         if (isSystemVersion) {
-            confidence = VespaVersion.confidenceFrom(statistics, controller, releasedAt);
+            confidence = VespaVersion.confidenceFrom(statistics, controller);
         } else {
             // Keep existing confidence for non-system versions if already computed
             confidence = confidenceFor(statistics.version(), controller)
-                    .orElse(VespaVersion.confidenceFrom(statistics, controller, releasedAt));
+                    .orElse(VespaVersion.confidenceFrom(statistics, controller));
         }
         return new VespaVersion(statistics,
                                 gitSha.sha, releasedAt,
