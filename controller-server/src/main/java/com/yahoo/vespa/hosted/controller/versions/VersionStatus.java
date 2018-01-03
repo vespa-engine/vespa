@@ -119,10 +119,10 @@ public class VersionStatus {
     }
 
     private static ListMap<Version, String> findConfigServerVersions(Controller controller) {
-        List<URI> configServers = controller.zoneRegistry().zones().stream()
-                // TODO: Filter properly.
-                .filter(zone -> ! zone.region().equals(RegionName.from("us-east-2a")))
-                .flatMap(zone -> controller.getConfigServerUris(zone).stream())
+        List<URI> configServers = controller.zoneRegistry().zones()
+                .controllerManaged()
+                .ids().stream()
+                .flatMap(zoneId -> controller.getConfigServerUris(zoneId).stream())
                 .collect(Collectors.toList());
 
         ListMap<Version, String> versions = new ListMap<>();

@@ -2,12 +2,10 @@
 package com.yahoo.config.model.application.provider;
 
 import com.yahoo.config.application.TestBase;
-import com.yahoo.config.application.api.RuleConfigDeriver;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provision.ZoneId;
 import com.yahoo.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -42,7 +40,7 @@ public class FilesApplicationPackageTest {
         assertTrue(new File(appDir, "hosts.xml").exists());
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
 
-        ApplicationPackage processed = app.preprocess(ZoneId.from(Environment.dev, RegionName.defaultName()),
+        ApplicationPackage processed = app.preprocess(new Zone(Environment.dev, RegionName.defaultName()),
                                                       (ruleBaseDir, outputDir) -> {},
                                                       new BaseDeployLogger());
         assertTrue(new File(appDir, ".preprocessed").exists());

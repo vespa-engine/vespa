@@ -20,7 +20,8 @@ public class Zone {
     private final SystemName systemName;
     private final FlavorDefaults flavorDefaults;
     private final Optional<NodeFlavors> nodeFlavors;
-    private final ZoneId id;
+    private final Environment environment;
+    private final RegionName region;
 
     @Inject
     public Zone(ConfigserverConfig configserverConfig, NodeFlavors nodeFlavors) {
@@ -46,25 +47,21 @@ public class Zone {
                  RegionName region,
                  FlavorDefaults flavorDefaults,
                  NodeFlavors nodeFlavors) {
-        this.id = ZoneId.from(environment, region);
+        this.environment = environment;
+        this.region = region;
         this.flavorDefaults = flavorDefaults;
         this.systemName = systemName;
         this.nodeFlavors = Optional.ofNullable(nodeFlavors);
     }
 
-    /** Returns the id of this */
-    public ZoneId id() {
-        return id;
-    }
-
     /** Returns the current environment */
     public Environment environment() {
-        return id.environment();
+        return environment;
     }
 
     /** Returns the current region */
     public RegionName region() {
-        return id.region();
+        return region;
     }
 
     /** Returns the current system */
@@ -83,19 +80,21 @@ public class Zone {
 
     @Override
     public String toString() {
-        return id.toString();
+        return "zone " + environment + "." + region;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if ( ! (o instanceof Zone)) return false;
-        return Objects.equals(id, ((Zone) o).id);
+        if (!(o instanceof Zone)) return false;
+        Zone zone = (Zone) o;
+        return environment == zone.environment &&
+               Objects.equals(region, zone.region);
     }
 
     @Override
     public int hashCode() {
-        return id.hashCode();
+        return Objects.hash(environment, region);
     }
 
     private static class FlavorDefaults {
