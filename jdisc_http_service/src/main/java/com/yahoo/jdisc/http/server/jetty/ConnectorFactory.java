@@ -94,7 +94,7 @@ public class ConnectorFactory {
     private SslConnectionFactory newSslConnectionFactory() {
         Ssl sslConfig = connectorConfig.ssl();
 
-        SslContextFactory factory = new SslContextFactory();
+        SslContextFactory factory = new JDiscSslContextFactory();
 
         sslKeyStoreConfigurator.configure(new DefaultSslKeyStoreContext(factory));
         sslTrustStoreConfigurator.configure(new DefaultSslTrustStoreContext(factory));
