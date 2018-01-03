@@ -5,6 +5,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzService;
 
 import java.net.URI;
 import java.time.Duration;
@@ -51,5 +52,8 @@ public interface ZoneRegistry {
 
     /** Returns the system of this registry. */
     SystemName system();
+
+    /** Return the configserver's Athenz service identity */
+    AthenzService getConfigserverAthenzService(ZoneId zoneId);
 
 }

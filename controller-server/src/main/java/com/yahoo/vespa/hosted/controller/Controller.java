@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
@@ -23,7 +24,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingSe
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -156,8 +156,16 @@ public class Controller extends AbstractComponent {
         return zoneRegistry.getLogServerUri(deploymentId);
     }
 
+    /**
+     * @deprecated Use {@link #getSecureConfigServerUris(ZoneId)} instead
+     */
+    @Deprecated
     public List<URI> getConfigServerUris(ZoneId zoneId) {
         return zoneRegistry.getConfigServerUris(zoneId);
+    }
+
+    public List<URI> getSecureConfigServerUris(ZoneId zoneId) {
+        return zoneRegistry.getConfigServerSecureUris(zoneId);
     }
     
     public ZoneRegistry zoneRegistry() { return zoneRegistry; }
