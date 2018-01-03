@@ -93,7 +93,7 @@ public class FileReferenceDownloader {
                 downloads.remove(fileReference);
                 download.future().set(Optional.of(file));
             } else {
-                log.log(LogLevel.WARNING, "Received a file " + fileReference + " I did not ask for. Impossible");
+                log.log(LogLevel.INFO, "Received '" + fileReference + "', which was not requested. Can be ignored if happening during upgrades/restarts");
             }
         }
     }
