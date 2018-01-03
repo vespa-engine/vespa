@@ -250,7 +250,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 new AthenzIdentityVerifier(
                         singleton(
                                 zoneRegistry.getConfigserverAthenzService(
-                                        ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getEnvironment()))));
+                                        ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion()))));
         return HttpClientBuilder.create()
                 .setUserAgent("config-server-client")
                 .setSslcontext(sslContextProvider.get())
