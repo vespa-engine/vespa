@@ -956,6 +956,34 @@ TEST_F("ReferenceFieldValue with ID serialization matches Java", RefFixture) {
     f.verify_cross_language_serialization("reference_with_id", value);
 }
 
+struct AssociatedDocumentRepoFixture {
+    const DocumentType& doc_type{repo.getDocumentType()};
+    DocumentId doc_id{"doc::testdoc"};
+    Document source_doc{doc_type, doc_id};
+
+    std::unique_ptr<Document> roundtrip_serialize_source_document() {
+        nbostream stream;
+        VespaDocumentSerializer serializer(stream);
+        serializer.write(source_doc);
+
+        auto deserialized_doc = std::make_unique<Document>();
+        VespaDocumentDeserializer deserializer(repo, stream, serialization_version);
+        deserializer.read(*deserialized_doc);
+        return deserialized_doc;
+    }
+};
+
+TEST_F("Deserializing non-empty document associates correct repo with document instance", AssociatedDocumentRepoFixture) {
+    f.source_doc.setValue(f.doc_type.getField("header field"), IntFieldValue(42));
+    auto deserialized_doc = f.roundtrip_serialize_source_document();
+    EXPECT_EQUAL(&doc_repo, deserialized_doc->getRepo());
+}
+
+TEST_F("Deserializing empty document associates correct repo with document instance", AssociatedDocumentRepoFixture) {
+    auto deserialized_doc = f.roundtrip_serialize_source_document();
+    EXPECT_EQUAL(&doc_repo, deserialized_doc->getRepo());
+}
+
 }  // namespace
 
 TEST_MAIN() { TEST_RUN_ALL(); }
