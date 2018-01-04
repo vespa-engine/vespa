@@ -154,7 +154,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private static TrustManager[] createTrustManagersWithAthenzCa() {
         try {
             KeyStore trustStore = KeyStore.getInstance("JKS");
-            try (FileInputStream in = new FileInputStream("/home/y/share/ssl/certs/yahoo_certificate_bundle.jks")) {
+            try (FileInputStream in = new FileInputStream("/opt/yahoo/share/ssl/certs/yahoo_certificate_bundle.jks")) {
                 trustStore.load(in, null);
             }
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
