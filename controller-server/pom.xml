@@ -109,6 +109,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>config-model-api</artifactId>
             <version>${project.version}</version>
@@ -185,11 +190,6 @@
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-                <!--Exclude Apache httpclient -->
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpclient</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
