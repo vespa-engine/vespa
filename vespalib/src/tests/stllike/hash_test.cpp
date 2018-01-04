@@ -402,8 +402,7 @@ TEST("test hash set iterators stl compatible")
     EXPECT_TRUE((equal_types<iter_traits::value_type, int>::value));
     EXPECT_TRUE((equal_types<iter_traits::reference, int&>::value));
     EXPECT_TRUE((equal_types<iter_traits::pointer, int*>::value));
-    EXPECT_TRUE((equal_types<iter_traits::iterator_category,
-                             std::forward_iterator_tag>::value));
+    EXPECT_TRUE((equal_types<iter_traits::iterator_category, std::forward_iterator_tag>::value));
 
     typedef set_type::const_iterator const_iter_type;
     typedef std::iterator_traits<const_iter_type> const_iter_traits;
@@ -411,8 +410,28 @@ TEST("test hash set iterators stl compatible")
     EXPECT_TRUE((equal_types<const_iter_traits::value_type, const int>::value));
     EXPECT_TRUE((equal_types<const_iter_traits::reference, const int&>::value));
     EXPECT_TRUE((equal_types<const_iter_traits::pointer, const int*>::value));
-    EXPECT_TRUE((equal_types<const_iter_traits::iterator_category,
-                             std::forward_iterator_tag>::value));
+    EXPECT_TRUE((equal_types<const_iter_traits::iterator_category, std::forward_iterator_tag>::value));
+}
+
+void
+verify_sum(const hash_map<size_t, size_t> & m, size_t expexted_sum) {
+    size_t computed_sum = 0;
+    std::for_each(m.begin(), m.end(), [&computed_sum](const auto & v) { computed_sum += v.second; });
+    EXPECT_EQUAL(expexted_sum, computed_sum);
+    computed_sum = 0;
+    m.for_each([&computed_sum](const auto & v) { computed_sum += v.second; });
+    EXPECT_EQUAL(expexted_sum, computed_sum);
+}
+
+TEST("test that for_each member works as std::for_each") {
+    hash_map<size_t, size_t> m;
+    size_t expected_sum(0);
+    for (size_t i(0); i < 1000; i++) {
+        TEST_DO(verify_sum(m, expected_sum));
+        m[i] = i;
+        expected_sum += i;
+    }
+    TEST_DO(verify_sum(m, expected_sum));
 }
 
 using IntHashSet = hash_set<int>;

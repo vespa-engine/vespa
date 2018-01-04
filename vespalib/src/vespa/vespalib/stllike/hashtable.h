@@ -249,6 +249,11 @@ public:
     insert_result insert(V && node) {
         return insertInternal(std::forward<V>(node));
     }
+    
+    /// This gives faster iteration than can be achieved by the iterators.
+    template <typename Func>
+    void for_each(Func func) const;
+
     void erase(const Key & key);
     void reserve(size_t sz) {
         if (sz > _nodes.capacity()) {
