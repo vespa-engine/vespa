@@ -37,16 +37,16 @@ public class OutstandingChangeDeployerTest {
         assertFalse(tester.application("app1").hasOutstandingChange());
         tester.notifyJobCompletion(DeploymentJobs.JobType.component, tester.application("app1"), true);
         assertTrue(tester.application("app1").hasOutstandingChange());
-        assertEquals(1, tester.buildSystem().jobs().size());
+        assertEquals(1, tester.deploymentQueue().jobs().size());
         
         deployer.maintain();
-        assertEquals("No effect as job is in progress", 1, tester.buildSystem().jobs().size());
+        assertEquals("No effect as job is in progress", 1, tester.deploymentQueue().jobs().size());
         
         tester.deployCompletely("app1");
-        assertEquals("Upgrade done", 0, tester.buildSystem().jobs().size());
+        assertEquals("Upgrade done", 0, tester.deploymentQueue().jobs().size());
 
         deployer.maintain();
-        List<BuildService.BuildJob> jobs = tester.buildSystem().jobs();
+        List<BuildService.BuildJob> jobs = tester.deploymentQueue().jobs();
         assertEquals(1, jobs.size());
         assertEquals(11, jobs.get(0).projectId());
         assertEquals(DeploymentJobs.JobType.systemTest.jobName(), jobs.get(0).jobName());

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
@@ -42,8 +43,8 @@ public class DeploymentQueue {
     public List<BuildJob> jobs() {
         ImmutableList.Builder<BuildJob> builder = ImmutableList.builder();
         for (JobType jobType : JobType.values())
-            locked(jobType, queue ->
-                    queue.forEach(id -> toBuildJob(id, jobType).ifPresent(builder::add)));
+            for (ApplicationId id : curator.readJobQueue(jobType))
+                toBuildJob(id, jobType).ifPresent(builder::add);
 
         return builder.build();
     }

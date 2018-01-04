@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
@@ -11,58 +12,54 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author mpolden
+ * @author jvenstad
  */
-@RunWith(Parameterized.class)
 public class DeploymentQueueTest {
 
-    @Parameterized.Parameters(name = "jobType={0}")
-    public static Iterable<?> capacityConstrainedJobs() {
-        return Arrays.asList(JobType.systemTest, JobType.stagingTest);
-    }
-
-    private final JobType jobType;
-
-    public DeploymentQueueTest(JobType jobType) {
-        this.jobType = jobType;
-    }
-
     @Test
-    public void throttle_capacity_constrained_jobs() {
+    public void testJobOffering() {
         DeploymentTester tester = new DeploymentTester();
-        DeploymentQueue deploymentQueue = new DeploymentQueue(tester.controller(), new MockCuratorDb());
+        DeploymentQueue deploymentQueue = new DeploymentQueue(tester.controller(), tester.controller().curator());
 
         int project1 = 1;
         int project2 = 2;
         int project3 = 3;
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .region("us-west-1")
-                .build();
-        ApplicationId app1 = tester.createAndDeploy("app1", project1, applicationPackage).id();
-        ApplicationId app2 = tester.createAndDeploy("app2", project2, applicationPackage).id();
-        ApplicationId app3 = tester.createAndDeploy("app3", project3, applicationPackage).id();
+
+        ApplicationId app1 = tester.createApplication("app1", "tenant", project1, null).id();
+        ApplicationId app2 = tester.createApplication("app2", "tenant", project2, null).id();
+        ApplicationId app3 = tester.createApplication("app3", "tenant", project3, null).id();
 
         // Trigger jobs in capacity constrained environment
-        deploymentQueue.addJob(app1, jobType, false);
-        deploymentQueue.addJob(app2, jobType, false);
-        deploymentQueue.addJob(app3, jobType, false);
+        deploymentQueue.addJob(app1, JobType.systemTest, false);
+        deploymentQueue.addJob(app2, JobType.systemTest, true);
+        deploymentQueue.addJob(app3, JobType.stagingTest, false);
 
-        // A limited number of jobs are offered at a time:
-        // First offer
-        List<BuildJob> nextJobs = deploymentQueue.takeJobsToRun();
-        assertEquals(2, nextJobs.size());
-        assertEquals(project1, nextJobs.get(0).projectId());
-        assertEquals(project2, nextJobs.get(1).projectId());
+        // Trigger jobs in non-capacity constrained environment
+        deploymentQueue.addJob(app1, JobType.productionUsWest1, false);
+        deploymentQueue.addJob(app2, JobType.productionUsWest1, false);
+        deploymentQueue.addJob(app3, JobType.productionUsWest1, false);
 
-        // Second offer
-        nextJobs = deploymentQueue.takeJobsToRun();
-        assertEquals(1, nextJobs.size());
-        assertEquals(project3, nextJobs.get(0).projectId());
+        assertEquals("Each offer contains a single job from each capacity constrained environment, and all other jobs.",
+                     Arrays.asList(new BuildJob(project2, JobType.systemTest.jobName()),
+                                   new BuildJob(project3, JobType.stagingTest.jobName()),
+                                   new BuildJob(project1, JobType.productionUsWest1.jobName()),
+                                   new BuildJob(project2, JobType.productionUsWest1.jobName()),
+                                   new BuildJob(project3, JobType.productionUsWest1.jobName())),
+                     deploymentQueue.takeJobsToRun());
+
+        assertEquals("The system test job for project 1 was pushed back in the queue by that for project 2.",
+                     Collections.singletonList(new BuildJob(project1, JobType.systemTest.jobName())),
+                     deploymentQueue.takeJobsToRun());
+
+        assertEquals("No jobs are left.",
+                     Collections.emptyList(),
+                     deploymentQueue.takeJobsToRun());
     }
 
 }

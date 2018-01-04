@@ -76,7 +76,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
             return vespaVersion();
         }
         if (path.matches("/screwdriver/v1/jobsToRun")) {
-            return buildJobs(controller.applications().deploymentTrigger().buildSystem().jobs());
+            return buildJobs(controller.applications().deploymentTrigger().deploymentQueue().jobs());
         }
         return notFound(request);
     }
@@ -95,7 +95,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
     private HttpResponse delete(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
         if (path.matches("/screwdriver/v1/jobsToRun")) {
-            return buildJobs(controller.applications().deploymentTrigger().buildSystem().takeJobsToRun());
+            return buildJobs(controller.applications().deploymentTrigger().deploymentQueue().takeJobsToRun());
         }
         return notFound(request);
     }

@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Duration;
-import java.util.concurrent.Executors;
 
 /**
  * Maintenance jobs of the controller.
@@ -60,8 +59,7 @@ public class ControllerMaintenance extends AbstractComponent {
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(10), jobControl);
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
         dnsMaintainer = new DnsMaintainer(controller, Duration.ofHours(1), jobControl, nameService);
-        deploymentTriggerer = new DeploymentTriggerer(controller, Duration.ofSeconds(30), jobControl, buildService,
-                                                      controller.applications().deploymentTrigger().buildSystem());
+        deploymentTriggerer = new DeploymentTriggerer(controller, Duration.ofSeconds(30), jobControl, buildService);
     }
 
     public Upgrader upgrader() { return upgrader; }

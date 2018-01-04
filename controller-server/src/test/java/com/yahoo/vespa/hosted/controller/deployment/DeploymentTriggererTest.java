@@ -2,16 +2,16 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -20,52 +20,67 @@ import static org.junit.Assert.assertEquals;
 public class DeploymentTriggererTest {
 
     @Test
-    public void testTriggering() {
+    public void testMaintenance() {
         DeploymentTester tester = new DeploymentTester();
         JobControl jobControl = new JobControl(tester.controller().curator());
-        DeploymentQueue deploymentQueue = new DeploymentTriggerer(tester.controller(),
-                                                                  Duration.ofDays(1),
-                                                                  jobControl,
-                                                                  new MockBuildService(),
-                                                                  Runnable::run);
 
-        // Make sure the applications exist in the controller, as the build system uses this information.
-        ApplicationId app1 = tester.createAndDeploy("app1", 1, "default-policy").id();
-        ApplicationId app2 = tester.createAndDeploy("app2", 2, "default-policy").id();
-        ApplicationId app3 = tester.createAndDeploy("app3", 3, "default-policy").id();
+        int project1 = 1;
+        int project2 = 2;
+        int project3 = 3;
 
-        // Trigger jobs in a capacity-constrained environment.
-        deploymentQueue.addJob(app1, systemTest, false);
-        deploymentQueue.addJob(app2, systemTest, false);
-        deploymentQueue.addJob(app3, systemTest, false);
+        ApplicationId app1 = tester.createApplication("app1", "tenant", project1, null).id();
+        ApplicationId app2 = tester.createApplication("app2", "tenant", project2, null).id();
+        ApplicationId app3 = tester.createApplication("app3", "tenant", project3, null).id();
 
-        // Trigger jobs in a non-constrained environment.
-        deploymentQueue.addJob(app1, productionUsWest1, false);
-        deploymentQueue.addJob(app2, productionUsWest1, false);
-        deploymentQueue.addJob(app3, productionUsWest1, false);
+        // Create a BuildService which always rejects jobs from project2, but accepts and runs all others.
+        ArrayList<BuildJob> buildJobs = new ArrayList<>();
+        BuildService buildService = buildJob -> buildJob.projectId() == project2 ? false : buildJobs.add(buildJob);
 
-        // A single capacity-constrained job is triggered each run.
-        List<BuildService.BuildJob> nextJobs = deploymentQueue.takeJobsToRun();
-        assertEquals(2, nextJobs.size());
-        assertEquals(project1, nextJobs.get(0).projectId());
-        assertEquals(project2, nextJobs.get(1).projectId());
+        DeploymentTriggerer triggerer = new DeploymentTriggerer(tester.controller(),
+                                                                Duration.ofDays(1),
+                                                                jobControl,
+                                                                buildService,
+                                                                Runnable::run);
 
-        nextJobs = deploymentQueue.takeJobsToRun();
-        assertEquals(1, nextJobs.size());
-        assertEquals(project3, nextJobs.get(0).projectId());
-    }
+        triggerer.maintain();
+        assertEquals("No jobs are triggered initially.",
+                     Collections.emptyList(),
+                     buildJobs);
 
+        // Trigger jobs in capacity constrained environment
+        tester.deploymentQueue().addJob(app1, DeploymentJobs.JobType.systemTest, false);
+        tester.deploymentQueue().addJob(app2, DeploymentJobs.JobType.systemTest, false);
+        tester.deploymentQueue().addJob(app3, DeploymentJobs.JobType.systemTest, false);
 
-    private static class MockBuildService implements BuildService {
+        // Trigger jobs in non-capacity constrained environment
+        tester.deploymentQueue().addJob(app1, DeploymentJobs.JobType.productionUsWest1, false);
+        tester.deploymentQueue().addJob(app2, DeploymentJobs.JobType.productionUsWest1, false);
+        tester.deploymentQueue().addJob(app3, DeploymentJobs.JobType.productionUsWest1, false);
 
-        private final Set<String> jobs = new HashSet<>();
+        triggerer.maintain();
+        assertEquals("One of each capacity constrained job and production jobs not for app2 are triggered after one maintenance run.",
+                     Arrays.asList(new BuildJob(project1, DeploymentJobs.JobType.systemTest.jobName()),
+                                   new BuildJob(project1, DeploymentJobs.JobType.productionUsWest1.jobName()),
+                                   new BuildJob(project3, DeploymentJobs.JobType.productionUsWest1.jobName())),
+                     buildJobs);
 
-        @Override
-        public boolean trigger(BuildJob buildJob) {
-            jobs.add(buildJob.jobName() + "@" + buildJob.projectId());
-            return true;
-        }
+        buildJobs.clear();
+        triggerer.maintain();
+        assertEquals("Next job in line fails to trigger in the build service.",
+                     Collections.emptyList(),
+                     buildJobs);
 
+        buildJobs.clear();
+        triggerer.maintain();
+        assertEquals("Next job which was waiting for capacity is triggered on next run.",
+                     Collections.singletonList(new BuildJob(project3, DeploymentJobs.JobType.systemTest.jobName())),
+                     buildJobs);
+
+        buildJobs.clear();
+        triggerer.maintain();
+        assertEquals("No jobs are left.",
+                     Collections.emptyList(),
+                     tester.deploymentQueue().takeJobsToRun());
     }
 
 }

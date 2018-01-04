@@ -50,13 +50,13 @@ public class DeploymentTrigger {
     private final DeploymentQueue deploymentQueue;
     private final DeploymentOrder order;
 
-    public DeploymentTrigger(Controller controller, CuratorDb curator, Clock clock, DeploymentQueue deploymentQueue) {
+    public DeploymentTrigger(Controller controller, CuratorDb curator, Clock clock) {
         Objects.requireNonNull(controller,"controller cannot be null");
         Objects.requireNonNull(curator,"curator cannot be null");
         Objects.requireNonNull(clock,"clock cannot be null");
         this.controller = controller;
         this.clock = clock;
-        this.deploymentQueue = deploymentQueue;
+        this.deploymentQueue = new DeploymentQueue(controller, curator);
         this.order = new DeploymentOrder(controller);
         this.jobTimeout = controller.system().equals(SystemName.main) ? Duration.ofHours(12) : Duration.ofHours(1);
     }
@@ -64,7 +64,7 @@ public class DeploymentTrigger {
     /** Returns the time in the past before which jobs are at this moment considered unresponsive */
     public Instant jobTimeoutLimit() { return clock.instant().minus(jobTimeout); }
 
-    public DeploymentQueue buildSystem() { return deploymentQueue; }
+    public DeploymentQueue deploymentQueue() { return deploymentQueue; }
 
     public DeploymentOrder deploymentOrder() { return order; }
 

@@ -25,31 +25,29 @@ public class DeploymentTriggerer extends Maintainer {
     static final int triggeringRetries = 5;
 
     private final BuildService buildService;
-    private final DeploymentQueue deploymentQueue;
     private final Executor executor;
 
-    public DeploymentTriggerer(Controller controller, Duration triggeringInterval, JobControl jobControl,
-                               BuildService buildService, DeploymentQueue deploymentQueue) {
-        this(controller, triggeringInterval, jobControl, buildService, deploymentQueue, Executors.newFixedThreadPool(20));
+    public DeploymentTriggerer(Controller controller, Duration triggeringInterval, JobControl jobControl, BuildService buildService) {
+        this(controller, triggeringInterval, jobControl, buildService, Executors.newFixedThreadPool(20));
     }
 
     DeploymentTriggerer(Controller controller, Duration triggeringInterval, JobControl jobControl,
-                        BuildService buildService, DeploymentQueue deploymentQueue, Executor executor) {
+                        BuildService buildService, Executor executor) {
         super(controller, triggeringInterval, jobControl);
         this.buildService = buildService;
-        this.deploymentQueue = deploymentQueue;
         this.executor = executor;
     }
 
     @Override
     protected void maintain() {
-        deploymentQueue.takeJobsToRun().forEach(buildJob -> executor.execute(() -> {
-            for (int i = 0; i < triggeringRetries; i++)
-                if (buildService.trigger(buildJob))
-                    return;
+        controller().applications().deploymentTrigger().deploymentQueue().takeJobsToRun()
+                .forEach(buildJob -> executor.execute(() -> {
+                    for (int i = 0; i < triggeringRetries; i++)
+                        if (buildService.trigger(buildJob))
+                            return;
 
-            log.log(Level.WARNING, "Exhausted all " + triggeringRetries + " retries for " + buildJob + " without success.");
-        }));
+                    log.log(Level.WARNING, "Exhausted all " + triggeringRetries + " retries for " + buildJob + " without success.");
+                }));
     }
 
 }
