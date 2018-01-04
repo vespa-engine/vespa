@@ -79,7 +79,7 @@ public class DeploymentTriggerTest {
     @Test
     public void deploymentSpecDecidesTriggerOrder() {
         DeploymentTester tester = new DeploymentTester();
-        BuildSystem buildSystem = tester.buildSystem();
+        DeploymentQueue deploymentQueue = tester.buildSystem();
         TenantId tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
         Application application = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -98,13 +98,13 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionCorpUsEast1);
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsWest1);
-        assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
+        assertTrue("All jobs consumed", deploymentQueue.jobs().isEmpty());
     }
 
     @Test
     public void deploymentsSpecWithDelays() {
         DeploymentTester tester = new DeploymentTester();
-        BuildSystem buildSystem = tester.buildSystem();
+        DeploymentQueue deploymentQueue = tester.buildSystem();
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -124,21 +124,21 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
         tester.clock().advance(Duration.ofSeconds(1)); // Make staging test sort as the last successful job
         tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
-        assertTrue("No more jobs triggered at this time", buildSystem.jobs().isEmpty());
+        assertTrue("No more jobs triggered at this time", deploymentQueue.jobs().isEmpty());
 
         // 30 seconds pass, us-west-1 is triggered
         tester.clock().advance(Duration.ofSeconds(30));
         tester.deploymentTrigger().triggerReadyJobs();
 
         // Consume us-west-1 job without reporting completion
-        assertEquals(1, buildSystem.jobs().size());
-        assertEquals(JobType.productionUsWest1.jobName(), buildSystem.jobs().get(0).jobName());
-        buildSystem.takeJobsToRun();
+        assertEquals(1, deploymentQueue.jobs().size());
+        assertEquals(JobType.productionUsWest1.jobName(), deploymentQueue.jobs().get(0).jobName());
+        deploymentQueue.takeJobsToRun();
 
         // 3 minutes pass, delayed trigger does nothing as us-west-1 is still in progress
         tester.clock().advance(Duration.ofMinutes(3));
         tester.deploymentTrigger().triggerReadyJobs();
-        assertTrue("No more jobs triggered at this time", buildSystem.jobs().isEmpty());
+        assertTrue("No more jobs triggered at this time", deploymentQueue.jobs().isEmpty());
 
         // us-west-1 completes
         tester.deploy(JobType.productionUsWest1, application, applicationPackage);
@@ -146,18 +146,18 @@ public class DeploymentTriggerTest {
 
         // Delayed trigger does nothing as not enough time has passed after us-west-1 completion
         tester.deploymentTrigger().triggerReadyJobs();
-        assertTrue("No more jobs triggered at this time", buildSystem.jobs().isEmpty());
+        assertTrue("No more jobs triggered at this time", deploymentQueue.jobs().isEmpty());
 
         // 3 minutes pass, us-central-1 is triggered
         tester.clock().advance(Duration.ofMinutes(3));
         tester.deploymentTrigger().triggerReadyJobs();
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
-        assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
+        assertTrue("All jobs consumed", deploymentQueue.jobs().isEmpty());
 
         // Delayed trigger job runs again, with nothing to trigger
         tester.clock().advance(Duration.ofMinutes(10));
         tester.deploymentTrigger().triggerReadyJobs();
-        assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
+        assertTrue("All jobs consumed", deploymentQueue.jobs().isEmpty());
     }
 
     @Test
@@ -235,7 +235,7 @@ public class DeploymentTriggerTest {
     @Test
     public void testSuccessfulDeploymentApplicationPackageChanged() {
         DeploymentTester tester = new DeploymentTester();
-        BuildSystem buildSystem = tester.buildSystem();
+        DeploymentQueue deploymentQueue = tester.buildSystem();
         TenantId tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
         Application application = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
         ApplicationPackage previousApplicationPackage = new ApplicationPackageBuilder()
@@ -263,7 +263,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionUsCentral1);
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionUsWest1);
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionApNortheast1);
-        assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
+        assertTrue("All jobs consumed", deploymentQueue.jobs().isEmpty());
     }
 
     @Test
@@ -333,7 +333,7 @@ public class DeploymentTriggerTest {
     @Test
     public void testHandleMultipleNotificationsFromLastJob() {
         DeploymentTester tester = new DeploymentTester();
-        BuildSystem buildSystem = tester.buildSystem();
+        DeploymentQueue deploymentQueue = tester.buildSystem();
         TenantId tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
         Application application = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -353,7 +353,7 @@ public class DeploymentTriggerTest {
         tester.notifyJobCompletion(JobType.productionCorpUsEast1, application, true);
         assertFalse("Change has been deployed",
                     tester.applications().require(application.id()).deploying().isPresent());
-        assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
+        assertTrue("All jobs consumed", deploymentQueue.jobs().isEmpty());
     }
 
 }

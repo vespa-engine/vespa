@@ -9,10 +9,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTriggerer;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Duration;
+import java.util.concurrent.Executors;
 
 /**
  * Maintenance jobs of the controller.
@@ -37,6 +39,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final DeploymentMetricsMaintainer deploymentMetricsMaintainer;
     private final ApplicationOwnershipConfirmer applicationOwnershipConfirmer;
     private final DnsMaintainer dnsMaintainer;
+    private final DeploymentTriggerer deploymentTriggerer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, Controller controller, CuratorDb curator,
@@ -57,6 +60,8 @@ public class ControllerMaintenance extends AbstractComponent {
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(10), jobControl);
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
         dnsMaintainer = new DnsMaintainer(controller, Duration.ofHours(1), jobControl, nameService);
+        deploymentTriggerer = new DeploymentTriggerer(controller, Duration.ofSeconds(30), jobControl, buildService,
+                                                      controller.applications().deploymentTrigger().buildSystem());
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -78,6 +83,7 @@ public class ControllerMaintenance extends AbstractComponent {
         deploymentMetricsMaintainer.deconstruct();
         applicationOwnershipConfirmer.deconstruct();
         dnsMaintainer.deconstruct();
+        deploymentTriggerer.deconstruct();
     }
 
 }

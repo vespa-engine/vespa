@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
  * @author mpolden
  */
 @RunWith(Parameterized.class)
-public class PolledBuildSystemTest {
+public class DeploymentQueueTest {
 
     @Parameterized.Parameters(name = "jobType={0}")
     public static Iterable<?> capacityConstrainedJobs() {
@@ -28,14 +28,14 @@ public class PolledBuildSystemTest {
 
     private final JobType jobType;
 
-    public PolledBuildSystemTest(JobType jobType) {
+    public DeploymentQueueTest(JobType jobType) {
         this.jobType = jobType;
     }
 
     @Test
     public void throttle_capacity_constrained_jobs() {
         DeploymentTester tester = new DeploymentTester();
-        BuildSystem buildSystem = new PolledBuildSystem(tester.controller(), new MockCuratorDb());
+        DeploymentQueue deploymentQueue = new DeploymentQueue(tester.controller(), new MockCuratorDb());
 
         int project1 = 1;
         int project2 = 2;
@@ -48,19 +48,19 @@ public class PolledBuildSystemTest {
         ApplicationId app3 = tester.createAndDeploy("app3", project3, applicationPackage).id();
 
         // Trigger jobs in capacity constrained environment
-        buildSystem.addJob(app1, jobType, false);
-        buildSystem.addJob(app2, jobType, false);
-        buildSystem.addJob(app3, jobType, false);
+        deploymentQueue.addJob(app1, jobType, false);
+        deploymentQueue.addJob(app2, jobType, false);
+        deploymentQueue.addJob(app3, jobType, false);
 
         // A limited number of jobs are offered at a time:
         // First offer
-        List<BuildJob> nextJobs = buildSystem.takeJobsToRun();
+        List<BuildJob> nextJobs = deploymentQueue.takeJobsToRun();
         assertEquals(2, nextJobs.size());
         assertEquals(project1, nextJobs.get(0).projectId());
         assertEquals(project2, nextJobs.get(1).projectId());
 
         // Second offer
-        nextJobs = buildSystem.takeJobsToRun();
+        nextJobs = deploymentQueue.takeJobsToRun();
         assertEquals(1, nextJobs.size());
         assertEquals(project3, nextJobs.get(0).projectId());
     }

@@ -47,16 +47,16 @@ public class DeploymentTrigger {
 
     private final Controller controller;
     private final Clock clock;
-    private final BuildSystem buildSystem;
+    private final DeploymentQueue deploymentQueue;
     private final DeploymentOrder order;
 
-    public DeploymentTrigger(Controller controller, CuratorDb curator, Clock clock, BuildSystem buildSystem) {
+    public DeploymentTrigger(Controller controller, CuratorDb curator, Clock clock, DeploymentQueue deploymentQueue) {
         Objects.requireNonNull(controller,"controller cannot be null");
         Objects.requireNonNull(curator,"curator cannot be null");
         Objects.requireNonNull(clock,"clock cannot be null");
         this.controller = controller;
         this.clock = clock;
-        this.buildSystem = buildSystem;
+        this.deploymentQueue = deploymentQueue;
         this.order = new DeploymentOrder(controller);
         this.jobTimeout = controller.system().equals(SystemName.main) ? Duration.ofHours(12) : Duration.ofHours(1);
     }
@@ -64,7 +64,7 @@ public class DeploymentTrigger {
     /** Returns the time in the past before which jobs are at this moment considered unresponsive */
     public Instant jobTimeoutLimit() { return clock.instant().minus(jobTimeout); }
 
-    public BuildSystem buildSystem() { return buildSystem; }
+    public DeploymentQueue buildSystem() { return deploymentQueue; }
 
     public DeploymentOrder deploymentOrder() { return order; }
 
@@ -238,7 +238,7 @@ public class DeploymentTrigger {
      */
     public void cancelChange(ApplicationId applicationId) {
         applications().lockOrThrow(applicationId, application -> {
-            buildSystem.removeJobs(application.id());
+            deploymentQueue.removeJobs(application.id());
             applications().store(application.withDeploying(Optional.empty()));
         });
     }
@@ -313,7 +313,7 @@ public class DeploymentTrigger {
         log.info(String.format("Triggering %s for %s, %s: %s", jobType, application,
                                application.deploying().map(d -> "deploying " + d).orElse("restarted deployment"),
                                reason));
-        buildSystem.addJob(application.id(), jobType, first);
+        deploymentQueue.addJob(application.id(), jobType, first);
         return application.withJobTriggering(jobType,
                                              application.deploying(),
                                              clock.instant(),
