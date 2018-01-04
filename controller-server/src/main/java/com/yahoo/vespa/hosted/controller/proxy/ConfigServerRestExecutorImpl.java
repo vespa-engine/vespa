@@ -7,8 +7,10 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentityVerifier;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzSslContextProvider;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -21,14 +23,19 @@ import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -254,9 +261,42 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         return HttpClientBuilder.create()
                 .setUserAgent("config-server-client")
                 .setSslcontext(sslContextProvider.get())
-                .setHostnameVerifier(hostnameVerifier)
+                .setHostnameVerifier(new AthenzIdentityVerifierAdapter(hostnameVerifier))
                 .setDefaultRequestConfig(config)
                 .build();
+    }
+
+    private static class AthenzIdentityVerifierAdapter implements X509HostnameVerifier {
+
+        private final AthenzIdentityVerifier verifier;
+
+        AthenzIdentityVerifierAdapter(AthenzIdentityVerifier verifier) {
+            this.verifier = verifier;
+        }
+
+        @Override
+        public boolean verify(String hostname, SSLSession sslSession) {
+            return verifier.verify(hostname, sslSession);
+        }
+
+        @Override
+        public void verify(String host, SSLSocket ssl) { /* All sockets accepted */}
+
+        @Override
+        public void verify(String hostname, X509Certificate certificate) throws SSLException {
+            AthenzIdentity identity = AthenzUtils.createAthenzIdentity(certificate);
+            if (!verifier.isTrusted(identity)) {
+                throw new SSLException("Athenz identity is not trusted: " + identity.getFullName());
+            }
+        }
+
+        @Override
+        public void verify(String hostname, String[] cns, String[] subjectAlts) throws SSLException {
+            AthenzIdentity identity = AthenzUtils.createAthenzIdentity(cns[0]);
+            if (!verifier.isTrusted(identity)) {
+                throw new SSLException("Athenz identity is not trusted: " + identity.getFullName());
+            }
+        }
     }
 
 }
