@@ -7,6 +7,7 @@ import com.yahoo.log.LogLevel;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.POST;
@@ -14,6 +15,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
@@ -39,7 +42,8 @@ public class CertificateSignerResource {
     public CertificateSerializedPayload generateCertificate(CsrSerializedPayload csrPayload,
                                                             @Context HttpServletRequest req) {
         try {
-            String remoteHostname = req.getRemoteHost();
+            InetAddress addr = InetAddress.getByName(req.getRemoteAddr());
+            String remoteHostname = addr.getHostName();
             PKCS10CertificationRequest csr = csrPayload.csr;
             log.log(LogLevel.DEBUG, "Certification request from " + remoteHostname + ": " + csr);
             X509Certificate certificate = certificateSigner.generateX509Certificate(csr, remoteHostname);
@@ -47,6 +51,11 @@ public class CertificateSignerResource {
         } catch (RuntimeException e) {
             log.log(LogLevel.ERROR, e.getMessage(), e);
             throw new InternalServerErrorException(e.getMessage(), e);
+        } catch (UnknownHostException e) {
+            String message = "Failed to resolve remote address " + req.getRemoteAddr() +
+                    ", must resolve to match value in Common Name";
+            log.log(LogLevel.ERROR, message);
+            throw new BadRequestException(message);
         }
     }
 }
