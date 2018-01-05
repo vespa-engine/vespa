@@ -12,19 +12,18 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
  * Serialization of a queue of ApplicationIds to/from Json bytes using Slime.
  *
- * The queue is serialized as an array of strings.
+ * The set is serialized as an array of string.
  *
  * @author bratseth
  */
 public class JobQueueSerializer {
 
-    public byte[] toJson(Iterable<ApplicationId> queue) {
+    public byte[] toJson(Deque<ApplicationId> queue) {
         try {
             Slime slime = new Slime();
             Cursor array = slime.setArray();

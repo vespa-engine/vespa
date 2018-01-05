@@ -19,9 +19,6 @@
       "name": "DeploymentMetricsMaintainer"
     },
     {
-      "name": "DeploymentTriggerer"
-    },
-    {
       "name": "DnsMaintainer"
     },
     {
