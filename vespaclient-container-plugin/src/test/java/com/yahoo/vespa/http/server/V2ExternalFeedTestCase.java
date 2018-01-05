@@ -115,7 +115,10 @@ public class V2ExternalFeedTestCase {
         volatile DataFormat lastFormatSeen;
 
         public LessConfiguredHandler(Executor executor) throws Exception {
-            super(executor, null, null, new DummyMetric(), AccessLog.voidAccessLog(), null, MetricReceiver.nullImplementation);
+            super(new FeedHandler.Context(executor,
+                                          AccessLog.voidAccessLog(),
+                                          new DummyMetric()),
+                  null, null, null, MetricReceiver.nullImplementation);
         }
 
         @Override

@@ -39,7 +39,10 @@ public class FeedHandlerTest {
         private final CountDownLatch countDownLatch = new CountDownLatch(1);
 
         public TestFeedHandler() throws Exception {
-            super(Executors.newCachedThreadPool(), null, null, mock(Metric.class), mock(AccessLog.class), null, MetricReceiver.nullImplementation);
+            super(new FeedHandler.Context(Executors.newCachedThreadPool(),
+                                          mock(AccessLog.class),
+                                          mock(Metric.class)),
+                  null, null, null, MetricReceiver.nullImplementation);
         }
 
         /**

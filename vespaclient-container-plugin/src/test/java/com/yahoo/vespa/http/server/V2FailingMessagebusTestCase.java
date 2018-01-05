@@ -61,7 +61,8 @@ public class V2FailingMessagebusTestCase {
     private class LessConfiguredHandler extends FeedHandler {
 
         public LessConfiguredHandler(Executor executor) throws Exception {
-            super(executor, null, null, new DummyMetric(), AccessLog.voidAccessLog(), null, MetricReceiver.nullImplementation);
+            super(new FeedHandler.Context(executor, AccessLog.voidAccessLog(), new DummyMetric()),
+                  null, null,  null, MetricReceiver.nullImplementation);
         }
 
         @Override
