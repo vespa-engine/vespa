@@ -8,7 +8,6 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import org.junit.Test;
@@ -48,7 +47,7 @@ public class NodeAdminImplTest {
     private final DockerOperations dockerOperations = mock(DockerOperations.class);
     private final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
     private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
-    private final AclMaintainer aclMaintainer = mock(AclMaintainer.class);
+    private final Runnable aclMaintainer = mock(Runnable.class);
     private final ManualClock clock = new ManualClock();
 
     private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer,
