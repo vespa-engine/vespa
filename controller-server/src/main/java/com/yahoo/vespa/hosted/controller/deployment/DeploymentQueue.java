@@ -31,15 +31,19 @@ public class DeploymentQueue {
         this.curator = curator;
     }
 
+    /** Add the given application to the queue of the given job type -- in front if first, at the back otherwise. */
     public void addJob(ApplicationId applicationId, JobType jobType, boolean first) {
         locked(jobType, queue -> {
-            if (first)
-                queue.addFirst(applicationId);
-            else
-                queue.addLast(applicationId);
+            if ( ! queue.contains(applicationId)) {
+                if (first)
+                    queue.addFirst(applicationId);
+                else
+                    queue.addLast(applicationId);
+            }
         });
     }
 
+    /** List all jobs currently enqueued. */
     public List<BuildJob> jobs() {
         ImmutableList.Builder<BuildJob> builder = ImmutableList.builder();
         for (JobType jobType : JobType.values())
@@ -49,6 +53,7 @@ public class DeploymentQueue {
         return builder.build();
     }
 
+    /** Remove and return a set of jobs to run. This set will contain only one of each job type for capacity constrained zones. */
     public List<BuildJob> takeJobsToRun() {
         ImmutableList.Builder<BuildJob> builder = ImmutableList.builder();
         for (JobType jobType : JobType.values())
@@ -61,6 +66,7 @@ public class DeploymentQueue {
         return builder.build();
     }
 
+    /** Remove all enqueued jobs for the given application. */
     public void removeJobs(ApplicationId applicationId) {
         for (JobType jobType : JobType.values())
             locked(jobType, queue -> {

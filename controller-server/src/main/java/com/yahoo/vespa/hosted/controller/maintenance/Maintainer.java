@@ -41,10 +41,6 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     
     protected Controller controller() { return controller; }
     
-    protected CuratorDb curator() { return jobControl.curator(); }
-
-    protected JobControl jobControl() { return jobControl; }
-
     @Override
     public void run() {
         try {
