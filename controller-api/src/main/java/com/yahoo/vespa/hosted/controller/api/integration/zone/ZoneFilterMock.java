@@ -46,17 +46,17 @@ public class ZoneFilterMock implements ZoneList {
     }
 
     @Override
-    public ZoneList in(Environment environment) {
-        return filter(zoneId -> zoneId.environment() == environment);
+    public ZoneList in(Environment... environments) {
+        return filter(zoneId -> new HashSet<>(Arrays.asList(environments)).contains(zoneId.environment()));
     }
 
     @Override
-    public ZoneList in(RegionName region) {
-        return filter(zoneId -> zoneId.region().equals(region));
+    public ZoneList in(RegionName... regions) {
+        return filter(zoneId -> new HashSet<>(Arrays.asList(regions)).contains(zoneId.region()));
     }
 
     @Override
-    public ZoneList zones(ZoneId... zones) {
+    public ZoneList among(ZoneId... zones) {
         return filter(zoneId -> new HashSet<>(Arrays.asList(zones)).contains(zoneId));
     }
 

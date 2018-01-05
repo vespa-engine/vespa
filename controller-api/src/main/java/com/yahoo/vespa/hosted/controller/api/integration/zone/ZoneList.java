@@ -19,14 +19,14 @@ public interface ZoneList extends ZoneFilter {
     @Override
     ZoneList not();
 
-    /** Zones in the given environment. */
-    ZoneList in(Environment environment);
+    /** Zones in one of the given environments. */
+    ZoneList in(Environment... environments);
 
-    /** Zones in the given region. */
-    ZoneList in(RegionName region);
+    /** Zones in one of the given regions. */
+    ZoneList in(RegionName... regions);
 
     /** Only the given zones — combine with not() for best effect! */
-    ZoneList zones(ZoneId... zones);
+    ZoneList among(ZoneId... zones);
 
     /** Returns the id of all zones in this list as — you guessed it — a list. */
     List<ZoneId> ids();
