@@ -59,7 +59,6 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
             switch (method) {
                 case GET: return get(request);
                 case POST: return post(request);
-                case DELETE: return delete(request);
                 default: return ErrorResponse.methodNotAllowed("Method '" + method + "' is unsupported");
             }
         } catch (IllegalArgumentException|IllegalStateException e) {
@@ -76,7 +75,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
             return vespaVersion();
         }
         if (path.matches("/screwdriver/v1/jobsToRun")) {
-            return buildJobs(controller.applications().deploymentTrigger().buildSystem().jobs());
+            return buildJobs(controller.applications().deploymentTrigger().deploymentQueue().jobs());
         }
         return notFound(request);
     }
@@ -88,14 +87,6 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
         }
         if (path.matches("/screwdriver/v1/trigger/tenant/{tenant}/application/{application}")) {
             return trigger(request, path.get("tenant"), path.get("application"));
-        }
-        return notFound(request);
-    }
-
-    private HttpResponse delete(HttpRequest request) {
-        Path path = new Path(request.getUri().getPath());
-        if (path.matches("/screwdriver/v1/jobsToRun")) {
-            return buildJobs(controller.applications().deploymentTrigger().buildSystem().takeJobsToRun());
         }
         return notFound(request);
     }

@@ -56,7 +56,7 @@ public class FailureRedeployerTest {
         // Production job fails and is retried
         tester.clock().advance(Duration.ofSeconds(1)); // Advance time so that we can detect jobs in progress
         tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.productionUsEast3);
-        assertEquals("Production job is retried", 1, tester.buildSystem().jobs().size());
+        assertEquals("Production job is retried", 1, tester.deploymentQueue().jobs().size());
         assertEquals("Application has pending upgrade to " + version, version, tester.versionChange(app.id()).get().version());
 
         // Another version is released, which cancels any pending upgrades to lower versions
@@ -64,13 +64,13 @@ public class FailureRedeployerTest {
         tester.updateVersionStatus(version);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3); // Finish previous production job.
         tester.upgrader().maintain();
-        assertEquals("Application starts upgrading to new version", 1, tester.buildSystem().jobs().size());
+        assertEquals("Application starts upgrading to new version", 1, tester.deploymentQueue().jobs().size());
         assertEquals("Application has pending upgrade to " + version, version, tester.versionChange(app.id()).get().version());
 
         // Failure redeployer does not retry failing job for prod.us-east-3 as there's an ongoing deployment
         tester.clock().advance(Duration.ofMinutes(1));
         tester.readyJobTrigger().maintain();
-        assertFalse("Job is not retried", tester.buildSystem().jobs().stream()
+        assertFalse("Job is not retried", tester.deploymentQueue().jobs().stream()
                 .anyMatch(j -> j.jobName().equals(DeploymentJobs.JobType.productionUsEast3.jobName())));
 
         // Test environments pass
@@ -79,20 +79,20 @@ public class FailureRedeployerTest {
 
         // Production job fails again and exhausts all immediate retries
         tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.productionUsEast3);
-        tester.buildSystem().takeJobsToRun();
+        tester.deploymentQueue().takeJobsToRun();
         tester.clock().advance(Duration.ofMinutes(10));
         tester.notifyJobCompletion(DeploymentJobs.JobType.productionUsEast3, app, false);
-        assertTrue("Retries exhausted", tester.buildSystem().jobs().isEmpty());
+        assertTrue("Retries exhausted", tester.deploymentQueue().jobs().isEmpty());
         assertTrue("Failure is recorded", tester.application(app.id()).deploymentJobs().hasFailures());
 
         // Failure redeployer retries job
         tester.clock().advance(Duration.ofMinutes(5));
         tester.readyJobTrigger().maintain();
-        assertEquals("Job is retried", 1, tester.buildSystem().jobs().size());
+        assertEquals("Job is retried", 1, tester.deploymentQueue().jobs().size());
 
         // Production job finally succeeds
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
-        assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
+        assertTrue("All jobs consumed", tester.deploymentQueue().jobs().isEmpty());
         assertFalse("No failures", tester.application(app.id()).deploymentJobs().hasFailures());
     }
 
@@ -110,20 +110,20 @@ public class FailureRedeployerTest {
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
 
         // staging-test starts, but does not complete
-        assertEquals(DeploymentJobs.JobType.stagingTest.jobName(), tester.buildSystem().takeJobsToRun().get(0).jobName());
+        assertEquals(DeploymentJobs.JobType.stagingTest.jobName(), tester.deploymentQueue().takeJobsToRun().get(0).jobName());
         tester.readyJobTrigger().maintain();
-        assertTrue("No jobs retried", tester.buildSystem().jobs().isEmpty());
+        assertTrue("No jobs retried", tester.deploymentQueue().jobs().isEmpty());
 
         // Just over 12 hours pass, job is retried
         tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
         tester.readyJobTrigger().maintain();
-        assertEquals(DeploymentJobs.JobType.stagingTest.jobName(), tester.buildSystem().takeJobsToRun().get(0).jobName());
+        assertEquals(DeploymentJobs.JobType.stagingTest.jobName(), tester.deploymentQueue().takeJobsToRun().get(0).jobName());
 
         // Deployment completes
         tester.deploy(DeploymentJobs.JobType.stagingTest, app, applicationPackage, true);
         tester.notifyJobCompletion(DeploymentJobs.JobType.stagingTest, app, true);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
-        assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
+        assertTrue("All jobs consumed", tester.deploymentQueue().jobs().isEmpty());
     }
 
     @Test
@@ -152,10 +152,10 @@ public class FailureRedeployerTest {
 
         // system-test fails and exhausts all immediate retries
         tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.systemTest);
-        tester.buildSystem().takeJobsToRun();
+        tester.deploymentQueue().takeJobsToRun();
         tester.clock().advance(Duration.ofMinutes(10));
         tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, app, false);
-        assertTrue("Retries exhausted", tester.buildSystem().jobs().isEmpty());
+        assertTrue("Retries exhausted", tester.deploymentQueue().jobs().isEmpty());
 
         // Another version is released
         version = Version.fromString("5.2");
@@ -165,12 +165,12 @@ public class FailureRedeployerTest {
         assertEquals("Application has pending upgrade to " + version, version, tester.versionChange(app.id()).get().version());
 
         // Consume system-test job for 5.2
-        tester.buildSystem().takeJobsToRun();
+        tester.deploymentQueue().takeJobsToRun();
 
         // Failure re-deployer does not retry failing system-test job as it failed for an older change
         tester.clock().advance(Duration.ofMinutes(5));
         tester.readyJobTrigger().maintain();
-        assertTrue("No jobs retried", tester.buildSystem().jobs().isEmpty());
+        assertTrue("No jobs retried", tester.deploymentQueue().jobs().isEmpty());
     }
 
     @Test
@@ -202,23 +202,23 @@ public class FailureRedeployerTest {
 
         // Test environments pass
         tester.deploy(DeploymentJobs.JobType.systemTest, application, applicationPackage);
-        tester.buildSystem().takeJobsToRun();
+        tester.deploymentQueue().takeJobsToRun();
         tester.clock().advance(Duration.ofMinutes(10));
         tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, application, true);
 
         tester.deploy(DeploymentJobs.JobType.stagingTest, application, applicationPackage);
-        tester.buildSystem().takeJobsToRun();
+        tester.deploymentQueue().takeJobsToRun();
         tester.clock().advance(Duration.ofMinutes(10));
         tester.notifyJobCompletion(DeploymentJobs.JobType.stagingTest, application, true);
 
         // Production job starts, but does not complete
-        assertEquals(1, tester.buildSystem().jobs().size());
-        assertEquals("Production job triggered", DeploymentJobs.JobType.productionCdUsCentral1.jobName(), tester.buildSystem().jobs().get(0).jobName());
-        tester.buildSystem().takeJobsToRun();
+        assertEquals(1, tester.deploymentQueue().jobs().size());
+        assertEquals("Production job triggered", DeploymentJobs.JobType.productionCdUsCentral1.jobName(), tester.deploymentQueue().jobs().get(0).jobName());
+        tester.deploymentQueue().takeJobsToRun();
 
         // Failure re-deployer runs
         tester.readyJobTrigger().maintain();
-        assertTrue("No jobs retried", tester.buildSystem().jobs().isEmpty());
+        assertTrue("No jobs retried", tester.deploymentQueue().jobs().isEmpty());
 
         // Deployment completes
         tester.notifyJobCompletion(DeploymentJobs.JobType.productionCdUsCentral1, application, true);
@@ -243,7 +243,7 @@ public class FailureRedeployerTest {
 
         // Failure redeployer does not restart deployment
         tester.readyJobTrigger().maintain();
-        assertTrue("No jobs scheduled", tester.buildSystem().jobs().isEmpty());
+        assertTrue("No jobs scheduled", tester.deploymentQueue().jobs().isEmpty());
     }
 
     @Test
@@ -263,7 +263,7 @@ public class FailureRedeployerTest {
 
         // Failure redeployer does not restart deployment
         tester.readyJobTrigger().maintain();
-        assertTrue("No jobs scheduled", tester.buildSystem().jobs().isEmpty());
+        assertTrue("No jobs scheduled", tester.deploymentQueue().jobs().isEmpty());
     }
 
 }
