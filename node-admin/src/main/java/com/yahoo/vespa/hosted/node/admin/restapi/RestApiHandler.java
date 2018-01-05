@@ -37,10 +37,10 @@ public class RestApiHandler extends LoggingRequestHandler{
     private final MetricReceiverWrapper metricReceiverWrapper;
 
     @Inject
-    public RestApiHandler(Executor executor, AccessLog accessLog,
+    public RestApiHandler(LoggingRequestHandler.Context parentCtx,
                           NodeAdminStateUpdater nodeAdminStateUpdater,
                           MetricReceiverWrapper metricReceiverWrapper) {
-        super(executor, accessLog);
+        super(parentCtx);
         this.refresher = nodeAdminStateUpdater;
         this.metricReceiverWrapper = metricReceiverWrapper;
     }
