@@ -69,7 +69,9 @@ public class DeploymentTester {
 
     public ApplicationController applications() { return tester.controller().applications(); }
 
-    public DeploymentQueue deploymentQueue() { return tester.controller().applications().deploymentTrigger().deploymentQueue(); }
+    // TODO: This thing simulates the wrong thing: the build system won't hold the jobs that are running,
+    // and so these should be consumed immediately upon triggering, and be "somewhere else" while running.
+    public BuildSystem buildSystem() { return tester.controller().applications().deploymentTrigger().buildSystem(); }
 
     public DeploymentTrigger deploymentTrigger() { return tester.controller().applications().deploymentTrigger(); }
 
@@ -258,18 +260,18 @@ public class DeploymentTester {
         }
         if (expectOnlyTheseJobs)
             assertEquals(jobs.length, countJobsOf(application));
-        deploymentQueue().removeJobs(application.id());
+        buildSystem().removeJobs(application.id());
     }
 
     private BuildService.BuildJob findJob(Application application, JobType jobType) {
-        for (BuildService.BuildJob job : deploymentQueue().jobs())
+        for (BuildService.BuildJob job : buildSystem().jobs())
             if (job.projectId() == application.deploymentJobs().projectId().get() && job.jobName().equals(jobType.jobName()))
                 return job;
         throw new NoSuchElementException(jobType + " is not scheduled for " + application);
     }
 
     private int countJobsOf(Application application) {
-        return (int) deploymentQueue().jobs().stream()
+        return (int)buildSystem().jobs().stream()
                                         .filter(job -> job.projectId() == application.deploymentJobs().projectId().get())
                                         .count();
     }
