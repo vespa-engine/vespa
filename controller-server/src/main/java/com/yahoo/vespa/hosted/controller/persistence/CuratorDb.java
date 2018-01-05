@@ -133,7 +133,7 @@ public class CuratorDb {
             return jobQueueSerializer.fromJson(data.get());
         }
         catch (RuntimeException e) {
-            log.log(Level.WARNING, "Error reading job queue, deleting inactive state");
+            log.log(Level.WARNING, "Error reading job queue of type '" + jobType.jobName() + "'; deleting it.");
             writeJobQueue(jobType, Collections::emptyIterator);
             return new ArrayDeque<>();
         }

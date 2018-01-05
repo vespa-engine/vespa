@@ -58,7 +58,7 @@ public class DeploymentTriggererTest {
         tester.deploymentQueue().addJob(app3, DeploymentJobs.JobType.productionUsWest1, false);
 
         triggerer.maintain();
-        assertEquals("One of each capacity constrained job and production jobs not for app2 are triggered after one maintenance run.",
+        assertEquals("One system test job and all production jobs not for app2 are triggered after one maintenance run.",
                      Arrays.asList(new BuildJob(project1, DeploymentJobs.JobType.systemTest.jobName()),
                                    new BuildJob(project1, DeploymentJobs.JobType.productionUsWest1.jobName()),
                                    new BuildJob(project3, DeploymentJobs.JobType.productionUsWest1.jobName())),
