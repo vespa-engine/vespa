@@ -29,11 +29,15 @@ public class AthenzIdentityVerifier implements HostnameVerifier {
     public boolean verify(String hostname, SSLSession session) {
         try {
             X509Certificate cert = (X509Certificate) session.getPeerCertificates()[0];
-            return allowedIdentities.contains(AthenzUtils.createAthenzIdentity(cert));
+            return isTrusted(AthenzUtils.createAthenzIdentity(cert));
         } catch (SSLPeerUnverifiedException e) {
             log.log(Level.WARNING, "Unverified client: " + hostname);
             return false;
         }
+    }
+
+    public boolean isTrusted(AthenzIdentity identity) {
+        return allowedIdentities.contains(identity);
     }
 
 }
