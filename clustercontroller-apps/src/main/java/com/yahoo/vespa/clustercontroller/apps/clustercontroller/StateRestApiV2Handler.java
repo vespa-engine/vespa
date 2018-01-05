@@ -3,7 +3,6 @@ package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ClusterInfoConfig;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.clustercontroller.apputil.communication.http.JDiscHttpRequestHandler;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.ClusterControllerStateRestAPI;
@@ -13,19 +12,22 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 
 public class StateRestApiV2Handler extends JDiscHttpRequestHandler {
     private static final Logger log = Logger.getLogger(StateRestApiV2Handler.class.getName());
 
     @Inject
-    public StateRestApiV2Handler(Executor executor, ClusterController cc, ClusterInfoConfig config, AccessLog accessLog) {
-        this(executor, new ClusterControllerStateRestAPI(cc, getClusterControllerSockets(config)), "/cluster/v2", accessLog);
+    public StateRestApiV2Handler(ClusterController cc, ClusterInfoConfig config,
+                                 JDiscHttpRequestHandler.Context ctx)
+    {
+        this(new ClusterControllerStateRestAPI(cc, getClusterControllerSockets(config)), "/cluster/v2", ctx);
     }
 
-    private StateRestApiV2Handler(Executor executor, ClusterControllerStateRestAPI restApi, String pathPrefix, AccessLog accessLog) {
-        super(new RestApiHandler(restApi).setDefaultPathPrefix(pathPrefix), executor, accessLog);
+    private StateRestApiV2Handler(ClusterControllerStateRestAPI restApi, String pathPrefix,
+                                  JDiscHttpRequestHandler.Context ctx)
+    {
+        super(new RestApiHandler(restApi).setDefaultPathPrefix(pathPrefix), ctx);
     }
 
     // This method is package-private instead of private to be accessible to unit-tests.
