@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.restapi.controller;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.text.Utf8;
@@ -20,7 +19,6 @@ import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.util.concurrent.Executor;
 import java.util.logging.Level;
 
 /**
@@ -34,8 +32,8 @@ public class ControllerApiHandler extends LoggingRequestHandler {
 
     private final ControllerMaintenance maintenance;
 
-    public ControllerApiHandler(Executor executor, AccessLog accessLog, ControllerMaintenance maintenance) {
-        super(executor, accessLog);
+    public ControllerApiHandler(LoggingRequestHandler.Context parentCtx, ControllerMaintenance maintenance) {
+        super(parentCtx);
         this.maintenance = maintenance;
     }
 

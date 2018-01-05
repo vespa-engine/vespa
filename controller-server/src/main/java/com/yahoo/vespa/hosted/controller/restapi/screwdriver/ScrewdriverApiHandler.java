@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.slime.Cursor;
@@ -29,7 +28,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
-import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,8 +45,8 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
 
-    public ScrewdriverApiHandler(Executor executor, AccessLog accessLog, Controller controller) {
-        super(executor, accessLog);
+    public ScrewdriverApiHandler(LoggingRequestHandler.Context parentCtx, Controller controller) {
+        super(parentCtx);
         this.controller = controller;
     }
 

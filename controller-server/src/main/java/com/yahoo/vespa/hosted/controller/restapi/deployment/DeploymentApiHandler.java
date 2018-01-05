@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -23,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.restapi.Path;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.Optional;
-import java.util.concurrent.Executor;
 import java.util.logging.Level;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError.outOfCapacity;
@@ -40,8 +38,8 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
 
-    public DeploymentApiHandler(Executor executor, AccessLog accessLog, Controller controller) {
-        super(executor, accessLog);
+    public DeploymentApiHandler(LoggingRequestHandler.Context parentCtx, Controller controller) {
+        super(parentCtx);
         this.controller = controller;
     }
 

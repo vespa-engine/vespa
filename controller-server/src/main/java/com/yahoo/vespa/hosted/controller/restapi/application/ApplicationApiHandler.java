@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
@@ -94,7 +93,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
-import java.util.concurrent.Executor;
 import java.util.logging.Level;
 
 /**
@@ -112,9 +110,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private final AthenzClientFactory athenzClientFactory;
 
     @Inject
-    public ApplicationApiHandler(Executor executor, AccessLog accessLog, Controller controller, Authorizer authorizer,
+    public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
+                                 Controller controller, Authorizer authorizer,
                                  AthenzClientFactory athenzClientFactory) {
-        super(executor, accessLog);
+        super(parentCtx);
         this.controller = controller;
         this.authorizer = authorizer;
         this.athenzClientFactory = athenzClientFactory;

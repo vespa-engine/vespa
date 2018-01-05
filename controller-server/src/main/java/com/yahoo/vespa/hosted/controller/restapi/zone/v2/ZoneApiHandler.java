@@ -5,7 +5,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -18,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
-import java.util.concurrent.Executor;
 import java.util.logging.Level;
 
 /**
@@ -34,9 +32,9 @@ public class ZoneApiHandler extends LoggingRequestHandler {
     private final ZoneRegistry zoneRegistry;
     private final ConfigServerRestExecutor proxy;
 
-    public ZoneApiHandler(Executor executor, AccessLog accessLog, ZoneRegistry zoneRegistry,
+    public ZoneApiHandler(LoggingRequestHandler.Context parentCtx, ZoneRegistry zoneRegistry,
                           ConfigServerRestExecutor proxy) {
-        super(executor, accessLog);
+        super(parentCtx);
         this.zoneRegistry = zoneRegistry;
         this.proxy = proxy;
     }

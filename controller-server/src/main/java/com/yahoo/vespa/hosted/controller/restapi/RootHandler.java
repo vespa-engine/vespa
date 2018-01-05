@@ -9,12 +9,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
-import java.util.concurrent.Executor;
 
 /**
  * Responds to requests for the root path of the controller by listing the available web service API's.
@@ -28,8 +26,8 @@ import java.util.concurrent.Executor;
  */
 public class RootHandler extends LoggingRequestHandler {
 
-    public RootHandler(Executor executor, AccessLog accessLog) {
-        super(executor, accessLog);
+    public RootHandler(LoggingRequestHandler.Context parentCtx) {
+        super(parentCtx);
     }
 
     @Override
