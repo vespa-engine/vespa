@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
@@ -37,6 +38,8 @@ public class Environment {
     private static final String REGION = "REGION";
     private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
     private static final String COREDUMP_FEED_ENDPOINT = "COREDUMP_FEED_ENDPOINT";
+    private static final String KEY_STORE_PATH = "KEY_STORE_PATH";
+    private static final String TRUST_STORE_PATH = "TRUST_STORE_PATH";
 
     private final List<URI> configServerHosts;
     private final String environment;
@@ -46,6 +49,8 @@ public class Environment {
     private final PathResolver pathResolver;
     private final List<String> logstashNodes;
     private final String feedEndpoint;
+    private final Optional<KeyStoreOptions> keyStoreOptions;
+    private final Optional<KeyStoreOptions> trustStoreOptions;
 
     static {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -59,7 +64,11 @@ public class Environment {
              new InetAddressResolver(),
              new PathResolver(),
              getLogstashNodesFromEnvironment(),
-             getEnvironmentVariable(COREDUMP_FEED_ENDPOINT));
+             getEnvironmentVariable(COREDUMP_FEED_ENDPOINT),
+
+            // TODO: Make key store password and type configurable
+             getKeyStoreOptionsFromEnvironment(KEY_STORE_PATH, new char[0], "PKCS12"),
+             getKeyStoreOptionsFromEnvironment(TRUST_STORE_PATH, "changeit".toCharArray(), "JKS"));
     }
 
     public Environment(List<URI> configServerHosts,
@@ -69,7 +78,9 @@ public class Environment {
                        InetAddressResolver inetAddressResolver,
                        PathResolver pathResolver,
                        List<String> logstashNodes,
-                       String feedEndpoint) {
+                       String feedEndpoint,
+                       Optional<KeyStoreOptions> keyStoreOptions,
+                       Optional<KeyStoreOptions> trustStoreOptions) {
         this.configServerHosts = configServerHosts;
         this.environment = environment;
         this.region = region;
@@ -78,6 +89,8 @@ public class Environment {
         this.pathResolver = pathResolver;
         this.logstashNodes = logstashNodes;
         this.feedEndpoint = feedEndpoint;
+        this.keyStoreOptions = keyStoreOptions;
+        this.trustStoreOptions = trustStoreOptions;
     }
 
     public List<URI> getConfigServerUris() { return configServerHosts; }
@@ -122,6 +135,12 @@ public class Environment {
             return Collections.emptyList();
         }
         return Arrays.asList(logstashNodes.split("[,\\s]+"));
+    }
+
+    private static Optional<KeyStoreOptions> getKeyStoreOptionsFromEnvironment(String pathToKeyStore, char[] password, String type) {
+        return Optional.ofNullable(System.getenv(pathToKeyStore))
+                .filter(path -> !Strings.isNullOrEmpty(path))
+                .map(path -> new KeyStoreOptions(Paths.get(path), password, type));
     }
 
     public InetAddress getInetAddressForHost(String hostname) throws UnknownHostException {
@@ -189,7 +208,16 @@ public class Environment {
     public List<String> getLogstashNodes() {
         return logstashNodes;
     }
-    
+
+    public Optional<KeyStoreOptions> getKeyStoreOptions() {
+        return keyStoreOptions;
+    }
+
+    public Optional<KeyStoreOptions> getTrustStoreOptions() {
+        return trustStoreOptions;
+    }
+
+
     public static class Builder {
         private List<URI> configServerHosts = Collections.emptyList();
         private String environment;
@@ -199,6 +227,8 @@ public class Environment {
         private PathResolver pathResolver;
         private List<String> logstashNodes = Collections.emptyList();
         private String feedEndpoint;
+        private KeyStoreOptions keyStoreOptions;
+        private KeyStoreOptions trustStoreOptions;
 
         public Builder configServerUris(String... hosts) {
             configServerHosts = Arrays.stream(hosts)
@@ -242,10 +272,21 @@ public class Environment {
             return this;
         }
 
+        public Builder keyStoreOptions(KeyStoreOptions keyStoreOptions) {
+            this.keyStoreOptions = keyStoreOptions;
+            return this;
+        }
+
+        public Builder trustStoreOptions(KeyStoreOptions trustStoreOptions) {
+            this.trustStoreOptions = trustStoreOptions;
+            return this;
+        }
+
 
         public Environment build() {
             return new Environment(configServerHosts, environment, region, parentHostHostname, inetAddressResolver,
-                                   pathResolver, logstashNodes, feedEndpoint);
+                                   pathResolver, logstashNodes, feedEndpoint,
+                                   Optional.ofNullable(keyStoreOptions), Optional.ofNullable(trustStoreOptions));
         }
     }
 }
