@@ -100,15 +100,10 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
         assertEquals("Response contains only two items", 2, SlimeUtils.jsonToSlime(response.getBody()).get().entries());
 
         // Check that GET didn't affect the enqueued jobs.
-        response = container.handleRequest(new Request("http://localhost:8080/screwdriver/v1/jobsToRun", "", Request.Method.DELETE));
+        response = container.handleRequest(new Request("http://localhost:8080/screwdriver/v1/jobsToRun", "", Request.Method.GET));
         assertTrue("Response contains system-test", response.getBodyAsString().contains(JobType.systemTest.jobName()));
         assertTrue("Response contains staging-test", response.getBodyAsString().contains(JobType.stagingTest.jobName()));
         assertEquals("Response contains only two items", 2, SlimeUtils.jsonToSlime(response.getBody()).get().entries());
-
-        Thread.sleep(50);
-        // Check that the *first* DELETE has removed the enqueued jobs.
-        assertResponse(new Request("http://localhost:8080/screwdriver/v1/jobsToRun", "", Request.Method.DELETE),
-                200, "[]");
     }
 
     @Test
