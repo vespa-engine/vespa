@@ -14,7 +14,10 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorImpl;
+import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 
 import java.time.Clock;
@@ -29,23 +32,18 @@ public class DockerAdminComponent implements AdminComponent {
     private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofSeconds(30);
     private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofSeconds(30);
 
-    private final Environment environment;
-    private final NodeRepository nodeRepository;
-    private final Orchestrator orchestrator;
+    private final NodeAdminConfig config;
     private final Docker docker;
     private final MetricReceiverWrapper metricReceiver;
     private final ClassLocking classLocking;
+
     private Optional<NodeAdminStateUpdater> nodeAdminStateUpdater = Optional.empty();
 
-    public DockerAdminComponent(Environment environment,
-                                NodeRepository nodeRepository,
-                                Orchestrator orchestrator,
+    public DockerAdminComponent(NodeAdminConfig config,
                                 Docker docker,
                                 MetricReceiverWrapper metricReceiver,
                                 ClassLocking classLocking) {
-        this.environment = environment;
-        this.nodeRepository = nodeRepository;
-        this.orchestrator = orchestrator;
+        this.config = config;
         this.docker = docker;
         this.metricReceiver = metricReceiver;
         this.classLocking = classLocking;
@@ -56,6 +54,13 @@ public class DockerAdminComponent implements AdminComponent {
         if (nodeAdminStateUpdater.isPresent()) {
             return;
         }
+
+
+        Environment environment = new Environment();
+        ConfigServerHttpRequestExecutor requestExecutor =
+                ConfigServerHttpRequestExecutor.create(environment.getConfigServerUris());
+        NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor);
+        Orchestrator orchestrator = new OrchestratorImpl(requestExecutor);
 
         Clock clock = Clock.systemUTC();
         String dockerHostHostName = HostName.getLocalhost();

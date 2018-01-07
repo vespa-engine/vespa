@@ -5,14 +5,9 @@ import com.yahoo.concurrent.classlock.ClassLocking;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorImpl;
-import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
-import com.yahoo.vespa.hosted.node.admin.util.Environment;
 
 import java.io.File;
+import java.util.Optional;
 
 /**
  * NodeAdminMain is the main component of the node admin JDisc application:
@@ -24,34 +19,27 @@ import java.io.File;
  *    be fatal: the node admin may not have installed and started the docker daemon.
  */
 public class NodeAdminMain implements AutoCloseable {
-    private final DockerAdminComponent dockerAdmin;
+    private final Docker docker;
+    private final MetricReceiverWrapper metricReceiver;
+    private final ClassLocking classLocking;
+
+    private Optional<DockerAdminComponent> dockerAdmin = Optional.empty();
 
     public NodeAdminMain(Docker docker,
                          MetricReceiverWrapper metricReceiver,
                          ClassLocking classLocking) {
-        Environment environment = new Environment();
-        ConfigServerHttpRequestExecutor requestExecutor =
-                ConfigServerHttpRequestExecutor.create(environment.getConfigServerUris());
-
-        NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor);
-        Orchestrator orchestrator = new OrchestratorImpl(requestExecutor);
-
-        dockerAdmin = new DockerAdminComponent(
-                environment,
-                nodeRepository,
-                orchestrator,
-                docker,
-                metricReceiver,
-                classLocking);
+        this.docker = docker;
+        this.metricReceiver = metricReceiver;
+        this.classLocking = classLocking;
     }
 
     @Override
     public void close() {
-        dockerAdmin.disable();
+        dockerAdmin.ifPresent(DockerAdminComponent::disable);
     }
 
     public NodeAdminStateUpdater getNodeAdminStateUpdater() {
-        return dockerAdmin.getNodeAdminStateUpdater();
+        return dockerAdmin.get().getNodeAdminStateUpdater();
     }
 
     public void start() {
@@ -59,19 +47,24 @@ public class NodeAdminMain implements AutoCloseable {
         NodeAdminConfig config = NodeAdminConfig.fromFile(new File(staticConfigPath));
 
         switch (config.mode) {
+            case aws_tenant:
             case tenant:
-                dockerAdmin.enable();
-                break;
+                dockerAdmin = Optional.of(new DockerAdminComponent(
+                        config,
+                        docker,
+                        metricReceiver,
+                        classLocking));
+                dockerAdmin.get().enable();
+                return;
             case config_server_host:
                 // TODO:
                 //  - install and start docker daemon
                 //  - Read config that specifies which containers to start how
                 //  - use thin static backends for node repo and orchestrator
                 //  - Start node admin state updater.
-                break;
-            default:
-                throw new IllegalStateException(
-                        "Unknown bootstrap mode: " + config.mode.name());
+                return;
         }
+
+        throw new IllegalStateException("Unknown bootstrap mode: " + config.mode.name());
     }
 }

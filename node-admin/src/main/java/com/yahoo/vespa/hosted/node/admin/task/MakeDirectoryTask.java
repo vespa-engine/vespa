@@ -11,17 +11,11 @@ public class MakeDirectoryTask implements Task {
 
     MakeDirectoryTask(Path directory) {
         this.directory = directory;
-        validate();
     }
 
     public MakeDirectoryTask withParents() {
         this.withParents = true;
         return this;
-    }
-
-    @Override
-    public String variantName() {
-        return directory.getFileName().toString();
     }
 
     private boolean makeDirectory(FileSystem fileSystem,

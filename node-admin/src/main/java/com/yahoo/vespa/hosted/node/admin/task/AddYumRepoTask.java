@@ -30,19 +30,13 @@ public class AddYumRepoTask implements Task {
     public AddYumRepoTask(Params params) {
         validateRepositoryId(params.repositoryId);
         this.params = params;
-        Task.validateVariant(variantName());
-    }
-
-    @Override
-    public String variantName() {
-        return params.repositoryId;
     }
 
     @Override
     public boolean execute(TaskContext context) {
-        Path path = Paths.get("/etc/yum.repos.d",params.repositoryId, ".repo");
+        Path path = Paths.get("/etc/yum.repos.d",params.repositoryId + ".repo");
 
-        if (path.toFile().exists()) {
+        if (context.getFileSystem().isRegularFile(path)) {
             return false;
         }
 

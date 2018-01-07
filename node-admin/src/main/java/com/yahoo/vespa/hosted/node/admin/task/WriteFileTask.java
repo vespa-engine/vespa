@@ -44,22 +44,6 @@ public class WriteFileTask implements Task {
 
     public WriteFileTask(Params params) {
         this.params = params;
-        Task.validateVariant(variantName());
-    }
-
-    @Override
-    public String variantName() {
-        return filenameStem(params.path);
-    }
-
-    static String filenameStem(Path path) {
-        String filename = path.getFileName().toString();
-        int i = filename.indexOf('.');
-        if (i >= 0) {
-            return filename.substring(0, i);
-        } else {
-            return filename;
-        }
     }
 
     @Override
