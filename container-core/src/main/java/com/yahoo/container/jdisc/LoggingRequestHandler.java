@@ -50,6 +50,9 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
             this.accessLog = other.accessLog;
             this.metric = other.metric;
         }
+        public Executor getExecutor() { return executor; }
+        public AccessLog getAccessLog() { return accessLog; }
+        public Metric getMetric() { return metric; }
     }
     public static Context testOnlyContext() {
         return new Context(new Executor() {

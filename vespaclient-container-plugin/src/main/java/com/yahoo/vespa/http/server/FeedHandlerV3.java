@@ -49,20 +49,18 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
     private static final Logger log = Logger.getLogger(FeedHandlerV3.class.getName());
 
     public FeedHandlerV3(
-            Executor executor,
+            LoggingRequestHandler.Context parentCtx,
             DocumentmanagerConfig documentManagerConfig,
             SessionCache sessionCache,
-            Metric metric,
-            AccessLog accessLog,
             ThreadpoolConfig threadpoolConfig,
             DocumentApiMetrics metricsHelper) throws Exception {
-        super(executor, accessLog, metric);
+        super(parentCtx);
         docTypeManager = new DocumentTypeManager(documentManagerConfig);
         this.sessionCache = sessionCache;
-        feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
+        feedReplyHandler = new FeedReplyReader(parentCtx.getMetric(), metricsHelper);
         cron = new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("feedhandlerv3.cron"));
         cron.scheduleWithFixedDelay(this::removeOldClients, 16, 11, TimeUnit.MINUTES);
-        this.metric = metric;
+        this.metric = parentCtx.getMetric();
         // 40% of the threads can be blocking on feeding before we deny requests.
         if (threadpoolConfig != null) {
             threadsAvailableForFeeding = new AtomicInteger(Math.max((int) (0.4 * threadpoolConfig.maxthreads()), 1));

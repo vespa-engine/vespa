@@ -2,7 +2,6 @@
 package com.yahoo.vespa.clustercontroller.apputil.communication.http;
 
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.HeaderFields;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.CompletionHandler;
@@ -14,7 +13,6 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 import java.time.Duration;
-import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 
 /**
@@ -29,8 +27,8 @@ public class JDiscHttpRequestHandler extends LoggingRequestHandler {
     private static final Logger log = Logger.getLogger(JDiscHttpRequestHandler.class.getName());
     private final HttpRequestHandler requestHandler;
 
-    public JDiscHttpRequestHandler(HttpRequestHandler handler, Executor executor, AccessLog accessLog) {
-        super(executor, accessLog);
+    public JDiscHttpRequestHandler(HttpRequestHandler handler, LoggingRequestHandler.Context parentCtx) {
+        super(parentCtx);
         this.requestHandler = handler;
     }
 

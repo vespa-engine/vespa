@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -60,9 +61,11 @@ public class RestApi extends LoggingRequestHandler {
     private final AtomicInteger threadsAvailableForApi;
 
     @Inject
-    public RestApi(Executor executor, AccessLog accessLog, DocumentmanagerConfig documentManagerConfig,
-                   LoadTypeConfig loadTypeConfig, ThreadpoolConfig threadpoolConfig, MetricReceiver metricReceiver) {
-        super(executor, accessLog);
+    public RestApi(LoggingRequestHandler.Context parentCtx, DocumentmanagerConfig documentManagerConfig,
+                   LoadTypeConfig loadTypeConfig, ThreadpoolConfig threadpoolConfig,
+                   MetricReceiver metricReceiver)
+    {
+        super(parentCtx);
         MessageBusParams params = new MessageBusParams(new LoadTypeSet(loadTypeConfig));
         params.setDocumentmanagerConfig(documentManagerConfig);
         this.operationHandler = new OperationHandlerImpl(new MessageBusDocumentAccess(params), metricReceiver);
@@ -82,7 +85,7 @@ public class RestApi extends LoggingRequestHandler {
             AccessLog accessLog,
             OperationHandler operationHandler,
             int threadsAvailable) {
-        super(executor, accessLog);
+        super(executor, accessLog, null);
         this.operationHandler = operationHandler;
         this.threadsAvailableForApi = new AtomicInteger(threadsAvailable);
     }

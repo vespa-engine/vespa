@@ -61,24 +61,22 @@ public class FeedHandler extends LoggingRequestHandler {
 
     @Inject
     public FeedHandler(
-            Executor executor,
+            LoggingRequestHandler.Context parentCtx,
             DocumentmanagerConfig documentManagerConfig,
             SessionCache sessionCache,
-            Metric metric,
-            AccessLog accessLog,
             ThreadpoolConfig threadpoolConfig,
             MetricReceiver metricReceiver) throws Exception {
-        super(executor, accessLog, metric);
+        super(parentCtx);
         DocumentApiMetrics metricsHelper = new DocumentApiMetrics(metricReceiver, "vespa.http.server");
-        feedHandlerV3 = new FeedHandlerV3(executor, documentManagerConfig, sessionCache, metric, accessLog, threadpoolConfig, metricsHelper);
+        feedHandlerV3 = new FeedHandlerV3(parentCtx, documentManagerConfig, sessionCache, threadpoolConfig, metricsHelper);
         docTypeManager = createDocumentManager(documentManagerConfig);
         clients = new HashMap<>();
         this.sessionCache = sessionCache;
         sessionId = new AtomicLong(new Random(System.currentTimeMillis()).nextLong());
-        feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
+        feedReplyHandler = new FeedReplyReader(parentCtx.getMetric(), metricsHelper);
         cron = new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("feedhandler.cron"));
         cron.scheduleWithFixedDelay(new CleanClients(), 16, 11, TimeUnit.MINUTES);
-        this.metric = metric;
+        this.metric = parentCtx.getMetric();
         this.localHostname = resolveLocalHostname();
     }
 

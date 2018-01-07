@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 
 import static com.yahoo.vespa.config.SlimeUtils.optionalString;
 
@@ -55,11 +56,11 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private final NodeFlavors nodeFlavors;
     private static final String nodeTypeKey = "type";
 
-
-    public NodesApiHandler(Executor executor, AccessLog accessLog, Orchestrator orchestrator,
+    @Inject
+    public NodesApiHandler(LoggingRequestHandler.Context parentCtx, Orchestrator orchestrator,
                            NodeRepository nodeRepository,
                            NodeRepositoryMaintenance maintenance, NodeFlavors flavors) {
-        super(executor, accessLog);
+        super(parentCtx);
         this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;
         this.maintenance = maintenance;
