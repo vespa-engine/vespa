@@ -21,7 +21,6 @@ Vagrant.configure("2") do |config|
   
   # Install required and nice-to-have packages
   config.vm.provision "shell", inline: <<-SHELL
-    yum update -y
     yum -y groupinstall "GNOME Desktop" "Graphical Administration Tools"
     systemctl set-default graphical.target
     yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
