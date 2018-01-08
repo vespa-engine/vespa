@@ -354,16 +354,17 @@ int Domain::closeSession(int sessionId)
         if (found != _sessions.end()) {
             sessionRunTime = (std::chrono::steady_clock::now() - found->second->getStartTime());
             retval = 1;
-            _sessionExecutor.sync();
         }
     }
-    if (retval == 1) {
+    while (retval == 1) {
         FastOS_Thread::Sleep(10);
-        LockGuard guard(_sessionLock);
+        MonitorGuard guard(_sessionLock);
         SessionList::iterator found = _sessions.find(sessionId);
         if (found != _sessions.end()) {
-            _sessions.erase(sessionId);
-            retval = 0;
+            if ( ! found->second->isVisitRunning()) {
+                _sessions.erase(sessionId);
+                retval = 0;
+            }
         } else {
             retval = 0;
         }
