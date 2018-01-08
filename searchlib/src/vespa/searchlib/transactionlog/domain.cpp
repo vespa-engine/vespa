@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/fastos/file.h>
 #include <algorithm>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.domain");
@@ -18,6 +19,7 @@ using vespalib::Monitor;
 using vespalib::MonitorGuard;
 using search::common::FileHeaderContext;
 using std::runtime_error;
+using namespace std::chrono_literals;
 
 namespace search::transactionlog {
 
@@ -357,8 +359,8 @@ int Domain::closeSession(int sessionId)
         }
     }
     while (retval == 1) {
-        FastOS_Thread::Sleep(10);
-        MonitorGuard guard(_sessionLock);
+        std::this_thread::sleep_for(10ms);
+        LockGuard guard(_sessionLock);
         SessionList::iterator found = _sessions.find(sessionId);
         if (found != _sessions.end()) {
             if ( ! found->second->isVisitRunning()) {
