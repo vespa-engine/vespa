@@ -58,7 +58,6 @@ public:
      */ 
     bool enterLoadState();
     bool enterReplayTransactionLogState();
-    bool enterReplaySpoolerState();
     bool enterRedoReprocessState();
     bool enterApplyLiveConfigState();
     bool enterReprocessState();

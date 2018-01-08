@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/fastos/file.h>
 #include <algorithm>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.domain");
@@ -18,6 +19,7 @@ using vespalib::Monitor;
 using vespalib::MonitorGuard;
 using search::common::FileHeaderContext;
 using std::runtime_error;
+using namespace std::chrono_literals;
 
 namespace search::transactionlog {
 
@@ -195,7 +197,7 @@ Domain::triggerSyncNow()
     if (!_pendingSync) {
         _pendingSync = true;
         DomainPart::SP dp(_parts.rbegin()->second);
-        _sessionExecutor.execute(Sync::UP(new Sync(_syncMonitor, dp, _pendingSync)));
+        _commitExecutor.execute(Sync::UP(new Sync(_syncMonitor, dp, _pendingSync)));
     }
 }
 
@@ -354,16 +356,17 @@ int Domain::closeSession(int sessionId)
         if (found != _sessions.end()) {
             sessionRunTime = (std::chrono::steady_clock::now() - found->second->getStartTime());
             retval = 1;
-            _sessionExecutor.sync();
         }
     }
-    if (retval == 1) {
-        FastOS_Thread::Sleep(10);
+    while (retval == 1) {
+        std::this_thread::sleep_for(10ms);
         LockGuard guard(_sessionLock);
         SessionList::iterator found = _sessions.find(sessionId);
         if (found != _sessions.end()) {
-            _sessions.erase(sessionId);
-            retval = 0;
+            if ( ! found->second->isVisitRunning()) {
+                _sessions.erase(sessionId);
+                retval = 0;
+            }
         } else {
             retval = 0;
         }

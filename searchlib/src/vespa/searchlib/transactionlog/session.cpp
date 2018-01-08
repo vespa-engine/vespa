@@ -3,7 +3,6 @@
 #include "domain.h"
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".transactionlog.session");
@@ -22,22 +21,17 @@ Session::createTask(const Session::SP & session)
     return Task::UP(new VisitTask(session));
 }
 
+Session::VisitTask::VisitTask(const Session::SP & session)
+    : _session(session)
+{
+    _session->startVisit();
+}
+Session::VisitTask::~VisitTask() = default;
+
 void
 Session::VisitTask::run()
 {
     _session->visitOnly();
-}
-
-void
-Session::SendTask::run()
-{
-    _session->sendPending();
-}
-
-bool
-Session::inSync() const
-{
-    return _inSync;
 }
 
 bool
@@ -49,7 +43,7 @@ Session::visit(FastOS_FileInterface & file, DomainPart & dp) {
     } else {
         more = dp.visit(_range, packet);
     }
-    if (packet.getHandle().size() > 0) {
+    if ( ! packet.getHandle().empty()) {
         send(packet);
     }
     return more;
@@ -78,51 +72,21 @@ Session::visit()
 }
 
 void
+Session::startVisit() {
+    assert(!_visitRunning);
+    _visitRunning = true;
+}
+void
 Session::visitOnly()
 {
     visit();
     sendDone();
     finalize();
+    _visitRunning = false;
 }
 
 bool Session::finished() const {
     return _finished || (_connection->GetState() != FNET_Connection::FNET_CONNECTED);
-}
-
-void
-Session::enQ(const SP & session, SerialNum serial, const Packet & packet)
-{
-    LockGuard guard(session->_lock);
-    session->_packetQ.push_back(QPacket(serial,packet));
-    if (session->_inSync) {
-        session->_domain->execute(Task::UP(new SendTask(session)));
-    }
-}
-
-void
-Session::sendPending()
-{
-    for (;;) {
-        QPacket packet;
-        {
-            LockGuard guard(_lock);
-            if (_packetQ.empty() || !ok())
-                break;
-            packet = std::move(_packetQ.front());
-            _packetQ.pop_front();
-        }
-        sendPacket(packet._serial, *packet._packet);
-    }
-}
-
-void
-Session::sendPacket(SerialNum serial, const Packet & packet)
-{
-    if (_range.from() < serial) {
-        send(packet);
-    } else {
-        LOG(debug, "[%d] : Skipping %" PRIu64 ". Last sent is %" PRIu64, _id, serial, _range.from());
-    }
 }
 
 void
@@ -172,21 +136,6 @@ Session::RequestDone(FRT_RPCRequest * req)
     req->SubRef();
 }
 
-int32_t
-Session::rpcAsync(FRT_RPCRequest * req)
-{
-    int32_t retval(-7);
-    LOG(debug, "rpcAsync %s starting.", req->GetMethodName());
-    FRT_Supervisor::InvokeAsync(_supervisor.GetTransport(), _connection, req, NEVER, this);
-    if (ok()) {
-        LOG(debug, "rpcAsync %s OK", req->GetMethodName());
-        retval = 0;
-    } else {
-        LOG(warning, "rpcAsync %s FAILED", req->GetMethodName());
-    }
-    return retval;
-}
-
 Session::Session(int sId, const SerialNumRange & r, const Domain::SP & d,
                  FRT_Supervisor & supervisor, FNET_Connection *conn) :
     _supervisor(supervisor),
@@ -194,12 +143,11 @@ Session::Session(int sId, const SerialNumRange & r, const Domain::SP & d,
     _domain(d),
     _range(r),
     _id(sId),
-    _inSync(false),
     _ok(true),
+    _visitRunning(false),
+    _inSync(false),
     _finished(false),
-    _packetQ(),
-    _startTime(),
-    _lock()
+    _startTime()
 {
     _connection->AddRef();
 }
@@ -217,22 +165,18 @@ Session::send(const Packet & packet)
     req->GetParams()->AddString(_domain->name().c_str());
     req->GetParams()->AddInt32(id());
     req->GetParams()->AddData(packet.getHandle().c_str(), packet.getHandle().size());
-    return send(req, true);
+    return send(req);
 }
 
 bool
-Session::send(FRT_RPCRequest * req, bool wait)
+Session::send(FRT_RPCRequest * req)
 {
-    int32_t retval(-1);
-    if (wait) {
-        retval = rpc(req);
-        if ( ! ((retval == RPC::OK) || (retval == FRTE_RPC_CONNECTION)) ) {
-            LOG(error, "Return value != OK(%d) in send for method 'visitCallback'.", retval);
-        }
-        req->SubRef();
-    } else {
-        retval = rpcAsync(req);
+    int32_t retval = rpc(req);
+    if ( ! ((retval == RPC::OK) || (retval == FRTE_RPC_CONNECTION)) ) {
+        LOG(error, "Return value != OK(%d) in send for method 'visitCallback'.", retval);
     }
+    req->SubRef();
+
     return (retval == RPC::OK);
 }
 
@@ -243,8 +187,7 @@ Session::sendDone()
     req->SetMethodName("eofCallback");
     req->GetParams()->AddString(_domain->name().c_str());
     req->GetParams()->AddInt32(id());
-    bool retval(send(req, true));
-    LockGuard guard(_lock);
+    bool retval(send(req));
     _inSync = true;
     return retval;
 }

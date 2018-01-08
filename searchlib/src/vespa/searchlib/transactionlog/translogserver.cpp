@@ -147,6 +147,10 @@ TransLogServer::~TransLogServer()
 {
     stop();
     join();
+    _commitExecutor.shutdown();
+    _commitExecutor.sync();
+    _sessionExecutor.shutdown();
+    _sessionExecutor.sync();
     _supervisor->ShutDown(true);
 }
 

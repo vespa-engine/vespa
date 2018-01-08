@@ -71,7 +71,7 @@ void getStatus(TransLogClient & client,
                size_t & count)
 {
     TransLogClient::Session::UP session = client.open(domainName);
-    if (session.get() == NULL) {
+    if ( ! session) {
         throw IllegalStateException(
                 make_string(
                     "Could not open session with domain '%s' on TLS '%s'",
@@ -123,9 +123,9 @@ TransactionLogManager::startReplay(SerialNum first,
                                    SerialNum syncToken,
                                    TransLogClient::Session::Callback &callback)
 {
-    assert(_visitor.get() == NULL);
+    assert( !_visitor);
     _visitor = createTlcVisitor(callback);
-    if (_visitor.get() == NULL) {
+    if (!_visitor) {
         throw IllegalStateException(
                 make_string(
                     "Could not create visitor for "
@@ -153,12 +153,10 @@ TransactionLogManager::startReplay(SerialNum first,
 void
 TransactionLogManager::replayDone()
 {
-    assert(_visitor.get() != NULL);
-    LOG(debug,
-        "Transaction log replayed for domain '%s'", getDomainName().c_str());
+    assert(_visitor);
+    LOG(debug, "Transaction log replayed for domain '%s'", getDomainName().c_str());
     changeReplayDone();
-    LOG(debug,
-        "Broadcasted replay done for domain '%s'", getDomainName().c_str());
+    LOG(debug, "Broadcasted replay done for domain '%s'", getDomainName().c_str());
     if (LOG_WOULD_LOG(event)) {
         logReplayComplete();
     }
