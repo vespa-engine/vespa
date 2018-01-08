@@ -134,7 +134,7 @@ public class DeploymentTrigger {
                 if (((VersionChange)change).version().isAfter(deployment.version())) return false; // later is ok
             }
             else if (((Change.ApplicationChange)change).revision().isPresent()) {
-                if ( ! deployment.revision().equals(((Change.ApplicationChange)change).revision().get())) return false;
+                if ( ! ((Change.ApplicationChange)change).revision().get().equals(deployment.revision())) return false;
             }
             else {
                 return false; // If we don't yet know the revision we are changing to, then we are not complete
