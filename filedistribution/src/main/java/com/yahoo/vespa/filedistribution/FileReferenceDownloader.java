@@ -39,7 +39,7 @@ public class FileReferenceDownloader {
             Executors.newFixedThreadPool(10, new DaemonThreadFactory("filereference downloader"));
     private final ConnectionPool connectionPool;
     private final Map<FileReference, FileReferenceDownload> downloads = new LinkedHashMap<>();
-    private final Map<FileReference, Double> downloadStatus = new HashMap<>();
+    private final Map<FileReference, Double> downloadStatus = new HashMap<>();  // between 0 and 1
     private final Duration downloadTimeout;
     private final FileReceiver fileReceiver;
 
