@@ -195,7 +195,7 @@ Domain::triggerSyncNow()
     if (!_pendingSync) {
         _pendingSync = true;
         DomainPart::SP dp(_parts.rbegin()->second);
-        _sessionExecutor.execute(Sync::UP(new Sync(_syncMonitor, dp, _pendingSync)));
+        _commitExecutor.execute(Sync::UP(new Sync(_syncMonitor, dp, _pendingSync)));
     }
 }
 
