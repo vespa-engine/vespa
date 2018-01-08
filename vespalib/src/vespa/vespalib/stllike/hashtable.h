@@ -147,7 +147,7 @@ public:
             }
         }
         iterator(hashtable * hash, next_t pos) : _current(pos), _hashTable(hash) { }
-        static iterator end(hashtable *hash) { return iterator(hash, Node::npos); }
+        static iterator end(hashtable *hash) { return iterator(hash, hash->initializedSize()); }
 
         Value & operator * ()  const { return _hashTable->get(_current); }
         Value * operator -> () const { return & _hashTable->get(_current); }
@@ -168,9 +168,6 @@ public:
     private:
         void advanceToNextValidHash() {
             for (_current++;(_current < _hashTable->initializedSize()) && ! _hashTable->_nodes[_current].valid(); _current++) { }
-            if (_current >= _hashTable->initializedSize()) {
-                _current = Node::npos;
-            }
         }
         next_t      _current;
         hashtable * _hashTable;
@@ -192,7 +189,7 @@ public:
         }
         const_iterator(const hashtable * hash, next_t pos) : _current(pos), _hashTable(hash) { }
         const_iterator(const iterator &i) :  _current(i._current), _hashTable(i._hashTable) {}
-        static const_iterator end(const hashtable *hash) { return const_iterator(hash, Node::npos); }
+        static const_iterator end(const hashtable *hash) { return const_iterator(hash, hash->initializedSize()); }
 
         const Value & operator * ()  const { return _hashTable->get(_current); }
         const Value * operator -> () const { return & _hashTable->get(_current); }
@@ -211,9 +208,6 @@ public:
     private:
         void advanceToNextValidHash() {
             for (_current++;(_current < _hashTable->initializedSize()) && ! _hashTable->_nodes[_current].valid(); _current++) { }
-            if (_current >= _hashTable->initializedSize()) {
-                _current = Node::npos;
-            }
         }
         next_t            _current;
         const hashtable * _hashTable;
