@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
@@ -60,7 +61,7 @@ public class CapacityPolicies {
      * @throws IllegalArgumentException if only one node is requested
      */
     private int ensureRedundancy(int nodeCount) {
-        if (nodeCount == 1) {
+        if (nodeCount == 1 && zone.system() != SystemName.cd) {
             throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy");
         }
         return nodeCount;

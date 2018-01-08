@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
