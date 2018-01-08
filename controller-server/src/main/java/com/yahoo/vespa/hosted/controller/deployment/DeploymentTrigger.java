@@ -176,7 +176,7 @@ public class DeploymentTrigger {
             }
             else {
                 JobStatus componentStatus = application.deploymentJobs().jobStatus().get(JobType.component);
-                if (changesAvailable(application, componentStatus, systemTestStatus)) {
+                if (componentStatus != null && changesAvailable(application, componentStatus, systemTestStatus)) {
                     application = trigger(JobType.systemTest, application, false, "Available change in component");
                     controller.applications().store(application);
                 }
@@ -208,33 +208,40 @@ public class DeploymentTrigger {
      */
     private boolean changesAvailable(Application application, JobStatus previous, JobStatus next) {
         if ( ! application.deploying().isPresent()) return false;
+        if (next == null) return true;
 
         Change change = application.deploying().get();
 
         if (change instanceof Change.VersionChange) { // Propagate upgrade while making sure we never downgrade
             Version targetVersion = ((Change.VersionChange)change).version();
 
-            // Is the target version tested?
-            if ( ! lastSuccessfulIs(targetVersion, JobType.stagingTest, application))
-                return false;
+            if (next.type().isTest()) {
+                // Is it this job's turn to upgrade?
+                if ( previous != null && ! lastSuccessfulIs(targetVersion, previous.type(), application))
+                    return false;
 
-            // Is it this job's turn to upgrade?
-            if ( previous.type().isProduction() && ! isOnAtLeastProductionVersion(targetVersion, application, previous.type()))
-                return false;
+                // Has the upgrade already been done?
+                if (lastSuccessfulIs(targetVersion, next.type(), application))
+                    return false;
+            }
+            else if (next.type().isProduction()) {
+                // Is the target version tested?
+                if ( ! lastSuccessfulIs(targetVersion, JobType.stagingTest, application))
+                    return false;
 
-            // Is the next a test zone which already completed this upgrade successfully?
-            if (next != null && next.type().isTest() && lastSuccessfulIs(targetVersion, next.type(), application))
-                return false;
+                // Is it this job's turn to upgrade?
+                if ( previous.type().isProduction() && ! isOnAtLeastProductionVersion(targetVersion, application, previous.type()))
+                    return false;
 
-            // Is the next a production job for a zone already upgraded to this version or a newer one?
-            if (next != null && next.type().isProduction() && isOnAtLeastProductionVersion(targetVersion, application, next.type()))
-                return false;
+                // Is the next a production job for a zone already upgraded to this version or a newer one?
+                if (isOnAtLeastProductionVersion(targetVersion, application, next.type()))
+                    return false;
+            }
 
             return true;
         }
         else { // revision changes do not need to handle downgrading
             if ( ! previous.lastSuccess().isPresent()) return false;
-            if (next == null) return true;
             if ( ! next.lastSuccess().isPresent()) return true;
             return previous.lastSuccess().get().revision().isPresent() &&
                    ! previous.lastSuccess().get().revision().equals(next.lastSuccess().get().revision());
