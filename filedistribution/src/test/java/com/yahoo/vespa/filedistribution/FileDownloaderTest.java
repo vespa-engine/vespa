@@ -72,7 +72,7 @@ public class FileDownloaderTest {
             assertEquals("content", IOUtils.readFile(pathToFile.get()));
 
             // Verify download status when downloaded
-            assertDownloadStatus(fileDownloader, fileReference, 100.0);
+            assertDownloadStatus(fileDownloader, fileReference, 1.0);
         }
 
         {
@@ -109,7 +109,7 @@ public class FileDownloaderTest {
             assertEquals("some other content", IOUtils.readFile(downloadedFile.get()));
 
             // Verify download status when downloaded
-            assertDownloadStatus(fileDownloader, fileReference, 100.0);
+            assertDownloadStatus(fileDownloader, fileReference, 1.0);
         }
 
         {
@@ -143,7 +143,7 @@ public class FileDownloaderTest {
             assertEquals("bar", IOUtils.readFile(downloadedBar));
 
             // Verify download status when downloaded
-            assertDownloadStatus(fileDownloader, fileReference, 100.0);
+            assertDownloadStatus(fileDownloader, fileReference, 1.0);
         }
     }
 
@@ -174,7 +174,7 @@ public class FileDownloaderTest {
         assertEquals("some other content", IOUtils.readFile(downloadedFile.get()));
 
         // Verify download status when downloaded
-        assertDownloadStatus(fileDownloader, fileReference, 100.0);
+        assertDownloadStatus(fileDownloader, fileReference, 1.0);
 
         assertEquals(timesToFail, responseHandler.failedTimes);
     }
