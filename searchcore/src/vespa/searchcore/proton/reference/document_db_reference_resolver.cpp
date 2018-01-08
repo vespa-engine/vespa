@@ -140,12 +140,14 @@ DocumentDBReferenceResolver::createImportedAttributesRepo(const IAttributeManage
                                                           bool useSearchCache)
 {
     auto result = std::make_unique<ImportedAttributesRepo>();
-    for (const auto &attr : _importedFieldsCfg.attribute) {
-        ReferenceAttribute::SP refAttr = getReferenceAttribute(attr.referencefield, attrMgr);
-        AttributeVector::SP targetAttr = getTargetDocumentDB(refAttr->getName())->getAttribute(attr.targetfield);
-        ImportedAttributeVector::SP importedAttr =
+    if (_useReferences) {
+        for (const auto &attr : _importedFieldsCfg.attribute) {
+            ReferenceAttribute::SP refAttr = getReferenceAttribute(attr.referencefield, attrMgr);
+            AttributeVector::SP targetAttr = getTargetDocumentDB(refAttr->getName())->getAttribute(attr.targetfield);
+            ImportedAttributeVector::SP importedAttr =
                 std::make_shared<ImportedAttributeVector>(attr.name, refAttr, targetAttr, documentMetaStore, useSearchCache);
-        result->add(importedAttr->getName(), importedAttr);
+            result->add(importedAttr->getName(), importedAttr);
+        }
     }
     return result;
 }
@@ -156,13 +158,15 @@ DocumentDBReferenceResolver::DocumentDBReferenceResolver(const IDocumentDBRefere
                                                          const document::DocumentType &prevThisDocType,
 
                                                          MonitoredRefCount &refCount,
-                                                         ISequencedTaskExecutor &attributeFieldWriter)
+                                                         ISequencedTaskExecutor &attributeFieldWriter,
+                                                         bool useReferences)
     : _registry(registry),
       _thisDocType(thisDocType),
       _importedFieldsCfg(importedFieldsCfg),
       _prevThisDocType(prevThisDocType),
       _refCount(refCount),
       _attributeFieldWriter(attributeFieldWriter),
+      _useReferences(useReferences),
       _registrators()
 {
 }
@@ -177,9 +181,11 @@ DocumentDBReferenceResolver::resolve(const IAttributeManager &newAttrMgr,
                                      const std::shared_ptr<search::IDocumentMetaStoreContext> &documentMetaStore,
                                      fastos::TimeStamp visibilityDelay)
 {
-    connectReferenceAttributesToGidMapper(newAttrMgr);
     detectOldListeners(oldAttrMgr);
-    listenToGidToLidChanges(newAttrMgr);
+    if (_useReferences) {
+        connectReferenceAttributesToGidMapper(newAttrMgr);
+        listenToGidToLidChanges(newAttrMgr);
+    }
     return createImportedAttributesRepo(newAttrMgr, documentMetaStore, (visibilityDelay > 0));
 }
 

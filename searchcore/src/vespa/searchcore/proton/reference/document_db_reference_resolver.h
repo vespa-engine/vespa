@@ -32,6 +32,7 @@ private:
     const document::DocumentType &_prevThisDocType;
     MonitoredRefCount              &_refCount;
     search::ISequencedTaskExecutor &_attributeFieldWriter;
+    bool                            _useReferences;
     std::map<vespalib::string, std::unique_ptr<GidToLidChangeRegistrator>> _registrators;
 
     GidToLidChangeRegistrator &getRegistrator(const vespalib::string &docTypeName);
@@ -49,7 +50,8 @@ public:
                                 const ImportedFieldsConfig &importedFieldsCfg,
                                 const document::DocumentType &prevThisDocType,
                                 MonitoredRefCount &refCount,
-                                search::ISequencedTaskExecutor &attributeFieldWriter);
+                                search::ISequencedTaskExecutor &attributeFieldWriter,
+                                bool useReferencdes);
     ~DocumentDBReferenceResolver();
 
     virtual std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &newAttrMgr,
