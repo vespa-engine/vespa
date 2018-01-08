@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.attribute.UserPrincipal;
@@ -36,9 +37,31 @@ public class FileSystem {
         uncheck(() -> Files.createDirectory(path, attributes));
     }
 
+    public String readUtf8File(Path path) {
+        byte[] byteContent = uncheck(() -> Files.readAllBytes(path));
+        return new String(byteContent, StandardCharsets.UTF_8);
+    }
+
     public void writeUtf8File(Path path, String content, OpenOption... options) {
         byte[] contentInUtf8 = content.getBytes(StandardCharsets.UTF_8);
         uncheck(() -> Files.write(path, contentInUtf8, options));
+    }
+
+    private PosixFileAttributes getAttributes(Path path) {
+        return uncheck(() ->
+                Files.getFileAttributeView(path, PosixFileAttributeView.class).readAttributes());
+    }
+
+    public Set<PosixFilePermission> getPermissions(Path path) {
+        return getAttributes(path).permissions();
+    }
+
+    static void validatePermissions(String permissions) {
+        Set<PosixFilePermission> set = PosixFilePermissions.fromString(permissions);
+        String serialized = PosixFilePermissions.toString(set);
+        if (!permissions.equals(serialized)) {
+            throw new IllegalArgumentException("Bad persmissions string: " + permissions);
+        }
     }
 
     /**
@@ -46,14 +69,29 @@ public class FileSystem {
      *                    and no permissions for others.
      */
     public void setPermissions(Path path, String permissions) {
-        Set<PosixFilePermission> permissionSet = PosixFilePermissions.fromString(permissions);
+        Set<PosixFilePermission> permissionSet;
+        try {
+            permissionSet = PosixFilePermissions.fromString(permissions);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Failed to set permissions '" +
+                    permissions + "' on path " + path, e);
+        }
+
         uncheck(() -> Files.setPosixFilePermissions(path, permissionSet));
+    }
+
+    public String getOwner(Path path) {
+        return getAttributes(path).owner().getName();
     }
 
     public void setOwner(Path path, String owner) {
         UserPrincipalLookupService service = path.getFileSystem().getUserPrincipalLookupService();
         UserPrincipal principal = uncheck(() -> service.lookupPrincipalByName(owner));
         uncheck(() -> Files.setOwner(path, principal));
+    }
+
+    public String getGroup(Path path) {
+        return getAttributes(path).group().getName();
     }
 
     public void setGroup(Path path, String group) {

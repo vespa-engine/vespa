@@ -8,59 +8,73 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 public class WriteFileTask implements Task {
-    private final Params params;
+    private final Path path;
+    private final Producer<String> contentProducer;
 
-    public static class Params {
-        private final Path path;
-        private final Producer<String> contentProducer;
+    private Optional<String> owner = Optional.empty();
+    private Optional<String> group = Optional.empty();
+    private Optional<String> permissions = Optional.empty();
 
-        private Optional<String> user = Optional.empty();
-        private Optional<String> group = Optional.empty();
-        private Optional<String> permissions = Optional.empty();
-
-        public Params(Path path, Producer<String> contentProducer) {
-            this.path = path;
-            this.contentProducer = contentProducer;
-        }
-
-        public Params withUser(String user) {
-            this.user = Optional.of(user);
-            return this;
-        }
-
-        public Params withGroup(String group) {
-            this.group = Optional.of(group);
-            return this;
-        }
-
-        /**
-         * @param permissions of the form "rwxr-x---".
-         */
-        public Params withPermissions(String permissions) {
-            this.permissions = Optional.of(permissions);
-            return this;
-        }
+    public WriteFileTask(Path path, Producer<String> contentProducer) {
+        this.path = path;
+        this.contentProducer = contentProducer;
     }
 
-    public WriteFileTask(Params params) {
-        this.params = params;
+    public WriteFileTask withOwner(String owner) {
+        this.owner = Optional.of(owner);
+        return this;
+    }
+
+    public WriteFileTask withGroup(String group) {
+        this.group = Optional.of(group);
+        return this;
+    }
+
+    /**
+     * @param permissions of the form "rwxr-x---".
+     */
+    public WriteFileTask withPermissions(String permissions) {
+        this.permissions = Optional.of(permissions);
+        return this;
     }
 
     @Override
     public boolean execute(TaskContext context) {
-        final FileSystemPath path = context.getFileSystem().withPath(params.path);
-        if (path.isRegularFile()) {
+        final FileSystemPath fileSystemPath = context.getFileSystem().withPath(path);
+
+        // TODO: Only return false if content, permission, etc would be unchanged.
+        if (fileSystemPath.isRegularFile()) {
             return false;
         }
 
-        context.executeSubtask(new MakeDirectoryTask(params.path.getParent()).withParents());
+        context.executeSubtask(new MakeDirectoryTask(path.getParent()).withParents());
 
-        path.writeUtf8File(params.contentProducer.call())
-                .setPermissions("rw-r--r--")
-                .setOwner("root")
-                .setGroup("root");
+        String content = contentProducer.call();
+        fileSystemPath.writeUtf8File(content);
+        permissions.ifPresent(fileSystemPath::setPermissions);
+        owner.ifPresent(fileSystemPath::setOwner);
+        group.ifPresent(fileSystemPath::setGroup);
 
-        // TODO: Only return true if file changed.
         return true;
+    }
+
+    public Path getPath() {
+        return path;
+    }
+
+    public Producer<String> getContentProducer() {
+        return contentProducer;
+    }
+
+    public Optional<String> getOwner() {
+        return owner;
+    }
+
+    public Optional<String> getGroup() {
+        return group;
+    }
+
+    public Optional<String> getPermissions() {
+        return permissions;
     }
 }

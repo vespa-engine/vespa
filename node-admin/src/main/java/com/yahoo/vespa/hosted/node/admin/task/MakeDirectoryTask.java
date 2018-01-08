@@ -9,7 +9,7 @@ public class MakeDirectoryTask implements Task {
     private final Path directory;
     private boolean withParents = false;
 
-    MakeDirectoryTask(Path directory) {
+    public MakeDirectoryTask(Path directory) {
         this.directory = directory;
     }
 
@@ -36,6 +36,6 @@ public class MakeDirectoryTask implements Task {
 
     @Override
     public boolean execute(TaskContext context) {
-        return !makeDirectory(context.getFileSystem(), directory, withParents);
+        return makeDirectory(context.getFileSystem(), directory, withParents);
     }
 }
