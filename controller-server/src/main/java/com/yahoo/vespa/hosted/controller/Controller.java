@@ -7,6 +7,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -66,6 +67,7 @@ public class Controller extends AbstractComponent {
     private final GlobalRoutingService globalRoutingService;
     private final ZoneRegistry zoneRegistry;
     private final ConfigServerClient configServerClient;
+    private final NodeRepositoryClientInterface nodeRepositoryClient;
     private final MetricsService metricsService;
     private final Chef chefClient;
     private final Organization organization;
@@ -81,19 +83,19 @@ public class Controller extends AbstractComponent {
     public Controller(ControllerDb db, CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
-                      ZoneRegistry zoneRegistry, ConfigServerClient configServerClient,
+                      ZoneRegistry zoneRegistry, ConfigServerClient configServerClient, NodeRepositoryClientInterface nodeRepositoryClient,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chefClient, AthenzClientFactory athenzClientFactory) {
         this(db, curator, rotationsConfig,
              gitHub, entityService, organization, globalRoutingService, zoneRegistry,
-             configServerClient, metricsService, nameService, routingGenerator, chefClient,
+             configServerClient, nodeRepositoryClient, metricsService, nameService, routingGenerator, chefClient,
              Clock.systemUTC(), athenzClientFactory);
     }
 
     public Controller(ControllerDb db, CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
-                      ZoneRegistry zoneRegistry, ConfigServerClient configServerClient,
+                      ZoneRegistry zoneRegistry, ConfigServerClient configServerClient, NodeRepositoryClientInterface nodeRepositoryClient,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chefClient, Clock clock,
                       AthenzClientFactory athenzClientFactory) {
@@ -106,6 +108,7 @@ public class Controller extends AbstractComponent {
         Objects.requireNonNull(globalRoutingService, "GlobalRoutingService cannot be null");
         Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
         Objects.requireNonNull(configServerClient, "ConfigServerClient cannot be null");
+        Objects.requireNonNull(nodeRepositoryClient, "NodeRepositoryClientInterface cannot be null");
         Objects.requireNonNull(metricsService, "MetricsService cannot be null");
         Objects.requireNonNull(nameService, "NameService cannot be null");
         Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null");
@@ -120,6 +123,7 @@ public class Controller extends AbstractComponent {
         this.globalRoutingService = globalRoutingService;
         this.zoneRegistry = zoneRegistry;
         this.configServerClient = configServerClient;
+        this.nodeRepositoryClient = nodeRepositoryClient;
         this.metricsService = metricsService;
         this.chefClient = chefClient;
         this.clock = clock;
@@ -237,6 +241,10 @@ public class Controller extends AbstractComponent {
 
     public CuratorDb curator() {
         return curator;
+    }
+
+    public NodeRepositoryClientInterface nodeRepositoryClient() {
+        return nodeRepositoryClient;
     }
 
     private String printableVersion(Optional<VespaVersion> vespaVersion) {

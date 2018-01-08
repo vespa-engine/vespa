@@ -2,11 +2,12 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeList;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -38,24 +39,24 @@ public class ClusterInfoMaintainer extends Maintainer {
         this.controller = controller;
     }
 
-    private static String clusterid(NodeList.Node node) {
-        return node.membership.clusterId;
+    private static String clusterid(NodeRepositoryNode node) {
+        return node.getMembership().clusterid;
     }
 
     private Map<ClusterSpec.Id, ClusterInfo> getClusterInfo(NodeList nodes, ZoneId zone) {
         Map<ClusterSpec.Id, ClusterInfo> infoMap = new HashMap<>();
 
         // Group nodes by clusterid
-        Map<String, List<NodeList.Node>> clusters = nodes.nodes.stream()
-                .filter(node -> node.membership != null)
+        Map<String, List<NodeRepositoryNode>> clusters = nodes.nodes().stream()
+                .filter(node -> node.getMembership() != null)
                 .collect(Collectors.groupingBy(ClusterInfoMaintainer::clusterid));
 
         // For each cluster - get info
         for (String id : clusters.keySet()) {
-            List<NodeList.Node> clusterNodes = clusters.get(id);
+            List<NodeRepositoryNode> clusterNodes = clusters.get(id);
 
             // Assume they are all equal and use first node as a representative for the cluster
-            NodeList.Node node = clusterNodes.get(0);
+            NodeRepositoryNode node = clusterNodes.get(0);
 
             // Extract flavor info
             double cpu = 0;
@@ -73,9 +74,9 @@ public class ClusterInfoMaintainer extends Maintainer {
             }*/
 
             // Add to map
-            List<String> hostnames = clusterNodes.stream().map(node1 -> node1.hostname).collect(Collectors.toList());
-            ClusterInfo inf = new ClusterInfo(node.flavor, node.cost, cpu, mem, disk,
-                                              ClusterSpec.Type.from(node.membership.clusterType), hostnames);
+            List<String> hostnames = clusterNodes.stream().map(NodeRepositoryNode::getHostname).collect(Collectors.toList());
+            ClusterInfo inf = new ClusterInfo(node.getFlavor(), node.getCost(), cpu, mem, disk,
+                                              ClusterSpec.Type.from(node.getMembership().clustertype), hostnames);
             infoMap.put(new ClusterSpec.Id(id), inf);
         }
 
@@ -88,7 +89,11 @@ public class ClusterInfoMaintainer extends Maintainer {
             for (Deployment deployment : application.deployments().values()) {
                 DeploymentId deploymentId = new DeploymentId(application.id(), deployment.zone());
                 try {
-                    NodeList nodes = controller().applications().configserverClient().getNodeList(deploymentId);
+                    NodeList nodes = controller.nodeRepositoryClient()
+                            .listNodes(deploymentId.zoneId(),
+                                       deploymentId.applicationId().tenant().value(),
+                                       deploymentId.applicationId().application().value(),
+                                       deploymentId.applicationId().instance().value());
                     Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes, deployment.zone());
                     controller().applications().lockIfPresent(application.id(), lockedApplication ->
                         controller.applications().store(lockedApplication.withClusterInfo(deployment.zone(), clusterInfo)));

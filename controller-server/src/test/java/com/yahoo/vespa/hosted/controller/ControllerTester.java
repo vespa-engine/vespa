@@ -241,6 +241,7 @@ public final class ControllerTester {
                                                new MemoryGlobalRoutingService(),
                                                zoneRegistryMock,
                                                configServerClientMock,
+                                               new NodeRepositoryClientMock(),
                                                new MockMetricsService(),
                                                nameService,
                                                new MockRoutingGenerator(),
