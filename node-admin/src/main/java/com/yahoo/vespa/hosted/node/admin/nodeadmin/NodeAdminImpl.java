@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
@@ -47,7 +46,7 @@ public class NodeAdminImpl implements NodeAdmin {
     private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
     private final StorageMaintainer storageMaintainer;
-    private final AclMaintainer aclMaintainer;
+    private final Runnable aclMaintainer;
 
     private final Clock clock;
     private boolean previousWantFrozen;
@@ -62,7 +61,7 @@ public class NodeAdminImpl implements NodeAdmin {
     public NodeAdminImpl(final DockerOperations dockerOperations,
                          final Function<String, NodeAgent> nodeAgentFactory,
                          final StorageMaintainer storageMaintainer,
-                         final AclMaintainer aclMaintainer,
+                         final Runnable aclMaintainer,
                          final MetricReceiverWrapper metricReceiver,
                          final Clock clock) {
         this.dockerOperations = dockerOperations;

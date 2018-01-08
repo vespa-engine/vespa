@@ -14,13 +14,17 @@ public class NodeAdminConfig {
     private static final Logger logger = Logger.getLogger(NodeAdminConfig.class.getName());
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    enum Mode {
+    public enum Mode {
+        aws_tenant,
+        config_server_host,
         tenant,
-        config_server_host
     }
 
     @JsonProperty("mode")
     public Mode mode = Mode.tenant;
+
+    @JsonProperty("docker")
+    public DockerAdminConfig docker = new DockerAdminConfig();
 
     public static NodeAdminConfig fromFile(File file) {
         if (!file.exists()) {
