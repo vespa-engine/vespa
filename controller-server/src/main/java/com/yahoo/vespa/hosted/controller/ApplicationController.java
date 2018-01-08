@@ -74,7 +74,7 @@ import java.util.stream.Collectors;
 
 /**
  * A singleton owned by the Controller which contains the methods and state for controlling applications.
- * 
+ *
  * @author bratseth
  */
 public class ApplicationController {
@@ -127,7 +127,7 @@ public class ApplicationController {
 
     /**
      * Returns the application with the given id
-     * 
+     *
      * @throws IllegalArgumentException if it does not exist
      */
     public Application require(ApplicationId id) {
@@ -135,7 +135,7 @@ public class ApplicationController {
     }
 
     /** Returns a snapshot of all applications */
-    public List<Application> asList() { 
+    public List<Application> asList() {
         return db.listApplications();
     }
 
@@ -237,7 +237,7 @@ public class ApplicationController {
             throw new UnsupportedOperationException("Only the instance names 'default' and names starting with 'default-pr' are supported at the moment");
         try (Lock lock = lock(id)) {
             com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
-            
+
             Optional<Tenant> tenant = controller.tenants().tenant(new TenantId(id.tenant().value()));
             if ( ! tenant.isPresent())
                 throw new IllegalArgumentException("Could not create '" + id + "': This tenant does not exist");
@@ -250,12 +250,12 @@ public class ApplicationController {
             if (tenant.get().isAthensTenant()) {
                 ZmsClient zmsClient = zmsClientFactory.createZmsClientWithAuthorizedServiceToken(token.get());
                 try {
-                    zmsClient.deleteApplication(tenant.get().getAthensDomain().get(), 
+                    zmsClient.deleteApplication(tenant.get().getAthensDomain().get(),
                                                 new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
                 }
                 catch (ZmsException ignored) {
                 }
-                zmsClient.addApplication(tenant.get().getAthensDomain().get(), 
+                zmsClient.addApplication(tenant.get().getAthensDomain().get(),
                                          new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
             }
             LockedApplication application = new LockedApplication(new Application(id), lock);
@@ -326,7 +326,7 @@ public class ApplicationController {
                     throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
                                                        " as " + application.deploying().get() + " is not tested");
                 Deployment existingDeployment = application.deployments().get(zone);
-                if (existingDeployment != null && existingDeployment.version().isAfter(version))
+                if (zone.environment().isProduction() && existingDeployment != null && existingDeployment.version().isAfter(version))
                     throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
                                                        " as the requested version " + version + " is older than" +
                                                        " the current version " + existingDeployment.version());
@@ -357,7 +357,7 @@ public class ApplicationController {
 
             // Carry out deployment
             options = withVersion(version, options);
-            ConfigServerClient.PreparedApplication preparedApplication = 
+            ConfigServerClient.PreparedApplication preparedApplication =
                     configserverClient.prepare(new DeploymentId(applicationId, zone), options, cnames, rotations,
                                                applicationPackage.zippedContent());
             preparedApplication.activate();
@@ -382,22 +382,22 @@ public class ApplicationController {
 
     private LockedApplication deleteRemovedDeployments(LockedApplication application) {
         List<Deployment> deploymentsToRemove = application.productionDeployments().values().stream()
-                .filter(deployment -> ! application.deploymentSpec().includes(deployment.zone().environment(), 
+                .filter(deployment -> ! application.deploymentSpec().includes(deployment.zone().environment(),
                                                                               Optional.of(deployment.zone().region())))
                 .collect(Collectors.toList());
 
         if (deploymentsToRemove.isEmpty()) return application;
-        
+
         if ( ! application.validationOverrides().allows(ValidationId.deploymentRemoval, clock.instant()))
-            throw new IllegalArgumentException(ValidationId.deploymentRemoval.value() + ": " + application + 
+            throw new IllegalArgumentException(ValidationId.deploymentRemoval.value() + ": " + application +
                                                " is deployed in " +
                                                deploymentsToRemove.stream()
                                                                    .map(deployment -> deployment.zone().region().value())
-                                                                   .collect(Collectors.joining(", ")) + 
-                                               ", but does not include " + 
+                                                                   .collect(Collectors.joining(", ")) +
+                                               ", but does not include " +
                                                (deploymentsToRemove.size() > 1 ? "these zones" : "this zone") +
                                                " in deployment.xml");
-        
+
         LockedApplication applicationWithRemoval = application;
         for (Deployment deployment : deploymentsToRemove)
             applicationWithRemoval = deactivate(applicationWithRemoval, deployment.zone());
@@ -416,7 +416,7 @@ public class ApplicationController {
     }
 
     /**
-     * Returns the existing triggering of the given type from this application, 
+     * Returns the existing triggering of the given type from this application,
      * or an incomplete one created in this method if none is present
      * This is needed (only) in the case where some external entity triggers a job.
      */
@@ -428,13 +428,13 @@ public class ApplicationController {
     }
 
     private JobStatus.JobRun incompleteTriggeringEvent(Version version) {
-        return new JobStatus.JobRun(-1, version, Optional.empty(), false, "", clock.instant());        
+        return new JobStatus.JobRun(-1, version, Optional.empty(), false, "", clock.instant());
     }
-    
+
     private DeployOptions withVersion(Version version, DeployOptions options) {
-        return new DeployOptions(options.screwdriverBuildJob, 
-                                 Optional.of(version), 
-                                 options.ignoreValidationErrors, 
+        return new DeployOptions(options.screwdriverBuildJob,
+                                 Optional.of(version),
+                                 options.ignoreValidationErrors,
                                  options.deployCurrentVersion);
     }
 
@@ -442,7 +442,7 @@ public class ApplicationController {
                                                              Optional<ScrewdriverBuildJob> screwDriverBuildJob) {
         if ( ! screwDriverBuildJob.isPresent())
             return ApplicationRevision.from(applicationPackage.hash());
-        
+
         GitRevision gitRevision = screwDriverBuildJob.get().gitRevision;
         if (gitRevision.repository == null || gitRevision.branch == null || gitRevision.commit == null)
             return ApplicationRevision.from(applicationPackage.hash());
@@ -507,7 +507,7 @@ public class ApplicationController {
     /**
      * Deletes the the given application. All known instances of the applications will be deleted,
      * including PR instances.
-     * 
+     *
      * @throws IllegalArgumentException if the application has deployments or the caller is not authorized
      * @throws NotExistsException if no instances of the application exist
      */
@@ -544,9 +544,9 @@ public class ApplicationController {
         }));
     }
 
-    /** 
-     * Replace any previous version of this application by this instance 
-     * 
+    /**
+     * Replace any previous version of this application by this instance
+     *
      * @param application a locked application to store
      */
     public void store(LockedApplication application) {
@@ -580,7 +580,7 @@ public class ApplicationController {
 
     public void notifyJobCompletion(JobReport report) {
         if ( ! get(report.applicationId()).isPresent()) {
-            log.log(Level.WARNING, "Ignoring completion of job of project '" + report.projectId() + 
+            log.log(Level.WARNING, "Ignoring completion of job of project '" + report.projectId() +
                                    "': Unknown application '" + report.applicationId() + "'");
             return;
         }

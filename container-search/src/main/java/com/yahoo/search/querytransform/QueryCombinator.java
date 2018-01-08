@@ -1,32 +1,31 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.querytransform;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.yahoo.component.ComponentId;
 import com.yahoo.language.Language;
 import com.yahoo.log.LogLevel;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.IndexedItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.parser.CustomParser;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.QueryTree;
-import com.yahoo.prelude.query.AndItem;
-import com.yahoo.prelude.query.CompositeItem;
-import com.yahoo.prelude.query.IndexedItem;
-import com.yahoo.prelude.query.Item;
-import com.yahoo.prelude.query.NullItem;
-import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.query.parser.ParserFactory;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.yolean.Exceptions;
+
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <p>A searcher which grabs query parameters of the form "defidx.(identifier)=(index name)" and
@@ -36,8 +35,12 @@ import com.yahoo.search.searchchain.Execution;
  * settings of the default index set to the "".</p>
  *
  * @author Steinar Knutsen
+ * @deprecated use YQL
  */
+// TODO: Remove on Vespa 7
+@Deprecated
 public class QueryCombinator extends Searcher {
+
     private static final String QUERYPREFIX = "query.";
 
     private static class QueryPart {

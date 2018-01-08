@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 /**
  * Information about which deployment jobs an application should run and their current status.
  * This is immutable.
- * 
+ *
  * @author bratseth
  * @author mpolden
  */
@@ -129,7 +129,7 @@ public class DeploymentJobs {
         return true; // other environments do not have any preconditions
     }
 
-    /** Returns whether job has completed successfully */
+    /** Returns whether the job of the given type has completed successfully for the given change */
     public boolean isSuccessful(Change change, JobType jobType) {
         return Optional.ofNullable(jobStatus().get(jobType))
                 .flatMap(JobStatus::lastSuccess)
@@ -138,7 +138,7 @@ public class DeploymentJobs {
     }
 
     /**
-     * Returns the id of the Screwdriver project running these deployment jobs 
+     * Returns the id of the Screwdriver project running these deployment jobs
      * - or empty when this is not known or does not exist.
      * It is not known until the jobs have run once and reported back to the controller.
      */
@@ -194,7 +194,10 @@ public class DeploymentJobs {
 
         /** Returns whether this is a production job */
         public boolean isProduction() { return environment() == Environment.prod; }
-        
+
+        /** Returns whether this is an automated test job */
+        public boolean isTest() { return environment() != null && environment().isTest(); }
+
         /** Returns the environment of this job type, or null if it does not have an environment */
         public Environment environment() {
             switch (this) {
@@ -215,7 +218,7 @@ public class DeploymentJobs {
                     .filter(jobType -> jobType.jobName.equals(jobName))
                     .findAny().orElseThrow(() -> new IllegalArgumentException("Unknown job name '" + jobName + "'"));
         }
-        
+
         /** Returns the job type for the given zone */
         public static Optional<JobType> from(SystemName system, ZoneId zone) {
             return Stream.of(values())
