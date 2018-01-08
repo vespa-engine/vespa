@@ -57,6 +57,7 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.ConfigServerClientMock'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.NodeRepositoryClientMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.ZoneRegistryMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.Controller'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.ConfigServerProxyMock'/>\n" +

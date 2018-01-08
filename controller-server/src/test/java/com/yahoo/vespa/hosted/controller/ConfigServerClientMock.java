@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeList;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.rotation.Rotation;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -201,28 +200,4 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
         return endpoints.getOrDefault(endpoint, result);
     }
 
-    @Override
-    public NodeList getNodeList(DeploymentId deployment) {
-        NodeList list = new NodeList();
-        list.nodes = new ArrayList<>();
-        NodeList.Node hostA = new NodeList.Node();
-        hostA.hostname = "hostA";
-        hostA.cost = 10;
-        hostA.flavor = "C-2B/24/500";
-        hostA.membership = new NodeList.Node.Membership();
-        hostA.membership.clusterId = "clusterA";
-        hostA.membership.clusterType = "container";
-        list.nodes.add(hostA);
-
-        NodeList.Node hostB = new NodeList.Node();
-        hostB.hostname = "hostB";
-        hostB.cost = 20;
-        hostB.flavor = "C-2C/24/500";
-        hostB.membership = new NodeList.Node.Membership();
-        hostB.membership.clusterId = "clusterB";
-        hostB.membership.clusterType = "content";
-        list.nodes.add(hostB);
-
-        return list;
-    }
 }
