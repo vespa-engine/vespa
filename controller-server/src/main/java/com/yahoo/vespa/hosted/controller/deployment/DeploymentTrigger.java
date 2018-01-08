@@ -115,7 +115,7 @@ public class DeploymentTrigger {
         });
     }
 
-    /** Returns whether all production zones listed in deployment spec last were successful on the currently deploying change. */
+    /** Returns whether all production zones listed in deployment spec has this change (or a newer version, if upgrade) */
     private boolean deploymentComplete(LockedApplication application) {
         if ( ! application.deploying().isPresent()) return true;
         Change change = application.deploying().get();
