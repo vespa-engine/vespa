@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.io;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFilePermission;
-import java.util.Set;
 
 /**
  * Convenience class for calling FileSystem methods on a fixed Path.
@@ -41,7 +39,7 @@ public class FileSystemPath {
         return this;
     }
 
-    public Set<PosixFilePermission> getPermissions() {
+    public String getPermissions() {
         return fileSystem.getPermissions(path);
     }
 

@@ -52,16 +52,8 @@ public class FileSystem {
                 Files.getFileAttributeView(path, PosixFileAttributeView.class).readAttributes());
     }
 
-    public Set<PosixFilePermission> getPermissions(Path path) {
-        return getAttributes(path).permissions();
-    }
-
-    static void validatePermissions(String permissions) {
-        Set<PosixFilePermission> set = PosixFilePermissions.fromString(permissions);
-        String serialized = PosixFilePermissions.toString(set);
-        if (!permissions.equals(serialized)) {
-            throw new IllegalArgumentException("Bad persmissions string: " + permissions);
-        }
+    public String getPermissions(Path path) {
+        return PosixFilePermissions.toString(getAttributes(path).permissions());
     }
 
     /**

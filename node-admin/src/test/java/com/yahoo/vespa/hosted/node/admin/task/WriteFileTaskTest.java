@@ -8,6 +8,7 @@ import org.mockito.ArgumentCaptor;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -21,7 +22,8 @@ public class WriteFileTaskTest extends TaskTestBase {
 
     @Test
     public void testWrite() {
-        Path path = Paths.get("foo");
+        Path parentDirectory = Paths.get("/foo");
+        Path path = parentDirectory.resolve("bar");
 
         @SuppressWarnings("unchecked")
         Producer<String> contentProducer = (Producer<String>) mock(Producer.class);
@@ -41,16 +43,21 @@ public class WriteFileTaskTest extends TaskTestBase {
 
         assertTrue(task.execute(contextMock));
 
+        verify(contentProducer, times(1)).call();
         verify(fileSystemMock).writeUtf8File(path, content);
         verify(fileSystemMock).setPermissions(path, permissions);
         verify(fileSystemMock).setOwner(path, owner);
         verify(fileSystemMock).setGroup(path, group);
 
         // Writing a file with the expected content
-        ArgumentCaptor<WriteFileTask> writeFileTaskArgumentCaptor =
-                ArgumentCaptor.forClass(WriteFileTask.class);
+        ArgumentCaptor<MakeDirectoryTask> makeDirectoryTaskCaptor =
+                ArgumentCaptor.forClass(MakeDirectoryTask.class);
         verify(contextMock, times(1))
-                .executeSubtask(writeFileTaskArgumentCaptor.capture());
+                .executeSubtask(makeDirectoryTaskCaptor.capture());
+
+        MakeDirectoryTask makeDirectoryTask = makeDirectoryTaskCaptor.getValue();
+        assertEquals(parentDirectory, makeDirectoryTask.getPath());
+        assertTrue(makeDirectoryTask.getWithParents());
     }
 
     @Test

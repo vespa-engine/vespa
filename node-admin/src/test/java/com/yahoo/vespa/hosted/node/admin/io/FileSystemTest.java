@@ -7,8 +7,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermission;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -59,17 +57,9 @@ public class FileSystemTest {
 
     @Test
     public void permissions() throws Exception {
-        fileSystem.setPermissions(path, "rwxr-x---");
-        Set<PosixFilePermission> permissions = fileSystem.getPermissions(path);
-        assertTrue(permissions.contains(PosixFilePermission.OWNER_READ));
-        assertTrue(permissions.contains(PosixFilePermission.OWNER_WRITE));
-        assertTrue(permissions.contains(PosixFilePermission.OWNER_EXECUTE));
-        assertTrue(permissions.contains(PosixFilePermission.GROUP_READ));
-        assertFalse(permissions.contains(PosixFilePermission.GROUP_WRITE));
-        assertTrue(permissions.contains(PosixFilePermission.GROUP_EXECUTE));
-        assertFalse(permissions.contains(PosixFilePermission.OTHERS_READ));
-        assertFalse(permissions.contains(PosixFilePermission.OTHERS_WRITE));
-        assertFalse(permissions.contains(PosixFilePermission.OTHERS_EXECUTE));
+        String expectedPermissions = "rwxr-x---";
+        fileSystem.setPermissions(path, expectedPermissions);
+        assertEquals(expectedPermissions, fileSystem.getPermissions(path));
     }
 
     @Test(expected = IllegalArgumentException.class)

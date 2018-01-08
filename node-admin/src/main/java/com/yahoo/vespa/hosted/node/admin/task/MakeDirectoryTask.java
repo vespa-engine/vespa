@@ -6,16 +6,24 @@ import com.yahoo.vespa.hosted.node.admin.io.FileSystem;
 import java.nio.file.Path;
 
 public class MakeDirectoryTask implements Task {
-    private final Path directory;
+    private final Path path;
     private boolean withParents = false;
 
-    public MakeDirectoryTask(Path directory) {
-        this.directory = directory;
+    public MakeDirectoryTask(Path path) {
+        this.path = path;
     }
 
     public MakeDirectoryTask withParents() {
         this.withParents = true;
         return this;
+    }
+
+    Path getPath() {
+        return path;
+    }
+
+    boolean getWithParents() {
+        return withParents;
     }
 
     private boolean makeDirectory(FileSystem fileSystem,
@@ -36,6 +44,6 @@ public class MakeDirectoryTask implements Task {
 
     @Override
     public boolean execute(TaskContext context) {
-        return makeDirectory(context.getFileSystem(), directory, withParents);
+        return makeDirectory(context.getFileSystem(), path, withParents);
     }
 }
