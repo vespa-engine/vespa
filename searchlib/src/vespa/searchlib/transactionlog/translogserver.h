@@ -28,11 +28,10 @@ public:
                    const common::FileHeaderContext &fileHeaderContext, uint64_t domainPartSize);
     TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                    const common::FileHeaderContext &fileHeaderContext);
-    virtual ~TransLogServer();
+    ~TransLogServer() override;
     DomainStats getDomainStats() const;
 
     void commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done) override;
-
 
     class Session
     {
