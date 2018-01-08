@@ -353,7 +353,7 @@ DocumentDB::applySubDBConfig(const DocumentDBConfig &newConfigSnapshot,
     auto newDocType = newRepo->getDocumentType(_docTypeName.getName());
     assert(newDocType != nullptr);
     DocumentDBReferenceResolver resolver(*registry, *newDocType, newConfigSnapshot.getImportedFieldsConfig(),
-                                         *oldDocType, _refCount, _writeService.attributeFieldWriter());
+                                         *oldDocType, _refCount, _writeService.attributeFieldWriter(), _state.getAllowReconfig());
     _subDBs.applyConfig(newConfigSnapshot, *_activeConfigSnapshot, serialNum, params, resolver);
 }
 
@@ -384,6 +384,9 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
                 _docTypeName.toString().c_str());
         }
         cmpres = _activeConfigSnapshot->compare(*configSnapshot);
+    }
+    if (_state.getState() == DDBState::State::APPLY_LIVE_CONFIG) {
+        cmpres.importedFieldsChanged = true;
     }
     const ReconfigParams params(cmpres);
     // Save config via config manager if replay is done.
@@ -496,7 +499,8 @@ DocumentDB::tearDownReferences()
                                          activeConfig->getImportedFieldsConfig(),
                                          *docType,
                                          _refCount,
-                                         _writeService.attributeFieldWriter());
+                                         _writeService.attributeFieldWriter(),
+                                         false);
     _subDBs.tearDownReferences(resolver);
     registry->remove(_docTypeName.getName());
 }

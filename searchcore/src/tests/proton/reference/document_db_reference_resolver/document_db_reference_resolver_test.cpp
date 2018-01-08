@@ -224,15 +224,21 @@ struct Fixture {
         oldAttrMgr.addReferenceAttribute("parent2_ref");
         oldAttrMgr.addReferenceAttribute("parent3_ref");
     }
-    ImportedAttributesRepo::UP resolve(fastos::TimeStamp visibilityDelay) {
-        DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, _attributeFieldWriter);
+    ImportedAttributesRepo::UP resolve(fastos::TimeStamp visibilityDelay, bool useReferences) {
+        DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, _attributeFieldWriter, useReferences);
         return resolver.resolve(attrMgr, oldAttrMgr, std::shared_ptr<search::IDocumentMetaStoreContext>(), visibilityDelay);
+    }
+    ImportedAttributesRepo::UP resolve(fastos::TimeStamp visibilityDelay) {
+        return resolve(visibilityDelay, true);
+    }
+    ImportedAttributesRepo::UP resolveReplay() {
+        return resolve(fastos::TimeStamp(0), false);
     }
     ImportedAttributesRepo::UP resolve() {
         return resolve(fastos::TimeStamp(0));
     }
     void teardown() {
-        DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, _attributeFieldWriter);
+        DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, _attributeFieldWriter, false);
         resolver.teardown(attrMgr);
     }
     const IGidToLidMapperFactory *getMapperFactoryPtr(const vespalib::string &attrName) {
@@ -275,6 +281,13 @@ TEST_F("require that reference attributes are connected to gid mapper", Fixture)
     f.resolve();
     EXPECT_EQUAL(f.factory.get(), f.getMapperFactoryPtr("ref"));
     EXPECT_EQUAL(f.factory.get(), f.getMapperFactoryPtr("other_ref"));
+}
+
+TEST_F("require that reference attributes are not connected to gid mapper during replay", Fixture)
+{
+    f.resolveReplay();
+    EXPECT_EQUAL(static_cast<IGidToLidMapperFactory *>(nullptr), f.getMapperFactoryPtr("ref"));
+    EXPECT_EQUAL(static_cast<IGidToLidMapperFactory *>(nullptr), f.getMapperFactoryPtr("other_ref"));
 }
 
 TEST_F("require that imported attributes are instantiated without search cache as default", Fixture)
