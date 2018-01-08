@@ -51,7 +51,7 @@ public:
                                 const document::DocumentType &prevThisDocType,
                                 MonitoredRefCount &refCount,
                                 search::ISequencedTaskExecutor &attributeFieldWriter,
-                                bool useReferencdes);
+                                bool useReferences);
     ~DocumentDBReferenceResolver();
 
     virtual std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &newAttrMgr,
