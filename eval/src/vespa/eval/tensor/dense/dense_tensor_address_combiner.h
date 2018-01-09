@@ -64,7 +64,7 @@ private:
     CellsRef               _cells;
     Address                _address;
     const Mapping         &_common;
-    const Mapping         &_mutable;
+    const Mapping         &_right;
     std::vector<size_t>    _accumulatedSize;
 
     double cell(size_t cellIdx) const { return _cells[cellIdx]; }
@@ -81,12 +81,12 @@ public:
     ~CommonDenseTensorCellsIterator();
     template <typename Func>
     void for_each(Address & combined, Func && func) const {
-        const int32_t lastDimension = _mutable.size() - 1;
+        const int32_t lastDimension = _right.size() - 1;
         int32_t curDimension = lastDimension;
         size_t cellIdx = index(_address);
         while (curDimension >= 0) {
-            const uint32_t rdim = _mutable[curDimension].second;
-            const uint32_t cdim = _mutable[curDimension].first;
+            const uint32_t rdim = _right[curDimension].second;
+            const uint32_t cdim = _right[curDimension].first;
             size_type & cindex = combined[cdim];
             if (curDimension == lastDimension) {
                 for (cindex = 0; cindex < _type.dimensions()[rdim].size; cindex++) {

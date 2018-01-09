@@ -80,7 +80,7 @@ CommonDenseTensorCellsIterator::CommonDenseTensorCellsIterator(const Mapping & c
       _cells(cells),
       _address(type_in.dimensions().size(), 0),
       _common(common),
-      _mutable(right),
+      _right(right),
       _accumulatedSize(_address.size())
 {
     size_t multiplier = 1;
