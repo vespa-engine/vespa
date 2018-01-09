@@ -1,13 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
-import com.google.inject.Inject;
-
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.log.LogLevel;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.vespa.config.server.ActivationConflictException;
@@ -15,7 +12,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.concurrent.Executor;
+import java.time.Duration;
 
 /**
  * Super class for http handlers, that takes care of checking valid
@@ -23,7 +20,6 @@ import java.util.concurrent.Executor;
  * implement the handleMETHOD methods that it supports.
  *
  * @author hmusum
- * @since 5.1.14
  */
 public class HttpHandler extends LoggingRequestHandler {
 
@@ -68,6 +64,17 @@ public class HttpHandler extends LoggingRequestHandler {
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Unexpected exception handling a config server request", e);
             return HttpErrorResponse.internalServerError(getMessage(e, request));
+        }
+    }
+
+    protected static Duration getRequestTimeout(HttpRequest request, Duration defaultTimeout) {
+        if (!request.hasProperty("timeout")) {
+            return defaultTimeout;
+        }
+        try {
+            return Duration.ofMillis((long) (Double.parseDouble(request.getProperty("timeout")) * 1000));
+        } catch (Exception e) {
+            return defaultTimeout;
         }
     }
 

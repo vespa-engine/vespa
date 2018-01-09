@@ -12,6 +12,7 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,20 +31,20 @@ public class FileDistributionStatus extends AbstractComponent {
 
     private final Supervisor supervisor = new Supervisor(new Transport());
 
-    public StatusAllHosts status(Application application) {
+    public StatusAllHosts status(Application application, Duration timeout) {
         List<HostStatus> hostStatuses = new ArrayList<>();
         application.getModel().getHosts()
                 .forEach(host -> host.getServices()
                         .stream()
                         .filter(service -> "configproxy".equals(service.getServiceType()))
-                        .forEach(service -> hostStatuses.add(getHostStatus(service.getHostName(), getRpcPort(service)))));
+                        .forEach(service -> hostStatuses.add(getHostStatus(service.getHostName(), getRpcPort(service), timeout))));
         return createStatusForAllHosts(hostStatuses);
     }
 
-    HostStatus getHostStatus(String hostname, int port) {
+    HostStatus getHostStatus(String hostname, int port, Duration timeout) {
         Target target = supervisor.connect(new Spec(hostname, port));
         Request request = new Request("filedistribution.getActiveFileReferencesStatus");
-        target.invokeSync(request, 1.0);
+        target.invokeSync(request, timeout.toMillis() / 1000);
         HostStatus hostStatus = createHostStatusFromResponse(hostname, request);
         target.close();
         return hostStatus;

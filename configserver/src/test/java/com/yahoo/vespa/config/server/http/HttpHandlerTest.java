@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
@@ -11,15 +10,15 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.time.Duration;
+import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 /**
  * @author lulf
- * @since 5.34
  */
 public class HttpHandlerTest {
     @Test
@@ -34,6 +33,15 @@ public class HttpHandlerTest {
         new JsonDecoder().decode(data, baos.toByteArray());
         assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.errorCodes.INVALID_APPLICATION_PACKAGE.name()));
         assertThat(data.get().field("message").asString(), is(message));
+    }
+
+    @Test
+    public void testTimeoutParameter() {
+        assertEquals(1500, HttpTestHandler.getRequestTimeout(
+                HttpRequest.createTestRequest("foo",
+                                              com.yahoo.jdisc.http.HttpRequest.Method.GET,
+                                              null,
+                                              Collections.singletonMap("timeout", "1.5")), Duration.ofSeconds(5)).toMillis());
     }
 
     private static class HttpTestHandler extends HttpHandler {
