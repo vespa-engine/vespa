@@ -28,15 +28,7 @@ public interface ZoneRegistry {
     /** Returns the default region for the given environment, if one is configured. */
     Optional<RegionName> getDefaultRegion(Environment environment);
 
-    /** Returns a list with all known config servers in the given zone.
-     *
-     * @deprecated Use {@link #getConfigServerSecureUris(ZoneId)} instead (requires that client trusts Athenz CA)
-     */
-    @Deprecated
-    default List<URI> getConfigServerUris(ZoneId zoneId) {
-        throw new UnsupportedOperationException("Use getConfigServerSecureUris() instead");
-    }
-
+    // TODO Rename to getConfigServerUris once port 4080 is removed from configservers
     /** Returns a list with all known config servers in the given zone, with a secure connection URL. */
     List<URI> getConfigServerSecureUris(ZoneId zoneId);
 
