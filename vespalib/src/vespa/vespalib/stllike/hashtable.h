@@ -142,7 +142,7 @@ public:
         typedef std::forward_iterator_tag iterator_category;
 
         iterator(hashtable * hash) : _current(0), _hashTable(hash) {
-            if ((_current < _hashTable->initializedSize()) && ! _hashTable->_nodes[_current].valid()) {
+            if (! _hashTable->_nodes[_current].valid()) {
                 advanceToNextValidHash();
             }
         }
@@ -186,7 +186,7 @@ public:
         typedef std::forward_iterator_tag iterator_category;
 
         const_iterator(const hashtable * hash) : _current(0), _hashTable(hash) {
-            if ((_current < _hashTable->initializedSize()) && ! _hashTable->_nodes[_current].valid()) {
+            if (! _hashTable->_nodes[_current].valid()) {
                 advanceToNextValidHash();
             }
         }
