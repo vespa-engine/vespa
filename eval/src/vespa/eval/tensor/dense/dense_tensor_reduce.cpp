@@ -52,3 +52,4 @@ DimensionReducer::setup(const eval::ValueType &oldType, const vespalib::string &
 }
 
 }
+
