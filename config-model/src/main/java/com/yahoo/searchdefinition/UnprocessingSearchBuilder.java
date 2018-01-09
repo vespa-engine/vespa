@@ -10,7 +10,6 @@ import java.io.IOException;
 
 /**
  * A SearchBuilder that does not run the processing chain for searches
- *
  */
 public class UnprocessingSearchBuilder extends SearchBuilder {
 

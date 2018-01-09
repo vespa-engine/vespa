@@ -25,4 +25,5 @@ public class UnrankedRankProfile extends RankProfile {
         this.setKeepRankCount(0);
         this.setRerankCount(0);
     }
+
 }

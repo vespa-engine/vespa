@@ -11,9 +11,10 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class FieldOperationApplierForStructs extends FieldOperationApplier {
+
     @Override
     public void process(SDDocumentType sdoc) {
         for (SDDocumentType type : sdoc.getAllTypes()) {
@@ -45,4 +46,5 @@ public class FieldOperationApplierForStructs extends FieldOperationApplier {
             }
         }
     }
+
 }

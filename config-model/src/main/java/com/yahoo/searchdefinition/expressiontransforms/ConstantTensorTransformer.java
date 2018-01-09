@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.searchdefinition;
+package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -19,7 +19,7 @@ import java.util.Map;
  *
  * @author geirst
  */
-class ConstantTensorTransformer extends ExpressionTransformer {
+public class ConstantTensorTransformer extends ExpressionTransformer {
 
     public static final String CONSTANT = "constant";
 

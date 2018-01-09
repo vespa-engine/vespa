@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.searchdefinition;
+package com.yahoo.searchdefinition.expressiontransforms;
 
+import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.rule.*;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
@@ -20,7 +21,7 @@ import java.util.Map;
  *
  * @author lesters
  */
-class MacroShadower extends ExpressionTransformer {
+public class MacroShadower extends ExpressionTransformer {
 
     private final Map<String, RankProfile.Macro> macros;
 

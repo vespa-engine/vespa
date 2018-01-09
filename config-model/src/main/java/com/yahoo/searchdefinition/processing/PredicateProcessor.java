@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * Validates the predicate fields.
  *
- * @author <a href="mailto:lesters@yahoo-inc.com">Lester Solbakken</a>
+ * @author Lester Solbakken
  */
 public class PredicateProcessor extends Processor {
 

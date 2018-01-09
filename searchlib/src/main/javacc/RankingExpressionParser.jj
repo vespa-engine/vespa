@@ -333,7 +333,7 @@ ExpressionNode arg() :
 {
     ( ret = constantPrimitive()                                          |
       LOOKAHEAD(2) ret = feature()                                       |
-      name = identifier()            { ret = new NameNode(name);       } )
+      name = identifier()        { ret = new NameNode(name);       } )
     { return ret; }
 }
 
