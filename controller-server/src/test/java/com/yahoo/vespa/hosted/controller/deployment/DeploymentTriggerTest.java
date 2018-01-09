@@ -217,16 +217,14 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
 
-        // Parallel deployment
-        tester.deploy(DeploymentJobs.JobType.productionUsWest1, app, applicationPackage);
-        tester.deploy(DeploymentJobs.JobType.productionUsEast3, app, applicationPackage);
-
         // Last declared job completes first
+        tester.deploy(DeploymentJobs.JobType.productionUsWest1, app, applicationPackage);
         tester.notifyJobCompletion(DeploymentJobs.JobType.productionUsWest1, app, true);
         assertTrue("Change is present as not all jobs are complete",
                    tester.applications().require(app.id()).deploying().isPresent());
 
         // All jobs complete
+        tester.deploy(DeploymentJobs.JobType.productionUsEast3, app, applicationPackage);
         tester.notifyJobCompletion(DeploymentJobs.JobType.productionUsEast3, app, true);
         assertFalse("Change has been deployed",
                     tester.applications().require(app.id()).deploying().isPresent());
@@ -287,13 +285,13 @@ public class DeploymentTriggerTest {
 
         Application app = tester.createAndDeploy("app1", 1, applicationPackageBuilder.build());
 
-        
-        
+
+
         tester.clock().advance(Duration.ofHours(1)); // --------------- Enter block window: 18:30
-        
+
         readyJobsTrigger.run();
         assertEquals(0, tester.buildSystem().jobs().size());
-        
+
         String searchDefinition =
                 "search test {\n" +
                 "  document test {\n" +
@@ -314,7 +312,7 @@ public class DeploymentTriggerTest {
         BuildService.BuildJob productionJob = tester.buildSystem().takeJobsToRun().get(0);
         assertEquals("production-us-west-1", productionJob.jobName());
     }
-    
+
     @Test
     public void testUpgradingButNoJobStarted() {
         DeploymentTester tester = new DeploymentTester();

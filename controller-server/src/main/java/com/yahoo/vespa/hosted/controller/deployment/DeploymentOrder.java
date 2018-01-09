@@ -2,10 +2,10 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.application.api.DeploymentSpec;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -51,7 +51,7 @@ public class DeploymentOrder {
             return Collections.emptyList();
         }
 
-        // Always trigger system test after component as deployment spec might not be available yet 
+        // Always trigger system test after component as deployment spec might not be available yet
         // (e.g. if this is a new application with no previous deployments)
         if (job == JobType.component) {
             return Collections.singletonList(JobType.systemTest);
@@ -67,11 +67,6 @@ public class DeploymentOrder {
         // If this is the last deployment step there's nothing more to trigger
         int currentIndex = deploymentSteps.indexOf(currentStep.get());
         if (currentIndex == deploymentSteps.size() - 1) {
-            return Collections.emptyList();
-        }
-
-        // Postpone if step hasn't completed all its jobs for this change
-        if ( ! completedSuccessfully(currentStep.get(), application.deploying().get(), application)) {
             return Collections.emptyList();
         }
 

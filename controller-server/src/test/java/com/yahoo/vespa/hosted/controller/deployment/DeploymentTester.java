@@ -98,7 +98,7 @@ public class DeploymentTester {
     public void updateVersionStatus() {
         controller().updateVersionStatus(VersionStatus.compute(controller(), tester.controller().systemVersion()));
     }
-    
+
     public void updateVersionStatus(Version currentVersion) {
         configServer().setDefaultVersion(currentVersion);
         controller().updateVersionStatus(VersionStatus.compute(controller(), currentVersion));
@@ -174,7 +174,7 @@ public class DeploymentTester {
         completeDeployment(application, applicationPackage, Optional.empty(), false);
     }
 
-    private void completeDeployment(Application application, ApplicationPackage applicationPackage, 
+    private void completeDeployment(Application application, ApplicationPackage applicationPackage,
                                     Optional<JobType> failOnJob, boolean includingProductionZones) {
         DeploymentOrder order = new DeploymentOrder(controller());
         List<JobType> jobs = order.jobsFrom(applicationPackage.deploymentSpec());
@@ -208,9 +208,13 @@ public class DeploymentTester {
     }
 
     public void completeUpgrade(Application application, Version version, String upgradePolicy) {
-        assertTrue(applications().require(application.id()).deploying().isPresent());
+        completeUpgrade(application, version, applicationPackage(upgradePolicy));
+    }
+
+    public void completeUpgrade(Application application, Version version, ApplicationPackage applicationPackage) {
+        assertTrue(application + " has a deployment", applications().require(application.id()).deploying().isPresent());
         assertEquals(new Change.VersionChange(version), applications().require(application.id()).deploying().get());
-        completeDeployment(application, applicationPackage(upgradePolicy), Optional.empty(), true);
+        completeDeployment(application, applicationPackage, Optional.empty(), true);
     }
 
     public void completeUpgradeWithError(Application application, Version version, String upgradePolicy, JobType failOnJob) {
@@ -233,6 +237,10 @@ public class DeploymentTester {
 
     public void deploy(JobType job, Application application, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
         job.zone(controller().system()).ifPresent(zone -> tester.deploy(application, zone, applicationPackage, deployCurrentVersion));
+    }
+
+    public void deployAndNotify(Application application, String upgradePolicy, boolean success, JobType... jobs) {
+        deployAndNotify(application, applicationPackage(upgradePolicy), success, true, jobs);
     }
 
     public void deployAndNotify(Application application, ApplicationPackage applicationPackage, boolean success,
@@ -264,9 +272,10 @@ public class DeploymentTester {
     }
 
     private BuildService.BuildJob findJob(Application application, JobType jobType) {
-        for (BuildService.BuildJob job : buildSystem().jobs())
+        for (BuildService.BuildJob job : buildSystem().jobs()) {
             if (job.projectId() == application.deploymentJobs().projectId().get() && job.jobName().equals(jobType.jobName()))
                 return job;
+        }
         throw new NoSuchElementException(jobType + " is not scheduled for " + application);
     }
 
@@ -281,6 +290,8 @@ public class DeploymentTester {
                 .upgradePolicy(upgradePolicy)
                 .environment(Environment.prod)
                 .region("us-west-1")
+                .environment(Environment.prod)
+                .region("us-east-3")
                 .build();
     }
 

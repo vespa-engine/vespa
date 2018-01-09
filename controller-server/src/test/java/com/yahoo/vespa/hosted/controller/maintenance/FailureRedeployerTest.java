@@ -89,6 +89,7 @@ public class FailureRedeployerTest {
         tester.clock().advance(Duration.ofMinutes(5));
         tester.readyJobTrigger().maintain();
         assertEquals("Job is retried", 1, tester.buildSystem().jobs().size());
+        assertEquals(DeploymentJobs.JobType.productionUsEast3.jobName(), tester.buildSystem().jobs().get(0).jobName());
 
         // Production job finally succeeds
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
@@ -220,9 +221,14 @@ public class FailureRedeployerTest {
         tester.readyJobTrigger().maintain();
         assertTrue("No jobs retried", tester.buildSystem().jobs().isEmpty());
 
-        // Deployment completes
+        // Deployment notifies completeness but has not actually made a deployment
         tester.notifyJobCompletion(DeploymentJobs.JobType.productionCdUsCentral1, application, true);
-        assertFalse("Change deployed", tester.application(application.id()).deploying().isPresent());
+        assertTrue("Change not really deployed", tester.application(application.id()).deploying().isPresent());
+
+        // Deployment actually deploys and notifies completeness
+        tester.deploy(DeploymentJobs.JobType.productionCdUsCentral1, application, applicationPackage);
+        tester.notifyJobCompletion(DeploymentJobs.JobType.productionCdUsCentral1, application, true);
+        assertFalse("Change not really deployed", tester.application(application.id()).deploying().isPresent());
     }
 
     @Test

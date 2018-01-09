@@ -27,6 +27,12 @@ public enum Environment {
     /** Returns whether deployments to this environment are done manually */
     public boolean isManuallyDeployed() { return this == dev || this == perf; }
 
+    /** Returns whether this environment is for automated tests */
+    public boolean isTest() { return this == test || this == staging; }
+
+    /** Returns whether this environment is production (prod) */
+    public boolean isProduction() { return this == prod; }
+
     /** Returns the prod environment. This is useful for non-hosted properties where we just need any consistent value */
     public static Environment defaultEnvironment() { return prod; }
 

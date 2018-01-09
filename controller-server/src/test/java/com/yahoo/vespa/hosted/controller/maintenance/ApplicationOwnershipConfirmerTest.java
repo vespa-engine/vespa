@@ -1,11 +1,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
@@ -74,8 +70,9 @@ public class ApplicationOwnershipConfirmerTest {
         assertEquals("Confirmation issue reference is not updated when no issue id is returned.", issueId, propertyApp.get().ownershipIssueId());
         assertEquals("Confirmation issue reference is not updated when no issue id is returned.", issueId, userApp.get().ownershipIssueId());
 
-        // The user deletes its production deployment — see that the issue is forgotten.
+        // The user deletes all production deployments — see that the issue is forgotten.
         assertEquals("Confirmation issue for user is sitll open.", issueId, userApp.get().ownershipIssueId());
+        tester.controller().applications().deactivate(userApp.get(), userApp.get().productionDeployments().keySet().stream().findAny().get());
         tester.controller().applications().deactivate(userApp.get(), userApp.get().productionDeployments().keySet().stream().findAny().get());
         assertTrue("No production deployments are listed for user.", userApp.get().productionDeployments().isEmpty());
         confirmer.maintain();
