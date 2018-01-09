@@ -21,7 +21,7 @@ apply(DenseTensorAddressCombiner & combiner, DirectDenseTensorBuilder & builder,
     for (DenseTensorCellsIterator lhsItr = lhs.cellsIterator(); lhsItr.valid(); lhsItr.next()) {
         combiner.updateLeftAndCommon(lhsItr.address());
         if (rhsIter.updateCommon(combiner.address())) {
-            rhsIter.for_each(combiner.address(), [&combiner, &func, &builder, &lhsItr](const DenseTensorCellsIterator::Address & combined, double rhsCell) {
+            rhsIter.for_each(combiner.address(), [&func, &builder, &lhsItr](const DenseTensorCellsIterator::Address & combined, double rhsCell) {
                 builder.insertCell(combined, func(lhsItr.cell(), rhsCell));
             });
         }
