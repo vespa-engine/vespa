@@ -8,10 +8,10 @@ namespace vespalib::tensor {
 
 DenseTensorAddressCombiner::~DenseTensorAddressCombiner() = default;
 
-DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs,
-                                                       CellsRef rhsCells)
+DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &combined, const eval::ValueType &lhs,
+                                                       const eval::ValueType &rhs, CellsRef rhsCells)
     : _rightAddress(rhs, rhsCells),
-      _combinedAddress(),
+      _combinedAddress(combined),
       _left(),
       _commonRight(),
       _right()
@@ -37,14 +37,13 @@ DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lh
         _right.emplace_back(numDimensions++, rhsItr-rhs.dimensions().cbegin());
         ++rhsItr;
     }
-    _combinedAddress.resize(numDimensions);
 }
 
-DenseTensorAddressCombiner::AddressContext::AddressContext(const eval::ValueType &type, CellsRef cells)
+DenseTensorAddressCombiner::AddressContext::AddressContext(const eval::ValueType &type)
     : _type(type),
-      _cells(cells),
-      _address(type.dimensions().size(), 0),
-      _accumulatedSize(_address.size())
+      _accumulatedSize(_type.dimensions().size()),
+      _address(type.dimensions().size(), 0)
+
 {
     size_t multiplier = 1;
     for (int32_t i(_address.size() - 1); i >= 0; i--) {
@@ -53,6 +52,7 @@ DenseTensorAddressCombiner::AddressContext::AddressContext(const eval::ValueType
     }
 }
 
+DenseTensorAddressCombiner::AddressContext::~AddressContext() = default;
 
 eval::ValueType
 DenseTensorAddressCombiner::combineDimensions(const eval::ValueType &lhs, const eval::ValueType &rhs)

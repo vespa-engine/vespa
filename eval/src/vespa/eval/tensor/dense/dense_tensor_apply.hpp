@@ -21,7 +21,7 @@ apply(DenseTensorAddressCombiner & combiner, DirectDenseTensorBuilder & builder,
     for (DenseTensorCellsIterator lhsItr = lhs.cellsIterator(); lhsItr.valid(); lhsItr.next()) {
         combiner.updateLeftAndCommon(lhsItr.address());
         if (combiner.updateCommonRight()) {
-            combiner.for_each([&func, &builder, &lhsItr](const DenseTensorCellsIterator::Address & combined, double rhsCell) {
+            combiner.for_each([&func, &builder, &lhsItr](size_t combined, double rhsCell) {
                 builder.insertCell(combined, func(lhsItr.cell(), rhsCell));
             });
         }
@@ -53,8 +53,9 @@ template <typename Function>
 std::unique_ptr<Tensor>
 apply(const DenseTensorView &lhs, const DenseTensorView &rhs, Function &&func)
 {
-    DenseTensorAddressCombiner combiner(lhs.fast_type(), rhs.fast_type(), rhs.cellsRef());
-    DirectDenseTensorBuilder builder(DenseTensorAddressCombiner::combineDimensions(lhs.fast_type(), rhs.fast_type()));
+    eval::ValueType resultType = DenseTensorAddressCombiner::combineDimensions(lhs.fast_type(), rhs.fast_type());
+    DenseTensorAddressCombiner combiner(resultType, lhs.fast_type(), rhs.fast_type(), rhs.cellsRef());
+    DirectDenseTensorBuilder builder(resultType);
     if (combiner.hasAnyRightOnlyDimensions()) {
         return apply(combiner, builder, lhs, std::move(func));
     } else {
