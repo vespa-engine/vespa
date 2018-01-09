@@ -14,7 +14,6 @@ using vespalib::tensor::DenseTensor;
 using vespalib::tensor::DenseTensorView;
 using vespalib::tensor::MutableDenseTensorView;
 using vespalib::eval::ValueType;
-using std::make_unique;
 
 namespace search::tensor {
 
@@ -175,9 +174,9 @@ DenseTensorStore::getTensor(EntryRef ref) const
     auto raw = getRawBuffer(ref);
     size_t numCells = getNumCells(raw);
     if (_numUnboundDims == 0) {
-        return make_unique<DenseTensorView>(_type, CellsRef(static_cast<const double *>(raw), numCells));
+        return std::make_unique<DenseTensorView>(_type, CellsRef(static_cast<const double *>(raw), numCells));
     } else {
-        auto result = make_unique<MutableDenseTensorView>(_type, CellsRef(static_cast<const double *>(raw), numCells));
+        auto result = std::make_unique<MutableDenseTensorView>(_type, CellsRef(static_cast<const double *>(raw), numCells));
         makeConcreteType(*result, raw, _numUnboundDims);
         return result;
     }
@@ -262,11 +261,8 @@ DenseTensorStore::setDenseTensor(const TensorType &tensor)
 TensorStore::EntryRef
 DenseTensorStore::setTensor(const Tensor &tensor)
 {
-    const DenseTensorView *view(dynamic_cast<const DenseTensorView *>(&tensor));
-    if (view) {
-        return setDenseTensor(*view);
-    }
-    abort();
+    const DenseTensorView &view(dynamic_cast<const DenseTensorView &>(tensor));
+    return setDenseTensor(view);
 }
 
 }
