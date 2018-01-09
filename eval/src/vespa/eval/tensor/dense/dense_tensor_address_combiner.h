@@ -22,8 +22,14 @@ public:
 
 private:
     using Address = DenseTensorCellsIterator::Address;
+    using CellsRef = vespalib::ConstArrayRef<double>;
+    using size_type = eval::ValueType::Dimension::size_type;
 
+    const eval::ValueType &_rightType;
     Address                _combinedAddress;
+    CellsRef               _rightCells;
+    Address                _rightAddress;
+    std::vector<size_t>    _accumulatedSize;
     Mapping                _left;
     Mapping                _commonRight;
     Mapping                _right;
@@ -32,43 +38,8 @@ private:
             _combinedAddress[m.first] = addr[m.second];
         }
     }
-public:
-    DenseTensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs);
-    ~DenseTensorAddressCombiner();
-    void updateLeftAndCommon(const Address & addr) { update(addr, _left); }
-    const Mapping & getCommonRight() const { return _commonRight; }
-    const Mapping & getRight() const { return _right; }
-
-    bool hasAnyRightOnlyDimensions() const { return ! _right.empty(); }
-
-    const Address &address() const { return _combinedAddress; }
-    Address &address() { return _combinedAddress; }
-
-    static eval::ValueType combineDimensions(const eval::ValueType &lhs, const eval::ValueType &rhs);
-};
-
-
-/**
- * Utility class to iterate over common cells in a dense tensor.
- */
-class CommonDenseTensorCellsIterator
-{
-public:
-    using size_type = eval::ValueType::Dimension::size_type;
-    using Address = std::vector<size_type>;
-    using Mapping = DenseTensorAddressCombiner::Mapping;
-private:
-    using Dims = std::vector<uint32_t>;
-    using CellsRef = vespalib::ConstArrayRef<double>;
-    const eval::ValueType &_type;
-    CellsRef               _cells;
-    Address                _address;
-    const Mapping         &_common;
-    const Mapping         &_right;
-    std::vector<size_t>    _accumulatedSize;
-
-    double cell(size_t cellIdx) const { return _cells[cellIdx]; }
-    size_t index(const Address &address) const {
+    double rightCell(size_t cellIdx) const { return _rightCells[cellIdx]; }
+    size_t rightIndex(const Address &address) const {
         size_t cellIdx(0);
         for (uint32_t i(0); i < address.size(); i++) {
             cellIdx += address[i]*_accumulatedSize[i];
@@ -76,53 +47,58 @@ private:
         return cellIdx;
     }
 public:
-    CommonDenseTensorCellsIterator(const Mapping & common, const Mapping & right,
-                                   const eval::ValueType &type_in, CellsRef cells);
-    ~CommonDenseTensorCellsIterator();
+    DenseTensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs, CellsRef rhsCells);
+    ~DenseTensorAddressCombiner();
+    void updateLeftAndCommon(const Address & addr) { update(addr, _left); }
+
+    bool hasAnyRightOnlyDimensions() const { return ! _right.empty(); }
+
+    const Address &address() const { return _combinedAddress; }
+
+    bool updateCommonRight() {
+        for (const auto & m : _commonRight) {
+            if (_combinedAddress[m.first] >= _rightType.dimensions()[m.second].size) {
+                return false;
+            }
+            _rightAddress[m.second] = _combinedAddress[m.first];
+        }
+        return true;
+    }
+    double rightCell() { return rightCell(rightIndex(_rightAddress)); }
+
     template <typename Func>
-    void for_each(Address & combined, Func && func) const {
+    void for_each(Func && func) {
         const int32_t lastDimension = _right.size() - 1;
         int32_t curDimension = lastDimension;
-        size_t cellIdx = index(_address);
+        size_t cellIdx = rightIndex(_rightAddress);
         while (curDimension >= 0) {
             const uint32_t rdim = _right[curDimension].second;
             const uint32_t cdim = _right[curDimension].first;
-            size_type & cindex = combined[cdim];
+            size_type & cindex = _combinedAddress[cdim];
             if (curDimension == lastDimension) {
-                for (cindex = 0; cindex < _type.dimensions()[rdim].size; cindex++) {
-                    func(combined, cell(cellIdx));
+                for (cindex = 0; cindex < _rightType.dimensions()[rdim].size; cindex++) {
+                    func(_combinedAddress, rightCell(cellIdx));
                     cellIdx += _accumulatedSize[rdim];
                 }
                 cindex = 0;
-                cellIdx -= _accumulatedSize[rdim] * _type.dimensions()[rdim].size;
+                cellIdx -= _accumulatedSize[rdim] * _rightType.dimensions()[rdim].size;
                 curDimension--;
             } else {
-                if (cindex < _type.dimensions()[rdim].size) {
+                if (cindex < _rightType.dimensions()[rdim].size) {
                     cindex++;
                     cellIdx += _accumulatedSize[rdim];
                     curDimension++;
                 } else {
-                    cellIdx -= _accumulatedSize[rdim] * _type.dimensions()[rdim].size;
+                    cellIdx -= _accumulatedSize[rdim] * _rightType.dimensions()[rdim].size;
                     cindex = 0;
                     curDimension--;
                 }
             }
         }
     }
-    bool updateCommon(const Address & combined) {
-        for (const auto & m : _common) {
-            if (combined[m.first] >= _type.dimensions()[m.second].size) {
-                return false;
-            }
-            _address[m.second] = combined[m.first];
-        }
-        return true;
-    }
-    double cell() const {
-        return cell(index(_address));
-    }
 
-    const eval::ValueType &fast_type() const { return _type; }
+    static eval::ValueType combineDimensions(const eval::ValueType &lhs, const eval::ValueType &rhs);
 };
+
 
 }
