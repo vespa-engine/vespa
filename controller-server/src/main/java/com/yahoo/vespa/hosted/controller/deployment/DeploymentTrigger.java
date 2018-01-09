@@ -215,22 +215,18 @@ public class DeploymentTrigger {
         if (change instanceof Change.VersionChange) { // Propagate upgrade while making sure we never downgrade
             Version targetVersion = ((Change.VersionChange)change).version();
 
-            if (next.type().isTest()) {
-                // Is it this job's turn to upgrade?
-                if ( previous != null && ! lastSuccessfulIs(targetVersion, previous.type(), application))
-                    return false;
+            // Is it not yet this job's turn to upgrade?
+            if ( ! lastSuccessfulIs(targetVersion, previous.type(), application))
+                return false;
 
-                // Has the upgrade already been done?
+            if (next.type().isTest()) {
+                // Has the upgrade test already been done?
                 if (lastSuccessfulIs(targetVersion, next.type(), application))
                     return false;
             }
             else if (next.type().isProduction()) {
                 // Is the target version tested?
                 if ( ! lastSuccessfulIs(targetVersion, JobType.stagingTest, application))
-                    return false;
-
-                // Is it this job's turn to upgrade?
-                if ( previous.type().isProduction() && ! isOnAtLeastProductionVersion(targetVersion, application, previous.type()))
                     return false;
 
                 // Is the next a production job for a zone already upgraded to this version or a newer one?
@@ -421,9 +417,9 @@ public class DeploymentTrigger {
     private boolean lastSuccessfulIs(Version version, JobType jobType, Application application) {
         JobStatus status = application.deploymentJobs().jobStatus().get(jobType);
         if (status == null) return false;
-        Optional<JobStatus.JobRun> lastSuccessfulStagingRun = status.lastSuccess();
-        if ( ! lastSuccessfulStagingRun.isPresent()) return false;
-        return lastSuccessfulStagingRun.get().version().equals(version);
+        Optional<JobStatus.JobRun> lastSuccessfulRun = status.lastSuccess();
+        if ( ! lastSuccessfulRun.isPresent()) return false;
+        return lastSuccessfulRun.get().version().equals(version);
     }
 
 }
