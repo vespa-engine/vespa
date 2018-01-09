@@ -496,4 +496,11 @@ TEST("test hash table capacity and size") {
     EXPECT_EQUAL(2048u, many.capacity());
 }
 
+TEST("test that begin and end are identical with empty hashtables") {
+    hash_set<int> empty;
+    EXPECT_TRUE(empty.begin() == empty.end());
+    hash_set<int> empty_but_reserved(10);
+    EXPECT_TRUE(empty_but_reserved.begin() == empty_but_reserved.end());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
