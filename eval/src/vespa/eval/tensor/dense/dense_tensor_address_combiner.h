@@ -18,25 +18,11 @@ namespace vespalib::tensor {
 class DenseTensorAddressCombiner
 {
 public:
-    using Address = DenseTensorCellsIterator::Address;
     using Mapping = std::vector<std::pair<uint32_t, uint32_t>>;
 
 private:
-    enum class AddressOp { LHS, RHS, BOTH };
+    using Address = DenseTensorCellsIterator::Address;
 
-    using CellsIterator = DenseTensorCellsIterator;
-
-    class AddressReader
-    {
-    private:
-        const Address &_address;
-        uint32_t       _idx;
-    public:
-        AddressReader(const Address &address) : _address(address), _idx(0) {}
-        Address::value_type nextLabel() { return _address[_idx++]; }
-    };
-
-    std::vector<AddressOp> _ops;
     Address                _combinedAddress;
     Mapping                _left;
     Mapping                _commonRight;
@@ -50,14 +36,6 @@ public:
     DenseTensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs);
     ~DenseTensorAddressCombiner();
     void updateLeftAndCommon(const Address & addr) { update(addr, _left); }
-    void updateRight(const Address & addr) { update(addr, _right); }
-    bool hasCommonWithRight(const Address & addr) const {
-        for (const auto & m : _commonRight) {
-            if (_combinedAddress[m.first] != addr[m.second]) return false;
-        }
-        return true;
-    }
-
     const Mapping & getCommonRight() const { return _commonRight; }
     const Mapping & getRight() const { return _right; }
 

@@ -10,36 +10,33 @@ DenseTensorAddressCombiner::~DenseTensorAddressCombiner() { }
 
 DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lhs,
                                                        const eval::ValueType &rhs)
-    : _ops(),
-      _combinedAddress(),
+    : _combinedAddress(),
       _left(),
       _commonRight(),
       _right()
 {
     auto rhsItr = rhs.dimensions().cbegin();
     auto rhsItrEnd = rhs.dimensions().cend();
+    uint32_t numDimensions(0);
     for (const auto &lhsDim : lhs.dimensions()) {
         while ((rhsItr != rhsItrEnd) && (rhsItr->name < lhsDim.name)) {
-            _right.emplace_back(_ops.size(), rhsItr-rhs.dimensions().cbegin());
-            _ops.push_back(AddressOp::RHS);
+            _right.emplace_back(numDimensions++, rhsItr-rhs.dimensions().cbegin());
             ++rhsItr;
         }
         if ((rhsItr != rhsItrEnd) && (rhsItr->name == lhsDim.name)) {
-            _left.emplace_back(_ops.size(), _left.size());
-            _commonRight.emplace_back(_ops.size(), rhsItr-rhs.dimensions().cbegin());
-            _ops.push_back(AddressOp::BOTH);
+            _left.emplace_back(numDimensions, _left.size());
+            _commonRight.emplace_back(numDimensions, rhsItr-rhs.dimensions().cbegin());
+            ++numDimensions;
             ++rhsItr;
         } else {
-            _left.emplace_back(_ops.size(), _left.size());
-            _ops.push_back(AddressOp::LHS);
+            _left.emplace_back(numDimensions++, _left.size());
         }
     }
     while (rhsItr != rhsItrEnd) {
-        _right.emplace_back(_ops.size(), rhsItr-rhs.dimensions().cbegin());
-        _ops.push_back(AddressOp::RHS);
+        _right.emplace_back(numDimensions++, rhsItr-rhs.dimensions().cbegin());
         ++rhsItr;
     }
-    _combinedAddress.resize(_ops.size());
+    _combinedAddress.resize(numDimensions);
 }
 
 eval::ValueType
