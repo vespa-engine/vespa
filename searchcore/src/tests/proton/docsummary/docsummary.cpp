@@ -31,6 +31,7 @@
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/encoding/base64.h>
+#include <vespa/config-bucketspaces.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -51,6 +52,7 @@ using search::index::DummyFileHeaderContext;
 using search::index::schema::CollectionType;
 using storage::spi::Timestamp;
 using vespa::config::search::core::ProtonConfig;
+using vespa::config::content::core::BucketspacesConfig;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorCells;
 using vespalib::tensor::TensorDimensions;
@@ -205,6 +207,7 @@ public:
         auto b = std::make_shared<BootstrapConfig>(1, _documenttypesConfig, _repo,
                                                    std::make_shared<ProtonConfig>(),
                                                    std::make_shared<FiledistributorrpcConfig>(),
+                                                   std::make_shared<BucketspacesConfig>(),
                                                    _tuneFileDocumentDB);
         _configMgr.forwardConfig(b);
         _configMgr.nextGeneration(0);

@@ -23,6 +23,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/config-bucketspaces.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace cloud::config::filedistribution;
@@ -40,6 +41,7 @@ using search::transactionlog::TransLogServer;
 using searchcorespi::IFlushTarget;
 using searchcorespi::index::IndexFlushTarget;
 using vespa::config::search::core::ProtonConfig;
+using vespa::config::content::core::BucketspacesConfig;
 using vespalib::Slime;
 
 namespace {
@@ -96,6 +98,7 @@ Fixture::Fixture()
         b(new BootstrapConfig(1, documenttypesConfig, repo,
                               std::make_shared<ProtonConfig>(),
                               std::make_shared<FiledistributorrpcConfig>(),
+                              std::make_shared<BucketspacesConfig>(),
                               tuneFileDocumentDB));
     mgr.forwardConfig(b);
     mgr.nextGeneration(0);

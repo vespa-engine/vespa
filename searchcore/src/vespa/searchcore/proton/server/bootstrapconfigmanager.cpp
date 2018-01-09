@@ -2,6 +2,7 @@
 
 #include "bootstrapconfigmanager.h"
 #include "bootstrapconfig.h"
+#include <vespa/config-bucketspaces.h>
 #include <vespa/searchlib/common/tunefileinfo.hpp>
 
 #include <vespa/log/log.h>
@@ -13,7 +14,9 @@ using document::DocumentTypeRepo;
 using search::TuneFileDocumentDB;
 using vespa::config::search::core::ProtonConfig;
 using cloud::config::filedistribution::FiledistributorrpcConfig;
+using vespa::config::content::core::BucketspacesConfig;
 using document::DocumenttypesConfig;
+using BucketspacesConfigSP = std::shared_ptr<BucketspacesConfig>;
 
 namespace proton {
 
@@ -31,7 +34,8 @@ BootstrapConfigManager::createConfigKeySet() const
 {
     return ConfigKeySet().add<ProtonConfig>(_configId)
                          .add<DocumenttypesConfig>(_configId)
-                         .add<FiledistributorrpcConfig>(_configId);
+                         .add<FiledistributorrpcConfig>(_configId)
+                         .add<BucketspacesConfig>(_configId);
 }
 
 void
@@ -45,6 +49,7 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
     TuneFileDocumentDB::SP newTuneFileDocumentDB;
     DocumenttypesConfigSP newDocumenttypesConfig;
     DocumentTypeRepo::SP newRepo;
+    BucketspacesConfigSP newBucketspacesConfig;
     int64_t currentGen = -1;
 
     BootstrapConfig::SP current = _pendingConfigSnapshot;
@@ -54,6 +59,7 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
         newTuneFileDocumentDB = current->getTuneFileDocumentDBSP();
         newDocumenttypesConfig = current->getDocumenttypesConfigSP();
         newRepo = current->getDocumentTypeRepoSP();
+        newBucketspacesConfig = current->getBucketspacesConfigSP();
         currentGen = current->getGeneration();
     }
 
@@ -88,14 +94,20 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
         newDocumenttypesConfig = DocumenttypesConfigSP(documenttypesConfig.release());
         newRepo = repo;
     }
+    if (snapshot.isChanged<BucketspacesConfig>(_configId, currentGen)) {
+        LOG(spam, "Bucketspaces config is changed");
+        std::unique_ptr<BucketspacesConfig> bucketspacesConfig = snapshot.getConfig<BucketspacesConfig>(_configId);
+        newBucketspacesConfig = std::move(bucketspacesConfig);
+    }
     assert(newProtonConfig.get() != nullptr);
     assert(newFiledistRpcConfSP.get() != nullptr);
+    assert(newBucketspacesConfig);
     assert(newTuneFileDocumentDB.get() != nullptr);
     assert(newDocumenttypesConfig.get() != nullptr);
     assert(newRepo.get() != nullptr);
 
     auto newSnapshot(std::make_shared<BootstrapConfig>(snapshot.getGeneration(), newDocumenttypesConfig, newRepo,
-                                                       newProtonConfig, newFiledistRpcConfSP, newTuneFileDocumentDB));
+                                                       newProtonConfig, newFiledistRpcConfSP, newBucketspacesConfig, newTuneFileDocumentDB));
 
     assert(newSnapshot->valid());
     {

@@ -30,6 +30,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/config-bucketspaces.h>
 
 #include <iostream>
 
@@ -54,6 +55,7 @@ using searchcorespi::IFlushTarget;
 using searchcorespi::index::IThreadingService;
 using storage::spi::Timestamp;
 using vespa::config::search::core::ProtonConfig;
+using vespa::config::content::core::BucketspacesConfig;
 using vespalib::mkdir;
 
 typedef StoreOnlyDocSubDB::Config StoreOnlyConfig;
@@ -281,6 +283,7 @@ struct MyConfigSnapshot
                                  _builder.getDocumentTypeRepo(),
                                  std::make_shared<ProtonConfig>(),
                                  std::make_shared<FiledistributorrpcConfig>(),
+                                 std::make_shared<BucketspacesConfig>(),
                                  tuneFileDocumentDB);
         config::DirSpec spec(cfgDir);
         DocumentDBConfigHelper mgr(spec, "searchdocument");

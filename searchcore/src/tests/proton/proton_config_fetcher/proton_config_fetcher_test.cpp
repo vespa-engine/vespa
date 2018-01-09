@@ -18,6 +18,7 @@
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <vespa/config-bucketspaces.h>
 #include <mutex>
 
 using namespace config;
@@ -26,6 +27,8 @@ using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 using namespace cloud::config::filedistribution;
+using vespa::config::content::core::BucketspacesConfig;
+using vespa::config::content::core::BucketspacesConfigBuilder;
 
 using config::ConfigUri;
 using document::DocumentTypeRepo;
@@ -52,6 +55,7 @@ struct ConfigTestFixture {
     ProtonConfigBuilder protonBuilder;
     DocumenttypesConfigBuilder documenttypesBuilder;
     FiledistributorrpcConfigBuilder filedistBuilder;
+    BucketspacesConfigBuilder bucketspacesBuilder;
     map<std::string, DoctypeFixture::UP> dbConfig;
     ConfigSet set;
     IConfigContext::SP context;
@@ -62,6 +66,7 @@ struct ConfigTestFixture {
           protonBuilder(),
           documenttypesBuilder(),
           filedistBuilder(),
+          bucketspacesBuilder(),
           dbConfig(),
           set(),
           context(new ConfigContext(set)),
@@ -70,6 +75,7 @@ struct ConfigTestFixture {
         set.addBuilder(configId, &protonBuilder);
         set.addBuilder(configId, &documenttypesBuilder);
         set.addBuilder(configId, &filedistBuilder);
+        set.addBuilder(configId, &bucketspacesBuilder);
         addDocType("_alwaysthere_");
     }
 
@@ -146,6 +152,7 @@ struct ConfigTestFixture {
                                                        DocumentTypeRepo::SP(new DocumentTypeRepo(documenttypesBuilder)),
                                                        BootstrapConfig::ProtonConfigSP(new ProtonConfig(protonBuilder)),
                                                        std::make_shared<FiledistributorrpcConfig>(),
+                                                       std::make_shared<BucketspacesConfig>(bucketspacesBuilder),
                                                        std::make_shared<TuneFileDocumentDB>()));
     }
 
@@ -197,11 +204,13 @@ struct ProtonConfigOwner : public proton::IProtonConfigurer
 
 TEST_F("require that bootstrap config manager creats correct key set", BootstrapConfigManager("foo")) {
     const ConfigKeySet set(f1.createConfigKeySet());
-    ASSERT_EQUAL(3u, set.size());
+    ASSERT_EQUAL(4u, set.size());
     ConfigKey protonKey(ConfigKey::create<ProtonConfig>("foo"));
     ConfigKey dtKey(ConfigKey::create<DocumenttypesConfig>("foo"));
+    ConfigKey bsKey(ConfigKey::create<BucketspacesConfig>("foo"));
     ASSERT_TRUE(set.find(protonKey) != set.end());
     ASSERT_TRUE(set.find(dtKey) != set.end());
+    ASSERT_TRUE(set.find(bsKey) != set.end());
 }
 
 TEST_FFF("require that bootstrap config manager updates config", ConfigTestFixture("search"),

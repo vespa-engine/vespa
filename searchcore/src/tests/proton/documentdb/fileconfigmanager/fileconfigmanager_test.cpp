@@ -13,6 +13,7 @@
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/config-bucketspaces.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace cloud::config::filedistribution;
@@ -23,6 +24,7 @@ using namespace search::index;
 using namespace search;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search;
+using vespa::config::content::core::BucketspacesConfig;
 using proton::matching::RankingConstants;
 
 typedef DocumentDBConfigHelper DBCM;
@@ -44,6 +46,7 @@ makeBaseConfigSnapshot()
                                               DocumentTypeRepo::SP(new DocumentTypeRepo(*dtcfg)),
                                               std::make_shared<ProtonConfig>(),
                                               std::make_shared<FiledistributorrpcConfig>(),
+                                              std::make_shared<BucketspacesConfig>(),
                                               std::make_shared<TuneFileDocumentDB>()));
     dbcm.forwardConfig(b);
     dbcm.nextGeneration(0);
