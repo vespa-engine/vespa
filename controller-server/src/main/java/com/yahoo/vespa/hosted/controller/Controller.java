@@ -160,14 +160,7 @@ public class Controller extends AbstractComponent {
         return zoneRegistry.getLogServerUri(deploymentId);
     }
 
-    /**
-     * @deprecated Use {@link #getSecureConfigServerUris(ZoneId)} instead
-     */
-    @Deprecated
-    public List<URI> getConfigServerUris(ZoneId zoneId) {
-        return zoneRegistry.getConfigServerUris(zoneId);
-    }
-
+    // TODO Rename to getConfigServerUris once port 4080 is removed from configservers
     public List<URI> getSecureConfigServerUris(ZoneId zoneId) {
         return zoneRegistry.getConfigServerSecureUris(zoneId);
     }
