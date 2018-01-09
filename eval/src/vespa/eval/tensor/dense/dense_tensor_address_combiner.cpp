@@ -11,7 +11,10 @@ DenseTensorAddressCombiner::~DenseTensorAddressCombiner() { }
 DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lhs,
                                                        const eval::ValueType &rhs)
     : _ops(),
-      _combinedAddress()
+      _combinedAddress(),
+      _left(),
+      _commonRight(),
+      _right()
 {
     auto rhsItr = rhs.dimensions().cbegin();
     auto rhsItrEnd = rhs.dimensions().cend();
