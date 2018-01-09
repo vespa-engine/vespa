@@ -1,13 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
+import com.yahoo.component.ComponentId;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.classlock.ClassLocking;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.vespa.hosted.node.admin.component.AdminComponent;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * NodeAdminMain is the main component of the node admin JDisc application:
@@ -19,52 +27,73 @@ import java.util.Optional;
  *    be fatal: the node admin may not have installed and started the docker daemon.
  */
 public class NodeAdminMain implements AutoCloseable {
+    private static final Logger logger = Logger.getLogger(NodeAdminMain.class.getName());
+
+    private final ComponentRegistry<AdminComponent> adminRegistry;
     private final Docker docker;
     private final MetricReceiverWrapper metricReceiver;
     private final ClassLocking classLocking;
 
+    private List<AdminComponent> enabledComponents = new ArrayList<>();
+
     private Optional<DockerAdminComponent> dockerAdmin = Optional.empty();
 
-    public NodeAdminMain(Docker docker,
+    public NodeAdminMain(ComponentRegistry<AdminComponent> adminRegistry,
+                         Docker docker,
                          MetricReceiverWrapper metricReceiver,
                          ClassLocking classLocking) {
+        this.adminRegistry = adminRegistry;
         this.docker = docker;
         this.metricReceiver = metricReceiver;
         this.classLocking = classLocking;
     }
 
+    public static NodeAdminConfig getConfig() {
+        String path = Defaults.getDefaults().underVespaHome("conf/node-admin.json");
+        return NodeAdminConfig.fromFile(new File(path));
+    }
+
+    public void start() {
+        NodeAdminConfig config = getConfig();
+
+        if (config.components.isEmpty()) {
+            enable(new DockerAdminComponent(config, docker, metricReceiver, classLocking));
+        } else {
+            logger.log(LogLevel.INFO, () -> {
+                String registeredComponentsList = adminRegistry
+                        .allComponentsById().keySet().stream()
+                        .map(ComponentId::stringValue)
+                        .collect(Collectors.joining(", "));
+
+                String requestedComponentsList = config.components.stream()
+                        .collect(Collectors.joining(", "));
+
+                return String.format(
+                        "Components registered = '%s', enabled = '%s'",
+                        registeredComponentsList,
+                        requestedComponentsList);
+            });
+
+            for (String componentSpecificationString : config.components) {
+                enable(adminRegistry.getComponent(componentSpecificationString));
+            }
+        }
+    }
+
+    private void enable(AdminComponent component) {
+        component.enable();
+        enabledComponents.add(component);
+    }
+
     @Override
     public void close() {
-        dockerAdmin.ifPresent(DockerAdminComponent::disable);
+        int i = enabledComponents.size();
+        while (i --> 0) {
+            enabledComponents.remove(i).disable();
+        }
     }
 
     public NodeAdminStateUpdater getNodeAdminStateUpdater() {
         return dockerAdmin.get().getNodeAdminStateUpdater();
-    }
-
-    public void start() {
-        String staticConfigPath = Defaults.getDefaults().underVespaHome("conf/node-admin.json");
-        NodeAdminConfig config = NodeAdminConfig.fromFile(new File(staticConfigPath));
-
-        switch (config.mode) {
-            case aws_tenant:
-            case tenant:
-                dockerAdmin = Optional.of(new DockerAdminComponent(
-                        config,
-                        docker,
-                        metricReceiver,
-                        classLocking));
-                dockerAdmin.get().enable();
-                return;
-            case config_server_host:
-                // TODO:
-                //  - install and start docker daemon
-                //  - Read config that specifies which containers to start how
-                //  - use thin static backends for node repo and orchestrator
-                //  - Start node admin state updater.
-                return;
-        }
-
-        throw new IllegalStateException("Unknown bootstrap mode: " + config.mode.name());
     }
 }

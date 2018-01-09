@@ -2,10 +2,12 @@
 package com.yahoo.vespa.hosted.node.admin.provider;
 
 import com.google.inject.Inject;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.classlock.ClassLocking;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.vespa.hosted.node.admin.component.AdminComponent;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminMain;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 
@@ -13,10 +15,11 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
     private final NodeAdminMain nodeAdminMain;
 
     @Inject
-    public NodeAdminProvider(Docker docker,
+    public NodeAdminProvider(ComponentRegistry<AdminComponent> adminRegistry,
+                             Docker docker,
                              MetricReceiverWrapper metricReceiver,
                              ClassLocking classLocking) {
-        nodeAdminMain = new NodeAdminMain(docker, metricReceiver, classLocking);
+        nodeAdminMain = new NodeAdminMain(adminRegistry, docker, metricReceiver, classLocking);
         nodeAdminMain.start();
     }
 
