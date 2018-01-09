@@ -40,7 +40,7 @@ import java.util.logging.Logger;
 public class NodeRepositoryProvisioner implements Provisioner {
 
     private static Logger log = Logger.getLogger(NodeRepositoryProvisioner.class.getName());
-    private static final int SPARE_CAPACITY_PROD = 2;
+    private static final int SPARE_CAPACITY_PROD = 0;
     private static final int SPARE_CAPACITY_NONPROD = 0;
 
     private final NodeRepository nodeRepository;
