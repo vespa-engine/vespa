@@ -31,7 +31,10 @@ public:
     DirectDenseTensorBuilder(const eval::ValueType &type_in);
     ~DirectDenseTensorBuilder();
     void insertCell(const Address &address, double cellValue) {
-        _cells[calculateCellAddress(address, _type)] = cellValue;
+        insertCell(calculateCellAddress(address, _type), cellValue);
+    }
+    void insertCell(size_t index, double cellValue) {
+        _cells[index] = cellValue;
     }
     Tensor::UP build();
 };

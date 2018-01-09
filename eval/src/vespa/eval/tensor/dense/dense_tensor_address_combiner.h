@@ -18,57 +18,87 @@ namespace vespalib::tensor {
 class DenseTensorAddressCombiner
 {
 public:
-    using Address = DenseTensorCellsIterator::Address;
+    using Mapping = std::vector<std::pair<uint32_t, uint32_t>>;
 
 private:
-    enum class AddressOp { LHS, RHS, BOTH };
+    using Address = DenseTensorCellsIterator::Address;
+    using CellsRef = vespalib::ConstArrayRef<double>;
+    using size_type = eval::ValueType::Dimension::size_type;
 
-    using CellsIterator = DenseTensorCellsIterator;
-
-    class AddressReader
-    {
-    private:
-        const Address &_address;
-        uint32_t       _idx;
-    public:
-        AddressReader(const Address &address) : _address(address), _idx(0) {}
-        Address::value_type nextLabel() { return _address[_idx++]; }
-    };
-
-    std::vector<AddressOp> _ops;
+    const eval::ValueType &_rightType;
     Address                _combinedAddress;
+    CellsRef               _rightCells;
+    Address                _rightAddress;
+    std::vector<size_t>    _accumulatedSize;
+    Mapping                _left;
+    Mapping                _commonRight;
+    Mapping                _right;
+    void update(const Address & addr, const Mapping & mapping) {
+        for (const auto & m : mapping) {
+            _combinedAddress[m.first] = addr[m.second];
+        }
+    }
+    double rightCell(size_t cellIdx) const { return _rightCells[cellIdx]; }
+    size_t rightIndex(const Address &address) const {
+        size_t cellIdx(0);
+        for (uint32_t i(0); i < address.size(); i++) {
+            cellIdx += address[i]*_accumulatedSize[i];
+        }
+        return cellIdx;
+    }
 public:
-    DenseTensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs);
+    DenseTensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs, CellsRef rhsCells);
     ~DenseTensorAddressCombiner();
+    void updateLeftAndCommon(const Address & addr) { update(addr, _left); }
+
+    bool hasAnyRightOnlyDimensions() const { return ! _right.empty(); }
 
     const Address &address() const { return _combinedAddress; }
 
-    bool combine(const CellsIterator &lhsItr, const CellsIterator &rhsItr) {
-        uint32_t index(0);
-        AddressReader lhsReader(lhsItr.address());
-        AddressReader rhsReader(rhsItr.address());
-        for (const auto &op : _ops) {
-            switch (op) {
-                case AddressOp::LHS:
-                    _combinedAddress[index] = lhsReader.nextLabel();
-                    break;
-                case AddressOp::RHS:
-                    _combinedAddress[index] = rhsReader.nextLabel();
-                    break;
-                case AddressOp::BOTH:
-                    Address::value_type lhsLabel = lhsReader.nextLabel();
-                    Address::value_type rhsLabel = rhsReader.nextLabel();
-                    if (lhsLabel != rhsLabel) {
-                        return false;
-                    }
-                    _combinedAddress[index] = lhsLabel;
+    bool updateCommonRight() {
+        for (const auto & m : _commonRight) {
+            if (_combinedAddress[m.first] >= _rightType.dimensions()[m.second].size) {
+                return false;
             }
-            index++;
+            _rightAddress[m.second] = _combinedAddress[m.first];
         }
         return true;
+    }
+    double rightCell() { return rightCell(rightIndex(_rightAddress)); }
+
+    template <typename Func>
+    void for_each(Func && func) {
+        const int32_t lastDimension = _right.size() - 1;
+        int32_t curDimension = lastDimension;
+        size_t cellIdx = rightIndex(_rightAddress);
+        while (curDimension >= 0) {
+            const uint32_t rdim = _right[curDimension].second;
+            const uint32_t cdim = _right[curDimension].first;
+            size_type & cindex = _combinedAddress[cdim];
+            if (curDimension == lastDimension) {
+                for (cindex = 0; cindex < _rightType.dimensions()[rdim].size; cindex++) {
+                    func(_combinedAddress, rightCell(cellIdx));
+                    cellIdx += _accumulatedSize[rdim];
+                }
+                cindex = 0;
+                cellIdx -= _accumulatedSize[rdim] * _rightType.dimensions()[rdim].size;
+                curDimension--;
+            } else {
+                if (cindex < _rightType.dimensions()[rdim].size) {
+                    cindex++;
+                    cellIdx += _accumulatedSize[rdim];
+                    curDimension++;
+                } else {
+                    cellIdx -= _accumulatedSize[rdim] * _rightType.dimensions()[rdim].size;
+                    cindex = 0;
+                    curDimension--;
+                }
+            }
+        }
     }
 
     static eval::ValueType combineDimensions(const eval::ValueType &lhs, const eval::ValueType &rhs);
 };
+
 
 }

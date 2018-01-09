@@ -6,37 +6,50 @@
 
 namespace vespalib::tensor {
 
-DenseTensorAddressCombiner::~DenseTensorAddressCombiner() { }
+DenseTensorAddressCombiner::~DenseTensorAddressCombiner() = default;
 
-DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lhs,
-                                                       const eval::ValueType &rhs)
-    : _ops(),
-      _combinedAddress()
+DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs,
+                                                       CellsRef rhsCells)
+    : _rightType(rhs),
+      _combinedAddress(),
+      _rightCells(rhsCells),
+      _rightAddress(rhs.dimensions().size(), 0),
+      _accumulatedSize(_rightAddress.size()),
+      _left(),
+      _commonRight(),
+      _right()
 {
     auto rhsItr = rhs.dimensions().cbegin();
     auto rhsItrEnd = rhs.dimensions().cend();
+    uint32_t numDimensions(0);
     for (const auto &lhsDim : lhs.dimensions()) {
         while ((rhsItr != rhsItrEnd) && (rhsItr->name < lhsDim.name)) {
-            _ops.push_back(AddressOp::RHS);
+            _right.emplace_back(numDimensions++, rhsItr-rhs.dimensions().cbegin());
             ++rhsItr;
         }
         if ((rhsItr != rhsItrEnd) && (rhsItr->name == lhsDim.name)) {
-            _ops.push_back(AddressOp::BOTH);
+            _left.emplace_back(numDimensions, _left.size());
+            _commonRight.emplace_back(numDimensions, rhsItr-rhs.dimensions().cbegin());
+            ++numDimensions;
             ++rhsItr;
         } else {
-            _ops.push_back(AddressOp::LHS);
+            _left.emplace_back(numDimensions++, _left.size());
         }
     }
     while (rhsItr != rhsItrEnd) {
-        _ops.push_back(AddressOp::RHS);
+        _right.emplace_back(numDimensions++, rhsItr-rhs.dimensions().cbegin());
         ++rhsItr;
     }
-    _combinedAddress.resize(_ops.size());
+    _combinedAddress.resize(numDimensions);
+    size_t multiplier = 1;
+    for (int32_t i(_rightAddress.size() - 1); i >= 0; i--) {
+        _accumulatedSize[i] = multiplier;
+        multiplier *= _rightType.dimensions()[i].size;
+    }
 }
 
 eval::ValueType
-DenseTensorAddressCombiner::combineDimensions(const eval::ValueType &lhs,
-                                              const eval::ValueType &rhs)
+DenseTensorAddressCombiner::combineDimensions(const eval::ValueType &lhs, const eval::ValueType &rhs)
 {
     // NOTE: both lhs and rhs are sorted according to dimension names.
     std::vector<eval::ValueType::Dimension> result;
@@ -45,8 +58,7 @@ DenseTensorAddressCombiner::combineDimensions(const eval::ValueType &lhs,
     while (lhsItr != lhs.dimensions().end() &&
            rhsItr != rhs.dimensions().end()) {
         if (lhsItr->name == rhsItr->name) {
-            result.emplace_back(lhsItr->name,
-                                std::min(lhsItr->size, rhsItr->size));
+            result.emplace_back(lhsItr->name, std::min(lhsItr->size, rhsItr->size));
             ++lhsItr;
             ++rhsItr;
         } else if (lhsItr->name < rhsItr->name) {
