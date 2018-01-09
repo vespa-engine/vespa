@@ -76,6 +76,7 @@ StorageNode::StorageNode(
         std::unique_ptr<HostInfo> hostInfo,
         RunMode mode)
     : _singleThreadedDebugMode(mode == SINGLE_THREADED_TEST_MODE),
+      _has_enabled_global_spaces(false),
       _configFetcher(),
       _hostInfo(std::move(hostInfo)),
       _context(context),
@@ -281,7 +282,7 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         DIFFERWARN(clusterName, "Cannot alter cluster name of node live");
         DIFFERWARN(nodeIndex, "Cannot alter node index of node live");
         DIFFERWARN(isDistributor, "Cannot alter role of node live");
-        _serverConfig.reset(new StorServerConfig(oldC));
+        _serverConfig = std::make_unique<StorServerConfig>(oldC);
         _newServerConfig.reset();
         (void)updated;
     }
@@ -324,11 +325,11 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
                 StorDistributionConfig::getDiskDistributionName(newC.diskDistribution).c_str());
             ASSIGN(diskDistribution);
         }
-        _distributionConfig.reset(new StorDistributionConfig(oldC));
+        _distributionConfig = std::make_unique<StorDistributionConfig>(oldC);
         _newDistributionConfig.reset();
         if (updated) {
             _context.getComponentRegister().setDistribution(make_shared<lib::Distribution>(oldC));
-            for (StorageLink* link = _chain.get(); link != 0; link = link->getNextLink()) {
+            for (StorageLink* link = _chain.get(); link != nullptr; link = link->getNextLink()) {
                 link->storageDistributionChanged();
             }
         }
@@ -347,7 +348,12 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
     if (_newBucketSpacesConfig) {
         _bucketSpacesConfig = std::move(_newBucketSpacesConfig);
         _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
-        // TODO: Add new bucket space resolver to document api converter
+        // If we've seen global bucket spaces enabled once, we must continue to update
+        // bucket spaces config or we'll get out of sync with doc types config.
+        _has_enabled_global_spaces = _has_enabled_global_spaces || _bucketSpacesConfig->enableMultipleBucketSpaces;
+        if (_has_enabled_global_spaces) {
+            _communicationManager->updateBucketSpacesConfig(*_bucketSpacesConfig);
+        }
     }
 }
 
