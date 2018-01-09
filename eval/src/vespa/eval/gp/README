@@ -1,0 +1,53 @@
+Experimental code related to genetic programming.
+
+The goal is to evolve a function satisfying predefined constraints as
+closely as possible with minimal computational effort. We are willing
+to spend more CPU finding a function taking less CPU to execute.
+
+Possible solutions are represented by simulated individuals that
+evolve over time. Each individual has a weakness value indicating how
+well it solves the problem. A weakness of 0 indicates that the
+individual solves the problem perfectly. Worse solutions have higher
+weakness. Each individual also has information about the cost of its
+solution as well as the age of the individual itself.
+
+Simulated individuals are grouped together in a population. The
+triplet (weakness,cost,age) enables us to impose a strict weak
+ordering of individuals within a population. This ordering is used to
+skew the selection of which individuals to further evolve in order to
+find the best possible solution. We prefer young solutions with low
+cost and little weakness.
+
+Each simulated individual may represent multiple possible solutions
+for the function we are trying to evolve. The fitness evaluation of an
+individual will evaluate the weakness of each possible solution
+represented by the individual and give direct feedback to the
+individual by presenting it with the weakness value for each
+alternative solution. This enables the individual to update the
+weakness and cost values used to order it within the population. It
+also enables some self-reflection about the less awesome solutions it
+contains.
+
+Having multiple possible solutions represented by a single individual
+enables even further sorting criteria to be imposed within a
+population based on the potential quality of unexpressed
+solutions. This concept is inverted and called 'waste'.
+
+When training a solution with multiple outputs, it might make sense to
+start training a single output and add more outputs as we go. To focus
+the training on the newly added outputs and how they can best re-use
+the calculations needed by the already trained outputs the code used
+to produce the other outputs is frozen during training. To avoid the
+quality of training to depend on the order which outputs are trained,
+there needs to be more advanced ways to freeze/thaw operations and
+outputs. Maybe we need to do circular freeze/thaw to simulate
+multi-dimensional gradient decent. Maybe we need to utilize multiple
+parallel generations with different free outputs. Maybe freeze/thaw
+itself is a mutation.
+
+Another theme that should be investigated is the cross-over to
+reinforcement learning and intelligent design. Can we perform error
+push-back through a genetically learned program? Can we efficiently
+express neural networks in the selected programming model? Can we
+perform smart mutation with greater than random chance of improving
+the solution?
