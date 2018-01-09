@@ -30,15 +30,22 @@ VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::Ve
 template <typename DimensionVType, typename DimensionHType, typename ComponentType, typename HashMapComparator>
 VectorBase<DimensionVType, DimensionHType, ComponentType, HashMapComparator>::~VectorBase() { }
 
+template <typename V>
+V copyAndSync(const V & v) {
+    V tmp(v);
+    tmp.syncMap();
+    return tmp;
+}
+
 template <typename Vector, typename Buffer>
 DotProductExecutor<Vector, Buffer>::DotProductExecutor(const IAttributeVector * attribute, const Vector & queryVector) :
     FeatureExecutor(),
     _attribute(attribute),
-    _queryVector(queryVector),
+    _queryVector(copyAndSync(queryVector)),
+    _end(_queryVector.getDimMap().end()),
     _buffer()
 {
     _buffer.allocate(_attribute->getMaxValueCount());
-    _queryVector.syncMap();
 }
 
 template <typename Vector, typename Buffer>
@@ -50,7 +57,7 @@ DotProductExecutor<Vector, Buffer>::execute(uint32_t docId)
         _buffer.fill(*_attribute, docId);
         for (size_t i = 0; i < _buffer.size(); ++i) {
             typename Vector::HashMap::const_iterator itr = _queryVector.getDimMap().find(_buffer[i].getValue());
-            if (itr != _queryVector.getDimMap().end()) {
+            if (itr != _end) {
                 val += _buffer[i].getWeight() * itr->second;
             }
         }
