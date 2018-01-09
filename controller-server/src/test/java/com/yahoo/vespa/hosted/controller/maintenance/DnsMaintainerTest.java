@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -31,10 +30,12 @@ import static org.junit.Assert.assertTrue;
 public class DnsMaintainerTest {
 
     @Test
-    @Ignore // TODO: Enable once DnsMaintainer actually removes records
     public void removes_record_for_unassigned_rotation() {
         DeploymentTester tester = new DeploymentTester();
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        DnsMaintainer dnsMaintainer = new DnsMaintainer(tester.controller(), Duration.ofHours(12),
+                                                        new JobControl(new MockCuratorDb()),
+                                                        tester.controllerTester().nameService());
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -53,6 +54,11 @@ public class DnsMaintainerTest {
         assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
         assertEquals("rotation-fqdn-01.", record.get().data().asString());
 
+        // DnsMaintainer does nothing
+        dnsMaintainer.maintain();
+        assertTrue("DNS record is not removed", tester.controllerTester().nameService().findRecord(
+                Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")).isPresent());
+
         // Remove application
         applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -65,9 +71,6 @@ public class DnsMaintainerTest {
         tester.applications().deleteApplication(application.id(), Optional.of(new NToken("ntoken")));
 
         // DnsMaintainer removes record
-        DnsMaintainer dnsMaintainer = new DnsMaintainer(tester.controller(), Duration.ofHours(12),
-                                                     new JobControl(new MockCuratorDb()),
-                                                     tester.controllerTester().nameService());
         dnsMaintainer.maintain();
         assertFalse("DNS record removed", tester.controllerTester().nameService().findRecord(
                 Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")).isPresent());
