@@ -17,17 +17,22 @@ DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lh
     auto rhsItrEnd = rhs.dimensions().cend();
     for (const auto &lhsDim : lhs.dimensions()) {
         while ((rhsItr != rhsItrEnd) && (rhsItr->name < lhsDim.name)) {
+            _right.emplace_back(_ops.size(), rhsItr-rhs.dimensions().cbegin());
             _ops.push_back(AddressOp::RHS);
             ++rhsItr;
         }
         if ((rhsItr != rhsItrEnd) && (rhsItr->name == lhsDim.name)) {
+            _left.emplace_back(_ops.size(), _left.size());
+            _commonRight.emplace_back(_ops.size(), rhsItr-rhs.dimensions().cbegin());
             _ops.push_back(AddressOp::BOTH);
             ++rhsItr;
         } else {
+            _left.emplace_back(_ops.size(), _left.size());
             _ops.push_back(AddressOp::LHS);
         }
     }
     while (rhsItr != rhsItrEnd) {
+        _right.emplace_back(_ops.size(), rhsItr-rhs.dimensions().cbegin());
         _ops.push_back(AddressOp::RHS);
         ++rhsItr;
     }
@@ -65,5 +70,25 @@ DenseTensorAddressCombiner::combineDimensions(const eval::ValueType &lhs,
             eval::ValueType::double_type() :
             eval::ValueType::tensor_type(std::move(result)));
 }
+
+
+CommonDenseTensorCellsIterator::CommonDenseTensorCellsIterator(const Mapping & common,
+                                                               const Mapping & right,
+                                                               const eval::ValueType &type_in,
+                                                               CellsRef cells)
+    : _type(type_in),
+      _cells(cells),
+      _address(type_in.dimensions().size(), 0),
+      _common(common),
+      _mutable(right),
+      _accumulatedSize(_address.size())
+{
+    size_t multiplier = 1;
+    for (int32_t i(_address.size() - 1); i >= 0; i--) {
+        _accumulatedSize[i] = multiplier;
+        multiplier *= type_in.dimensions()[i].size;
+    }
+}
+CommonDenseTensorCellsIterator::~CommonDenseTensorCellsIterator() = default;
 
 }
