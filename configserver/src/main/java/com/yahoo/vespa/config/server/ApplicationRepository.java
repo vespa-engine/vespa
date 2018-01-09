@@ -263,9 +263,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         hostProvisioner.ifPresent(provisioner -> provisioner.restart(applicationId, hostFilter));
     }
 
-    public HttpResponse filedistributionStatus(Tenant tenant, ApplicationId applicationId) {
+    public HttpResponse filedistributionStatus(Tenant tenant, ApplicationId applicationId, Duration timeout) {
         Application application = getApplication(tenant, applicationId);
-        return fileDistributionStatus.status(application);
+        return fileDistributionStatus.status(application, timeout);
     }
 
     public Tenant verifyTenantAndApplication(ApplicationId applicationId) {

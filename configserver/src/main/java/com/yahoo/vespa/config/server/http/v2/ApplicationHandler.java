@@ -26,6 +26,7 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 /**
  * Operations on applications (delete, wait for config convergence, restart, application content etc.)
@@ -93,7 +94,8 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isFiledistributionStatusRequest(request)) {
-            return applicationRepository.filedistributionStatus(tenant, applicationId);
+            Duration timeout = HttpHandler.getRequestTimeout(request, Duration.ofSeconds(5));
+            return applicationRepository.filedistributionStatus(tenant, applicationId, timeout);
         }
 
         return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(tenant, applicationId));

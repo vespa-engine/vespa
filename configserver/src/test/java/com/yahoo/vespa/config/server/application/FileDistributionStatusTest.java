@@ -16,6 +16,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,6 +35,8 @@ import static com.yahoo.vespa.config.server.application.FileDistributionStatus.S
  */
 public class FileDistributionStatusTest {
 
+    private final Duration timeout = Duration.ofMillis(100);
+
     private TenantName tenant = TenantName.from("mytenant");
     private ApplicationId appId = ApplicationId.from(tenant, ApplicationName.from("myapp"), InstanceName.from("myinstance"));
     private Application application;
@@ -48,7 +51,7 @@ public class FileDistributionStatusTest {
         FileDistributionStatus status = new MockStatus(statusFinished("localhost", Status.FINISHED, fileReferenceStatuses));
         application = createApplication("localhost");
 
-        HttpResponse response = status.status(application);
+        HttpResponse response = getStatus(status, application);
         assertResponse(200,
                        "{" +
                                "\"hosts\":[" +
@@ -68,7 +71,7 @@ public class FileDistributionStatusTest {
         FileDistributionStatus status = new MockStatus(statusWithError("localhost2", Status.IN_PROGRESS, fileReferenceStatuses, ""));
         application = createApplication("localhost2");
 
-        HttpResponse response = status.status(application);
+        HttpResponse response = getStatus(status, application);
         assertResponse(200,
                        "{" +
                                "\"hosts\":[" +
@@ -97,7 +100,7 @@ public class FileDistributionStatusTest {
 
         FileDistributionStatus status = new MockStatus(new HashSet<>(Arrays.asList(localhost, localhost2)));
         application = createApplication("localhost", "localhost2");
-        HttpResponse response = status.status(application);
+        HttpResponse response = getStatus(status, application);
         assertResponse(200,
                        "{" +
                                "\"hosts\":[" +
@@ -140,6 +143,10 @@ public class FileDistributionStatusTest {
         return new Application(mockModel, new ServerCache(), 3, Version.fromIntValues(0, 0, 0), MetricUpdater.createTestUpdater(), appId);
     }
 
+    HttpResponse getStatus(FileDistributionStatus fileDistributionStatus, Application application) {
+        return fileDistributionStatus.status(application, timeout);
+    }
+
     private static class MockStatus extends FileDistributionStatus {
 
         private final Map<String, HostStatus> statuses = new HashMap<>();
@@ -155,7 +162,7 @@ public class FileDistributionStatusTest {
         }
 
         @Override
-        HostStatus getHostStatus(String hostname, int port) {
+        HostStatus getHostStatus(String hostname, int port, Duration timeout) {
             return statuses.get(hostname);
         }
     }
