@@ -72,7 +72,7 @@ public class HttpHandler extends LoggingRequestHandler {
             return defaultTimeout;
         }
         try {
-            return Duration.ofSeconds((long) Double.parseDouble(request.getProperty("timeout")));
+            return Duration.ofMillis((long) (Double.parseDouble(request.getProperty("timeout")) * 1000));
         } catch (Exception e) {
             return defaultTimeout;
         }
