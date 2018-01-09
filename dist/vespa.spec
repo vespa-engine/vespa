@@ -96,6 +96,9 @@ Requires: lz4
 Requires: libzstd
 Requires: zlib
 Requires: libicu
+Requires: perf
+Requires: gdb
+Requires: net-tools
 %if 0%{?centos}
 Requires: llvm3.9
 Requires: vespa-boost >= 1.59.0-6
