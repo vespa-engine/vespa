@@ -261,9 +261,8 @@ DenseTensorView::join(join_fun_t function, const Tensor &arg) const
 }
 
 Tensor::UP
-DenseTensorView::reduce(join_fun_t op, const std::vector<vespalib::string> &dimensions) const
+DenseTensorView::reduce_all(join_fun_t op, const std::vector<vespalib::string> &dims) const
 {
-    const std::vector<vespalib::string> & dims = (dimensions.empty() ? _typeRef.dimension_names() : dimensions);
     if (op == eval::operation::Mul::f) {
         return dense::reduce(*this, dims, [](double a, double b) { return (a * b);});
     }
@@ -271,6 +270,14 @@ DenseTensorView::reduce(join_fun_t op, const std::vector<vespalib::string> &dime
         return dense::reduce(*this, dims, [](double a, double b) { return (a + b);});
     }
     return dense::reduce(*this, dims, op);
+}
+
+Tensor::UP
+DenseTensorView::reduce(join_fun_t op, const std::vector<vespalib::string> &dimensions) const
+{
+    return dimensions.empty()
+            ? reduce_all(op, _typeRef.dimension_names())
+            : reduce_all(op, dimensions);
 }
 
 }

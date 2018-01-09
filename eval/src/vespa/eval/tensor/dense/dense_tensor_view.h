@@ -25,6 +25,7 @@ public:
 
 private:
     const eval::ValueType &_typeRef;
+    Tensor::UP reduce_all(join_fun_t op, const std::vector<vespalib::string> &dimensions) const;
 protected:
     CellsRef _cellsRef;
 
