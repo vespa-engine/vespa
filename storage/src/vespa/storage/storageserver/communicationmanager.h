@@ -27,6 +27,7 @@
 #include <queue>
 #include <atomic>
 #include <mutex>
+#include <vespa/config-bucketspaces.h>
 
 namespace mbus {
     class RPCMessageBus;
@@ -150,10 +151,13 @@ private:
     void process(const std::shared_ptr<api::StorageMessage>& msg);
 
     using CommunicationManagerConfig= vespa::config::content::core::StorCommunicationmanagerConfig;
+    using BucketspacesConfig = vespa::config::content::core::BucketspacesConfig;
 
     void configureMessageBusLimits(const CommunicationManagerConfig& cfg);
     void configure(std::unique_ptr<CommunicationManagerConfig> config) override;
     void receiveStorageReply(const std::shared_ptr<api::StorageReply>&);
+    void fail_with_unresolvable_bucket_space(std::unique_ptr<documentapi::DocumentMessage> msg,
+                                             const vespalib::string& error_message);
 
     void serializeNodeState(const api::GetNodeStateReply& gns, std::ostream& os, bool includeDescription,
                             bool includeDiskDescription, bool useOldFormat) const;
@@ -207,6 +211,9 @@ public:
 
     void handleReply(std::unique_ptr<mbus::Reply> msg) override;
     void updateMessagebusProtocol(const document::DocumentTypeRepo::SP &repo);
+    void updateBucketSpacesConfig(const BucketspacesConfig&);
+
+    const CommunicationManagerMetrics& metrics() const noexcept { return _metrics; }
 };
 
 } // storage
