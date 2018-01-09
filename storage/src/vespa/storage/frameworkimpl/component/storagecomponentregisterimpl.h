@@ -11,7 +11,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/storage/common/storagecomponent.h>
-#include <vespa/storage/config/config-bucketspaces.h>
+#include <vespa/config-bucketspaces.h>
 #include <vespa/storage/config/config-stor-prioritymapping.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
 #include <vespa/vdslib/distribution/distribution.h>

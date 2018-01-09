@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/config/config-bucketspaces.h>
+#include <vespa/config-bucketspaces.h>
 #include <vespa/storage/common/bucket_resolver.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
 #include <memory>
