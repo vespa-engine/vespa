@@ -29,7 +29,7 @@ private:
     Address                _combinedAddress;
     CellsRef               _rightCells;
     Address                _rightAddress;
-    std::vector<size_t>    _accumulatedSize;
+    std::vector<size_t>    _rightAccumulatedSize;
     Mapping                _left;
     Mapping                _commonRight;
     Mapping                _right;
@@ -42,7 +42,7 @@ private:
     size_t rightIndex(const Address &address) const {
         size_t cellIdx(0);
         for (uint32_t i(0); i < address.size(); i++) {
-            cellIdx += address[i]*_accumulatedSize[i];
+            cellIdx += address[i]*_rightAccumulatedSize[i];
         }
         return cellIdx;
     }
@@ -70,26 +70,26 @@ public:
     void for_each(Func && func) {
         const int32_t lastDimension = _right.size() - 1;
         int32_t curDimension = lastDimension;
-        size_t cellIdx = rightIndex(_rightAddress);
+        size_t rightCellIdx = rightIndex(_rightAddress);
         while (curDimension >= 0) {
             const uint32_t rdim = _right[curDimension].second;
             const uint32_t cdim = _right[curDimension].first;
             size_type & cindex = _combinedAddress[cdim];
             if (curDimension == lastDimension) {
                 for (cindex = 0; cindex < _rightType.dimensions()[rdim].size; cindex++) {
-                    func(_combinedAddress, rightCell(cellIdx));
-                    cellIdx += _accumulatedSize[rdim];
+                    func(_combinedAddress, rightCell(rightCellIdx));
+                    rightCellIdx += _rightAccumulatedSize[rdim];
                 }
                 cindex = 0;
-                cellIdx -= _accumulatedSize[rdim] * _rightType.dimensions()[rdim].size;
+                rightCellIdx -= _rightAccumulatedSize[rdim] * _rightType.dimensions()[rdim].size;
                 curDimension--;
             } else {
                 if (cindex < _rightType.dimensions()[rdim].size) {
                     cindex++;
-                    cellIdx += _accumulatedSize[rdim];
+                    rightCellIdx += _rightAccumulatedSize[rdim];
                     curDimension++;
                 } else {
-                    cellIdx -= _accumulatedSize[rdim] * _rightType.dimensions()[rdim].size;
+                    rightCellIdx -= _rightAccumulatedSize[rdim] * _rightType.dimensions()[rdim].size;
                     cindex = 0;
                     curDimension--;
                 }

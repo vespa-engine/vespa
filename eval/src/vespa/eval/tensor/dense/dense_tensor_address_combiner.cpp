@@ -14,7 +14,7 @@ DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lh
       _combinedAddress(),
       _rightCells(rhsCells),
       _rightAddress(rhs.dimensions().size(), 0),
-      _accumulatedSize(_rightAddress.size()),
+      _rightAccumulatedSize(_rightAddress.size()),
       _left(),
       _commonRight(),
       _right()
@@ -43,7 +43,7 @@ DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lh
     _combinedAddress.resize(numDimensions);
     size_t multiplier = 1;
     for (int32_t i(_rightAddress.size() - 1); i >= 0; i--) {
-        _accumulatedSize[i] = multiplier;
+        _rightAccumulatedSize[i] = multiplier;
         multiplier *= _rightType.dimensions()[i].size;
     }
 }
