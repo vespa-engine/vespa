@@ -13,7 +13,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ApplicationRepository;
@@ -30,7 +29,6 @@ import com.yahoo.vespa.config.server.http.StaticResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
-import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.MockSessionZKClient;
@@ -67,7 +65,6 @@ import static org.mockito.Mockito.when;
 
 /**
  * @author hmusum
- * @since 5.4
  */
 public class ApplicationHandlerTest {
 
@@ -83,7 +80,7 @@ public class ApplicationHandlerTest {
     private final HttpProxy mockHttpProxy = mock(HttpProxy.class);
 
     @Before
-    public void setup() throws Exception {
+    public void setup() {
         TestTenantBuilder testBuilder = new TestTenantBuilder();
         testBuilder.createTenant(mytenantName).withReloadHandler(new MockReloadHandler());
         testBuilder.createTenant(foobar).withReloadHandler(new MockReloadHandler());
@@ -275,6 +272,27 @@ public class ApplicationHandlerTest {
         tenant.getRemoteSessionRepo().addSession(new RemoteSession(tenant.getName(), sessionId, componentRegistry, new MockSessionZKClient(app), clock));
     }
 
+    @Test
+    public void testFileDistributionStatus() throws Exception {
+        long sessionId = 1;
+        ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
+        addMockApplication(tenants.getTenant(mytenantName), application, sessionId, Clock.systemUTC());
+        Zone zone = Zone.defaultZone();
+
+        HttpResponse response = fileDistributionStatus(application, zone);
+        assertEquals(200, response.getStatus());
+        SessionHandlerTest.getRenderedString(response);
+        assertEquals("{\"hosts\":[{\"hostname\":\"mytesthost\",\"status\":\"UNKNOWN\",\"message\":\"error: Connection error(104)\",\"fileReferences\":[]}],\"status\":\"IN_PROGRESS\"}",
+                     SessionHandlerTest.getRenderedString(response));
+
+        // 404 for unknown application
+        ApplicationId unknown = new ApplicationId.Builder().applicationName("unknown").tenant(mytenantName).build();
+        HttpResponse responseForUnknown = fileDistributionStatus(unknown, zone);
+        assertEquals(404, responseForUnknown.getStatus());
+        assertEquals("{\"error-code\":\"NOT_FOUND\",\"message\":\"No such application id: mytenant.unknown\"}",
+                     SessionHandlerTest.getRenderedString(responseForUnknown));
+    }
+
     private static Tenants addApplication(ApplicationId applicationId, long sessionId) throws Exception {
         // This method is a good illustration of the spaghetti wiring resulting from no design
         // TODO: When this setup looks sane we have refactored sufficiently that there is a design
@@ -392,6 +410,11 @@ public class ApplicationHandlerTest {
         HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(restartUrl, com.yahoo.jdisc.http.HttpRequest.Method.POST));
         HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "");
         return SessionHandlerTest.getRenderedString(response);
+    }
+
+    private HttpResponse fileDistributionStatus(ApplicationId application, Zone zone) {
+        String restartUrl = toUrlPath(application, zone, true) + "/filedistributionstatus";
+        return mockHandler.handle(HttpRequest.createTestRequest(restartUrl, com.yahoo.jdisc.http.HttpRequest.Method.GET));
     }
 
     private static class MockStateApiFactory implements ApplicationConvergenceChecker.StateApiFactory {

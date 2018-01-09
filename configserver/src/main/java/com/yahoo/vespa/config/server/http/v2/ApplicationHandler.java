@@ -11,7 +11,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.vespa.config.server.ApplicationRepository;
@@ -27,7 +26,6 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.Executor;
 
 /**
  * Operations on applications (delete, wait for config convergence, restart, application content etc.)
@@ -94,6 +92,10 @@ public class ApplicationHandler extends HttpHandler {
             return applicationRepository.serviceListToCheckForConfigConvergence(tenant, applicationId, request.getUri());
         }
 
+        if (isFiledistributionStatusRequest(request)) {
+            return applicationRepository.filedistributionStatus(tenant, applicationId);
+        }
+
         return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(tenant, applicationId));
     }
 
@@ -154,6 +156,7 @@ public class ApplicationHandler extends HttpHandler {
                 // WARNING: UPDATE src/main/resources/configserver-app/services.xml IF YOU MAKE ANY CHANGES TO THESE BINDINGS!
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/content/*",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/log",
+                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/filedistributionstatus",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*",
@@ -180,6 +183,11 @@ public class ApplicationHandler extends HttpHandler {
     private static boolean isContentRequest(HttpRequest request) {
         return getBindingMatch(request).groupCount() > 7 &&
                 request.getUri().getPath().contains("/content/");
+    }
+
+    private static boolean isFiledistributionStatusRequest(HttpRequest request) {
+        return getBindingMatch(request).groupCount() == 7 &&
+                request.getUri().getPath().contains("/filedistributionstatus");
     }
 
     private static String getHostNameFromRequest(HttpRequest req) {
