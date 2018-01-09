@@ -111,7 +111,9 @@ public:
     }
     bool updateCommon(const Address & combined) {
         for (const auto & m : _common) {
-            if (combined[m.first] >= _type.dimensions()[m.second].size) return false;
+            if (combined[m.first] >= _type.dimensions()[m.second].size) {
+                return false;
+            }
             _address[m.second] = combined[m.first];
         }
         return true;
