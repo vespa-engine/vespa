@@ -21,15 +21,16 @@ public:
 private:
     using CellsRef = vespalib::ConstArrayRef<double>;
     const eval::ValueType &_type;
-    CellsRef _cells;
-    size_t   _cellIdx;
-    Address  _address;
+    CellsRef       _cells;
+    size_t         _cellIdx;
+    const int32_t  _lastDimension;
+    Address        _address;
 public:
     DenseTensorCellsIterator(const eval::ValueType &type_in, CellsRef cells);
     ~DenseTensorCellsIterator();
     void next() {
         ++_cellIdx;
-        for (int64_t i = (_address.size() - 1); i >= 0; --i) {
+        for (int32_t i = _lastDimension; i >= 0; --i) {
             _address[i]++;
             if (__builtin_expect((_address[i] != _type.dimensions()[i].size), true)) {
                 // Outer dimension labels can only be increased when this label wraps around.

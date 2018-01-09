@@ -15,8 +15,7 @@ using vespalib::tensor::DenseTensorView;
 using vespalib::tensor::MutableDenseTensorView;
 using vespalib::eval::ValueType;
 
-namespace search {
-namespace tensor {
+namespace search::tensor {
 
 constexpr size_t MIN_BUFFER_CLUSTERS = 1024;
 
@@ -25,12 +24,9 @@ DenseTensorStore::BufferType::BufferType()
                               MIN_BUFFER_CLUSTERS,
                               RefType::offsetSize() / RefType::align(1)),
       _unboundDimSizesSize(0u)
-{
-}
+{}
 
-DenseTensorStore::BufferType::~BufferType()
-{
-}
+DenseTensorStore::BufferType::~BufferType() = default;
 
 void
 DenseTensorStore::BufferType::cleanHold(void *buffer, uint64_t offset,
@@ -171,20 +167,16 @@ void makeConcreteType(MutableDenseTensorView &tensor,
 std::unique_ptr<Tensor>
 DenseTensorStore::getTensor(EntryRef ref) const
 {
+    using CellsRef = DenseTensorView::CellsRef;
     if (!ref.valid()) {
         return std::unique_ptr<Tensor>();
     }
     auto raw = getRawBuffer(ref);
     size_t numCells = getNumCells(raw);
     if (_numUnboundDims == 0) {
-        return std::make_unique<DenseTensorView>
-                (_type,
-                 DenseTensorView::CellsRef(static_cast<const double *>(raw), numCells));
+        return std::make_unique<DenseTensorView>(_type, CellsRef(static_cast<const double *>(raw), numCells));
     } else {
-        std::unique_ptr <MutableDenseTensorView> result =
-                std::make_unique<MutableDenseTensorView>(_type,
-                                                         DenseTensorView::CellsRef(static_cast<const double *>(raw),
-                                                                               numCells));
+        auto result = std::make_unique<MutableDenseTensorView>(_type, CellsRef(static_cast<const double *>(raw), numCells));
         makeConcreteType(*result, raw, _numUnboundDims);
         return result;
     }
@@ -208,8 +200,7 @@ DenseTensorStore::getTensor(EntryRef ref, MutableDenseTensorView &tensor) const
     }
 }
 
-namespace
-{
+namespace {
 
 void
 checkMatchingType(const ValueType &lhs, const ValueType &rhs, size_t numCells)
@@ -270,12 +261,8 @@ DenseTensorStore::setDenseTensor(const TensorType &tensor)
 TensorStore::EntryRef
 DenseTensorStore::setTensor(const Tensor &tensor)
 {
-    const DenseTensorView *view(dynamic_cast<const DenseTensorView *>(&tensor));
-    if (view) {
-        return setDenseTensor(*view);
-    }
-    abort();
+    const DenseTensorView &view(dynamic_cast<const DenseTensorView &>(tensor));
+    return setDenseTensor(view);
 }
 
-}  // namespace search::tensor
-}  // namespace search
+}

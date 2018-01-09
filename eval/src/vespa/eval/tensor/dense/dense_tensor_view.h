@@ -25,6 +25,7 @@ public:
 
 private:
     const eval::ValueType &_typeRef;
+    Tensor::UP reduce_all(join_fun_t op, const std::vector<vespalib::string> &dimensions) const;
 protected:
     CellsRef _cellsRef;
 
@@ -47,19 +48,15 @@ public:
     bool operator==(const DenseTensorView &rhs) const;
     CellsIterator cellsIterator() const { return CellsIterator(_typeRef, _cellsRef); }
 
-    virtual const eval::ValueType &type() const override;
-    virtual double as_double() const override;
-    virtual Tensor::UP apply(const CellFunction &func) const override;
-    virtual Tensor::UP join(join_fun_t function,
-                            const Tensor &arg) const override;
-    virtual Tensor::UP reduce(join_fun_t op,
-                              const std::vector<vespalib::string> &dimensions)
-        const override;
-    virtual bool equals(const Tensor &arg) const override;
-    virtual Tensor::UP clone() const override;
-    virtual eval::TensorSpec toSpec() const override;
-    virtual void accept(TensorVisitor &visitor) const override;
+    const eval::ValueType &type() const override;
+    double as_double() const override;
+    Tensor::UP apply(const CellFunction &func) const override;
+    Tensor::UP join(join_fun_t function, const Tensor &arg) const override;
+    Tensor::UP reduce(join_fun_t op, const std::vector<vespalib::string> &dimensions) const override;
+    bool equals(const Tensor &arg) const override;
+    Tensor::UP clone() const override;
+    eval::TensorSpec toSpec() const override;
+    void accept(TensorVisitor &visitor) const override;
 };
 
 }
-
