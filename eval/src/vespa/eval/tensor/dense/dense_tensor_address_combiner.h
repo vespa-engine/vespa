@@ -29,6 +29,7 @@ private:
     public:
         AddressContext(const eval::ValueType &type, CellsRef cells);
         size_type dimSize(uint32_t dim) const { return _type.dimensions()[dim].size; }
+        size_type wholeDimStep(uint32_t dim) const { return _accumulatedSize[dim] * dimSize(dim); }
         double cell() const { return cell(index()); }
         double cell(size_t cellIdx) const { return _cells[cellIdx]; }
         size_t index() const {
@@ -92,7 +93,7 @@ public:
                     rightCellIdx += _rightAddress._accumulatedSize[rdim];
                 }
                 cindex = 0;
-                rightCellIdx -= _rightAddress._accumulatedSize[rdim] * _rightAddress.dimSize(rdim);
+                rightCellIdx -= _rightAddress.wholeDimStep(rdim);
                 curDimension--;
             } else {
                 if (cindex < _rightAddress.dimSize(rdim)) {
@@ -100,7 +101,7 @@ public:
                     rightCellIdx += _rightAddress._accumulatedSize[rdim];
                     curDimension++;
                 } else {
-                    rightCellIdx -= _rightAddress._accumulatedSize[rdim] * _rightAddress.dimSize(rdim);
+                    rightCellIdx -= _rightAddress.wholeDimStep(rdim);
                     cindex = 0;
                     curDimension--;
                 }
