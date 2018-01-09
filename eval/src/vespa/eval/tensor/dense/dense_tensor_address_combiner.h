@@ -127,31 +127,30 @@ public:
                                    const eval::ValueType &type_in, CellsRef cells);
     ~CommonDenseTensorCellsIterator();
     template <typename Func>
-    void for_each(Address & combined, Func && func) {
+    void for_each(Address & combined, Func && func) const {
         const int32_t lastDimension = _mutable.size() - 1;
         int32_t curDimension = lastDimension;
         size_t cellIdx = index(_address);
         while (curDimension >= 0) {
             const uint32_t rdim = _mutable[curDimension].second;
             const uint32_t cdim = _mutable[curDimension].first;
-            size_type & rindex = _address[rdim];
             size_type & cindex = combined[cdim];
             if (curDimension == lastDimension) {
-                for (rindex = 0, cindex = 0; rindex < _type.dimensions()[rdim].size; rindex++, cindex++) {
+                for (cindex = 0; cindex < _type.dimensions()[rdim].size; cindex++) {
                     func(combined, cell(cellIdx));
                     cellIdx += _accumulatedSize[rdim];
                 }
-                rindex = 0; cindex = 0;
+                cindex = 0;
                 cellIdx -= _accumulatedSize[rdim] * _type.dimensions()[rdim].size;
                 curDimension--;
             } else {
-                if (rindex < _type.dimensions()[rdim].size) {
-                    rindex++; cindex++;
+                if (cindex < _type.dimensions()[rdim].size) {
+                    cindex++;
                     cellIdx += _accumulatedSize[rdim];
                     curDimension++;
                 } else {
                     cellIdx -= _accumulatedSize[rdim] * _type.dimensions()[rdim].size;
-                    rindex = 0; cindex = 0;
+                    cindex = 0;
                     curDimension--;
                 }
             }
