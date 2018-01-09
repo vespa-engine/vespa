@@ -167,7 +167,10 @@ public:
         void setInternalIndex(next_t n)  { _current = n; }
     private:
         void advanceToNextValidHash() {
-            for (_current++;(_current < _hashTable->initializedSize()) && ! _hashTable->_nodes[_current].valid(); _current++) { }
+            ++_current;
+            while ((_current < _hashTable->initializedSize()) && ! _hashTable->_nodes[_current].valid()) {
+                ++_current;
+            }
         }
         next_t      _current;
         hashtable * _hashTable;
@@ -207,7 +210,10 @@ public:
         next_t getInternalIndex() const  { return _current; }
     private:
         void advanceToNextValidHash() {
-            for (_current++;(_current < _hashTable->initializedSize()) && ! _hashTable->_nodes[_current].valid(); _current++) { }
+            ++_current;
+            while ((_current < _hashTable->initializedSize()) && ! _hashTable->_nodes[_current].valid()) {
+                ++_current;
+            }
         }
         next_t            _current;
         const hashtable * _hashTable;

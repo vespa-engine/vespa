@@ -96,8 +96,12 @@ Requires: lz4
 Requires: libzstd
 Requires: zlib
 Requires: libicu
+Requires: perf
+Requires: gdb
+Requires: net-tools
 %if 0%{?centos}
 Requires: llvm3.9
+Requires: devtoolset-7-gdb
 Requires: vespa-boost >= 1.59.0-6
 Requires: vespa-zookeeper-c-client >= 3.4.9-6
 %define _extra_link_directory /usr/lib64/llvm3.9/lib;/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib
