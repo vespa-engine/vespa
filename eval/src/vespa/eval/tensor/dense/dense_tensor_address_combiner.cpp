@@ -10,11 +10,8 @@ DenseTensorAddressCombiner::~DenseTensorAddressCombiner() = default;
 
 DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs,
                                                        CellsRef rhsCells)
-    : _rightType(rhs),
+    : _rightAddress(rhs, rhsCells),
       _combinedAddress(),
-      _rightCells(rhsCells),
-      _rightAddress(rhs.dimensions().size(), 0),
-      _rightAccumulatedSize(_rightAddress.size()),
       _left(),
       _commonRight(),
       _right()
@@ -41,12 +38,21 @@ DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lh
         ++rhsItr;
     }
     _combinedAddress.resize(numDimensions);
+}
+
+DenseTensorAddressCombiner::AddressContext::AddressContext(const eval::ValueType &type, CellsRef cells)
+    : _type(type),
+      _cells(cells),
+      _address(type.dimensions().size(), 0),
+      _accumulatedSize(_address.size())
+{
     size_t multiplier = 1;
-    for (int32_t i(_rightAddress.size() - 1); i >= 0; i--) {
-        _rightAccumulatedSize[i] = multiplier;
-        multiplier *= _rightType.dimensions()[i].size;
+    for (int32_t i(_address.size() - 1); i >= 0; i--) {
+        _accumulatedSize[i] = multiplier;
+        multiplier *= type.dimensions()[i].size;
     }
 }
+
 
 eval::ValueType
 DenseTensorAddressCombiner::combineDimensions(const eval::ValueType &lhs, const eval::ValueType &rhs)
