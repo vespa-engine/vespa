@@ -464,7 +464,7 @@ public class DynamicDockerProvisioningTest {
         ApplicationId application = tester.makeApplicationId();
         Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-3");
         tester.prepare(application, ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100")),
-                       1, 1, flavor.canonicalName());
+                       2, 1, flavor.canonicalName());
     }
 
     private ApplicationId makeApplicationId(String tenant, String appName) {
