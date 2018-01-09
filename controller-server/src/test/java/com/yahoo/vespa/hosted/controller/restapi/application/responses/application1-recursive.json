@@ -111,7 +111,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "staging-test completed",
+        "reason": "Immediate retry on failure",
         "at": "(ignore)"
       },
       "lastCompleted": {

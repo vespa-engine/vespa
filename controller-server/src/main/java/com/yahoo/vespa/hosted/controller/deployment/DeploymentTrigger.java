@@ -215,11 +215,11 @@ public class DeploymentTrigger {
         if (change instanceof Change.VersionChange) { // Propagate upgrade while making sure we never downgrade
             Version targetVersion = ((Change.VersionChange)change).version();
 
-            // Is it not yet this job's turn to upgrade?
-            if ( ! lastSuccessfulIs(targetVersion, previous.type(), application))
-                return false;
-
             if (next.type().isTest()) {
+                // Is it not yet this job's turn to upgrade?
+                if ( ! lastSuccessfulIs(targetVersion, previous.type(), application))
+                    return false;
+
                 // Has the upgrade test already been done?
                 if (lastSuccessfulIs(targetVersion, next.type(), application))
                     return false;
@@ -229,10 +229,16 @@ public class DeploymentTrigger {
                 if ( ! lastSuccessfulIs(targetVersion, JobType.stagingTest, application))
                     return false;
 
-                // Is the next a production job for a zone already upgraded to this version or a newer one?
-                if (isOnAtLeastProductionVersion(targetVersion, application, next.type()))
+                // Is the previous a job production which neither succeed with the target version, nor has a higher version?
+                if (previous.type().isProduction() && ! alreadyDeployed(targetVersion, application, previous.type()))
+                    return false;
+
+                // Did the next job already succeed on the target version, or does it already have a higher version?
+                if (alreadyDeployed(targetVersion, application, next.type()))
                     return false;
             }
+            else
+                throw new IllegalStateException("Unclassified type of next job: " + next);
 
             return true;
         }
@@ -365,9 +371,9 @@ public class DeploymentTrigger {
         if (jobType.isProduction() && application.deploying().isPresent() &&
             application.deploying().get().blockedBy(application.deploymentSpec(), clock.instant())) return false;
 
-        // Don't downgrade or redeploy the same version in production
+        // Don't downgrade or redeploy the same version in production needlessly
         if (application.deploying().isPresent() && application.deploying().get() instanceof VersionChange &&
-            jobType.isProduction() && isOnAtLeastProductionVersion(((VersionChange) application.deploying().get()).version(), application, jobType)) return false;
+            jobType.isProduction() && alreadyDeployed(((VersionChange) application.deploying().get()).version(), application, jobType)) return false;
 
         if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) return false;
         if  ( ! hasJob(jobType, application)) return false;
@@ -385,20 +391,19 @@ public class DeploymentTrigger {
     }
 
     /**
-     * Returns whether the current deployed version in the zone given by the job
-     * is newer or equal to the given version. This may be the case even if the production job
-     * in question failed, if the failure happens after deployment.
-     * In that case we should never deploy an earlier version as that may potentially
-     * downgrade production nodes which we are not guaranteed to support, and upgradibng to the current
-     * version is just unnecessary work.
+     * Returns whether the currently deployed version in the zone for the given production job is newer
+     * than the given version, in which case we should avoid an unsupported downgrade, or if it is the
+     * same version, and was successfully deployed, in which case it is unnecessary to redeploy it.
      */
-    private boolean isOnAtLeastProductionVersion(Version version, Application application, JobType job) {
-        if ( ! job.isProduction()) return false; // TODO: Throw if not prod, and change name/doc accordingly
-        Optional<ZoneId> zone = job.zone(controller.system());
-        if ( ! zone.isPresent()) return false;
-        Deployment existingDeployment = application.deployments().get(zone.get());
-        if (existingDeployment == null) return false;
-        return existingDeployment.version().isAfter(version) || existingDeployment.version().equals(version);
+    private boolean alreadyDeployed(Version version, Application application, JobType job) {
+        if ( ! job.isProduction())
+            throw new IllegalArgumentException(job + " is not a production job!");
+
+        return    lastSuccessfulIs(version, job, application)
+               || job.zone(controller.system())
+                       .map(zone -> application.deployments().get(zone))
+                       .map(deployment -> deployment.version().isAfter(version))
+                       .orElse(false);
     }
 
     private boolean acceptNewRevisionNow(LockedApplication application) {
