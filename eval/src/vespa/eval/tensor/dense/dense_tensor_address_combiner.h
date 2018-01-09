@@ -66,31 +66,6 @@ public:
     const Address &address() const { return _combinedAddress; }
     Address &address() { return _combinedAddress; }
 
-    bool combine(const Address & lhs, const Address & rhs) {
-        uint32_t index(0);
-        AddressReader lhsReader(lhs);
-        AddressReader rhsReader(rhs);
-        for (const auto &op : _ops) {
-            switch (op) {
-                case AddressOp::LHS:
-                    _combinedAddress[index] = lhsReader.nextLabel();
-                    break;
-                case AddressOp::RHS:
-                    _combinedAddress[index] = rhsReader.nextLabel();
-                    break;
-                case AddressOp::BOTH:
-                    Address::value_type lhsLabel = lhsReader.nextLabel();
-                    Address::value_type rhsLabel = rhsReader.nextLabel();
-                    if (lhsLabel != rhsLabel) {
-                        return false;
-                    }
-                    _combinedAddress[index] = lhsLabel;
-            }
-            index++;
-        }
-        return true;
-    }
-
     static eval::ValueType combineDimensions(const eval::ValueType &lhs, const eval::ValueType &rhs);
 };
 
