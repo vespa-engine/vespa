@@ -5,7 +5,6 @@
 #include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/searchlib/common/address_space.h>
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <functional>
 
 namespace search {
