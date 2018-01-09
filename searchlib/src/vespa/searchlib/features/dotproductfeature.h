@@ -113,9 +113,10 @@ public:
 template <typename Vector, typename Buffer>
 class DotProductExecutor : public fef::FeatureExecutor {
 private:
-    const search::attribute::IAttributeVector * _attribute;
-    Vector _queryVector;
-    Buffer _buffer;
+    const attribute::IAttributeVector *            _attribute;
+    const Vector                                   _queryVector;
+    const typename Vector::HashMap::const_iterator _end;
+    Buffer                                         _buffer;
 
 public:
     DotProductExecutor(const search::attribute::IAttributeVector * attribute, const Vector & queryVector);
