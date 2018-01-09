@@ -21,6 +21,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.TenantApplications;
@@ -70,6 +71,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final DeployLogger logger = new SilentDeployLogger();
     private final ConfigserverConfig configserverConfig;
     private final Environment environment;
+    private final FileDistributionStatus fileDistributionStatus;
 
     @Inject
     public ApplicationRepository(Tenants tenants,
@@ -79,7 +81,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  HttpProxy httpProxy, 
                                  ConfigserverConfig configserverConfig) {
         this(tenants, hostProvisionerProvider.getHostProvisioner(), logServerLogGrabber,
-             applicationConvergenceChecker, httpProxy, configserverConfig, Clock.systemUTC());
+             applicationConvergenceChecker, httpProxy, configserverConfig, Clock.systemUTC(), new FileDistributionStatus());
     }
 
     // For testing
@@ -88,7 +90,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  Clock clock) {
         this(tenants, Optional.of(hostProvisioner), new LogServerLogGrabber(),
              new ApplicationConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
-             new ConfigserverConfig(new ConfigserverConfig.Builder()), clock);
+             new ConfigserverConfig(new ConfigserverConfig.Builder()), clock, new FileDistributionStatus());
     }
 
     private ApplicationRepository(Tenants tenants,
@@ -97,7 +99,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   ApplicationConvergenceChecker applicationConvergenceChecker,
                                   HttpProxy httpProxy,
                                   ConfigserverConfig configserverConfig,
-                                  Clock clock) {
+                                  Clock clock,
+                                  FileDistributionStatus fileDistributionStatus) {
         this.tenants = tenants;
         this.hostProvisioner = hostProvisioner;
         this.logServerLogGrabber = logServerLogGrabber;
@@ -106,6 +109,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.clock = clock;
         this.configserverConfig = configserverConfig;
         this.environment = Environment.from(configserverConfig.environment());
+        this.fileDistributionStatus = fileDistributionStatus;
     }
 
     /**
@@ -257,6 +261,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public void restart(ApplicationId applicationId, HostFilter hostFilter) {
         hostProvisioner.ifPresent(provisioner -> provisioner.restart(applicationId, hostFilter));
+    }
+
+    public HttpResponse filedistributionStatus(Tenant tenant, ApplicationId applicationId) {
+        Application application = getApplication(tenant, applicationId);
+        return fileDistributionStatus.status(application);
     }
 
     public Tenant verifyTenantAndApplication(ApplicationId applicationId) {

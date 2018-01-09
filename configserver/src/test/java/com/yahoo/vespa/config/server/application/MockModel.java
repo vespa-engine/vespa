@@ -16,9 +16,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 // Model with two services, one that does not have a state port
@@ -47,6 +49,20 @@ class MockModel implements Model {
         HostInfo hostInfo = new HostInfo(hostname, Arrays.asList(container, serviceNoStatePort));
 
         return new MockModel(Collections.singleton(hostInfo));
+    }
+
+    static MockModel createConfigProxy(String hostname, int rpcPort) {
+        return createConfigProxies(Collections.singletonList(hostname), rpcPort);
+    }
+
+    static MockModel createConfigProxies(List<String> hostnames, int rpcPort) {
+        Set<HostInfo> hostInfos = new HashSet<>();
+        hostnames.forEach(hostname -> {
+            ServiceInfo configProxy = createServiceInfo(hostname, "configproxy", "configproxy",
+                                            ClusterSpec.Type.admin, rpcPort, "rpc");
+            hostInfos.add(new HostInfo(hostname, Collections.singletonList(configProxy)));
+        });
+        return new MockModel(hostInfos);
     }
 
     static private ServiceInfo createServiceInfo(
