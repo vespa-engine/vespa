@@ -14,8 +14,8 @@ namespace vespalib::tensor {
 class SparseTensorAddressRef
 {
     const void *_start;
-    uint32_t _size;
-    uint32_t _hash;
+    uint32_t    _size;
+    uint32_t    _hash;
 public:
     SparseTensorAddressRef()
         : _start(nullptr), _size(0u), _hash(0u)
@@ -64,3 +64,4 @@ public:
 };
 
 }
+
