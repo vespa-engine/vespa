@@ -17,7 +17,7 @@ public class RankProfileTransformContext extends TransformContext {
     private final Map<String, RankProfile.Macro> inlineMacros;
     private final Map<String, String> rankPropertiesOutput;
 
-    RankProfileTransformContext(RankProfile rankProfile,
+    public RankProfileTransformContext(RankProfile rankProfile,
                                 Map<String, Value> constants,
                                 Map<String, RankProfile.Macro> inlineMacros,
                                 Map<String, String> rankPropertiesOutput) {
