@@ -22,14 +22,14 @@ public:
     typedef std::unique_ptr<Grouping> UP;
 
 private:
-    uint32_t           _id;         // client id for this grouping
-    bool               _valid;      // is this grouping object valid?
-    bool               _all;        // if true, group all document, not just hits (streaming only)
-    int64_t            _topN;       // hits to process per search node
-    uint32_t           _firstLevel; // first processing level this iteration (levels before considered frozen)
-    uint32_t           _lastLevel;  // last processing level this iteration
-    GroupingLevelList  _levels;     // grouping parameters per level
-    Group              _root;       // the grouping tree
+    uint32_t               _id;         // client id for this grouping
+    bool                   _valid;      // is this grouping object valid?
+    bool                   _all;        // if true, group all document, not just hits (streaming only)
+    int64_t                _topN;       // hits to process per search node
+    uint32_t               _firstLevel; // first processing level this iteration (levels before considered frozen)
+    uint32_t               _lastLevel;  // last processing level this iteration
+    GroupingLevelList      _levels;     // grouping parameters per level
+    Group                  _root;       // the grouping tree
     const vespalib::Clock *_clock;      // An optional clock to be used for timeout handling.
     fastos::TimeStamp      _timeOfDoom; // Used if clock is specified. This is time when request expires.
 
