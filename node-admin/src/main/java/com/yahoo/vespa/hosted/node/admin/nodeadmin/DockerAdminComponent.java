@@ -37,6 +37,8 @@ public class DockerAdminComponent implements AdminComponent {
     private final MetricReceiverWrapper metricReceiver;
     private final ClassLocking classLocking;
 
+    private ConfigServerHttpRequestExecutor requestExecutor;
+
     private Optional<NodeAdminStateUpdater> nodeAdminStateUpdater = Optional.empty();
 
     public DockerAdminComponent(NodeAdminConfig config,
@@ -55,10 +57,9 @@ public class DockerAdminComponent implements AdminComponent {
             return;
         }
 
-
         Environment environment = new Environment();
-        ConfigServerHttpRequestExecutor requestExecutor =
-                ConfigServerHttpRequestExecutor.create(environment.getConfigServerUris());
+        requestExecutor = ConfigServerHttpRequestExecutor.create(
+                environment.getConfigServerUris(), environment.getKeyStoreOptions(), environment.getTrustStoreOptions());
         NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor);
         Orchestrator orchestrator = new OrchestratorImpl(requestExecutor);
 
@@ -123,6 +124,7 @@ public class DockerAdminComponent implements AdminComponent {
         }
 
         nodeAdminStateUpdater.get().stop();
+        requestExecutor.close();
         nodeAdminStateUpdater = Optional.empty();
         // TODO: Also stop docker
     }

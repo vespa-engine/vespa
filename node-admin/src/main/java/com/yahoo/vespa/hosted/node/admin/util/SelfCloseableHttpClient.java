@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 /**
  * @author freva
  */
-class SelfCloseableHttpClient {
+class SelfCloseableHttpClient implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(SelfCloseableHttpClient.class.getName());
 
@@ -61,12 +61,16 @@ class SelfCloseableHttpClient {
 
     @Override
     public void finalize() throws Throwable {
+        close();
+        super.finalize();
+    }
+
+    @Override
+    public void close() {
         try {
             httpClient.close();
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Ignoring exception thrown when closing http client", e);
         }
-
-        super.finalize();
     }
 }

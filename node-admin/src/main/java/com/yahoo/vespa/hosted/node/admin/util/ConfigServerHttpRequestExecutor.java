@@ -41,7 +41,7 @@ import java.util.function.Supplier;
  *
  * @author dybdahl
  */
-public class ConfigServerHttpRequestExecutor {
+public class ConfigServerHttpRequestExecutor implements AutoCloseable {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(ConfigServerHttpRequestExecutor.class);
     private static final Duration CLIENT_REFRESH_INTERVAL = Duration.ofHours(1);
 
@@ -202,5 +202,18 @@ public class ConfigServerHttpRequestExecutor {
         });
 
         return sslContextBuilder.build();
+    }
+
+    @Override
+    public void close() {
+        do {
+            try {
+                clientRefresherScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            } catch (InterruptedException e1) {
+                NODE_ADMIN_LOGGER.info("Interrupted while waiting for clientRefresherScheduler to shutdown");
+            }
+        } while (!clientRefresherScheduler.isTerminated());
+
+        client.close();
     }
 }
