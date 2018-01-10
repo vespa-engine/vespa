@@ -10,7 +10,6 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Replaces "features" which found in the given constants by their constant value
@@ -19,40 +18,33 @@ import java.util.Map;
  */
 public class ConstantDereferencer extends ExpressionTransformer {
 
-    /** The map of constants to dereference */
-    private final Map<String, Value> constants;
-
-    public ConstantDereferencer(Map<String, Value> constants) {
-        this.constants = constants;
-    }
-
     @Override
-    public ExpressionNode transform(ExpressionNode node) {
+    public ExpressionNode transform(ExpressionNode node, TransformContext context) {
         if (node instanceof ReferenceNode)
-            return transformFeature((ReferenceNode) node);
+            return transformFeature((ReferenceNode) node, context);
         else if (node instanceof CompositeNode)
-            return transformChildren((CompositeNode)node);
+            return transformChildren((CompositeNode)node, context);
         else
             return node;
     }
 
-    private ExpressionNode transformFeature(ReferenceNode node) {
+    private ExpressionNode transformFeature(ReferenceNode node, TransformContext context) {
         if (!node.getArguments().isEmpty())
-            return transformArguments(node);
+            return transformArguments(node, context);
         else
-            return transformConstantReference(node);
+            return transformConstantReference(node, context);
     }
 
-    private ExpressionNode transformArguments(ReferenceNode node) {
+    private ExpressionNode transformArguments(ReferenceNode node, TransformContext context) {
         List<ExpressionNode> arguments = node.getArguments().expressions();
         List<ExpressionNode> transformedArguments = new ArrayList<>(arguments.size());
         for (ExpressionNode argument : arguments)
-            transformedArguments.add(transform(argument));
+            transformedArguments.add(transform(argument, context));
         return node.setArguments(transformedArguments);
     }
 
-    private ExpressionNode transformConstantReference(ReferenceNode node) {
-        Value value = constants.get(node.getName());
+    private ExpressionNode transformConstantReference(ReferenceNode node, TransformContext context) {
+        Value value = context.constants().get(node.getName());
         if (value == null || (value instanceof TensorValue)) {
             return node; // not a value constant reference
         }

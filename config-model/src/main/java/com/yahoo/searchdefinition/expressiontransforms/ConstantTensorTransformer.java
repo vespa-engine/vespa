@@ -8,11 +8,11 @@ import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.NameNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
+import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Transforms named references to constant tensors with the rank feature 'constant'.
@@ -23,53 +23,44 @@ public class ConstantTensorTransformer extends ExpressionTransformer {
 
     public static final String CONSTANT = "constant";
 
-    private final Map<String, Value> constants;
-    private final Map<String, String> rankPropertiesOutput;
-
-    public ConstantTensorTransformer(Map<String, Value> constants,
-                                     Map<String, String> rankPropertiesOutput) {
-        this.constants = constants;
-        this.rankPropertiesOutput = rankPropertiesOutput;
-    }
-
     @Override
-    public ExpressionNode transform(ExpressionNode node) {
+    public ExpressionNode transform(ExpressionNode node, TransformContext context) {
         if (node instanceof ReferenceNode) {
-            return transformFeature((ReferenceNode) node);
+            return transformFeature((ReferenceNode) node, (RankProfileTransformContext)context);
         } else if (node instanceof CompositeNode) {
-            return transformChildren((CompositeNode) node);
+            return transformChildren((CompositeNode) node, context);
         } else {
             return node;
         }
     }
 
-    private ExpressionNode transformFeature(ReferenceNode node) {
+    private ExpressionNode transformFeature(ReferenceNode node, RankProfileTransformContext context) {
         if (!node.getArguments().isEmpty()) {
-            return transformArguments(node);
+            return transformArguments(node, context);
         } else {
-            return transformConstantReference(node);
+            return transformConstantReference(node, context);
         }
     }
 
-    private ExpressionNode transformArguments(ReferenceNode node) {
+    private ExpressionNode transformArguments(ReferenceNode node, TransformContext context) {
         List<ExpressionNode> arguments = node.getArguments().expressions();
         List<ExpressionNode> transformedArguments = new ArrayList<>(arguments.size());
         for (ExpressionNode argument : arguments) {
-            transformedArguments.add(transform(argument));
+            transformedArguments.add(transform(argument, context));
         }
         return node.setArguments(transformedArguments);
     }
 
-    private ExpressionNode transformConstantReference(ReferenceNode node) {
-        Value value = constants.get(node.getName());
+    private ExpressionNode transformConstantReference(ReferenceNode node, RankProfileTransformContext context) {
+        Value value = context.constants().get(node.getName());
         if (value == null || !(value instanceof TensorValue)) {
             return node;
         }
         TensorValue tensorValue = (TensorValue)value;
         String featureName = CONSTANT + "(" + node.getName() + ")";
         String tensorType = tensorValue.asTensor().type().toString();
-        rankPropertiesOutput.put(featureName + ".value", tensorValue.toString());
-        rankPropertiesOutput.put(featureName + ".type", tensorType);
+        context.rankPropertiesOutput().put(featureName + ".value", tensorValue.toString());
+        context.rankPropertiesOutput().put(featureName + ".type", tensorType);
         return new ReferenceNode("constant", Arrays.asList(new NameNode(node.getName())), null);
     }
 

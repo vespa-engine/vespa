@@ -63,11 +63,11 @@ public class DerivedConfiguration {
      */
     public DerivedConfiguration(Search search, List<Search> abstractSearchList, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry) {
         Validator.ensureNotNull("Search definition", search);
-        if (!search.isProcessed()) {
+        if ( ! search.isProcessed()) {
             throw new IllegalArgumentException("Search '" + search.getName() + "' not processed.");
         }
         this.search = search;
-        if (!search.isDocumentsOnly()) {
+        if ( ! search.isDocumentsOnly()) {
             streamingFields = new VsmFields(search);
             streamingSummary = new VsmSummary(search);
         }
@@ -160,15 +160,15 @@ public class DerivedConfiguration {
     public Search getSearch() {
         return search;
     }
-    
+
     public RankProfileList getRankProfileList() {
         return rankProfileList;
     }
-    
+
     public VsmSummary getVsmSummary() {
         return streamingSummary;
     }
-    
+
     public VsmFields getVsmFields() {
         return streamingFields;
     }
@@ -180,7 +180,7 @@ public class DerivedConfiguration {
     public Juniperrc getJuniperrc() {
         return juniperrc;
     }
-    
+
     public SummaryMap getSummaryMap() {
         return summaryMap;
     }

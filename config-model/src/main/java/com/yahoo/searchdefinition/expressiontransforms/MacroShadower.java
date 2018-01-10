@@ -3,10 +3,12 @@ package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.rule.*;
+import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
+import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
+import com.yahoo.searchlib.rankingexpression.rule.FunctionNode;
+import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
-
-import java.util.Map;
+import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 
 /**
  * Transforms function nodes to reference nodes if a macro shadows a built-in function.
@@ -23,44 +25,38 @@ import java.util.Map;
  */
 public class MacroShadower extends ExpressionTransformer {
 
-    private final Map<String, RankProfile.Macro> macros;
-
-    public MacroShadower(Map<String, RankProfile.Macro> macros) {
-        this.macros = macros;
-    }
-
     @Override
-    public RankingExpression transform(RankingExpression expression) {
+    public RankingExpression transform(RankingExpression expression, TransformContext context) {
         String name = expression.getName();
         ExpressionNode node = expression.getRoot();
-        ExpressionNode result = transform(node);
+        ExpressionNode result = transform(node, context);
         return new RankingExpression(name, result);
     }
 
     @Override
-    public ExpressionNode transform(ExpressionNode node) {
+    public ExpressionNode transform(ExpressionNode node, TransformContext context) {
         if (node instanceof FunctionNode)
-            return transformFunctionNode((FunctionNode) node);
+            return transformFunctionNode((FunctionNode) node, context);
         if (node instanceof CompositeNode)
-            return transformChildren((CompositeNode)node);
+            return transformChildren((CompositeNode)node, context);
         return node;
     }
 
-    protected ExpressionNode transformFunctionNode(FunctionNode function) {
+    protected ExpressionNode transformFunctionNode(FunctionNode function, TransformContext context) {
         String name = function.getFunction().toString();
-        RankProfile.Macro macro = macros.get(name);
+        RankProfile.Macro macro = ((RankProfileTransformContext)context).rankProfile().getMacros().get(name);
         if (macro == null) {
-            return transformChildren(function);
+            return transformChildren(function, context);
         }
 
         int functionArity = function.getFunction().arity();
         int macroArity = macro.getFormalParams() != null ? macro.getFormalParams().size() : 0;
         if (functionArity != macroArity) {
-            return transformChildren(function);
+            return transformChildren(function, context);
         }
 
         ReferenceNode node = new ReferenceNode(name, function.children(), null);
-        return transformChildren(node);
+        return transformChildren(node, context);
     }
 
 }

@@ -6,8 +6,7 @@ import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
-
-import java.util.Map;
+import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 
 /**
  * Inlines macros in ranking expressions
@@ -16,25 +15,19 @@ import java.util.Map;
  */
 public class MacroInliner extends ExpressionTransformer {
 
-    private final Map<String, RankProfile.Macro> macros;
-
-    public MacroInliner(Map<String, RankProfile.Macro> macros) {
-        this.macros = macros;
-    }
-
     @Override
-    public ExpressionNode transform(ExpressionNode node) {
+    public ExpressionNode transform(ExpressionNode node, TransformContext context) {
         if (node instanceof ReferenceNode)
-            return transformFeatureNode((ReferenceNode)node);
+            return transformFeatureNode((ReferenceNode)node, (RankProfileTransformContext)context);
         if (node instanceof CompositeNode)
-            return transformChildren((CompositeNode)node);
+            return transformChildren((CompositeNode)node, context);
         return node;
     }
 
-    private ExpressionNode transformFeatureNode(ReferenceNode feature) {
-        RankProfile.Macro macro = macros.get(feature.getName());
+    private ExpressionNode transformFeatureNode(ReferenceNode feature, RankProfileTransformContext context) {
+        RankProfile.Macro macro = context.inlineMacros().get(feature.getName());
         if (macro == null) return feature;
-        return transform(macro.getRankingExpression().getRoot()); // inline recursively and return
+        return transform(macro.getRankingExpression().getRoot(), context); // inline recursively and return
     }
 
 }

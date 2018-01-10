@@ -92,7 +92,7 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
 
     private void assertContainsExpression(String expr, String transformedExpression) throws ParseException {
         assertTrue("Expected expression '" + transformedExpression + "' not found",
-                containsExpression(expr, transformedExpression));
+                   containsExpression(expr, transformedExpression));
     }
 
     private boolean containsExpression(String expr, String transformedExpression) throws ParseException {
