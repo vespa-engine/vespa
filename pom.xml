@@ -1054,6 +1054,7 @@
         <module>vespaclient-container-plugin</module>
         <module>vespaclient-java</module>
         <module>vespa-application-maven-plugin</module>
+        <module>vespa-athenz</module>
         <module>vespa-documentgen-plugin</module>
         <module>vespa_feed_perf</module>
         <module>vespa-hadoop</module>
