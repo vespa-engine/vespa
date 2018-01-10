@@ -79,6 +79,8 @@ public:
 
     template <typename Func>
     void for_each(const AddressContext & rightAddress, const CellsRef & rhsCells, Func && func) {
+        // The rightAddress oly holds the starting point for iteration and what is need to efficiently maintain
+        // an index for addressing th ecells.
         const int32_t lastDimension = _right.size() - 1;
         int32_t curDimension = lastDimension;
         size_t rightCellIdx = rightAddress.index();
