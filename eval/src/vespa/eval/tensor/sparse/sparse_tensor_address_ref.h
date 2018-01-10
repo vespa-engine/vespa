@@ -3,14 +3,10 @@
 #pragma once
 
 #include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/xxhash/xxhash.h>
 #include <cstring>
 
-namespace vespalib {
-
-// From vespalib/util/hashmap.h
-size_t hashValue(const void * buf, size_t sz);
-
-namespace tensor {
+namespace vespalib::tensor {
 
 /**
  * A reference to a compact sparse immutable address to a tensor cell.
@@ -18,8 +14,8 @@ namespace tensor {
 class SparseTensorAddressRef
 {
     const void *_start;
-    uint32_t _size;
-    uint32_t _hash;
+    uint32_t    _size;
+    uint32_t    _hash;
 public:
     SparseTensorAddressRef()
         : _start(nullptr), _size(0u), _hash(0u)
@@ -44,7 +40,7 @@ public:
 
     uint32_t hash() const { return _hash; }
 
-    uint32_t calcHash() const { return hashValue(_start, _size); }
+    uint32_t calcHash() const { return XXH32(_start, _size, 0); }
 
     bool operator<(const SparseTensorAddressRef &rhs) const {
         size_t minSize = std::min(_size, rhs._size);
@@ -67,5 +63,5 @@ public:
     uint32_t size() const { return _size; }
 };
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}
+
