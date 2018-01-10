@@ -10,6 +10,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -23,6 +24,9 @@ import java.util.Optional;
 public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
+
+    /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
+    private final Map<String, ImportResult> importedModels = new HashMap<>();
 
     @Override
     public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
@@ -42,7 +46,8 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
                 throw new IllegalArgumentException("A tensorflow node must take an argument pointing to " +
                                                    "the tensorflow model directory under [application]/models");
 
-            ImportResult result = tensorFlowImporter.importModel(asString(feature.getArguments().expressions().get(0)));
+            String modelPath = asString(feature.getArguments().expressions().get(0));
+            ImportResult result = importedModels.computeIfAbsent(modelPath, k -> tensorFlowImporter.importModel(modelPath));
 
             // Find the specified expression
             ImportResult.Signature signature = chooseOrDefault("signatures", result.signatures(),
