@@ -66,6 +66,8 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
     ContentSearchCluster search;
     private final Map<String, NewDocumentType> documentDefinitions;
     private final Set<NewDocumentType> globallyDistributedDocuments;
+    // Experimental flag (TODO: remove when feature is enabled by default)
+    private boolean enableMultipleBucketSpaces = false;
     com.yahoo.vespa.model.content.StorageGroup rootGroup;
     StorageCluster storageNodes;
     DistributorCluster distributorNodes;
@@ -146,6 +148,10 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             ModelElement tuning = contentElement.getChild("tuning");
             if (tuning != null) {
                 setupTuning(c, tuning);
+            }
+            ModelElement experimental = contentElement.getChild("experimental");
+            if (experimental != null) {
+                setupExperimental(c, experimental);
             }
 
             if (context.getParentProducer().getRoot() == null) return c;
@@ -241,6 +247,13 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                 if (attr != null) {
                     c.maxNodesPerMerge = attr;
                 }
+            }
+        }
+
+        private void setupExperimental(ContentCluster cluster, ModelElement experimental) {
+            Boolean enableMultipleBucketSpaces = experimental.childAsBoolean("enable-multiple-bucket-spaces");
+            if (enableMultipleBucketSpaces != null) {
+                cluster.enableMultipleBucketSpaces = enableMultipleBucketSpaces;
             }
         }
 
@@ -628,7 +641,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             }
         }
         new ReservedDocumentTypeNameValidator().validate(documentDefinitions);
-        new GlobalDistributionValidator().validate(documentDefinitions, globallyDistributedDocuments, redundancy);
+        new GlobalDistributionValidator().validate(documentDefinitions, globallyDistributedDocuments, redundancy, enableMultipleBucketSpaces);
     }
 
     public static Map<String, Integer> METRIC_INDEX_MAP = new TreeMap<>();
@@ -713,5 +726,6 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             docTypeBuilder.bucketspace(bucketSpace);
             builder.documenttype(docTypeBuilder);
         }
+        builder.enable_multiple_bucket_spaces(enableMultipleBucketSpaces);
     }
 }
