@@ -10,7 +10,8 @@ DenseTensorAddressCombiner::~DenseTensorAddressCombiner() = default;
 
 DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &combined, const eval::ValueType &lhs,
                                                        const eval::ValueType &rhs)
-    : _combinedAddress(combined),
+    : _rightAddress(rhs),
+      _combinedAddress(combined),
       _left(),
       _commonRight(),
       _right()

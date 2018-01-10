@@ -11,18 +11,17 @@ namespace vespalib::tensor::dense {
 template <typename Function>
 std::unique_ptr<Tensor>
 apply(DenseTensorAddressCombiner & combiner, DirectDenseTensorBuilder & builder,
-      const DenseTensorView &lhs, AddressContext & rhsAddr, const DenseTensorView::CellsRef & rhsCells,
-      Function &&func) __attribute__((noinline));
+      const DenseTensorView &lhs, const DenseTensorView::CellsRef & rhsCells, Function &&func) __attribute__((noinline));
 
 template <typename Function>
 std::unique_ptr<Tensor>
 apply(DenseTensorAddressCombiner & combiner, DirectDenseTensorBuilder & builder,
-      const DenseTensorView &lhs, AddressContext & rhsAddr, const DenseTensorView::CellsRef & rhsCells, Function &&func)
+      const DenseTensorView &lhs, const DenseTensorView::CellsRef & rhsCells, Function &&func)
 {
     for (DenseTensorCellsIterator lhsItr = lhs.cellsIterator(); lhsItr.valid(); lhsItr.next()) {
         combiner.updateLeftAndCommon(lhsItr.address());
-        if (rhsAddr.updateCommon(combiner.address(), combiner.commonRight())) {
-            combiner.for_each(rhsAddr, rhsCells, [&func, &builder, &lhsItr](size_t combined, double rhsCell) {
+        if (combiner.updateCommon()) {
+            combiner.for_each_right(rhsCells, [&func, &builder, &lhsItr](size_t combined, double rhsCell) {
                 builder.insertCell(combined, func(lhsItr.cell(), rhsCell));
             });
         }
@@ -34,19 +33,18 @@ apply(DenseTensorAddressCombiner & combiner, DirectDenseTensorBuilder & builder,
 template <typename Function>
 std::unique_ptr<Tensor>
 apply_no_rightonly_dimensions(DenseTensorAddressCombiner & combiner, DirectDenseTensorBuilder & builder,
-                              const DenseTensorView &lhs, AddressContext & rhsAddr,
-                              const DenseTensorView::CellsRef & rhsCells, Function &&func)  __attribute__((noinline));
+                              const DenseTensorView &lhs, const DenseTensorView::CellsRef & rhsCells,
+                              Function &&func)  __attribute__((noinline));
 
 template <typename Function>
 std::unique_ptr<Tensor>
 apply_no_rightonly_dimensions(DenseTensorAddressCombiner & combiner, DirectDenseTensorBuilder & builder,
-                              const DenseTensorView &lhs, AddressContext & rhsAddr,
-                              const DenseTensorView::CellsRef & rhsCells, Function &&func)
+                              const DenseTensorView &lhs, const DenseTensorView::CellsRef & rhsCells, Function &&func)
 {
     for (DenseTensorCellsIterator lhsItr = lhs.cellsIterator(); lhsItr.valid(); lhsItr.next()) {
         combiner.updateLeftAndCommon(lhsItr.address());
-        if (rhsAddr.updateCommon(combiner.address(), combiner.commonRight())) {
-            builder.insertCell(combiner.address(), func(lhsItr.cell(), rhsCells[rhsAddr.index()]));
+        if (combiner.updateCommon()) {
+            builder.insertCell(combiner.address(), func(lhsItr.cell(), rhsCells[combiner.rightCellIndex()]));
         }
     }
     return builder.build();
@@ -59,11 +57,10 @@ apply(const DenseTensorView &lhs, const DenseTensorView &rhs, Function &&func)
     eval::ValueType resultType = DenseTensorAddressCombiner::combineDimensions(lhs.fast_type(), rhs.fast_type());
     DenseTensorAddressCombiner combiner(resultType, lhs.fast_type(), rhs.fast_type());
     DirectDenseTensorBuilder builder(resultType);
-    AddressContext rhsAddress(rhs.fast_type());
     if (combiner.hasAnyRightOnlyDimensions()) {
-        return apply(combiner, builder, lhs, rhsAddress, rhs.cellsRef(), std::move(func));
+        return apply(combiner, builder, lhs, rhs.cellsRef(), std::move(func));
     } else {
-        return apply_no_rightonly_dimensions(combiner, builder, lhs, rhsAddress, rhs.cellsRef(), std::move(func));
+        return apply_no_rightonly_dimensions(combiner, builder, lhs, rhs.cellsRef(), std::move(func));
     }
 }
 

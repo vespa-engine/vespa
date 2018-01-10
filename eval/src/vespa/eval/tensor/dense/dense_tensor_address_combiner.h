@@ -61,6 +61,7 @@ private:
     using CellsRef = vespalib::ConstArrayRef<double>;
     using size_type = eval::ValueType::Dimension::size_type;
 
+    AddressContext         _rightAddress;
     AddressContext         _combinedAddress;
 
     Mapping                _left;
@@ -71,42 +72,42 @@ public:
     DenseTensorAddressCombiner(const eval::ValueType &combined, const eval::ValueType &lhs, const eval::ValueType &rhs);
     ~DenseTensorAddressCombiner();
     void updateLeftAndCommon(const Address & addr) { _combinedAddress.update(addr, _left); }
-
+    bool updateCommon() { return _rightAddress.updateCommon(_combinedAddress._address, _commonRight); }
     bool hasAnyRightOnlyDimensions() const { return ! _right.empty(); }
 
     const Address & address() const { return _combinedAddress._address; }
-    const Mapping & commonRight() const { return _commonRight; }
+    size_t rightCellIndex() const { return _rightAddress.index(); }
 
     template <typename Func>
-    void for_each(const AddressContext & rightAddress, const CellsRef & rhsCells, Func && func) {
+    void for_each_right(const CellsRef & rhsCells, Func && func) {
         // The rightAddress oly holds the starting point for iteration and what is need to efficiently maintain
         // an index for addressing th ecells.
         const int32_t lastDimension = _right.size() - 1;
         int32_t curDimension = lastDimension;
-        size_t rightCellIdx = rightAddress.index();
+        size_t rightCellIdx = _rightAddress.index();
         size_t combinedCellIdx = _combinedAddress.index();
         while (curDimension >= 0) {
             const uint32_t rdim = _right[curDimension].second;
             const uint32_t cdim = _right[curDimension].first;
             size_type & cindex = _combinedAddress._address[cdim];
             if (curDimension == lastDimension) {
-                for (cindex = 0; cindex < rightAddress.dimSize(rdim); cindex++) {
+                for (cindex = 0; cindex < _rightAddress.dimSize(rdim); cindex++) {
                     func(combinedCellIdx, rhsCells[rightCellIdx]);
-                    rightCellIdx += rightAddress._accumulatedSize[rdim];
+                    rightCellIdx += _rightAddress._accumulatedSize[rdim];
                     combinedCellIdx += _combinedAddress._accumulatedSize[cdim];
                 }
                 cindex = 0;
-                rightCellIdx -= rightAddress.wholeDimStep(rdim);
+                rightCellIdx -= _rightAddress.wholeDimStep(rdim);
                 combinedCellIdx -= _combinedAddress.wholeDimStep(cdim);
                 curDimension--;
             } else {
-                if (cindex < rightAddress.dimSize(rdim)) {
+                if (cindex < _rightAddress.dimSize(rdim)) {
                     cindex++;
-                    rightCellIdx += rightAddress._accumulatedSize[rdim];
+                    rightCellIdx += _rightAddress._accumulatedSize[rdim];
                     combinedCellIdx += _combinedAddress._accumulatedSize[cdim];
                     curDimension++;
                 } else {
-                    rightCellIdx -= rightAddress.wholeDimStep(rdim);
+                    rightCellIdx -= _rightAddress.wholeDimStep(rdim);
                     combinedCellIdx -= _combinedAddress.wholeDimStep(cdim);
                     cindex = 0;
                     curDimension--;
