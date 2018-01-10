@@ -57,7 +57,9 @@ public class NodeAdminMain implements AutoCloseable {
         NodeAdminConfig config = getConfig();
 
         if (config.components.isEmpty()) {
-            enable(new DockerAdminComponent(config, docker, metricReceiver, classLocking));
+            dockerAdmin = Optional.of(new DockerAdminComponent(
+                    config, docker, metricReceiver, classLocking));
+            enable(dockerAdmin.get());
         } else {
             logger.log(LogLevel.INFO, () -> {
                 String registeredComponentsList = adminRegistry
