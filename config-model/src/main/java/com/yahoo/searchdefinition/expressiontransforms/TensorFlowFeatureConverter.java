@@ -1,6 +1,5 @@
 package com.yahoo.searchdefinition.expressiontransforms;
 
-import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.ImportResult;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.TensorFlowImporter;
@@ -10,6 +9,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
+import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 
 import java.util.Map;
 import java.util.Optional;
@@ -24,23 +24,18 @@ import java.util.Optional;
 public class TensorFlowFeatureConverter extends ExpressionTransformer {
 
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
-    private final RankProfile profile;
-
-    public TensorFlowFeatureConverter(RankProfile profile) {
-        this.profile = profile;
-    }
 
     @Override
-    public ExpressionNode transform(ExpressionNode node) {
+    public ExpressionNode transform(ExpressionNode node, TransformContext context) {
         if (node instanceof ReferenceNode)
-            return transformFeature((ReferenceNode) node);
+            return transformFeature((ReferenceNode) node, (RankProfileTransformContext)context);
         else if (node instanceof CompositeNode)
-            return super.transformChildren((CompositeNode) node);
+            return super.transformChildren((CompositeNode) node, context);
         else
             return node;
     }
 
-    private ExpressionNode transformFeature(ReferenceNode feature) {
+    private ExpressionNode transformFeature(ReferenceNode feature, RankProfileTransformContext context) {
         try {
             if ( ! feature.getName().equals("tensorflow")) return feature;
 
@@ -48,15 +43,16 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer {
                 throw new IllegalArgumentException("A tensorflow node must take an argument pointing to " +
                                                    "the tensorflow model directory under [application]/models");
 
-            // Find the specified expression
             ImportResult result = tensorFlowImporter.importModel(asString(feature.getArguments().expressions().get(0)));
+
+            // Find the specified expression
             ImportResult.Signature signature = chooseOrDefault("signatures", result.signatures(),
                                                                optionalArgument(1, feature.getArguments()));
             String output = chooseOrDefault("outputs", signature.outputs(),
                                             optionalArgument(2, feature.getArguments()));
 
             // Add all constants
-            result.constants().forEach((k, v) -> profile.addConstantTensor(k, new TensorValue(v)));
+            result.constants().forEach((k, v) -> context.rankProfile().addConstantTensor(k, new TensorValue(v)));
 
             return result.expressions().get(output).getRoot();
         }

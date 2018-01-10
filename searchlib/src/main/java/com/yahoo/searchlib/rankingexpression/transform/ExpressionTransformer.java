@@ -15,22 +15,22 @@ import java.util.List;
  */
 public abstract class ExpressionTransformer {
 
-    public RankingExpression transform(RankingExpression expression) {
-        return new RankingExpression(expression.getName(), transform(expression.getRoot()));
+    public RankingExpression transform(RankingExpression expression, TransformContext context) {
+        return new RankingExpression(expression.getName(), transform(expression.getRoot(), context));
     }
 
     /** Transforms an expression node and returns the transformed node */
-    public abstract ExpressionNode transform(ExpressionNode node);
+    public abstract ExpressionNode transform(ExpressionNode node, TransformContext context);
 
     /**
      * Utility method which calls transform on each child of the given node and return the resulting transformed
      * composite
      */
-    protected CompositeNode transformChildren(CompositeNode node) {
+    protected CompositeNode transformChildren(CompositeNode node, TransformContext context) {
         List<ExpressionNode> children = node.children();
         List<ExpressionNode> transformedChildren = new ArrayList<>(children.size());
         for (ExpressionNode child : children)
-            transformedChildren.add(transform(child));
+            transformedChildren.add(transform(child, context));
         return node.setChildren(transformedChildren);
     }
 
