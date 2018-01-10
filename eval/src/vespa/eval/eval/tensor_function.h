@@ -80,12 +80,26 @@ using join_fun_t = double (*)(double, double);
  **/
 struct Node : public TensorFunction
 {
+    /**
+     * Reference to a sub-tree. References are replaceable to enable
+     * in-place bottom-up optimization during compilation.
+     **/
+    class Child {
+    private:
+        mutable const TensorFunction *ptr;
+    public:
+        using CREF = std::reference_wrapper<const Child>;
+        Child(const TensorFunction &child) : ptr(&child) {}
+        const TensorFunction &get() const { return *ptr; }
+        void set(const TensorFunction &child) const { ptr = &child; }
+    };
     const ValueType result_type;
     Node(const ValueType &result_type_in) : result_type(result_type_in) {}
     Node(const Node &) = delete;
     Node &operator=(const Node &) = delete;
     Node(Node &&) = delete;
     Node &operator=(Node &&) = delete;
+    virtual void push_children(std::vector<Child::CREF> &children) const = 0;
 };
 
 struct Inject : Node {
@@ -94,10 +108,11 @@ struct Inject : Node {
            size_t tensor_id_in)
         : Node(result_type_in), tensor_id(tensor_id_in) {}
     const Value &eval(ConstArrayRef<Value::CREF> params, Stash &) const override;
+    void push_children(std::vector<Child::CREF> &children) const override;
 };
 
 struct Reduce : Node {
-    const TensorFunction &tensor;
+    Child tensor;
     const Aggr aggr;
     const std::vector<vespalib::string> dimensions;
     Reduce(const ValueType &result_type_in,
@@ -106,21 +121,23 @@ struct Reduce : Node {
            const std::vector<vespalib::string> &dimensions_in)
         : Node(result_type_in), tensor(tensor_in), aggr(aggr_in), dimensions(dimensions_in) {}
     const Value &eval(ConstArrayRef<Value::CREF> params, Stash &stash) const override;
+    void push_children(std::vector<Child::CREF> &children) const override;
 };
 
 struct Map : Node {
-    const TensorFunction &tensor;
+    Child tensor;
     const map_fun_t function;    
     Map(const ValueType &result_type_in,
         const TensorFunction &tensor_in,
         map_fun_t function_in)
         : Node(result_type_in), tensor(tensor_in), function(function_in) {}
     const Value &eval(ConstArrayRef<Value::CREF> params, Stash &stash) const override;
+    void push_children(std::vector<Child::CREF> &children) const override;
 };
 
 struct Join : Node {
-    const TensorFunction &lhs_tensor;
-    const TensorFunction &rhs_tensor;
+    Child lhs_tensor;
+    Child rhs_tensor;
     const join_fun_t function;    
     Join(const ValueType &result_type_in,
          const TensorFunction &lhs_tensor_in,
@@ -129,6 +146,7 @@ struct Join : Node {
         : Node(result_type_in), lhs_tensor(lhs_tensor_in),
           rhs_tensor(rhs_tensor_in), function(function_in) {}
     const Value &eval(ConstArrayRef<Value::CREF> params, Stash &stash) const override;
+    void push_children(std::vector<Child::CREF> &children) const override;
 };
 
 const Node &inject(const ValueType &type, size_t tensor_id, Stash &stash);

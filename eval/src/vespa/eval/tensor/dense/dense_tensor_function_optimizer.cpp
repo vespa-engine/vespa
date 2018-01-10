@@ -60,10 +60,10 @@ struct InnerProductFunctionOptimizer
         const Reduce *reduce = as<Reduce>(expr);
         if (reduce && (reduce->aggr == Aggr::SUM)) {
             const ValueType &result_type = reduce->result_type;
-            const Join *join = as<Join>(reduce->tensor);
+            const Join *join = as<Join>(reduce->tensor.get());
             if (join && (join->function == Mul::f)) {
-                const Inject *lhs = as<Inject>(join->lhs_tensor);
-                const Inject *rhs = as<Inject>(join->rhs_tensor);
+                const Inject *lhs = as<Inject>(join->lhs_tensor.get());
+                const Inject *rhs = as<Inject>(join->rhs_tensor.get());
                 if (lhs && rhs) {
                     if (isDenseDotProduct(result_type, lhs->result_type, rhs->result_type)) {
                         return stash.create<DenseDotProductFunction>(lhs->tensor_id, rhs->tensor_id);
