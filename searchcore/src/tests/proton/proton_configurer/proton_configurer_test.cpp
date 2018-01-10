@@ -21,6 +21,7 @@
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/config-bucketspaces.h>
 
 using namespace config;
 using namespace proton;
@@ -28,6 +29,8 @@ using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 using namespace cloud::config::filedistribution;
+using vespa::config::content::core::BucketspacesConfig;
+using vespa::config::content::core::BucketspacesConfigBuilder;
 
 using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
 using config::ConfigUri;
@@ -98,6 +101,7 @@ struct ConfigFixture {
     ProtonConfigBuilder _protonBuilder;
     DocumenttypesConfigBuilder _documenttypesBuilder;
     FiledistributorrpcConfigBuilder _filedistBuilder;
+    BucketspacesConfigBuilder _bucketspacesBuilder;
     map<std::string, DBConfigFixture::UP> _dbConfig;
     int _idcounter;
     int64_t _generation;
@@ -108,6 +112,7 @@ struct ConfigFixture {
           _protonBuilder(),
           _documenttypesBuilder(),
           _filedistBuilder(),
+          _bucketspacesBuilder(),
           _dbConfig(),
           _idcounter(-1),
           _generation(1),
@@ -166,6 +171,7 @@ struct ConfigFixture {
                                                        DocumentTypeRepo::SP(new DocumentTypeRepo(_documenttypesBuilder)),
                                                        BootstrapConfig::ProtonConfigSP(new ProtonConfig(_protonBuilder)),
                                                        std::make_shared<FiledistributorrpcConfig>(),
+                                                       std::make_shared<BucketspacesConfig>(_bucketspacesBuilder),
                                                        std::make_shared<TuneFileDocumentDB>()));
     }
 

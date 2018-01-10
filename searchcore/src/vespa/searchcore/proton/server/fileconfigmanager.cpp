@@ -5,6 +5,7 @@
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/config/print/fileconfigsnapshotreader.h>
 #include <vespa/config/print/fileconfigsnapshotwriter.h>
+#include <vespa/config-bucketspaces.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config-summarymap.h>
@@ -32,6 +33,7 @@ using vespa::config::search::SummaryConfig;
 using vespa::config::search::SummarymapConfig;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::summary::JuniperrcConfig;
+using vespa::config::content::core::BucketspacesConfig;
 using vespalib::nbostream;
 
 typedef IndexMetaInfo::SnapshotList SnapshotList;
@@ -383,6 +385,7 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
     }
 
     auto filedistRpcConf = std::make_shared<FiledistributorrpcConfig>();
+    auto bucketspaces = std::make_shared<BucketspacesConfig>();
 
     /*
      * XXX: If non-default maintenance config is used then an extra config
@@ -396,6 +399,7 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
                                 repo,
                                 _protonConfig,
                                 filedistRpcConf,
+                                bucketspaces,
                                 currentSnapshot.getTuneFileDocumentDBSP()));
     dbc.forwardConfig(bootstrap);
     dbc.nextGeneration(0);

@@ -7,12 +7,38 @@
 #include "i_document_db_config_owner.h"
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
+#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+#include <vespa/config-bucketspaces.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <future>
 
 using vespalib::makeLambdaTask;
 using vespa::config::search::core::ProtonConfig;
 
 namespace proton {
+
+namespace {
+
+document::BucketSpace
+getBucketSpace(const BootstrapConfig &bootstrapConfig, const DocTypeName &name)
+{
+    const auto &bucketspaces = *bootstrapConfig.getBucketspacesConfigSP();
+    if (bucketspaces.enableMultipleBucketSpaces) {
+        for (const auto &entry : bucketspaces.documenttype) {
+            if (entry.name == name.getName()) {
+                return storage::spi::FixedBucketSpaces::from_string(entry.bucketspace);
+            }
+        }
+        vespalib::asciistream ost;
+        ost << "Could not map from document type name '" << name.getName() << "' to bucket space name";
+        throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
+    }
+    return document::BucketSpace::placeHolder();
+}
+
+}
+
 
 ProtonConfigurer::ProtonConfigurer(vespalib::ThreadStackExecutorBase &executor,
                                    IProtonConfigurerOwner &owner)
@@ -114,8 +140,7 @@ ProtonConfigurer::applyConfig(std::shared_ptr<ProtonConfigSnapshot> configSnapsh
     _owner.applyConfig(bootstrapConfig);
     for (const auto &ddbConfig : protonConfig.documentdb) {
         DocTypeName docTypeName(ddbConfig.inputdoctypename);
-        // TODO: set bucket space based on config when available
-        document::BucketSpace bucketSpace = document::BucketSpace::placeHolder();
+        document::BucketSpace bucketSpace = getBucketSpace(*bootstrapConfig, docTypeName);
         configureDocumentDB(*configSnapshot, docTypeName, bucketSpace, ddbConfig.configid, initializeThreads);
     }
     pruneDocumentDBs(*configSnapshot);

@@ -26,6 +26,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/config-bucketspaces.h>
 #include <vespa/vespalib/io/fileutil.h>
 
 #include <vespa/log/log.h>
@@ -37,6 +38,7 @@ using namespace cloud::config::filedistribution;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
+using vespa::config::content::core::BucketspacesConfig;
 
 using std::shared_ptr;
 using document::BucketSpace;
@@ -180,6 +182,7 @@ public:
                                                   factory.getTypeRepo(),
                                                   std::make_shared<ProtonConfig>(),
                                                   std::make_shared<FiledistributorrpcConfig>(),
+                                                  std::make_shared<BucketspacesConfig>(),
                                                   tuneFileDocDB));
         mgr.forwardConfig(b);
         mgr.nextGeneration(0);
