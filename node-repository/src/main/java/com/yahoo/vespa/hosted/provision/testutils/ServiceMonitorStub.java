@@ -34,7 +34,6 @@ public class ServiceMonitorStub implements ServiceMonitor {
     private final NodeRepository nodeRepository;
 
     private Set<String> downHosts = new HashSet<>();
-    private boolean statusIsKnown = true;
 
     /** Create a service monitor where all nodes are initially up */
     @Inject
@@ -57,12 +56,7 @@ public class ServiceMonitorStub implements ServiceMonitor {
         downHosts.remove(hostname);
     }
 
-    public void setStatusIsKnown(boolean statusIsKnown) {
-        this.statusIsKnown = statusIsKnown;
-    }
-
     private ServiceStatus getHostStatus(String hostname) {
-        if (!statusIsKnown) return ServiceStatus.NOT_CHECKED;
         if (downHosts.contains(hostname)) return ServiceStatus.DOWN;
         return ServiceStatus.UP;
     }
@@ -92,6 +86,6 @@ public class ServiceMonitorStub implements ServiceMonitor {
 
     @Override
     public ServiceModel getServiceModelSnapshot() {
-        throw new UnsupportedOperationException("getServicemodelSnapshot has not been implemented");
+        return new ServiceModel(getAllApplicationInstances());
     }
 }

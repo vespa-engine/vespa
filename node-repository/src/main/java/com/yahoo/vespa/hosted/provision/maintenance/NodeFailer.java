@@ -6,8 +6,6 @@ import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.applicationmodel.ApplicationInstance;
-import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -29,6 +27,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.counting;
 
 /**
  * Maintains information in the node repo about when this node last responded to ping
@@ -169,27 +170,38 @@ public class NodeFailer extends Maintainer {
     }
 
     /**
-     * If the node is positively DOWN, and there is no "down" history record, we add it.
-     * If the node is positively UP we remove any "down" history record.
+     * If a node remains bad for a long time, the NodeFailer will eventually try to fail the node.
+     */
+    public static boolean badNode(List<ServiceInstance> services) {
+        Map<ServiceStatus, Long> countsByStatus = services.stream()
+                .collect(Collectors.groupingBy(ServiceInstance::serviceStatus, counting()));
+
+        return countsByStatus.getOrDefault(ServiceStatus.UP, 0L) <= 0L &&
+                countsByStatus.getOrDefault(ServiceStatus.DOWN, 0L) > 0L;
+    }
+
+    /**
+     * If the node is down (see badNode()), and there is no "down" history record, we add it.
+     * Otherwise we remove any "down" history record.
      *
-     * @return a list of all nodes which are positively currently in the down state
+     * @return a list of all nodes that should be considered as down
      */
     private List<Node> determineActiveNodeDownStatus() {
         List<Node> downNodes = new ArrayList<>();
-        for (ApplicationInstance application : serviceMonitor.getAllApplicationInstances().values()) {
-            for (ServiceCluster cluster : application.serviceClusters()) {
-                for (ServiceInstance service : cluster.serviceInstances()) {
-                    Optional<Node> node = nodeRepository().getNode(service.hostName().s(), Node.State.active);
-                    if ( ! node.isPresent()) continue; // we also get status from infrastructure nodes, which are not in the repo. TODO: remove when proxy nodes are in node repo everywhere
+        serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName()
+                .entrySet().stream().forEach(
+                        entry -> {
+                            Optional<Node> node = nodeRepository().getNode(entry.getKey().s(), Node.State.active);
+                            if (node.isPresent()) {
+                                if (badNode(entry.getValue())) {
+                                    downNodes.add(recordAsDown(node.get()));
+                                } else {
+                                    clearDownRecord(node.get());
+                                }
+                            }
+                        }
+        );
 
-                    if (service.serviceStatus().equals(ServiceStatus.DOWN))
-                        downNodes.add(recordAsDown(node.get()));
-                    else if (service.serviceStatus().equals(ServiceStatus.UP))
-                        clearDownRecord(node.get());
-                    // else: we don't know current status; don't take any action until we have positive information
-                }
-            }
-        }
         return downNodes;
     }
 
