@@ -63,8 +63,8 @@ vespalib::string twoCellsJson[3] =
     "] }",
     "{ dimensions: [ 'x', 'y' ],"
     " cells: ["
-    "{ address: { y:'3'}, value: 4.0 },"
-    "{ address: { x:'1'}, value: 3.0 }"
+    "{ address: { x:'1'}, value: 3.0 },"
+    "{ address: { y:'3'}, value: 4.0 }"
     "] }",
 };
 }
