@@ -74,10 +74,10 @@ DocumentDBConfigManager::buildSchema(const AttributesConfig &newAttributesConfig
 {
     // Called with lock held
     Schema::SP oldSchema;
-    if (_pendingConfigSnapshot.get() != NULL) {
+    if (_pendingConfigSnapshot) {
         oldSchema = _pendingConfigSnapshot->getSchemaSP();
     }
-    if (oldSchema.get() == NULL) {
+    if (!oldSchema) {
         return buildNewSchema(newAttributesConfig, newSummaryConfig, newIndexschemaConfig);
     }
     const DocumentDBConfig &old = *_pendingConfigSnapshot;

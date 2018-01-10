@@ -116,7 +116,7 @@ ProtonConfigurer::skipConfig(const ProtonConfigSnapshot *configSnapshot, bool in
 {
     // called by proton executor thread
     std::lock_guard<std::mutex> guard(_mutex);
-    assert((_activeConfigSnapshot.get() == nullptr) == initialConfig);
+    assert(!_activeConfigSnapshot == initialConfig);
     if (_activeConfigSnapshot.get() == configSnapshot) {
         return true; // config snapshot already applied
     }

@@ -375,8 +375,8 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
     typedef DocumentDBConfig::DocumenttypesConfigSP DTCSP;
     DTCSP docTypesCfg(config::ConfigGetter<DTC>::getConfig("", spec).release());
     DocumentTypeRepo::SP repo;
-    if (currentSnapshot.getDocumenttypesConfigSP().get() != NULL &&
-        currentSnapshot.getDocumentTypeRepoSP().get() != NULL &&
+    if (currentSnapshot.getDocumenttypesConfigSP() &&
+        currentSnapshot.getDocumentTypeRepoSP() &&
         currentSnapshot.getDocumenttypesConfig() == *docTypesCfg) {
         docTypesCfg = currentSnapshot.getDocumenttypesConfigSP();
         repo = currentSnapshot.getDocumentTypeRepoSP();

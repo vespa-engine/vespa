@@ -53,7 +53,7 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
     int64_t currentGen = -1;
 
     BootstrapConfig::SP current = _pendingConfigSnapshot;
-    if (current.get() != nullptr) {
+    if (current) {
         newProtonConfig = current->getProtonConfigSP();
         newFiledistRpcConfSP = current->getFiledistributorrpcConfigSP();
         newTuneFileDocumentDB = current->getTuneFileDocumentDBSP();
@@ -99,12 +99,12 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
         std::unique_ptr<BucketspacesConfig> bucketspacesConfig = snapshot.getConfig<BucketspacesConfig>(_configId);
         newBucketspacesConfig = std::move(bucketspacesConfig);
     }
-    assert(newProtonConfig.get() != nullptr);
-    assert(newFiledistRpcConfSP.get() != nullptr);
+    assert(newProtonConfig);
+    assert(newFiledistRpcConfSP);
     assert(newBucketspacesConfig);
-    assert(newTuneFileDocumentDB.get() != nullptr);
-    assert(newDocumenttypesConfig.get() != nullptr);
-    assert(newRepo.get() != nullptr);
+    assert(newTuneFileDocumentDB);
+    assert(newDocumenttypesConfig);
+    assert(newRepo);
 
     auto newSnapshot(std::make_shared<BootstrapConfig>(snapshot.getGeneration(), newDocumenttypesConfig, newRepo,
                                                        newProtonConfig, newFiledistRpcConfSP, newBucketspacesConfig, newTuneFileDocumentDB));

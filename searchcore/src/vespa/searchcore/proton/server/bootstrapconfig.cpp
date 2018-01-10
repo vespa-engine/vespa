@@ -58,12 +58,7 @@ BootstrapConfig::operator==(const BootstrapConfig &rhs) const
 bool
 BootstrapConfig::valid() const
 {
-    return _documenttypes.get() != NULL &&
-                    _repo.get() != NULL &&
-                  _proton.get() != NULL &&
-        _fileDistributorRpc.get() != NULL &&
-        _bucketspaces.get() != NULL &&
-        _tuneFileDocumentDB.get() != NULL;
+    return _documenttypes && _repo && _proton && _fileDistributorRpc && _bucketspaces && _tuneFileDocumentDB;
 }
 
 
