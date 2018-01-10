@@ -17,7 +17,7 @@ import java.util.Map;
  * @author bratseth
  */
 // This object can be built incrementally within this package, but is immutable when observed from outside the package
-public class ImportResult {
+public class TensorFlowModel {
 
     private final Map<String, Signature> signatures = new HashMap<>();
     private final Map<String, TensorType> arguments = new HashMap<>();
@@ -69,7 +69,7 @@ public class ImportResult {
         void skippedOutput(String name, String reason) { skippedOutputs.put(name, reason); }
 
         /** Returns the result this is part of */
-        ImportResult owner() { return ImportResult.this; }
+        TensorFlowModel owner() { return TensorFlowModel.this; }
 
         /**
          * Returns an immutable map of the inputs (evaluation context) of this. This is a map from input name

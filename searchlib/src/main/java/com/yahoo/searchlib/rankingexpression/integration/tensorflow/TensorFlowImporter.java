@@ -34,7 +34,7 @@ public class TensorFlowImporter {
      *
      * @param modelDir the directory containing the TensorFlow model files to import
      */
-    public ImportResult importModel(String modelDir) {
+    public TensorFlowModel importModel(String modelDir) {
         try (SavedModelBundle model = SavedModelBundle.load(modelDir, "serve")) {
             return importModel(model);
         }
@@ -44,7 +44,7 @@ public class TensorFlowImporter {
     }
 
     /** Imports a TensorFlow model */
-    public ImportResult importModel(SavedModelBundle model) {
+    public TensorFlowModel importModel(SavedModelBundle model) {
         try {
             return importGraph(MetaGraphDef.parseFrom(model.metaGraphDef()), model);
         }
@@ -53,10 +53,10 @@ public class TensorFlowImporter {
         }
     }
 
-    private ImportResult importGraph(MetaGraphDef graph, SavedModelBundle model) {
-        ImportResult result = new ImportResult();
+    private TensorFlowModel importGraph(MetaGraphDef graph, SavedModelBundle model) {
+        TensorFlowModel result = new TensorFlowModel();
         for (Map.Entry<String, SignatureDef> signatureEntry : graph.getSignatureDefMap().entrySet()) {
-            ImportResult.Signature signature = result.signature(signatureEntry.getKey()); // Prefer key over "methodName"
+            TensorFlowModel.Signature signature = result.signature(signatureEntry.getKey()); // Prefer key over "methodName"
 
             importInputs(signatureEntry.getValue().getInputsMap(), signature);
             for (Map.Entry<String, TensorInfo> output : signatureEntry.getValue().getOutputsMap().entrySet()) {
@@ -74,7 +74,7 @@ public class TensorFlowImporter {
         return result;
     }
 
-    private void importInputs(Map<String, TensorInfo> inputInfoMap, ImportResult.Signature signature) {
+    private void importInputs(Map<String, TensorInfo> inputInfoMap, TensorFlowModel.Signature signature) {
         inputInfoMap.forEach((key, value) -> {
             String argumentName = nameOf(value.getName());
             TensorType argumentType = importTensorType(value.getTensorShape());
@@ -97,7 +97,7 @@ public class TensorFlowImporter {
     }
 
     /** Recursively convert a graph of TensorFlow nodes into a Vespa tensor function expression tree */
-    private TypedTensorFunction importNode(NodeDef tfNode, GraphDef graph, SavedModelBundle model, ImportResult result) {
+    private TypedTensorFunction importNode(NodeDef tfNode, GraphDef graph, SavedModelBundle model, TensorFlowModel result) {
         TypedTensorFunction function = tensorFunctionOf(tfNode, graph, model, result);
         // We add all intermediate nodes imported as separate expressions. Only those referenced in a signature output
         // will be used
@@ -105,7 +105,7 @@ public class TensorFlowImporter {
         return function;
     }
 
-    private TypedTensorFunction tensorFunctionOf(NodeDef tfNode, GraphDef graph, SavedModelBundle model, ImportResult result) {
+    private TypedTensorFunction tensorFunctionOf(NodeDef tfNode, GraphDef graph, SavedModelBundle model, TensorFlowModel result) {
         // Import arguments lazily below, as some nodes have arguments unused arguments leading to unsupported ops
         // TODO: Implement mapping of more functions from https://www.tensorflow.org/api_docs/python/
         switch (tfNode.getOp().toLowerCase()) {
@@ -120,7 +120,7 @@ public class TensorFlowImporter {
     }
 
     private List<TypedTensorFunction> importArguments(NodeDef tfNode, GraphDef graph, SavedModelBundle model,
-                                                      ImportResult result) {
+                                                      TensorFlowModel result) {
         return tfNode.getInputList().stream()
                                     .map(argNode -> importNode(getNode(nameOf(argNode), graph), graph, model, result))
                                     .collect(Collectors.toList());
