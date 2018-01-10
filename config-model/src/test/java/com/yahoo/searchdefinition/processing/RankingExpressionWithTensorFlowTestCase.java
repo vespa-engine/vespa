@@ -91,8 +91,8 @@ public class RankingExpressionWithTensorFlowTestCase {
             fail("Expecting exception");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("Rank profile 'my_profile' is invalid: Could not import tensorflow model from tensorflow('" +
-                         modelDirectory + "','serving_defaultz'): Model does not have the specified signatures 'serving_defaultz'",
+            assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from tensorflow('" +
+                         modelDirectory + "','serving_defaultz'): Model does not have the specified signature 'serving_defaultz'",
                          Exceptions.toMessageString(expected));
         }
     }
@@ -110,8 +110,8 @@ public class RankingExpressionWithTensorFlowTestCase {
             fail("Expecting exception");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("Rank profile 'my_profile' is invalid: Could not import tensorflow model from tensorflow('" +
-                         modelDirectory + "','serving_default','x'): Model does not have the specified outputs 'x'",
+            assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from tensorflow('" +
+                         modelDirectory + "','serving_default','x'): Model does not have the specified output 'x'",
                          Exceptions.toMessageString(expected));
         }
     }

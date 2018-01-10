@@ -30,10 +30,6 @@ public class Mnist_SoftmaxTestCase {
         SavedModelBundle model = SavedModelBundle.load(modelDir, "serve");
         ImportResult result = new TensorFlowImporter().importModel(model);
 
-        // Check logged messages
-        result.warnings().forEach(System.err::println);
-        assertEquals(0, result.warnings().size());
-
         // Check constants
         assertEquals(2, result.constants().size());
 
@@ -70,6 +66,9 @@ public class Mnist_SoftmaxTestCase {
                      "rename(constant(Variable_1), d0, d1), " +
                      "f(a,b)(a + b))",
                      toNonPrimitiveString(output));
+
+        // ... skipped outputs
+        assertEquals(0, signature.skippedOutputs().size());
 
         // Test execution
         assertEqualResult(model, result, "Variable/read");

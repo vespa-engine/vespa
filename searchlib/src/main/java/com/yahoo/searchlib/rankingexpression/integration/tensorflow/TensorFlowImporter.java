@@ -67,8 +67,7 @@ public class TensorFlowImporter {
                     signature.output(outputName, nameOf(output.getValue().getName()));
                 }
                 catch (IllegalArgumentException e) {
-                    result.warn("Skipping output '" + outputName + "' of " + signature +
-                                ": " + Exceptions.toMessageString(e));
+                    signature.skippedOutput(outputName, Exceptions.toMessageString(e));
                 }
             }
         }
