@@ -5,7 +5,7 @@ import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class FieldOperationApplierForSearch extends FieldOperationApplier {
     @Override

@@ -6,9 +6,10 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class FieldOperationApplier {
+
     public void process(SDDocumentType sdoc) {
         if (!sdoc.isStruct()) {
             apply(sdoc);

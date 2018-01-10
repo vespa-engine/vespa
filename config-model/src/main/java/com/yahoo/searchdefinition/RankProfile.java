@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.search.query.ranking.Diversity;
+import com.yahoo.searchdefinition.expressiontransforms.ExpressionTransforms;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
@@ -9,13 +11,22 @@ import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
-import com.yahoo.searchlib.rankingexpression.rule.SetMembershipNode;
-import com.yahoo.searchlib.rankingexpression.transform.ConstantDereferencer;
-import com.yahoo.searchlib.rankingexpression.transform.Simplifier;
-import com.yahoo.config.application.api.ApplicationPackage;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Serializable;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a rank profile - a named set of ranking settings
@@ -40,7 +51,7 @@ public class RankProfile implements Serializable, Cloneable {
     protected Set<RankSetting> rankSettings = new java.util.LinkedHashSet<>();
 
     /** The ranking expression to be used for first phase */
-    private RankingExpression firstPhaseRanking= null; 
+    private RankingExpression firstPhaseRanking= null;
 
     /** The ranking expression to be used for second phase */
     private RankingExpression secondPhaseRanking = null;
@@ -485,7 +496,7 @@ public class RankProfile implements Serializable, Cloneable {
 
     /**
      * Returns the string form of the second phase ranking expression.
-     * 
+     *
      * @return string form of second phase ranking expression
      */
     public String getSecondPhaseRankingString() {
@@ -702,12 +713,7 @@ public class RankProfile implements Serializable, Cloneable {
                                       Map<String, Macro> inlineMacros) {
         if (expression == null) return null;
         Map<String, String> rankPropertiesOutput = new HashMap<>();
-        expression = new ConstantDereferencer(constants).transform(expression);
-        expression = new ConstantTensorTransformer(constants, rankPropertiesOutput).transform(expression);
-        expression = new MacroInliner(inlineMacros).transform(expression);
-        expression = new MacroShadower(getMacros()).transform(expression);
-        expression = new TensorTransformer(this).transform(expression);
-        expression = new Simplifier().transform(expression);
+        expression = new ExpressionTransforms().transform(expression, this, constants, inlineMacros, rankPropertiesOutput);
         for (Map.Entry<String, String> rankProperty : rankPropertiesOutput.entrySet()) {
             addRankProperty(rankProperty.getKey(), rankProperty.getValue());
         }
@@ -975,7 +981,7 @@ public class RankProfile implements Serializable, Cloneable {
                 throw new IllegalArgumentException("match-phase did not set max-hits > 0");
             }
         }
-            
+
     }
 
     public static class TypeSettings {
