@@ -3,8 +3,6 @@
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/config/config.h>
-#include <vespa/config/print/asciiconfigwriter.h>
-#include <vespa/config/print/asciiconfigreader.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <random>
 
@@ -16,6 +14,7 @@ struct GlobalBucketSpaceDistributionConverterTest : public CppUnit::TestFixture 
     CPPUNIT_TEST(can_transform_single_level_multi_group_config);
     CPPUNIT_TEST(can_transform_multi_level_multi_group_config);
     CPPUNIT_TEST(can_transform_heterogenous_multi_group_config);
+    CPPUNIT_TEST(can_transform_concrete_distribution_instance);
     CPPUNIT_TEST(config_retired_state_is_propagated);
     CPPUNIT_TEST(group_capacities_are_propagated);
     CPPUNIT_TEST(global_distribution_has_same_owner_distributors_as_default);
@@ -25,6 +24,7 @@ struct GlobalBucketSpaceDistributionConverterTest : public CppUnit::TestFixture 
     void can_transform_single_level_multi_group_config();
     void can_transform_multi_level_multi_group_config();
     void can_transform_heterogenous_multi_group_config();
+    void can_transform_concrete_distribution_instance();
     void config_retired_state_is_propagated();
     void group_capacities_are_propagated();
     void global_distribution_has_same_owner_distributors_as_default();
@@ -36,29 +36,13 @@ using DistributionConfig = vespa::config::content::StorDistributionConfig;
 
 namespace {
 
-std::unique_ptr<DistributionConfig> string_to_config(const vespalib::string& cfg) {
-    vespalib::asciistream iss(cfg);
-    config::AsciiConfigReader<vespa::config::content::StorDistributionConfig> reader(iss);
-    return reader.read();
-}
-
-vespalib::string config_to_string(const DistributionConfig& cfg) {
-    vespalib::asciistream ost;
-    config::AsciiConfigWriter writer(ost);
-    writer.write(cfg);
-    return ost.str();
-}
-
 vespalib::string default_to_global_config(const vespalib::string& default_config) {
-    auto default_cfg = string_to_config(default_config);
+    auto default_cfg = GlobalBucketSpaceDistributionConverter::string_to_config(default_config);
     auto as_global = GlobalBucketSpaceDistributionConverter::convert_to_global(*default_cfg);
-    return config_to_string(*as_global);
+    return GlobalBucketSpaceDistributionConverter::config_to_string(*as_global);
 }
 
-}
-
-void GlobalBucketSpaceDistributionConverterTest::can_transform_flat_cluster_config() {
-    vespalib::string default_config(
+vespalib::string default_flat_config(
 R"(redundancy 1
 group[1]
 group[0].name "invalid"
@@ -70,7 +54,7 @@ group[0].nodes[1].index 1
 group[0].nodes[2].index 2
 )");
 
-    vespalib::string expected_global_config(
+vespalib::string expected_flat_global_config(
 R"(redundancy 3
 initial_redundancy 0
 ensure_primary_persisted true
@@ -89,7 +73,11 @@ group[0].nodes[2].index 2
 group[0].nodes[2].retired false
 disk_distribution MODULO_BID
 )");
-    CPPUNIT_ASSERT_EQUAL(expected_global_config, default_to_global_config(default_config));
+
+}
+
+void GlobalBucketSpaceDistributionConverterTest::can_transform_flat_cluster_config() {
+    CPPUNIT_ASSERT_EQUAL(expected_flat_global_config, default_to_global_config(default_flat_config));
 }
 
 
@@ -290,6 +278,13 @@ disk_distribution MODULO_BID
     CPPUNIT_ASSERT_EQUAL(expected_global_config, default_to_global_config(default_config));
 }
 
+void GlobalBucketSpaceDistributionConverterTest::can_transform_concrete_distribution_instance() {
+    auto default_cfg = GlobalBucketSpaceDistributionConverter::string_to_config(default_flat_config);
+    lib::Distribution flat_distr(*default_cfg);
+    auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(flat_distr);
+    CPPUNIT_ASSERT_EQUAL(expected_flat_global_config, global_distr->serialize());
+}
+
 void GlobalBucketSpaceDistributionConverterTest::config_retired_state_is_propagated() {
     vespalib::string default_config(
 R"(redundancy 1
@@ -306,7 +301,7 @@ group[0].nodes[2].index 2
 group[0].nodes[2].retired true
 )");
 
-    auto default_cfg = string_to_config(default_config);
+    auto default_cfg = GlobalBucketSpaceDistributionConverter::string_to_config(default_config);
     auto as_global = GlobalBucketSpaceDistributionConverter::convert_to_global(*default_cfg);
 
     CPPUNIT_ASSERT_EQUAL(size_t(1), as_global->group.size());
@@ -336,7 +331,7 @@ group[2].index 1
 group[2].nodes[1]
 group[2].nodes[0].index 1
 )");
-    auto default_cfg = string_to_config(default_config);
+    auto default_cfg = GlobalBucketSpaceDistributionConverter::string_to_config(default_config);
     auto as_global = GlobalBucketSpaceDistributionConverter::convert_to_global(*default_cfg);
 
     CPPUNIT_ASSERT_EQUAL(size_t(3), as_global->group.size());
@@ -365,7 +360,7 @@ group[2].nodes[0].index 1
 group[2].nodes[1].index 2
 )");
 
-    auto default_cfg = string_to_config(default_config);
+    auto default_cfg = GlobalBucketSpaceDistributionConverter::string_to_config(default_config);
     auto global_cfg = GlobalBucketSpaceDistributionConverter::convert_to_global(*default_cfg);
 
     lib::Distribution default_distr(*default_cfg);
