@@ -70,6 +70,13 @@ using join_fun_t = double (*)(double, double);
  * will invoke the immediate API on the tensor engine associated with
  * the input tensors. In other words, the intermediate representation
  * 'compiles to itself'.
+ *
+ * The reason for using the top-level TensorFunction interface when
+ * referencing downwards in the tree is to enable mixed-mode execution
+ * resulting from partial optimization where the intermediate
+ * representation is partially replaced by implementation-specific
+ * tensor functions, which may or may not rely on lower-level tensor
+ * functions that may in turn be mixed-mode.
  **/
 struct Node : public TensorFunction
 {
@@ -90,11 +97,11 @@ struct Inject : Node {
 };
 
 struct Reduce : Node {
-    const Node &tensor;
+    const TensorFunction &tensor;
     const Aggr aggr;
     const std::vector<vespalib::string> dimensions;
     Reduce(const ValueType &result_type_in,
-           const Node &tensor_in,
+           const TensorFunction &tensor_in,
            Aggr aggr_in,
            const std::vector<vespalib::string> &dimensions_in)
         : Node(result_type_in), tensor(tensor_in), aggr(aggr_in), dimensions(dimensions_in) {}
@@ -102,22 +109,22 @@ struct Reduce : Node {
 };
 
 struct Map : Node {
-    const Node &tensor;
+    const TensorFunction &tensor;
     const map_fun_t function;    
     Map(const ValueType &result_type_in,
-        const Node &tensor_in,
+        const TensorFunction &tensor_in,
         map_fun_t function_in)
         : Node(result_type_in), tensor(tensor_in), function(function_in) {}
     const Value &eval(ConstArrayRef<Value::CREF> params, Stash &stash) const override;
 };
 
 struct Join : Node {
-    const Node &lhs_tensor;
-    const Node &rhs_tensor;
+    const TensorFunction &lhs_tensor;
+    const TensorFunction &rhs_tensor;
     const join_fun_t function;    
     Join(const ValueType &result_type_in,
-         const Node &lhs_tensor_in,
-         const Node &rhs_tensor_in,
+         const TensorFunction &lhs_tensor_in,
+         const TensorFunction &rhs_tensor_in,
          join_fun_t function_in)
         : Node(result_type_in), lhs_tensor(lhs_tensor_in),
           rhs_tensor(rhs_tensor_in), function(function_in) {}

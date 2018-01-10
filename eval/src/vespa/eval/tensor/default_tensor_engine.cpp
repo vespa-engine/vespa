@@ -7,7 +7,7 @@
 #include "serialization/typed_binary_format.h"
 #include "dense/dense_tensor.h"
 #include "dense/dense_tensor_builder.h"
-#include "dense/dense_tensor_function_compiler.h"
+#include "dense/dense_tensor_function_optimizer.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
@@ -208,7 +208,7 @@ DefaultTensorEngine::decode(nbostream &input) const
 const TensorFunction &
 DefaultTensorEngine::compile(const eval::tensor_function::Node &expr, Stash &stash) const
 {
-    return DenseTensorFunctionCompiler::compile(expr, stash);
+    return DenseTensorFunctionOptimizer::optimize(expr, stash);
 }
 
 //-----------------------------------------------------------------------------
