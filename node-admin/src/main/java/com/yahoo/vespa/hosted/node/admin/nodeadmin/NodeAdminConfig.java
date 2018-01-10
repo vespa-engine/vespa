@@ -7,18 +7,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.logging.Logger;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class NodeAdminConfig {
+    private static final Logger logger = Logger.getLogger(NodeAdminConfig.class.getName());
     private static final ObjectMapper mapper = new ObjectMapper();
-
-    /**
-     * A list of components to enable instead of the default.
-     */
-    @JsonProperty("components")
-    public List<String> components = new ArrayList<>();
 
     public enum Mode {
         aws_tenant,
