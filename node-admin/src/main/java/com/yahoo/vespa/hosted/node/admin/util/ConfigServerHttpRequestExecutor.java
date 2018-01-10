@@ -50,7 +50,15 @@ public class ConfigServerHttpRequestExecutor implements AutoCloseable {
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("http-client-refresher"));
     private final List<URI> configServerHosts;
 
-    private SelfCloseableHttpClient client;
+    /**
+     * The 'client' will be periodically re-created by clientRefresherScheduler if we provide keyStoreOptions
+     * or trustStoreOptions. This is needed because the key/trust stores are updated outside of node-admin,
+     * but we want to use the most recent store.
+     *
+     * The 'client' reference must be volatile because it is set and read in different threads, and visibility
+     * of changes is only guaranteed for volatile variables.
+     */
+    private volatile SelfCloseableHttpClient client;
 
     public static ConfigServerHttpRequestExecutor create(
             Collection<URI> configServerUris, Optional<KeyStoreOptions> keyStoreOptions, Optional<KeyStoreOptions> trustStoreOptions) {
