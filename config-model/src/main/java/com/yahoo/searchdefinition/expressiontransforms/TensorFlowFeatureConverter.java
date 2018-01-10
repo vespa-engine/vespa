@@ -9,7 +9,6 @@ import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
-import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 
 import java.util.Map;
 import java.util.Optional;
@@ -21,14 +20,14 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-public class TensorFlowFeatureConverter extends ExpressionTransformer {
+public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
 
     @Override
-    public ExpressionNode transform(ExpressionNode node, TransformContext context) {
+    public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
         if (node instanceof ReferenceNode)
-            return transformFeature((ReferenceNode) node, (RankProfileTransformContext)context);
+            return transformFeature((ReferenceNode) node, context);
         else if (node instanceof CompositeNode)
             return super.transformChildren((CompositeNode) node, context);
         else
