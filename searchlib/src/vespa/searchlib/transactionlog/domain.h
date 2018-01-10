@@ -151,6 +151,7 @@ private:
     vespalib::Monitor      _currentChunkMonitor;
     vespalib::Lock         _sessionLock;
     SessionList            _sessions;
+    DurationSeconds        _maxSessionRunTime;
     vespalib::string       _baseDir;
     const common::FileHeaderContext &_fileHeaderContext;
     bool                   _markedDeleted;

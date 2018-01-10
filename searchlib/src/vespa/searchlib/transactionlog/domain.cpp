@@ -50,6 +50,7 @@ Domain::Domain(const string &domainName, const string & baseDir, FastOS_ThreadPo
       _currentChunkMonitor(),
       _sessionLock(),
       _sessions(),
+      _maxSessionRunTime(),
       _baseDir(baseDir),
       _fileHeaderContext(fileHeaderContext),
       _markedDeleted(false),
