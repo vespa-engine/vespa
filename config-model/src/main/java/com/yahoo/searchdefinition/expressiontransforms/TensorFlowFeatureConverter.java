@@ -74,7 +74,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
     private ImportResult.Signature chooseSignature(ImportResult importResult, Optional<String> signatureName) {
         if ( ! signatureName.isPresent()) {
             if (importResult.signatures().size() == 0)
-                throw new IllegalArgumentException("No signatures are present");
+                throw new IllegalArgumentException("No signatures are available");
             if (importResult.signatures().size() > 1)
                 throw new IllegalArgumentException("Model has multiple signatures (" +
                                                    Joiner.on(", ").join(importResult.signatures().keySet()) +
@@ -98,7 +98,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
     private RankingExpression chooseOutput(ImportResult.Signature signature, Optional<String> outputName) {
         if ( ! outputName.isPresent()) {
             if (signature.outputs().size() == 0)
-                throw new IllegalArgumentException("No signatures are present");
+                throw new IllegalArgumentException("No outputs are available" + skippedOutputsDescription(signature));
             if (signature.outputs().size() > 1)
                 throw new IllegalArgumentException(signature + " has multiple outputs (" +
                                                    Joiner.on(", ").join(signature.outputs().keySet()) +
@@ -108,11 +108,23 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         }
         else {
             RankingExpression expression = signature.outputExpression(outputName.get());
-            if (expression == null)
-                throw new IllegalArgumentException("Model does not have the specified output '" +
-                                                   outputName.get() + "'");
+            if (expression == null) {
+                if (signature.skippedOutputs().containsKey(outputName.get()))
+                    throw new IllegalArgumentException("Could not use output '" + outputName.get() + "': " +
+                                                       signature.skippedOutputs().get(outputName.get()));
+                else
+                    throw new IllegalArgumentException("Model does not have the specified output '" +
+                                                       outputName.get() + "'");
+            }
             return expression;
         }
+    }
+
+    private String skippedOutputsDescription(ImportResult.Signature signature) {
+        if (signature.skippedOutputs().isEmpty()) return "";
+        StringBuilder b = new StringBuilder(": ");
+        signature.skippedOutputs().forEach((k, v) -> b.append("Skipping output '").append(k).append("': ").append(v));
+        return b.toString();
     }
 
     private Optional<String> optionalArgument(int argumentIndex, Arguments arguments) {
