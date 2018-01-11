@@ -115,8 +115,8 @@ public class FileDirectory  {
                 } else {
                     IOUtils.copyDirectory(tempDestinationDir.toFile(), destinationDir, -1);
                 }
-                IOUtils.recursiveDeleteDir(tempDestinationDir.toFile());
             }
+            IOUtils.recursiveDeleteDir(tempDestinationDir.toFile());
             return reference;
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
