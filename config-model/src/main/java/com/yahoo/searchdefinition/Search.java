@@ -171,8 +171,9 @@ public class Search implements Serializable, ImmutableSearch {
         rankingConstants.put(name, constant);
     }
 
-    public Iterable<RankingConstant> getRankingConstants() {
-        return rankingConstants.values();
+    /** Returns a read-only map of the ranking constants in this indexed by name */
+    public Map<String, RankingConstant> getRankingConstants() {
+        return Collections.unmodifiableMap(rankingConstants);
     }
 
     public Optional<TemporaryImportedFields> temporaryImportedFields() {

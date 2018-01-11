@@ -37,7 +37,7 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
 
     public void prepareToDistributeFiles(List<SearchNode> backends) {
         for (SearchDefinitionSpec sds : localSDS) {
-            for (RankingConstant constant : sds.getSearchDefinition().getSearch().getRankingConstants()) {
+            for (RankingConstant constant : sds.getSearchDefinition().getSearch().getRankingConstants().values()) {
                 FileReference reference = FileSender.sendFileToServices(constant.getFileName(), backends);
                 constant.setFileReference(reference.value());
             }

@@ -48,7 +48,7 @@ public class RankingConstantsValidator extends Validator {
         ExceptionMessageCollector exceptionMessageCollector = new ExceptionMessageCollector("Invalid constant tensor file(s):");
 
         for (SearchDefinition sd : deployState.getSearchDefinitions()) {
-            for (RankingConstant rc : sd.getSearch().getRankingConstants()) {
+            for (RankingConstant rc : sd.getSearch().getRankingConstants().values()) {
                 try {
                     validateRankingConstant(rc, applicationPackage);
                 } catch (InvalidConstantTensor | FileNotFoundException ex) {
