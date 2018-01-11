@@ -114,7 +114,9 @@ Content = element content {
     Documents? &
     ContentNodes? &
     TopGroup? &
-    Controllers?
+    Controllers? &
+    # Contains experimental feature switches
+    Experimental?
 }
 
 Controllers =
@@ -366,4 +368,8 @@ TuningIoOptionsFull = string "normal" | string "directio" | string "mmap" | stri
 TuningCompression = element compression {
    element type { string "none" | string "lz4" | string "zstd" }? &
    element level { xsd:nonNegativeInteger }?
+}
+
+Experimental = element experimental {
+    element enable-multiple-bucket-spaces { xsd:boolean }?
 }
