@@ -98,8 +98,8 @@ StorageProtocol::encode(const vespalib::Version& version,
         } else if (version < version5_2) {
             return encodeMessage(_serializer5_1, routable, message, version5_1, version);
         } else {
-            if (!_activateBucketSpaceSerialization) {
-                return encodeMessage(_serializer5_2, routable, message, version5_2, version);
+            if (_activateBucketSpaceSerialization) {
+                return encodeMessage(_serializer6_0, routable, message, version6_0, version);
             } else {
                if (version < version6_0) {
                    return encodeMessage(_serializer5_2, routable, message, version5_2, version);
@@ -169,8 +169,8 @@ StorageProtocol::decode(const vespalib::Version & version,
         } else if (version < version5_2) {
             return decodeMessage(_serializer5_1, data, type, version5_1, version);
         } else {
-            if (!_activateBucketSpaceSerialization) {
-                return decodeMessage(_serializer5_2, data, type, version5_2, version);
+            if (_activateBucketSpaceSerialization) {
+                return decodeMessage(_serializer6_0, data, type, version6_0, version);
             } else {
                 if (version < version6_0) {
                     return decodeMessage(_serializer5_2, data, type, version5_2, version);
