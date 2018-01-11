@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.search.query.ranking.Diversity;
-import com.yahoo.searchdefinition.expressiontransforms.ExpressionTransforms;
+import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
@@ -102,7 +102,8 @@ public class RankProfile implements Serializable, Cloneable {
      *
      * @param name   the name of the new profile
      * @param search the search definition owning this profile
-     * @param rankProfileRegistry The {@link com.yahoo.searchdefinition.RankProfileRegistry} to use for storing and looking up rank profiles.
+     * @param rankProfileRegistry The {@link com.yahoo.searchdefinition.RankProfileRegistry} to use for storing
+     *                            and looking up rank profiles.
      */
     public RankProfile(String name, Search search, RankProfileRegistry rankProfileRegistry) {
         this.name = name;
@@ -713,7 +714,12 @@ public class RankProfile implements Serializable, Cloneable {
                                       Map<String, Macro> inlineMacros) {
         if (expression == null) return null;
         Map<String, String> rankPropertiesOutput = new HashMap<>();
-        expression = new ExpressionTransforms().transform(expression, this, constants, inlineMacros, rankPropertiesOutput);
+
+        RankProfileTransformContext context = new RankProfileTransformContext(this,
+                                                                              constants,
+                                                                              inlineMacros,
+                                                                              rankPropertiesOutput);
+        expression = rankProfileRegistry.expressionTransforms().transform(expression, context);
         for (Map.Entry<String, String> rankProperty : rankPropertiesOutput.entrySet()) {
             addRankProperty(rankProperty.getKey(), rankProperty.getValue());
         }

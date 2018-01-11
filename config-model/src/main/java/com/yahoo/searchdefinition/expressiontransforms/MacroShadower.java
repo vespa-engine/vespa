@@ -8,7 +8,6 @@ import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.FunctionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
-import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 
 /**
  * Transforms function nodes to reference nodes if a macro shadows a built-in function.
@@ -23,10 +22,10 @@ import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
  *
  * @author lesters
  */
-public class MacroShadower extends ExpressionTransformer {
+public class MacroShadower extends ExpressionTransformer<RankProfileTransformContext> {
 
     @Override
-    public RankingExpression transform(RankingExpression expression, TransformContext context) {
+    public RankingExpression transform(RankingExpression expression, RankProfileTransformContext context) {
         String name = expression.getName();
         ExpressionNode node = expression.getRoot();
         ExpressionNode result = transform(node, context);
@@ -34,7 +33,7 @@ public class MacroShadower extends ExpressionTransformer {
     }
 
     @Override
-    public ExpressionNode transform(ExpressionNode node, TransformContext context) {
+    public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
         if (node instanceof FunctionNode)
             return transformFunctionNode((FunctionNode) node, context);
         if (node instanceof CompositeNode)
@@ -42,9 +41,9 @@ public class MacroShadower extends ExpressionTransformer {
         return node;
     }
 
-    protected ExpressionNode transformFunctionNode(FunctionNode function, TransformContext context) {
+    protected ExpressionNode transformFunctionNode(FunctionNode function, RankProfileTransformContext context) {
         String name = function.getFunction().toString();
-        RankProfile.Macro macro = ((RankProfileTransformContext)context).rankProfile().getMacros().get(name);
+        RankProfile.Macro macro = context.rankProfile().getMacros().get(name);
         if (macro == null) {
             return transformChildren(function, context);
         }

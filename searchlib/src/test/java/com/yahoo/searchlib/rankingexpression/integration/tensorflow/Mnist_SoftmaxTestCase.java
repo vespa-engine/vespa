@@ -28,11 +28,7 @@ public class Mnist_SoftmaxTestCase {
     public void testImporting() {
         String modelDir = "src/test/files/integration/tensorflow/mnist_softmax/saved";
         SavedModelBundle model = SavedModelBundle.load(modelDir, "serve");
-        ImportResult result = new TensorFlowImporter().importModel(model);
-
-        // Check logged messages
-        result.warnings().forEach(System.err::println);
-        assertEquals(0, result.warnings().size());
+        TensorFlowModel result = new TensorFlowImporter().importModel(model);
 
         // Check constants
         assertEquals(2, result.constants().size());
@@ -51,7 +47,7 @@ public class Mnist_SoftmaxTestCase {
 
         // Check signatures
         assertEquals(1, result.signatures().size());
-        ImportResult.Signature signature = result.signatures().get("serving_default");
+        TensorFlowModel.Signature signature = result.signatures().get("serving_default");
         assertNotNull(signature);
 
         // ... signature inputs
@@ -71,6 +67,9 @@ public class Mnist_SoftmaxTestCase {
                      "f(a,b)(a + b))",
                      toNonPrimitiveString(output));
 
+        // ... skipped outputs
+        assertEquals(0, signature.skippedOutputs().size());
+
         // Test execution
         assertEqualResult(model, result, "Variable/read");
         assertEqualResult(model, result, "Variable_1/read");
@@ -78,7 +77,7 @@ public class Mnist_SoftmaxTestCase {
         assertEqualResult(model, result, "add");
     }
 
-    private void assertEqualResult(SavedModelBundle model, ImportResult result, String operationName) {
+    private void assertEqualResult(SavedModelBundle model, TensorFlowModel result, String operationName) {
         Tensor tfResult = tensorFlowExecute(model, operationName);
         Context context = contextFrom(result);
         Tensor placeholder = placeholderArgument();
@@ -96,7 +95,7 @@ public class Mnist_SoftmaxTestCase {
         return new TensorConverter().toVespaTensor(results.get(0));
     }
 
-    private Context contextFrom(ImportResult result) {
+    private Context contextFrom(TensorFlowModel result) {
         MapContext context = new MapContext();
         result.constants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
         return context;

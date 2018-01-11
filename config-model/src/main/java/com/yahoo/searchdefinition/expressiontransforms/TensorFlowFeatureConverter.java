@@ -1,7 +1,9 @@
 package com.yahoo.searchdefinition.expressiontransforms;
 
+import com.google.common.base.Joiner;
+import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
-import com.yahoo.searchlib.rankingexpression.integration.tensorflow.ImportResult;
+import com.yahoo.searchlib.rankingexpression.integration.tensorflow.TensorFlowModel;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.TensorFlowImporter;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
@@ -9,8 +11,8 @@ import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
-import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -21,14 +23,17 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-public class TensorFlowFeatureConverter extends ExpressionTransformer {
+public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
 
+    /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
+    private final Map<String, TensorFlowModel> importedModels = new HashMap<>();
+
     @Override
-    public ExpressionNode transform(ExpressionNode node, TransformContext context) {
+    public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
         if (node instanceof ReferenceNode)
-            return transformFeature((ReferenceNode) node, (RankProfileTransformContext)context);
+            return transformFeature((ReferenceNode) node, context);
         else if (node instanceof CompositeNode)
             return super.transformChildren((CompositeNode) node, context);
         else
@@ -43,44 +48,83 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer {
                 throw new IllegalArgumentException("A tensorflow node must take an argument pointing to " +
                                                    "the tensorflow model directory under [application]/models");
 
-            ImportResult result = tensorFlowImporter.importModel(asString(feature.getArguments().expressions().get(0)));
+            String modelPath = asString(feature.getArguments().expressions().get(0));
+            TensorFlowModel result = importedModels.computeIfAbsent(modelPath, k -> tensorFlowImporter.importModel(modelPath));
 
             // Find the specified expression
-            ImportResult.Signature signature = chooseOrDefault("signatures", result.signatures(),
-                                                               optionalArgument(1, feature.getArguments()));
-            String output = chooseOrDefault("outputs", signature.outputs(),
-                                            optionalArgument(2, feature.getArguments()));
+            TensorFlowModel.Signature signature = chooseSignature(result,
+                                                                  optionalArgument(1, feature.getArguments()));
+            RankingExpression expression = chooseOutput(signature,
+                                                        optionalArgument(2, feature.getArguments()));
 
-            // Add all constants
+            // Add all constants (after finding outputs to fail faster when the output is not found)
             result.constants().forEach((k, v) -> context.rankProfile().addConstantTensor(k, new TensorValue(v)));
 
-            return result.expressions().get(output).getRoot();
+            return expression.getRoot();
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Could not import tensorflow model from " + feature, e);
+            throw new IllegalArgumentException("Could not use tensorflow model from " + feature, e);
         }
     }
 
     /**
-     * Returns the specified, existing map value, or the only map value if no key is specified.
+     * Returns the specified, existing signature, or the only signature if none is specified.
      * Throws IllegalArgumentException in all other cases.
      */
-    private <T> T chooseOrDefault(String valueDescription, Map<String, T> map, Optional<String> key) {
-        if ( ! key.isPresent()) {
-            if (map.size() == 0)
-                throw new IllegalArgumentException("No " + valueDescription + " are present");
-            if (map.size() > 1)
-                throw new IllegalArgumentException("Model has multiple " + valueDescription + ", but no " +
-                                                   valueDescription + " argument is specified");
-            return map.values().stream().findFirst().get();
+    private TensorFlowModel.Signature chooseSignature(TensorFlowModel importResult, Optional<String> signatureName) {
+        if ( ! signatureName.isPresent()) {
+            if (importResult.signatures().size() == 0)
+                throw new IllegalArgumentException("No signatures are available");
+            if (importResult.signatures().size() > 1)
+                throw new IllegalArgumentException("Model has multiple signatures (" +
+                                                   Joiner.on(", ").join(importResult.signatures().keySet()) +
+                                                   "), one must be specified " +
+                                                   "as a second argument to tensorflow()");
+            return importResult.signatures().values().stream().findFirst().get();
         }
         else {
-            T value = map.get(key.get());
-            if (value == null)
-                throw new IllegalArgumentException("Model does not have the specified " +
-                                                   valueDescription + " '" + key.get() + "'");
-            return value;
+            TensorFlowModel.Signature signature = importResult.signatures().get(signatureName.get());
+            if (signature == null)
+                throw new IllegalArgumentException("Model does not have the specified signature '" +
+                                                   signatureName.get() + "'");
+            return signature;
         }
+    }
+
+    /**
+     * Returns the specified, existing output expression, or the only output expression if no output name is specified.
+     * Throws IllegalArgumentException in all other cases.
+     */
+    private RankingExpression chooseOutput(TensorFlowModel.Signature signature, Optional<String> outputName) {
+        if ( ! outputName.isPresent()) {
+            if (signature.outputs().size() == 0)
+                throw new IllegalArgumentException("No outputs are available" + skippedOutputsDescription(signature));
+            if (signature.outputs().size() > 1)
+                throw new IllegalArgumentException(signature + " has multiple outputs (" +
+                                                   Joiner.on(", ").join(signature.outputs().keySet()) +
+                                                   "), one must be specified " +
+                                                   "as a third argument to tensorflow()");
+            return signature.outputExpression(signature.outputs().keySet().stream().findFirst().get());
+        }
+        else {
+            RankingExpression expression = signature.outputExpression(outputName.get());
+            if (expression == null) {
+                if (signature.skippedOutputs().containsKey(outputName.get()))
+                    throw new IllegalArgumentException("Could not use output '" + outputName.get() + "': " +
+                                                       signature.skippedOutputs().get(outputName.get()));
+                else
+                    throw new IllegalArgumentException("Model does not have the specified output '" +
+                                                       outputName.get() + "'");
+            }
+            return expression;
+        }
+    }
+
+    private String skippedOutputsDescription(TensorFlowModel.Signature signature) {
+        if (signature.skippedOutputs().isEmpty()) return "";
+        StringBuilder b = new StringBuilder(": ");
+        signature.skippedOutputs().forEach((k, v) -> b.append("Skipping output '").append(k).append("': ").append(v));
+        return b.toString();
     }
 
     private Optional<String> optionalArgument(int argumentIndex, Arguments arguments) {
