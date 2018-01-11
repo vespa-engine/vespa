@@ -18,7 +18,7 @@ int main(int argc, char** argv)
     }
     const char *username = getenv("VESPA_USER");
     if (username == nullptr) {
-        username = "yahoo";
+        username = "vespa";
     }
     struct passwd *p = getpwnam(username);
     if (p == nullptr) {
