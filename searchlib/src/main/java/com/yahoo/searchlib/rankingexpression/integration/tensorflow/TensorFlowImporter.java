@@ -111,9 +111,12 @@ public class TensorFlowImporter {
         switch (tfNode.getOp().toLowerCase()) {
             case "add" : case "add_n" : return operationMapper.join(importArguments(tfNode, graph, model, result), ScalarFunctions.add());
             case "acos" : return operationMapper.map(importArguments(tfNode, graph, model, result), ScalarFunctions.acos());
-            case "placeholder" : return operationMapper.placeholder(tfNode, result);
+            case "elu": return operationMapper.map(importArguments(tfNode, graph, model, result), ScalarFunctions.elu());
             case "identity" : return operationMapper.identity(tfNode, model, result);
+            case "placeholder" : return operationMapper.placeholder(tfNode, result);
+            case "relu": return operationMapper.map(importArguments(tfNode, graph, model, result), ScalarFunctions.relu());
             case "matmul" : return operationMapper.matmul(importArguments(tfNode, graph, model, result));
+            case "sigmoid": return operationMapper.map(importArguments(tfNode, graph, model, result), ScalarFunctions.sigmoid());
             case "softmax" : return operationMapper.softmax(importArguments(tfNode, graph, model, result));
             default : throw new IllegalArgumentException("Conversion of TensorFlow operation '" + tfNode.getOp() + "' is not supported");
         }
