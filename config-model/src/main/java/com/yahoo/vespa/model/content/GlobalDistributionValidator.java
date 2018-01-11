@@ -26,8 +26,8 @@ public class GlobalDistributionValidator {
                          boolean enableMultipleBucketSpaces) {
         if (!enableMultipleBucketSpaces) {
             verifyGlobalDocumentsHaveRequiredRedundancy(globallyDistributedDocuments, redundancy);
+            verifySearchableCopiesIsSameAsRedundancy(globallyDistributedDocuments, redundancy);
         }
-        verifySearchableCopiesIsSameAsRedundancy(globallyDistributedDocuments, redundancy);
         verifyReferredDocumentsArePresent(documentDefinitions);
         verifyReferredDocumentsAreGlobal(documentDefinitions, globallyDistributedDocuments);
     }

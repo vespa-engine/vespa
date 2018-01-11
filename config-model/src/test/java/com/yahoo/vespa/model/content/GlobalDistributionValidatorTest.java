@@ -41,11 +41,11 @@ public class GlobalDistributionValidatorTest {
     }
 
     @Test
-    public void validation_of_global_distribution_is_deactivated_if_multiple_bucket_spaces_is_enabled() {
+    public void validation_of_redundancy_is_deactivated_if_multiple_bucket_spaces_is_enabled() {
         Fixture fixture = new Fixture()
                 .addGlobalDocument(createDocumentType("foo"))
                 .addGlobalDocument(createDocumentType("bar"));
-        Redundancy redundancy = createRedundancyWithoutGlobalDistribution();
+        Redundancy redundancy = createRedundancyWithoutGlobalDistributionAndTooFewSearchableCopies();
 
         validate(fixture, redundancy, true);
     }
@@ -145,6 +145,12 @@ public class GlobalDistributionValidatorTest {
     private static Redundancy createRedundancyWithTooFewSearchableCopies() {
         Redundancy redundancy = new Redundancy(2, 2, 1);
         redundancy.setTotalNodes(2);
+        return redundancy;
+    }
+
+    private static Redundancy createRedundancyWithoutGlobalDistributionAndTooFewSearchableCopies() {
+        Redundancy redundancy = new Redundancy(2, 2, 1);
+        redundancy.setTotalNodes(3);
         return redundancy;
     }
 
