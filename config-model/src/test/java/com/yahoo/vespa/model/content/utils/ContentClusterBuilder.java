@@ -26,6 +26,7 @@ public class ContentClusterBuilder {
     private Optional<String> dispatchXml = Optional.empty();
     private Optional<Double> protonDiskLimit = Optional.empty();
     private Optional<Double> protonMemoryLimit = Optional.empty();
+    private Optional<Boolean> enableMultipleBucketSpaces = Optional.empty();
 
     public ContentClusterBuilder() {
     }
@@ -77,6 +78,11 @@ public class ContentClusterBuilder {
         return this;
     }
 
+    public ContentClusterBuilder enableMultipleBucketSpaces(boolean value) {
+        this.enableMultipleBucketSpaces = Optional.of(value);
+        return this;
+    }
+
     public ContentCluster build(MockRoot root) throws Exception {
         return ContentClusterUtils.createCluster(getXml(), root);
     }
@@ -93,6 +99,11 @@ public class ContentClusterBuilder {
                "  </engine>");
         if (dispatchXml.isPresent()) {
             xml += dispatchXml.get();
+        }
+        if (enableMultipleBucketSpaces.isPresent()) {
+            xml += joinLines("<experimental>",
+                    "<enable-multiple-bucket-spaces>" + (enableMultipleBucketSpaces.get() ? "true" : "false") + "</enable-multiple-bucket-spaces>",
+                    "</experimental>");
         }
         return xml + groupXml +
                "</content>";

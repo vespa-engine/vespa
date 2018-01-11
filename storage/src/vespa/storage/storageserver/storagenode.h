@@ -104,7 +104,6 @@ protected:
     using BucketspacesConfig = vespa::config::content::core::BucketspacesConfig;
 private:
     bool _singleThreadedDebugMode;
-    bool _has_enabled_global_spaces;
         // Subscriptions to config
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
 

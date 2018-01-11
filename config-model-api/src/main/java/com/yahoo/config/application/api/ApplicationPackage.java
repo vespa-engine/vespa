@@ -4,7 +4,6 @@ package com.yahoo.config.application.api;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.path.Path;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
@@ -42,7 +41,7 @@ import java.util.jar.JarFile;
  */
 public interface ApplicationPackage {
 
-    // Caution!! If you add something here it must probably also be added to ZooKeeperClient.feedZKAppPkg
+    // Caution!! If you add something here it must probably also be added to ZooKeeperClient.write(applicationPackage)
 
     String HOSTS = "hosts.xml";
     String SERVICES = "services.xml";
@@ -54,6 +53,7 @@ public interface ApplicationPackage {
     String DOCPROCCHAINS_DIR = "docproc/chains";
     String PROCESSORCHAINS_DIR = "processor/chains";
     String ROUTINGTABLES_DIR = "routing/tables";
+    String MODELS_DIR = "models";
 
     // NOTE: this directory is created in serverdb during deploy, and should not exist in the original user application
     /** Do not use */
@@ -271,7 +271,7 @@ public interface ApplicationPackage {
      *
      * @return A new application package instance pointing to a new location
      */
-    default ApplicationPackage preprocess(Zone zone, RuleConfigDeriver ruleConfigDeriver, DeployLogger logger) 
+    default ApplicationPackage preprocess(Zone zone, RuleConfigDeriver ruleConfigDeriver, DeployLogger logger)
         throws IOException, TransformerException, ParserConfigurationException, SAXException {
         throw new UnsupportedOperationException("This application package does not support preprocessing");
     }

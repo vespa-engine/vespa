@@ -20,7 +20,7 @@ import java.util.List;
  *
  * @author bratseth
  */
-public class Simplifier extends ExpressionTransformer {
+public class Simplifier extends ExpressionTransformer<TransformContext> {
 
     @Override
     public ExpressionNode transform(ExpressionNode node, TransformContext context) {

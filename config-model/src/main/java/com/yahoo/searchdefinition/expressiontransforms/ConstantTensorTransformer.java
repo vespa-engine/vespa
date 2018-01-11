@@ -8,7 +8,6 @@ import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.NameNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
-import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,14 +18,14 @@ import java.util.List;
  *
  * @author geirst
  */
-public class ConstantTensorTransformer extends ExpressionTransformer {
+public class ConstantTensorTransformer extends ExpressionTransformer<RankProfileTransformContext> {
 
     public static final String CONSTANT = "constant";
 
     @Override
-    public ExpressionNode transform(ExpressionNode node, TransformContext context) {
+    public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
         if (node instanceof ReferenceNode) {
-            return transformFeature((ReferenceNode) node, (RankProfileTransformContext)context);
+            return transformFeature((ReferenceNode) node, context);
         } else if (node instanceof CompositeNode) {
             return transformChildren((CompositeNode) node, context);
         } else {
@@ -42,7 +41,7 @@ public class ConstantTensorTransformer extends ExpressionTransformer {
         }
     }
 
-    private ExpressionNode transformArguments(ReferenceNode node, TransformContext context) {
+    private ExpressionNode transformArguments(ReferenceNode node, RankProfileTransformContext context) {
         List<ExpressionNode> arguments = node.getArguments().expressions();
         List<ExpressionNode> transformedArguments = new ArrayList<>(arguments.size());
         for (ExpressionNode argument : arguments) {

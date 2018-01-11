@@ -11,7 +11,6 @@ import com.yahoo.vespa.model.application.validation.ConstantTensorJsonValidator.
 import com.yahoo.vespa.model.search.SearchDefinition;
 
 import java.io.FileNotFoundException;
-import java.io.Reader;
 
 /**
  * RankingConstantsValidator validates all constant tensors (ranking constants) bundled with an application package
@@ -22,10 +21,11 @@ import java.io.Reader;
 public class RankingConstantsValidator extends Validator {
 
     private static class ExceptionMessageCollector {
-        public String combinedMessage;
-        public boolean exceptionsOccurred = false;
 
-        public ExceptionMessageCollector(String messagePrelude) {
+        String combinedMessage;
+        boolean exceptionsOccurred = false;
+
+        ExceptionMessageCollector(String messagePrelude) {
             this.combinedMessage = messagePrelude;
         }
 
@@ -36,8 +36,8 @@ public class RankingConstantsValidator extends Validator {
         }
     }
 
-    public static class TensorValidationFailed extends RuntimeException {
-        public TensorValidationFailed(String message) {
+    static class TensorValidationFailed extends RuntimeException {
+        TensorValidationFailed(String message) {
             super(message);
         }
     }
@@ -45,10 +45,10 @@ public class RankingConstantsValidator extends Validator {
     @Override
     public void validate(VespaModel model, DeployState deployState) {
         ApplicationPackage applicationPackage = deployState.getApplicationPackage();
-        ExceptionMessageCollector exceptionMessageCollector = new ExceptionMessageCollector("Failed to validate constant tensor file(s):");
+        ExceptionMessageCollector exceptionMessageCollector = new ExceptionMessageCollector("Invalid constant tensor file(s):");
 
         for (SearchDefinition sd : deployState.getSearchDefinitions()) {
-            for (RankingConstant rc : sd.getSearch().getRankingConstants()) {
+            for (RankingConstant rc : sd.getSearch().getRankingConstants().values()) {
                 try {
                     validateRankingConstant(rc, applicationPackage);
                 } catch (InvalidConstantTensor | FileNotFoundException ex) {

@@ -55,4 +55,7 @@ class RankProfileSearchFixture {
     public RankProfile rankProfile(String rankProfile) {
         return rankProfileRegistry.getRankProfile(search, rankProfile).compile();
     }
+
+    public Search search() { return search; }
+
 }

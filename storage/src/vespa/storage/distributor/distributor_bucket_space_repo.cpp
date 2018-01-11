@@ -3,6 +3,7 @@
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/persistence/spi/fixed_bucket_spaces.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -13,27 +14,21 @@ using document::BucketSpace;
 namespace storage {
 namespace distributor {
 
-DistributorBucketSpaceRepo::DistributorBucketSpaceRepo()
+DistributorBucketSpaceRepo::DistributorBucketSpaceRepo(bool enableGlobalBucketSpace)
     : _map()
 {
-    add(BucketSpace::placeHolder(), std::make_unique<DistributorBucketSpace>());
+    add(spi::FixedBucketSpaces::default_space(), std::make_unique<DistributorBucketSpace>());
+    if (enableGlobalBucketSpace) {
+        add(spi::FixedBucketSpaces::global_space(), std::make_unique<DistributorBucketSpace>());
+    }
 }
 
-DistributorBucketSpaceRepo::~DistributorBucketSpaceRepo() {
-}
+DistributorBucketSpaceRepo::~DistributorBucketSpaceRepo() = default;
 
 void
 DistributorBucketSpaceRepo::add(document::BucketSpace bucketSpace, std::unique_ptr<DistributorBucketSpace> distributorBucketSpace)
 {
     _map.emplace(bucketSpace, std::move(distributorBucketSpace));
-}
-
-void DistributorBucketSpaceRepo::setDefaultDistribution(
-        std::shared_ptr<const lib::Distribution> distr)
-{
-    LOG(debug, "Got new default distribution '%s'", distr->toString().c_str());
-    // TODO all spaces, per-space config transforms
-    getDefaultSpace().setDistribution(std::move(distr));
 }
 
 DistributorBucketSpace &

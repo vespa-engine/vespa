@@ -16,7 +16,6 @@ import com.yahoo.searchlib.rankingexpression.rule.FunctionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
-import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.Reduce;
@@ -33,15 +32,15 @@ import java.util.Optional;
  *
  * @author lesters
  */
-public class TensorTransformer extends ExpressionTransformer {
+public class TensorTransformer extends ExpressionTransformer<RankProfileTransformContext> {
 
     @Override
-    public ExpressionNode transform(ExpressionNode node, TransformContext context) {
+    public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
         if (node instanceof CompositeNode) {
             node = transformChildren((CompositeNode) node, context);
         }
         if (node instanceof FunctionNode) {
-            node = transformFunctionNode((FunctionNode) node, ((RankProfileTransformContext)context).rankProfile());
+            node = transformFunctionNode((FunctionNode) node, context.rankProfile());
         }
         return node;
     }
@@ -206,11 +205,9 @@ public class TensorTransformer extends ExpressionTransformer {
     }
 
     private void addIfConstantInRankingConstants(String name, ReferenceNode node, Context context, RankProfile profile) {
-        for (RankingConstant rankingConstant : profile.getSearch().getRankingConstants()) {
-            if (rankingConstant.getName().equals(name)) {
-                context.put(node.toString(), emptyTensorValue(rankingConstant.getTensorType()));
-            }
-        }
+        RankingConstant constant = profile.getSearch().getRankingConstants().get(name);
+        if (constant != null)
+            context.put(node.toString(), emptyTensorValue(constant.getTensorType()));
     }
 
     private void addIfQuery(ReferenceNode node, Context context, RankProfile profile) {

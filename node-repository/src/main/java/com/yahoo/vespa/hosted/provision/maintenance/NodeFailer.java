@@ -5,6 +5,7 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
@@ -55,11 +56,12 @@ public class NodeFailer extends Maintainer {
     private final Orchestrator orchestrator;
     private final Instant constructionTime;
     private final ThrottlePolicy throttlePolicy;
+    private final Metric metric;
 
     public NodeFailer(Deployer deployer, HostLivenessTracker hostLivenessTracker,
                       ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
                       Duration downTimeLimit, Clock clock, Orchestrator orchestrator,
-                      ThrottlePolicy throttlePolicy,
+                      ThrottlePolicy throttlePolicy, Metric metric,
                       JobControl jobControl) {
         // check ping status every five minutes, but at least twice as often as the down time limit
         super(nodeRepository, min(downTimeLimit.dividedBy(2), Duration.ofMinutes(5)), jobControl);
@@ -71,6 +73,7 @@ public class NodeFailer extends Maintainer {
         this.orchestrator = orchestrator;
         this.constructionTime = clock.instant();
         this.throttlePolicy = throttlePolicy;
+        this.metric = metric;
     }
 
     @Override
@@ -290,6 +293,7 @@ public class NodeFailer extends Maintainer {
             log.info(String.format("Want to fail node %s, but throttling is in effect: %s", node.hostname(),
                                    throttlePolicy.toHumanReadableString()));
         }
+        metric.set("nodeFailThrottling", throttle ? 1 : 0, null);
         return throttle;
     }
 

@@ -13,20 +13,20 @@ import java.util.List;
  *
  * @author bratseth
  */
-public abstract class ExpressionTransformer {
+public abstract class ExpressionTransformer<CONTEXT extends TransformContext> {
 
-    public RankingExpression transform(RankingExpression expression, TransformContext context) {
+    public RankingExpression transform(RankingExpression expression, CONTEXT context) {
         return new RankingExpression(expression.getName(), transform(expression.getRoot(), context));
     }
 
     /** Transforms an expression node and returns the transformed node */
-    public abstract ExpressionNode transform(ExpressionNode node, TransformContext context);
+    public abstract ExpressionNode transform(ExpressionNode node, CONTEXT context);
 
     /**
      * Utility method which calls transform on each child of the given node and return the resulting transformed
      * composite
      */
-    protected CompositeNode transformChildren(CompositeNode node, TransformContext context) {
+    protected CompositeNode transformChildren(CompositeNode node, CONTEXT context) {
         List<ExpressionNode> children = node.children();
         List<ExpressionNode> transformedChildren = new ArrayList<>(children.size());
         for (ExpressionNode child : children)

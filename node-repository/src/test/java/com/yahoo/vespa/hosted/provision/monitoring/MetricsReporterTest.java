@@ -193,7 +193,7 @@ public class MetricsReporterTest {
         return Optional.empty();
     }
 
-    private static class TestMetric implements Metric {
+    public static class TestMetric implements Metric {
 
         public Map<String, Number> values = new HashMap<>();
         public Map<String, List<Context>> context = new HashMap<>();

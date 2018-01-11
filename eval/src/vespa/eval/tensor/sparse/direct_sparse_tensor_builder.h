@@ -40,8 +40,7 @@ public:
     void
     copyCells(const Cells &cells_in, const eval::ValueType &cells_in_type)
     {
-        SparseTensorAddressPadder addressPadder(_type,
-                                                cells_in_type);
+        SparseTensorAddressPadder addressPadder(_type, cells_in_type);
         for (const auto &cell : cells_in) {
             addressPadder.padAddress(cell.first);
             SparseTensorAddressRef oldRef = addressPadder.getAddressRef();
@@ -64,8 +63,7 @@ public:
     {
     }
 
-    DirectTensorBuilder(const eval::ValueType &type_in,
-                        const Cells &cells_in)
+    DirectTensorBuilder(const eval::ValueType &type_in, const Cells &cells_in)
         : _stash(TensorImplType::STASH_CHUNK_SIZE),
           _type(type_in),
           _cells()
@@ -94,14 +92,12 @@ public:
     }
 
     template <class Function>
-    void insertCell(SparseTensorAddressRef address, double value,
-                    Function &&func)
+    void insertCell(SparseTensorAddressRef address, double value, Function &&func)
     {
-        SparseTensorAddressRef oldRef(address);
-        auto res = _cells.insert(std::make_pair(oldRef, value));
+        auto res = _cells.insert(std::make_pair(address, value));
         if (res.second) {
             // Replace key with own copy
-            res.first->first = SparseTensorAddressRef(oldRef, _stash);
+            res.first->first = SparseTensorAddressRef(address, _stash);
         } else {
             res.first->second = func(res.first->second, value);
         }
@@ -113,8 +109,7 @@ public:
     }
 
     template <class Function>
-    void insertCell(SparseTensorAddressBuilder &address, double value,
-                    Function &&func)
+    void insertCell(SparseTensorAddressBuilder &address, double value, Function &&func)
     {
         insertCell(address.getAddressRef(), value, func);
     }

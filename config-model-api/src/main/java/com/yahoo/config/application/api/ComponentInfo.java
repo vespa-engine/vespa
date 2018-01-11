@@ -4,9 +4,10 @@ package com.yahoo.config.application.api;
 
 /**
  * Describes a component residing in the components directory.
- * <p>TODO: add support for component versions.</p>
+ *
  * @author tonytv
  */
+// TODO: add support for component versions.
 public class ComponentInfo {
 
     final String pathRelativeToAppDir;

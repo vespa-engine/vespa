@@ -10,7 +10,9 @@
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
+#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
+#include <vespa/persistence/spi/fixed_bucket_spaces.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor-main");
@@ -63,7 +65,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       framework::StatusReporter("distributor", "Distributor"),
       _compReg(compReg),
       _component(compReg, "distributor"),
-      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
+      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(_component.enableMultipleBucketSpaces())),
       _metrics(new DistributorMetricSet(_component.getLoadTypes()->getMetricLoadTypes())),
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
@@ -103,7 +105,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
     _distributorStatusDelegate.registerStatusPage();
     _bucketDBStatusDelegate.registerStatusPage();
     hostInfoReporterRegistrar.registerReporter(&_hostInfoReporter);
-    _bucketSpaceRepo->setDefaultDistribution(_component.getDistribution());
+    propagateDefaultDistribution(_component.getDistribution());
 };
 
 Distributor::~Distributor()
@@ -532,7 +534,11 @@ void
 Distributor::propagateDefaultDistribution(
         std::shared_ptr<const lib::Distribution> distribution)
 {
-    _bucketSpaceRepo->setDefaultDistribution(std::move(distribution));
+    _bucketSpaceRepo->get(spi::FixedBucketSpaces::default_space()).setDistribution(distribution);
+    if (_component.enableMultipleBucketSpaces()) {
+        auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
+        _bucketSpaceRepo->get(spi::FixedBucketSpaces::global_space()).setDistribution(std::move(global_distr));
+    }
 }
 
 void

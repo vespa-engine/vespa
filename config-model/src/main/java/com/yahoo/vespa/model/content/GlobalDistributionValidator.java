@@ -22,10 +22,12 @@ public class GlobalDistributionValidator {
 
     public void validate(Map<String, NewDocumentType> documentDefinitions,
                          Set<NewDocumentType> globallyDistributedDocuments,
-                         Redundancy redundancy) {
-
-        verifyGlobalDocumentsHaveRequiredRedundancy(globallyDistributedDocuments, redundancy);
-        verifySearchableCopiesIsSameAsRedundancy(globallyDistributedDocuments, redundancy);
+                         Redundancy redundancy,
+                         boolean enableMultipleBucketSpaces) {
+        if (!enableMultipleBucketSpaces) {
+            verifyGlobalDocumentsHaveRequiredRedundancy(globallyDistributedDocuments, redundancy);
+            verifySearchableCopiesIsSameAsRedundancy(globallyDistributedDocuments, redundancy);
+        }
         verifyReferredDocumentsArePresent(documentDefinitions);
         verifyReferredDocumentsAreGlobal(documentDefinitions, globallyDistributedDocuments);
     }

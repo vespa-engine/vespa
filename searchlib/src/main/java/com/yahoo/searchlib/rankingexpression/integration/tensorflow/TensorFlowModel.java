@@ -1,15 +1,13 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * The result of importing a TensorFlow model into Vespa.
@@ -20,18 +18,16 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 // This object can be built incrementally within this package, but is immutable when observed from outside the package
-public class ImportResult {
+public class TensorFlowModel {
 
     private final Map<String, Signature> signatures = new HashMap<>();
     private final Map<String, TensorType> arguments = new HashMap<>();
     private final Map<String, Tensor> constants = new HashMap<>();
     private final Map<String, RankingExpression> expressions = new HashMap<>();
-    private final List<String> warnings = new ArrayList<>();
 
     void argument(String name, TensorType argumentType) { arguments.put(name, argumentType); }
     void constant(String name, Tensor constant) { constants.put(name, constant); }
     void expression(String name, RankingExpression expression) { expressions.put(name, expression); }
-    void warn(String warning) { warnings.add(warning); }
 
     /** Returns the given signature. If it does not already exist it is added to this. */
     Signature signature(String name) {
@@ -51,11 +47,6 @@ public class ImportResult {
      */
     public Map<String, RankingExpression> expressions() { return Collections.unmodifiableMap(expressions); }
 
-    /** Returns an immutable list, in natural sort order of the warnings generated while importing this */
-    public List<String> warnings() {
-        return warnings.stream().sorted().collect(Collectors.toList());
-    }
-
     /** Returns an immutable map of the signatures of this */
     public Map<String, Signature> signatures() { return Collections.unmodifiableMap(signatures); }
 
@@ -68,6 +59,7 @@ public class ImportResult {
         private final String name;
         private final Map<String, String> inputs = new HashMap<>();
         private final Map<String, String> outputs = new HashMap<>();
+        private final Map<String, String> skippedOutputs = new HashMap<>();
 
         Signature(String name) {
             this.name = name;
@@ -75,9 +67,10 @@ public class ImportResult {
 
         void input(String inputName, String argumentName) { inputs.put(inputName, argumentName); }
         void output(String name, String expressionName) { outputs.put(name, expressionName); }
+        void skippedOutput(String name, String reason) { skippedOutputs.put(name, reason); }
 
         /** Returns the result this is part of */
-        ImportResult owner() { return ImportResult.this; }
+        TensorFlowModel owner() { return TensorFlowModel.this; }
 
         /**
          * Returns an immutable map of the inputs (evaluation context) of this. This is a map from input name
@@ -90,6 +83,12 @@ public class ImportResult {
 
         /** Returns an immutable list of the expression names of this */
         public Map<String, String> outputs() { return Collections.unmodifiableMap(outputs); }
+
+        /**
+         * Returns an immutable list of the outputs of this which could not be imported,
+         * with a string detailing the reason for each
+         */
+        public Map<String, String> skippedOutputs() { return Collections.unmodifiableMap(skippedOutputs); }
 
         /** Returns owner().expressions().get(outputs.get(outputName)), e.g the expression this output references */
         public RankingExpression outputExpression(String outputName) { return owner().expressions().get(outputs.get(outputName)); }

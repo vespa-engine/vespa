@@ -18,6 +18,7 @@ import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createClus
 import static com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder.createSearchDefinitions;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 
 /**
  * Unit tests for content search cluster.
@@ -38,10 +39,24 @@ public class ContentSearchClusterTest {
     }
 
     private static ContentCluster createClusterWithGlobalType() throws Exception {
-        return createCluster(new ContentClusterBuilder().docTypes(Arrays.asList(
-                DocType.indexGlobal("global"),
-                DocType.index("regular"))).getXml(),
+        return createCluster(createClusterBuilderWithGlobalType().getXml(),
                 createSearchDefinitions("global", "regular"));
+    }
+
+    private static ContentCluster createClusterWithMultipleBucketSpacesEnabled() throws Exception {
+        ContentClusterBuilder builder = createClusterBuilderWithGlobalType();
+        builder.groupXml(joinLines("<group>",
+                "<node distribution-key='0' hostalias='mockhost'/>",
+                "<node distribution-key='1' hostalias='mockhost'/>",
+                "</group>"));
+        builder.enableMultipleBucketSpaces(true);
+        String clusterXml = builder.getXml();
+        return createCluster(clusterXml, createSearchDefinitions("global", "regular"));
+    }
+
+    private static ContentClusterBuilder createClusterBuilderWithGlobalType() {
+        return new ContentClusterBuilder()
+                .docTypes(Arrays.asList(DocType.indexGlobal("global"), DocType.index("regular")));
     }
 
     private static ProtonConfig getProtonConfig(ContentCluster cluster) {
@@ -131,11 +146,22 @@ public class ContentSearchClusterTest {
     @Test
     public void require_that_bucket_spaces_config_is_produced_for_content_cluster() throws Exception {
         BucketspacesConfig config = getBucketspacesConfig(createClusterWithGlobalType());
+        assertBucketspacesConfigWithTwoDocumentTypes(config);
+        // Safeguard against flipping the switch
+        assertFalse(config.enable_multiple_bucket_spaces());
+    }
+
+    @Test
+    public void require_that_multiple_bucket_spaces_can_be_enabled() throws Exception {
+        BucketspacesConfig config = getBucketspacesConfig(createClusterWithMultipleBucketSpacesEnabled());
+        assertBucketspacesConfigWithTwoDocumentTypes(config);
+        assertTrue(config.enable_multiple_bucket_spaces());
+    }
+
+    private static void assertBucketspacesConfigWithTwoDocumentTypes(BucketspacesConfig config) {
         assertEquals(2, config.documenttype().size());
         assertDocumentType("global", "global", config.documenttype(0));
         assertDocumentType("regular", "default", config.documenttype(1));
-        // Safeguard against flipping the switch
-        assertFalse(config.enable_multiple_bucket_spaces());
     }
 
 }

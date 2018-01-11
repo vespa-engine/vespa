@@ -182,16 +182,22 @@ public interface Tensor {
     default Tensor notEqual(Tensor argument) { return join(argument, (a, b) -> ( a != b ? 1.0 : 0.0)); }
     default Tensor approxEqual(Tensor argument) { return join(argument, (a, b) -> ( approxEquals(a,b) ? 1.0 : 0.0)); }
 
+    default Tensor avg() { return avg(Collections.emptyList()); }
     default Tensor avg(String dimension) { return avg(Collections.singletonList(dimension)); }
     default Tensor avg(List<String> dimensions) { return reduce(Reduce.Aggregator.avg, dimensions); }
+    default Tensor count() { return count(Collections.emptyList()); }
     default Tensor count(String dimension) { return count(Collections.singletonList(dimension)); }
     default Tensor count(List<String> dimensions) { return reduce(Reduce.Aggregator.count, dimensions); }
+    default Tensor max() { return max(Collections.emptyList()); }
     default Tensor max(String dimension) { return max(Collections.singletonList(dimension)); }
     default Tensor max(List<String> dimensions) { return reduce(Reduce.Aggregator.max, dimensions); }
+    default Tensor min() { return min(Collections.emptyList()); }
     default Tensor min(String dimension) { return min(Collections.singletonList(dimension)); }
     default Tensor min(List<String> dimensions) { return reduce(Reduce.Aggregator.min, dimensions); }
+    default Tensor prod() { return prod(Collections.emptyList()); }
     default Tensor prod(String dimension) { return prod(Collections.singletonList(dimension)); }
     default Tensor prod(List<String> dimensions) { return reduce(Reduce.Aggregator.prod, dimensions); }
+    default Tensor sum() { return sum(Collections.emptyList()); }
     default Tensor sum(String dimension) { return sum(Collections.singletonList(dimension)); }
     default Tensor sum(List<String> dimensions) { return reduce(Reduce.Aggregator.sum, dimensions); }
 

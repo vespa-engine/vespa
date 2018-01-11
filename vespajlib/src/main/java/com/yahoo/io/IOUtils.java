@@ -426,6 +426,16 @@ public abstract class IOUtils {
        }
     }
 
+    /** Writes the given content to the file (replacing any existing content) */
+    public static void writeFile(File file, byte[] content) throws UncheckedIOException {
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            out.write(content);
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     /**
      * Writes the given string to the file
      */

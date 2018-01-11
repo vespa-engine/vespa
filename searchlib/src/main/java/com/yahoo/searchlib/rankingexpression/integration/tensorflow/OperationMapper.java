@@ -1,3 +1,4 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow;
 
 import com.google.common.collect.ImmutableList;
@@ -86,7 +87,7 @@ class OperationMapper {
         return new TypedTensorFunction(resultType, function);
     }
 
-    TypedTensorFunction placeholder(NodeDef tfNode, ImportResult result) {
+    TypedTensorFunction placeholder(NodeDef tfNode, TensorFlowModel result) {
         String name = tfNode.getName();
         TensorType type = result.arguments().get(name);
         if (type == null)
@@ -96,7 +97,7 @@ class OperationMapper {
         return new TypedTensorFunction(type, new VariableTensor(name));
     }
 
-    TypedTensorFunction identity(NodeDef tfNode, SavedModelBundle model, ImportResult result) {
+    TypedTensorFunction identity(NodeDef tfNode, SavedModelBundle model, TensorFlowModel result) {
         if ( ! tfNode.getName().endsWith("/read"))
             throw new IllegalArgumentException("Encountered identity node " + tfNode.getName() + ", but identify " +
                                                "nodes are only supported when reading variables");

@@ -1,16 +1,13 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.transform.ConstantDereferencer;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 import com.yahoo.searchlib.rankingexpression.transform.Simplifier;
-import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * The transformations done on ranking expressions done at config time before passing them on to the Vespa
@@ -31,12 +28,7 @@ public class ExpressionTransforms {
                              new TensorTransformer(),
                              new Simplifier());
 
-    public RankingExpression transform(RankingExpression expression,
-                                       RankProfile rankProfile,
-                                       Map<String, Value> constants,
-                                       Map<String, RankProfile.Macro> inlineMacros,
-                                       Map<String, String> rankPropertiesOutput) {
-        TransformContext context = new RankProfileTransformContext(rankProfile, constants, inlineMacros, rankPropertiesOutput);
+    public RankingExpression transform(RankingExpression expression, RankProfileTransformContext context) {
         for (ExpressionTransformer transformer : transforms)
             expression = transformer.transform(expression, context);
         return expression;

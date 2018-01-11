@@ -16,7 +16,7 @@ import java.util.List;
  *
  * @author bratseth
  */
-public class ConstantDereferencer extends ExpressionTransformer {
+public class ConstantDereferencer extends ExpressionTransformer<TransformContext> {
 
     @Override
     public ExpressionNode transform(ExpressionNode node, TransformContext context) {

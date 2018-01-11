@@ -129,8 +129,8 @@ void
 Grouping::selectMembers(const vespalib::ObjectPredicate &predicate,
                         vespalib::ObjectOperation &operation)
 {
-    for (size_t i(0), m(_levels.size()); i < m; i++) {
-        _levels[i].select(predicate, operation);
+    for (GroupingLevel & level : _levels) {
+        level.select(predicate, operation);
     }
     selectGroups(predicate, operation, _root, _firstLevel, _lastLevel, 0);
 }
@@ -317,9 +317,9 @@ void Grouping::cleanupAttributeReferences()
 
 void Grouping::cleanTemporary()
 {
-    for (GroupingLevelList::iterator it(_levels.begin()), mt(_levels.end()); it != mt; ++it) {
-        if (it->getExpression().getRoot()->inherits(FunctionNode::classId)) {
-            static_cast<FunctionNode &>(*it->getExpression().getRoot()).reset();
+    for (GroupingLevel & level : _levels) {
+        if (level.getExpression().getRoot()->inherits(FunctionNode::classId)) {
+            static_cast<FunctionNode &>(*level.getExpression().getRoot()).reset();
         }
     }
 }
