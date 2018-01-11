@@ -13,7 +13,7 @@ document::Bucket ConfigurableBucketResolver::bucketFromId(const document::Docume
         return document::Bucket(iter->second, document::BucketId(0));
     }
     throw spi::UnknownBucketSpaceException("Unknown bucket space mapping for document type '"
-                                           + id.getDocType() + "' in id: " + id.toString(), VESPA_STRLOC);
+                                           + id.getDocType() + "' in id: '" + id.toString() + "'", VESPA_STRLOC);
 }
 
 document::BucketSpace ConfigurableBucketResolver::bucketSpaceFromName(const vespalib::string& name) const {

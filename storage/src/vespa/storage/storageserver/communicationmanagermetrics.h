@@ -18,6 +18,7 @@ struct CommunicationManagerMetrics : public metrics::MetricSet {
     metrics::LoadMetric<metrics::DoubleAverageMetric> exceptionMessageProcessTime;
     metrics::LongCountMetric failedDueToTooLittleMemory;
     metrics::LongCountMetric convertToStorageAPIFailures;
+    metrics::LongCountMetric bucketSpaceMappingFailures;
     metrics::DoubleAverageMetric sendCommandLatency;
     metrics::DoubleAverageMetric sendReplyLatency;
 

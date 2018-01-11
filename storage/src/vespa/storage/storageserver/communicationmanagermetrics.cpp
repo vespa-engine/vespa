@@ -21,12 +21,14 @@ CommunicationManagerMetrics::CommunicationManagerMetrics(const LoadTypeSet& load
       failedDueToTooLittleMemory("toolittlememory", "", "Number of messages failed due to too little memory available", this),
       convertToStorageAPIFailures("convertfailures", "",
                                   "Number of messages that failed to get converted to storage API messages", this),
+      bucketSpaceMappingFailures("bucket_space_mapping_failures", "",
+                                 "Number of messages that could not be resolved to a known bucket space", this),
       sendCommandLatency("sendcommandlatency", "", "Average ms used to send commands to MBUS", this),
       sendReplyLatency("sendreplylatency", "", "Average ms used to send replies to MBUS", this)
 {
 }
 
-CommunicationManagerMetrics::~CommunicationManagerMetrics() { }
+CommunicationManagerMetrics::~CommunicationManagerMetrics() = default;
 
 }
 

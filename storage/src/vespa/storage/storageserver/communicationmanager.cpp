@@ -10,6 +10,7 @@
 #include <vespa/storage/common/bucket_resolver.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/config/config-stor-server.h>
+#include <vespa/storage/storageserver/configurable_bucket_resolver.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -17,6 +18,8 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/bufferedlogger.h>
+#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+
 LOG_SETUP(".communication.manager");
 
 using vespalib::make_string;
@@ -137,8 +140,13 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
 
         assert(docMsgPtr.get());
 
-        std::unique_ptr<api::StorageCommand> cmd(
-                _docApiConverter.toStorageAPI(static_cast<documentapi::DocumentMessage&>(*docMsgPtr), _component.getTypeRepo()));
+        std::unique_ptr<api::StorageCommand> cmd;
+        try {
+            cmd = _docApiConverter.toStorageAPI(static_cast<documentapi::DocumentMessage&>(*docMsgPtr), _component.getTypeRepo());
+        } catch (spi::UnknownBucketSpaceException& e) {
+            fail_with_unresolvable_bucket_space(std::move(docMsgPtr), e.getMessage());
+            return;
+        }
 
         if (!cmd.get()) {
             LOGBM(warning, "Unsupported message: StorageApi could not convert message of type %d to a storageapi message",
@@ -262,6 +270,19 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
     }
 }
 
+void CommunicationManager::fail_with_unresolvable_bucket_space(
+        std::unique_ptr<documentapi::DocumentMessage> msg,
+        const vespalib::string& error_message)
+{
+    LOG(debug, "Could not map DocumentAPI message to internal bucket: %s", error_message.c_str());
+    MBUS_TRACE(msg->getTrace(), 6, "Communication manager: Failing message as its document type has no known bucket space mapping");
+    std::unique_ptr<mbus::Reply> reply(new mbus::EmptyReply());
+    reply->addError(mbus::Error(documentapi::DocumentProtocol::ERROR_REJECTED, error_message));
+    msg->swapState(*reply);
+    _metrics.bucketSpaceMappingFailures.inc();
+    _messageBusSession->reply(std::move(reply));
+}
+
 namespace {
 
 struct PlaceHolderBucketResolver : public BucketResolver {
@@ -320,9 +341,9 @@ CommunicationManager::~CommunicationManager()
         onClose();
     }
 
-    _sourceSession.reset(0);
-    _messageBusSession.reset(0);
-    _mbus.reset(0);
+    _sourceSession.reset();
+    _messageBusSession.reset();
+    _mbus.reset();
 
     // Clear map of sent messages _before_ we delete any visitor threads to
     // avoid any issues where unloading shared libraries causes messages
@@ -336,12 +357,12 @@ CommunicationManager::~CommunicationManager()
 void CommunicationManager::onClose()
 {
     // Avoid getting config during shutdown
-    _configFetcher.reset(0);
+    _configFetcher.reset();
 
     _closed = true;
 
-    if (_mbus.get()) {
-        if (_messageBusSession.get()) {
+    if (_mbus) {
+        if (_messageBusSession) {
             _messageBusSession->close();
         }
     }
@@ -352,11 +373,11 @@ void CommunicationManager::onClose()
 
     // Stopping pumper thread should stop all incoming messages from being
     // processed.
-    if (_thread.get() != 0) {
+    if (_thread) {
         _thread->interrupt();
         _eventQueue.signal();
         _thread->join();
-        _thread.reset(0);
+        _thread.reset();
     }
 
     // Emptying remaining queued messages
@@ -771,6 +792,10 @@ void CommunicationManager::updateMessagebusProtocol(
         mbus::IProtocol::SP newStorageProtocol(new mbusprot::StorageProtocol(repo, *_component.getLoadTypes(), _component.enableMultipleBucketSpaces()));
         _earlierGenerations.push_back(std::make_pair(now, _mbus->getMessageBus().putProtocol(newStorageProtocol)));
     }
+}
+
+void CommunicationManager::updateBucketSpacesConfig(const BucketspacesConfig& config) {
+    _docApiConverter.setBucketResolver(ConfigurableBucketResolver::from_config(config));
 }
 
 } // storage
