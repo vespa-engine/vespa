@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
@@ -45,12 +45,12 @@ public class DeployAuthorizer {
         // Validate that domain in identity configuration (deployment.xml) is same as tenant domain
         applicationPackage.deploymentSpec().athenzDomain().ifPresent(identityDomain -> {
             AthenzDomain tenantDomain = tenant.getAthensDomain().orElseThrow(() -> new IllegalArgumentException("Identity provider only available to Athenz onboarded tenants"));
-            if (! Objects.equals(tenantDomain.id(), identityDomain.value())) {
+            if (! Objects.equals(tenantDomain.getName(), identityDomain.value())) {
                 throw new ForbiddenException(
                         String.format(
                                 "Athenz domain in deployment.xml: [%s] must match tenant domain: [%s]",
                                 identityDomain.value(),
-                                tenantDomain.id()
+                                tenantDomain.getName()
                         ));
             }
         });
@@ -75,7 +75,7 @@ public class DeployAuthorizer {
         if (!principalDomain.equals(AthenzUtils.SCREWDRIVER_DOMAIN)) {
             throw loggedForbiddenException(
                     "Principal '%s' is not a Screwdriver principal. Excepted principal with Athenz domain '%s', got '%s'.",
-                    principal.getName(), AthenzUtils.SCREWDRIVER_DOMAIN.id(), principalDomain.id());
+                    principal.getName(), AthenzUtils.SCREWDRIVER_DOMAIN.getName(), principalDomain.getName());
         }
 
         // NOTE: no fine-grained deploy authorization for non-Athenz tenants
@@ -86,7 +86,7 @@ public class DeployAuthorizer {
                         "Screwdriver principal '%1$s' does not have deploy access to '%2$s'. " +
                         "Either the application has not been created at " + zoneRegistry.getDashboardUri() + " or " +
                         "'%1$s' is not added to the application's deployer role in Athenz domain '%3$s'.",
-                        athenzPrincipal.getIdentity().getFullName(), applicationId, tenantDomain.id());
+                        athenzPrincipal.getIdentity().getFullName(), applicationId, tenantDomain.getName());
             }
         }
     }

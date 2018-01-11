@@ -37,7 +37,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBui
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
@@ -287,7 +287,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor response = slime.setObject();
         Cursor array = response.setArray("data");
         for (AthenzDomain athenzDomain : controller.getDomainList(request.getProperty("prefix"))) {
-            array.addString(athenzDomain.id());
+            array.addString(athenzDomain.getName());
         }
         return new SlimeJsonResponse(slime);
     }
@@ -881,7 +881,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request, boolean listApplications) {
         object.setString("tenant", tenant.getId().id());
         object.setString("type", tenant.tenantType().name());
-        tenant.getAthensDomain().ifPresent(a -> object.setString("athensDomain", a.id()));
+        tenant.getAthensDomain().ifPresent(a -> object.setString("athensDomain", a.getName()));
         tenant.getProperty().ifPresent(p -> object.setString("property", p.id()));
         tenant.getPropertyId().ifPresent(p -> object.setString("propertyId", p.toString()));
         tenant.getUserGroup().ifPresent(g -> object.setString("userGroup", g.id()));
@@ -920,7 +920,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("tenant", tenant.getId().id());
         Cursor metaData = object.setObject("metaData");
         metaData.setString("type", tenant.tenantType().name());
-        tenant.getAthensDomain().ifPresent(a -> metaData.setString("athensDomain", a.id()));
+        tenant.getAthensDomain().ifPresent(a -> metaData.setString("athensDomain", a.getName()));
         tenant.getProperty().ifPresent(p -> metaData.setString("property", p.id()));
         tenant.getUserGroup().ifPresent(g -> metaData.setString("userGroup", g.id()));
         object.setString("url", withPath("/application/v4/tenant/" + tenant.getId().id(), requestURI).toString());
@@ -1001,7 +1001,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         AthenzIdentity identity = authorizer.getIdentity(request);
         if ( ! authorizer.isAthenzDomainAdmin(identity, tenantDomain)) {
             throw new ForbiddenException(
-                    String.format("The user '%s' is not admin in Athenz domain '%s'", identity.getFullName(), tenantDomain.id()));
+                    String.format("The user '%s' is not admin in Athenz domain '%s'", identity.getFullName(), tenantDomain.getName()));
         }
     }
 

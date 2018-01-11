@@ -116,22 +116,6 @@ public class IdentifierTest {
     }
 
     @Test
-    public void athenz_parent_domain_is_without_name_suffix() {
-        assertEquals(new AthenzDomain("home.john"), new AthenzDomain("home.john.myapp").getParent());
-    }
-
-    @Test
-    public void athenz_domain_name_is_last_suffix() {
-        assertEquals("myapp", new AthenzDomain("home.john.myapp").getNameSuffix());
-    }
-
-    @Test
-    public void domain_without_dot_is_toplevel() {
-        assertTrue(new AthenzDomain("toplevel").isTopLevelDomain());
-        assertFalse(new AthenzDomain("not.toplevel").isTopLevelDomain());
-    }
-
-    @Test
     public void dns_names_has_no_underscore() {
         assertEquals("a-b-c", new ApplicationId("a_b_c").toDns());
     }
