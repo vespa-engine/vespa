@@ -7,7 +7,6 @@ import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.Session;
@@ -23,7 +22,6 @@ import static org.junit.Assert.assertNotNull;
  */
 public class TensorflowImportTestCase {
 
-    @Ignore
     @Test
     public void testMnistSoftmaxImport() {
         String modelDir = "src/test/files/integration/tensorflow/mnist_softmax/saved";
@@ -74,7 +72,6 @@ public class TensorflowImportTestCase {
         assertEqualResult(model, result, "Placeholder", "add");
     }
 
-    @Ignore
     @Test
     public void test3LayerMnistImport() {
         String modelDir = "src/test/files/integration/tensorflow/3_layer_mnist/saved";
