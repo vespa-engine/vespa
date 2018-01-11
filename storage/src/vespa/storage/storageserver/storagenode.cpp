@@ -76,7 +76,6 @@ StorageNode::StorageNode(
         std::unique_ptr<HostInfo> hostInfo,
         RunMode mode)
     : _singleThreadedDebugMode(mode == SINGLE_THREADED_TEST_MODE),
-      _has_enabled_global_spaces(false),
       _configFetcher(),
       _hostInfo(std::move(hostInfo)),
       _context(context),
@@ -144,6 +143,11 @@ StorageNode::initialize()
     // Fetch configs needed first. These functions will just grab the config
     // and store them away, while having the config lock.
     subscribeToConfigs();
+
+    // Multiple bucket spaces can only be enabled on startup and cannot be live reconfigured.
+    // A process restart is required to either enable or disable after the fact.
+    // TODO ensure config is tagged as 'restart' as a consequence
+    _context.getComponentRegister().setEnableMultipleBucketSpaces(_bucketSpacesConfig->enableMultipleBucketSpaces);
 
     updateUpgradeFlag(*_clusterConfig);
 
@@ -348,10 +352,7 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
     if (_newBucketSpacesConfig) {
         _bucketSpacesConfig = std::move(_newBucketSpacesConfig);
         _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
-        // If we've seen global bucket spaces enabled once, we must continue to update
-        // bucket spaces config or we'll get out of sync with doc types config.
-        _has_enabled_global_spaces = _has_enabled_global_spaces || _bucketSpacesConfig->enableMultipleBucketSpaces;
-        if (_has_enabled_global_spaces) {
+        if (_component->enableMultipleBucketSpaces()) {
             _communicationManager->updateBucketSpacesConfig(*_bucketSpacesConfig);
         }
     }

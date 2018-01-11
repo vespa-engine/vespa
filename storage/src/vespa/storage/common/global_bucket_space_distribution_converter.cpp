@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "global_bucket_space_distribution_converter.h"
+#include <vespa/config/config.h>
+#include <vespa/config/print/asciiconfigwriter.h>
+#include <vespa/config/print/asciiconfigreader.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vdslib/distribution/distribution_config_util.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -152,6 +155,27 @@ GlobalBucketSpaceDistributionConverter::convert_to_global(const DistributionConf
     set_distribution_invariant_config_fields(builder, source);
     build_global_groups(builder, source);
     return std::make_shared<DistributionConfig>(builder);
+}
+
+std::shared_ptr<lib::Distribution>
+GlobalBucketSpaceDistributionConverter::convert_to_global(const lib::Distribution& distr) {
+    const auto src_config = distr.serialize();
+    auto global_config = convert_to_global(*string_to_config(src_config));
+    return std::make_shared<lib::Distribution>(*global_config);
+}
+
+std::unique_ptr<DistributionConfig>
+GlobalBucketSpaceDistributionConverter::string_to_config(const vespalib::string& cfg) {
+    vespalib::asciistream iss(cfg);
+    config::AsciiConfigReader<vespa::config::content::StorDistributionConfig> reader(iss);
+    return reader.read();
+}
+
+vespalib::string GlobalBucketSpaceDistributionConverter::config_to_string(const DistributionConfig& cfg) {
+    vespalib::asciistream ost;
+    config::AsciiConfigWriter writer(ost);
+    writer.write(cfg);
+    return ost.str();
 }
 
 }

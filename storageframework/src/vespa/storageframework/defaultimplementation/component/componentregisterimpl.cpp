@@ -12,12 +12,12 @@ ComponentRegisterImpl::ComponentRegisterImpl()
       _components(),
       _topMetricSet("vds", "", ""),
       _hooks(),
-      _metricManager(0),
-      _memoryManager(0),
-      _clock(0),
-      _threadPool(0),
+      _metricManager(nullptr),
+      _memoryManager(nullptr),
+      _clock(nullptr),
+      _threadPool(nullptr),
       _upgradeFlag(NO_UPGRADE_SPECIAL_HANDLING_ACTIVE),
-      _shutdownListener(0)
+      _shutdownListener(nullptr)
 { }
 
 ComponentRegisterImpl::~ComponentRegisterImpl() { }

@@ -37,6 +37,7 @@ class StorageComponentRegisterImpl
     lib::Distribution::SP _distribution;
     NodeStateUpdater* _nodeStateUpdater;
     BucketspacesConfig _bucketSpacesConfig;
+    bool _enableMultipleBucketSpaces;
 
 public:
     typedef std::unique_ptr<StorageComponentRegisterImpl> UP;
@@ -67,6 +68,9 @@ public:
     virtual void setBucketIdFactory(const document::BucketIdFactory&);
     virtual void setDistribution(lib::Distribution::SP);
     virtual void setBucketSpacesConfig(const BucketspacesConfig&);
+
+    virtual void setEnableMultipleBucketSpaces(bool enabled); // To be called during startup configuration phase only.
+    bool enableMultipleBucketSpaces() const;
 
 };
 
