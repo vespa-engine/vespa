@@ -117,7 +117,7 @@ public class SessionZooKeeperClient {
 
     /** Returns the number of node members needed in a barrier */
     private int getNumberOfMembers() {
-        return (curator.serverCount() / 2) + 1; // majority
+        return (curator.zooKeeperEnsembleCount() / 2) + 1; // majority
     }
 
     private Curator.CompletionWaiter createCompletionWaiter(String waiterNode) {

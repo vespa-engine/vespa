@@ -23,7 +23,7 @@ public class ZooKeeperAccessMaintainerTest {
     @Test
     public void test() {
         NodeRepositoryTester tester = new NodeRepositoryTester();
-        tester.curator().setConnectionSpec("server1:1234,server2:5678");
+        tester.curator().setZooKeeperEnsembleConnectionSpec("server1:1234,server2:5678");
         ZooKeeperAccessMaintainer maintainer = new ZooKeeperAccessMaintainer(tester.nodeRepository(), 
                                                                              tester.curator(), Duration.ofHours(1), new JobControl(tester.nodeRepository().database()));
         assertTrue(ZooKeeperServer.getAllowedClientHostnames().isEmpty());

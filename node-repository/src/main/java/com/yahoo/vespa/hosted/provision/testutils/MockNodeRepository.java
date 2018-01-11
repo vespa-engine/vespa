@@ -51,7 +51,7 @@ public class MockNodeRepository extends NodeRepository {
               new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
         this.flavors = flavors;
 
-        curator.setConnectionSpec("cfg1:1234,cfg2:1234,cfg3:1234");
+        curator.setZooKeeperEnsembleConnectionSpec("cfg1:1234,cfg2:1234,cfg3:1234");
         populate();
     }
 

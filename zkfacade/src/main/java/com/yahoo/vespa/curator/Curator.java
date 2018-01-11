@@ -26,10 +26,10 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * Curator interface for Vespa.
@@ -47,77 +47,85 @@ public class Curator implements AutoCloseable {
     private static final int ZK_SESSION_TIMEOUT = 30000;
     private static final int ZK_CONNECTION_TIMEOUT = 30000;
 
-    private static final int baseSleepTime = 1000; //ms
-    private static final int maxRetries = 10;
+    private static final int BASE_SLEEP_TIME = 1000; //ms
+    private static final int MAX_RETRIES = 10;
 
-    private final CuratorFramework curatorFramework;
     protected final RetryPolicy retryPolicy;
 
-    private final String connectionSpec;
-    private final int serverCount;
+    private final CuratorFramework curatorFramework;
+    private final String connectionSpec; // May be a subset of the servers in the ensemble
+
+    private final String zooKeeperEnsembleConnectionSpec;
+    private final int zooKeeperEnsembleCount;
 
     /** Creates a curator instance from a comma-separated string of ZooKeeper host:port strings */
     public static Curator create(String connectionSpec) {
-        return new Curator(connectionSpec);
+        return new Curator(connectionSpec, connectionSpec);
     }
 
     // Depend on ZooKeeperServer to make sure it is started first
     // TODO: Move zookeeperserver config out of configserverconfig (requires update of controller services.xml as well)
     @Inject
     public Curator(ConfigserverConfig configserverConfig, ZooKeeperServer server) {
-        this(createConnectionSpec(configserverConfig));
-    }
-    
-    static String createConnectionSpec(ConfigserverConfig config) {
-        String thisServer = HostName.getLocalhost();
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < config.zookeeperserver().size(); i++) {
-            ConfigserverConfig.Zookeeperserver server = config.zookeeperserver(i);
-
-            String spec = String.format("%s:%d", server.hostname(), server.port());
-
-            if (config.zookeeperLocalhostAffinity() && server.hostname().equals(thisServer)) {
-                // Only connect to localhost server if possible, to save network traffic
-                // and balance load.
-                return spec;
-            }
-
-            if (sb.length() > 0) {
-                sb.append(',');
-            }
-
-            sb.append(spec);
-        }
-        return sb.toString();
+        this(configserverConfig, createConnectionSpec(configserverConfig));
     }
 
-    /** 
-     * Create a curator instance which connects to the zookeeper servers given by a connection spec
-     * on the format "hostname1:port,hostname2:port" ...
-     */
-    public Curator(String connectionSpec) {
-        Objects.requireNonNull(connectionSpec, "The curator connection spec cannot be null");
+    private Curator(ConfigserverConfig configserverConfig, String zooKeeperEnsembleConnectionSpec) {
+        this(configserverConfig.zookeeperLocalhostAffinity() ?
+                HostName.getLocalhost() : zooKeeperEnsembleConnectionSpec,
+                zooKeeperEnsembleConnectionSpec);
+    }
+
+    private Curator(String connectionSpec, String zooKeeperEnsembleConnectionSpec) {
+        this(connectionSpec,
+                zooKeeperEnsembleConnectionSpec,
+                (retryPolicy) -> CuratorFrameworkFactory
+                        .builder()
+                        .retryPolicy(retryPolicy)
+                        .sessionTimeoutMs(ZK_SESSION_TIMEOUT)
+                        .connectionTimeoutMs(ZK_CONNECTION_TIMEOUT)
+                        .connectString(connectionSpec)
+                        .zookeeperFactory(new DNSResolvingFixerZooKeeperFactory(UNKNOWN_HOST_TIMEOUT_MILLIS))
+                        .build());
+    }
+
+    protected Curator(String connectionSpec,
+                      String zooKeeperEnsembleConnectionSpec,
+                      Function<RetryPolicy, CuratorFramework> curatorFactory) {
+        this(connectionSpec, zooKeeperEnsembleConnectionSpec, curatorFactory,
+                new ExponentialBackoffRetry(BASE_SLEEP_TIME, MAX_RETRIES));
+    }
+
+    private Curator(String connectionSpec,
+                    String zooKeeperEnsembleConnectionSpec,
+                    Function<RetryPolicy, CuratorFramework> curatorFactory,
+                    RetryPolicy retryPolicy) {
         this.connectionSpec = connectionSpec;
-        this.serverCount = connectionSpec.split(",").length;
-        validateConnectionSpec(connectionSpec);
-        retryPolicy = new ExponentialBackoffRetry(baseSleepTime, maxRetries);
-        curatorFramework = CuratorFrameworkFactory.builder()
-                .retryPolicy(retryPolicy)
-                .sessionTimeoutMs(ZK_SESSION_TIMEOUT)
-                .connectionTimeoutMs(ZK_CONNECTION_TIMEOUT)
-                .connectString(connectionSpec)
-                .zookeeperFactory(new DNSResolvingFixerZooKeeperFactory(UNKNOWN_HOST_TIMEOUT_MILLIS))
-                .build();
-        addFakeListener();
-        curatorFramework.start();
+        this.retryPolicy = retryPolicy;
+        this.curatorFramework = curatorFactory.apply(retryPolicy);
+        if (this.curatorFramework != null) {
+            validateConnectionSpec(connectionSpec);
+            validateConnectionSpec(zooKeeperEnsembleConnectionSpec);
+            addFakeListener();
+            curatorFramework.start();
+        }
+
+        this.zooKeeperEnsembleConnectionSpec = zooKeeperEnsembleConnectionSpec;
+        this.zooKeeperEnsembleCount = zooKeeperEnsembleConnectionSpec.split(",").length;
     }
 
-    protected Curator() {
-        this.connectionSpec = "";
-        this.serverCount = 0;
-        retryPolicy = new ExponentialBackoffRetry(baseSleepTime, maxRetries);
-        curatorFramework = null;
+    static String createConnectionSpec(ConfigserverConfig config) {
+        StringBuilder connectionSpec = new StringBuilder();
+        for (int i = 0; i < config.zookeeperserver().size(); i++) {
+            if (connectionSpec.length() > 0) {
+                connectionSpec.append(',');
+            }
+            ConfigserverConfig.Zookeeperserver server = config.zookeeperserver(i);
+            connectionSpec.append(server.hostname());
+            connectionSpec.append(':');
+            connectionSpec.append(server.port());
+        }
+        return connectionSpec.toString();
     }
 
     private static void validateConnectionSpec(String connectionSpec) {
@@ -125,18 +133,19 @@ public class Curator implements AutoCloseable {
             throw new IllegalArgumentException(String.format("Connections spec '%s' is not valid", connectionSpec));
     }
 
-    /** Returns the number of zooKeeper servers in this cluster */
-    public int serverCount() { return serverCount; }
-
-    /** 
-     * Returns the servers in this cluster as a comma-separated list of host:port strings. 
+    /**
+     * Returns the ZooKeeper "connect string" used by curator: a comma-separated list of
+     * host:port of ZooKeeper endpoints to connect to. This may be a subset of
+     * zooKeeperEnsembleConnectionSpec() if there's some affinity, e.g. for
+     * performance reasons.
+     *
      * This may be empty but never null 
      */
     public String connectionSpec() { return connectionSpec; }
 
     /** For internal use; prefer creating a {@link CuratorCounter} */
     public DistributedAtomicLong createAtomicCounter(String path) {
-        return new DistributedAtomicLong(curatorFramework, path, new ExponentialBackoffRetry(baseSleepTime, maxRetries));
+        return new DistributedAtomicLong(curatorFramework, path, new ExponentialBackoffRetry(BASE_SLEEP_TIME, MAX_RETRIES));
     }
 
     /** For internal use; prefer creating a {@link com.yahoo.vespa.curator.recipes.CuratorLock} */
@@ -339,4 +348,19 @@ public class Curator implements AutoCloseable {
 
     }
 
+    /**
+     * @return The non-null connect string containing all ZooKeeper servers in the ensemble.
+     * WARNING: This may be different from the servers this Curator may connect to.
+     * TODO: Move method out of this class.
+     */
+    public String zooKeeperEnsembleConnectionSpec() {
+        return zooKeeperEnsembleConnectionSpec;
+    }
+
+    /**
+     * Returns the number of zooKeeper servers in this ensemble.
+     * WARNING: This may be different from the number of servers this Curator may connect to.
+     * TODO: Move method out of this class.
+     */
+    public int zooKeeperEnsembleCount() { return zooKeeperEnsembleCount; }
 }

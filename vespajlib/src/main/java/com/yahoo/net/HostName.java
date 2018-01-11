@@ -177,8 +177,4 @@ public class HostName {
             return false;
         }
     }
-
-    public static void setHostNameForTestingOnly(String hostName) {
-        preferredHostName = hostName;
-    }
 }
