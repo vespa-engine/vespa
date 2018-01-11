@@ -57,7 +57,7 @@ public class NodeRepositoryImplTest {
     public void startContainer() throws Exception {
         final int port = findRandomOpenPort();
         requestExecutor = ConfigServerHttpRequestExecutor.create(
-                Collections.singleton(URI.create("http://127.0.0.1:" + port)));
+                Collections.singleton(URI.create("http://127.0.0.1:" + port)), Optional.empty(), Optional.empty());
         container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(port), Networking.enable);
     }
 

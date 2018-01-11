@@ -3,8 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import org.apache.http.HttpHeaders;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -13,27 +13,27 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContextBuilder;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * Retries request on config server a few times before giving up. Assumes that all requests should be sent with
@@ -41,62 +41,39 @@ import java.util.Optional;
  *
  * @author dybdahl
  */
-public class ConfigServerHttpRequestExecutor {
+public class ConfigServerHttpRequestExecutor implements AutoCloseable {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(ConfigServerHttpRequestExecutor.class);
+    private static final Duration CLIENT_REFRESH_INTERVAL = Duration.ofHours(1);
 
     private final ObjectMapper mapper = new ObjectMapper();
-    private final CloseableHttpClient client;
+    private final ScheduledExecutorService clientRefresherScheduler =
+            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("http-client-refresher"));
     private final List<URI> configServerHosts;
 
-    @Override
-    public void finalize() throws Throwable {
-        try {
-            client.close();
-        } catch (Exception e) {
-            NODE_ADMIN_LOGGER.warning("Ignoring exception thrown when closing client against " + configServerHosts, e);
+    /**
+     * The 'client' will be periodically re-created by clientRefresherScheduler if we provide keyStoreOptions
+     * or trustStoreOptions. This is needed because the key/trust stores are updated outside of node-admin,
+     * but we want to use the most recent store.
+     *
+     * The 'client' reference must be volatile because it is set and read in different threads, and visibility
+     * of changes is only guaranteed for volatile variables.
+     */
+    private volatile SelfCloseableHttpClient client;
+
+    public static ConfigServerHttpRequestExecutor create(
+            Collection<URI> configServerUris, Optional<KeyStoreOptions> keyStoreOptions, Optional<KeyStoreOptions> trustStoreOptions) {
+        Supplier<SelfCloseableHttpClient> clientSupplier = () -> createHttpClient(keyStoreOptions, trustStoreOptions);
+        ConfigServerHttpRequestExecutor requestExecutor = new ConfigServerHttpRequestExecutor(
+                randomizeConfigServerUris(configServerUris), clientSupplier.get());
+
+        if (keyStoreOptions.isPresent() || trustStoreOptions.isPresent()) {
+            requestExecutor.clientRefresherScheduler.scheduleAtFixedRate(() -> requestExecutor.client = clientSupplier.get(),
+                    CLIENT_REFRESH_INTERVAL.toMillis(), CLIENT_REFRESH_INTERVAL.toMillis(), TimeUnit.MILLISECONDS);
         }
-
-        super.finalize();
+        return requestExecutor;
     }
 
-    public static ConfigServerHttpRequestExecutor create(Collection<URI> configServerUris) {
-        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(getConnectionSocketFactoryRegistry());
-        cm.setMaxTotal(200); // Increase max total connections to 200, which should be enough
-
-        // Have experienced hang in socket read, which may have been because of
-        // system defaults, therefore set explicit timeouts. Set arbitrarily to
-        // 15s > 10s used by Orchestrator lock timeout.
-        int timeoutMs = 15_000;
-        RequestConfig requestBuilder = RequestConfig.custom()
-                .setConnectTimeout(timeoutMs) // establishment of connection
-                .setConnectionRequestTimeout(timeoutMs) // connection from connection manager
-                .setSocketTimeout(timeoutMs) // waiting for data
-                .build();
-
-        return new ConfigServerHttpRequestExecutor(randomizeConfigServerUris(configServerUris),
-                                                   HttpClientBuilder.create()
-                                                           .setDefaultRequestConfig(requestBuilder)
-                                                           .disableAutomaticRetries()
-                                                           .setUserAgent("node-admin")
-                                                           .setConnectionManager(cm).build());
-    }
-
-    private static Registry<ConnectionSocketFactory> getConnectionSocketFactoryRegistry() {
-        try {
-            SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
-                    new SSLContextBuilder().loadTrustMaterial(null, (arg0, arg1) -> true).build(),
-                    NoopHostnameVerifier.INSTANCE);
-
-            return RegistryBuilder.<ConnectionSocketFactory>create()
-                    .register("http", PlainConnectionSocketFactory.getSocketFactory())
-                    .register("https", sslSocketFactory)
-                    .build();
-        } catch (GeneralSecurityException e) {
-            throw new RuntimeException("Failed to create SSL context", e);
-        }
-    }
-
-    ConfigServerHttpRequestExecutor(List<URI> configServerHosts, CloseableHttpClient client) {
+    ConfigServerHttpRequestExecutor(List<URI> configServerHosts, SelfCloseableHttpClient client) {
         this.configServerHosts = configServerHosts;
         this.client = client;
     }
@@ -200,4 +177,51 @@ public class ConfigServerHttpRequestExecutor {
         return shuffledConfigServerHosts;
     }
 
+    private static SelfCloseableHttpClient createHttpClient(Optional<KeyStoreOptions> keyStoreOptions,
+                                                            Optional<KeyStoreOptions> trustStoreOptions) {
+        NODE_ADMIN_LOGGER.info("Creating new HTTP client");
+        try {
+            SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
+                    makeSslContext(keyStoreOptions, trustStoreOptions), NoopHostnameVerifier.INSTANCE);
+            return new SelfCloseableHttpClient(sslSocketFactory);
+        } catch (Exception e) {
+            NODE_ADMIN_LOGGER.error("Failed to create HTTP client with custom SSL Context, proceeding with default");
+            return new SelfCloseableHttpClient();
+        }
+    }
+
+    private static SSLContext makeSslContext(Optional<KeyStoreOptions> keyStoreOptions, Optional<KeyStoreOptions> trustStoreOptions)
+            throws KeyManagementException, NoSuchAlgorithmException {
+        SSLContextBuilder sslContextBuilder = new SSLContextBuilder();
+        keyStoreOptions.ifPresent(options -> {
+            try {
+                sslContextBuilder.loadKeyMaterial(options.getKeyStore(), options.password);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        trustStoreOptions.ifPresent(options -> {
+            try {
+                sslContextBuilder.loadTrustMaterial(options.getKeyStore(), null);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        return sslContextBuilder.build();
+    }
+
+    @Override
+    public void close() {
+        do {
+            try {
+                clientRefresherScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            } catch (InterruptedException e1) {
+                NODE_ADMIN_LOGGER.info("Interrupted while waiting for clientRefresherScheduler to shutdown");
+            }
+        } while (!clientRefresherScheduler.isTerminated());
+
+        client.close();
+    }
 }

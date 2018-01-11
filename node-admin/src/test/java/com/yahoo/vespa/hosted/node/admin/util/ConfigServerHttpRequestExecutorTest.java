@@ -7,7 +7,6 @@ import org.apache.http.HttpVersion;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.entity.BasicHttpEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicStatusLine;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +26,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -56,7 +54,7 @@ public class ConfigServerHttpRequestExecutorTest {
 
     @Before
     public void initExecutor() throws IOException {
-        CloseableHttpClient httpMock = mock(CloseableHttpClient.class);
+        SelfCloseableHttpClient httpMock = mock(SelfCloseableHttpClient.class);
         when(httpMock.execute(any())).thenAnswer(invocationOnMock -> {
             HttpGet get = (HttpGet) invocationOnMock.getArguments()[0];
             mockLog.append(get.getMethod()).append(" ").append(get.getURI()).append("  ");
@@ -74,7 +72,6 @@ public class ConfigServerHttpRequestExecutorTest {
 
             return response;
         });
-        doNothing().when(httpMock).close();
         executor = new ConfigServerHttpRequestExecutor(configServers, httpMock);
     }
 
