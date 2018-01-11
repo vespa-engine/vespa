@@ -205,11 +205,9 @@ public class TensorTransformer extends ExpressionTransformer<RankProfileTransfor
     }
 
     private void addIfConstantInRankingConstants(String name, ReferenceNode node, Context context, RankProfile profile) {
-        for (RankingConstant rankingConstant : profile.getSearch().getRankingConstants()) {
-            if (rankingConstant.getName().equals(name)) {
-                context.put(node.toString(), emptyTensorValue(rankingConstant.getTensorType()));
-            }
-        }
+        RankingConstant constant = profile.getSearch().getRankingConstants().get(name);
+        if (constant != null)
+            context.put(node.toString(), emptyTensorValue(constant.getTensorType()));
     }
 
     private void addIfQuery(ReferenceNode node, Context context, RankProfile profile) {
