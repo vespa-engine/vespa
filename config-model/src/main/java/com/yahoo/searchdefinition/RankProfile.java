@@ -39,7 +39,7 @@ public class RankProfile implements Serializable, Cloneable {
     private final String name;
 
     /** The search definition owning this profile, or null if none */
-    private Search search=null;
+    private Search search = null;
 
     /** The name of the rank profile inherited by this */
     private String inheritedName = null;
@@ -51,7 +51,7 @@ public class RankProfile implements Serializable, Cloneable {
     protected Set<RankSetting> rankSettings = new java.util.LinkedHashSet<>();
 
     /** The ranking expression to be used for first phase */
-    private RankingExpression firstPhaseRanking= null;
+    private RankingExpression firstPhaseRanking = null;
 
     /** The ranking expression to be used for second phase */
     private RankingExpression secondPhaseRanking = null;

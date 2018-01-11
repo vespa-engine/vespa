@@ -21,6 +21,7 @@ public class FileDistributionProvider {
     private final FileDistribution fileDistribution;
 
     static private class ManagerWrapper implements AddFileInterface {
+
         private final FileDistributionManager manager;
         ManagerWrapper(FileDistributionManager manager) {
             this.manager = manager;
@@ -45,7 +46,7 @@ public class FileDistributionProvider {
                 zooKeepersSpec, applicationId, fileDistributionLock);
         this.fileDistribution = new CombinedLegacyDistribution(supervisor, new FileDBHandler(manager), disableFileDistributor);
         this.fileRegistry = new CombinedLegacyRegistry(new FileDBRegistry(new ManagerWrapper(manager)),
-                new FileDBRegistry(new ApplicationFileManager(applicationDir, new FileDirectory())));
+                                                       new FileDBRegistry(new ApplicationFileManager(applicationDir, new FileDirectory())));
 
     }
 

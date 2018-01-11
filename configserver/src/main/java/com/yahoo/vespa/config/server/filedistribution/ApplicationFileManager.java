@@ -5,6 +5,7 @@ import com.yahoo.config.FileReference;
 import java.io.File;
 
 public class ApplicationFileManager implements AddFileInterface {
+
     private final File applicationDir;
     private final FileDirectory master;
 
@@ -22,4 +23,5 @@ public class ApplicationFileManager implements AddFileInterface {
     public FileReference addFile(String relativePath) {
         return master.addFile(new File(applicationDir, relativePath));
     }
+
 }

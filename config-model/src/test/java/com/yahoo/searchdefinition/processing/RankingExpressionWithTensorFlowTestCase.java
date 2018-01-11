@@ -15,7 +15,8 @@ import static org.junit.Assert.fail;
  */
 public class RankingExpressionWithTensorFlowTestCase {
 
-    private final String modelDirectory = "src/test/integration/tensorflow/mnist_softmax/saved";
+    // The "../" is to escape the "models/" element prepended to the path
+    private final String modelDirectory = "../src/test/integration/tensorflow/mnist_softmax/saved";
     private final String vespaExpression = "join(rename(reduce(join(Placeholder, rename(constant(Variable), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(Variable_1), d0, d1), f(a,b)(a + b))";
 
     @Test

@@ -6,7 +6,7 @@ import com.yahoo.tensor.TensorType;
 import java.util.Objects;
 
 /**
- * Represents a global ranking constant (declared in a .sd file)
+ * Represents a global ranking constant
  *
  * @author arnej
  */
@@ -16,23 +16,35 @@ public class RankingConstant {
     private final String name;
     private TensorType tensorType = null;
     private String fileName = null;
-    private String fileRef = "";
+    private String fileReference = "";
 
     public RankingConstant(String name) {
         this.name = name;
     }
 
-    public void setFileName(String fileName) { 
-        Objects.requireNonNull(fileName, "Filename cannot be null");
-        this.fileName = fileName; 
+    public RankingConstant(String name, TensorType type, String fileName) {
+        this(name);
+        this.tensorType = type;
+        this.fileName = fileName;
+        validate();
     }
 
-    public void setFileReference(String fileRef) { this.fileRef = fileRef; }
+    public void setFileName(String fileName) {
+        Objects.requireNonNull(fileName, "Filename cannot be null");
+        this.fileName = fileName;
+    }
+
+    /**
+     * Set the internally generated reference to this file used to identify this instance of the file for
+     * file distribution.
+     */
+    public void setFileReference(String fileReference) { this.fileReference = fileReference; }
+
     public void setType(TensorType tensorType) { this.tensorType = tensorType; }
 
     public String getName() { return name; }
     public String getFileName() { return fileName; }
-    public String getFileReference() { return fileRef; }
+    public String getFileReference() { return fileReference; }
     public TensorType getTensorType() { return tensorType; }
     public String getType() { return tensorType.toString(); }
 
@@ -47,7 +59,7 @@ public class RankingConstant {
         StringBuilder b = new StringBuilder();
         b.append("constant '").append(name)
          .append("' from file '").append(fileName)
-         .append("' with ref '").append(fileRef)
+         .append("' with ref '").append(fileReference)
          .append("' of type '").append(tensorType)
          .append("'");
         return b.toString();

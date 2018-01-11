@@ -58,7 +58,7 @@ public class Search implements Serializable, ImmutableSearch {
 
     // Field sets
     private FieldSets fieldSets = new FieldSets();
-    
+
     // Whether or not this object has been processed.
     private boolean processed;
 
@@ -162,13 +162,13 @@ public class Search implements Serializable, ImmutableSearch {
         docType = document;
     }
 
-    public void addRankingConstant(RankingConstant rConstant) {
-        rConstant.validate();
-        String name = rConstant.getName();
+    public void addRankingConstant(RankingConstant constant) {
+        constant.validate();
+        String name = constant.getName();
         if (rankingConstants.get(name) != null) {
             throw new IllegalArgumentException("Ranking constant '"+name+"' defined twice");
         }
-        rankingConstants.put(name, rConstant);
+        rankingConstants.put(name, constant);
     }
 
     public Iterable<RankingConstant> getRankingConstants() {

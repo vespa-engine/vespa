@@ -3,19 +3,17 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.RankingConstant;
+import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.ImportedFieldsConfig;
-import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
-import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.config.search.SummarymapConfig;
+import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.summary.JuniperrcConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-import com.yahoo.config.FileReference;
-import com.yahoo.vespa.model.utils.FileSender;
 
 /**
  * Represents a document database and the backend configuration needed for this database.
@@ -59,17 +57,17 @@ public class DocumentDatabase extends AbstractConfigProducer implements
     public void getConfig(IndexInfoConfig.Builder builder) {
         derivedCfg.getIndexInfo().getConfig(builder);
     }
-    
+
     @Override
     public void getConfig(IlscriptsConfig.Builder builder) {
         derivedCfg.getIndexingScript().getConfig(builder);
     }
-    
+
     @Override
     public void getConfig(AttributesConfig.Builder builder) {
         derivedCfg.getAttributeFields().getConfig(builder);
     }
-    
+
     @Override
     public void getConfig(RankProfilesConfig.Builder builder) {
         derivedCfg.getRankProfileList().getConfig(builder);
@@ -77,15 +75,15 @@ public class DocumentDatabase extends AbstractConfigProducer implements
 
     @Override
     public void getConfig(RankingConstantsConfig.Builder builder) {
-        for (RankingConstant rConstant : derivedCfg.getSearch().getRankingConstants()) {
-            if ("".equals(rConstant.getFileReference())) {
-                System.err.println("INVALID rank constant "+rConstant.getName()+" [missing file reference]");
+        for (RankingConstant constant : derivedCfg.getSearch().getRankingConstants()) {
+            if ("".equals(constant.getFileReference())) {
+                System.err.println("INVALID rank constant "+constant.getName()+" [missing file reference]"); // TODO: Throw or log warning
                 continue;
             }
             builder.constant(new RankingConstantsConfig.Constant.Builder()
-                             .name(rConstant.getName())
-                             .fileref(rConstant.getFileReference())
-                             .type(rConstant.getType()));
+                             .name(constant.getName())
+                             .fileref(constant.getFileReference())
+                             .type(constant.getType()));
         }
     }
 
@@ -93,17 +91,17 @@ public class DocumentDatabase extends AbstractConfigProducer implements
     public void getConfig(IndexschemaConfig.Builder builder) {
         derivedCfg.getIndexSchema().getConfig(builder);
     }
-    
+
     @Override
     public void getConfig(JuniperrcConfig.Builder builder) {
         derivedCfg.getJuniperrc().getConfig(builder);
     }
-    
+
     @Override
     public void getConfig(SummarymapConfig.Builder builder) {
         derivedCfg.getSummaryMap().getConfig(builder);
     }
-    
+
     @Override
     public void getConfig(SummaryConfig.Builder builder) {
         derivedCfg.getSummaries().getConfig(builder);
