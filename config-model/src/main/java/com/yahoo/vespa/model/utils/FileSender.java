@@ -17,7 +17,6 @@ import java.util.*;
  * Utility methods for sending files to a collection of nodes.
  *
  * @author gjoranv
- * @since 5.1.9
  */
 public class FileSender implements Serializable {
 

@@ -61,9 +61,9 @@ public class ZKApplicationPackage implements ApplicationPackage {
         return Optional.of(readAllocatedHosts(allocatedHostsPath, nodeFlavors));
     }
 
-    /** 
+    /**
      * Reads allocated hosts at the given node.
-     * 
+     *
      * @return the allocated hosts at this node or empty if there is no data at this path
      */
     private AllocatedHosts readAllocatedHosts(String allocatedHostsPath, Optional<NodeFlavors> nodeFlavors) {
@@ -79,11 +79,9 @@ public class ZKApplicationPackage implements ApplicationPackage {
         if (fileRegistryNodes.isEmpty()) {
             fileRegistryMap.put(legacyVersion, importFileRegistry(fileRegistryNode));
         } else {
-            fileRegistryNodes.stream()
-                    .forEach(version -> {
+            fileRegistryNodes.forEach(version ->
                         fileRegistryMap.put(com.yahoo.config.provision.Version.fromString(version),
-                                            importFileRegistry(Joiner.on("/").join(fileRegistryNode, version)));
-                    });
+                                            importFileRegistry(Joiner.on("/").join(fileRegistryNode, version))));
         }
     }
 
@@ -155,7 +153,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     private Optional<PreGeneratedFileRegistry> getPreGeneratedFileRegistry(com.yahoo.config.provision.Version vespaVersion) {
         // Assumes at least one file registry, which we always have.
         Optional<PreGeneratedFileRegistry> fileRegistry = Optional.ofNullable(fileRegistryMap.get(vespaVersion));
-        if (!fileRegistry.isPresent()) {
+        if ( ! fileRegistry.isPresent()) {
             fileRegistry = Optional.of(fileRegistryMap.values().iterator().next());
         }
         return fileRegistry;
@@ -243,7 +241,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
         List<ComponentInfo> components = new ArrayList<>();
         PreGeneratedFileRegistry fileRegistry = getPreGeneratedFileRegistry(vespaVersion).get();
         for (String path : fileRegistry.getPaths()) {
-            if (path.startsWith(FilesApplicationPackage.COMPONENT_DIR + File.separator) && path.endsWith(".jar")) {
+            if (path.startsWith(ApplicationPackage.COMPONENT_DIR + File.separator) && path.endsWith(".jar")) {
                 ComponentInfo component = new ComponentInfo(path);
                 components.add(component);
             }

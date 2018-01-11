@@ -100,7 +100,7 @@ public class ZooKeeperClient {
     }
 
     /**
-     * Feeds def files and user config into ZK.
+     * Writes def files and user config into ZK.
      *
      * @param app the application package to feed to zookeeper
      */
