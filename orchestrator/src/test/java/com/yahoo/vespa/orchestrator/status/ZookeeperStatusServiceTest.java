@@ -8,8 +8,6 @@ import com.yahoo.vespa.orchestrator.TestIds;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.curator.SessionFailRetryLoop.SessionFailedException;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.KillSession;
 import org.apache.curator.test.TestingServer;
 import org.hamcrest.Description;
@@ -56,7 +54,7 @@ public class ZookeeperStatusServiceTest {
     }
 
     private static Curator createConnectedCurator(TestingServer server) throws InterruptedException {
-        Curator curator = new Curator(server.getConnectString());
+        Curator curator = Curator.create(server.getConnectString());
         curator.framework().blockUntilConnected(1, TimeUnit.MINUTES);
         return curator;
     }

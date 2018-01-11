@@ -27,7 +27,7 @@ public class FileDistributionFactory {
 
     @Inject
     public FileDistributionFactory(Curator curator) {
-        this(curator, curator.connectionSpec());
+        this(curator, curator.zooKeeperEnsembleConnectionSpec());
     }
 
     public FileDistributionFactory(Curator curator, String zkSpec) {

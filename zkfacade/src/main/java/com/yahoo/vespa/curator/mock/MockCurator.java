@@ -7,8 +7,6 @@ import com.yahoo.collections.Pair;
 import com.yahoo.concurrent.Lock;
 import com.yahoo.concurrent.Locks;
 import com.yahoo.path.Path;
-import static com.yahoo.vespa.curator.mock.MemoryFileSystem.Node;
-
 import com.yahoo.vespa.curator.CompletionTimeoutException;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.recipes.CuratorLockException;
@@ -86,6 +84,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.yahoo.vespa.curator.mock.MemoryFileSystem.Node;
+
 /**
  * <p>A <b>non thread safe</b> mock of the curator API.
  * The methods are implemented lazily, due to laziness.
@@ -106,7 +106,7 @@ public class MockCurator extends Curator {
     private boolean shouldTimeoutOnEnter = false;
     private int monotonicallyIncreasingNumber = 0;
     private final boolean stableOrdering;
-    private String connectionSpec = "";
+    private String zooKeeperEnsembleConnectionSpec = "";
     private final Locks<String> locks = new Locks<>(Long.MAX_VALUE, TimeUnit.DAYS);
 
     /** The file system used by this mock to store zookeeper files and directories */
@@ -133,6 +133,7 @@ public class MockCurator extends Curator {
      *                       This is not what ZooKeeper does.
      */
     public MockCurator(boolean stableOrdering) {
+        super("", "", (retryPolicy) -> null);
         this.stableOrdering = stableOrdering;
         curatorFramework = new MockCuratorFramework();
         curatorFramework.start();
@@ -152,11 +153,18 @@ public class MockCurator extends Curator {
         return Optional.ofNullable(atomicCounters.get(path));
     }
     
-    /** Assigns the connection string, which must be on the form host1:port,host2:port ... */
-    public void setConnectionSpec(String connectionSpec) { this.connectionSpec = connectionSpec; }
+    /**
+     * Sets the ZooKeeper ensemble connection spec, which must be on the form
+     * host1:port,host2:port ...
+     */
+    public void setZooKeeperEnsembleConnectionSpec(String ensembleSpec) {
+        this.zooKeeperEnsembleConnectionSpec = ensembleSpec;
+    }
 
     @Override
-    public String connectionSpec() { return connectionSpec; }
+    public String zooKeeperEnsembleConnectionSpec() {
+        return zooKeeperEnsembleConnectionSpec;
+    }
 
     // ----- Start of adaptor methods from Curator to the mock file system -----
 
@@ -368,7 +376,7 @@ public class MockCurator extends Curator {
         public void notify(Path path, PathChildrenCacheEvent event) {
             try {
                 // Snapshot directoryListeners in case notification leads to new directoryListeners added
-                Set<Map.Entry<Path, PathChildrenCacheListener>>directoryLlistenerSnapshot = new HashSet<>(directoryListeners.entrySet());
+                Set<Map.Entry<Path, PathChildrenCacheListener>> directoryLlistenerSnapshot = new HashSet<>(directoryListeners.entrySet());
                 for (Map.Entry<Path, PathChildrenCacheListener> listener : directoryLlistenerSnapshot) {
                     if (path.isChildOf(listener.getKey()))
                         listener.getValue().childEvent(curatorFramework, event);
