@@ -23,6 +23,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.monitoring.MetricsReporterTest;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
@@ -63,6 +64,7 @@ public class NodeFailTester {
     public NodeFailer failer;
     public ServiceMonitorStub serviceMonitor;
     public MockDeployer deployer;
+    public MetricsReporterTest.TestMetric metric;
     private final TestHostLivenessTracker hostLivenessTracker;
     private final Orchestrator orchestrator;
     private final NodeRepositoryProvisioner provisioner;
@@ -99,6 +101,7 @@ public class NodeFailTester {
         apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default")), 1));
         tester.deployer = new MockDeployer(tester.provisioner, apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
+        tester.metric = new MetricsReporterTest.TestMetric();
         tester.failer = tester.createFailer();
         return tester;
     }
@@ -134,6 +137,7 @@ public class NodeFailTester {
         apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2, 1));
         tester.deployer = new MockDeployer(tester.provisioner, apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
+        tester.metric = new MetricsReporterTest.TestMetric();
         tester.failer = tester.createFailer();
         return tester;
     }
@@ -155,6 +159,7 @@ public class NodeFailTester {
         apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, allProxies, 1));
         tester.deployer = new MockDeployer(tester.provisioner, apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
+        tester.metric = new MetricsReporterTest.TestMetric();
         tester.failer = tester.createFailer();
         return tester;
     }
@@ -163,6 +168,7 @@ public class NodeFailTester {
         NodeFailTester tester = new NodeFailTester();
         tester.deployer = new MockDeployer(tester.provisioner, Collections.emptyMap());
         tester.serviceMonitor = new ServiceMonitorStub(Collections.emptyMap(), tester.nodeRepository);
+        tester.metric = new MetricsReporterTest.TestMetric();
         tester.failer = tester.createFailer();
         return tester;
     }
@@ -177,7 +183,8 @@ public class NodeFailTester {
     }
 
     public NodeFailer createFailer() {
-        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour, clock, orchestrator, NodeFailer.ThrottlePolicy.hosted, new JobControl(nodeRepository.database()));
+        metric.values = new HashMap<>();
+        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour, clock, orchestrator, NodeFailer.ThrottlePolicy.hosted, metric, new JobControl(nodeRepository.database()));
     }
 
     public void allNodesMakeAConfigRequestExcept(Node ... deadNodeArray) {
