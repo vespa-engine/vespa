@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.applicationmodel.ServiceInstance;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
@@ -10,7 +12,9 @@ import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +26,8 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests automatic failing of nodes.
@@ -107,20 +113,13 @@ public class NodeFailerTest {
         tester.failer.run();
         tester.clock.advance(Duration.ofMinutes(5));
         tester.allNodesMakeAConfigRequestExcept();
-        // the system goes down and do not have updated information when coming back
+        // the system goes down
         tester.clock.advance(Duration.ofMinutes(120));
         tester.failer = tester.createFailer();
-        tester.serviceMonitor.setStatusIsKnown(false);
         tester.failer.run();
-        // due to this, nothing is failed
-        assertEquals( 1, tester.deployer.redeployments);
-        assertEquals(12, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
-        assertEquals( 3, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
-        assertEquals( 1, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
-        // when status becomes known, and the host is still down, it is failed
+        // the host is still down and fails
         tester.clock.advance(Duration.ofMinutes(5));
         tester.allNodesMakeAConfigRequestExcept();
-        tester.serviceMonitor.setStatusIsKnown(true);
         tester.failer.run();
         assertEquals( 2, tester.deployer.redeployments);
         assertEquals(12, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
@@ -457,6 +456,35 @@ public class NodeFailerTest {
         }
     }
 
+    @Test
+    public void testUpness() {
+        assertFalse(badNode(0, 0, 0));
+        assertFalse(badNode(0, 0, 2));
+        assertFalse(badNode(0, 3, 0));
+        assertFalse(badNode(0, 3, 2));
+        assertTrue(badNode(1, 0, 0));
+        assertTrue(badNode(1, 0, 2));
+        assertFalse(badNode(1, 3, 0));
+        assertFalse(badNode(1, 3, 2));
+    }
+
+    private void addServiceInstances(List<ServiceInstance> list, ServiceStatus status, int num) {
+        for (int i = 0; i < num; ++i) {
+            ServiceInstance service = mock(ServiceInstance.class);
+            when(service.serviceStatus()).thenReturn(status);
+            list.add(service);
+        }
+    }
+
+    private boolean badNode(int numDown, int numUp, int numNotChecked) {
+        List<ServiceInstance> services = new ArrayList<>();
+        addServiceInstances(services, ServiceStatus.DOWN, numDown);
+        addServiceInstances(services, ServiceStatus.UP, numUp);
+        addServiceInstances(services, ServiceStatus.NOT_CHECKED, numNotChecked);
+        Collections.shuffle(services);
+
+        return NodeFailer.badNode(services);
+    }
 
     /**
      * Selects the first parent host that:
