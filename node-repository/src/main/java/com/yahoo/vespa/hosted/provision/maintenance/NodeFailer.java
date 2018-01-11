@@ -170,6 +170,7 @@ public class NodeFailer extends Maintainer {
     }
 
     /**
+     * Returns true if the node is considered bad: all monitored services services are down.
      * If a node remains bad for a long time, the NodeFailer will eventually try to fail the node.
      */
     public static boolean badNode(List<ServiceInstance> services) {
