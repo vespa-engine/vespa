@@ -77,7 +77,7 @@ public class Curator implements AutoCloseable {
 
             String spec = String.format("%s:%d", server.hostname(), server.port());
 
-            if ((config.zookeeperLocalhostAffinity() || config.system().equals("cd")) && server.hostname().equals(thisServer)) {
+            if (config.zookeeperLocalhostAffinity() && server.hostname().equals(thisServer)) {
                 // Only connect to localhost server if possible, to save network traffic
                 // and balance load.
                 return spec;
