@@ -243,7 +243,7 @@ Visitor::Visitor(StorageComponent& component)
       _visitorTarget(),
       _state(STATE_NOT_STARTED),
       _buckets(),
-      _bucketSpace(BucketSpace::placeHolder()),
+      _bucketSpace(BucketSpace::invalid()),
       _currentBucket(),
       _bucketStates(),
       _calledStartingVisitor(false),

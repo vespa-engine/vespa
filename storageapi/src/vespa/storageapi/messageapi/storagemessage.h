@@ -348,7 +348,7 @@ protected:
     StorageMessage(const MessageType& code, Id id);
     StorageMessage(const StorageMessage&, Id id);
 
-    static document::Bucket getDummyBucket() { return document::Bucket(document::BucketSpace::placeHolder(), document::BucketId()); }
+    static document::Bucket getDummyBucket() { return document::Bucket(document::BucketSpace::invalid(), document::BucketId()); }
 public:
     virtual ~StorageMessage();
 
