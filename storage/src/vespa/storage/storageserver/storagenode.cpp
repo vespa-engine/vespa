@@ -145,6 +145,11 @@ StorageNode::initialize()
     // and store them away, while having the config lock.
     subscribeToConfigs();
 
+    // Multiple bucket spaces can only be enabled on startup and cannot be live reconfigured.
+    // A process restart is required to either enable or disable after the fact.
+    // TODO ensure config is tagged as 'restart' as a consequence
+    _context.getComponentRegister().setEnableMultipleBucketSpaces(_bucketSpacesConfig->enableMultipleBucketSpaces);
+
     updateUpgradeFlag(*_clusterConfig);
 
     // First update some basics that doesn't depend on anything else to be
@@ -347,6 +352,7 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
     }
     if (_newBucketSpacesConfig) {
         _bucketSpacesConfig = std::move(_newBucketSpacesConfig);
+        // TODO should we deprecate this in favor of always and only setting at startup time..?
         _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
         // If we've seen global bucket spaces enabled once, we must continue to update
         // bucket spaces config or we'll get out of sync with doc types config.
