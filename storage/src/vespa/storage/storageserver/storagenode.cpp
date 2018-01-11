@@ -76,7 +76,6 @@ StorageNode::StorageNode(
         std::unique_ptr<HostInfo> hostInfo,
         RunMode mode)
     : _singleThreadedDebugMode(mode == SINGLE_THREADED_TEST_MODE),
-      _has_enabled_global_spaces(false),
       _configFetcher(),
       _hostInfo(std::move(hostInfo)),
       _context(context),
@@ -352,12 +351,8 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
     }
     if (_newBucketSpacesConfig) {
         _bucketSpacesConfig = std::move(_newBucketSpacesConfig);
-        // TODO should we deprecate this in favor of always and only setting at startup time..?
         _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
-        // If we've seen global bucket spaces enabled once, we must continue to update
-        // bucket spaces config or we'll get out of sync with doc types config.
-        _has_enabled_global_spaces = _has_enabled_global_spaces || _bucketSpacesConfig->enableMultipleBucketSpaces;
-        if (_has_enabled_global_spaces) {
+        if (_component->enableMultipleBucketSpaces()) {
             _communicationManager->updateBucketSpacesConfig(*_bucketSpacesConfig);
         }
     }
