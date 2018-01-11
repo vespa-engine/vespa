@@ -183,7 +183,6 @@ public class NodeFailTester {
     }
 
     public NodeFailer createFailer() {
-        metric.values = new HashMap<>();
         return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour, clock, orchestrator, NodeFailer.ThrottlePolicy.hosted, metric, new JobControl(nodeRepository.database()));
     }
 
