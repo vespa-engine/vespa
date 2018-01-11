@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.jrt.Request;
@@ -9,6 +10,7 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
+import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 
@@ -19,6 +21,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.logging.Logger;
 
 /**
  * File distribution status for each host in the application
@@ -27,17 +34,31 @@ import java.util.Optional;
  */
 public class FileDistributionStatus extends AbstractComponent {
 
+    private static final Logger log = Logger.getLogger(FileDistributionStatus.class.getName());
+
     enum Status {UNKNOWN, FINISHED, IN_PROGRESS}
 
+    private final ExecutorService rpcExecutor = Executors.newCachedThreadPool(new DaemonThreadFactory("filedistribution status"));
     private final Supervisor supervisor = new Supervisor(new Transport());
 
     public StatusAllHosts status(Application application, Duration timeout) {
         List<HostStatus> hostStatuses = new ArrayList<>();
+        List <Future<HostStatus>> results = new ArrayList<>();
         application.getModel().getHosts()
                 .forEach(host -> host.getServices()
                         .stream()
                         .filter(service -> "configproxy".equals(service.getServiceType()))
-                        .forEach(service -> hostStatuses.add(getHostStatus(service.getHostName(), getRpcPort(service), timeout))));
+                        .forEach(service -> {
+                            results.add(rpcExecutor.submit(() -> getHostStatus(service.getHostName(), getRpcPort(service), timeout)));
+                        }));
+        // wait for all
+        results.forEach(future -> {
+            try {
+                hostStatuses.add(future.get());
+            } catch (InterruptedException | ExecutionException e) {
+                log.log(LogLevel.WARNING, "Failed getting file distribution status", e);
+            }
+        });
         return createStatusForAllHosts(hostStatuses);
     }
 
@@ -89,10 +110,10 @@ public class FileDistributionStatus extends AbstractComponent {
                 .filter(port -> port.getTags().contains("rpc"))
                 .map(PortInfo::getPort)
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Could not find rpc port for config proxy for " + service.getHostName()));
+                .orElseThrow(() -> new RuntimeException("Could not find rpc port for " + service.getServiceType() + " on " + service.getHostName()));
     }
 
-    static class StatusAllHosts extends JSONResponse {
+    private static class StatusAllHosts extends JSONResponse {
 
         private StatusAllHosts(Status status, List<HostStatus> hostStatuses) {
             super(200);
