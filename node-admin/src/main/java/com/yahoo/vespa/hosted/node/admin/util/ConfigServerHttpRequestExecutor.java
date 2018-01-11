@@ -214,6 +214,7 @@ public class ConfigServerHttpRequestExecutor implements AutoCloseable {
 
     @Override
     public void close() {
+        clientRefresherScheduler.shutdown();
         do {
             try {
                 clientRefresherScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
