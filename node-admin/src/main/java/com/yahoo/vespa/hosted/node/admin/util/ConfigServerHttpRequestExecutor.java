@@ -97,6 +97,8 @@ public class ConfigServerHttpRequestExecutor implements AutoCloseable {
                     NODE_ADMIN_LOGGER.warning("Failed to communicate with " + configServer + ", will try next: " + e.getMessage());
                 }
                 lastException = e;
+                // reshuffle when failure, to avoid always trying in the same order. TODO: Should rather keep track of when and which server failed
+                Collections.shuffle(configServerHosts);
                 continue;
             }
 
