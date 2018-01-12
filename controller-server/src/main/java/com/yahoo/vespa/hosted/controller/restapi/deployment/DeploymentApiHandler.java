@@ -180,6 +180,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
     /** The last triggered upgrade to this version, for this application */
     private Optional<JobStatus> lastDeployingTo(Version version, Application application) {
         return JobList.from(application)
+                .running(controller.applications().deploymentTrigger().jobTimeoutLimit())
                 .upgrading()
                 .asList().stream()
                 .max(comparing(job -> job.lastTriggered().get().at()));

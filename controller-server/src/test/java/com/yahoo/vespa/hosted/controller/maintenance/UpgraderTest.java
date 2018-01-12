@@ -431,6 +431,7 @@ public class UpgraderTest {
         tester.deploymentTrigger().cancelChange(default1.id());
         tester.deploymentTrigger().cancelChange(default2.id());
         tester.deploymentTrigger().cancelChange(default3.id());
+        tester.completeUpgrade(default4, v1, "default");
         tester.clock().advance(Duration.ofHours(13)); // Currently we don't cancel running jobs, so this is necessary to allow a new triggering below
 
         // Canaries upgrade and raise confidence of V2
@@ -454,15 +455,14 @@ public class UpgraderTest {
         assertEquals(v2, tester.application("default0").deployments().get(ZoneId.from("prod.us-west-1")).version());
         assertEquals(v0, tester.application("default0").deployments().get(ZoneId.from("prod.us-east-3")).version());
         tester.upgrader().maintain();
-        assertEquals("Upgrade to 5.1 scheduled for apps not completely on 5.1 or 5.2", 5, tester.buildSystem().jobs().size());
+        assertEquals("Upgrade to 5.1 scheduled for apps not completely on 5.1 or 5.2", 4, tester.buildSystem().jobs().size());
 
         tester.deploymentTrigger().triggerReadyJobs();
-        assertEquals("Testing of 5.1 for 5 applications is triggered", 5, tester.buildSystem().jobs().size());
+        assertEquals("Testing of 5.1 for 4 applications is triggered", 4, tester.buildSystem().jobs().size());
         assertEquals(DeploymentJobs.JobType.systemTest.jobName(), tester.buildSystem().jobs().get(0).jobName());
         assertEquals(DeploymentJobs.JobType.systemTest.jobName(), tester.buildSystem().jobs().get(1).jobName());
         assertEquals(DeploymentJobs.JobType.systemTest.jobName(), tester.buildSystem().jobs().get(2).jobName());
         assertEquals(DeploymentJobs.JobType.systemTest.jobName(), tester.buildSystem().jobs().get(3).jobName());
-        assertEquals(DeploymentJobs.JobType.systemTest.jobName(), tester.buildSystem().jobs().get(4).jobName());
 
         // The tester code for completing upgrades does not handle this scenario, so we trigger each step manually (for one app)
         tester.deployAndNotify(tester.application("default0"), "default", true, DeploymentJobs.JobType.systemTest);
