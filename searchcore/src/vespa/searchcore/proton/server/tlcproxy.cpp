@@ -15,9 +15,8 @@ void TlcProxy::commit(search::SerialNum serialNum, search::transactionlog::Type 
                       const vespalib::nbostream &buf, DoneCallback onDone)
 {
     Packet::Entry entry(serialNum, type, vespalib::ConstBufferRef(buf.c_str(), buf.size()));
-    Packet packet;
+    Packet packet(entry.serializedSize());
     packet.add(entry);
-    packet.close();
     _tlsDirectWriter.commit(_domain, packet, std::move(onDone));
 }
 

@@ -36,7 +36,7 @@ Session::VisitTask::run()
 
 bool
 Session::visit(FastOS_FileInterface & file, DomainPart & dp) {
-    Packet packet;
+    Packet packet(size_t(-1));
     bool more(false);
     if (dp.isClosed()) {
         more = dp.visit(file, _range, packet);
