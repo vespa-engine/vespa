@@ -269,6 +269,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET service
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/service/storagenode-awe3slno6mmq2fye191y324jl/state/v1/", GET),
                               new File("service.json"));
+
+        // DELETE application with active deployments fails
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE).userIdentity(USER_ID),
+                              new File("delete-with-active-deployments.json"), 400);
+
         // DELETE (deactivate) a deployment - dev
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default", DELETE),
                               "Deactivated tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default");
