@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.NATCommand;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
@@ -104,20 +105,25 @@ public class DockerOperationsImpl implements DockerOperations {
             String configServers = environment.getConfigServerUris().stream()
                     .map(URI::getHost)
                     .collect(Collectors.joining(","));
+
             Docker.CreateContainerCommand command = docker.createContainerCommand(
                     nodeSpec.wantedDockerImage.get(),
                     ContainerResources.from(nodeSpec.minCpuCores, nodeSpec.minMainMemoryAvailableGb),
                     containerName,
                     nodeSpec.hostname)
                     .withManagedBy(MANAGER_NAME)
-                    .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
-                    .withIpAddress(nodeInetAddress)
                     .withEnvironment("CONFIG_SERVER_ADDRESS", configServers)
                     .withUlimit("nofile", 262_144, 262_144)
                     .withUlimit("nproc", 32_768, 409_600)
                     .withUlimit("core", -1, -1)
                     .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
                     .withAddCapability("SYS_ADMIN"); // Needed for perf
+
+            if (!docker.networkNATted()) {
+                logger.info("Network not natted - setting up with specific ip address on a macvlan");
+                command.withIpAddress(nodeInetAddress);
+                command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
+            }
 
             command.withVolume("/etc/hosts", "/etc/hosts");
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
@@ -137,11 +143,15 @@ public class DockerOperationsImpl implements DockerOperations {
             command.create();
 
             if (isIPv6) {
-                docker.connectContainerToNetwork(containerName, "bridge");
+                if (!docker.networkNATted()) {
+                    docker.connectContainerToNetwork(containerName, "bridge");
+                }
+
                 docker.startContainer(containerName);
-                setupContainerNetworkingWithScript(containerName);
+                setupContainerNetworkConnectivity(containerName, nodeInetAddress);
             } else {
                 docker.startContainer(containerName);
+                setupContainerNetworkConnectivity(containerName, nodeInetAddress);
             }
 
             DIRECTORIES_TO_MOUNT.entrySet().stream().filter(Map.Entry::getValue).forEach(entry ->
@@ -191,13 +201,24 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     /**
+     * For macvlan:
      * Due to a bug in docker (https://github.com/docker/libnetwork/issues/1443), we need to manually set
      * IPv6 gateway in containers connected to more than one docker network
+     *
+     * For nat:
+     * Setup iptables NAT rules
      */
-    private void setupContainerNetworkingWithScript(ContainerName containerName) throws IOException {
-        InetAddress hostDefaultGateway = DockerNetworkCreator.getDefaultGatewayLinux(true);
-        executeCommandInNetworkNamespace(containerName,
-                "route", "-A", "inet6", "add", "default", "gw", hostDefaultGateway.getHostAddress(), "dev", "eth1");
+    private void setupContainerNetworkConnectivity(ContainerName containerName, InetAddress externalAddress) throws IOException {
+        if (docker.networkNATted()) {
+            String ipv6Str = docker.getGlobalIPv6Address(containerName);
+            String natCommand = NATCommand.create(externalAddress, InetAddress.getByName(ipv6Str), "eth0");
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
+            logger.info("Please setup these rules:" + natCommand);
+        } else {
+            InetAddress hostDefaultGateway = DockerNetworkCreator.getDefaultGatewayLinux(true);
+            executeCommandInNetworkNamespace(containerName,
+                    "route", "-A", "inet6", "add", "default", "gw", hostDefaultGateway.getHostAddress(), "dev", "eth1");
+        }
     }
 
     @Override

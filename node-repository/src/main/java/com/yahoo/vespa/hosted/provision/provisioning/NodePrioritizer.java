@@ -177,7 +177,7 @@ public class NodePrioritizer {
             if (node.type() == NodeType.host && node.state() == Node.State.active) {
                 boolean conflictingCluster = false;
                 NodeList list = new NodeList(allNodes);
-                NodeList childrenWithSameApp = list.childNodes(node).owner(appId);
+                 NodeList childrenWithSameApp = list.childNodes(node).owner(appId);
                 for (Node child : childrenWithSameApp.asList()) {
                     // Look for nodes from the same cluster
                     if (child.allocation().get().membership().cluster().id().equals(clusterSpec.id())) {

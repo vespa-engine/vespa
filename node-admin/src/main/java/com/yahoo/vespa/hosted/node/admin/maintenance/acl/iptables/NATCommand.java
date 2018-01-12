@@ -17,7 +17,7 @@ public class NATCommand implements Command {
     private final String snatCommand;
     private final String dnatCommand;
 
-    NATCommand(InetAddress externalIp, InetAddress internalIp, String iface) {
+    public NATCommand(InetAddress externalIp, InetAddress internalIp, String iface) {
         String command = externalIp instanceof Inet6Address ? "ip6tables" : "iptables";
         this.snatCommand = String.format("%s -t nat -A POSTROUTING -o %s -s %s -j SNAT --to %s",
                 command,
@@ -39,4 +39,8 @@ public class NATCommand implements Command {
 
     @Override
     public String asString(String commandName) { return asString(); }
+
+    public static String create(InetAddress externalIp, InetAddress internalIp, String iface) {
+        return new NATCommand(externalIp, internalIp, iface).asString();
+    }
 }
