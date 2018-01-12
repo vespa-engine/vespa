@@ -77,7 +77,13 @@ public class NodeAdminMain implements AutoCloseable {
             });
 
             for (String componentSpecificationString : config.components) {
-                enable(adminRegistry.getComponent(componentSpecificationString));
+                AdminComponent component =
+                        adminRegistry.getComponent(componentSpecificationString);
+                if (component == null) {
+                    throw new IllegalArgumentException("There is no component named '" +
+                            componentSpecificationString + "'");
+                }
+                enable(component);
             }
         }
     }
