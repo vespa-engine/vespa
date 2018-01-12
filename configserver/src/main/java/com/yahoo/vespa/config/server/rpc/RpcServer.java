@@ -486,12 +486,13 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             if (request.isError()) {
                 log.warning("Failed delivering meta for reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
                         target.toString() + " with error: '" + request.errorMessage() + "'.");
+                return 1;
+            } else {
+                if (request.returnValues().get(0).asInt32() != 0) {
+                    throw new IllegalArgumentException("Unknown error from target '" + target.toString() + "' during rpc call " + request.methodName());
+                }
+                return request.returnValues().get(1).asInt32();
             }
-            int retCode = request.returnValues().get(0).asInt32();
-            if (retCode != 0) {
-                throw new IllegalArgumentException("Unknown error from target '" + target.toString() + "' during rpc call " + request.methodName());
-            }
-            return request.returnValues().get(1).asInt32();
         }
         private void sendPart(int session, FileReference ref, int partId, byte [] buf) {
             Request request = new Request(FileReceiver.RECEIVE_PART_METHOD);
@@ -501,12 +502,12 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             request.parameters().add(new DataValue(buf));
             target.invokeSync(request, 600);
             if (request.isError()) {
-                log.warning("Failed delivering reference '" + ref.value() + "' to " +
-                        target.toString() + " with error: '" + request.errorMessage() + "'.");
-            }
-            int retCode = request.returnValues().get(0).asInt32();
-            if (retCode != 0) {
-                throw new IllegalArgumentException("Unknown error from target '" + target.toString() + "' during rpc call " + request.methodName());
+                throw new IllegalArgumentException("Failed delivering reference '" + ref.value() + "' to " +
+                                                           target.toString() + " with error: '" + request.errorMessage() + "'.");
+            } else {
+                if (request.returnValues().get(0).asInt32() != 0) {
+                    throw new IllegalArgumentException("Unknown error from target '" + target.toString() + "' during rpc call " + request.methodName());
+                }
             }
         }
         private void sendEof(int session, FileReferenceData fileData, FileServer.ReplayStatus status) {
@@ -518,12 +519,12 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             request.parameters().add(new StringValue(status.getDescription()));
             target.invokeSync(request, 600);
             if (request.isError()) {
-                log.warning("Failed delivering reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
-                        target.toString() + " with error: '" + request.errorMessage() + "'.");
-            }
-            int retCode = request.returnValues().get(0).asInt32();
-            if (retCode != 0) {
-                throw new IllegalArgumentException("Unknown error from target '" + target.toString() + "' during rpc call " + request.methodName());
+                throw new IllegalArgumentException("Failed delivering reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
+                                                           target.toString() + " with error: '" + request.errorMessage() + "'.");
+            } else {
+                if (request.returnValues().get(0).asInt32() != 0) {
+                    throw new IllegalArgumentException("Unknown error from target '" + target.toString() + "' during rpc call " + request.methodName());
+                }
             }
         }
     }
