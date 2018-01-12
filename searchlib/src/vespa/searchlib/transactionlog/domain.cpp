@@ -320,7 +320,6 @@ waitPendingSync(vespalib::Monitor &syncMonitor, bool &pendingSync)
 
 }
 
-
 Domain::Chunk::Chunk()
     : _data(size_t(-1)),
       _callBacks(),
@@ -328,6 +327,7 @@ Domain::Chunk::Chunk()
 {}
 
 Domain::Chunk::~Chunk() = default;
+
 void
 Domain::Chunk::add(const Packet &packet, Writer::DoneCallback onDone) {
     if (_callBacks.empty()) {
@@ -347,7 +347,6 @@ Domain::Chunk::age() const {
 
 void
 Domain::commit(const Packet & packet, Writer::DoneCallback onDone) {
-    std::unique_ptr<Chunk> completed;
     vespalib::MonitorGuard guard(_currentChunkMonitor);
     if (! (_lastSerial < packet.range().from())) {
         throw runtime_error(make_string("Incomming serial number(%ld) must be bigger than the last one (%ld).",
@@ -356,11 +355,16 @@ Domain::commit(const Packet & packet, Writer::DoneCallback onDone) {
         _lastSerial = packet.range().to();
     }
     _currentChunk->add(packet, std::move(onDone));
+    commitIfFull(guard);
+}
+
+void
+Domain::commitIfFull(const vespalib::MonitorGuard &guard) {
     if (_currentChunk->sizeBytes() > _config.getChunkSizeLimit()) {
-        completed = grabCurrentChunk(guard);
-    }
-    if (completed) {
-        commitChunk(std::move(_currentChunk), guard);
+        auto completed = grabCurrentChunk(guard);
+        if (completed) {
+            commitChunk(std::move(completed), guard);
+        }
     }
 }
 

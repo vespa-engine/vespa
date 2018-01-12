@@ -104,6 +104,7 @@ public:
 private:
     void Run(FastOS_ThreadInterface *thisThread, void *arguments) override;
     void commitIfStale(const vespalib::MonitorGuard & guard);
+    void commitIfFull(const vespalib::MonitorGuard & guard);
     class Chunk {
     public:
         Chunk();
