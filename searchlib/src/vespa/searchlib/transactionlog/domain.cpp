@@ -30,7 +30,7 @@ DomainConfig::DomainConfig()
       _compressionLevel(9),
       _partSizeLimit(0x10000000), // 256M
       _chunkSizeLimit(0x40000),   // 256k
-      _chunkAgeLimit(1ms)
+      _chunkAgeLimit(10ms)
 { }
 Domain::Domain(const string &domainName, const string & baseDir, FastOS_ThreadPool & threadPool,
                Executor & commitExecutor, Executor & sessionExecutor, const DomainConfig & cfg,
