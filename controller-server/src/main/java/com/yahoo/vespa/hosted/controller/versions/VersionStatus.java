@@ -141,8 +141,6 @@ public class VersionStatus {
         }
 
         for (Application application : ApplicationList.from(applications).notPullRequest().asList()) {
-            DeploymentJobs jobs = application.deploymentJobs();
-
             // Note that each version deployed on this application in production exists
             // (ignore non-production versions)
             for (Deployment deployment : application.productionDeployments().values()) {
@@ -168,6 +166,7 @@ public class VersionStatus {
 
             // Deploying versions
             JobList.from(application)
+                    .running(jobTimeoutLimit)
                     .upgrading()
                     .mapToList(job -> job.lastTriggered().get().version())
                     .forEach(version -> versionMap.put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version)).withDeploying(application.id())));
