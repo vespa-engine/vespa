@@ -35,4 +35,4 @@ compression.level int default=9
 chunk.sizelimit int default = 256000  # 256k
 
 ## How long a chunk can reside in memory befor ebeeing flushed to disk.
-chunk.agelimit double default = 0.0010 # 10 milliseconds
+chunk.agelimit double default = 0.010 # 10 milliseconds
