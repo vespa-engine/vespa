@@ -206,6 +206,11 @@ StorageNode::initialize()
 
     _chain.reset(createChain().release());
 
+    if (_component->enableMultipleBucketSpaces()) {
+        assert(_communicationManager != nullptr);
+        _communicationManager->updateBucketSpacesConfig(*_bucketSpacesConfig);
+    }
+
     // Start the metric manager, such that it starts generating snapshots
     // and the like. Note that at this time, all metrics should hopefully
     // have been created, such that we don't need to pay the extra cost of
