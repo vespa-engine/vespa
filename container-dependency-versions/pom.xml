@@ -336,6 +336,13 @@
                 <version>${mimepull.version}</version>
             </dependency>
             <dependency>
+                <!-- NOT provided from Jdisc runtime, but any project that has unit tests based on
+                     the 'application' framework MUST use our version. -->
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>${scala.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jcl-over-slf4j</artifactId>
                 <version>${slf4j.version}</version>
@@ -422,6 +429,7 @@
         <guava.version>18.0</guava.version>
         <guice.version>3.0</guice.version>
         <jetty.version>9.4.8.v20171121</jetty.version>
+        <scala.version>2.11.4</scala.version>  <!-- When updating this, the scala.major-version in parent must also be updated! -->
         <slf4j.version>1.7.5</slf4j.version>
 
         <!-- These must be kept in sync with version used by current jersey2.version. -->

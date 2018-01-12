@@ -617,11 +617,6 @@
                 <version>4.3.0</version>
             </dependency>
             <dependency>
-                <groupId>org.scala-lang</groupId>
-                <artifactId>scala-library</artifactId>
-                <version>${scala.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.scala-lang.modules</groupId>
                 <artifactId>scala-parser-combinators_${scala.major-version}</artifactId>
                 <version>1.0.1</version>
@@ -710,8 +705,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <test.hide>true</test.hide>
     	<doclint>all</doclint>
-        <scala.major-version>2.11</scala.major-version>
-        <scala.version>${scala.major-version}.4</scala.version>
+        <scala.major-version>2.11</scala.major-version> <!-- TODO: factorylib magic for maven cache bootstrapping prevents moving this to container-dep-versions. -->
         <surefire.version>2.19.1</surefire.version> <!-- NOTE bjorncs 15.06.2017: Version 2.20 has OoM issues -->
     </properties>
 
