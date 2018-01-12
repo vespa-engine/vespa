@@ -16,6 +16,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/stat.h>
+#include <vespa/persistence/spi/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/config/config.h>
@@ -333,11 +334,21 @@ BucketManager::reportStatus(std::ostream& out,
     bool showAll = path.hasAttribute("showall");
     if (showAll) {
         framework::PartlyXmlStatusReporter xmlReporter(*this, out, path);
+
+        using vespalib::xml::XmlTag;
+        using vespalib::xml::XmlEndTag;
+        using vespalib::xml::XmlAttribute;
+
         xmlReporter << vespalib::xml::XmlTag("buckets");
-        BucketDBDumper dumper(xmlReporter.getStream());
-        _component.getBucketSpaceRepo().forEachBucketChunked(
-                dumper, "BucketManager::reportStatus");
-        xmlReporter << vespalib::xml::XmlEndTag();
+        for (auto& space : _component.getBucketSpaceRepo()) {
+            xmlReporter << XmlTag("bucket-space")
+                        << XmlAttribute("name", spi::FixedBucketSpaces::to_string(space.first));
+            BucketDBDumper dumper(xmlReporter.getStream());
+            _component.getBucketSpaceRepo().get(space.first).bucketDatabase().chunkedAll(
+                    dumper, "BucketManager::reportStatus");
+            xmlReporter << XmlEndTag();
+        }
+        xmlReporter << XmlEndTag();
     } else {
         framework::PartlyHtmlStatusReporter htmlReporter(*this);
         htmlReporter.reportHtmlHeader(out, path);

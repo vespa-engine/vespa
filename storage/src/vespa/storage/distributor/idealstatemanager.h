@@ -136,6 +136,7 @@ private:
 
     void getBucketStatus(document::BucketSpace bucketSpace, const BucketDatabase::Entry& entry,
                          NodeMaintenanceStatsTracker& statsTracker, std::ostream& out) const;
+    void dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const;
 };
 
 }

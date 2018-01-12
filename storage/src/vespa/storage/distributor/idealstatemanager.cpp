@@ -9,6 +9,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storage/common/bucketmessages.h>
+#include <vespa/persistence/spi/fixed_bucket_spaces.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
@@ -246,9 +247,6 @@ IdealStateManager::getBucketStatus(
         NodeMaintenanceStatsTracker& statsTracker,
         std::ostream& out) const
 {
-    LOG(debug, "Dumping bucket database valid at cluster state version %u",
-        _distributorComponent.getDistributor().getClusterState().getVersion());
-
     document::Bucket bucket(bucketSpace, entry.getBucketId());
     std::vector<MaintenanceOperation::SP> operations(
             generateAll(bucket, statsTracker));
@@ -270,13 +268,21 @@ IdealStateManager::getBucketStatus(
     out << "[" << entry->toString() << "]<br>\n";
 }
 
-void
-IdealStateManager::getBucketStatus(std::ostream& out) const
-{
-    BucketSpace bucketSpace(BucketSpace::placeHolder());
-    StatusBucketVisitor proc(*this, bucketSpace, out);
-    auto &distributorBucketSpace(_bucketSpaceRepo.get(bucketSpace));
+void IdealStateManager::dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const {
+    out << "<h2>" << spi::FixedBucketSpaces::to_string(bucket_space) << " - " << bucket_space << "</h2>\n";
+
+    StatusBucketVisitor proc(*this, bucket_space, out);
+    auto &distributorBucketSpace(_bucketSpaceRepo.get(bucket_space));
     distributorBucketSpace.getBucketDatabase().forEach(proc);
+}
+
+void IdealStateManager::getBucketStatus(std::ostream& out) const {
+    LOG(debug, "Dumping bucket database valid at cluster state version %u",
+        _distributorComponent.getDistributor().getClusterState().getVersion());
+
+    for (auto& space : _bucketSpaceRepo) {
+        dump_bucket_space_db_status(space.first, out);
+    }
 }
 
 } // distributor
