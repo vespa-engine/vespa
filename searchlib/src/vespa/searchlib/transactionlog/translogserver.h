@@ -22,15 +22,16 @@ public:
     typedef std::shared_ptr<TransLogServer> SP;
 
     TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
-                   const common::FileHeaderContext &fileHeaderContext, const DomainConfig & cfg, size_t maxThreads);
+                   const common::FileHeaderContext &fileHeaderContext,
+                   uint64_t domainPartSize, size_t maxThreads, DomainPart::Crc defaultCrc);
     TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
-                   const common::FileHeaderContext &fileHeaderContext, const DomainConfig & cfg);
+                   const common::FileHeaderContext &fileHeaderContext, uint64_t domainPartSize);
     TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                    const common::FileHeaderContext &fileHeaderContext);
     ~TransLogServer() override;
     DomainStats getDomainStats() const;
+
     void commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done) override;
-    TransLogServer & setDomainConfig(const DomainConfig & cfg);
 
     class Session
     {
@@ -78,7 +79,8 @@ private:
 
     vespalib::string                    _name;
     vespalib::string                    _baseDir;
-    DomainConfig                        _domainConfig;
+    const uint64_t                      _domainPartSize;
+    const DomainPart::Crc               _defaultCrcType;
     vespalib::ThreadStackExecutor       _commitExecutor;
     vespalib::ThreadStackExecutor       _sessionExecutor;
     FastOS_ThreadPool                   _threadPool;
