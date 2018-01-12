@@ -162,4 +162,28 @@ TEST("require that tensor join works") {
     TEST_DO(verify_equal(*expect, ctx.eval(prog)));
 }
 
+TEST("require that push_children works") {
+    Stash stash;
+    std::vector<Node::Child::CREF> refs;
+    const Node &a = inject(ValueType::double_type(), 0, stash);
+    const Node &b = inject(ValueType::double_type(), 1, stash);
+    a.push_children(refs);
+    b.push_children(refs);
+    ASSERT_EQUAL(refs.size(), 0u);
+    //-------------------------------------------------------------------------
+    reduce(a, Aggr::SUM, {}, stash).push_children(refs);
+    ASSERT_EQUAL(refs.size(), 1u);
+    EXPECT_EQUAL(&refs[0].get().get(), &a);
+    //-------------------------------------------------------------------------
+    map(b, operation::Neg::f, stash).push_children(refs);
+    ASSERT_EQUAL(refs.size(), 2u);
+    EXPECT_EQUAL(&refs[1].get().get(), &b);
+    //-------------------------------------------------------------------------
+    join(a, b, operation::Add::f, stash).push_children(refs);
+    ASSERT_EQUAL(refs.size(), 4u);
+    EXPECT_EQUAL(&refs[2].get().get(), &a);
+    EXPECT_EQUAL(&refs[3].get().get(), &b);
+    //-------------------------------------------------------------------------
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
