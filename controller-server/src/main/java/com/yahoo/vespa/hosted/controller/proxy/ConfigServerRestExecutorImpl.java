@@ -38,7 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,6 +54,7 @@ import static java.util.Collections.singleton;
 public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
 
     private static final Duration PROXY_REQUEST_TIMEOUT = Duration.ofSeconds(10);
+    private static final Set<String> HEADERS_TO_COPY = Collections.singleton("X-HTTP-Method-Override");
 
     private final ZoneRegistry zoneRegistry;
     private final AthenzSslContextProvider sslContextProvider;
@@ -125,7 +126,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         final HttpRequestBase requestBase = createHttpBaseRequest(
                 proxyRequest.getMethod(), fullUri, proxyRequest.getData());
         // Empty list of headers to copy for now, add headers when needed, or rewrite logic.
-        copyHeaders(proxyRequest.getHeaders(), requestBase, new HashSet<>());
+        copyHeaders(proxyRequest.getHeaders(), requestBase);
 
         RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
@@ -193,10 +194,10 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         }
     }
 
-    private void copyHeaders(Map<String, List<String>> headers, HttpRequestBase toRequest, Set<String> headersToCopy) {
+    private static void copyHeaders(Map<String, List<String>> headers, HttpRequestBase toRequest) {
         for (Map.Entry<String, List<String>> headerEntry : headers.entrySet()) {
-            for (String value : headerEntry.getValue()) {
-                if (headersToCopy.contains(value)) {
+            if (HEADERS_TO_COPY.contains(headerEntry.getKey())) {
+                for (String value : headerEntry.getValue()) {
                     toRequest.addHeader(headerEntry.getKey(), value);
                 }
             }
