@@ -6,7 +6,7 @@
 namespace document {
 
 Bucket::Bucket() noexcept
-    : _bucketSpace(BucketSpace::placeHolder()),
+    : _bucketSpace(BucketSpace::invalid()),
       _bucketId()
 {
 }
