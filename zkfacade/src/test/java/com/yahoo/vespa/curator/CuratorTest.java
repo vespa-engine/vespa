@@ -2,6 +2,7 @@
 package com.yahoo.vespa.curator;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.net.HostName;
 import org.apache.curator.test.TestingServer;
 import org.junit.After;
 import org.junit.Before;
@@ -71,6 +72,22 @@ public class CuratorTest {
             assertThat(curator.zooKeeperEnsembleCount(), is(1));
         }
     }
+
+    @Test
+     public void localhost_affinity() {
+         String localhostHostName = "myhost";
+         int localhostPort = 123;
+
+         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
+         builder.zookeeperserver(createZKBuilder(localhostHostName, localhostPort));
+         builder.zookeeperserver(createZKBuilder("otherhost", 345));
+         ConfigserverConfig config = new ConfigserverConfig(builder);
+
+         HostName.setHostNameForTestingOnly(localhostHostName);
+
+        String localhostSpec = localhostHostName + ":" + localhostPort;
+         assertThat(Curator.createConnectionSpecForLocalhost(config), is(localhostSpec));
+     }
 
     private ConfigserverConfig createTestConfig() {
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
