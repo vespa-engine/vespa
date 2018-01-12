@@ -95,7 +95,9 @@ Domain::Run(FastOS_ThreadInterface *thisThread, void *) {
         commitIfStale(guard);
     }
 }
-void Domain::addPart(int64_t partId, bool isLastPart) {
+
+void
+Domain::addPart(int64_t partId, bool isLastPart) {
     auto dp = make_shared<DomainPart>(_name, dir(), partId, _config.getEncoding(),
                                       _config.getCompressionlevel(), _fileHeaderContext, isLastPart);
     if (dp->size() == 0) {
@@ -243,7 +245,8 @@ Domain::triggerSyncNow()
     }
 }
 
-DomainPart::SP Domain::findPart(SerialNum s)
+DomainPart::SP
+Domain::findPart(SerialNum s)
 {
     LockGuard guard(_lock);
     DomainPartList::iterator it(_parts.upper_bound(s));
@@ -260,12 +263,14 @@ DomainPart::SP Domain::findPart(SerialNum s)
     return DomainPart::SP();
 }
 
-uint64_t Domain::size() const
+uint64_t
+Domain::size() const
 {
     return size(LockGuard(_lock));
 }
 
-uint64_t Domain::size(const LockGuard & guard) const
+uint64_t
+Domain::size(const LockGuard & guard) const
 {
     (void) guard;
     assert(guard.locks(_lock));
@@ -276,7 +281,8 @@ uint64_t Domain::size(const LockGuard & guard) const
     return sz;
 }
 
-SerialNum Domain::findOldestActiveVisit() const
+SerialNum
+Domain::findOldestActiveVisit() const
 {
     SerialNum oldestActive(std::numeric_limits<SerialNum>::max());
     LockGuard guard(_sessionLock);
@@ -289,7 +295,8 @@ SerialNum Domain::findOldestActiveVisit() const
     return oldestActive;
 }
 
-void Domain::cleanSessions()
+void
+Domain::cleanSessions()
 {
     if ( _sessions.empty()) {
         return;
@@ -410,7 +417,8 @@ Domain::commitChunk(std::unique_ptr<Chunk> chunk, const vespalib::MonitorGuard &
     cleanSessions();
 }
 
-bool Domain::erase(SerialNum to)
+bool
+Domain::erase(SerialNum to)
 {
     bool retval(true);
     /// Do not erase the last element
@@ -428,8 +436,9 @@ bool Domain::erase(SerialNum to)
     return retval;
 }
 
-int Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to,
-                  FRT_Supervisor & supervisor, FNET_Connection *conn)
+int
+Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to,
+              FRT_Supervisor & supervisor, FNET_Connection *conn)
 {
     assert(this == domain.get());
     cleanSessions();
@@ -440,7 +449,8 @@ int Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to,
     return session->id();
 }
 
-int Domain::startSession(int sessionId)
+int
+Domain::startSession(int sessionId)
 {
     int retval(-1);
     LockGuard guard(_sessionLock);
@@ -456,7 +466,8 @@ int Domain::startSession(int sessionId)
     return retval;
 }
 
-int Domain::closeSession(int sessionId)
+int
+Domain::closeSession(int sessionId)
 {
     _commitExecutor.sync();
     int retval(-1);
