@@ -18,7 +18,6 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -230,7 +229,7 @@ public class AclProvisioningTest {
     }
 
     private List<Node> setConfigServers(String connectionSpec) {
-        curator.setConnectionSpec(connectionSpec);
+        curator.setZooKeeperEnsembleConnectionSpec(connectionSpec);
         return tester.nodeRepository().getConfigNodes();
     }
 

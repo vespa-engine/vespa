@@ -39,7 +39,7 @@ public class ZooKeeperAccessMaintainer extends Maintainer {
             hosts.add(node.hostname());
 
         if ( ! hosts.isEmpty()) { // no nodes -> not a hosted instance: Pass an empty list to deactivate restriction
-            for (String hostPort : curator.connectionSpec().split(","))
+            for (String hostPort : curator.zooKeeperEnsembleConnectionSpec().split(","))
                 hosts.add(hostPort.split(":")[0]);
         }
 

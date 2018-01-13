@@ -32,7 +32,7 @@ public class NodeRepositoryTester {
         nodeFlavors = new NodeFlavors(createConfig());
         clock = new ManualClock();
         curator = new MockCurator();
-        curator.setConnectionSpec("server1:1234,server2:5678");
+        curator.setZooKeeperEnsembleConnectionSpec("server1:1234,server2:5678");
         nodeRepository = new NodeRepository(nodeFlavors, curator, clock, Zone.defaultZone(),
                                             new MockNameResolver().mockAnyLookup(),
                                             new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));

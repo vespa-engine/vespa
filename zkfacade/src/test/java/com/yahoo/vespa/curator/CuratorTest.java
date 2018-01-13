@@ -60,7 +60,7 @@ public class CuratorTest {
     public void require_that_curator_can_produce_spec() {
         try (Curator curator = createCurator(createTestConfig())) {
             assertThat(curator.connectionSpec(), is(spec1 + "," + spec2));
-            assertThat(curator.serverCount(), is(2));
+            assertThat(curator.zooKeeperEnsembleCount(), is(2));
         }
     }
 
@@ -69,26 +69,25 @@ public class CuratorTest {
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
         builder.zookeeperserver(createZKBuilder("localhost", port1));
         try (Curator curator = createCurator(new ConfigserverConfig(builder))) {
-            assertThat(curator.serverCount(), is(1));
+            assertThat(curator.zooKeeperEnsembleCount(), is(1));
         }
     }
 
     @Test
-    public void localhost_affinity() {
-        String localhostHostName = "myhost";
-        int localhostPort = 123;
+     public void localhost_affinity() {
+         String localhostHostName = "myhost";
+         int localhostPort = 123;
+
+         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
+         builder.zookeeperserver(createZKBuilder(localhostHostName, localhostPort));
+         builder.zookeeperserver(createZKBuilder("otherhost", 345));
+         ConfigserverConfig config = new ConfigserverConfig(builder);
+
+         HostName.setHostNameForTestingOnly(localhostHostName);
+
         String localhostSpec = localhostHostName + ":" + localhostPort;
-
-        ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
-        builder.zookeeperserver(createZKBuilder(localhostHostName, localhostPort));
-        builder.zookeeperserver(createZKBuilder("otherhost", 345));
-        builder.zookeeperLocalhostAffinity(true);
-        ConfigserverConfig config = new ConfigserverConfig(builder);
-
-        HostName.setHostNameForTestingOnly(localhostHostName);
-
-        assertThat(Curator.createConnectionSpec(config), is(localhostSpec));
-    }
+         assertThat(Curator.createConnectionSpecForLocalhost(config), is(localhostSpec));
+     }
 
     private ConfigserverConfig createTestConfig() {
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
