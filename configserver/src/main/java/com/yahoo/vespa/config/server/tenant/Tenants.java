@@ -74,10 +74,9 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
      * New instance from the tenants in the given component registry's ZooKeeper data.
      * 
      * @param globalComponentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry}
-     * @throws Exception is creating the Tenants instance fails
      */
     @Inject
-    public Tenants(GlobalComponentRegistry globalComponentRegistry) throws Exception {
+    public Tenants(GlobalComponentRegistry globalComponentRegistry) {
         this.globalComponentRegistry = globalComponentRegistry;
         this.curator = globalComponentRegistry.getCurator();
         metricUpdater = globalComponentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
@@ -91,12 +90,14 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor);
         directoryCache.start();
         directoryCache.addListener(this);
+        log.log(LogLevel.INFO, "Creating all tenants"); // TODO: Change to debug
         createTenants();
         notifyTenantsLoaded();
+        log.log(LogLevel.INFO, "All tenants created"); // TODO: Change to debug
     }
 
     /**
-     * New instance containing the given tenants. Creates no system tenants and noZookeeper watches. For testing only.
+     * New instance containing the given tenants. Creates no system tenants and no Zookeeper watches. For testing only.
      * @param globalComponentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry} instance
      * @param tenants a collection of {@link Tenant}s
      */
@@ -128,7 +129,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         return tenants;
     }
     
-    public synchronized void addTenant(TenantName tenantName) throws Exception {
+    public synchronized void addTenant(TenantName tenantName) {
         writeTenantPath(tenantName);
         createTenant(tenantName);
     }
@@ -318,7 +319,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     }
 
     @Override
-    public void childEvent(CuratorFramework framework, PathChildrenCacheEvent event) throws Exception {
+    public void childEvent(CuratorFramework framework, PathChildrenCacheEvent event) {
         switch (event.getType()) {
             case CHILD_ADDED:
             case CHILD_REMOVED:
