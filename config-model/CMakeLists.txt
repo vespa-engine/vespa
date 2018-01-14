@@ -8,5 +8,3 @@ vespa_install_script(src/main/sh/vespa-validate-application bin)
 
 install(DIRECTORY src/main/resources/schema DESTINATION share/vespa PATTERN ".gitignore" EXCLUDE)
 install(DIRECTORY src/main/resources/schema DESTINATION share/vespa/schema/version/6.x PATTERN ".gitignore" EXCLUDE)
-
-install_java_artifact(jing)
