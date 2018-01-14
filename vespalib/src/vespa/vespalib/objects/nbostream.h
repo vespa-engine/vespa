@@ -20,7 +20,7 @@ class nbostream
  public:
     using Buffer = Array<char>;
     using Alloc = alloc::Alloc;
-    enum State { ok=0, eof=0x01, oob=0x02};
+    enum State { ok=0, eof=0x01};
     nbostream(size_t initialSize=1024);
 protected:
     nbostream(const void * buf, size_t sz, bool longLivedBuffer);
@@ -145,7 +145,6 @@ public:
     const char * peek() const { return &_rbuf[_rp]; }
     size_t rp() const { return _rp; }
     nbostream & rp(size_t pos) { if (pos > _wp) fail(eof); _rp = pos; return *this; }
-    nbostream & wp(size_t pos) { if (pos > _wbuf.size()) fail(oob); _wp = pos; return *this; }
     size_t wp() const { return _wp; }
     State state() const { return _state; }
     bool good() const { return _state == ok; }
