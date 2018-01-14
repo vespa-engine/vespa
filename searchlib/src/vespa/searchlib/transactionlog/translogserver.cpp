@@ -1,10 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "translogserver.h"
+#include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <fstream>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.server");
@@ -13,6 +15,9 @@ using vespalib::make_string;
 using vespalib::stringref;
 using vespalib::IllegalArgumentException;
 using search::common::FileHeaderContext;
+using std::make_shared;
+using std::runtime_error;
+using namespace std::chrono_literals;
 
 namespace search::transactionlog {
 
@@ -26,21 +31,16 @@ class SyncHandler : public FNET_Task
     SerialNum                   _syncTo;
     
 public:
-    SyncHandler(FRT_Supervisor *supervisor,
-                FRT_RPCRequest *req,const Domain::SP &domain,
-                const TransLogServer::Session::SP &session,
-                SerialNum syncTo);
+    SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req,const Domain::SP &domain,
+                const TransLogServer::Session::SP &session, SerialNum syncTo);
 
     ~SyncHandler();
     void PerformTask() override;
 };
 
 
-SyncHandler::SyncHandler(FRT_Supervisor *supervisor,
-                         FRT_RPCRequest *req,
-                         const Domain::SP &domain,
-                         const TransLogServer::Session::SP &session,
-                         SerialNum syncTo)
+SyncHandler::SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req, const Domain::SP &domain,
+                         const TransLogServer::Session::SP &session, SerialNum syncTo)
     : FNET_Task(supervisor->GetScheduler()),
       _req(*req),
       _domain(domain),
@@ -50,9 +50,7 @@ SyncHandler::SyncHandler(FRT_Supervisor *supervisor,
 }
 
 
-SyncHandler::~SyncHandler()
-{
-}
+SyncHandler::~SyncHandler() = default;
 
 
 void
@@ -77,25 +75,25 @@ SyncHandler::PerformTask()
 
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                                const FileHeaderContext &fileHeaderContext)
-    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, 0x10000000)
+    : TransLogServer(name, listenPort, baseDir, fileHeaderContext,
+                     DomainConfig().setEncoding(Encoding(Encoding::xxh64, Encoding::Compression::none))
+                             .setPartSizeLimit(0x10000000).setChunkSizeLimit(0x40000).setChunkAgeLimit( 100us))
 {}
 
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
-                               const FileHeaderContext &fileHeaderContext, uint64_t domainPartSize)
-    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, domainPartSize, 4, DomainPart::Crc::xxh64)
+                               const FileHeaderContext &fileHeaderContext, const DomainConfig & cfg)
+    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, cfg, 4)
 {}
 
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
-                               const FileHeaderContext &fileHeaderContext, uint64_t domainPartSize,
-                               size_t maxThreads, DomainPart::Crc defaultCrcType)
+                               const FileHeaderContext &fileHeaderContext, const DomainConfig & cfg, size_t maxThreads)
     : FRT_Invokable(),
       _name(name),
       _baseDir(baseDir),
-      _domainPartSize(domainPartSize),
-      _defaultCrcType(defaultCrcType),
+      _domainConfig(cfg),
       _commitExecutor(maxThreads, 128*1024),
       _sessionExecutor(maxThreads, 128*1024),
-      _threadPool(8192, 1),
+      _threadPool(0x20000),
       _supervisor(std::make_unique<FRT_Supervisor>()),
       _domains(),
       _reqQ(),
@@ -110,8 +108,8 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
                 domainDir >> domainName;
                 if ( ! domainName.empty()) {
                     try {
-                        auto domain = std::make_shared<Domain>(domainName, dir(), _commitExecutor, _sessionExecutor,
-                                                               _domainPartSize, _defaultCrcType,_fileHeaderContext);
+                        auto domain = make_shared<Domain>(domainName, dir(), _threadPool, _commitExecutor,
+                                                          _sessionExecutor, cfg,_fileHeaderContext);
                         _domains[domain->name()] = domain;
                     } catch (const std::exception & e) {
                         LOG(warning, "Failed creating %s domain on startup. Exception = %s", domainName.c_str(), e.what());
@@ -128,17 +126,17 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
                     listenOk = true;
                 } else {
                     LOG(warning, "Failed listening at port %s trying for %d seconds more.", listenSpec, i);
-                    FastOS_Thread::Sleep(1000);
+                    std::this_thread::sleep_for(1s);
                 }
             }
             if ( ! listenOk ) {
-                throw std::runtime_error(make_string("Failed listening at port %s. Giving up. Requires manual intervention.", listenSpec));
+                throw runtime_error(make_string("Failed listening at port %s. Giving up. Requires manual intervention.", listenSpec));
             }
         } else {
-            throw std::runtime_error(make_string("Failed creating tls dir %s r(%d), e(%d). Requires manual intervention.", dir().c_str(), retval, errno));
+            throw runtime_error(make_string("Failed creating tls dir %s r(%d), e(%d). Requires manual intervention.", dir().c_str(), retval, errno));
         }
     } else {
-        throw std::runtime_error(make_string("Failed creating tls base dir %s r(%d), e(%d). Requires manual intervention.", _baseDir.c_str(), retval, errno));
+        throw runtime_error(make_string("Failed creating tls base dir %s r(%d), e(%d). Requires manual intervention.", _baseDir.c_str(), retval, errno));
     }
     start(_threadPool);
 }
@@ -154,14 +152,16 @@ TransLogServer::~TransLogServer()
     _supervisor->ShutDown(true);
 }
 
-bool TransLogServer::onStop()
+bool
+TransLogServer::onStop()
 {
     LOG(info, "Stopping TLS");
     _reqQ.push(NULL);
     return true;
 }
 
-void TransLogServer::run()
+void
+TransLogServer::run()
 {
     FRT_RPCRequest *req(NULL);
     bool hasPacket(false);
@@ -200,11 +200,12 @@ void TransLogServer::run()
             }
         }
         logMetric();
-    } while (running() && !(hasPacket && (req == NULL)));
+    } while (running() && !(hasPacket && (req == nullptr)));
     LOG(info, "TLS Stopped");
 }
 
-void TransLogServer::logMetric() const
+void
+TransLogServer::logMetric() const
 {
     Guard domainGuard(_lock);
     for (DomainList::const_iterator it(_domains.begin()), mt(_domains.end()); it != mt; it++) {
@@ -213,6 +214,17 @@ void TransLogServer::logMetric() const
         EV_COUNT((prefix + "first").c_str(), it->second->begin());
         EV_VALUE((prefix + "numused").c_str(), it->second->size());
     }
+}
+
+
+TransLogServer &
+TransLogServer::setDomainConfig(const DomainConfig & cfg) {
+    Guard domainGuard(_lock);
+    _domainConfig = cfg;
+    for(auto &domain: _domains) {
+        domain.second->setConfig(cfg);
+    }
+    return *this;
 }
 
 DomainStats
@@ -249,7 +261,8 @@ TransLogServer::findDomain(const stringref &domainName)
     return domain;
 }
 
-void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
+void
+TransLogServer::exportRPC(FRT_Supervisor & supervisor)
 {
     _supervisor->SetSessionInitHook(FRT_METHOD(TransLogServer::initSession), this);
     _supervisor->SetSessionFiniHook(FRT_METHOD(TransLogServer::finiSession), this);
@@ -336,7 +349,8 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     rb.ReturnDesc("syncedto", "Entry synced to");
 }
 
-void TransLogServer::createDomain(FRT_RPCRequest *req)
+void
+TransLogServer::createDomain(FRT_RPCRequest *req)
 {
     uint32_t retval(0);
     FRT_Values & params = *req->GetParams();
@@ -349,8 +363,8 @@ void TransLogServer::createDomain(FRT_RPCRequest *req)
     Domain::SP domain(findDomain(domainName));
     if ( !domain ) {
         try {
-            domain = std::make_shared<Domain>(domainName, dir(), _commitExecutor, _sessionExecutor,
-                                              _domainPartSize, _defaultCrcType, _fileHeaderContext);
+            domain = make_shared<Domain>(domainName, dir(), _threadPool, _commitExecutor,
+                                         _sessionExecutor, _domainConfig, _fileHeaderContext);
             {
                 Guard domainGuard(_lock);
                 _domains[domain->name()] = domain;
@@ -366,7 +380,8 @@ void TransLogServer::createDomain(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void TransLogServer::deleteDomain(FRT_RPCRequest *req)
+void
+TransLogServer::deleteDomain(FRT_RPCRequest *req)
 {
     uint32_t retval(0);
     vespalib::string msg("ok");
@@ -405,7 +420,8 @@ void TransLogServer::deleteDomain(FRT_RPCRequest *req)
     ret.AddString(msg.c_str());
 }
 
-void TransLogServer::openDomain(FRT_RPCRequest *req)
+void
+TransLogServer::openDomain(FRT_RPCRequest *req)
 {
     uint32_t retval(0);
     FRT_Values & params = *req->GetParams();
@@ -422,7 +438,8 @@ void TransLogServer::openDomain(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void TransLogServer::listDomains(FRT_RPCRequest *req)
+void
+TransLogServer::listDomains(FRT_RPCRequest *req)
 {
     FRT_Values & ret    = *req->GetReturn();
     LOG(debug, "listDomains()");
@@ -437,7 +454,8 @@ void TransLogServer::listDomains(FRT_RPCRequest *req)
     ret.AddString(domains.c_str());
 }
 
-void TransLogServer::domainStatus(FRT_RPCRequest *req)
+void
+TransLogServer::domainStatus(FRT_RPCRequest *req)
 {
     FRT_Values & params = *req->GetParams();
     FRT_Values & ret    = *req->GetReturn();
@@ -457,18 +475,20 @@ void TransLogServer::domainStatus(FRT_RPCRequest *req)
     }
 }
 
-void TransLogServer::commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done)
+void
+TransLogServer::commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done)
 {
     (void) done;
     Domain::SP domain(findDomain(domainName));
     if (domain) {
-        domain->commit(packet);
+        domain->commit(packet, std::move(done));
     } else {
         throw IllegalArgumentException("Could not find domain " + domainName);
     }
 }
 
-void TransLogServer::domainCommit(FRT_RPCRequest *req)
+void
+TransLogServer::domainCommit(FRT_RPCRequest *req)
 {
     FRT_Values & params = *req->GetParams();
     FRT_Values & ret    = *req->GetReturn();
@@ -478,7 +498,9 @@ void TransLogServer::domainCommit(FRT_RPCRequest *req)
     if (domain) {
         Packet packet(params[1]._data._buf, params[1]._data._len);
         try {
-            domain->commit(packet);
+            vespalib::Gate gate;
+            domain->commit(packet, make_shared<GateCallback>(gate));
+            gate.await();
             ret.AddInt32(0);
             ret.AddString("ok");
         } catch (const std::exception & e) {
@@ -491,7 +513,8 @@ void TransLogServer::domainCommit(FRT_RPCRequest *req)
     }
 }
 
-void TransLogServer::domainVisit(FRT_RPCRequest *req)
+void
+TransLogServer::domainVisit(FRT_RPCRequest *req)
 {
     uint32_t retval(uint32_t(-1));
     FRT_Values & params = *req->GetParams();
@@ -508,7 +531,8 @@ void TransLogServer::domainVisit(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void TransLogServer::domainSessionRun(FRT_RPCRequest *req)
+void
+TransLogServer::domainSessionRun(FRT_RPCRequest *req)
 {
     uint32_t retval(uint32_t(-1));
     FRT_Values & params = *req->GetParams();
@@ -524,13 +548,15 @@ void TransLogServer::domainSessionRun(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void TransLogServer::relayToThreadRPC(FRT_RPCRequest *req)
+void
+TransLogServer::relayToThreadRPC(FRT_RPCRequest *req)
 {
     req->Detach();
     _reqQ.push(req);
 }
 
-void TransLogServer::domainSessionClose(FRT_RPCRequest *req)
+void
+TransLogServer::domainSessionClose(FRT_RPCRequest *req)
 {
     uint32_t retval(uint32_t(-1));
     FRT_Values & params = *req->GetParams();
@@ -547,7 +573,8 @@ void TransLogServer::domainSessionClose(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void TransLogServer::domainPrune(FRT_RPCRequest *req)
+void
+TransLogServer::domainPrune(FRT_RPCRequest *req)
 {
     uint32_t retval(uint32_t(-1));
     FRT_Values & params = *req->GetParams();
