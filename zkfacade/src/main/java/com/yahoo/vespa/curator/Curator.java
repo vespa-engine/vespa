@@ -71,7 +71,7 @@ public class Curator implements AutoCloseable {
     }
 
     private Curator(ConfigserverConfig configserverConfig, String zooKeeperEnsembleConnectionSpec) {
-        this(configserverConfig.zookeeperLocalhostAffinity() ?
+        this((configserverConfig.zookeeperLocalhostAffinity() || configserverConfig.system().equals("cd")) ?
                 createConnectionSpecForLocalhost(configserverConfig) : zooKeeperEnsembleConnectionSpec,
                 zooKeeperEnsembleConnectionSpec);
     }
