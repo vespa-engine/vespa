@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 
 import java.util.List;
 

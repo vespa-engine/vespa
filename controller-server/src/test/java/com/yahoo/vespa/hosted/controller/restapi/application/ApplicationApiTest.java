@@ -7,7 +7,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
@@ -655,7 +655,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         long screwdriverProjectId = 123;
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
-        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1");
+        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.id(), "tenant1", "application1");
         ScrewdriverId screwdriverId = new ScrewdriverId(Long.toString(screwdriverProjectId));
         controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
 
@@ -682,7 +682,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
-        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1");
+        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.id(), "tenant1", "application1");
         controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
 
         // Allow systemtest to succeed by notifying completion of system test
@@ -763,7 +763,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                           data, method);
             request.getHeaders().put("Content-Type", contentType);
             if (identity != null) {
-                request.getHeaders().put("Athenz-Identity-Domain", identity.getDomain().getName());
+                request.getHeaders().put("Athenz-Identity-Domain", identity.getDomain().id());
                 request.getHeaders().put("Athenz-Identity-Name", identity.getName());
             }
             return request;

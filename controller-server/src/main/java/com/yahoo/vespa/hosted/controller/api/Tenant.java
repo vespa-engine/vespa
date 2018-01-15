@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api;
 
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantType;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
