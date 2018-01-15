@@ -185,7 +185,7 @@ public class ConfigServerHttpRequestExecutor implements AutoCloseable {
                     makeSslContext(keyStoreOptions, trustStoreOptions), NoopHostnameVerifier.INSTANCE);
             return new SelfCloseableHttpClient(sslSocketFactory);
         } catch (Exception e) {
-            NODE_ADMIN_LOGGER.error("Failed to create HTTP client with custom SSL Context, proceeding with default");
+            NODE_ADMIN_LOGGER.error("Failed to create HTTP client with custom SSL Context, proceeding with default", e);
             return new SelfCloseableHttpClient();
         }
     }
