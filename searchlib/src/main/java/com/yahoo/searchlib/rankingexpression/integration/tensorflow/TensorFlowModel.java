@@ -69,6 +69,8 @@ public class TensorFlowModel {
         void output(String name, String expressionName) { outputs.put(name, expressionName); }
         void skippedOutput(String name, String reason) { skippedOutputs.put(name, reason); }
 
+        public String name() { return name; }
+
         /** Returns the result this is part of */
         TensorFlowModel owner() { return TensorFlowModel.this; }
 

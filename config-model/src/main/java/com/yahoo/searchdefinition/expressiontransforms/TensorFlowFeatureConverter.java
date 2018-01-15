@@ -11,6 +11,8 @@ import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.TensorFlowImporter;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.TensorFlowModel;
+import com.yahoo.searchlib.rankingexpression.integration.tensorflow.TensorFlowModel.Signature;
+import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
@@ -39,7 +41,7 @@ import java.util.Optional;
 public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
     // TODO: Make system test work with this set to true, then remove the "true" path
-    private static final boolean constantsInConfig = true;
+    private static final boolean constantsInConfig = false;
 
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
 
@@ -64,20 +66,20 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
                 throw new IllegalArgumentException("A tensorflow node must take an argument pointing to " +
                                                    "the tensorflow model directory under [application]/models");
 
+            // modelPath: The relative path to this model below the "models/" dir in the application package
             Path modelPath = Path.fromString(asString(feature.getArguments().expressions().get(0)));
-            TensorFlowModel result = importedModels.computeIfAbsent(modelPath, k -> importModel(modelPath));
+            TensorFlowModel model = importedModels.computeIfAbsent(modelPath, k -> importModel(modelPath));
 
             // Find the specified expression
-            TensorFlowModel.Signature signature = chooseSignature(result,
-                                                                  optionalArgument(1, feature.getArguments()));
-            RankingExpression expression = chooseOutput(signature,
-                                                        optionalArgument(2, feature.getArguments()));
+            Signature signature = chooseSignature(model, optionalArgument(1, feature.getArguments()));
+            String output = chooseOutput(signature, optionalArgument(2, feature.getArguments()));
+            RankingExpression expression = readExpression(model, modelPath, signature.name(), output);
 
             // Add all constants (after finding outputs to fail faster when the output is not found)
             if (constantsInConfig)
-                result.constants().forEach((k, v) -> context.rankProfile().addConstantTensor(k, new TensorValue(v)));
+                model.constants().forEach((k, v) -> context.rankProfile().addConstantTensor(k, new TensorValue(v)));
             else // correct way, disabled for now
-                result.constants().forEach((k, v) -> transformConstant(modelPath, context.rankProfile(), k, v));
+                model.constants().forEach((k, v) -> transformConstant(modelPath, context.rankProfile(), k, v));
 
             return expression.getRoot();
         }
@@ -101,7 +103,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
      * Returns the specified, existing signature, or the only signature if none is specified.
      * Throws IllegalArgumentException in all other cases.
      */
-    private TensorFlowModel.Signature chooseSignature(TensorFlowModel importResult, Optional<String> signatureName) {
+    private Signature chooseSignature(TensorFlowModel importResult, Optional<String> signatureName) {
         if ( ! signatureName.isPresent()) {
             if (importResult.signatures().size() == 0)
                 throw new IllegalArgumentException("No signatures are available");
@@ -113,7 +115,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             return importResult.signatures().values().stream().findFirst().get();
         }
         else {
-            TensorFlowModel.Signature signature = importResult.signatures().get(signatureName.get());
+            Signature signature = importResult.signatures().get(signatureName.get());
             if (signature == null)
                 throw new IllegalArgumentException("Model does not have the specified signature '" +
                                                    signatureName.get() + "'");
@@ -125,7 +127,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
      * Returns the specified, existing output expression, or the only output expression if no output name is specified.
      * Throws IllegalArgumentException in all other cases.
      */
-    private RankingExpression chooseOutput(TensorFlowModel.Signature signature, Optional<String> outputName) {
+    private String chooseOutput(Signature signature, Optional<String> outputName) {
         if ( ! outputName.isPresent()) {
             if (signature.outputs().size() == 0)
                 throw new IllegalArgumentException("No outputs are available" + skippedOutputsDescription(signature));
@@ -134,11 +136,11 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
                                                    Joiner.on(", ").join(signature.outputs().keySet()) +
                                                    "), one must be specified " +
                                                    "as a third argument to tensorflow()");
-            return signature.outputExpression(signature.outputs().keySet().stream().findFirst().get());
+            return signature.outputs().get(signature.outputs().keySet().stream().findFirst().get());
         }
         else {
-            RankingExpression expression = signature.outputExpression(outputName.get());
-            if (expression == null) {
+            String output = signature.outputs().get(outputName.get());
+            if (output == null) {
                 if (signature.skippedOutputs().containsKey(outputName.get()))
                     throw new IllegalArgumentException("Could not use output '" + outputName.get() + "': " +
                                                        signature.skippedOutputs().get(outputName.get()));
@@ -146,7 +148,45 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
                     throw new IllegalArgumentException("Model does not have the specified output '" +
                                                        outputName.get() + "'");
             }
-            return expression;
+            return output;
+        }
+    }
+
+    /**
+     * Store converted ranking expression for file distribution to be able to read them when creating the model
+     * on a different config server in the same cluster.
+     */
+    private RankingExpression readExpression(TensorFlowModel model, Path modelPath, String signature, String output) {
+        Optional<RankingExpression> storedConvertedExpression = readConverted(signature, output, modelPath);
+        if (storedConvertedExpression.isPresent())
+            return storedConvertedExpression.get();
+
+        RankingExpression convertedExpression = model.expressions().get(output);
+        writeConverted(signature, output, convertedExpression, modelPath);
+        return convertedExpression;
+    }
+
+    /** Reads a previously stored converted ranking expression, or returns empty if it does not exist */
+    private Optional<RankingExpression> readConverted(String signature, String output, Path modelPath) {
+        File expressionFile = expressionFile(modelPath, signature, output);
+        try {
+            if ( ! expressionFile.exists()) return Optional.empty();
+            return Optional.of(new RankingExpression(IOUtils.readFile(expressionFile)));
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        catch (ParseException e) {
+            throw new IllegalStateException("Could not parse " + expressionFile, e);
+        }
+    }
+
+    private void writeConverted(String signature, String output, RankingExpression expression, Path modelPath) {
+        try {
+            IOUtils.writeFile(expressionFile(modelPath, signature, output), expression.getRoot().toString(), false);
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -154,12 +194,10 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         try {
             if (profile.getSearch().getRankingConstants().containsKey(constantName)) return;
 
-            System.out.println("modelPath is " + modelPath);
             File constantFilePath = new File(ApplicationPackage.MODELS_GENERATED_DIR.append(modelPath)
                                                                                     .append("constants")
                                                                                     .getRelative())
                                     .getCanonicalFile();
-            System.out.println("constant file path is " + constantFilePath);
             if ( ! constantFilePath.exists())
                 if ( ! constantFilePath.mkdir())
                     throw new IOException("Could not create directory " + constantFilePath);
@@ -202,6 +240,19 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
     private boolean isQuoteSign(int c) {
         return c == '\'' || c == '"';
+    }
+
+    private File expressionFile(Path modelPath, String signature, String output) {
+        try {
+            return new File(ApplicationPackage.MODELS_GENERATED_DIR.append(modelPath)
+                                                                   .append("expressions")
+                                                                   .append(signature + ". " + output + ".expression")
+                                                                   .getRelative())
+                    .getCanonicalFile();
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
 }
