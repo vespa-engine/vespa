@@ -146,8 +146,8 @@ StorageBucketDBInitializer::StorageBucketDBInitializer(
         _readState[i] = std::make_unique<BucketSpaceReadState>();
         for (const auto &elem : _system._bucketSpaceRepo) {
             _readState[i]->emplace(elem.first, std::make_unique<BucketReadState>());
+            _state._dirsToList += 1;
         }
-        _state._dirsToList += 1;
     }
     _system._component.registerStatusPage(*this);
 }
