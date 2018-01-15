@@ -69,6 +69,13 @@
         </dependency>
 
         <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespa-athenz</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <scope>provided</scope>

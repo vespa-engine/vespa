@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.athenz.mock;
 
 import com.yahoo.athenz.auth.util.Crypto;
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentityCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzRoleCertificate;
@@ -58,10 +58,10 @@ public class ZtsClientMock implements ZtsClient {
     @Override
     public AthenzRoleCertificate getRoleCertificate(AthenzDomain roleDomain, String roleName) {
         log.log(Level.INFO,
-                String.format("getRoleCertificate(roleDomain=%s, roleName=%s)", roleDomain.id(), roleDomain));
+                String.format("getRoleCertificate(roleDomain=%s, roleName=%s)", roleDomain.getName(), roleDomain));
         try {
             KeyPair keyPair = createKeyPair();
-            String subject = String.format("CN=%s:role.%s", roleDomain.id(), roleName);
+            String subject = String.format("CN=%s:role.%s", roleDomain.getName(), roleName);
             return new AthenzRoleCertificate(createCertificate(keyPair, subject), keyPair.getPrivate());
         } catch (NoSuchAlgorithmException | OperatorCreationException | IOException e) {
             throw new RuntimeException(e);
