@@ -165,9 +165,8 @@ public class Search implements Serializable, ImmutableSearch {
     public void addRankingConstant(RankingConstant constant) {
         constant.validate();
         String name = constant.getName();
-        if (rankingConstants.get(name) != null) {
-            throw new IllegalArgumentException("Ranking constant '"+name+"' defined twice");
-        }
+        if (rankingConstants.containsKey(name))
+            throw new IllegalArgumentException("Ranking constant '" + name + "' defined twice");
         rankingConstants.put(name, constant);
     }
 

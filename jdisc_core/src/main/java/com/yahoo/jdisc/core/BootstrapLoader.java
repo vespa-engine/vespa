@@ -2,15 +2,15 @@
 package com.yahoo.jdisc.core;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public interface BootstrapLoader {
 
-    public void init(String bundleLocation, boolean privileged) throws Exception;
+    void init(String bundleLocation, boolean privileged) throws Exception;
 
-    public void start() throws Exception;
+    void start() throws Exception;
 
-    public void stop() throws Exception;
+    void stop() throws Exception;
 
-    public void destroy();
+    void destroy();
 }

@@ -14,7 +14,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 class Benchmark {
 
@@ -103,4 +103,5 @@ class Benchmark {
             return new Benchmark(this);
         }
     }
+
 }

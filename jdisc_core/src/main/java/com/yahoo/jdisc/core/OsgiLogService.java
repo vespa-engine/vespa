@@ -4,7 +4,7 @@ package com.yahoo.jdisc.core;
 import org.osgi.framework.*;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 class OsgiLogService {
 
@@ -38,22 +38,22 @@ class OsgiLogService {
                 return;
             }
             switch (event.getType()) {
-            case ServiceEvent.REGISTERED:
-                try {
-                    activator.start(ctx);
-                } catch (Exception e) {
-                    throw new RuntimeException("Exception thrown while starting " +
-                                               activator.getClass().getName() + ".", e);
-                }
-                break;
-            case ServiceEvent.UNREGISTERING:
-                try {
-                    activator.stop(ctx);
-                } catch (Exception e) {
-                    throw new RuntimeException("Exception thrown while stopping " +
-                                               activator.getClass().getName() + ".", e);
-                }
-                break;
+                case ServiceEvent.REGISTERED:
+                    try {
+                        activator.start(ctx);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Exception thrown while starting " +
+                                                   activator.getClass().getName() + ".", e);
+                    }
+                    break;
+                case ServiceEvent.UNREGISTERING:
+                    try {
+                        activator.stop(ctx);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Exception thrown while stopping " +
+                                                   activator.getClass().getName() + ".", e);
+                    }
+                    break;
             }
         }
     }

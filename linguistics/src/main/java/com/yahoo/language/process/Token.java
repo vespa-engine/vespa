@@ -2,9 +2,9 @@
 package com.yahoo.language.process;
 
 /**
- * Interface providing access to a single token produced by the tokenizer.
+ * A single token produced by the tokenizer.
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
+ * @author Mathias Mølster Lidal
  */
 public interface Token {
 

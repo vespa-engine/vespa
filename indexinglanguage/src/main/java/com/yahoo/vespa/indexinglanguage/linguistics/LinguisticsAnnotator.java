@@ -1,15 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.linguistics;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.yahoo.document.annotation.*;
+import com.yahoo.document.annotation.Annotation;
+import com.yahoo.document.annotation.AnnotationTypes;
+import com.yahoo.document.annotation.Span;
+import com.yahoo.document.annotation.SpanList;
+import com.yahoo.document.annotation.SpanTree;
+import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.Tokenizer;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
@@ -110,7 +115,7 @@ public class LinguisticsAnnotator {
                 }
                 return;
             }
-            if (!token.isIndexable()) {
+            if ( ! token.isIndexable()) {
                 return;
             }
         }
