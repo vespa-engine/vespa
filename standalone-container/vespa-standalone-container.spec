@@ -87,7 +87,8 @@ chmod +x /etc/profile.d/vespa.sh
 %postun
 if [ $1 -eq 0 ]; then # this is an uninstallation
     rm -f /etc/profile.d/vespa.sh
-    userdel vespa
+    ! getent passwd vespa >/dev/null || userdel vespa
+    ! getent group vespa >/dev/null || groupdel vespa
 fi
 
 %files
