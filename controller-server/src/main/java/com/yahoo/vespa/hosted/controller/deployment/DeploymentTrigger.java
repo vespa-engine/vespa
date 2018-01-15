@@ -399,11 +399,11 @@ public class DeploymentTrigger {
         if ( ! job.isProduction())
             throw new IllegalArgumentException(job + " is not a production job!");
 
-        return    lastSuccessfulIs(version, job, application)
-               || job.zone(controller.system())
-                       .map(zone -> application.deployments().get(zone))
-                       .map(deployment -> deployment.version().isAfter(version))
-                       .orElse(false);
+        return lastSuccessfulIs(version, job, application) ||
+               job.zone(controller.system())
+                  .map(zone -> application.deployments().get(zone))
+                  .map(deployment -> deployment.version().isAfter(version))
+                  .orElse(false);
     }
 
     private boolean acceptNewRevisionNow(LockedApplication application) {

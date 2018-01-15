@@ -5,13 +5,11 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 
 import java.net.URI;
@@ -95,8 +93,7 @@ public class VersionStatus {
         Version systemVersion = infrastructureVersions.stream().sorted().findFirst().get();
 
         Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions,
-                                                                                            controller.applications().asList(),
-                                                                                            controller.applications().deploymentTrigger().jobTimeoutLimit());
+                                                                                            controller.applications().asList());
         List<VespaVersion> versions = new ArrayList<>();
 
         for (DeploymentStatistics statistics : deploymentStatistics) {
@@ -132,8 +129,7 @@ public class VersionStatus {
     }
 
     private static Collection<DeploymentStatistics> computeDeploymentStatistics(Set<Version> infrastructureVersions,
-                                                                                List<Application> applications,
-                                                                                Instant jobTimeoutLimit) {
+                                                                                List<Application> applications) {
         Map<Version, DeploymentStatistics> versionMap = new HashMap<>();
 
         for (Version infrastructureVersion : infrastructureVersions) {
@@ -141,8 +137,6 @@ public class VersionStatus {
         }
 
         for (Application application : ApplicationList.from(applications).notPullRequest().asList()) {
-            DeploymentJobs jobs = application.deploymentJobs();
-
             // Note that each version deployed on this application in production exists
             // (ignore non-production versions)
             for (Deployment deployment : application.productionDeployments().values()) {
