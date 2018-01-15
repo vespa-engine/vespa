@@ -5,7 +5,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
@@ -108,7 +108,7 @@ public class TenantController {
             AthenzDomain domain = tenant.getAthensDomain().get();
             Optional<Tenant> existingTenantWithDomain = tenantHaving(domain);
             if (existingTenantWithDomain.isPresent())
-                throw new IllegalArgumentException("Could not create " + tenant + ": The Athens domain '" + domain.getName() +
+                throw new IllegalArgumentException("Could not create " + tenant + ": The Athens domain '" + domain +
                                                    "' is already connected to " + existingTenantWithDomain.get());
             ZmsClient zmsClient = athenzClientFactory.createZmsClientWithAuthorizedServiceToken(token.get());
             try { zmsClient.deleteTenant(domain); } catch (ZmsException ignored) { }
@@ -200,7 +200,7 @@ public class TenantController {
         try (Lock lock = lock(tenantId)) {
             Tenant existing = tenant(tenantId).orElseThrow(() -> new NotExistsException(tenantId));
             if (existing.isAthensTenant()) return existing; // nothing to do
-            log.info("Starting migration of " + existing + " to Athenz domain " + tenantDomain.getName());
+            log.info("Starting migration of " + existing + " to Athenz domain " + tenantDomain.id());
             if (tenantHaving(tenantDomain).isPresent())
                 throw new IllegalArgumentException("Could not migrate " + existing + " to " + tenantDomain + ": " +
                                                    "This domain is already used by " + tenantHaving(tenantDomain).get());

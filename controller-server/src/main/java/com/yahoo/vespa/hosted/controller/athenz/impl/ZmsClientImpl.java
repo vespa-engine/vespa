@@ -12,7 +12,7 @@ import com.yahoo.athenz.zms.ZMSClient;
 import com.yahoo.athenz.zms.ZMSClientException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPublicKey;
@@ -48,17 +48,17 @@ public class ZmsClientImpl implements ZmsClient {
         log("putTenancy(tenantDomain=%s, service=%s)", tenantDomain, service);
         runOrThrow(() -> {
             Tenancy tenancy = new Tenancy()
-                    .setDomain(tenantDomain.getName())
+                    .setDomain(tenantDomain.id())
                     .setService(service.getFullName())
                     .setResourceGroups(Collections.emptyList());
-            zmsClient.putTenancy(tenantDomain.getName(), service.getFullName(), /*auditref*/null, tenancy);
+            zmsClient.putTenancy(tenantDomain.id(), service.getFullName(), /*auditref*/null, tenancy);
         });
     }
 
     @Override
     public void deleteTenant(AthenzDomain tenantDomain) {
         log("deleteTenancy(tenantDomain=%s, service=%s)", tenantDomain, service);
-        runOrThrow(() -> zmsClient.deleteTenancy(tenantDomain.getName(), service.getFullName(), /*auditref*/null));
+        runOrThrow(() -> zmsClient.deleteTenancy(tenantDomain.id(), service.getFullName(), /*auditref*/null));
     }
 
     @Override
@@ -66,16 +66,16 @@ public class ZmsClientImpl implements ZmsClient {
         List<TenantRoleAction> tenantRoleActions = createTenantRoleActions();
         log("putProviderResourceGroupRoles(" +
                         "tenantDomain=%s, providerDomain=%s, service=%s, resourceGroup=%s, roleActions=%s)",
-                tenantDomain, service.getDomain().getName(), service.getName(), applicationName, tenantRoleActions);
+                tenantDomain, service.getDomain().id(), service.getName(), applicationName, tenantRoleActions);
         runOrThrow(() -> {
             ProviderResourceGroupRoles resourceGroupRoles = new ProviderResourceGroupRoles()
-                    .setDomain(service.getDomain().getName())
+                    .setDomain(service.getDomain().id())
                     .setService(service.getName())
-                    .setTenant(tenantDomain.getName())
+                    .setTenant(tenantDomain.id())
                     .setResourceGroup(applicationName.id())
                     .setRoles(tenantRoleActions);
             zmsClient.putProviderResourceGroupRoles(
-                    tenantDomain.getName(), service.getDomain().getName(), service.getName(),
+                    tenantDomain.id(), service.getDomain().id(), service.getName(),
                     applicationName.id(), /*auditref*/null, resourceGroupRoles);
         });
     }
@@ -83,10 +83,10 @@ public class ZmsClientImpl implements ZmsClient {
     @Override
     public void deleteApplication(AthenzDomain tenantDomain, ApplicationId applicationName) {
         log("deleteProviderResourceGroupRoles(tenantDomain=%s, providerDomain=%s, service=%s, resourceGroup=%s)",
-                tenantDomain, service.getDomain().getName(), service.getName(), applicationName);
+                tenantDomain, service.getDomain().id(), service.getName(), applicationName);
         runOrThrow(() -> {
             zmsClient.deleteProviderResourceGroupRoles(
-                    tenantDomain.getName(), service.getDomain().getName(), service.getName(), applicationName.id(), /*auditref*/null);
+                    tenantDomain.id(), service.getDomain().id(), service.getName(), applicationName.id(), /*auditref*/null);
         });
     }
 
@@ -110,7 +110,7 @@ public class ZmsClientImpl implements ZmsClient {
     public boolean isDomainAdmin(AthenzIdentity identity, AthenzDomain domain) {
         log("getMembership(domain=%s, role=%s, principal=%s)", domain, "admin", identity);
         return getOrThrow(
-                () -> zmsClient.getMembership(domain.getName(), "admin", identity.getFullName()).getIsMember());
+                () -> zmsClient.getMembership(domain.id(), "admin", identity.getFullName()).getIsMember());
     }
 
     @Override
@@ -127,18 +127,18 @@ public class ZmsClientImpl implements ZmsClient {
 
     @Override
     public AthenzPublicKey getPublicKey(AthenzService service, String keyId) {
-        log("getPublicKeyEntry(domain=%s, service=%s, keyId=%s)", service.getDomain().getName(), service.getName(), keyId);
+        log("getPublicKeyEntry(domain=%s, service=%s, keyId=%s)", service.getDomain().id(), service.getName(), keyId);
         return getOrThrow(() -> {
-            PublicKeyEntry entry = zmsClient.getPublicKeyEntry(service.getDomain().getName(), service.getName(), keyId);
+            PublicKeyEntry entry = zmsClient.getPublicKeyEntry(service.getDomain().id(), service.getName(), keyId);
             return fromYbase64EncodedKey(entry.getKey(), keyId);
         });
     }
 
     @Override
     public List<AthenzPublicKey> getPublicKeys(AthenzService service) {
-        log("getServiceIdentity(domain=%s, service=%s)", service.getDomain().getName(), service.getName());
+        log("getServiceIdentity(domain=%s, service=%s)", service.getDomain().id(), service.getName());
         return getOrThrow(() -> {
-            ServiceIdentity serviceIdentity = zmsClient.getServiceIdentity(service.getDomain().getName(), service.getName());
+            ServiceIdentity serviceIdentity = zmsClient.getServiceIdentity(service.getDomain().id(), service.getName());
             return toAthenzPublicKeys(serviceIdentity.getPublicKeys());
         });
     }
@@ -198,7 +198,7 @@ public class ZmsClientImpl implements ZmsClient {
 
     private String resourceStringPrefix(AthenzDomain tenantDomain) {
         return String.format("%s:service.%s.tenant.%s",
-                             service.getDomain().getName(), service.getName(), tenantDomain.getName());
+                             service.getDomain().id(), service.getName(), tenantDomain.id());
     }
 
     private String tenantResourceString(AthenzDomain tenantDomain) {
