@@ -10,10 +10,8 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.session.LocalSession;
-import com.yahoo.vespa.config.server.session.Session;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -21,8 +19,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -37,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 public class RedeployTest {
 
     @Test
-    public void testRedeploy() throws InterruptedException, IOException {
+    public void testRedeploy() {
         DeployTester tester = new DeployTester("src/test/apps/app");
         tester.deployApp("myapp", Instant.now());
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
@@ -66,7 +62,7 @@ public class RedeployTest {
     }
 
     @Test
-    public void testRedeployWillPurgeOldNonActiveDeployments() {
+    public void testPurgingOfOldNonActiveDeployments() {
         ManualClock clock = new ManualClock(Instant.now());
         ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                                                .configServerDBDir(Files.createTempDir()
@@ -97,18 +93,11 @@ public class RedeployTest {
 
         clock.advance(Duration.ofHours(1)); // longer than session lifetime
 
-        // Need another deployment to get old sessions purged
-        Optional<com.yahoo.config.provision.Deployment> deployment4 = tester.redeployFromLocalActive();
-        assertTrue(deployment4.isPresent());
-        deployment4.get().activate();  // session 5
-
-        // Both session 2 (deactivated) and session 4 (never activated) should have been removed
+        // All sessions except 3 should be removed after the call to purgeOldSessions
+        tester.tenant().getLocalSessionRepo().purgeOldSessions();
         final Collection<LocalSession> sessions = tester.tenant().getLocalSessionRepo().listSessions();
-        System.out.println(sessions);
-        assertEquals(2, sessions.size());
-        final Set<Long> sessionIds = sessions.stream().map(Session::getSessionId).collect(Collectors.toSet());
-        assertTrue(sessionIds.contains(3L));
-        assertTrue(sessionIds.contains(5L));
+        assertEquals(1, sessions.size());
+        assertEquals(3, new ArrayList<>(sessions).get(0).getSessionId());
     }
 
 }

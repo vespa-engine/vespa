@@ -27,7 +27,6 @@ import static org.junit.Assert.fail;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class LocalSessionRepoTest extends TestWithCurator {
 
@@ -84,6 +83,7 @@ public class LocalSessionRepoTest extends TestWithCurator {
         assertNotNull(repo.getSession(4l));
         clock.advance(Duration.ofSeconds(1));
         addSession(5l, 10);
+        repo.purgeOldSessions();
         assertNull(repo.getSession(1l));
         assertNull(repo.getSession(2l));
         assertNull(repo.getSession(3l));
