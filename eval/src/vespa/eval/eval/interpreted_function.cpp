@@ -469,10 +469,6 @@ const Function *get_lambda(const nodes::Node &node) {
 } // namespace vespalib::<unnamed>
 
 
-InterpretedFunction::LazyParams::~LazyParams()
-{
-}
-
 InterpretedFunction::SimpleParams::SimpleParams(const std::vector<double> &params_in)
     : params(params_in)
 {}
