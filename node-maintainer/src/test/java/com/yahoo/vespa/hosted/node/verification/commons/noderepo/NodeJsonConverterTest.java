@@ -26,8 +26,8 @@ public class NodeJsonConverterTest {
     @Test
     public void convertJsonModel_should_return_correct_HardwareInfo() throws Exception {
         List<URL> urls = new ArrayList<>(Arrays.asList(new File("src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json").toURI().toURL()));
-        NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(urls);
-        HardwareInfo hardwareInfo = NodeJsonConverter.convertJsonModelToHardwareInfo(nodeRepoJsonModel);
+        NodeSpec nodeSpec = NodeRepoInfoRetriever.retrieve(urls);
+        HardwareInfo hardwareInfo = NodeJsonConverter.convertJsonModelToHardwareInfo(nodeSpec);
         double expectedMinDiskAvailable = 500.0;
         double expectedMinMainMemoryAvailable = 24.0;
         double expectedMinCpuCores = 24.0;

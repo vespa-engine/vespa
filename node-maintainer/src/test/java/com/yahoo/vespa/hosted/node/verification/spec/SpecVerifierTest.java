@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.verification.spec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoInfoRetriever;
-import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonModel;
+import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeSpec;
 import com.yahoo.vespa.hosted.node.verification.commons.report.SpecVerificationReport;
 import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
@@ -90,8 +90,8 @@ public class SpecVerifierTest {
         actualHardware.setIpv6Connection(true);
         actualHardware.setDiskType(HardwareInfo.DiskType.SLOW);
         nodeInfoUrls.add(new File(NODE_REPO_PATH).toURI().toURL());
-        NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
-        SpecVerificationReport verificationSpecVerificationReport = SpecVerifier.makeVerificationReport(actualHardware, nodeRepoJsonModel);
+        NodeSpec nodeSpec = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
+        SpecVerificationReport verificationSpecVerificationReport = SpecVerifier.makeVerificationReport(actualHardware, nodeSpec);
         String expectedJson = "{\"actualInterfaceSpeed\":100.0}";
         ObjectMapper om = new ObjectMapper();
         String actualJson = om.writeValueAsString(verificationSpecVerificationReport);
@@ -101,15 +101,15 @@ public class SpecVerifierTest {
     @Test
     public void getNodeRepositoryJSON_should_return_valid_nodeRepoJSONModel() throws Exception {
         nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepo.json"));
-        NodeRepoJsonModel actualNodeRepoJsonModel = SpecVerifier.getNodeRepositoryJSON(nodeInfoUrls);
+        NodeSpec actualNodeSpec = SpecVerifier.getNodeRepositoryJSON(nodeInfoUrls);
         double expectedMinCpuCores = 4D;
         double expectedMinMainMemoryAvailableGb = 4.04D;
         double expectedMinDiskAvailableGb = 1759.84;
         boolean expectedFastDisk = true;
-        assertEquals(expectedMinCpuCores, actualNodeRepoJsonModel.getMinCpuCores(), DELTA);
-        assertEquals(expectedMinMainMemoryAvailableGb, actualNodeRepoJsonModel.getMinMainMemoryAvailableGb(), DELTA);
-        assertEquals(expectedMinDiskAvailableGb, actualNodeRepoJsonModel.getMinDiskAvailableGb(), DELTA);
-        assertEquals(expectedFastDisk, actualNodeRepoJsonModel.isFastDisk());
+        assertEquals(expectedMinCpuCores, actualNodeSpec.getMinCpuCores(), DELTA);
+        assertEquals(expectedMinMainMemoryAvailableGb, actualNodeSpec.getMinMainMemoryAvailableGb(), DELTA);
+        assertEquals(expectedMinDiskAvailableGb, actualNodeSpec.getMinDiskAvailableGb(), DELTA);
+        assertEquals(expectedFastDisk, actualNodeSpec.isFastDisk());
     }
 
 }

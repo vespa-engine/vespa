@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.node.verification.commons.HostURLGenerator;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.IPAddressVerifier;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeJsonConverter;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoInfoRetriever;
-import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonModel;
+import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeSpec;
 import com.yahoo.vespa.hosted.node.verification.commons.report.Reporter;
 import com.yahoo.vespa.hosted.node.verification.commons.report.SpecVerificationReport;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfoRetr
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,24 +31,24 @@ public class SpecVerifier {
     private static final Logger logger = Logger.getLogger(SpecVerifier.class.getName());
 
     public static boolean verifySpec(CommandExecutor commandExecutor, List<URL> nodeInfoUrls) throws IOException {
-        NodeRepoJsonModel nodeRepoJsonModel = getNodeRepositoryJSON(nodeInfoUrls);
-        VerifierSettings verifierSettings = new VerifierSettings(nodeRepoJsonModel);
+        NodeSpec nodeSpec = getNodeRepositoryJSON(nodeInfoUrls);
+        VerifierSettings verifierSettings = new VerifierSettings(nodeSpec);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor, verifierSettings);
-        SpecVerificationReport specVerificationReport = makeVerificationReport(actualHardware, nodeRepoJsonModel);
+        SpecVerificationReport specVerificationReport = makeVerificationReport(actualHardware, nodeSpec);
         Reporter.reportSpecVerificationResults(specVerificationReport, nodeInfoUrls);
         return specVerificationReport.isValidSpec();
     }
 
-    protected static SpecVerificationReport makeVerificationReport(HardwareInfo actualHardware, NodeRepoJsonModel nodeRepoJsonModel) {
-        SpecVerificationReport specVerificationReport = HardwareNodeComparator.compare(NodeJsonConverter.convertJsonModelToHardwareInfo(nodeRepoJsonModel), actualHardware);
+    protected static SpecVerificationReport makeVerificationReport(HardwareInfo actualHardware, NodeSpec nodeSpec) {
+        SpecVerificationReport specVerificationReport = HardwareNodeComparator.compare(NodeJsonConverter.convertJsonModelToHardwareInfo(nodeSpec), actualHardware);
         IPAddressVerifier ipAddressVerifier = new IPAddressVerifier();
-        ipAddressVerifier.reportFaultyIpAddresses(nodeRepoJsonModel, specVerificationReport);
+        ipAddressVerifier.reportFaultyIpAddresses(nodeSpec, specVerificationReport);
         return specVerificationReport;
     }
 
-    protected static NodeRepoJsonModel getNodeRepositoryJSON(List<URL> nodeInfoUrls) throws IOException {
-        NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
-        return nodeRepoJsonModel;
+    protected static NodeSpec getNodeRepositoryJSON(List<URL> nodeInfoUrls) throws IOException {
+        NodeSpec nodeSpec = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
+        return nodeSpec;
     }
 
     public static void main(String[] args) {

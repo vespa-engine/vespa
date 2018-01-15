@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.verification.commons.noderepo;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 
 /**
- * Converts a NodeRepoJsonModel object to a HardwareInfo object.
+ * Converts a NodeSpec object to a HardwareInfo object.
  * 
  * @author olaaun
  * @author sgrostad
@@ -15,23 +15,23 @@ public class NodeJsonConverter {
         nodeRepoHardwareInfo.setInterfaceSpeedMbs(1000);
     }
 
-    protected static void setIpv6Interface(NodeRepoJsonModel nodeRepoJsonModel, HardwareInfo nodeRepoHardwareInfo) {
-        if (nodeRepoJsonModel.getIpv6Address() != null) {
+    protected static void setIpv6Interface(NodeSpec nodeSpec, HardwareInfo nodeRepoHardwareInfo) {
+        if (nodeSpec.getIpv6Address() != null) {
             nodeRepoHardwareInfo.setIpv6Interface(true);
         }
     }
 
-    protected static void setIpv4Interface(NodeRepoJsonModel nodeRepoJsonModel, HardwareInfo nodeRepoHardwareInfo) {
-        if (nodeRepoJsonModel.getIpv4Address() != null) {
+    protected static void setIpv4Interface(NodeSpec nodeSpec, HardwareInfo nodeRepoHardwareInfo) {
+        if (nodeSpec.getIpv4Address() != null) {
             nodeRepoHardwareInfo.setIpv4Interface(true);
         }
     }
 
-    public static HardwareInfo convertJsonModelToHardwareInfo(NodeRepoJsonModel nodeRepoJsonModel) {
-        HardwareInfo nodeRepoHardwareInfo = nodeRepoJsonModel.copyToHardwareInfo();
+    public static HardwareInfo convertJsonModelToHardwareInfo(NodeSpec nodeSpec) {
+        HardwareInfo nodeRepoHardwareInfo = nodeSpec.copyToHardwareInfo();
         addStandardSpecifications(nodeRepoHardwareInfo);
-        setIpv4Interface(nodeRepoJsonModel, nodeRepoHardwareInfo);
-        setIpv6Interface(nodeRepoJsonModel, nodeRepoHardwareInfo);
+        setIpv4Interface(nodeSpec, nodeRepoHardwareInfo);
+        setIpv6Interface(nodeSpec, nodeRepoHardwareInfo);
         return nodeRepoHardwareInfo;
     }
 

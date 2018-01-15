@@ -10,7 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Parse JSON from node repository and stores information as a NodeRepoJsonModel object.
+ * Parse JSON from node repository and stores information as a NodeSpec object.
  *
  * @author olaaun
  * @author sgrostad
@@ -19,13 +19,13 @@ public class NodeRepoInfoRetriever {
 
     private static final Logger logger = Logger.getLogger(NodeRepoInfoRetriever.class.getName());
 
-    public static NodeRepoJsonModel retrieve(List<URL> nodeInfoUrls) throws IOException {
-        NodeRepoJsonModel nodeRepoJsonModel;
+    public static NodeSpec retrieve(List<URL> nodeInfoUrls) throws IOException {
+        NodeSpec nodeSpec;
         ObjectMapper objectMapper = new ObjectMapper();
         for (URL nodeInfoURL : nodeInfoUrls) {
             try {
-                nodeRepoJsonModel = objectMapper.readValue(nodeInfoURL, NodeRepoJsonModel.class);
-                return nodeRepoJsonModel;
+                nodeSpec = objectMapper.readValue(nodeInfoURL, NodeSpec.class);
+                return nodeSpec;
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Failed to parse JSON from config server: " + nodeInfoURL.toString(), e);
             }

@@ -27,23 +27,23 @@ public class IPAddressVerifier {
 
     private static final Logger logger = Logger.getLogger(IPAddressVerifier.class.getName());
 
-    public void reportFaultyIpAddresses(NodeRepoJsonModel nodeRepoJsonModel, SpecVerificationReport specVerificationReport) {
-        String[] faultyIpAddresses = getFaultyIpAddresses(nodeRepoJsonModel);
+    public void reportFaultyIpAddresses(NodeSpec nodeSpec, SpecVerificationReport specVerificationReport) {
+        String[] faultyIpAddresses = getFaultyIpAddresses(nodeSpec);
         if (faultyIpAddresses.length > 0) {
             specVerificationReport.setFaultyIpAddresses(faultyIpAddresses);
         }
     }
 
-    public String[] getFaultyIpAddresses(NodeRepoJsonModel jsonModel) {
-        String expectedHostname = jsonModel.getHostname();
+    public String[] getFaultyIpAddresses(NodeSpec nodeSpec) {
+        String expectedHostname = nodeSpec.getHostname();
         List<String> faultyIpAddresses = new ArrayList<>();
         if (expectedHostname == null || expectedHostname.equals(""))
             return new String[0];
-        if (!isValidIpv4(jsonModel.getIpv4Address(), expectedHostname)) {
-            faultyIpAddresses.add(jsonModel.getIpv4Address());
+        if (!isValidIpv4(nodeSpec.getIpv4Address(), expectedHostname)) {
+            faultyIpAddresses.add(nodeSpec.getIpv4Address());
         }
-        if (!isValidIpv6(jsonModel.getIpv6Address(), expectedHostname)) {
-            faultyIpAddresses.add(jsonModel.getIpv6Address());
+        if (!isValidIpv6(nodeSpec.getIpv6Address(), expectedHostname)) {
+            faultyIpAddresses.add(nodeSpec.getIpv6Address());
         }
         return faultyIpAddresses.stream().toArray(String[]::new);
     }

@@ -3,11 +3,10 @@ package com.yahoo.vespa.hosted.node.verification.commons.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoInfoRetriever;
-import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonModel;
+import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeSpec;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,16 +45,16 @@ public class Reporter {
     }
 
     private static HardwareDivergenceReport generateHardwareDivergenceReport(List<URL> nodeInfoUrls) throws IOException {
-        NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
+        NodeSpec nodeSpec = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
         ObjectMapper om = new ObjectMapper();
-        if (nodeRepoJsonModel.getHardwareDivergence() == null || nodeRepoJsonModel.getHardwareDivergence().equals("null")) {
+        if (nodeSpec.getHardwareDivergence() == null || nodeSpec.getHardwareDivergence().equals("null")) {
             return new HardwareDivergenceReport();
         }
         try {
-            HardwareDivergenceReport hardwareDivergenceReport = om.readValue(nodeRepoJsonModel.getHardwareDivergence(), HardwareDivergenceReport.class);
+            HardwareDivergenceReport hardwareDivergenceReport = om.readValue(nodeSpec.getHardwareDivergence(), HardwareDivergenceReport.class);
             return hardwareDivergenceReport;
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to parse hardware divergence report from node repo. Report:\n" + nodeRepoJsonModel.getHardwareDivergence(), e.getMessage());
+            logger.log(Level.WARNING, "Failed to parse hardware divergence report from node repo. Report:\n" + nodeSpec.getHardwareDivergence(), e.getMessage());
             return new HardwareDivergenceReport();
         }
     }

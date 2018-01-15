@@ -19,7 +19,7 @@ import java.util.stream.Stream;
  * @author sgrostad
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class NodeRepoJsonModel {
+public class NodeSpec {
 
     @JsonProperty("minDiskAvailableGb")
     private double minDiskAvailableGb;
