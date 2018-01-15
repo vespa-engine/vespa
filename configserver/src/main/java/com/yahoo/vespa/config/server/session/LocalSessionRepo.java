@@ -63,11 +63,6 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         }
     }
 
-    @Override
-    public synchronized void addSession(LocalSession session) {
-        super.addSession(session);
-    }
-
     // public for testing
     public void purgeOldSessions() {
         try {
