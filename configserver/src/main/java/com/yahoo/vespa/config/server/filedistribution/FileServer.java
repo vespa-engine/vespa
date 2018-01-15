@@ -92,18 +92,17 @@ public class FileServer {
         try {
             return root.getFile(reference).exists();
         } catch (IllegalArgumentException e) {
-            log.warning("Failed locating file reference '" + reference + "' with error " + e.toString());
+            log.info("Failed locating file reference '" + reference + "' with error " + e.toString());
         }
         return false;
     }
-    public boolean startFileServing(String fileName, Receiver target) {
+    public void startFileServing(String fileName, Receiver target) {
         FileReference reference = new FileReference(fileName);
         File file = root.getFile(reference);
 
         if (file.exists()) {
             pushExecutor.execute(() -> serveFile(reference, target));
         }
-        return false;
     }
 
     private void serveFile(FileReference reference, Receiver target) {
