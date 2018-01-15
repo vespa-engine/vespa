@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.athenz.filter;
 
 import com.yahoo.athenz.auth.token.PrincipalToken;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.InvalidTokenException;
