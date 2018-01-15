@@ -12,6 +12,7 @@
 
     <accesslog type="vespa" fileNamePattern="logs/vespa/configserver/access.log.%Y%m%d%H%M%S" rotationScheme="date" symlinkName="access.log" />
     <preprocess:include file='access-logging.xml' required='false' />
+
     <component id="com.yahoo.vespa.config.server.ConfigServerBootstrap" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.monitoring.Metrics" bundle="configserver" />
     <component id="com.yahoo.vespa.zookeeper.ZooKeeperServer" bundle="zkfacade" />
@@ -174,5 +175,7 @@
     </http>
 
     <preprocess:include file='athenz-identity-provider.xml' required='false' />
+
+    <preprocess:include file='configserver-config.xml' required='false' />
   </jdisc>
 </services>
