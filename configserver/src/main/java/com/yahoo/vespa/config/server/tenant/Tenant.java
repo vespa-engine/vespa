@@ -139,22 +139,15 @@ public class Tenant implements TenantHandlerProvider {
     }
 
     /**
-     * Closes any watchers, thread pools that may react to changes in tenant state. Also removes any local state
-     * in filesystem.
+     * Closes any watchers, thread pools that may react to changes in tenant state, and removes any state
+     * in filesystem and zookeeper
      */
     public void close() {
         tenantFileSystemDirs.delete();
         remoteSessionRepo.close();
         applicationRepo.close();
-    }
-
-    /**
-     * Deletes a tenant from ZooKeeper and filesystem.
-     */
-    public void delete() {
         localSessionRepo.deleteAllSessions();
         curator.delete(path);
     }
-
 
 }

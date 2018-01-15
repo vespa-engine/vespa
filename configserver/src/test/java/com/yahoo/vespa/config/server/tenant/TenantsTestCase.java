@@ -41,7 +41,7 @@ public class TenantsTestCase extends TestWithCurator {
     private final TenantName tenant3 = TenantName.from("tenant3");
 
     @Before
-    public void setupSessions() throws Exception {
+    public void setupSessions() {
         globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
         listener = (TenantRequestHandlerTest.MockReloadListener)globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();
@@ -53,7 +53,7 @@ public class TenantsTestCase extends TestWithCurator {
     }
 
     @After
-    public void closeSessions() throws IOException {
+    public void closeSessions() {
         tenants.close();
     }
 
@@ -87,7 +87,7 @@ public class TenantsTestCase extends TestWithCurator {
     }
 
     @Test
-    public void testAddTenant() throws Exception {
+    public void testAddTenant() {
         Set<TenantName> allTenants = tenants.getAllTenantNames();
         assertTrue(allTenants.contains(tenant1));
         assertTrue(allTenants.contains(tenant2));
@@ -109,6 +109,13 @@ public class TenantsTestCase extends TestWithCurator {
         assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenants.tenantZkPath(tenant1)));
         tenants.deleteTenant(tenant1);
         assertFalse(tenants.getAllTenantNames().contains(tenant1));
+
+        try {
+            tenants.deleteTenant(TenantName.from("non-existing"));
+            fail("deletion of non-existing tenant should fail");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -123,7 +130,6 @@ public class TenantsTestCase extends TestWithCurator {
     
     @Test
     public void testTenantsChanged() throws Exception {
-        tenants.close(); // close the Tenants instance created in setupSession, we do not want to use one with a PatchChildrenCache listener
         tenants = new Tenants(globalComponentRegistry, new ArrayList<>());
         tenants.addTenant(tenant2);
         tenants.createTenants();
