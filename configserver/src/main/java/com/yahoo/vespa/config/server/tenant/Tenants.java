@@ -156,26 +156,19 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     }
 
     private void checkForRemovedTenants(Set<TenantName> newTenants) {
-        Map<TenantName, Tenant> current = new LinkedHashMap<>(tenants);
-        for (Map.Entry<TenantName, Tenant> entry : current.entrySet()) {
-            TenantName tenant = entry.getKey();
-            if (!newTenants.contains(tenant) && !DEFAULT_TENANT.equals(tenant)) {
-                notifyRemovedTenant(tenant);
-                entry.getValue().close();
-                tenants.remove(tenant);
+        for (TenantName tenantName : ImmutableSet.copyOf(tenants.keySet())) {
+            if (!newTenants.contains(tenantName)) {
+                deleteTenant(tenantName);
             }
         }
     }
 
     private void checkForAddedTenants(Set<TenantName> newTenants) {
+        // TODO: Creating an executor here for every invocation does not seem optimal
         ExecutorService executor = Executors.newFixedThreadPool(globalComponentRegistry.getConfigserverConfig().numParallelTenantLoaders());
         for (TenantName tenantName : newTenants) {
             // Note: the http handler will check if the tenant exists, and throw accordingly
-            if (!tenants.containsKey(tenantName)) {
-                executor.execute(() -> {
-                    createTenant(tenantName);
-                });
-            }
+            executor.execute(() -> createTenant(tenantName));
         }
         executor.shutdown();
         try {
@@ -259,8 +252,12 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     public synchronized Tenants deleteTenant(TenantName name) {
         if (name.equals(DEFAULT_TENANT))
             throw new IllegalArgumentException("Deleting 'default' tenant is not allowed");
-        Tenant tenant = tenants.get(name);
-        tenant.delete();
+        Tenant tenant = tenants.remove(name);
+        if (tenant == null) {
+            throw new IllegalArgumentException("Deleting '" + name + "' failed, tenant does not exist");
+        }
+        notifyRemovedTenant(name);
+        tenant.close();
         return this;
     }
 
