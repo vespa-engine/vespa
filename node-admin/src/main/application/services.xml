@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-<service version="1.0" xmlns:preprocess="properties">
+<services version="1.0" xmlns:preprocess="properties">
   <jdisc id="node-admin" jetty="true" version="1.0">
     <!-- Please update container test when changing this file -->
     <accesslog type="vespa" fileNamePattern="logs/vespa/node-admin/access.log.%Y%m%d%H%M%S" rotationScheme="date" symlinkName="access.log" />
@@ -24,4 +24,4 @@
 
     <preprocess:include file="variant.xml" required="false"/>
   </jdisc>
-</service>
+</services>
