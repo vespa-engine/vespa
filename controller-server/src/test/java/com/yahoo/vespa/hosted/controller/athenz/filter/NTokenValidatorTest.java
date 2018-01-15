@@ -87,7 +87,7 @@ public class NTokenValidatorTest {
     }
 
     private static NToken createNToken(AthenzIdentity identity, Instant issueTime, PrivateKey privateKey, String keyId) {
-        PrincipalToken token = new PrincipalToken.Builder("U1", identity.getDomain().getName(), identity.getName())
+        PrincipalToken token = new PrincipalToken.Builder("U1", identity.getDomain().id(), identity.getName())
                 .keyId(keyId)
                 .salt("1234")
                 .host("host")

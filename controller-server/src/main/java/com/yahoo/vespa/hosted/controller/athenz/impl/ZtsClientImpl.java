@@ -8,7 +8,7 @@ import com.yahoo.athenz.zts.TenantDomains;
 import com.yahoo.athenz.zts.ZTSClient;
 import com.yahoo.athenz.zts.ZTSClientException;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentityCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzRoleCertificate;
@@ -52,9 +52,9 @@ public class ZtsClientImpl implements ZtsClient {
         return getOrThrow(() -> {
             log.log(LogLevel.DEBUG, String.format(
                     "getTenantDomains(domain=%s, identity=%s, rolename=admin, service=%s)",
-                    service.getDomain().getName(), identity.getFullName(), service.getFullName()));
+                    service.getDomain().id(), identity.getFullName(), service.getFullName()));
             TenantDomains domains = ztsClient.getTenantDomains(
-                    service.getDomain().getName(), identity.getFullName(), "admin", service.getName());
+                    service.getDomain().id(), identity.getFullName(), "admin", service.getName());
             return domains.getTenantDomainNames().stream()
                     .map(AthenzDomain::new)
                     .collect(toList());
@@ -68,13 +68,13 @@ public class ZtsClientImpl implements ZtsClient {
                     String.format("postInstanceRefreshRequest(service=%s)", service.getFullName()));
             InstanceRefreshRequest req =
                     ZTSClient.generateInstanceRefreshRequest(
-                            service.getDomain().getName(),
+                            service.getDomain().id(),
                             service.getName(),
                             privateKey,
                             certificateDnsDomain,
                             (int) certExpiry.getSeconds());
             X509Certificate certificate = Crypto.loadX509Certificate(
-                    ztsClient.postInstanceRefreshRequest(service.getDomain().getName(), service.getName(), req)
+                    ztsClient.postInstanceRefreshRequest(service.getDomain().id(), service.getName(), req)
                             .getCertificate());
             return new AthenzIdentityCertificate(certificate, privateKey);
         });
@@ -85,18 +85,18 @@ public class ZtsClientImpl implements ZtsClient {
         return getOrThrow(() -> {
             log.log(LogLevel.DEBUG,
                     String.format("postRoleCertificateRequest(service=%s, roleDomain=%s, roleName=%s)",
-                                  service.getFullName(), roleDomain.getName(), roleName));
+                                  service.getFullName(), roleDomain.id(), roleName));
             RoleCertificateRequest req =
                     ZTSClient.generateRoleCertificateRequest(
-                            service.getDomain().getName(),
+                            service.getDomain().id(),
                             service.getName(),
-                            roleDomain.getName(),
+                            roleDomain.id(),
                             roleName,
                             privateKey,
                             certificateDnsDomain,
                             (int)certExpiry.getSeconds());
             X509Certificate roleCertificate = Crypto.loadX509Certificate(
-                    ztsClient.postRoleCertificateRequest(roleDomain.getName(), roleName, req)
+                    ztsClient.postRoleCertificateRequest(roleDomain.id(), roleName, req)
                             .getToken());
             return new AthenzRoleCertificate(roleCertificate, privateKey);
         });
