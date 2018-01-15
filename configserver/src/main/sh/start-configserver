@@ -130,6 +130,8 @@ baseuserargs="$vespa_base__jvmargs_configserver"
 serveruserargs="$cloudconfig_server__jvmargs"
 jvmargs="$baseuserargs $serveruserargs"
 
+export LD_PRELOAD=${VESPA_HOME}/lib64/vespa/malloc/libvespamallocd.so
+
 printenv > $cfpfile
 fixddir $bundlecachedir
 
