@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition.expressiontransforms;
 import com.google.common.base.Joiner;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.io.IOUtils;
+import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
@@ -43,7 +44,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
 
     /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
-    private final Map<String, TensorFlowModel> importedModels = new HashMap<>();
+    private final Map<Path, TensorFlowModel> importedModels = new HashMap<>();
 
     @Override
     public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
@@ -63,8 +64,8 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
                 throw new IllegalArgumentException("A tensorflow node must take an argument pointing to " +
                                                    "the tensorflow model directory under [application]/models");
 
-            String modelPath = ApplicationPackage.MODELS_DIR + "/" + asString(feature.getArguments().expressions().get(0));
-            TensorFlowModel result = importedModels.computeIfAbsent(modelPath, k -> tensorFlowImporter.importModel(modelPath));
+            Path modelPath = Path.fromString(asString(feature.getArguments().expressions().get(0)));
+            TensorFlowModel result = importedModels.computeIfAbsent(modelPath, k -> importModel(modelPath));
 
             // Find the specified expression
             TensorFlowModel.Signature signature = chooseSignature(result,
@@ -82,6 +83,17 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Could not use tensorflow model from " + feature, e);
+        }
+    }
+
+    private TensorFlowModel importModel(Path modelPath) {
+        try {
+            return tensorFlowImporter.importModel(new File(ApplicationPackage.MODELS_DIR.append(modelPath)
+                                                                                        .getRelative())
+                                                                                        .getCanonicalPath());
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -138,17 +150,21 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         }
     }
 
-    private void transformConstant(String modelPath, RankProfile profile, String constantName, Tensor constantValue) {
+    private void transformConstant(Path modelPath, RankProfile profile, String constantName, Tensor constantValue) {
         try {
             if (profile.getSearch().getRankingConstants().containsKey(constantName)) return;
 
-            File constantFilePath = new File(modelPath, "converted_variables").getCanonicalFile();
-            if (!constantFilePath.exists()) {
-                if (!constantFilePath.mkdir())
+            System.out.println("modelPath is " + modelPath);
+            File constantFilePath = new File(ApplicationPackage.MODELS_GENERATED_DIR.append(modelPath)
+                                                                                    .append("constants")
+                                                                                    .getRelative())
+                                    .getCanonicalFile();
+            System.out.println("constant file path is " + constantFilePath);
+            if ( ! constantFilePath.exists())
+                if ( ! constantFilePath.mkdir())
                     throw new IOException("Could not create directory " + constantFilePath);
-            }
 
-            // "tbf" ending for "typed binary format" - recognized by the nodes reciving the file:
+            // "tbf" ending for "typed binary format" - recognized by the nodes receiving the file:
             File constantFile = new File(constantFilePath, constantName + ".tbf");
             IOUtils.writeFile(constantFile, TypedBinaryFormat.encode(constantValue));
             profile.getSearch().addRankingConstant(new RankingConstant(constantName, constantValue.type(), constantFile.getPath()));

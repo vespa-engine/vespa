@@ -33,7 +33,7 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @After
     public void removeGeneratedConstantTensorFiles() {
-        IOUtils.recursiveDeleteDir(new File(modelDirectory.substring(3), "converted_variables"));
+        IOUtils.recursiveDeleteDir(new File(modelDirectory.substring(3), "constants"));
     }
 
     @Test
@@ -126,7 +126,7 @@ public class RankingExpressionWithTensorFlowTestCase {
         try {
             TensorValue constant = (TensorValue)search.rankProfile("my_profile").getConstants().get(name); // Old way. TODO: Remove
             if (constant == null) { // New way
-                File constantFile = new File(modelDirectory.substring(3) + "/converted_variables", name + ".tbf");
+                File constantFile = new File(modelDirectory.substring(3) + "/constants", name + ".tbf");
                 RankingConstant rankingConstant = search.search().getRankingConstants().get(name);
                 assertEquals(name, rankingConstant.getName());
                 assertEquals(constantFile.getAbsolutePath(), rankingConstant.getFileName());

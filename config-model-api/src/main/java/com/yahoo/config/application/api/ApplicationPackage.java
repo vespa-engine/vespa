@@ -53,7 +53,11 @@ public interface ApplicationPackage {
     String DOCPROCCHAINS_DIR = "docproc/chains";
     String PROCESSORCHAINS_DIR = "processor/chains";
     String ROUTINGTABLES_DIR = "routing/tables";
-    String MODELS_DIR = "models";
+
+    /** Machine-learned models - only present in user-uploaded package instances */
+    Path MODELS_DIR = Path.fromString("models");
+    /** Files generated from machine-learned models - distributed to config servers over file distribution */
+    Path MODELS_GENERATED_DIR = Path.fromString("models.generated");
 
     // NOTE: this directory is created in serverdb during deploy, and should not exist in the original user application
     /** Do not use */
