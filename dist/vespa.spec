@@ -203,7 +203,8 @@ exit 0
 %systemd_postun_with_restart vespa-configserver.service
 if [ $1 -eq 0 ]; then # this is an uninstallation
     rm -f /etc/profile.d/vespa.sh
-    userdel vespa
+    ! getent passwd vespa >/dev/null || userdel vespa
+    ! getent group vespa >/dev/null || groupdel vespa
 fi
 
 %files
