@@ -84,7 +84,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         FileDistributionOptions fileDistributionOptions = FileDistributionOptions.defaultOptions();
         fileDistributionOptions.disableFiledistributor(disableFiledistributor);
         fileDistributionOptions = new DomFileDistributionOptionsBuilder(fileDistributionOptions).build(XML.getChild(adminElement, "filedistribution"));
-        return new FileDistributionConfigProducer.Builder(fileDistributionOptions).build(parent, fileRegistry);
+        return new FileDistributionConfigProducer.Builder(fileDistributionOptions).build(parent, fileRegistry, configServerSpecs);
     }
 
     private Element getChildWithFallback(Element parent, String childName, String alternativeChildName) {

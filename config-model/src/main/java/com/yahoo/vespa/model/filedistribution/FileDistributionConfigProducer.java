@@ -2,11 +2,13 @@
 package com.yahoo.vespa.model.filedistribution;
 
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.admin.FileDistributionOptions;
 
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -46,8 +48,8 @@ public class FileDistributionConfigProducer extends AbstractConfigProducer {
             this.options = fileDistributionOptions;
         }
 
-        public FileDistributionConfigProducer build(AbstractConfigProducer ancestor, FileRegistry fileRegistry) {
-            FileDistributor fileDistributor = new FileDistributor(fileRegistry);
+        public FileDistributionConfigProducer build(AbstractConfigProducer ancestor, FileRegistry fileRegistry, List<ConfigServerSpec> configServerSpec) {
+            FileDistributor fileDistributor = new FileDistributor(fileRegistry, configServerSpec);
             return new FileDistributionConfigProducer(ancestor, fileDistributor, options);
         }
     }
