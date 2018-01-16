@@ -23,9 +23,24 @@ const TensorEngine &infer_engine(const std::initializer_list<Value::CREF> &value
 //-----------------------------------------------------------------------------
 
 void
-Inject::push_children(std::vector<Child::CREF> &) const
+Leaf::push_children(std::vector<Child::CREF> &) const
 {
 }
+
+void
+Op1::push_children(std::vector<Child::CREF> &children) const
+{
+    children.emplace_back(_child);
+}
+
+void
+Op2::push_children(std::vector<Child::CREF> &children) const
+{
+    children.emplace_back(_lhs);
+    children.emplace_back(_rhs);
+}
+
+//-----------------------------------------------------------------------------
 
 const Value &
 Inject::eval(const LazyParams &params, Stash &stash) const
@@ -34,12 +49,6 @@ Inject::eval(const LazyParams &params, Stash &stash) const
 }
 
 //-----------------------------------------------------------------------------
-
-void
-Reduce::push_children(std::vector<Child::CREF> &children) const
-{
-    children.emplace_back(_child);
-}
 
 const Value &
 Reduce::eval(const LazyParams &params, Stash &stash) const
@@ -51,12 +60,6 @@ Reduce::eval(const LazyParams &params, Stash &stash) const
 
 //-----------------------------------------------------------------------------
 
-void
-Map::push_children(std::vector<Child::CREF> &children) const
-{
-    children.emplace_back(_child);
-}
-
 const Value &
 Map::eval(const LazyParams &params, Stash &stash) const
 {
@@ -67,13 +70,6 @@ Map::eval(const LazyParams &params, Stash &stash) const
 
 //-----------------------------------------------------------------------------
 
-void
-Join::push_children(std::vector<Child::CREF> &children) const
-{
-    children.emplace_back(_lhs);
-    children.emplace_back(_rhs);
-}
-
 const Value &
 Join::eval(const LazyParams &params, Stash &stash) const
 {
@@ -81,6 +77,27 @@ Join::eval(const LazyParams &params, Stash &stash) const
     const Value &b = rhs().eval(params, stash);
     const TensorEngine &engine = infer_engine({a,b});
     return engine.join(a, b, _function, stash);
+}
+
+//-----------------------------------------------------------------------------
+
+const Value &
+Concat::eval(const LazyParams &params, Stash &stash) const
+{
+    const Value &a = lhs().eval(params, stash);
+    const Value &b = rhs().eval(params, stash);
+    const TensorEngine &engine = infer_engine({a,b});
+    return engine.concat(a, b, _dimension, stash);
+}
+
+//-----------------------------------------------------------------------------
+
+const Value &
+Rename::eval(const LazyParams &params, Stash &stash) const
+{
+    const Value &a = child().eval(params, stash);
+    const TensorEngine &engine = infer_engine({a});
+    return engine.rename(a, _from, _to, stash);
 }
 
 //-----------------------------------------------------------------------------
@@ -102,6 +119,16 @@ const Node &map(const Node &child, map_fun_t function, Stash &stash) {
 const Node &join(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash) {
     ValueType result_type = ValueType::join(lhs.result_type(), rhs.result_type());
     return stash.create<Join>(result_type, lhs, rhs, function);
+}
+
+const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dimension, Stash &stash) {
+    ValueType result_type = ValueType::concat(lhs.result_type(), rhs.result_type(), dimension);
+    return stash.create<Concat>(result_type, lhs, rhs, dimension);
+}
+
+const Node &rename(const Node &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) {
+    ValueType result_type = child.result_type().rename(from, to);
+    return stash.create<Rename>(result_type, child, from, to);
 }
 
 } // namespace vespalib::eval::tensor_function

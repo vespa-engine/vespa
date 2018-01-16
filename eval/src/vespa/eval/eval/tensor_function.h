@@ -109,23 +109,61 @@ public:
     const ValueType &result_type() const override { return _result_type; }
 };
 
-class Inject : public Node
+//-----------------------------------------------------------------------------
+
+class Leaf : public Node
+{
+public:
+    Leaf(const ValueType &result_type_in) : Node(result_type_in) {}
+    void push_children(std::vector<Child::CREF> &children) const final override;
+};
+
+class Op1 : public Node
+{
+private:
+    Child _child;    
+public:
+    Op1(const ValueType &result_type_in,
+        const TensorFunction &child_in)
+        : Node(result_type_in), _child(child_in) {}
+    const TensorFunction &child() const { return _child.get(); }    
+    void push_children(std::vector<Child::CREF> &children) const final override;
+};
+
+class Op2 : public Node
+{
+private:
+    Child _lhs;
+    Child _rhs;
+public:
+    Op2(const ValueType &result_type_in,
+        const TensorFunction &lhs_in,
+        const TensorFunction &rhs_in)
+        : Node(result_type_in), _lhs(lhs_in), _rhs(rhs_in) {}
+    const TensorFunction &lhs() const { return _lhs.get(); }
+    const TensorFunction &rhs() const { return _rhs.get(); }
+    void push_children(std::vector<Child::CREF> &children) const final override;
+};
+
+//-----------------------------------------------------------------------------
+
+class Inject : public Leaf
 {
 private:
     size_t _param_idx;
 public:
     Inject(const ValueType &result_type_in,
            size_t param_idx_in)
-        : Node(result_type_in), _param_idx(param_idx_in) {}
+        : Leaf(result_type_in), _param_idx(param_idx_in) {}
     size_t param_idx() const { return _param_idx; }
-    void push_children(std::vector<Child::CREF> &children) const override;
     const Value &eval(const LazyParams &params, Stash &) const override;
 };
 
-class Reduce : public Node
+//-----------------------------------------------------------------------------
+
+class Reduce : public Op1
 {
 private:
-    Child _child;
     Aggr _aggr;
     std::vector<vespalib::string> _dimensions;
 public:
@@ -133,54 +171,85 @@ public:
            const TensorFunction &child_in,
            Aggr aggr_in,
            const std::vector<vespalib::string> &dimensions_in)
-        : Node(result_type_in), _child(child_in), _aggr(aggr_in), _dimensions(dimensions_in) {}
-    const TensorFunction &child() const { return _child.get(); }
+        : Op1(result_type_in, child_in), _aggr(aggr_in), _dimensions(dimensions_in) {}
     Aggr aggr() const { return _aggr; }
-    const std::vector<vespalib::string> dimensions() const { return _dimensions; }
-    void push_children(std::vector<Child::CREF> &children) const override;
+    const std::vector<vespalib::string> &dimensions() const { return _dimensions; }
     const Value &eval(const LazyParams &params, Stash &stash) const override;
 };
 
-class Map : public Node
+//-----------------------------------------------------------------------------
+
+class Map : public Op1
 {
 private:
-    Child _child;
     map_fun_t _function;
 public:
     Map(const ValueType &result_type_in,
         const TensorFunction &child_in,
         map_fun_t function_in)
-        : Node(result_type_in), _child(child_in), _function(function_in) {}
-    const TensorFunction &child() const { return _child.get(); }
+        : Op1(result_type_in, child_in), _function(function_in) {}
     map_fun_t function() const { return _function; }
-    void push_children(std::vector<Child::CREF> &children) const override;
     const Value &eval(const LazyParams &params, Stash &stash) const override;
 };
 
-class Join : public Node
+//-----------------------------------------------------------------------------
+
+class Join : public Op2
 {
 private:
-    Child _lhs;
-    Child _rhs;
     join_fun_t _function;    
 public:
     Join(const ValueType &result_type_in,
          const TensorFunction &lhs_in,
          const TensorFunction &rhs_in,
          join_fun_t function_in)
-        : Node(result_type_in), _lhs(lhs_in),
-          _rhs(rhs_in), _function(function_in) {}
-    const TensorFunction &lhs() const { return _lhs.get(); }
-    const TensorFunction &rhs() const { return _rhs.get(); }
+        : Op2(result_type_in, lhs_in, rhs_in), _function(function_in) {}
     join_fun_t function() const { return _function; }
-    void push_children(std::vector<Child::CREF> &children) const override;
     const Value &eval(const LazyParams &params, Stash &stash) const override;
 };
+
+//-----------------------------------------------------------------------------
+
+class Concat : public Op2
+{
+private:
+    vespalib::string _dimension;    
+public:
+    Concat(const ValueType &result_type_in,
+           const TensorFunction &lhs_in,
+           const TensorFunction &rhs_in,
+           const vespalib::string &dimension_in)
+        : Op2(result_type_in, lhs_in, rhs_in), _dimension(dimension_in) {}
+    const vespalib::string &dimension() const { return _dimension; }
+    const Value &eval(const LazyParams &params, Stash &stash) const override;
+};
+
+//-----------------------------------------------------------------------------
+
+class Rename : public Op1
+{
+private:
+    std::vector<vespalib::string> _from;
+    std::vector<vespalib::string> _to;
+public:
+    Rename(const ValueType &result_type_in,
+           const TensorFunction &child_in,
+           const std::vector<vespalib::string> &from_in,
+           const std::vector<vespalib::string> &to_in)
+        : Op1(result_type_in, child_in), _from(from_in), _to(to_in) {}
+    const std::vector<vespalib::string> &from() const { return _from; }
+    const std::vector<vespalib::string> &to() const { return _to; }
+    const Value &eval(const LazyParams &params, Stash &stash) const override;
+};
+
+//-----------------------------------------------------------------------------
 
 const Node &inject(const ValueType &type, size_t param_idx, Stash &stash);
 const Node &reduce(const Node &child, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash);
 const Node &map(const Node &child, map_fun_t function, Stash &stash);
 const Node &join(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash);
+const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dimension, Stash &stash);
+const Node &rename(const Node &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash);
 
 } // namespace vespalib::eval::tensor_function
 } // namespace vespalib::eval
