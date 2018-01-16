@@ -7,8 +7,11 @@ import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -20,9 +23,10 @@ import java.util.logging.Logger;
 public class LocalSessionRepo extends SessionRepo<LocalSession> {
 
     private static final Logger log = Logger.getLogger(LocalSessionRepo.class.getName());
+    private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
+    private static final Duration delay = Duration.ofMinutes(1);
 
-    private final static FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
-
+    private final ScheduledExecutorService purgeOldSessionsExecutor = new ScheduledThreadPoolExecutor(1);
     private final long sessionLifetime; // in seconds
     private final Clock clock;
 
@@ -30,6 +34,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
                             Clock clock, long sessionLifeTime) {
         this(clock, sessionLifeTime);
         loadSessions(tenantFileSystemDirs.sessionsPath(), loader);
+        purgeOldSessionsExecutor.scheduleWithFixedDelay(this::purgeOldSessions, delay.getSeconds(), delay.getSeconds(), TimeUnit.SECONDS);
     }
 
     // Constructor public only for testing
@@ -58,18 +63,18 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         }
     }
 
-    @Override
-    public synchronized void addSession(LocalSession session) {
-        purgeOldSessions();
-        super.addSession(session);
-    }
-
-    private void purgeOldSessions() {
-        List<LocalSession> sessions = new ArrayList<>(listSessions());
-        for (LocalSession candidate : sessions) {
-            if (hasExpired(candidate) && !isActiveSession(candidate)) {
-                deleteSession(candidate);
+    // public for testing
+    public void purgeOldSessions() {
+        try {
+            List<LocalSession> sessions = new ArrayList<>(listSessions());
+            for (LocalSession candidate : sessions) {
+                if (hasExpired(candidate) && !isActiveSession(candidate)) {
+                    deleteSession(candidate);
+                }
             }
+            // Make sure to catch here, to avoid executor just dying in case of issues ...
+        } catch (Throwable e) {
+            log.log(LogLevel.WARNING, "Error when purging old sessions ", e);
         }
     }
 
