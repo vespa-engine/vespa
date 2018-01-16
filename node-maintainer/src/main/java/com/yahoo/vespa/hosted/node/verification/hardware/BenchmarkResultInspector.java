@@ -28,10 +28,10 @@ public class BenchmarkResultInspector {
 //        if (memoryWriteSpeed < MEMORY_WRITE_SPEED_LOWER_LIMIT) {
 //            benchmarkReport.setMemoryWriteSpeedGBs(memoryWriteSpeed);
 //        }
-        double memoryReadSpeed = benchmarkResults.getMemoryReadSpeedGBs();
-        if (memoryReadSpeed < MEMORY_READ_SPEED_LOWER_LIMIT) {
-            benchmarkReport.setMemoryReadSpeedGBs(memoryReadSpeed);
-        }
+//        double memoryReadSpeed = benchmarkResults.getMemoryReadSpeedGBs();
+//        if (memoryReadSpeed < MEMORY_READ_SPEED_LOWER_LIMIT) {
+//            benchmarkReport.setMemoryReadSpeedGBs(memoryReadSpeed);
+//        }
         double diskSpeed = benchmarkResults.getDiskSpeedMbs();
         if (diskSpeed < DISK_SPEED_LOWER_LIMIT) {
             benchmarkReport.setDiskSpeedMbs(diskSpeed);

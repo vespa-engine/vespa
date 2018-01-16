@@ -74,7 +74,7 @@ public class BenchmarkResultInspectorTest {
         assertNull(benchmarkReport.getMemoryWriteSpeedGBs());
     }
 
-    @Test
+//    @Test TODO: Temporarily disabled due to Meltdown/Spectre performance impact, see VESPA-11051
     public void isBenchmarkResultsValid_should_only_set_memory_write_speed() {
         benchmarkResults.setMemoryWriteSpeedGBs(INVALID_MEMORY_WRITE_SPEED);
         BenchmarkReport benchmarkReport = BenchmarkResultInspector.makeBenchmarkReport(benchmarkResults);
