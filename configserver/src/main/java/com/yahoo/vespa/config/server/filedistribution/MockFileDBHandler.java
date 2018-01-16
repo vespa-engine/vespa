@@ -20,8 +20,14 @@ public class MockFileDBHandler implements FileDistribution {
         sendDeployedFilesCalled++;
     }
 
+    public void startDownload(String hostName, Set<FileReference> fileReferences) {
+        throw new UnsupportedOperationException("Not valid for this Filedistribution implementation");
+    }
+
     @Override
-    public void startDownload(String hostName, Set<FileReference> fileReferences) { /* not implemented */ }
+    public void startDownload(String hostName, int port, Set<FileReference> fileReferences) {
+        throw new UnsupportedOperationException("Not valid for this Filedistribution implementation");
+    }
 
     @Override
     public void reloadDeployFileDistributor() {

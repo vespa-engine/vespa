@@ -24,7 +24,18 @@ public interface FileDistribution {
      * @param hostName       host which should be notified about file references to download
      * @param fileReferences set of file references to start downloading
      */
+    // TODO: Remove when 6.170 is the last version in use
     void startDownload(String hostName, Set<FileReference> fileReferences);
+
+    /**
+     * Notifies client which file references to download. Used to start downloading early (while
+     * preparing application package).
+     *
+     * @param hostName       host which should be notified about file references to download
+     * @param port           port which should be used when notifying
+     * @param fileReferences set of file references to start downloading
+     */
+    void startDownload(String hostName, int port, Set<FileReference> fileReferences);
 
     void reloadDeployFileDistributor();
 

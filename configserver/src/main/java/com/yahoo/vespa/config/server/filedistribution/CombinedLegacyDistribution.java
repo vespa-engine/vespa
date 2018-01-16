@@ -8,8 +8,8 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
-import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.model.ConfigProxy;
 
 import java.util.Collection;
 import java.util.Set;
@@ -36,10 +36,14 @@ public class CombinedLegacyDistribution implements FileDistribution {
         legacy.sendDeployedFiles(hostName, fileReferences);
     }
 
-    @Override
     public void startDownload(String hostName, Set<FileReference> fileReferences) {
+        startDownload(hostName, ConfigProxy.BASEPORT, fileReferences);
+    }
+
+    @Override
+    public void startDownload(String hostName, int port, Set<FileReference> fileReferences) {
         if (disableFileDistributor)
-            startDownloadingFileReferences(hostName, fileReferences);
+            startDownloadingFileReferences(hostName, port, fileReferences);
     }
 
     @Override
@@ -54,8 +58,8 @@ public class CombinedLegacyDistribution implements FileDistribution {
 
     // Notifies config proxy which file references it should start downloading. It's OK if the call does not succeed,
     // as downloading will then start synchronously when a service requests a file reference instead
-    private void startDownloadingFileReferences(String hostName, Set<FileReference> fileReferences) {
-        Target target = supervisor.connect(new Spec(hostName, 19090));
+    private void startDownloadingFileReferences(String hostName, int port, Set<FileReference> fileReferences) {
+        Target target = supervisor.connect(new Spec(hostName, port));
         double timeout = 0.1;
         Request request = new Request("filedistribution.setFileReferencesToDownload");
         request.parameters().add(new StringArray(fileReferences.stream().map(FileReference::value).toArray(String[]::new)));

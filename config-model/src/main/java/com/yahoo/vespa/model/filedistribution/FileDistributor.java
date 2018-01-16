@@ -2,8 +2,10 @@
 package com.yahoo.vespa.model.filedistribution;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.vespa.model.ConfigProxy;
 import com.yahoo.vespa.model.Host;
 
 import java.util.*;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 public class FileDistributor {
 
     private final FileRegistry fileRegistry;
+    private final List<ConfigServerSpec> configServerSpecs;
 
     /** A map from files to the hosts to which that file should be distributed */
     private final Map<FileReference, Set<Host>> filesToHosts = new LinkedHashMap<>();
@@ -54,8 +57,9 @@ public class FileDistributor {
         return hosts;
     }
 
-    public FileDistributor(FileRegistry fileRegistry) {
+    public FileDistributor(FileRegistry fileRegistry, List<ConfigServerSpec> configServerSpecs) {
         this.fileRegistry = fileRegistry;
+        this.configServerSpecs = configServerSpecs;
     }
 
     /** Returns the files which has been marked for distribution to the given host */
@@ -96,9 +100,15 @@ public class FileDistributor {
         for (Host host : getTargetHosts()) {
             if ( ! host.getHostname().equals(fileSourceHost)) {
                 dbHandler.sendDeployedFiles(host.getHostname(), filesToSendToHost(host));
-                dbHandler.startDownload(host.getHostname(), filesToSendToHost(host));
+                dbHandler.startDownload(host.getHostname(), ConfigProxy.BASEPORT, filesToSendToHost(host));
             }
         }
+        // Ask other config server to download, for redundancy
+        if (configServerSpecs != null)
+            configServerSpecs.stream()
+                    .filter(configServerSpec -> !configServerSpec.getHostName().equals(fileSourceHost))
+                    .forEach(spec -> dbHandler.startDownload(spec.getHostName(), spec.getConfigServerPort(), allFilesToSend()));
+
         dbHandler.sendDeployedFiles(fileSourceHost, allFilesToSend());
         dbHandler.removeDeploymentsThatHaveDifferentApplicationId(getTargetHostnames());
     }

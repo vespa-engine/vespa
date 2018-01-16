@@ -30,7 +30,7 @@ import java.util.Optional;
  */
 public class ContentClusterUtils {
 
-    public static MockRoot createMockRoot(String[] hosts) throws Exception {
+    public static MockRoot createMockRoot(String[] hosts) {
         return createMockRoot(hosts, SearchDefinitionBuilder.createSearchDefinitions("test"));
     }
 
@@ -46,7 +46,7 @@ public class ContentClusterUtils {
         return new MockRoot("", deployStateBuilder.build());
     }
 
-    public static MockRoot createMockRoot(String[] hosts, List<String> searchDefinitions) throws Exception {
+    public static MockRoot createMockRoot(String[] hosts, List<String> searchDefinitions) {
         return createMockRoot(new InMemoryProvisioner(true, hosts), searchDefinitions);
     }
 
@@ -58,10 +58,11 @@ public class ContentClusterUtils {
         return createMockRoot(new SingleNodeProvisioner(), searchDefinitions, deployStateBuilder);
     }
 
-    public static ContentCluster createCluster(String clusterXml, MockRoot root) throws Exception {
+    public static ContentCluster createCluster(String clusterXml, MockRoot root) {
         Document doc = XML.getDocument(clusterXml);
         Admin admin = new Admin(root, new DefaultMonitoring("vespa", 60), new Metrics(), Collections.emptyMap(), false,
-                                new FileDistributionConfigProducer.Builder(FileDistributionOptions.defaultOptions()).build(root, new MockFileRegistry()));
+                                new FileDistributionConfigProducer.Builder(FileDistributionOptions.defaultOptions())
+                                        .build(root, new MockFileRegistry(), null));
         ConfigModelContext context = ConfigModelContext.create(null, root.getDeployState(), null, root, null);
         
         return new ContentCluster.Builder(admin).build(Collections.emptyList(), context, doc.getDocumentElement());
