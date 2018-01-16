@@ -45,6 +45,8 @@ public:
 
     bool matrixHasCommonDimensionInnermost() const { return _commonDimensionInnermost; }
 
+    const eval::ValueType &result_type() const override { return _resultType; }
+    void push_children(std::vector<Child::CREF> &) const override {}
     const eval::Value &eval(const eval::LazyParams &params, Stash &stash) const override;
 };
 

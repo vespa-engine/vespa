@@ -22,21 +22,62 @@ class Tensor;
 //-----------------------------------------------------------------------------
 
 /**
- * A tensor function that can be evaluated. A TensorFunction will
- * typically be produced by an implementation-specific compile step
- * that takes an implementation-independent intermediate
- * representation of the tensor function as input (tree of
- * tensor_function::Node objects).
+ * Interface used to describe a tensor function as a tree of nodes
+ * with information about operation sequencing and intermediate result
+ * types. Each node in the tree describes a single tensor
+ * operation. This is the intermediate representation of a tensor
+ * function.
+ *
+ * A tensor function will initially be created based on a Function
+ * (expression AST) and associated type-resolving. In this tree, each
+ * node will directly represent a single call to the tensor engine
+ * immediate API.
+ *
+ * The generic implementation-independent tree will then be optimized
+ * (in-place, bottom-up) where sub-expressions may be replaced with
+ * optimized implementation-specific alternatives.
+ *
+ * This leaves us with a mixed-mode tree with some generic and some
+ * specialized nodes, that may be evaluated recursively.
  **/
 struct TensorFunction
 {
+    TensorFunction(const TensorFunction &) = delete;
+    TensorFunction &operator=(const TensorFunction &) = delete;
+    TensorFunction(TensorFunction &&) = delete;
+    TensorFunction &operator=(TensorFunction &&) = delete;
+    TensorFunction() {}
+
+    /**
+     * Reference to a sub-tree. References are replaceable to enable
+     * in-place bottom-up optimization.
+     **/
+    class Child {
+    private:
+        mutable const TensorFunction *ptr;
+    public:
+        using CREF = std::reference_wrapper<const Child>;
+        Child(const TensorFunction &child) : ptr(&child) {}
+        const TensorFunction &get() const { return *ptr; }
+        void set(const TensorFunction &child) const { ptr = &child; }
+    };
+    virtual const ValueType &result_type() const = 0;
+
+    /**
+     * Push references to all children (NB: implementation must use
+     * Child class for all sub-expression references) on the given
+     * vector. This is needed to enable optimization of trees where
+     * the core algorithm does not need to know concrete node types.
+     *
+     * @params children where to put your children references
+     **/
+    virtual void push_children(std::vector<Child::CREF> &children) const = 0;
+
     /**
      * Evaluate this tensor function based on the given
      * parameters. The given stash can be used to store temporary
      * objects that need to be kept alive for the return value to be
-     * valid. The return value must conform to the result type
-     * indicated by the intermediate representation describing this
-     * tensor function.
+     * valid. The return value must conform to 'result_type'.
      *
      * @return result of evaluating this tensor function
      * @param params external values needed to evaluate this function
@@ -59,101 +100,87 @@ namespace tensor_function {
 using map_fun_t = double (*)(double);
 using join_fun_t = double (*)(double, double);
 
-/**
- * Interface used to describe a tensor function as a tree of nodes
- * with information about operation sequencing and intermediate result
- * types. Each node in the tree will describe a single tensor
- * operation. This is the intermediate representation of a tensor
- * function.
- *
- * The intermediate representation of a tensor function can also be
- * used to evaluate the tensor function it represents directly. This
- * will invoke the immediate API on the tensor engine associated with
- * the input tensors. In other words, the intermediate representation
- * 'compiles to itself'.
- *
- * The reason for using the top-level TensorFunction interface when
- * referencing downwards in the tree is to enable mixed-mode execution
- * resulting from partial optimization where the intermediate
- * representation is partially replaced by implementation-specific
- * tensor functions, which may or may not rely on lower-level tensor
- * functions that may in turn be mixed-mode.
- **/
-struct Node : public TensorFunction
+class Node : public TensorFunction
 {
-    /**
-     * Reference to a sub-tree. References are replaceable to enable
-     * in-place bottom-up optimization during compilation.
-     **/
-    class Child {
-    private:
-        mutable const TensorFunction *ptr;
-    public:
-        using CREF = std::reference_wrapper<const Child>;
-        Child(const TensorFunction &child) : ptr(&child) {}
-        const TensorFunction &get() const { return *ptr; }
-        void set(const TensorFunction &child) const { ptr = &child; }
-    };
-    const ValueType result_type;
-    Node(const ValueType &result_type_in) : result_type(result_type_in) {}
-    Node(const Node &) = delete;
-    Node &operator=(const Node &) = delete;
-    Node(Node &&) = delete;
-    Node &operator=(Node &&) = delete;
-    virtual void push_children(std::vector<Child::CREF> &children) const = 0;
+private:
+    ValueType _result_type;
+public:
+    Node(const ValueType &result_type_in) : _result_type(result_type_in) {}
+    const ValueType &result_type() const override { return _result_type; }
 };
 
-struct Inject : Node {
-    const size_t tensor_id;
+class Inject : public Node
+{
+private:
+    size_t _param_idx;
+public:
     Inject(const ValueType &result_type_in,
-           size_t tensor_id_in)
-        : Node(result_type_in), tensor_id(tensor_id_in) {}
-    const Value &eval(const LazyParams &params, Stash &) const override;
+           size_t param_idx_in)
+        : Node(result_type_in), _param_idx(param_idx_in) {}
+    size_t param_idx() const { return _param_idx; }
     void push_children(std::vector<Child::CREF> &children) const override;
+    const Value &eval(const LazyParams &params, Stash &) const override;
 };
 
-struct Reduce : Node {
-    Child tensor;
-    const Aggr aggr;
-    const std::vector<vespalib::string> dimensions;
+class Reduce : public Node
+{
+private:
+    Child _child;
+    Aggr _aggr;
+    std::vector<vespalib::string> _dimensions;
+public:
     Reduce(const ValueType &result_type_in,
-           const TensorFunction &tensor_in,
+           const TensorFunction &child_in,
            Aggr aggr_in,
            const std::vector<vespalib::string> &dimensions_in)
-        : Node(result_type_in), tensor(tensor_in), aggr(aggr_in), dimensions(dimensions_in) {}
-    const Value &eval(const LazyParams &params, Stash &stash) const override;
+        : Node(result_type_in), _child(child_in), _aggr(aggr_in), _dimensions(dimensions_in) {}
+    const TensorFunction &child() const { return _child.get(); }
+    Aggr aggr() const { return _aggr; }
+    const std::vector<vespalib::string> dimensions() const { return _dimensions; }
     void push_children(std::vector<Child::CREF> &children) const override;
+    const Value &eval(const LazyParams &params, Stash &stash) const override;
 };
 
-struct Map : Node {
-    Child tensor;
-    const map_fun_t function;    
+class Map : public Node
+{
+private:
+    Child _child;
+    map_fun_t _function;
+public:
     Map(const ValueType &result_type_in,
-        const TensorFunction &tensor_in,
+        const TensorFunction &child_in,
         map_fun_t function_in)
-        : Node(result_type_in), tensor(tensor_in), function(function_in) {}
-    const Value &eval(const LazyParams &params, Stash &stash) const override;
+        : Node(result_type_in), _child(child_in), _function(function_in) {}
+    const TensorFunction &child() const { return _child.get(); }
+    map_fun_t function() const { return _function; }
     void push_children(std::vector<Child::CREF> &children) const override;
+    const Value &eval(const LazyParams &params, Stash &stash) const override;
 };
 
-struct Join : Node {
-    Child lhs_tensor;
-    Child rhs_tensor;
-    const join_fun_t function;    
+class Join : public Node
+{
+private:
+    Child _lhs;
+    Child _rhs;
+    join_fun_t _function;    
+public:
     Join(const ValueType &result_type_in,
-         const TensorFunction &lhs_tensor_in,
-         const TensorFunction &rhs_tensor_in,
+         const TensorFunction &lhs_in,
+         const TensorFunction &rhs_in,
          join_fun_t function_in)
-        : Node(result_type_in), lhs_tensor(lhs_tensor_in),
-          rhs_tensor(rhs_tensor_in), function(function_in) {}
-    const Value &eval(const LazyParams &params, Stash &stash) const override;
+        : Node(result_type_in), _lhs(lhs_in),
+          _rhs(rhs_in), _function(function_in) {}
+    const TensorFunction &lhs() const { return _lhs.get(); }
+    const TensorFunction &rhs() const { return _rhs.get(); }
+    join_fun_t function() const { return _function; }
     void push_children(std::vector<Child::CREF> &children) const override;
+    const Value &eval(const LazyParams &params, Stash &stash) const override;
 };
 
-const Node &inject(const ValueType &type, size_t tensor_id, Stash &stash);
-const Node &reduce(const Node &tensor, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash);
-const Node &map(const Node &tensor, map_fun_t function, Stash &stash);
-const Node &join(const Node &lhs_tensor, const Node &rhs_tensor, join_fun_t function, Stash &stash);
+const Node &inject(const ValueType &type, size_t param_idx, Stash &stash);
+const Node &reduce(const Node &child, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash);
+const Node &map(const Node &child, map_fun_t function, Stash &stash);
+const Node &join(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash);
 
 } // namespace vespalib::eval::tensor_function
 } // namespace vespalib::eval

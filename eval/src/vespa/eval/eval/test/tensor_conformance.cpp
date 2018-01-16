@@ -275,7 +275,7 @@ struct RetainedReduce : Eval {
         Stash stash;
         auto a_type = ValueType::from_spec(a.type());
         const auto &ir = tensor_function::reduce(tensor_function::inject(a_type, tensor_id_a, stash), aggr, dimensions, stash);
-        ValueType expect_type = ir.result_type;
+        ValueType expect_type = ir.result_type();
         const auto &fun = engine.compile(ir, stash);
         Input input(engine.from_spec(a));
         return Result(engine, check_type(fun.eval(input.get(), stash), expect_type));
@@ -290,7 +290,7 @@ struct RetainedMap : Eval {
         Stash stash;
         auto a_type = ValueType::from_spec(a.type());
         const auto &ir = tensor_function::map(tensor_function::inject(a_type, tensor_id_a, stash), function, stash);
-        ValueType expect_type = ir.result_type;
+        ValueType expect_type = ir.result_type();
         const auto &fun = engine.compile(ir, stash);
         Input input(engine.from_spec(a));
         return Result(engine, check_type(fun.eval(input.get(), stash), expect_type));
@@ -308,7 +308,7 @@ struct RetainedJoin : Eval {
         const auto &ir = tensor_function::join(tensor_function::inject(a_type, tensor_id_a, stash),
                                                tensor_function::inject(b_type, tensor_id_b, stash),
                                                function, stash);
-        ValueType expect_type = ir.result_type;
+        ValueType expect_type = ir.result_type();
         const auto &fun = engine.compile(ir, stash);
         Input input(engine.from_spec(a), engine.from_spec(b));
         return Result(engine, check_type(fun.eval(input.get(), stash), expect_type));
