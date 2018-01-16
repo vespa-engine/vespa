@@ -24,13 +24,14 @@ public class BenchmarkResultInspector {
             benchmarkReport.setCpuCyclesPerSec(cpuCyclesPerSec);
         }
         double memoryWriteSpeed = benchmarkResults.getMemoryWriteSpeedGBs();
-        if (memoryWriteSpeed < MEMORY_WRITE_SPEED_LOWER_LIMIT) {
-            benchmarkReport.setMemoryWriteSpeedGBs(memoryWriteSpeed);
-        }
-        double memoryReadSpeed = benchmarkResults.getMemoryReadSpeedGBs();
-        if (memoryReadSpeed < MEMORY_READ_SPEED_LOWER_LIMIT) {
-            benchmarkReport.setMemoryReadSpeedGBs(memoryReadSpeed);
-        }
+//      TODO: Temporarily disabled due to Meltdown/Spectre performance impact, see VESPA-11051
+//        if (memoryWriteSpeed < MEMORY_WRITE_SPEED_LOWER_LIMIT) {
+//            benchmarkReport.setMemoryWriteSpeedGBs(memoryWriteSpeed);
+//        }
+//        double memoryReadSpeed = benchmarkResults.getMemoryReadSpeedGBs();
+//        if (memoryReadSpeed < MEMORY_READ_SPEED_LOWER_LIMIT) {
+//            benchmarkReport.setMemoryReadSpeedGBs(memoryReadSpeed);
+//        }
         double diskSpeed = benchmarkResults.getDiskSpeedMbs();
         if (diskSpeed < DISK_SPEED_LOWER_LIMIT) {
             benchmarkReport.setDiskSpeedMbs(diskSpeed);
