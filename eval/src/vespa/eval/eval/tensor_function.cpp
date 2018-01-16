@@ -43,6 +43,14 @@ Op2::push_children(std::vector<Child::CREF> &children) const
 //-----------------------------------------------------------------------------
 
 const Value &
+ConstValue::eval(const LazyParams &, Stash &) const
+{
+    return _value;
+}
+
+//-----------------------------------------------------------------------------
+
+const Value &
 Inject::eval(const LazyParams &params, Stash &stash) const
 {
     return params.resolve(_param_idx, stash);
@@ -102,6 +110,28 @@ Rename::eval(const LazyParams &params, Stash &stash) const
 
 //-----------------------------------------------------------------------------
 
+void
+If::push_children(std::vector<Child::CREF> &children) const
+{
+    children.emplace_back(_cond);
+    children.emplace_back(_true_child);
+    children.emplace_back(_false_child);
+}
+
+const Value &
+If::eval(const LazyParams &params, Stash &stash) const
+{
+    return (cond().eval(params, stash).as_bool()
+            ? true_child().eval(params, stash)
+            : false_child().eval(params, stash));
+}
+
+//-----------------------------------------------------------------------------
+
+const Node &const_value(const Value &value, Stash &stash) {
+    return stash.create<ConstValue>(value);
+}
+
 const Node &inject(const ValueType &type, size_t param_idx, Stash &stash) {
     return stash.create<Inject>(type, param_idx);
 }
@@ -129,6 +159,14 @@ const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dim
 const Node &rename(const Node &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) {
     ValueType result_type = child.result_type().rename(from, to);
     return stash.create<Rename>(result_type, child, from, to);
+}
+
+const Node &if_node(const Node &cond, const Node &true_child, const Node &false_child, Stash &stash) {
+    ValueType result_type = true_child.result_type();
+    if (result_type != false_child.result_type()) {
+        result_type = ValueType::any_type();
+    }
+    return stash.create<If>(result_type, cond, true_child, false_child);
 }
 
 } // namespace vespalib::eval::tensor_function
