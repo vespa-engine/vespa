@@ -450,19 +450,6 @@ const Function *get_lambda(const nodes::Node &node) {
 } // namespace vespalib::<unnamed>
 
 
-InterpretedFunction::SimpleParams::SimpleParams(const std::vector<double> &params_in)
-    : params(params_in)
-{}
-
-InterpretedFunction::SimpleParams::~SimpleParams() { }
-
-const Value &
-InterpretedFunction::SimpleParams::resolve(size_t idx, Stash &stash) const
-{
-    assert(idx < params.size());
-    return stash.create<DoubleValue>(params[idx]);
-}
-
 InterpretedFunction::State::State(const TensorEngine &engine_in)
     : engine(engine_in),
       params(nullptr),

@@ -9,6 +9,8 @@ LazyParams::~LazyParams()
 {
 }
 
+//-----------------------------------------------------------------------------
+
 SimpleObjectParams::~SimpleObjectParams()
 {
 }
@@ -19,5 +21,20 @@ SimpleObjectParams::resolve(size_t idx, Stash &) const
     assert(idx < params.size());
     return params[idx];
 }
+
+//-----------------------------------------------------------------------------
+
+SimpleParams::~SimpleParams()
+{
+}
+
+const Value &
+SimpleParams::resolve(size_t idx, Stash &stash) const
+{
+    assert(idx < params.size());
+    return stash.create<DoubleValue>(params[idx]);
+}
+
+//-----------------------------------------------------------------------------
 
 } // namespace vespalib::eval

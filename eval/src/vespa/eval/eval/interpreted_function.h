@@ -27,18 +27,6 @@ class TensorEngine;
 class InterpretedFunction
 {
 public:
-    using LazyParams = ::vespalib::eval::LazyParams;
-
-    /**
-     * Simple wrapper for number-only parameters that are known up
-     * front. Intended for convenience (testing), not performance.
-     **/
-    struct SimpleParams : LazyParams {
-        std::vector<double> params;
-        explicit SimpleParams(const std::vector<double> &params_in);
-        ~SimpleParams();
-        const Value &resolve(size_t idx, Stash &stash) const override;
-    };
     struct State {
         const TensorEngine      &engine;
         const LazyParams        *params;

@@ -51,7 +51,7 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
         bool has_issues = InterpretedFunction::detect_issues(function);
         if (is_supported && !has_issues) {
             vespalib::string desc = as_string(param_names, param_values, expression);
-            InterpretedFunction::SimpleParams params(param_values);
+            SimpleParams params(param_values);
             verify_result(SimpleTensorEngine::ref(), function, false,  "[untyped simple] "+desc, params, expected_result);
             verify_result(DefaultTensorEngine::ref(), function, false, "[untyped prod]   "+desc, params, expected_result);
             verify_result(DefaultTensorEngine::ref(), function, true,  "[typed prod]     "+desc, params, expected_result);
@@ -62,7 +62,7 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
                        const Function &function,
                        bool typed,
                        const vespalib::string &description,
-                       const InterpretedFunction::SimpleParams &params,
+                       const SimpleParams &params,
                        double expected_result)
     {
         NodeTypes node_types = typed
@@ -103,7 +103,7 @@ TEST("require that invalid function evaluates to a error") {
     EXPECT_TRUE(function.has_error());
     InterpretedFunction ifun(SimpleTensorEngine::ref(), function, NodeTypes());
     InterpretedFunction::Context ctx(ifun);
-    InterpretedFunction::SimpleParams my_params({1,2,3,4});
+    SimpleParams my_params({1,2,3,4});
     const Value &result = ifun.eval(ctx, my_params);
     EXPECT_TRUE(result.is_error());
     EXPECT_EQUAL(error_value, result.as_double());
@@ -115,7 +115,7 @@ size_t count_ifs(const vespalib::string &expr, std::initializer_list<double> par
     Function fun = Function::parse(expr);
     InterpretedFunction ifun(SimpleTensorEngine::ref(), fun, NodeTypes());
     InterpretedFunction::Context ctx(ifun);
-    InterpretedFunction::SimpleParams params(params_in);
+    SimpleParams params(params_in);
     ifun.eval(ctx, params);
     return ctx.if_cnt();
 }
@@ -143,8 +143,8 @@ TEST("require that basic addition works") {
     Function function = Function::parse("a+10");
     InterpretedFunction interpreted(SimpleTensorEngine::ref(), function, NodeTypes());
     InterpretedFunction::Context ctx(interpreted);
-    InterpretedFunction::SimpleParams params_20({20});
-    InterpretedFunction::SimpleParams params_40({40});
+    SimpleParams params_20({20});
+    SimpleParams params_40({40});
     EXPECT_EQUAL(interpreted.eval(ctx, params_20).as_double(), 30.0);
     EXPECT_EQUAL(interpreted.eval(ctx, params_40).as_double(), 50.0);
 }
