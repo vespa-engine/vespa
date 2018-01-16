@@ -5,6 +5,7 @@
 #include "function.h"
 #include "simple_tensor_engine.h"
 #include "node_types.h"
+#include "lazy_params.h"
 #include <vespa/vespalib/util/stash.h>
 
 namespace vespalib {
@@ -26,33 +27,6 @@ class TensorEngine;
 class InterpretedFunction
 {
 public:
-    /**
-     * Interface used to lazy-resolve parameters when needed.
-     **/
-    struct LazyParams {
-        virtual const Value &resolve(size_t idx, Stash &stash) const = 0;
-        virtual ~LazyParams();
-    };
-    /**
-     * Simple wrapper for number-only parameters that are known up
-     * front. Intended for convenience (testing), not performance.
-     **/
-    struct SimpleParams : LazyParams {
-        std::vector<double> params;
-        explicit SimpleParams(const std::vector<double> &params_in);
-        ~SimpleParams();
-        const Value &resolve(size_t idx, Stash &stash) const override;
-    };
-    /**
-     * Simple wrapper for object parameters that are known up
-     * front. Intended for convenience (testing), not performance.
-     **/
-    struct SimpleObjectParams : LazyParams {
-        std::vector<Value::CREF> params;
-        explicit SimpleObjectParams(const std::vector<Value::CREF> &params_in) : params(params_in) {}
-        ~SimpleObjectParams();
-        const Value &resolve(size_t idx, Stash &stash) const override;
-    };
     struct State {
         const TensorEngine      &engine;
         const LazyParams        *params;

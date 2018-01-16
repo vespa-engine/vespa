@@ -94,7 +94,7 @@ TensorSpec eval_expr(const Inspector &test, const TensorEngine &engine, bool typ
     NodeTypes types = typed ? NodeTypes(fun, get_types(param_values)) : NodeTypes();
     InterpretedFunction ifun(engine, fun, types);
     InterpretedFunction::Context ctx(ifun);
-    InterpretedFunction::SimpleObjectParams params(param_refs);
+    SimpleObjectParams params(param_refs);
     return engine.to_spec(ifun.eval(ctx, params));
 }
 

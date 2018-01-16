@@ -9,6 +9,7 @@ vespa_add_library(eval_eval OBJECT
     gbdt.cpp
     interpreted_function.cpp
     key_gen.cpp
+    lazy_params.cpp
     node_types.cpp
     operation.cpp
     operator_nodes.cpp

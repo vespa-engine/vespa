@@ -20,7 +20,7 @@ struct Frame {
     const Node &next_child() { return node.get_child(child_idx++); }
 };
 
-struct NoParams : InterpretedFunction::LazyParams {
+struct NoParams : LazyParams {
     const Value &resolve(size_t, Stash &stash) const override {
         return stash.create<ErrorValue>();
     }

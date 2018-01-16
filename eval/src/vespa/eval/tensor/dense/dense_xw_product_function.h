@@ -45,7 +45,7 @@ public:
 
     bool matrixHasCommonDimensionInnermost() const { return _commonDimensionInnermost; }
 
-    const eval::Value &eval(ConstArrayRef<eval::Value::CREF> params, Stash &stash) const override;
+    const eval::Value &eval(const eval::LazyParams &params, Stash &stash) const override;
 };
 
 }

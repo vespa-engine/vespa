@@ -6,6 +6,7 @@
 #include <vector>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/arrayref.h>
+#include "lazy_params.h"
 #include "value_type.h"
 #include "value.h"
 #include "aggr.h"
@@ -41,7 +42,7 @@ struct TensorFunction
      * @param params external values needed to evaluate this function
      * @param stash heterogeneous object store
      **/
-    virtual const Value &eval(ConstArrayRef<Value::CREF> params, Stash &stash) const = 0;
+    virtual const Value &eval(const LazyParams &params, Stash &stash) const = 0;
     virtual ~TensorFunction() {}
 };
 
@@ -107,7 +108,7 @@ struct Inject : Node {
     Inject(const ValueType &result_type_in,
            size_t tensor_id_in)
         : Node(result_type_in), tensor_id(tensor_id_in) {}
-    const Value &eval(ConstArrayRef<Value::CREF> params, Stash &) const override;
+    const Value &eval(const LazyParams &params, Stash &) const override;
     void push_children(std::vector<Child::CREF> &children) const override;
 };
 
@@ -120,7 +121,7 @@ struct Reduce : Node {
            Aggr aggr_in,
            const std::vector<vespalib::string> &dimensions_in)
         : Node(result_type_in), tensor(tensor_in), aggr(aggr_in), dimensions(dimensions_in) {}
-    const Value &eval(ConstArrayRef<Value::CREF> params, Stash &stash) const override;
+    const Value &eval(const LazyParams &params, Stash &stash) const override;
     void push_children(std::vector<Child::CREF> &children) const override;
 };
 
@@ -131,7 +132,7 @@ struct Map : Node {
         const TensorFunction &tensor_in,
         map_fun_t function_in)
         : Node(result_type_in), tensor(tensor_in), function(function_in) {}
-    const Value &eval(ConstArrayRef<Value::CREF> params, Stash &stash) const override;
+    const Value &eval(const LazyParams &params, Stash &stash) const override;
     void push_children(std::vector<Child::CREF> &children) const override;
 };
 
@@ -145,7 +146,7 @@ struct Join : Node {
          join_fun_t function_in)
         : Node(result_type_in), lhs_tensor(lhs_tensor_in),
           rhs_tensor(rhs_tensor_in), function(function_in) {}
-    const Value &eval(ConstArrayRef<Value::CREF> params, Stash &stash) const override;
+    const Value &eval(const LazyParams &params, Stash &stash) const override;
     void push_children(std::vector<Child::CREF> &children) const override;
 };
 

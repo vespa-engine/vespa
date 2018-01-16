@@ -33,9 +33,9 @@ struct Params {
     }
 };
 
-InterpretedFunction::SimpleObjectParams make_params(const Function &function, const Params &params)
+SimpleObjectParams make_params(const Function &function, const Params &params)
 {
-    InterpretedFunction::SimpleObjectParams fun_params({});
+    SimpleObjectParams fun_params({});
     EXPECT_EQUAL(params.map.size(), function.num_params());
     for (size_t i = 0; i < function.num_params(); ++i) {
         auto param = params.map.find(function.param_name(i));
@@ -68,7 +68,7 @@ double calculate_expression(const vespalib::string &expression, const Params &pa
 }
 
 DoubleValue dummy_result(0.0);
-const Value &dummy_ranking(InterpretedFunction::Context &, InterpretedFunction::LazyParams &) { return dummy_result; }
+const Value &dummy_ranking(InterpretedFunction::Context &, LazyParams &) { return dummy_result; }
 
 double benchmark_expression_us(const vespalib::string &expression, const Params &params) {
     const Function function = Function::parse(expression);

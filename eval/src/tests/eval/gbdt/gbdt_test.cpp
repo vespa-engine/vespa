@@ -18,7 +18,7 @@ using namespace vespalib::eval::gbdt;
 double eval_double(const Function &function, const std::vector<double> &params) {
     InterpretedFunction ifun(SimpleTensorEngine::ref(), function, NodeTypes());
     InterpretedFunction::Context ctx(ifun);
-    InterpretedFunction::SimpleParams fun_params(params);
+    SimpleParams fun_params(params);
     return ifun.eval(ctx, fun_params).as_double();
 }
 

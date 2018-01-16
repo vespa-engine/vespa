@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/lazy_params.h>
 #include <vespa/eval/eval/gbdt.h>
 #include "llvm_wrapper.h"
 
@@ -26,7 +27,7 @@ public:
 
     using array_function = double (*)(const double *);
 
-    using resolve_function = double (*)(void *ctx, size_t idx);
+    using resolve_function = LazyParams::resolve_function;
     using lazy_function = double (*)(resolve_function, void *ctx);
 
 private:

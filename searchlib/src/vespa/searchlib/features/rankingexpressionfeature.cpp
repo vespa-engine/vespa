@@ -16,6 +16,7 @@ using vespalib::eval::PassParams;
 using vespalib::eval::CompileCache;
 using vespalib::eval::CompiledFunction;
 using vespalib::eval::InterpretedFunction;
+using vespalib::eval::LazyParams;
 using vespalib::eval::ValueType;
 using vespalib::eval::Value;
 using vespalib::eval::DoubleValue;
@@ -77,7 +78,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-struct MyLazyParams : InterpretedFunction::LazyParams {
+struct MyLazyParams : LazyParams {
     const fef::FeatureExecutor::Inputs &inputs;
     const ConstArrayRef<char> input_is_object;
     MyLazyParams(const fef::FeatureExecutor::Inputs &inputs_in, ConstArrayRef<char> input_is_object_in)

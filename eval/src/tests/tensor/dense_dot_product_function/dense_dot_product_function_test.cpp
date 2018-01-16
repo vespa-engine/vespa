@@ -63,7 +63,8 @@ public:
         _params.emplace_back(_lhsDenseTensor);
         _params.emplace_back(_rhsDenseTensor);
     }
-    ConstArrayRef<Value::CREF> get() const { return _params; }
+    SimpleObjectParams get() const { return SimpleObjectParams(_params); }
+    const Value &param(size_t idx) const { return _params[idx]; }
     double expectedDotProduct() const {
         return calcDotProduct(_lhsDenseTensor, _rhsDenseTensor);
     }
@@ -80,8 +81,8 @@ struct Fixture
         const Value &result = function.eval(input.get(), stash);
         ASSERT_TRUE(result.is_double());
         LOG(info, "eval(): (%s) * (%s) = %f",
-            input.get()[0].get().type().to_spec().c_str(),
-            input.get()[1].get().type().to_spec().c_str(),
+            input.param(0).type().to_spec().c_str(),
+            input.param(1).type().to_spec().c_str(),
             result.as_double());
         return result.as_double();
     }

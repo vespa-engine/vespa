@@ -123,7 +123,7 @@ struct Expr_V : Eval {
         NodeTypes types(fun, {});
         InterpretedFunction ifun(engine, fun, types);
         InterpretedFunction::Context ctx(ifun);
-        InterpretedFunction::SimpleObjectParams params({});
+        SimpleObjectParams params({});
         return Result(engine, check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
     }
 };
@@ -139,7 +139,7 @@ struct Expr_T : Eval {
         InterpretedFunction ifun(engine, fun, types);
         InterpretedFunction::Context ctx(ifun);
         Value::UP va = engine.from_spec(a);
-        InterpretedFunction::SimpleObjectParams params({*va});
+        SimpleObjectParams params({*va});
         return Result(engine, check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
     }
 };
@@ -157,7 +157,7 @@ struct Expr_TT : Eval {
         InterpretedFunction::Context ctx(ifun);
         Value::UP va = engine.from_spec(a);
         Value::UP vb = engine.from_spec(b);
-        InterpretedFunction::SimpleObjectParams params({*va,*vb});
+        SimpleObjectParams params({*va,*vb});
         return Result(engine, check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
     }
 };
@@ -259,7 +259,9 @@ struct Input {
         tensors.push_back(std::move(b));
         params.emplace_back(*tensors.back());
     }
-    ConstArrayRef<Value::CREF> get() const { return params; }
+    SimpleObjectParams get() const {
+        return SimpleObjectParams(params);
+    }
 };
 
 // evaluate tensor reduce operation using tensor engine retained api

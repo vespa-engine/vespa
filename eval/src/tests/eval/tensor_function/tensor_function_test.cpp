@@ -28,7 +28,7 @@ struct EvalCtx {
         return id;
     }
     const Value &eval(const TensorFunction &fun) {
-        return fun.eval(params, stash);
+        return fun.eval(SimpleObjectParams(params), stash);
     }
     const TensorFunction &compile(const tensor_function::Node &expr) {
         return engine.compile(expr, stash);

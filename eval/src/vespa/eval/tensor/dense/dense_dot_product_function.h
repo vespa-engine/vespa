@@ -23,7 +23,7 @@ public:
     DenseDotProductFunction(size_t lhsTensorId_, size_t rhsTensorId_);
     size_t lhsTensorId() const { return _lhsTensorId; }
     size_t rhsTensorId() const { return _rhsTensorId; }
-    const eval::Value &eval(ConstArrayRef<eval::Value::CREF> params, Stash &stash) const override;
+    const eval::Value &eval(const eval::LazyParams &params, Stash &stash) const override;
 };
 
 }
