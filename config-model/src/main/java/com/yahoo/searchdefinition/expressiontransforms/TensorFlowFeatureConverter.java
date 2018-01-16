@@ -68,34 +68,15 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
             // modelPath: The relative path to this model below the "models/" dir in the application package
             Path modelPath = Path.fromString(asString(feature.getArguments().expressions().get(0)));
-            TensorFlowModel model = importedModels.computeIfAbsent(modelPath, k -> importModel(modelPath));
-
-            // Find the specified expression
-            Signature signature = chooseSignature(model, optionalArgument(1, feature.getArguments()));
-            String output = chooseOutput(signature, optionalArgument(2, feature.getArguments()));
-            RankingExpression expression = readExpression(model, modelPath, signature.name(), output);
-
-            // Add all constants (after finding outputs to fail faster when the output is not found)
-            if (constantsInConfig)
-                model.constants().forEach((k, v) -> context.rankProfile().addConstantTensor(k, new TensorValue(v)));
-            else // correct way, disabled for now
-                model.constants().forEach((k, v) -> transformConstant(modelPath, context.rankProfile(), k, v));
-
-            return expression.getRoot();
+            Optional<String> signatureArg = optionalArgument(1, feature.getArguments());
+            Optional<String> outputArg = optionalArgument(2, feature.getArguments());
+            if (new File(ApplicationPackage.MODELS_DIR.append(modelPath).getRelative()).getCanonicalFile().exists())
+                return transformFromTensorFlowModel(modelPath, signatureArg, outputArg, context.rankProfile());
+            else
+                return transformFromStoredConvertedModel(modelPath, signatureArg, outputArg);
         }
-        catch (IllegalArgumentException e) {
+        catch (IllegalArgumentException | IOException e) {
             throw new IllegalArgumentException("Could not use tensorflow model from " + feature, e);
-        }
-    }
-
-    private TensorFlowModel importModel(Path modelPath) {
-        try {
-            return tensorFlowImporter.importModel(new File(ApplicationPackage.MODELS_DIR.append(modelPath)
-                                                                                        .getRelative())
-                                                                                        .getCanonicalPath());
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 
@@ -152,38 +133,57 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         }
     }
 
-    /**
-     * Store converted ranking expression for file distribution to be able to read them when creating the model
-     * on a different config server in the same cluster.
-     */
-    private RankingExpression readExpression(TensorFlowModel model, Path modelPath, String signature, String output) {
-        Optional<RankingExpression> storedConvertedExpression = readConverted(signature, output, modelPath);
-        if (storedConvertedExpression.isPresent())
-            return storedConvertedExpression.get();
+    private ExpressionNode transformFromTensorFlowModel(Path modelPath,
+                                                        Optional<String> signatureArg,
+                                                        Optional<String> outputArg,
+                                                        RankProfile rankProfile) {
+        TensorFlowModel model = importedModels.computeIfAbsent(modelPath, k -> importModel(modelPath));
 
-        RankingExpression convertedExpression = model.expressions().get(output);
-        writeConverted(signature, output, convertedExpression, modelPath);
-        return convertedExpression;
+        // Find the specified expression
+        Signature signature = chooseSignature(model, signatureArg);
+        String output = chooseOutput(signature, outputArg);
+        RankingExpression expression = model.expressions().get(output);
+        writeConverted(modelPath, signatureArg, outputArg, expression);
+
+        // Add all constants (after finding outputs to fail faster when the output is not found)
+        if (constantsInConfig)
+            model.constants().forEach((k, v) -> rankProfile.addConstantTensor(k, new TensorValue(v)));
+        else // correct way, disabled for now
+            model.constants().forEach((k, v) -> transformConstant(modelPath, rankProfile, k, v));
+
+        return expression.getRoot();
     }
 
-    /** Reads a previously stored converted ranking expression, or returns empty if it does not exist */
-    private Optional<RankingExpression> readConverted(String signature, String output, Path modelPath) {
-        File expressionFile = expressionFile(modelPath, signature, output);
+    private ExpressionNode transformFromStoredConvertedModel(Path modelPath,
+                                                             Optional<String> signatureArg,
+                                                             Optional<String> outputArg) {
+        File expressionFile = null;
         try {
-            if ( ! expressionFile.exists()) return Optional.empty();
-            return Optional.of(new RankingExpression(IOUtils.readFile(expressionFile)));
+            expressionFile = expressionFile(modelPath, signatureArg, outputArg);
+            return new RankingExpression(IOUtils.readFile(expressionFile)).getRoot();
         }
         catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException("Could not read " + expressionFile, e);
         }
         catch (ParseException e) {
             throw new IllegalStateException("Could not parse " + expressionFile, e);
         }
     }
 
-    private void writeConverted(String signature, String output, RankingExpression expression, Path modelPath) {
+    private TensorFlowModel importModel(Path modelPath) {
         try {
-            IOUtils.writeFile(expressionFile(modelPath, signature, output), expression.getRoot().toString(), false);
+            return tensorFlowImporter.importModel(new File(ApplicationPackage.MODELS_DIR.append(modelPath)
+                                                                                        .getRelative())
+                                                                                        .getCanonicalPath());
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private void writeConverted(Path modelPath, Optional<String> signatureArg, Optional<String> outputArg, RankingExpression expression) {
+        try {
+            IOUtils.writeFile(expressionFile(modelPath, signatureArg, outputArg), expression.getRoot().toString(), false);
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -242,11 +242,18 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         return c == '\'' || c == '"';
     }
 
-    private File expressionFile(Path modelPath, String signature, String output) {
+    private File expressionFile(Path modelPath, Optional<String> signatureArg, Optional<String> outputArg) {
         try {
+            StringBuilder fileName = new StringBuilder();
+            signatureArg.ifPresent(s -> fileName.append(s).append("."));
+            outputArg.ifPresent(s -> fileName.append(s).append("."));
+            if (fileName.length() == 0) // single signature and output
+                fileName.append("single.");
+            fileName.append("expression");
+
             return new File(ApplicationPackage.MODELS_GENERATED_DIR.append(modelPath)
                                                                    .append("expressions")
-                                                                   .append(signature + ". " + output + ".expression")
+                                                                   .append(fileName.toString())
                                                                    .getRelative())
                     .getCanonicalFile();
         }

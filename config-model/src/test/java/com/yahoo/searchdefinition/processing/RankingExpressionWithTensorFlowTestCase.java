@@ -34,6 +34,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     @After
     public void removeGeneratedConstantTensorFiles() {
         IOUtils.recursiveDeleteDir(new File(modelDirectory.substring(3), "constants"));
+        IOUtils.recursiveDeleteDir(new File(modelDirectory.substring(3), "expressions"));
     }
 
     @Test

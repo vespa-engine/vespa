@@ -3,6 +3,7 @@ package com.yahoo.path;
 
 import com.google.common.annotations.Beta;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -194,6 +195,8 @@ public final class Path {
     public static Path createRoot(String delimiter) {
         return new Path(delimiter);
     }
+
+    public File toFile() { return new File(toString()); }
 
     @Override
     public int hashCode() {
