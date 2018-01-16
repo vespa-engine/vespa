@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 
 
 /**
- * Stores results of caomparing node repo spec and actual hardware info.
+ * Stores results of comparing node repo spec and actual hardware info.
  * In case of divergent values, set the corresponding attribute to the actual hardware info value.
  * Attributes of equal value remain null.
  *
