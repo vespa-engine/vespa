@@ -18,7 +18,7 @@ struct IntReclaimer
 
 class MyStore : public DataStore<int, EntryRefT<3, 2> > {
 private:
-    typedef DataStore<int, EntryRefT<3, 2> > ParentType;
+    using ParentType = DataStore<int, EntryRefT<3, 2> >;
     using ParentType::_activeBufferIds;
 public:
     MyStore() {}
@@ -130,30 +130,11 @@ public:
     MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 };
 
-typedef MyStore::RefType MyRef;
-
-class Test : public vespalib::TestApp {
-private:
-    bool assertMemStats(const DataStoreBase::MemStats & exp,
-                        const DataStoreBase::MemStats & act);
-    void requireThatEntryRefIsWorking();
-    void requireThatAlignedEntryRefIsWorking();
-    void requireThatEntriesCanBeAddedAndRetrieved();
-    void requireThatAddEntryTriggersChangeOfBuffer();
-    void requireThatWeCanHoldAndTrimBuffers();
-    void requireThatWeCanHoldAndTrimElements();
-    void requireThatWeCanUseFreeLists();
-    void requireThatMemoryStatsAreCalculated();
-    void requireThatMemoryUsageIsCalculated();
-    void requireThatWecanDisableElemHoldList();
-    void requireThatBufferGrowthWorks();
-public:
-    int Main() override;
-};
+using MyRef = MyStore::RefType;
 
 bool
-Test::assertMemStats(const DataStoreBase::MemStats & exp,
-                     const DataStoreBase::MemStats & act)
+assertMemStats(const DataStoreBase::MemStats &exp,
+               const DataStoreBase::MemStats &act)
 {
     if (!EXPECT_EQUAL(exp._allocElems, act._allocElems)) return false;
     if (!EXPECT_EQUAL(exp._usedElems, act._usedElems)) return false;
@@ -165,10 +146,9 @@ Test::assertMemStats(const DataStoreBase::MemStats & exp,
     return true;
 }
 
-void
-Test::requireThatEntryRefIsWorking()
+TEST("require that entry ref is working")
 {
-    typedef EntryRefT<22> MyRefType;
+    using MyRefType = EntryRefT<22>;
     EXPECT_EQUAL(4194304u, MyRefType::offsetSize());
     EXPECT_EQUAL(1024u, MyRefType::numBuffers());
     {
@@ -194,10 +174,9 @@ Test::requireThatEntryRefIsWorking()
     }
 }
 
-void
-Test::requireThatAlignedEntryRefIsWorking()
+TEST("require that aligned entry ref is working")
 {
-    typedef AlignedEntryRefT<22, 2> MyRefType; // 4 byte alignement
+    using MyRefType = AlignedEntryRefT<22, 2>; // 4 byte alignement
     EXPECT_EQUAL(4 * 4194304u, MyRefType::offsetSize());
     EXPECT_EQUAL(1024u, MyRefType::numBuffers());
     EXPECT_EQUAL(0u, MyRefType::align(0));
@@ -223,10 +202,9 @@ Test::requireThatAlignedEntryRefIsWorking()
     }
 }
 
-void
-Test::requireThatEntriesCanBeAddedAndRetrieved()
+TEST("require that entries can be added and retrieved")
 {
-    typedef DataStore<int> IntStore;
+    using IntStore = DataStore<int>;
     IntStore ds;
     EntryRef r1 = ds.addEntry(10);
     EntryRef r2 = ds.addEntry(20);
@@ -242,10 +220,9 @@ Test::requireThatEntriesCanBeAddedAndRetrieved()
     EXPECT_EQUAL(30, ds.getEntry(r3));
 }
 
-void
-Test::requireThatAddEntryTriggersChangeOfBuffer()
+TEST("require that add entry triggers change of buffer")
 {
-    typedef DataStore<uint64_t, EntryRefT<10, 10> > Store;
+    using Store = DataStore<uint64_t, EntryRefT<10, 10> >;
     Store s;
     uint64_t num = 0;
     uint32_t lastId = 0;
@@ -269,8 +246,7 @@ Test::requireThatAddEntryTriggersChangeOfBuffer()
     LOG(info, "Added %" PRIu64 " nums in 2 buffers", num);
 }
 
-void
-Test::requireThatWeCanHoldAndTrimBuffers()
+TEST("require that we can hold and trim buffers")
 {
     MyStore s;
     EXPECT_EQUAL(0u, MyRef(s.addEntry(1)).bufferId());
@@ -315,8 +291,7 @@ Test::requireThatWeCanHoldAndTrimBuffers()
     EXPECT_TRUE(s.getBufferState(3).size() == 0);
 }
 
-void
-Test::requireThatWeCanHoldAndTrimElements()
+TEST("require that we can hold and trim elements")
 {
     MyStore s;
     MyRef r1 = s.addEntry(1);
@@ -347,8 +322,7 @@ toRef(Handle<int> handle)
     return MyRef(handle.ref);
 }
 
-void
-Test::requireThatWeCanUseFreeLists()
+TEST("require that we can use free lists")
 {
     MyStore s;
     s.enableFreeLists();
@@ -379,8 +353,7 @@ Test::requireThatWeCanUseFreeLists()
     EXPECT_EQUAL(6, s.getEntry(h6.ref));
 }
 
-void
-Test::requireThatMemoryStatsAreCalculated()
+TEST("require that memory stats are calculated")
 {
     MyStore s;
     DataStoreBase::MemStats m;
@@ -433,8 +406,7 @@ Test::requireThatMemoryStatsAreCalculated()
     EXPECT_TRUE(assertMemStats(m, s.getMemStats()));
 }
 
-void
-Test::requireThatMemoryUsageIsCalculated()
+TEST("require that memory usage is calculated")
 {
     MyStore s;
     MyRef r = s.addEntry(10);
@@ -452,9 +424,7 @@ Test::requireThatMemoryUsageIsCalculated()
     s.trimHoldLists(101);
 }
 
-
-void
-Test::requireThatWecanDisableElemHoldList()
+TEST("require that we can disable elemement hold list")
 {
     MyStore s;
     MyRef r1 = s.addEntry(10);
@@ -483,8 +453,7 @@ Test::requireThatWecanDisableElemHoldList()
     s.trimHoldLists(101);
 }
 
-namespace
-{
+namespace {
 
 void assertGrowStats(GrowthStats expSizes,
                      GrowthStats expFirstBufSizes,
@@ -497,8 +466,8 @@ void assertGrowStats(GrowthStats expSizes,
 }
 
 }
-void
-Test::requireThatBufferGrowthWorks()
+
+TEST("require that buffer growth works")
 {
     // Always switch to new buffer, min size 4
     TEST_DO(assertGrowStats({ 4, 8, 16, 32, 64, 64, 64, 64, 64 },
@@ -506,7 +475,7 @@ Test::requireThatBufferGrowthWorks()
     // Resize if buffer size is less than 4, min size 0
     TEST_DO(assertGrowStats({ 4, 8, 16, 32, 64, 64, 64, 64, 64 },
                             { 0, 1, 2, 4 }, 4, 0, 4));
-    // Alwais switch to new buffer, min size 16
+    // Always switch to new buffer, min size 16
     TEST_DO(assertGrowStats({ 16, 32, 64, 64, 64, 64, 64, 64, 64 },
                             { 16 }, 68, 16, 0));
     // Resize if buffer size is less than 16, min size 0
@@ -520,28 +489,8 @@ Test::requireThatBufferGrowthWorks()
                             { 0, 1 }, 4, 0, 0));
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("datastore_test");
-
-    requireThatEntryRefIsWorking();
-    requireThatAlignedEntryRefIsWorking();
-    requireThatEntriesCanBeAddedAndRetrieved();
-    requireThatAddEntryTriggersChangeOfBuffer();
-    requireThatWeCanHoldAndTrimBuffers();
-    requireThatWeCanHoldAndTrimElements();
-    requireThatWeCanUseFreeLists();
-    requireThatMemoryStatsAreCalculated();
-    requireThatMemoryUsageIsCalculated();
-    requireThatWecanDisableElemHoldList();
-    requireThatBufferGrowthWorks();
-
-    TEST_DONE();
-}
-
 }
 }
 
-TEST_APPHOOK(search::datastore::Test);
+TEST_MAIN() { TEST_RUN_ALL(); }
 
