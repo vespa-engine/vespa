@@ -84,7 +84,6 @@ class DataStore : public DataStoreT<RefT>
 protected:
     typedef DataStoreT<RefT> ParentType;
     using ParentType::ensureBufferCapacity;
-    // using ParentType::activeBuffer;
     using ParentType::_activeBufferIds;
     using ParentType::_freeListLists;
     using ParentType::getBufferEntry;
@@ -101,8 +100,10 @@ public:
     ~DataStore();
 
     EntryRef addEntry(const EntryType &e);
-    EntryRef addEntry2(const EntryType &e);
     const EntryType &getEntry(EntryRef ref) const;
+
+    template <typename ReclaimerT>
+    FreeListAllocator<EntryType, RefT, ReclaimerT> freeListAllocator();
 };
 
 extern template class DataStoreT<EntryRefT<22> >;

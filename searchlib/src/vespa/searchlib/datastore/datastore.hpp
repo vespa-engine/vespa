@@ -163,23 +163,6 @@ DataStore<EntryType, RefT>::addEntry(const EntryType &e)
 }
 
 template <typename EntryType, typename RefT>
-EntryRef
-DataStore<EntryType, RefT>::addEntry2(const EntryType &e)
-{
-    BufferState::FreeListList &freeListList = _freeListLists[0];
-    if (freeListList._head == NULL)
-        return addEntry(e);
-    BufferState &state = *freeListList._head;
-    assert(state.isActive());
-    RefType ref(state.popFreeList());
-    EntryType *be =
-        this->template
-        getBufferEntry<EntryType>(ref.bufferId(), ref.offset());
-    *be = e;
-    return ref;
-}
-
-template <typename EntryType, typename RefT>
 const EntryType &
 DataStore<EntryType, RefT>::getEntry(EntryRef ref) const
 {
@@ -188,6 +171,14 @@ DataStore<EntryType, RefT>::getEntry(EntryRef ref) const
         this->template
         getBufferEntry<EntryType>(intRef.bufferId(), intRef.offset());
     return *be;
+}
+
+template <typename EntryType, typename RefT>
+template <typename ReclaimerT>
+FreeListAllocator<EntryType, RefT, ReclaimerT>
+DataStore<EntryType, RefT>::freeListAllocator()
+{
+    return FreeListAllocator<EntryType, RefT, ReclaimerT>(*this, 0);
 }
 
 extern template class DataStoreT<EntryRefT<22> >;

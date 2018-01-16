@@ -11,6 +11,11 @@ LOG_SETUP("datastore_test");
 namespace search {
 namespace datastore {
 
+struct IntReclaimer
+{
+    static void reclaim(int *) {}
+};
+
 class MyStore : public DataStore<int, EntryRefT<3, 2> > {
 private:
     typedef DataStore<int, EntryRefT<3, 2> > ParentType;
@@ -336,35 +341,42 @@ Test::requireThatWeCanHoldAndTrimElements()
     EXPECT_EQUAL(0, s.getEntry(r3));
 }
 
+MyRef
+toRef(Handle<int> handle)
+{
+    return MyRef(handle.ref);
+}
+
 void
 Test::requireThatWeCanUseFreeLists()
 {
     MyStore s;
     s.enableFreeLists();
-    MyRef r1 = s.addEntry2(1);
-    s.holdElem(r1, 1);
+    auto allocator = s.freeListAllocator<IntReclaimer>();
+    auto h1 = allocator.alloc(1);
+    s.holdElem(h1.ref, 1);
     s.transferHoldLists(10);
-    MyRef r2 = s.addEntry2(2);
-    s.holdElem(r2, 1);
+    auto h2 = allocator.alloc(2);
+    s.holdElem(h2.ref, 1);
     s.transferHoldLists(20);
     s.trimElemHoldList(11);
-    MyRef r3 = s.addEntry2(3); // reuse r1
-    EXPECT_EQUAL(r1.offset(), r3.offset());
-    EXPECT_EQUAL(r1.bufferId(), r3.bufferId());
-    MyRef r4 = s.addEntry2(4);
-    EXPECT_EQUAL(r2.offset() + 1, r4.offset());
+    auto h3 = allocator.alloc(3); // reuse h1.ref
+    EXPECT_EQUAL(toRef(h1).offset(), toRef(h3).offset());
+    EXPECT_EQUAL(toRef(h1).bufferId(), toRef(h3).bufferId());
+    auto h4 = allocator.alloc(4);
+    EXPECT_EQUAL(toRef(h2).offset() + 1, toRef(h4).offset());
     s.trimElemHoldList(21);
-    MyRef r5 = s.addEntry2(5); // reuse r2
-    EXPECT_EQUAL(r2.offset(), r5.offset());
-    EXPECT_EQUAL(r2.bufferId(), r5.bufferId());
-    MyRef r6 = s.addEntry2(6);
-    EXPECT_EQUAL(r4.offset() + 1, r6.offset());
-    EXPECT_EQUAL(3, s.getEntry(r1));
-    EXPECT_EQUAL(5, s.getEntry(r2));
-    EXPECT_EQUAL(3, s.getEntry(r3));
-    EXPECT_EQUAL(4, s.getEntry(r4));
-    EXPECT_EQUAL(5, s.getEntry(r5));
-    EXPECT_EQUAL(6, s.getEntry(r6));
+    auto h5 = allocator.alloc(5); // reuse h2.ref
+    EXPECT_EQUAL(toRef(h2).offset(), toRef(h5).offset());
+    EXPECT_EQUAL(toRef(h2).bufferId(), toRef(h5).bufferId());
+    auto h6 = allocator.alloc(6);
+    EXPECT_EQUAL(toRef(h4).offset() + 1, toRef(h6).offset());
+    EXPECT_EQUAL(3, s.getEntry(h1.ref));
+    EXPECT_EQUAL(5, s.getEntry(h2.ref));
+    EXPECT_EQUAL(3, s.getEntry(h3.ref));
+    EXPECT_EQUAL(4, s.getEntry(h4.ref));
+    EXPECT_EQUAL(5, s.getEntry(h5.ref));
+    EXPECT_EQUAL(6, s.getEntry(h6.ref));
 }
 
 void
