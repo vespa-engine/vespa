@@ -3,15 +3,14 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
+import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotAuthorizedException;
@@ -19,6 +18,7 @@ import java.security.Principal;
 import java.util.Objects;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAthenzIdentities.SCREWDRIVER_DOMAIN;
 import static com.yahoo.vespa.hosted.controller.restapi.application.Authorizer.environmentRequiresAuthorization;
 
 /**
@@ -72,10 +72,10 @@ public class DeployAuthorizer {
         AthenzPrincipal athenzPrincipal = (AthenzPrincipal) principal;
         AthenzDomain principalDomain = athenzPrincipal.getDomain();
 
-        if (!principalDomain.equals(AthenzUtils.SCREWDRIVER_DOMAIN)) {
+        if (!principalDomain.equals(SCREWDRIVER_DOMAIN)) {
             throw loggedForbiddenException(
                     "Principal '%s' is not a Screwdriver principal. Excepted principal with Athenz domain '%s', got '%s'.",
-                    principal.getName(), AthenzUtils.SCREWDRIVER_DOMAIN.getName(), principalDomain.getName());
+                    principal.getName(), SCREWDRIVER_DOMAIN.getName(), principalDomain.getName());
         }
 
         // NOTE: no fine-grained deploy authorization for non-Athenz tenants

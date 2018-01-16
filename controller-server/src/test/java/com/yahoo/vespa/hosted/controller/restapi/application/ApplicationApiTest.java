@@ -5,13 +5,17 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
@@ -22,10 +26,6 @@ import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzService;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUser;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -750,8 +750,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
             }
             return data(out.toByteArray()).contentType(data.getContentType().getValue());
         }
-        private RequestBuilder userIdentity(UserId userId) { this.identity = AthenzUser.fromUserId(userId); return this; }
-        private RequestBuilder screwdriverIdentity(ScrewdriverId screwdriverId) { this.identity = AthenzService.fromScrewdriverId(screwdriverId); return this; }
+        private RequestBuilder userIdentity(UserId userId) { this.identity = HostedAthenzIdentities.from(userId); return this; }
+        private RequestBuilder screwdriverIdentity(ScrewdriverId screwdriverId) { this.identity = HostedAthenzIdentities.from(screwdriverId); return this; }
         private RequestBuilder contentType(String contentType) { this.contentType = contentType; return this; }
         private RequestBuilder recursive(String recursive) { this.recursive = recursive; return this; }
 
@@ -784,7 +784,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .getComponent(AthenzClientFactoryMock.class.getName());
         AthenzDbMock.Domain domainMock = new AthenzDbMock.Domain(domain);
         domainMock.markAsVespaTenant();
-        domainMock.admin(AthenzUser.fromUserId(userId));
+        domainMock.admin(AthenzUser.fromUserId(userId.id()));
         mock.getSetup().addDomain(domainMock);
     }
 
@@ -797,7 +797,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                 com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId applicationId) {
         AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
                 .getComponent(AthenzClientFactoryMock.class.getName());
-        AthenzIdentity screwdriverIdentity = AthenzService.fromScrewdriverId(screwdriverId);
+        AthenzIdentity screwdriverIdentity = HostedAthenzIdentities.from(screwdriverId);
         AthenzDbMock.Application athenzApplication = mock.getSetup().domains.get(domain).applications.get(applicationId);
         athenzApplication.addRoleMember(ApplicationAction.deploy, screwdriverIdentity);
     }

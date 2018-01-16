@@ -4,10 +4,10 @@ package com.yahoo.vespa.hosted.controller.athenz.filter;
 import com.yahoo.athenz.auth.token.PrincipalToken;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
+import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.InvalidTokenException;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsKeystore;
 
 import java.security.PublicKey;
@@ -15,7 +15,8 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils.ZMS_ATHENZ_SERVICE;
+import static com.yahoo.vespa.athenz.utils.AthenzIdentities.ZMS_ATHENZ_SERVICE;
+
 
 /**
  * Validates the content of an NToken:
@@ -24,6 +25,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUti
  *
  * @author bjorncs
  */
+// TODO Move to vespa-athenz
 class NTokenValidator {
 
         // Max allowed skew in token timestamp (only for creation, not expiry timestamp)
@@ -47,7 +49,7 @@ class NTokenValidator {
                 .orElseThrow(() -> new InvalidTokenException("NToken has an unknown keyId"));
         validateSignatureAndExpiration(principalToken, zmsPublicKey);
         return new AthenzPrincipal(
-                AthenzUtils.createAthenzIdentity(
+                AthenzIdentities.from(
                         new AthenzDomain(principalToken.getDomain()),
                         principalToken.getName()),
                 token);

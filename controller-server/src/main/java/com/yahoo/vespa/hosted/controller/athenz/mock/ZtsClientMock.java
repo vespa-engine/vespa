@@ -3,9 +3,9 @@ package com.yahoo.vespa.hosted.controller.athenz.mock;
 
 import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentityCertificate;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzRoleCertificate;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
+import com.yahoo.vespa.athenz.api.AthenzRoleCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZtsClient;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.operator.OperatorCreationException;

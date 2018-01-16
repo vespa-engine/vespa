@@ -1,8 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.api.integration.athenz;
-
-import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
+package com.yahoo.vespa.athenz.api;
 
 import java.util.Objects;
 
@@ -23,9 +20,6 @@ public class AthenzService implements AthenzIdentity {
         this(new AthenzDomain(domain), serviceName);
     }
 
-    public static AthenzService fromScrewdriverId(ScrewdriverId screwdriverId) {
-        return new AthenzService(AthenzUtils.SCREWDRIVER_DOMAIN, "sd" + screwdriverId.id());
-    }
 
     @Override
     public AthenzDomain getDomain() {

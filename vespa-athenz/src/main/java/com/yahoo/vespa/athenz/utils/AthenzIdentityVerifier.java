@@ -1,5 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.api.integration.athenz;
+package com.yahoo.vespa.athenz.utils;
+
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -14,7 +16,6 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
-// TODO Move to dedicated Athenz bundle
 public class AthenzIdentityVerifier implements HostnameVerifier {
 
     private static final Logger log = Logger.getLogger(AthenzIdentityVerifier.class.getName());
@@ -29,7 +30,7 @@ public class AthenzIdentityVerifier implements HostnameVerifier {
     public boolean verify(String hostname, SSLSession session) {
         try {
             X509Certificate cert = (X509Certificate) session.getPeerCertificates()[0];
-            return isTrusted(AthenzUtils.createAthenzIdentity(cert));
+            return isTrusted(AthenzIdentities.from(cert));
         } catch (SSLPeerUnverifiedException e) {
             log.log(Level.WARNING, "Unverified client: " + hostname);
             return false;

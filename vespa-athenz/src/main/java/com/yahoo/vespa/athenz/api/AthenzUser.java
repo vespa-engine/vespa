@@ -1,8 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.api.integration.athenz;
+package com.yahoo.vespa.athenz.api;
 
-import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 
 import java.util.Objects;
 
@@ -10,27 +9,23 @@ import java.util.Objects;
  * @author bjorncs
  */
 public class AthenzUser implements AthenzIdentity {
-    private final UserId userId;
+    private final String userId;
 
-    public AthenzUser(UserId userId) {
+    public AthenzUser(String userId) {
         this.userId = userId;
     }
 
-    public static AthenzUser fromUserId(UserId userId) {
+    public static AthenzUser fromUserId(String userId) {
         return new AthenzUser(userId);
     }
 
     @Override
     public AthenzDomain getDomain() {
-        return AthenzUtils.USER_PRINCIPAL_DOMAIN;
+        return AthenzIdentities.USER_PRINCIPAL_DOMAIN;
     }
 
     @Override
     public String getName() {
-        return userId.id();
-    }
-
-    public UserId getUserId() {
         return userId;
     }
 

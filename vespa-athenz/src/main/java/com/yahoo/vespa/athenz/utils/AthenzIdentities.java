@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.api.integration.athenz;
+package com.yahoo.vespa.athenz.utils;
 
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.api.AthenzUser;
 
 import javax.naming.NamingException;
 import javax.naming.ldap.LdapName;
@@ -11,23 +13,22 @@ import java.security.cert.X509Certificate;
 /**
  * @author bjorncs
  */
-public class AthenzUtils {
+public class AthenzIdentities {
 
-    private AthenzUtils() {}
+    private AthenzIdentities() {}
 
     public static final AthenzDomain USER_PRINCIPAL_DOMAIN = new AthenzDomain("user");
-    public static final AthenzDomain SCREWDRIVER_DOMAIN = new AthenzDomain("cd.screwdriver.project");
     public static final AthenzService ZMS_ATHENZ_SERVICE = new AthenzService("sys.auth", "zms");
 
-    public static AthenzIdentity createAthenzIdentity(AthenzDomain domain, String identityName) {
+    public static AthenzIdentity from(AthenzDomain domain, String identityName) {
         if (domain.equals(USER_PRINCIPAL_DOMAIN)) {
-            return AthenzUser.fromUserId(new UserId(identityName));
+            return AthenzUser.fromUserId(identityName);
         } else {
             return new AthenzService(domain, identityName);
         }
     }
 
-    public static AthenzIdentity createAthenzIdentity(String fullName) {
+    public static AthenzIdentity from(String fullName) {
         int domainIdentityNameSeparatorIndex = fullName.lastIndexOf('.');
         if (domainIdentityNameSeparatorIndex == -1
                 || domainIdentityNameSeparatorIndex == 0
@@ -36,15 +37,15 @@ public class AthenzUtils {
         }
         AthenzDomain domain = new AthenzDomain(fullName.substring(0, domainIdentityNameSeparatorIndex));
         String identityName = fullName.substring(domainIdentityNameSeparatorIndex + 1, fullName.length());
-        return createAthenzIdentity(domain, identityName);
+        return from(domain, identityName);
     }
 
-    public static AthenzIdentity createAthenzIdentity(X509Certificate certificate) {
+    public static AthenzIdentity from(X509Certificate certificate) {
         String commonName = getCommonName(certificate);
         if (isAthenzRoleIdentity(commonName)) {
             throw new IllegalArgumentException("Athenz role certificate not supported");
         }
-        return createAthenzIdentity(commonName);
+        return from(commonName);
     }
 
     private static boolean isAthenzRoleIdentity(String commonName) {

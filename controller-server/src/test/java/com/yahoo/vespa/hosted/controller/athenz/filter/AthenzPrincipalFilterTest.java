@@ -6,12 +6,11 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ReadableContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUser;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
+import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.InvalidTokenException;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
@@ -55,7 +54,7 @@ public class AthenzPrincipalFilterTest {
 
     private static final NToken NTOKEN = new NToken("dummy");
     private static final String ATHENZ_PRINCIPAL_HEADER = "Athenz-Principal-Auth";
-    private static final AthenzIdentity IDENTITY = AthenzUser.fromUserId(new UserId("bob"));
+    private static final AthenzIdentity IDENTITY = AthenzUser.fromUserId("bob");
     private static final X509Certificate CERTIFICATE = createSelfSignedCertificate(IDENTITY);
 
     private NTokenValidator validator;
@@ -140,7 +139,7 @@ public class AthenzPrincipalFilterTest {
     @Test
     public void conflicting_ntoken_and_certificate_is_unauthorized() {
         DiscFilterRequest request = mock(DiscFilterRequest.class);
-        AthenzUser conflictingIdentity = AthenzUser.fromUserId(new UserId("mallory"));
+        AthenzUser conflictingIdentity = AthenzUser.fromUserId("mallory");
         when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(NTOKEN.getRawToken());
         when(request.getAttribute("jdisc.request.X509Certificate"))
                 .thenReturn(new X509Certificate[]{createSelfSignedCertificate(conflictingIdentity)});

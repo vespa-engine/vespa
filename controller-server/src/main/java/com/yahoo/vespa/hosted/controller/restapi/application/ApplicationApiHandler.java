@@ -64,10 +64,10 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUser;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
+import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
@@ -875,7 +875,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .map(AthenzPrincipal::getIdentity)
                 .filter(AthenzUser.class::isInstance)
                 .map(AthenzUser.class::cast)
-                .map(AthenzUser::getUserId);
+                .map(AthenzUser::getName)
+                .map(UserId::new);
     }
 
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request, boolean listApplications) {
@@ -991,9 +992,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             throw new ForbiddenException("Identity not an user: " + identity.getFullName());
         }
         AthenzUser user = (AthenzUser) identity;
-        if (!authorizer.isSuperUser(request) && !authorizer.isGroupMember(user.getUserId(), userGroup) ) {
+        if (!authorizer.isSuperUser(request) && !authorizer.isGroupMember(new UserId(user.getName()), userGroup) ) {
             throw new ForbiddenException(String.format("User '%s' is not super user or part of the OpsDB user group '%s'",
-                                                       user.getUserId().id(), userGroup.id()));
+                                                       user.getName(), userGroup.id()));
         }
     }
 

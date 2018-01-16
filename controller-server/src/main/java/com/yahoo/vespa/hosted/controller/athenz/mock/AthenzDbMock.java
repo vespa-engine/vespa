@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.athenz.mock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 
 import java.util.HashMap;
 import java.util.HashSet;

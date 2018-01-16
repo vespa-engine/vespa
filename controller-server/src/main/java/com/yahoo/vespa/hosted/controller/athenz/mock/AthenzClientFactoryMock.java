@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.athenz.mock;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
+import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZtsClient;

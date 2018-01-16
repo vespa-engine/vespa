@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.RegionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
+import com.yahoo.vespa.athenz.api.NToken;
 
 /**
  * @author Tony Vaagenes
