@@ -135,7 +135,7 @@ public interface ApplicationPackage {
      */
     List<NamedReader> getFiles(Path pathFromRoot, String suffix, boolean recurse);
 
-    /** Same as getFiles(pathFromRoot,suffix,false) */
+    /** Same as getFiles(pathFromRoot, suffix, false) */
     default List<NamedReader> getFiles(Path pathFromRoot, String suffix) {
         return getFiles(pathFromRoot,suffix,false);
     }

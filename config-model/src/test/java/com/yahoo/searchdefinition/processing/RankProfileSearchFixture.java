@@ -1,5 +1,7 @@
 package com.yahoo.searchdefinition.processing;
 
+import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
@@ -22,7 +24,11 @@ class RankProfileSearchFixture {
     private Search search;
 
     RankProfileSearchFixture(String rankProfiles) throws ParseException {
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        this(MockApplicationPackage.createEmpty(), rankProfiles);
+    }
+
+    RankProfileSearchFixture(ApplicationPackage applicationpackage, String rankProfiles) throws ParseException {
+        SearchBuilder builder = new SearchBuilder(applicationpackage, rankProfileRegistry);
         String sdContent = "search test {\n" +
                            "  document test {\n" +
                            "  }\n" +

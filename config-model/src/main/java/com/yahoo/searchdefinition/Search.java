@@ -267,6 +267,8 @@ public class Search implements Serializable, ImmutableSearch {
         return sourceApplication.getRankingExpression(fileName);
     }
 
+    public ApplicationPackage sourceApplication() { return sourceApplication; }
+
     /**
      * Returns a field defined in this search definition or one if its documents. Fields in this search definition takes
      * precedence over document fields having the same name

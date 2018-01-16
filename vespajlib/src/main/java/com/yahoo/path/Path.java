@@ -8,12 +8,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-// TODO: Remove and replace usage by java.nio.file.Path
-
 /**
  * Represents a path represented by a list of elements. Immutable
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 @Beta
 public final class Path {

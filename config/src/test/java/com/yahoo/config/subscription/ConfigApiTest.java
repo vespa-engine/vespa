@@ -12,10 +12,10 @@ import static org.hamcrest.CoreMatchers.is;
 /**
  * Tests ConfigSubscriber API, and the ConfigHandle class.
  *
- * @author <a href="gv@yahoo-inc.com">Harald Musum</a>
- * @since 5.1
+ * @author Harald Musum
  */
 public class ConfigApiTest {
+
     private static final String CONFIG_ID = "raw:" + "times 1\n";
 
     @Test

@@ -41,7 +41,7 @@ import java.util.Optional;
 public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
     // TODO: Make system test work with this set to true, then remove the "true" path
-    private static final boolean constantsInConfig = false;
+    private static final boolean constantsInConfig = true;
 
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
 
@@ -62,47 +62,35 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         if ( ! feature.getName().equals("tensorflow")) return feature;
 
         try {
-            FeatureArguments arguments = new FeatureArguments(feature.getArguments());
-            if (arguments.modelDir().exists())
-                return transformFromTensorFlowModel(arguments, context.rankProfile());
-            else
-                return transformFromStoredConvertedModel(arguments);
+            ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(),
+                                                   feature.getArguments());
+            if (store.hasTensorFlowModels())
+                return transformFromTensorFlowModel(store, context.rankProfile());
+            else // is should have previously stored model information instead
+                return store.readConverted().getRoot();
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use tensorflow model from " + feature, e);
         }
     }
 
-    private ExpressionNode transformFromTensorFlowModel(FeatureArguments arguments, RankProfile rankProfile) {
-        TensorFlowModel model = importedModels.computeIfAbsent(arguments.modelPath(),
-                                                               k -> tensorFlowImporter.importModel(arguments.modelDir().toString()));
+    private ExpressionNode transformFromTensorFlowModel(ModelStore store, RankProfile rankProfile) {
+        TensorFlowModel model = importedModels.computeIfAbsent(store.arguments().modelPath(),
+                                                               k -> tensorFlowImporter.importModel(store.tensorFlowModelDir()));
 
         // Find the specified expression
-        Signature signature = chooseSignature(model, arguments.signature());
-        String output = chooseOutput(signature, arguments.output());
+        Signature signature = chooseSignature(model, store.arguments().signature());
+        String output = chooseOutput(signature, store.arguments().output());
         RankingExpression expression = model.expressions().get(output);
-        writeConverted(arguments, expression);
+        store.writeConverted(expression);
 
-        // Add all constants (after finding outputs to fail faster when the output is not found)
+        // Add all constants (after finding outputs to fail faster when the output is not found) TODO: Remove the first path
         if (constantsInConfig)
             model.constants().forEach((k, v) -> rankProfile.addConstantTensor(k, new TensorValue(v)));
         else // correct way, disabled for now
-            model.constants().forEach((k, v) -> transformConstant(arguments, rankProfile, k, v));
+            model.constants().forEach((k, v) -> transformConstant(store, rankProfile, k, v));
 
         return expression.getRoot();
-    }
-
-    private ExpressionNode transformFromStoredConvertedModel(FeatureArguments arguments) {
-        File expressionFile = null;
-        try {
-            return new RankingExpression(IOUtils.readFile(arguments.expressionFile())).getRoot();
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException("Could not read " + expressionFile, e);
-        }
-        catch (ParseException e) {
-            throw new IllegalStateException("Could not parse " + expressionFile, e);
-        }
     }
 
     /**
@@ -158,31 +146,12 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         }
     }
 
-    private void writeConverted(FeatureArguments arguments, RankingExpression expression) {
-        try {
-            IOUtils.writeFile(arguments.expressionFile(), expression.getRoot().toString(), false);
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
+    private void transformConstant(ModelStore store, RankProfile profile, String constantName, Tensor constantValue) {
+        if (profile.getSearch().getRankingConstants().containsKey(constantName)) return;
 
-    private void transformConstant(FeatureArguments arguments, RankProfile profile, String constantName, Tensor constantValue) {
-        try {
-            if (profile.getSearch().getRankingConstants().containsKey(constantName)) return;
-
-            if ( ! arguments.constantsDir().exists())
-                if ( ! arguments.constantsDir().mkdir())
-                    throw new IOException("Could not create directory " + arguments.constantsDir());
-
-            // "tbf" ending for "typed binary format" - recognized by the nodes receiving the file:
-            File constantFile = new File(arguments.constantsDir(), constantName + ".tbf");
-            IOUtils.writeFile(constantFile, TypedBinaryFormat.encode(constantValue));
-            profile.getSearch().addRankingConstant(new RankingConstant(constantName, constantValue.type(), constantFile.getPath()));
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        Path constantPath = store.writeConstant(constantName, constantValue);
+        profile.getSearch().addRankingConstant(new RankingConstant(constantName, constantValue.type(),
+                                                                   constantPath.toString()));
     }
 
     private String skippedOutputsDescription(TensorFlowModel.Signature signature) {
@@ -190,6 +159,98 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         StringBuilder b = new StringBuilder(": ");
         signature.skippedOutputs().forEach((k, v) -> b.append("Skipping output '").append(k).append("': ").append(v));
         return b.toString();
+    }
+
+    /**
+     * Provides read/write access to the correct directories of the application package given by the feature arguments
+     */
+    private static class ModelStore {
+
+        private final ApplicationPackage application;
+        private final FeatureArguments arguments;
+
+        public ModelStore(ApplicationPackage application, Arguments arguments) {
+            this.application = application;
+            this.arguments = new FeatureArguments(arguments);
+        }
+
+        public FeatureArguments arguments() { return arguments; }
+
+        public boolean hasTensorFlowModels() {
+            try {
+                return application.getFileReference(ApplicationPackage.MODELS_DIR).exists();
+            }
+            catch (UnsupportedOperationException e) {
+                return false; // No files -> no TensorFlow models
+            }
+        }
+
+        /**
+         * Returns the directory which (if hasTensorFlowModels is true)
+         * contains the source model to use for these arguments
+         */
+        public File tensorFlowModelDir() {
+            return application.getFileReference(ApplicationPackage.MODELS_DIR.append(arguments.modelPath()));
+        }
+
+        /**
+         * Adds this expression to the application package, such that it can be read later.
+         */
+        public void writeConverted(RankingExpression expression) {
+            try {
+                // We don't really need to store this as a file - we could keep it in memory in the application
+                // package until we write it to ZooKeeper. However, we need to write constants to the models_generated
+                // directory in any case (as they are distributed over file distribution),
+                // so we just reuse the same mechanism for expressions
+                Path expressionsPath = ApplicationPackage.MODELS_GENERATED_DIR.append(arguments.modelPath).append("expressions");
+                createIfNeeded(expressionsPath);
+                IOUtils.writeFile(application.getFileReference(expressionsPath.append(arguments.expressionFileName())),
+                                  expression.getRoot().toString(), false);
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        /** Reads the previously stored ranking expression for these arguments */
+        public RankingExpression readConverted() {
+            // TODO: ZK integrate
+            Path expressionPath = ApplicationPackage.MODELS_GENERATED_DIR.append(arguments.modelPath).append("expressions").append(arguments.expressionFileName());
+            try {
+                return new RankingExpression(IOUtils.readFile(application.getFileReference(expressionPath)));
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException("Could not read " + expressionPath, e);
+            }
+            catch (ParseException e) {
+                throw new IllegalStateException("Could not parse " + expressionPath, e);
+            }
+        }
+
+        /**
+         * Adds this constant to the application package as a file,
+         * such that it can be distributed using file distribution.
+         *
+         * @return the path to the stored constant, relative to the application package root
+         */
+        public Path writeConstant(String name, Tensor constant) {
+            Path constantsPath = ApplicationPackage.MODELS_GENERATED_DIR.append(arguments.modelPath).append("constants");
+            createIfNeeded(constantsPath);
+
+            // "tbf" ending for "typed binary format" - recognized by the nodes receiving the file:
+            Path constantPath = constantsPath.append(name + ".tbf");
+            IOUtils.writeFile(application.getFileReference(constantPath), TypedBinaryFormat.encode(constant));
+            return constantPath;
+        }
+
+        private void createIfNeeded(Path path) {
+            File dir = application.getFileReference(path);
+            if ( ! dir.exists()) {
+                if (!dir.mkdirs())
+                    throw new IllegalStateException("Could not create " + dir);
+            }
+        }
+
     }
 
     /** Encapsulates the 1, 2 or 3 arguments to a tensorflow feature */
@@ -231,24 +292,14 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             }
         }
 
-        public File expressionFile() {
-            try {
-                StringBuilder fileName = new StringBuilder();
-                signature.ifPresent(s -> fileName.append(s).append("."));
-                output.ifPresent(s -> fileName.append(s).append("."));
-                if (fileName.length() == 0) // single signature and output
-                    fileName.append("single.");
-                fileName.append("expression");
-
-                return new File(ApplicationPackage.MODELS_GENERATED_DIR.append(modelPath)
-                                        .append("expressions")
-                                        .append(fileName.toString())
-                                        .getRelative())
-                        .getCanonicalFile();
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+        public String expressionFileName() {
+            StringBuilder fileName = new StringBuilder();
+            signature.ifPresent(s -> fileName.append(s).append("."));
+            output.ifPresent(s -> fileName.append(s).append("."));
+            if (fileName.length() == 0) // single signature and output
+                fileName.append("single.");
+            fileName.append("expression");
+            return fileName.toString();
         }
 
         public File constantsDir() {

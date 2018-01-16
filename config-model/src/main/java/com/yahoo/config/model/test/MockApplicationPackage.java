@@ -37,8 +37,8 @@ public class MockApplicationPackage implements ApplicationPackage {
     private final Optional<String> validationOverrides;
     private final boolean failOnValidateXml;
 
-    private MockApplicationPackage(String hosts, String services, List<String> searchDefinitions, String searchDefinitionDir,
-                                   String deploymentSpec, String validationOverrides, boolean failOnValidateXml) {
+    protected MockApplicationPackage(String hosts, String services, List<String> searchDefinitions, String searchDefinitionDir,
+                                     String deploymentSpec, String validationOverrides, boolean failOnValidateXml) {
         this.hostsS = hosts;
         this.servicesS = services;
         this.searchDefinitions = searchDefinitions;

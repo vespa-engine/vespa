@@ -55,7 +55,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * Construct using {@link com.yahoo.config.model.application.provider.FilesApplicationPackage#fromFile(java.io.File)} or
  * {@link com.yahoo.config.model.application.provider.FilesApplicationPackage#fromFileWithDeployData(java.io.File, DeployData)}.
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public class FilesApplicationPackage implements ApplicationPackage {
 
@@ -97,15 +97,15 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     /** Creates package from a local directory, typically deploy app   */
-    public static FilesApplicationPackage fromFileWithDeployData(File appDir, DeployData deployData, 
+    public static FilesApplicationPackage fromFileWithDeployData(File appDir, DeployData deployData,
                                                                  boolean includeSourceFiles) {
         return new Builder(appDir).includeSourceFiles(includeSourceFiles).deployData(deployData).build();
     }
 
     private static ApplicationMetaData metaDataFromDeployData(File appDir, DeployData deployData) {
-        return new ApplicationMetaData(deployData.getDeployedByUser(), deployData.getDeployedFromDir(), 
-                                       deployData.getDeployTimestamp(), deployData.getApplicationName(), 
-                                       computeCheckSum(appDir), deployData.getGeneration(), 
+        return new ApplicationMetaData(deployData.getDeployedByUser(), deployData.getDeployedFromDir(),
+                                       deployData.getDeployTimestamp(), deployData.getApplicationName(),
+                                       computeCheckSum(appDir), deployData.getGeneration(),
                                        deployData.getCurrentlyActiveGeneration());
     }
 
@@ -385,9 +385,9 @@ public class FilesApplicationPackage implements ApplicationPackage {
         }
 	}
 
-    /** 
+    /**
      * Creates a reader for a config definition
-     * 
+     *
      * @param defPath the path to the application package
      * @return the reader of this config definition
      */
@@ -456,10 +456,10 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
             if (defs.containsKey(key)) {
                 if (nv[0].contains(".")) {
-                    log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key + 
+                    log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key +
                                            ". The file '" + def + "' will take precedence");
                 } else {
-                    log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key + 
+                    log.log(LogLevel.INFO, "Two config definitions found for the same name and namespace: " + key +
                                            ". Skipping '" + def + "', as it does not contain namespace in filename");
                     continue; // skip
                 }
@@ -704,7 +704,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         }
 
     }
-    
+
     /**
      * Adds the given path to the digest, or does nothing if path is neither file nor dir
      * @param path path to add to message digest

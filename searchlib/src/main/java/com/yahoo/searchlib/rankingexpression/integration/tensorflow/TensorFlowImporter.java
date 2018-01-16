@@ -14,6 +14,7 @@ import org.tensorflow.framework.SignatureDef;
 import org.tensorflow.framework.TensorInfo;
 import org.tensorflow.framework.TensorShapeProto;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ public class TensorFlowImporter {
 
     /**
      * Imports a saved TensorFlow model from a directory.
-     * The model should be saved as a pbtxt file.
+     * The model should be saved as a .pbtxt or .pb file.
      * The name of the model is taken as the db/pbtxt file name (not including the file ending).
      *
      * @param modelDir the directory containing the TensorFlow model files to import
@@ -42,6 +43,10 @@ public class TensorFlowImporter {
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Could not import TensorFlow model from directory '" + modelDir + "'", e);
         }
+    }
+
+    public TensorFlowModel importModel(File modelDir) {
+        return importModel(modelDir.toString());
     }
 
     /** Imports a TensorFlow model */
