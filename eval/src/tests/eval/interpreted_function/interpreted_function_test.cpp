@@ -180,7 +180,7 @@ struct InnerProduct {
         InterpretedFunction::Context ctx(interpreted);
         Value::UP va = engine.from_spec(a);
         Value::UP vb = engine.from_spec(b);
-        InterpretedFunction::SimpleObjectParams params({*va,*vb});
+        SimpleObjectParams params({*va,*vb});
         const Value &result = interpreted.eval(ctx, params);
         EXPECT_EQUAL(engine.to_spec(result), expect);
     }

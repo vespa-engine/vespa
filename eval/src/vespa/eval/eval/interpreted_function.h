@@ -39,16 +39,6 @@ public:
         ~SimpleParams();
         const Value &resolve(size_t idx, Stash &stash) const override;
     };
-    /**
-     * Simple wrapper for object parameters that are known up
-     * front. Intended for convenience (testing), not performance.
-     **/
-    struct SimpleObjectParams : LazyParams {
-        std::vector<Value::CREF> params;
-        explicit SimpleObjectParams(const std::vector<Value::CREF> &params_in) : params(params_in) {}
-        ~SimpleObjectParams();
-        const Value &resolve(size_t idx, Stash &stash) const override;
-    };
     struct State {
         const TensorEngine      &engine;
         const LazyParams        *params;

@@ -34,8 +34,8 @@ void verify_equal(const Value &expect, const Value &value) {
     EXPECT_EQUAL(expect_spec, value_spec);
 }
 
-std::vector<eval::Value::CREF> wrap(std::vector<eval::Value::CREF> params) {
-    return std::move(params);
+SimpleObjectParams wrap(std::vector<eval::Value::CREF> params) {
+    return SimpleObjectParams(params);
 }
 
 void verify_result(const TensorSpec &v, const TensorSpec &m, bool happy) {

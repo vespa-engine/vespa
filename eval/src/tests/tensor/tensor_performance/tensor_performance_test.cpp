@@ -33,9 +33,9 @@ struct Params {
     }
 };
 
-InterpretedFunction::SimpleObjectParams make_params(const Function &function, const Params &params)
+SimpleObjectParams make_params(const Function &function, const Params &params)
 {
-    InterpretedFunction::SimpleObjectParams fun_params({});
+    SimpleObjectParams fun_params({});
     EXPECT_EQUAL(params.map.size(), function.num_params());
     for (size_t i = 0; i < function.num_params(); ++i) {
         auto param = params.map.find(function.param_name(i));

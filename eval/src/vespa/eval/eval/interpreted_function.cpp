@@ -111,27 +111,9 @@ void op_tensor_concat(State &state, uint64_t param) {
 
 //-----------------------------------------------------------------------------
 
-template <typename T>
-const T &undef_cref() {
-    const T *undef = nullptr;
-    assert(undef);
-    return *undef;
-}
-
-struct TensorFunctionArgArgMeta {
-    const TensorFunction &function;
-    size_t param1;
-    size_t param2;
-    TensorFunctionArgArgMeta(const TensorFunction &function_in, size_t param1_in, size_t param2_in)
-        : function(function_in), param1(param1_in), param2(param2_in) {}
-};
-
-void op_tensor_function_arg_arg(State &state, uint64_t param) {
-    const TensorFunctionArgArgMeta &meta = unwrap_param<TensorFunctionArgArgMeta>(param);
-    Value::CREF params[2] =
-        {state.params->resolve(meta.param1, state.stash),
-         state.params->resolve(meta.param2, state.stash)};
-    state.stack.push_back(meta.function.eval(ConstArrayRef<Value::CREF>(params, 2), state.stash));
+void op_tensor_function(State &state, uint64_t param) {
+    const TensorFunction &fun = unwrap_param<TensorFunction>(param);
+    state.stack.push_back(fun.eval(*state.params, state.stash));
 }
 
 //-----------------------------------------------------------------------------
@@ -279,12 +261,11 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
             auto a = as<Symbol>(node.get_child(0).get_child(0));
             auto b = as<Symbol>(node.get_child(0).get_child(1));
             const auto &ir = tensor_function::reduce(tensor_function::join(
-                            tensor_function::inject(types.get_type(*a), 0, stash),
-                            tensor_function::inject(types.get_type(*b), 1, stash),
+                            tensor_function::inject(types.get_type(*a), a->id(), stash),
+                            tensor_function::inject(types.get_type(*b), b->id(), stash),
                             operation::Mul::f, stash), node.aggr(), node.dimensions(), stash);
             const auto &fun = tensor_engine.compile(ir, stash);
-            const auto &meta = stash.create<TensorFunctionArgArgMeta>(fun, a->id(), b->id());
-            program.emplace_back(op_tensor_function_arg_arg, wrap_param<TensorFunctionArgArgMeta>(meta));
+            program.emplace_back(op_tensor_function, wrap_param<TensorFunction>(fun));
         } else {
             ReduceParams &params = stash.create<ReduceParams>(node.aggr(), node.dimensions());
             program.emplace_back(op_tensor_reduce, wrap_param<ReduceParams>(params));
@@ -475,20 +456,11 @@ InterpretedFunction::SimpleParams::SimpleParams(const std::vector<double> &param
 
 InterpretedFunction::SimpleParams::~SimpleParams() { }
 
-InterpretedFunction::SimpleObjectParams::~SimpleObjectParams() {}
-
 const Value &
 InterpretedFunction::SimpleParams::resolve(size_t idx, Stash &stash) const
 {
     assert(idx < params.size());
     return stash.create<DoubleValue>(params[idx]);
-}
-
-const Value &
-InterpretedFunction::SimpleObjectParams::resolve(size_t idx, Stash &) const
-{
-    assert(idx < params.size());
-    return params[idx];
 }
 
 InterpretedFunction::State::State(const TensorEngine &engine_in)

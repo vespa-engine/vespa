@@ -23,9 +23,9 @@ const TensorEngine &infer_engine(const std::initializer_list<Value::CREF> &value
 //-----------------------------------------------------------------------------
 
 const Value &
-Inject::eval(ConstArrayRef<Value::CREF> params, Stash &) const
+Inject::eval(const LazyParams &params, Stash &stash) const
 {
-    return params[tensor_id];
+    return params.resolve(tensor_id, stash);
 }
 
 void
@@ -36,7 +36,7 @@ Inject::push_children(std::vector<Child::CREF> &) const
 //-----------------------------------------------------------------------------
 
 const Value &
-Reduce::eval(ConstArrayRef<Value::CREF> params, Stash &stash) const 
+Reduce::eval(const LazyParams &params, Stash &stash) const
 {
     const Value &a = tensor.get().eval(params, stash);
     const TensorEngine &engine = infer_engine({a});
@@ -52,7 +52,7 @@ Reduce::push_children(std::vector<Child::CREF> &children) const
 //-----------------------------------------------------------------------------
 
 const Value &
-Map::eval(ConstArrayRef<Value::CREF> params, Stash &stash) const
+Map::eval(const LazyParams &params, Stash &stash) const
 {
     const Value &a = tensor.get().eval(params, stash);
     const TensorEngine &engine = infer_engine({a});
@@ -68,7 +68,7 @@ Map::push_children(std::vector<Child::CREF> &children) const
 //-----------------------------------------------------------------------------
 
 const Value &
-Join::eval(ConstArrayRef<Value::CREF> params, Stash &stash) const
+Join::eval(const LazyParams &params, Stash &stash) const
 {
     const Value &a = lhs_tensor.get().eval(params, stash);
     const Value &b = rhs_tensor.get().eval(params, stash);

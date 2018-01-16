@@ -29,10 +29,10 @@ getCellsRef(const eval::Value &value)
 }
 
 const eval::Value &
-DenseDotProductFunction::eval(ConstArrayRef<eval::Value::CREF> params, Stash &stash) const
+DenseDotProductFunction::eval(const eval::LazyParams &params, Stash &stash) const
 {
-    DenseTensorView::CellsRef lhsCells = getCellsRef(params[_lhsTensorId]);
-    DenseTensorView::CellsRef rhsCells = getCellsRef(params[_rhsTensorId]);
+    DenseTensorView::CellsRef lhsCells = getCellsRef(params.resolve(_lhsTensorId, stash));
+    DenseTensorView::CellsRef rhsCells = getCellsRef(params.resolve(_rhsTensorId, stash));
     size_t numCells = std::min(lhsCells.size(), rhsCells.size());
     double result = _hwAccelerator->dotProduct(lhsCells.cbegin(), rhsCells.cbegin(), numCells);
     return stash.create<eval::DoubleValue>(result);
