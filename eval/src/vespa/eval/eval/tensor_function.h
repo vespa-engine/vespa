@@ -70,15 +70,36 @@ using join_fun_t = double (*)(double, double);
  * will invoke the immediate API on the tensor engine associated with
  * the input tensors. In other words, the intermediate representation
  * 'compiles to itself'.
+ *
+ * The reason for using the top-level TensorFunction interface when
+ * referencing downwards in the tree is to enable mixed-mode execution
+ * resulting from partial optimization where the intermediate
+ * representation is partially replaced by implementation-specific
+ * tensor functions, which may or may not rely on lower-level tensor
+ * functions that may in turn be mixed-mode.
  **/
 struct Node : public TensorFunction
 {
+    /**
+     * Reference to a sub-tree. References are replaceable to enable
+     * in-place bottom-up optimization during compilation.
+     **/
+    class Child {
+    private:
+        mutable const TensorFunction *ptr;
+    public:
+        using CREF = std::reference_wrapper<const Child>;
+        Child(const TensorFunction &child) : ptr(&child) {}
+        const TensorFunction &get() const { return *ptr; }
+        void set(const TensorFunction &child) const { ptr = &child; }
+    };
     const ValueType result_type;
     Node(const ValueType &result_type_in) : result_type(result_type_in) {}
     Node(const Node &) = delete;
     Node &operator=(const Node &) = delete;
     Node(Node &&) = delete;
     Node &operator=(Node &&) = delete;
+    virtual void push_children(std::vector<Child::CREF> &children) const = 0;
 };
 
 struct Inject : Node {
@@ -87,41 +108,45 @@ struct Inject : Node {
            size_t tensor_id_in)
         : Node(result_type_in), tensor_id(tensor_id_in) {}
     const Value &eval(ConstArrayRef<Value::CREF> params, Stash &) const override;
+    void push_children(std::vector<Child::CREF> &children) const override;
 };
 
 struct Reduce : Node {
-    const Node &tensor;
+    Child tensor;
     const Aggr aggr;
     const std::vector<vespalib::string> dimensions;
     Reduce(const ValueType &result_type_in,
-           const Node &tensor_in,
+           const TensorFunction &tensor_in,
            Aggr aggr_in,
            const std::vector<vespalib::string> &dimensions_in)
         : Node(result_type_in), tensor(tensor_in), aggr(aggr_in), dimensions(dimensions_in) {}
     const Value &eval(ConstArrayRef<Value::CREF> params, Stash &stash) const override;
+    void push_children(std::vector<Child::CREF> &children) const override;
 };
 
 struct Map : Node {
-    const Node &tensor;
+    Child tensor;
     const map_fun_t function;    
     Map(const ValueType &result_type_in,
-        const Node &tensor_in,
+        const TensorFunction &tensor_in,
         map_fun_t function_in)
         : Node(result_type_in), tensor(tensor_in), function(function_in) {}
     const Value &eval(ConstArrayRef<Value::CREF> params, Stash &stash) const override;
+    void push_children(std::vector<Child::CREF> &children) const override;
 };
 
 struct Join : Node {
-    const Node &lhs_tensor;
-    const Node &rhs_tensor;
+    Child lhs_tensor;
+    Child rhs_tensor;
     const join_fun_t function;    
     Join(const ValueType &result_type_in,
-         const Node &lhs_tensor_in,
-         const Node &rhs_tensor_in,
+         const TensorFunction &lhs_tensor_in,
+         const TensorFunction &rhs_tensor_in,
          join_fun_t function_in)
         : Node(result_type_in), lhs_tensor(lhs_tensor_in),
           rhs_tensor(rhs_tensor_in), function(function_in) {}
     const Value &eval(ConstArrayRef<Value::CREF> params, Stash &stash) const override;
+    void push_children(std::vector<Child::CREF> &children) const override;
 };
 
 const Node &inject(const ValueType &type, size_t tensor_id, Stash &stash);

@@ -28,29 +28,59 @@ Inject::eval(ConstArrayRef<Value::CREF> params, Stash &) const
     return params[tensor_id];
 }
 
+void
+Inject::push_children(std::vector<Child::CREF> &) const
+{
+}
+
+//-----------------------------------------------------------------------------
+
 const Value &
 Reduce::eval(ConstArrayRef<Value::CREF> params, Stash &stash) const 
 {
-    const Value &a = tensor.eval(params, stash);
+    const Value &a = tensor.get().eval(params, stash);
     const TensorEngine &engine = infer_engine({a});
     return engine.reduce(a, aggr, dimensions, stash);
 }
 
+void
+Reduce::push_children(std::vector<Child::CREF> &children) const
+{
+    children.emplace_back(tensor);
+}
+
+//-----------------------------------------------------------------------------
+
 const Value &
 Map::eval(ConstArrayRef<Value::CREF> params, Stash &stash) const
 {
-    const Value &a = tensor.eval(params, stash);
+    const Value &a = tensor.get().eval(params, stash);
     const TensorEngine &engine = infer_engine({a});
     return engine.map(a, function, stash);
 }
 
+void
+Map::push_children(std::vector<Child::CREF> &children) const
+{
+    children.emplace_back(tensor);
+}
+
+//-----------------------------------------------------------------------------
+
 const Value &
 Join::eval(ConstArrayRef<Value::CREF> params, Stash &stash) const
 {
-    const Value &a = lhs_tensor.eval(params, stash);
-    const Value &b = rhs_tensor.eval(params, stash);
+    const Value &a = lhs_tensor.get().eval(params, stash);
+    const Value &b = rhs_tensor.get().eval(params, stash);
     const TensorEngine &engine = infer_engine({a,b});
     return engine.join(a, b, function, stash);
+}
+
+void
+Join::push_children(std::vector<Child::CREF> &children) const
+{
+    children.emplace_back(lhs_tensor);
+    children.emplace_back(rhs_tensor);
 }
 
 //-----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 #include "dense_dot_product_function.h"
 #include "dense_xw_product_function.h"
-#include "dense_tensor_function_compiler.h"
+#include "dense_tensor_function_optimizer.h"
 #include <vespa/eval/eval/operation.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <iostream>
@@ -54,24 +54,25 @@ const TensorFunction &createDenseXWProduct(const ValueType &res, const Inject &v
                                                 common_is_inner);
 }
 
-struct InnerProductFunctionCompiler
+struct InnerProductFunctionOptimizer
 {
-    static const TensorFunction &compile(const Node &expr, Stash &stash) {
+    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash) {
         const Reduce *reduce = as<Reduce>(expr);
         if (reduce && (reduce->aggr == Aggr::SUM)) {
-            const Join *join = as<Join>(reduce->tensor);
+            const ValueType &result_type = reduce->result_type;
+            const Join *join = as<Join>(reduce->tensor.get());
             if (join && (join->function == Mul::f)) {
-                const Inject *lhs = as<Inject>(join->lhs_tensor);
-                const Inject *rhs = as<Inject>(join->rhs_tensor);
+                const Inject *lhs = as<Inject>(join->lhs_tensor.get());
+                const Inject *rhs = as<Inject>(join->rhs_tensor.get());
                 if (lhs && rhs) {
-                    if (isDenseDotProduct(expr.result_type, lhs->result_type, rhs->result_type)) {
+                    if (isDenseDotProduct(result_type, lhs->result_type, rhs->result_type)) {
                         return stash.create<DenseDotProductFunction>(lhs->tensor_id, rhs->tensor_id);
                     }
-                    if (isDenseXWProduct(expr.result_type, lhs->result_type, rhs->result_type)) {
-                        return createDenseXWProduct(expr.result_type, *lhs, *rhs, stash);
+                    if (isDenseXWProduct(result_type, lhs->result_type, rhs->result_type)) {
+                        return createDenseXWProduct(result_type, *lhs, *rhs, stash);
                     }
-                    if (isDenseXWProduct(expr.result_type, rhs->result_type, lhs->result_type)) {
-                        return createDenseXWProduct(expr.result_type, *rhs, *lhs, stash);
+                    if (isDenseXWProduct(result_type, rhs->result_type, lhs->result_type)) {
+                        return createDenseXWProduct(result_type, *rhs, *lhs, stash);
                     }
                 }
             }
@@ -83,9 +84,9 @@ struct InnerProductFunctionCompiler
 }
 
 const TensorFunction &
-DenseTensorFunctionCompiler::compile(const eval::tensor_function::Node &expr, Stash &stash)
+DenseTensorFunctionOptimizer::optimize(const eval::TensorFunction &expr, Stash &stash)
 {
-    return InnerProductFunctionCompiler::compile(expr, stash);
+    return InnerProductFunctionOptimizer::optimize(expr, stash);
 }
 
 }

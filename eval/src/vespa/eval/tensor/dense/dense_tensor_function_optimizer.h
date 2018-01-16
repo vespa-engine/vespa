@@ -10,11 +10,11 @@ namespace vespalib::tensor {
 
 /**
  * Class that recognizes calculations over dense tensors (in tensor function intermediate representation)
- * and compiles this into an explicit tensor function.
+ * and optimizes this into an explicit tensor function.
  */
-struct DenseTensorFunctionCompiler
+struct DenseTensorFunctionOptimizer
 {
-    static const eval::TensorFunction &compile(const eval::tensor_function::Node &expr, Stash &stash);
+    static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };
 
 }

@@ -7,7 +7,7 @@
 #include "serialization/typed_binary_format.h"
 #include "dense/dense_tensor.h"
 #include "dense/dense_tensor_builder.h"
-#include "dense/dense_tensor_function_compiler.h"
+#include "dense/dense_tensor_function_optimizer.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
@@ -208,7 +208,22 @@ DefaultTensorEngine::decode(nbostream &input) const
 const TensorFunction &
 DefaultTensorEngine::compile(const eval::tensor_function::Node &expr, Stash &stash) const
 {
-    return DenseTensorFunctionCompiler::compile(expr, stash);
+    using Node = eval::tensor_function::Node;
+    using Child = Node::Child;
+    Child root(expr);
+    std::vector<Child::CREF> nodes({root});
+    for (size_t i = 0; i < nodes.size(); ++i) {
+        const Child &child = nodes[i];
+        const Node *node = dynamic_cast<const Node *>(&child.get());
+        assert(node != nullptr);
+        node->push_children(nodes);
+    }
+    while (!nodes.empty()) {
+        const Child &child = nodes.back();
+        child.set(DenseTensorFunctionOptimizer::optimize(child.get(), stash));
+        nodes.pop_back();
+    }
+    return root.get();
 }
 
 //-----------------------------------------------------------------------------
