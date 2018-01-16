@@ -25,7 +25,7 @@ class Bucket {
     PartitionId _partition;
 
 public:
-    Bucket() : _bucket(document::BucketSpace::placeHolder(), document::BucketId(0)), _partition(0) {}
+    Bucket() : _bucket(document::BucketSpace::invalid(), document::BucketId(0)), _partition(0) {}
     Bucket(const document::Bucket& b, PartitionId p)
         : _bucket(b), _partition(p) {}
 
