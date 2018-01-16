@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -72,7 +73,9 @@ public class CertificateSigner {
                              ConfigserverConfig configserverConfig,
                              AthenzProviderServiceConfig config,
                              Zone zone) {
-        this(getPrivateKey(keyProvider, config, zone), configserverConfig.loadBalancerAddress(), Clock.systemUTC());
+        this(getPrivateKey(keyProvider, config, zone),
+             !configserverConfig.loadBalancerAddress().isEmpty() ? configserverConfig.loadBalancerAddress() : Defaults.getDefaults().vespaHostname(), // TODO Remove once vips in main is ready
+             Clock.systemUTC());
     }
 
     CertificateSigner(PrivateKey caPrivateKey, String loadBalancerAddress, Clock clock) {
