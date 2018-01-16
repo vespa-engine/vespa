@@ -95,6 +95,7 @@ public class ContainerControllerTester {
         }
         controller().applications().notifyJobCompletion(new DeploymentJobs.JobReport(applicationId, job, projectId,
                                                                                      42,
+                                                                                     Optional.empty(),
                                                                                      success ? Optional.empty() : Optional.of(DeploymentJobs.JobError.unknown)
         ));
     }

@@ -7,9 +7,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -244,18 +244,21 @@ public class DeploymentJobs {
         private final JobType jobType;
         private final long projectId;
         private final long buildNumber;
+        private final Optional<SourceRevision> sourceRevision;
         private final Optional<JobError> jobError;
 
         public JobReport(ApplicationId applicationId, JobType jobType, long projectId, long buildNumber,
-                         Optional<JobError> jobError) {
+                         Optional<SourceRevision> sourceRevision, Optional<JobError> jobError) {
             Objects.requireNonNull(applicationId, "applicationId cannot be null");
             Objects.requireNonNull(jobType, "jobType cannot be null");
+            Objects.requireNonNull(sourceRevision, "sourceRevision cannot be null");
             Objects.requireNonNull(jobError, "jobError cannot be null");
 
             this.applicationId = applicationId;
             this.projectId = projectId;
             this.buildNumber = buildNumber;
             this.jobType = jobType;
+            this.sourceRevision = sourceRevision; // TODO: Require non-empty source revision if jobType == component
             this.jobError = jobError;
         }
 
@@ -264,6 +267,7 @@ public class DeploymentJobs {
         public long projectId() { return projectId; }
         public long buildNumber() { return buildNumber; }
         public boolean success() { return ! jobError.isPresent(); }
+        public Optional<SourceRevision> sourceRevision() { return sourceRevision; }
         public Optional<JobError> jobError() { return jobError; }
 
     }

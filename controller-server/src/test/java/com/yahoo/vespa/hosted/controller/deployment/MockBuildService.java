@@ -162,6 +162,7 @@ public class MockBuildService implements BuildService {
                                 jobType,
                                 projectId,
                                 42,
+                                Optional.empty(),
                                 Optional.ofNullable(success ? null : JobError.unknown)
                         ));
         }
