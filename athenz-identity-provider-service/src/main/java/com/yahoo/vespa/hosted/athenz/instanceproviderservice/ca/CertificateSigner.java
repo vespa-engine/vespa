@@ -103,7 +103,9 @@ public class CertificateSigner {
                     // Set Basic Constraints to false
                     .addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
 
-            ContentSigner caSigner = new JcaContentSignerBuilder(SIGNER_ALGORITHM).build(caPrivateKey);
+            ContentSigner caSigner = new JcaContentSignerBuilder(SIGNER_ALGORITHM)
+                    .setProvider(provider)
+                    .build(caPrivateKey);
 
             return certificateConverter
                     .setProvider(provider)
