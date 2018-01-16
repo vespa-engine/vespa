@@ -47,9 +47,9 @@ bool isDenseXWProduct(const ValueType &res, const ValueType &vec, const ValueTyp
 }
 
 const TensorFunction &createDenseXWProduct(const ValueType &res, const Inject &vec, const Inject &mat, Stash &stash) {
-    bool common_is_inner = (mat.result_type.dimension_index(vec.result_type.dimensions()[0].name) == 1);
-    return stash.create<DenseXWProductFunction>(res, vec.tensor_id, mat.tensor_id,
-                                                vec.result_type.dimensions()[0].size,
+    bool common_is_inner = (mat.result_type().dimension_index(vec.result_type().dimensions()[0].name) == 1);
+    return stash.create<DenseXWProductFunction>(res, vec.param_idx(), mat.param_idx(),
+                                                vec.result_type().dimensions()[0].size,
                                                 res.dimensions()[0].size,
                                                 common_is_inner);
 }
@@ -58,20 +58,20 @@ struct InnerProductFunctionOptimizer
 {
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash) {
         const Reduce *reduce = as<Reduce>(expr);
-        if (reduce && (reduce->aggr == Aggr::SUM)) {
-            const ValueType &result_type = reduce->result_type;
-            const Join *join = as<Join>(reduce->tensor.get());
-            if (join && (join->function == Mul::f)) {
-                const Inject *lhs = as<Inject>(join->lhs_tensor.get());
-                const Inject *rhs = as<Inject>(join->rhs_tensor.get());
+        if (reduce && (reduce->aggr() == Aggr::SUM)) {
+            const ValueType &result_type = reduce->result_type();
+            const Join *join = as<Join>(reduce->child());
+            if (join && (join->function() == Mul::f)) {
+                const Inject *lhs = as<Inject>(join->lhs());
+                const Inject *rhs = as<Inject>(join->rhs());
                 if (lhs && rhs) {
-                    if (isDenseDotProduct(result_type, lhs->result_type, rhs->result_type)) {
-                        return stash.create<DenseDotProductFunction>(lhs->tensor_id, rhs->tensor_id);
+                    if (isDenseDotProduct(result_type, lhs->result_type(), rhs->result_type())) {
+                        return stash.create<DenseDotProductFunction>(lhs->param_idx(), rhs->param_idx());
                     }
-                    if (isDenseXWProduct(result_type, lhs->result_type, rhs->result_type)) {
+                    if (isDenseXWProduct(result_type, lhs->result_type(), rhs->result_type())) {
                         return createDenseXWProduct(result_type, *lhs, *rhs, stash);
                     }
-                    if (isDenseXWProduct(result_type, rhs->result_type, lhs->result_type)) {
+                    if (isDenseXWProduct(result_type, rhs->result_type(), lhs->result_type())) {
                         return createDenseXWProduct(result_type, *rhs, *lhs, stash);
                     }
                 }

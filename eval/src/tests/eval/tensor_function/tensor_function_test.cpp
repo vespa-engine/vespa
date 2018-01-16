@@ -113,7 +113,7 @@ TEST("require that tensor injection works") {
     size_t a_id = ctx.add_tensor(ctx.make_tensor_inject());
     Value::UP expect = ctx.make_tensor_inject();
     const auto &fun = inject(ValueType::from_spec("tensor(x[2],y[2])"), a_id, ctx.stash);
-    EXPECT_EQUAL(expect->type(), fun.result_type);
+    EXPECT_EQUAL(expect->type(), fun.result_type());
     const auto &prog = ctx.compile(fun);
     TEST_DO(verify_equal(*expect, ctx.eval(prog)));
 }
@@ -123,7 +123,7 @@ TEST("require that partial tensor reduction works") {
     size_t a_id = ctx.add_tensor(ctx.make_tensor_reduce_input());
     Value::UP expect = ctx.make_tensor_reduce_y_output();
     const auto &fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), a_id, ctx.stash), Aggr::SUM, {"y"}, ctx.stash);
-    EXPECT_EQUAL(expect->type(), fun.result_type);
+    EXPECT_EQUAL(expect->type(), fun.result_type());
     const auto &prog = ctx.compile(fun);
     TEST_DO(verify_equal(*expect, ctx.eval(prog)));
 }
@@ -132,7 +132,7 @@ TEST("require that full tensor reduction works") {
     EvalCtx ctx(SimpleTensorEngine::ref());
     size_t a_id = ctx.add_tensor(ctx.make_tensor_reduce_input());
     const auto &fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), a_id, ctx.stash), Aggr::SUM, {}, ctx.stash);
-    EXPECT_EQUAL(ValueType::from_spec("double"), fun.result_type);
+    EXPECT_EQUAL(ValueType::from_spec("double"), fun.result_type());
     const auto &prog = ctx.compile(fun);
     const Value &result = ctx.eval(prog);
     EXPECT_TRUE(result.is_double());
@@ -144,7 +144,7 @@ TEST("require that tensor map works") {
     size_t a_id = ctx.add_tensor(ctx.make_tensor_map_input());
     Value::UP expect = ctx.make_tensor_map_output();
     const auto &fun = map(inject(ValueType::from_spec("tensor(x{},y{})"), a_id, ctx.stash), operation::Neg::f, ctx.stash);
-    EXPECT_EQUAL(expect->type(), fun.result_type);
+    EXPECT_EQUAL(expect->type(), fun.result_type());
     const auto &prog = ctx.compile(fun);
     TEST_DO(verify_equal(*expect, ctx.eval(prog)));
 }
@@ -157,7 +157,7 @@ TEST("require that tensor join works") {
     const auto &fun = join(inject(ValueType::from_spec("tensor(x{},y{})"), a_id, ctx.stash),
                            inject(ValueType::from_spec("tensor(y{},z{})"), b_id, ctx.stash),
                            operation::Mul::f, ctx.stash);
-    EXPECT_EQUAL(expect->type(), fun.result_type);
+    EXPECT_EQUAL(expect->type(), fun.result_type());
     const auto &prog = ctx.compile(fun);
     TEST_DO(verify_equal(*expect, ctx.eval(prog)));
 }

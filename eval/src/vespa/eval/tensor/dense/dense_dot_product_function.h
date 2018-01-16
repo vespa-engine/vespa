@@ -13,8 +13,6 @@ namespace vespalib::tensor {
 class DenseDotProductFunction : public eval::TensorFunction
 {
 private:
-    using InjectUP = std::unique_ptr<eval::tensor_function::Inject>;
-
     size_t _lhsTensorId;
     size_t _rhsTensorId;
     hwaccelrated::IAccelrated::UP _hwAccelerator;
@@ -23,6 +21,8 @@ public:
     DenseDotProductFunction(size_t lhsTensorId_, size_t rhsTensorId_);
     size_t lhsTensorId() const { return _lhsTensorId; }
     size_t rhsTensorId() const { return _rhsTensorId; }
+    const eval::ValueType &result_type() const override { return eval::DoubleValue::double_type(); }
+    void push_children(std::vector<Child::CREF> &) const override {}
     const eval::Value &eval(const eval::LazyParams &params, Stash &stash) const override;
 };
 

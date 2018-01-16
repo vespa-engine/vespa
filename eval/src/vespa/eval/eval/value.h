@@ -51,6 +51,7 @@ public:
     bool is_double() const override { return true; }
     double as_double() const override { return _value; }
     const ValueType &type() const override { return _type; }
+    static const ValueType &double_type() { return _type; }
 };
 
 } // namespace vespalib::eval
