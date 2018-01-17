@@ -34,6 +34,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
@@ -139,7 +140,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
                 CloseableHttpResponse response = client.execute(requestBase);
         ) {
-            String content = EntityUtils.toString(response.getEntity());
+            String content = getContent(response);
             int status = response.getStatusLine().getStatusCode();
             if (status / 100 == 5) {
                 errorBuilder.append("Talking to server ").append(uri.getHost());
@@ -158,12 +159,25 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
             }
             // Send response back
             return Optional.of(new ProxyResponse(proxyRequest, content, status, Optional.of(uri), contentType));
-        } catch (IOException|RuntimeException e) {
+        } catch (Exception e) {
             errorBuilder.append("Talking to server ").append(uri.getHost());
             errorBuilder.append(" got exception ").append(e.getMessage());
             log.log(LogLevel.DEBUG, e, () -> "Got exception while sending request to " + uri.getHost());
             return Optional.empty();
         }
+    }
+
+    private static String getContent(CloseableHttpResponse response) {
+        return Optional.ofNullable(response.getEntity())
+                .map(entity ->
+                     {
+                         try {
+                             return EntityUtils.toString(entity);
+                         } catch (IOException e) {
+                             throw new UncheckedIOException(e);
+                         }
+                     }
+                ).orElse("");
     }
 
     private HttpRequestBase createHttpBaseRequest(String method, String uri, InputStream data) throws ProxyException {
