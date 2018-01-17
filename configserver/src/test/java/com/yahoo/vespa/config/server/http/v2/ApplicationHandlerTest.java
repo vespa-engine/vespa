@@ -282,7 +282,7 @@ public class ApplicationHandlerTest {
         HttpResponse response = fileDistributionStatus(application, zone);
         assertEquals(200, response.getStatus());
         SessionHandlerTest.getRenderedString(response);
-        assertEquals("{\"hosts\":[{\"hostname\":\"mytesthost\",\"status\":\"UNKNOWN\",\"message\":\"error: Connection error(104)\",\"fileReferences\":[]}],\"status\":\"IN_PROGRESS\"}",
+        assertEquals("{\"hosts\":[{\"hostname\":\"mytesthost\",\"status\":\"UNKNOWN\",\"message\":\"error: Connection error(104)\",\"fileReferences\":[]}],\"status\":\"UNKNOWN\"}",
                      SessionHandlerTest.getRenderedString(response));
 
         // 404 for unknown application
