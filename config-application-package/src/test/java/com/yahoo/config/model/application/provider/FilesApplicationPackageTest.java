@@ -15,6 +15,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -84,7 +85,7 @@ public class FilesApplicationPackageTest {
     }
 
     @Test
-    public void testDeploymentXml() {
+    public void testDeploymentXml() throws IOException {
         File appDir = new File("src/test/resources/app-with-deployment");
         final File deployment = new File(appDir, "deployment.xml");
         assertTrue(deployment.exists());
