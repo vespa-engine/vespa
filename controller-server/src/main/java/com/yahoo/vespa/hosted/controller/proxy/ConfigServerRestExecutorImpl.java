@@ -117,7 +117,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         return new ProxyResponse(proxyRequest, node.toString(), 200, Optional.empty(), "application/json");
     }
 
-    private String removeFirstSlashIfAny(String url) {
+    private static String removeFirstSlashIfAny(String url) {
         if (url.startsWith("/")) {
             return url.substring(1);
         }
@@ -180,7 +180,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 ).orElse("");
     }
 
-    private HttpRequestBase createHttpBaseRequest(String method, String uri, InputStream data) throws ProxyException {
+    private static HttpRequestBase createHttpBaseRequest(String method, String uri, InputStream data) throws ProxyException {
         Method enumMethod =  Method.valueOf(method);
         switch (enumMethod) {
             case GET:
