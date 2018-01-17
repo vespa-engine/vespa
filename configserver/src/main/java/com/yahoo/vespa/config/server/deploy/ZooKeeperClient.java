@@ -1,25 +1,32 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
-import com.yahoo.config.application.api.ApplicationMetaData;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
+import com.yahoo.config.model.application.provider.PreGeneratedFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
-import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
-import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.config.model.application.provider.PreGeneratedFileRegistry;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
 import org.apache.commons.io.IOUtils;
 
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A class used for reading and writing application data to zookeeper.
@@ -109,7 +116,6 @@ public class ZooKeeperClient {
         // gives lots and lots of debug output: // BasicConfigurator.configure();
         try {
             logFine("zk operations: " + configCurator.getNumberOfOperations());
-            logFine("zk operations: " + configCurator.getNumberOfOperations());
             logFine("Feeding user def files into ZooKeeper");
             writeUserDefs(app);
             logFine("zk operations: " + configCurator.getNumberOfOperations());
@@ -196,6 +202,9 @@ public class ZooKeeperClient {
         writeDir(app.getFile(Path.fromString(ApplicationPackage.ROUTINGTABLES_DIR)),
                  getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.ROUTINGTABLES_DIR),
                  xmlFilter, true);
+        writeDir(app.getFile(ApplicationPackage.MODELS_GENERATED_DIR),
+                 getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.MODELS_GENERATED_DIR),
+                 true);
     }
 
     private void writeDir(ApplicationFile file, Path zooKeeperAppPath, boolean recurse) throws IOException {
