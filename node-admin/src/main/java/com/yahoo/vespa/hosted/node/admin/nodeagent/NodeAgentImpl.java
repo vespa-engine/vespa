@@ -346,7 +346,7 @@ public class NodeAgentImpl implements NodeAgent {
                 }
             }
             if (currentFilebeatRestarter != null) currentFilebeatRestarter.cancel(true);
-            dockerOperations.removeContainer(existingContainer);
+            dockerOperations.removeContainer(existingContainer, nodeSpec);
             containerState = ABSENT;
             logger.info("Container successfully removed, new containerState is " + containerState);
             return Optional.empty();

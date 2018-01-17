@@ -154,7 +154,9 @@ public class DockerOperationsImpl implements DockerOperations {
                 setupContainerNetworkConnectivity(containerName, nodeInetAddress);
             } else {
                 docker.startContainer(containerName);
-                setupContainerNetworkConnectivity(containerName, nodeInetAddress);
+                if (docker.networkNATted()) {
+                    setupContainerNetworkConnectivity(containerName, nodeInetAddress);
+                }
             }
 
             DIRECTORIES_TO_MOUNT.entrySet().stream().filter(Map.Entry::getValue).forEach(entry ->
@@ -165,7 +167,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void removeContainer(final Container existingContainer) {
+    public void removeContainer(final Container existingContainer, ContainerNodeSpec nodeSpec) {
         final ContainerName containerName = existingContainer.name;
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         if (existingContainer.state.isRunning()) {
@@ -175,6 +177,21 @@ public class DockerOperationsImpl implements DockerOperations {
 
         logger.info("Deleting container " + containerName.asString());
         docker.deleteContainer(containerName);
+
+        if (docker.networkNATted()) {
+            logger.info("Delete iptables NAT rules for " + containerName.asString());
+            try {
+                InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname);
+                String ipv6Str = docker.getGlobalIPv6Address(containerName);
+                String drop = NATCommand.drop(nodeInetAddress, InetAddress.getByName(ipv6Str));
+                Pair<Integer, String> result = processExecuter.exec(drop);
+                if (result.getFirst() != 0) {
+                    logger.warning("Unable to drop NAT rule - error message: " + result.getSecond());
+                }
+            } catch (IOException e) {
+                logger.warning("Unable to drop NAT rule for container " + containerName, e);
+            }
+        }
     }
 
     @Override
@@ -214,7 +231,7 @@ public class DockerOperationsImpl implements DockerOperations {
     private void setupContainerNetworkConnectivity(ContainerName containerName, InetAddress externalAddress) throws IOException {
         if (docker.networkNATted()) {
             String ipv6Str = docker.getGlobalIPv6Address(containerName);
-            String natCommand = NATCommand.create(externalAddress, InetAddress.getByName(ipv6Str));
+            String natCommand = NATCommand.insert(externalAddress, InetAddress.getByName(ipv6Str));
             PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
             logger.info("Setting up NAT rules: " + natCommand);
             Pair<Integer, String> result = processExecuter.exec(natCommand);

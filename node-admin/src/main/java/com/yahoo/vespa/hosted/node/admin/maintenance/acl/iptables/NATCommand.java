@@ -17,15 +17,17 @@ public class NATCommand implements Command {
     private final String snatCommand;
     private final String dnatCommand;
 
-    public NATCommand(InetAddress externalIp, InetAddress internalIp) {
+    public NATCommand(InetAddress externalIp, InetAddress internalIp, String chainCommand) {
         String command = externalIp instanceof Inet6Address ? "ip6tables" : "iptables";
-        this.snatCommand = String.format("%s -t nat -A POSTROUTING -s %s -j SNAT --to %s",
+        this.snatCommand = String.format("%s -t nat %s POSTROUTING -s %s -j SNAT --to %s",
                 command,
+                chainCommand,
                 internalIp.getHostAddress(),
                 externalIp.getHostAddress());
 
-        this.dnatCommand = String.format("%s -t nat -A PREROUTING -d %s -j DNAT --to-destination %s",
+        this.dnatCommand = String.format("%s -t nat %s PREROUTING -d %s -j DNAT --to-destination %s",
                 command,
+                chainCommand,
                 externalIp.getHostAddress(),
                 internalIp.getHostAddress());
     }
@@ -38,7 +40,11 @@ public class NATCommand implements Command {
     @Override
     public String asString(String commandName) { return asString(); }
 
-    public static String create(InetAddress externalIp, InetAddress internalIp) {
-        return new NATCommand(externalIp, internalIp).asString();
+    public static String insert(InetAddress externalIp, InetAddress internalIp) {
+        return new NATCommand(externalIp, internalIp, "-I").asString();
+    }
+
+    public static String drop(InetAddress externalIp, InetAddress internalIp) {
+        return new NATCommand(externalIp, internalIp, "-D").asString();
     }
 }

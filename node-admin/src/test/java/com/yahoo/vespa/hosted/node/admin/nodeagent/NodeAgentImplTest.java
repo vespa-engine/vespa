@@ -115,7 +115,7 @@ public class NodeAgentImplTest {
 
         nodeAgent.converge();
 
-        verify(dockerOperations, never()).removeContainer(any());
+        verify(dockerOperations, never()).removeContainer(any(), any());
         verify(orchestrator, never()).suspend(any(String.class));
         verify(dockerOperations, never()).pullImageAsyncIfNeeded(any());
         verify(storageMaintainer, never()).removeOldFilesFromNode(eq(containerName));
@@ -181,7 +181,7 @@ public class NodeAgentImplTest {
 
         nodeAgent.converge();
 
-        verify(dockerOperations, never()).removeContainer(any());
+        verify(dockerOperations, never()).removeContainer(any(), any());
         verify(orchestrator, never()).suspend(any(String.class));
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository, aclMaintainer);
@@ -223,7 +223,7 @@ public class NodeAgentImplTest {
 
         verify(orchestrator, never()).suspend(any(String.class));
         verify(orchestrator, never()).resume(any(String.class));
-        verify(dockerOperations, never()).removeContainer(any());
+        verify(dockerOperations, never()).removeContainer(any(), any());
 
         final InOrder inOrder = inOrder(dockerOperations);
         inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(newDockerImage));
@@ -262,7 +262,7 @@ public class NodeAgentImplTest {
         inOrder.verify(orchestrator).resume(any(String.class));
         inOrder.verify(orchestrator).resume(any(String.class));
         inOrder.verify(orchestrator).suspend(any(String.class));
-        inOrder.verify(dockerOperations).removeContainer(any());
+        inOrder.verify(dockerOperations).removeContainer(any(), any());
         inOrder.verify(dockerOperations).startContainer(eq(containerName), eq(thirdSpec));
         inOrder.verify(orchestrator).resume(any(String.class));
     }
@@ -313,7 +313,7 @@ public class NodeAgentImplTest {
 
         nodeAgent.converge();
 
-        verify(dockerOperations, never()).removeContainer(any());
+        verify(dockerOperations, never()).removeContainer(any(), any());
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository).updateNodeAttributes(
                 hostName, new NodeAttributes()
@@ -344,7 +344,7 @@ public class NodeAgentImplTest {
 
         // Should only be called once, when we initialize
         verify(dockerOperations, times(1)).getContainer(eq(containerName));
-        verify(dockerOperations, never()).removeContainer(any());
+        verify(dockerOperations, never()).removeContainer(any(), any());
         verify(dockerOperations, never()).startContainer(eq(containerName), eq(nodeSpec));
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository).updateNodeAttributes(
@@ -378,7 +378,7 @@ public class NodeAgentImplTest {
         nodeAgent.converge();
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations);
-        inOrder.verify(dockerOperations, never()).removeContainer(any());
+        inOrder.verify(dockerOperations, never()).removeContainer(any(), any());
 
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository).updateNodeAttributes(
@@ -435,7 +435,7 @@ public class NodeAgentImplTest {
         nodeAgent.converge();
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations, nodeRepository);
-        inOrder.verify(dockerOperations, times(1)).removeContainer(any());
+        inOrder.verify(dockerOperations, times(1)).removeContainer(any(), any());
         inOrder.verify(storageMaintainer, times(1)).cleanupNodeStorage(eq(containerName), eq(nodeSpec));
         inOrder.verify(nodeRepository, times(1)).markNodeAvailableForNewAllocation(eq(hostName));
 
@@ -492,7 +492,7 @@ public class NodeAgentImplTest {
 
         nodeAgent.tick();
 
-        verify(dockerOperations, times(1)).removeContainer(any());
+        verify(dockerOperations, times(1)).removeContainer(any(), any());
         verify(dockerOperations, times(1)).startContainer(eq(containerName), eq(nodeSpec));
     }
 
