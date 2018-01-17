@@ -41,7 +41,7 @@ import java.util.Optional;
 public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
     // TODO: Make system test work with this set to true, then remove the "true" path
-    private static final boolean constantsInConfig = true;
+    private static final boolean constantsInConfig = false;
 
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
 
@@ -202,7 +202,9 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
                 // package until we write it to ZooKeeper. However, we need to write constants to the models_generated
                 // directory in any case (as they are distributed over file distribution),
                 // so we just reuse the same mechanism for expressions
-                Path expressionsPath = ApplicationPackage.MODELS_GENERATED_DIR.append(arguments.modelPath).append("expressions");
+                Path expressionsPath = ApplicationPackage.MODELS_GENERATED_DIR
+                                       .append(arguments.modelPath)
+                                       .append("expressions");
                 createIfNeeded(expressionsPath);
                 IOUtils.writeFile(application.getFileReference(expressionsPath.append(arguments.expressionFileName())),
                                   expression.getRoot().toString(), false);
@@ -214,10 +216,12 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
         /** Reads the previously stored ranking expression for these arguments */
         public RankingExpression readConverted() {
-            // TODO: ZK integrate
-            Path expressionPath = ApplicationPackage.MODELS_GENERATED_DIR.append(arguments.modelPath).append("expressions").append(arguments.expressionFileName());
+            Path expressionPath = ApplicationPackage.MODELS_GENERATED_DIR
+                                  .append(arguments.modelPath)
+                                  .append("expressions")
+                                  .append(arguments.expressionFileName());
             try {
-                return new RankingExpression(IOUtils.readFile(application.getFileReference(expressionPath)));
+                return new RankingExpression(application.getFile(expressionPath).createReader());
             }
             catch (IOException e) {
                 throw new UncheckedIOException("Could not read " + expressionPath, e);
@@ -278,20 +282,6 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         public Optional<String> signature() { return signature; }
         public Optional<String> output() { return output; }
 
-        /**
-         * Returns a File representing the actual location of the TensorFlow models given as part of the
-         * application package. This directory exists only when we are reading an application package supplied
-         * by a user.
-         */
-        public File modelDir() {
-            try {
-                return new File(ApplicationPackage.MODELS_DIR.append(modelPath).getRelative()).getCanonicalFile();
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
         public String expressionFileName() {
             StringBuilder fileName = new StringBuilder();
             signature.ifPresent(s -> fileName.append(s).append("."));
@@ -300,18 +290,6 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
                 fileName.append("single.");
             fileName.append("expression");
             return fileName.toString();
-        }
-
-        public File constantsDir() {
-            try {
-                return new File(ApplicationPackage.MODELS_GENERATED_DIR.append(modelPath)
-                                        .append("constants")
-                                        .getRelative())
-                        .getCanonicalFile();
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
         }
 
         private Optional<String> optionalArgument(int argumentIndex, Arguments arguments) {

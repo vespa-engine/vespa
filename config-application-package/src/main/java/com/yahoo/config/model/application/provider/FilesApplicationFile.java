@@ -15,9 +15,8 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * @author lulf
- * @author vegardh
- * @since 5.1
+ * @author Ulf Lilleengen
+ * @author Vegard Havdal
  */
 public class FilesApplicationFile extends ApplicationFile {
 
@@ -198,4 +197,5 @@ public class FilesApplicationFile extends ApplicationFile {
         if (other == this) return 0;
         return this.getPath().getName().compareTo((other).getPath().getName());
     }
+
 }
