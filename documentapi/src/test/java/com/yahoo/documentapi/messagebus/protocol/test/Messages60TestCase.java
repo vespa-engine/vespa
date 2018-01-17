@@ -53,7 +53,7 @@ public class Messages60TestCase extends Messages52TestCase {
             msg.setVisitorOrdering(OrderingSpecification.DESCENDING);
             msg.setMaxBucketsPerVisitor(2);
             msg.setBucketSpace(BUCKET_SPACE);
-            assertEquals(BASE_MESSAGE_LENGTH + 184 + serializedLength(BUCKET_SPACE), serialize("CreateVisitorMessage", msg));
+            assertEquals(BASE_MESSAGE_LENGTH + 178 + serializedLength(BUCKET_SPACE), serialize("CreateVisitorMessage", msg));
 
             for (Language lang : LANGUAGES) {
                 msg = (CreateVisitorMessage)deserialize("CreateVisitorMessage", DocumentProtocol.MESSAGE_CREATEVISITOR, lang);

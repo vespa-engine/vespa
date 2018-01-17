@@ -3,6 +3,7 @@
 #include "routablefactories50.h"
 #include "routablefactories51.h"
 #include "routablefactories52.h"
+#include "routablefactories60.h"
 #include "routingpolicyfactories.h"
 #include "routablerepository.h"
 #include "routingpolicyrepository.h"
@@ -49,10 +50,12 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     vespalib::VersionSpecification version50(5, 0);
     vespalib::VersionSpecification version51(5, 1);
     vespalib::VersionSpecification version52(5, 115);
+    vespalib::VersionSpecification version6(6, 999); // TODO finalize version
 
     std::vector<vespalib::VersionSpecification> from50 = { version50, version51, version52 };
     std::vector<vespalib::VersionSpecification> from51 = { version51, version52 };
     std::vector<vespalib::VersionSpecification> from52 = { version52 };
+    std::vector<vespalib::VersionSpecification> from6 = { version6 };
 
     // Add 5.0 serialization
     putRoutableFactory(MESSAGE_BATCHDOCUMENTUPDATE, IRoutableFactory::SP(new RoutableFactories50::BatchDocumentUpdateMessageFactory(*_repo)), from50);
@@ -65,7 +68,6 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     putRoutableFactory(MESSAGE_GETBUCKETSTATE, IRoutableFactory::SP(new RoutableFactories50::GetBucketStateMessageFactory()), from50);
     putRoutableFactory(MESSAGE_GETDOCUMENT, IRoutableFactory::SP(new RoutableFactories50::GetDocumentMessageFactory()), from50);
     putRoutableFactory(MESSAGE_MAPVISITOR, IRoutableFactory::SP(new RoutableFactories50::MapVisitorMessageFactory(*_repo)), from50);
-    putRoutableFactory(MESSAGE_MULTIOPERATION, IRoutableFactory::SP(new RoutableFactories50::MultiOperationMessageFactory(_repo)), from50);
     putRoutableFactory(MESSAGE_PUTDOCUMENT, IRoutableFactory::SP(new RoutableFactories50::PutDocumentMessageFactory(*_repo)), from50);
     putRoutableFactory(MESSAGE_QUERYRESULT, IRoutableFactory::SP(new RoutableFactories50::QueryResultMessageFactory()), from50);
     putRoutableFactory(MESSAGE_REMOVEDOCUMENT, IRoutableFactory::SP(new RoutableFactories50::RemoveDocumentMessageFactory()), from50);
@@ -84,7 +86,6 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     putRoutableFactory(REPLY_GETBUCKETSTATE, IRoutableFactory::SP(new RoutableFactories50::GetBucketStateReplyFactory()), from50);
     putRoutableFactory(REPLY_GETDOCUMENT, IRoutableFactory::SP(new RoutableFactories50::GetDocumentReplyFactory(*_repo)), from50);
     putRoutableFactory(REPLY_MAPVISITOR, IRoutableFactory::SP(new RoutableFactories50::MapVisitorReplyFactory()), from50);
-    putRoutableFactory(REPLY_MULTIOPERATION, IRoutableFactory::SP(new RoutableFactories50::MultiOperationReplyFactory()), from50);
     putRoutableFactory(REPLY_PUTDOCUMENT, IRoutableFactory::SP(new RoutableFactories50::PutDocumentReplyFactory()), from50);
     putRoutableFactory(REPLY_QUERYRESULT, IRoutableFactory::SP(new RoutableFactories50::QueryResultReplyFactory()), from50);
     putRoutableFactory(REPLY_REMOVEDOCUMENT, IRoutableFactory::SP(new RoutableFactories50::RemoveDocumentReplyFactory()), from50);
@@ -104,6 +105,9 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     putRoutableFactory(MESSAGE_PUTDOCUMENT, IRoutableFactory::SP(new RoutableFactories52::PutDocumentMessageFactory(*_repo)), from52);
     putRoutableFactory(MESSAGE_UPDATEDOCUMENT, IRoutableFactory::SP(new RoutableFactories52::UpdateDocumentMessageFactory(*_repo)), from52);
     putRoutableFactory(MESSAGE_REMOVEDOCUMENT, IRoutableFactory::SP(new RoutableFactories52::RemoveDocumentMessageFactory()), from52);
+
+    // Add 6.x serialization (TODO finalize version)
+    putRoutableFactory(MESSAGE_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories60::CreateVisitorMessageFactory(*_repo)), from6);
 }
 
 DocumentProtocol::~DocumentProtocol() { }
