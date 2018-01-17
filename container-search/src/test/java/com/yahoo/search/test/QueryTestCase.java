@@ -2,9 +2,13 @@
 package com.yahoo.search.test;
 
 import com.yahoo.component.chain.Chain;
+import com.yahoo.language.Language;
+import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detection;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.detect.Hint;
+import com.yahoo.language.process.StemMode;
+import com.yahoo.language.process.Token;
 import com.yahoo.language.simple.SimpleDetector;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Index;
@@ -65,6 +69,18 @@ public class QueryTestCase {
         assertNull(q.getModel().getDefaultIndex());
         assertEquals("", q.properties().get("aParameter"));
         assertNull(q.properties().get("notSetParameter"));
+
+        Query query = q;
+        String body = "a bb. ccc??!";
+        Linguistics linguistics = new SimpleLinguistics();
+
+        AndItem and = new AndItem();
+        for (Token token : linguistics.getTokenizer().tokenize(body, Language.ENGLISH, StemMode.SHORTEST, true)) {
+            if (token.isIndexable())
+                and.addItem(new WordItem(token.getTokenString(), "body"));
+        }
+        query.getModel().getQueryTree().setRoot(and);
+        System.out.println(query);
     }
 
     // TODO: YQL work in progress (jon)

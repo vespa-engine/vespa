@@ -12,31 +12,38 @@ import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.processing.request.CompoundName;
-import com.yahoo.search.query.*;
-import com.yahoo.search.query.profile.types.FieldType;
-import com.yahoo.search.query.properties.PropertyMap;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
-import com.yahoo.search.query.profile.types.FieldDescription;
-import com.yahoo.search.query.profile.types.QueryProfileFieldType;
-import com.yahoo.search.query.profile.types.QueryProfileType;
-import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
-import com.yahoo.search.query.properties.DefaultProperties;
-import com.yahoo.search.query.properties.QueryProperties;
-import com.yahoo.search.query.properties.QueryPropertyAliases;
-import com.yahoo.search.query.properties.RequestContextProperties;
-import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.federation.FederationSearcher;
+import com.yahoo.search.query.Model;
+import com.yahoo.search.query.ParameterParser;
+import com.yahoo.search.query.Presentation;
+import com.yahoo.search.query.Properties;
+import com.yahoo.search.query.QueryTree;
+import com.yahoo.search.query.Ranking;
+import com.yahoo.search.query.SessionId;
+import com.yahoo.search.query.Sorting;
 import com.yahoo.search.query.Sorting.AttributeSorter;
 import com.yahoo.search.query.Sorting.FieldOrder;
 import com.yahoo.search.query.Sorting.Order;
+import com.yahoo.search.query.UniqueRequestId;
 import com.yahoo.search.query.context.QueryContext;
 import com.yahoo.search.query.profile.ModelObjectMap;
 import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
+import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.FieldType;
+import com.yahoo.search.query.profile.types.QueryProfileFieldType;
+import com.yahoo.search.query.profile.types.QueryProfileType;
+import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+import com.yahoo.search.query.properties.DefaultProperties;
+import com.yahoo.search.query.properties.PropertyMap;
+import com.yahoo.search.query.properties.QueryProperties;
+import com.yahoo.search.query.properties.QueryPropertyAliases;
+import com.yahoo.search.query.properties.RequestContextProperties;
 import com.yahoo.search.yql.NullItemException;
 import com.yahoo.search.yql.VespaSerializer;
 import com.yahoo.search.yql.YqlParser;
-
+import com.yahoo.yolean.Exceptions;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.nio.ByteBuffer;
@@ -45,7 +52,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
@@ -951,8 +957,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /**
      * Return the HTTP request which caused this query. This will never be null
      * when running with queries from the network.
-     * (Except when running with deprecated code paths, in which case this will
-     * return null but getRequest() will not.)
      */
      public HttpRequest getHttpRequest() { return httpRequest; }
 

@@ -53,7 +53,13 @@ public interface ApplicationPackage {
     String DOCPROCCHAINS_DIR = "docproc/chains";
     String PROCESSORCHAINS_DIR = "processor/chains";
     String ROUTINGTABLES_DIR = "routing/tables";
-    String MODELS_DIR = "models";
+
+    /** Machine-learned models - only present in user-uploaded package instances */
+    Path MODELS_DIR = Path.fromString("models");
+    /** Files generated from machine-learned models */
+    Path MODELS_GENERATED_DIR = Path.fromString("models.generated");
+    /** Files generated from machine-learned models which should be replicated in ZooKeeper */
+    Path MODELS_GENERATED_REPLICATED_DIR = MODELS_GENERATED_DIR.append("replicated");
 
     // NOTE: this directory is created in serverdb during deploy, and should not exist in the original user application
     /** Do not use */
@@ -131,7 +137,7 @@ public interface ApplicationPackage {
      */
     List<NamedReader> getFiles(Path pathFromRoot, String suffix, boolean recurse);
 
-    /** Same as getFiles(pathFromRoot,suffix,false) */
+    /** Same as getFiles(pathFromRoot, suffix, false) */
     default List<NamedReader> getFiles(Path pathFromRoot, String suffix) {
         return getFiles(pathFromRoot,suffix,false);
     }

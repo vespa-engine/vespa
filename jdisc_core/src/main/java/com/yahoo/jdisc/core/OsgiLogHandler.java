@@ -6,7 +6,6 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.log.LogService;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Handler;
@@ -14,11 +13,11 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 class OsgiLogHandler extends Handler {
 
-    private static enum LogRecordProperty {
+    private enum LogRecordProperty {
 
         LEVEL,
         LOGGER_NAME,
@@ -32,6 +31,7 @@ class OsgiLogHandler extends Handler {
         SOURCE_METHOD_NAME,
         THREAD_ID,
         THROWN
+
     }
 
     private final static Map<String, LogRecordProperty> PROPERTY_MAP = createDictionary(LogRecordProperty.values());

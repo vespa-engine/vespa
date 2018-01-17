@@ -165,9 +165,8 @@ public class Search implements Serializable, ImmutableSearch {
     public void addRankingConstant(RankingConstant constant) {
         constant.validate();
         String name = constant.getName();
-        if (rankingConstants.get(name) != null) {
-            throw new IllegalArgumentException("Ranking constant '"+name+"' defined twice");
-        }
+        if (rankingConstants.containsKey(name))
+            throw new IllegalArgumentException("Ranking constant '" + name + "' defined twice");
         rankingConstants.put(name, constant);
     }
 
@@ -267,6 +266,8 @@ public class Search implements Serializable, ImmutableSearch {
     public Reader getRankingExpression(String fileName) {
         return sourceApplication.getRankingExpression(fileName);
     }
+
+    public ApplicationPackage sourceApplication() { return sourceApplication; }
 
     /**
      * Returns a field defined in this search definition or one if its documents. Fields in this search definition takes

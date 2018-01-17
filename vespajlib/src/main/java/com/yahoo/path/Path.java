@@ -3,16 +3,15 @@ package com.yahoo.path;
 
 import com.google.common.annotations.Beta;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-// TODO: Remove and replace usage by java.nio.file.Path
-
 /**
  * Represents a path represented by a list of elements. Immutable
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 @Beta
 public final class Path {
@@ -194,6 +193,8 @@ public final class Path {
     public static Path createRoot(String delimiter) {
         return new Path(delimiter);
     }
+
+    public File toFile() { return new File(toString()); }
 
     @Override
     public int hashCode() {

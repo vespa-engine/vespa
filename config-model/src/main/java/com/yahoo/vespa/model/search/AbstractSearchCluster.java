@@ -49,16 +49,7 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
         public static final IndexingMode REALTIME  = new IndexingMode("REALTIME");
         public static final IndexingMode STREAMING = new IndexingMode("STREAMING");
 
-        public static IndexingMode createIndexingMode(String ixm) {
-            if ("REALTIME".equalsIgnoreCase(ixm)) {
-                return REALTIME;
-            } else if ("STREAMING".equalsIgnoreCase(ixm)) {
-                return STREAMING;
-            }
-            return null;
-        }
-
-        private String name;
+        private final String name;
 
         private IndexingMode(String name) {
             this.name = name;
@@ -72,6 +63,7 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
     }
 
     public static final class SearchDefinitionSpec {
+
         private final SearchDefinition searchDefinition;
         private final UserConfigRepo userConfigRepo;
 

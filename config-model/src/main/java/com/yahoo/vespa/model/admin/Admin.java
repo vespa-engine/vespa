@@ -73,9 +73,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         this.fileDistribution = fileDistributionConfigProducer;
     }
 
-    public Configserver getConfigserver() {
-        return defaultConfigserver;
-    }
+    public Configserver getConfigserver() { return defaultConfigserver; }
 
     /** Returns the configured monitoring endpoint, or null if not configured */
     public Monitoring getMonitoring() {

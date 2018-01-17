@@ -8,7 +8,7 @@ package com.yahoo.config.model;
  *
  * @author gjoranv
  * @author bratseth
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public abstract class ConfigModel {
 
