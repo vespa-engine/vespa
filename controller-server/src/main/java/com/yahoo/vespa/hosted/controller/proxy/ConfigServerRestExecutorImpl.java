@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentityVerifier;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzSslContextProvider;
@@ -27,6 +27,7 @@ import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
@@ -34,7 +35,6 @@ import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import static java.util.Collections.singleton;
 
@@ -52,6 +53,8 @@ import static java.util.Collections.singleton;
  */
 @SuppressWarnings("unused") // Injected
 public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
+
+    private static final Logger log = Logger.getLogger(ConfigServerRestExecutorImpl.class.getName());
 
     private static final Duration PROXY_REQUEST_TIMEOUT = Duration.ofSeconds(10);
     private static final Set<String> HEADERS_TO_COPY = Collections.singleton("X-HTTP-Method-Override");
@@ -136,10 +139,14 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
                 CloseableHttpResponse response = client.execute(requestBase);
         ) {
-            if (response.getStatusLine().getStatusCode() / 100 == 5) {
+            String content = EntityUtils.toString(response.getEntity());
+            int status = response.getStatusLine().getStatusCode();
+            if (status / 100 == 5) {
                 errorBuilder.append("Talking to server ").append(uri.getHost());
-                errorBuilder.append(", got ").append(response.getStatusLine().getStatusCode()).append(" ")
-                        .append(streamToString(response.getEntity().getContent())).append("\n");
+                errorBuilder.append(", got ").append(status).append(" ")
+                        .append(content).append("\n");
+                log.log(LogLevel.DEBUG, () -> String.format("Got response from %s with status code %d and content:\n %s",
+                                                            uri.getHost(), status, content));
                 return Optional.empty();
             }
             final Header contentHeader = response.getLastHeader("Content-Type");
@@ -149,17 +156,12 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
             } else {
                 contentType = "application/json";
             }
-            return Optional.of(new ProxyResponse(
-                    proxyRequest,
-                    streamToString(response.getEntity().getContent()),
-                    response.getStatusLine().getStatusCode(),
-                    Optional.of(uri),
-                    contentType));
-
             // Send response back
+            return Optional.of(new ProxyResponse(proxyRequest, content, status, Optional.of(uri), contentType));
         } catch (IOException|RuntimeException e) {
             errorBuilder.append("Talking to server ").append(uri.getHost());
             errorBuilder.append(" got exception ").append(e.getMessage());
+            log.log(LogLevel.DEBUG, e, () -> "Got exception while sending request to " + uri.getHost());
             return Optional.empty();
         }
     }
@@ -201,17 +203,6 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                     toRequest.addHeader(headerEntry.getKey(), value);
                 }
             }
-        }
-    }
-
-    public static String streamToString(final InputStream inputStream) throws IOException {
-        final StringBuilder out = new StringBuilder();
-        while (true) {
-            byte[] bytesFromStream = IOUtils.readBytes(inputStream, 1024);
-            if (bytesFromStream.length == 0) {
-                return out.toString();
-            }
-            out.append(new String(bytesFromStream, StandardCharsets.UTF_8));
         }
     }
 
@@ -260,7 +251,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                                 zoneRegistry.getConfigserverAthenzService(
                                         ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion()))));
         return HttpClientBuilder.create()
-                .setUserAgent("config-server-client")
+                .setUserAgent("config-server-proxy-client")
                 .setSslcontext(sslContextProvider.get())
                 .setHostnameVerifier(new AthenzIdentityVerifierAdapter(hostnameVerifier))
                 .setDefaultRequestConfig(config)
