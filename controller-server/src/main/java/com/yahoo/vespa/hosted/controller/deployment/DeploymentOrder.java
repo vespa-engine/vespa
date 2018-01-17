@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
@@ -114,12 +113,6 @@ public class DeploymentOrder {
         return step.zones().stream()
                 .map(this::toJob)
                 .collect(collectingAndThen(toList(), Collections::unmodifiableList));
-    }
-
-    /** Returns whether all jobs have completed successfully for given step */
-    private boolean completedSuccessfully(DeploymentSpec.Step step, Change change, Application application) {
-        return jobsFrom(step).stream()
-                .allMatch(job -> application.deploymentJobs().isSuccessful(change, job));
     }
 
     /** Resolve deployment step from job */

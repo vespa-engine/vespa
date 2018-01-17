@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
@@ -173,8 +174,19 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
                 JobType.fromJobName(report.field("jobName").asString()),
                 report.field("projectId").asLong(),
                 report.field("buildNumber").asLong(),
+                toSourceRevision(report.field("sourceRevision")),
                 jobError
         );
+    }
+
+    private static Optional<SourceRevision> toSourceRevision(Inspector object) {
+        if (!object.field("repository").valid() ||
+            !object.field("branch").valid() ||
+            !object.field("commit").valid()) {
+            return Optional.empty();
+        }
+        return Optional.of(new SourceRevision(object.field("repository").asString(), object.field("branch").asString(),
+                                              object.field("commit").asString()));
     }
 
     private static String asString(InputStream in) {
