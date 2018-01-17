@@ -219,6 +219,11 @@ public class DockerMock implements Docker {
         }
 
         @Override
+        public CreateContainerCommand withExtraHost(String hostname, String ip) {
+            return this;
+        }
+
+        @Override
         public void create() {
 
         }

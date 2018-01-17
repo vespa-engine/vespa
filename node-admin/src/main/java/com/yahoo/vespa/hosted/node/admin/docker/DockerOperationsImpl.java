@@ -120,12 +120,15 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withAddCapability("SYS_ADMIN"); // Needed for perf
 
             if (!docker.networkNATted()) {
-                logger.info("Network not natted - setting up with specific ip address on a macvlan");
+                logger.info("Network not nated - setting up with specific ip address on a macvlan");
                 command.withIpAddress(nodeInetAddress);
                 command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
+                command.withVolume("/etc/hosts", "/etc/hosts");
+            } else {
+                logger.info("Network is nated - Adding hostname to /etc/hosts");
+                command.withExtraHost(nodeSpec.hostname, isIPv6 ? "::1" : "127.0.0.1");
             }
 
-            command.withVolume("/etc/hosts", "/etc/hosts");
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
                 String pathInHost = environment.pathInHostFromPathInNode(containerName, pathInNode).toString();
                 command.withVolume(pathInHost, pathInNode);
@@ -211,9 +214,13 @@ public class DockerOperationsImpl implements DockerOperations {
     private void setupContainerNetworkConnectivity(ContainerName containerName, InetAddress externalAddress) throws IOException {
         if (docker.networkNATted()) {
             String ipv6Str = docker.getGlobalIPv6Address(containerName);
-            String natCommand = NATCommand.create(externalAddress, InetAddress.getByName(ipv6Str), "eth0");
+            String natCommand = NATCommand.create(externalAddress, InetAddress.getByName(ipv6Str));
             PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-            logger.info("Please setup these rules:" + natCommand);
+            logger.info("Setting up NAT rules: " + natCommand);
+            Pair<Integer, String> result = processExecuter.exec(natCommand);
+            if (result.getFirst() != 0) {
+                throw new IOException("Unable to setup NAT rule - error message: " + result.getSecond());
+            }
         } else {
             InetAddress hostDefaultGateway = DockerNetworkCreator.getDefaultGatewayLinux(true);
             executeCommandInNetworkNamespace(containerName,

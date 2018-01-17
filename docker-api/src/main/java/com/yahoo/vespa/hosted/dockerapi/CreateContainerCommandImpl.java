@@ -39,6 +39,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private Optional<String[]> entrypoint = Optional.empty();
     private Set<Capability> addCapabilities = new HashSet<>();
     private Set<Capability> dropCapabilities = new HashSet<>();
+    private List<String> extraHosts = new ArrayList<>();
 
     CreateContainerCommandImpl(DockerClient docker,
                                DockerImage dockerImage,
@@ -88,7 +89,6 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         return this;
     }
 
-
     @Override
     public Docker.CreateContainerCommand withEnvironment(String name, String value) {
         assert name.indexOf('=') == -1;
@@ -106,6 +106,12 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     @Override
     public Docker.CreateContainerCommand withNetworkMode(String mode) {
         networkMode = Optional.of(mode);
+        return this;
+    }
+
+    @Override
+    public Docker.CreateContainerCommand withExtraHost(String hostname, String ip) {
+        extraHosts.add(hostname + ":" + ip);
         return this;
     }
 
@@ -140,6 +146,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .withLabels(labels)
                 .withEnv(environmentAssignments)
                 .withBinds(volumeBinds)
+                .withExtraHosts(extraHosts)
                 .withUlimits(ulimits)
                 .withCapAdd(new ArrayList<>(addCapabilities))
                 .withCapDrop(new ArrayList<>(dropCapabilities));
