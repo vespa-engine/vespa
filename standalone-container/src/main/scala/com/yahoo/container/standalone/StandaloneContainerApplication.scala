@@ -8,7 +8,7 @@ import java.nio.file.{FileSystems, Files, Path, Paths}
 import com.google.inject.name.Names
 import com.google.inject.{AbstractModule, Inject, Injector, Key}
 import com.yahoo.collections.CollectionUtil.first
-import com.yahoo.config.application.api.{ApplicationPackage, FileRegistry, RuleConfigDeriver}
+import com.yahoo.config.application.api.{ApplicationPackage, FileRegistry}
 import com.yahoo.config.model.application.provider._
 import com.yahoo.config.model.builder.xml.XmlHelper
 import com.yahoo.config.model.deploy.DeployState
@@ -33,7 +33,7 @@ import scala.collection.JavaConverters._
 import scala.util.Try
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 class StandaloneContainerApplication @Inject()(injector: Injector) extends Application {
@@ -157,10 +157,7 @@ object StandaloneContainerApplication {
                            configModelRepo: ConfigModelRepo = new ConfigModelRepo): (VespaModel, Container) = {
     val logger = new BaseDeployLogger
     val rawApplicationPackage = new FilesApplicationPackage.Builder(applicationPath.toFile).includeSourceFiles(true).preprocessedDir(preprocessedApplicationDir).build()
-    // TODO: Needed until we get rid of semantic rules
-    val applicationPackage = rawApplicationPackage.preprocess(Zone.defaultZone(), new RuleConfigDeriver {
-      override def derive(ruleBaseDir: String, outputDir: String): Unit = {}
-    }, logger)
+    val applicationPackage = rawApplicationPackage.preprocess(Zone.defaultZone(), logger)
     validateApplication(applicationPackage)
     val deployState = new DeployState.Builder().
       applicationPackage(applicationPackage).

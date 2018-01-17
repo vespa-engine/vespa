@@ -76,7 +76,7 @@ public class FilesApplicationPackageTest {
     }
 
     @Test
-    public void testDeploymentXmlNotAvailable() throws IOException, TransformerException, ParserConfigurationException, SAXException {
+    public void testDeploymentXmlNotAvailable()  {
         File appDir = new File("src/test/resources/multienvapp");
         assertFalse(new File(appDir, "deployment.xml").exists());
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
@@ -84,7 +84,7 @@ public class FilesApplicationPackageTest {
     }
 
     @Test
-    public void testDeploymentXml() throws IOException, TransformerException, ParserConfigurationException, SAXException {
+    public void testDeploymentXml() {
         File appDir = new File("src/test/resources/app-with-deployment");
         final File deployment = new File(appDir, "deployment.xml");
         assertTrue(deployment.exists());

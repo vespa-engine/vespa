@@ -4,18 +4,14 @@ package com.yahoo.vespa.model.container.search;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
-import com.yahoo.prelude.semantics.RuleBase;
-import com.yahoo.prelude.semantics.RuleImporter;
-import com.yahoo.prelude.semantics.parser.ParseException;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Reads the semantic rules from the application package by delegating to RuleConfigDeriver.
+ * Reads the semantic rules from the application package by delegating to SemanticRules.
  *
  * @author bratseth
  */
