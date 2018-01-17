@@ -4,8 +4,10 @@ package com.yahoo.vespa.hosted.node.admin;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author stiankri
@@ -13,23 +15,34 @@ import java.util.Optional;
 // TODO: Rename to Node or NodeRepositoryNode
 public class ContainerNodeSpec {
     public final String hostname;
-    public final Optional<DockerImage> wantedDockerImage;
-    public final Optional<DockerImage> currentDockerImage;
     public final Node.State nodeState;
     public final String nodeType;
     public final String nodeFlavor;
     public final String nodeCanonicalFlavor;
+
+    public final Optional<DockerImage> wantedDockerImage;
+    public final Optional<DockerImage> currentDockerImage;
+
     public final Optional<String> wantedVespaVersion;
     public final Optional<String> vespaVersion;
-    public final Optional<Owner> owner;
-    public final Optional<Membership> membership;
+
     public final Optional<Long> wantedRestartGeneration;
     public final Optional<Long> currentRestartGeneration;
+
     public final Optional<Long> wantedRebootGeneration;
     public final Optional<Long> currentRebootGeneration;
+
+    public final Optional<Owner> owner;
+    public final Optional<Membership> membership;
+
     public final Double minCpuCores;
     public final Double minMainMemoryAvailableGb;
     public final Double minDiskAvailableGb;
+
+    public final Boolean fastDisk;
+    public final Set<String> ipAddresses;
+
+    public final Optional<String> hardwareDivergence;
 
     public ContainerNodeSpec(
             final String hostname,
@@ -49,7 +62,10 @@ public class ContainerNodeSpec {
             final Optional<Long> currentRebootGeneration,
             final Double minCpuCores,
             final Double minMainMemoryAvailableGb,
-            final Double minDiskAvailableGb) {
+            final Double minDiskAvailableGb,
+            final Boolean fastDisk,
+            final Set<String> ipAddresses,
+            final Optional<String> hardwareDivergence) {
         Objects.requireNonNull(hostname);
         Objects.requireNonNull(nodeState);
         Objects.requireNonNull(nodeType);
@@ -57,6 +73,8 @@ public class ContainerNodeSpec {
         Objects.requireNonNull(minCpuCores);
         Objects.requireNonNull(minMainMemoryAvailableGb);
         Objects.requireNonNull(minDiskAvailableGb);
+        Objects.requireNonNull(fastDisk);
+        Objects.requireNonNull(ipAddresses);
 
         this.hostname = hostname;
         this.wantedDockerImage = wantedDockerImage;
@@ -76,6 +94,9 @@ public class ContainerNodeSpec {
         this.minCpuCores = minCpuCores;
         this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
         this.minDiskAvailableGb = minDiskAvailableGb;
+        this.fastDisk = fastDisk;
+        this.ipAddresses = ipAddresses;
+        this.hardwareDivergence = hardwareDivergence;
     }
 
     @Override
@@ -102,7 +123,10 @@ public class ContainerNodeSpec {
                 Objects.equals(currentRebootGeneration, that.currentRebootGeneration) &&
                 Objects.equals(minCpuCores, that.minCpuCores) &&
                 Objects.equals(minMainMemoryAvailableGb, that.minMainMemoryAvailableGb) &&
-                Objects.equals(minDiskAvailableGb, that.minDiskAvailableGb);
+                Objects.equals(minDiskAvailableGb, that.minDiskAvailableGb) &&
+                Objects.equals(fastDisk, that.fastDisk) &&
+                Objects.equals(ipAddresses, that.ipAddresses) &&
+                Objects.equals(hardwareDivergence, that.hardwareDivergence);
     }
 
     @Override
@@ -125,7 +149,10 @@ public class ContainerNodeSpec {
                 currentRebootGeneration,
                 minCpuCores,
                 minMainMemoryAvailableGb,
-                minDiskAvailableGb);
+                minDiskAvailableGb,
+                fastDisk,
+                ipAddresses,
+                hardwareDivergence);
     }
 
     @Override
@@ -149,6 +176,9 @@ public class ContainerNodeSpec {
                 + " currentRebootGeneration=" + currentRebootGeneration
                 + " minMainMemoryAvailableGb=" + minMainMemoryAvailableGb
                 + " minDiskAvailableGb=" + minDiskAvailableGb
+                + " fastDisk=" + fastDisk
+                + " ipAddresses=" + ipAddresses
+                + " hardwareDivergence=" + hardwareDivergence
                 + " }";
     }
 
@@ -245,6 +275,7 @@ public class ContainerNodeSpec {
         }
     }
 
+    // For testing only
     public static class Builder {
         private String hostname;
         private Optional<DockerImage> wantedDockerImage = Optional.empty();
@@ -264,6 +295,9 @@ public class ContainerNodeSpec {
         private Double minCpuCores;
         private Double minMainMemoryAvailableGb;
         private Double minDiskAvailableGb;
+        private Boolean fastDisk = false;
+        private Set<String> ipAddresses = Collections.emptySet();
+        private Optional<String> hardwareDivergence = Optional.empty();
 
         public Builder() {}
 
@@ -276,6 +310,8 @@ public class ContainerNodeSpec {
             minCpuCores(nodeSpec.minCpuCores);
             minMainMemoryAvailableGb(nodeSpec.minMainMemoryAvailableGb);
             minDiskAvailableGb(nodeSpec.minDiskAvailableGb);
+            fastDisk(nodeSpec.fastDisk);
+            ipAddresses(nodeSpec.ipAddresses);
 
             nodeSpec.wantedDockerImage.ifPresent(this::wantedDockerImage);
             nodeSpec.currentDockerImage.ifPresent(this::currentDockerImage);
@@ -287,6 +323,7 @@ public class ContainerNodeSpec {
             nodeSpec.currentRestartGeneration.ifPresent(this::currentRestartGeneration);
             nodeSpec.wantedRebootGeneration.ifPresent(this::wantedRebootGeneration);
             nodeSpec.currentRebootGeneration.ifPresent(this::currentRebootGeneration);
+            nodeSpec.hardwareDivergence.ifPresent(this::hardwareDivergence);
         }
 
         public Builder hostname(String hostname) {
@@ -378,13 +415,29 @@ public class ContainerNodeSpec {
             return this;
         }
 
+        public Builder fastDisk(boolean fastDisk) {
+            this.fastDisk = fastDisk;
+            return this;
+        }
+
+        public Builder ipAddresses(Set<String> ipAddresses) {
+            this.ipAddresses = ipAddresses;
+            return this;
+        }
+
+        public Builder hardwareDivergence(String hardwareDivergence) {
+            this.hardwareDivergence = Optional.of(hardwareDivergence);
+            return this;
+        }
+
         public ContainerNodeSpec build() {
             return new ContainerNodeSpec(hostname, wantedDockerImage, currentDockerImage, nodeState, nodeType,
                                          nodeFlavor, nodeCanonicalFlavor,
                                          wantedVespaVersion, vespaVersion, owner, membership,
                                          wantedRestartGeneration, currentRestartGeneration,
                                          wantedRebootGeneration, currentRebootGeneration,
-                                         minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb);
+                                         minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb,
+                                         fastDisk, ipAddresses, hardwareDivergence);
         }
 
     }
