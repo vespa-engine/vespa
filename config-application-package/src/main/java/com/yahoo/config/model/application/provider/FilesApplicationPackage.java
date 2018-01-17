@@ -659,6 +659,11 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     @Override
     public ApplicationPackage preprocess(Zone zone, RuleConfigDeriver ignored, DeployLogger logger) throws IOException, TransformerException, ParserConfigurationException, SAXException {
+        return preprocess(zone, logger);
+    }
+
+    @Override
+    public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException, TransformerException, ParserConfigurationException, SAXException {
         IOUtils.recursiveDeleteDir(preprocessedDir);
         IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> ! name.equals(".preprocessed") &&
                                                                           ! name.equals(SERVICES) &&

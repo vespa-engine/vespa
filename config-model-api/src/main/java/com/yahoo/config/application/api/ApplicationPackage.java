@@ -271,8 +271,24 @@ public interface ApplicationPackage {
      *
      * @return A new application package instance pointing to a new location
      */
+    // TODO: Remove when last version in use is 6.170
     default ApplicationPackage preprocess(Zone zone, RuleConfigDeriver ruleConfigDeriver, DeployLogger logger)
         throws IOException, TransformerException, ParserConfigurationException, SAXException {
+        throw new UnsupportedOperationException("This application package does not support preprocessing");
+    }
+
+    /**
+     * Preprocess an application for a given zone and return a new application package pointing to the preprocessed
+     * application package. This is the entry point for the multi environment application package support. This method
+     * will not mutate the existing application package.
+     *
+     * @param zone A valid {@link Zone} instance, used to decide which parts of services to keep and remove
+     * @param logger A {@link DeployLogger} to add output that will be returned to the user
+     *
+     * @return A new application package instance pointing to a new location
+     */
+    default ApplicationPackage preprocess(Zone zone, DeployLogger logger)
+            throws IOException, TransformerException, ParserConfigurationException, SAXException {
         throw new UnsupportedOperationException("This application package does not support preprocessing");
     }
 
