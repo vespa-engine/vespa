@@ -7,9 +7,9 @@ import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseInstructions
 import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseResult;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,10 +46,11 @@ public class MemoryBenchmark implements Benchmark {
             setupMountPoint();
             List<String> commandOutput = commandExecutor.executeCommand(MEM_BENCHMARK_WRITE_SPEED);
             ParseResult parseResult = parseMemorySpeed(commandOutput);
-            updateMemoryWriteSpeed(parseResult.getValue());
+            parseDouble(parseResult.getValue()).ifPresent(benchmarkResults::setMemoryWriteSpeedGBs);
+
             commandOutput = commandExecutor.executeCommand(MEM_BENCHMARK_READ_SPEED);
             parseResult = parseMemorySpeed(commandOutput);
-            updateMemoryReadSpeed(parseResult.getValue());
+            parseDouble(parseResult.getValue()).ifPresent(benchmarkResults::setMemoryReadSpeedGBs);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to perform memory benchmark", e);
         } finally {
@@ -76,30 +77,16 @@ public class MemoryBenchmark implements Benchmark {
     }
 
     protected ParseResult parseMemorySpeed(List<String> commandOutput) {
-        List<String> searchWords = new ArrayList<>(Arrays.asList(READ_AND_WRITE_SEARCH_WORD));
+        List<String> searchWords = Collections.singletonList(READ_AND_WRITE_SEARCH_WORD);
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, SPLIT_REGEX_STRING, searchWords);
         return OutputParser.parseSingleOutput(parseInstructions, commandOutput);
     }
 
-    protected void updateMemoryWriteSpeed(String memorySpeed) {
-        if (!isValidMemory(memorySpeed)) return;
-        double memoryWriteSpeedGbs = Double.parseDouble(memorySpeed);
-        benchmarkResults.setMemoryWriteSpeedGBs(memoryWriteSpeedGbs);
-    }
-
-    protected void updateMemoryReadSpeed(String memorySpeed) {
-        if (!isValidMemory(memorySpeed)) return;
-        double memoryReadSpeedGbs = Double.parseDouble(memorySpeed);
-        benchmarkResults.setMemoryReadSpeedGBs(memoryReadSpeedGbs);
-    }
-
-    protected boolean isValidMemory(String benchmarkOutput) {
+    private Optional<Double> parseDouble(String benchmarkOutput) {
         try {
-            Double.parseDouble(benchmarkOutput);
+            return Optional.of(Double.parseDouble(benchmarkOutput));
         } catch (NumberFormatException | NullPointerException e) {
-            return false;
+            return Optional.empty();
         }
-        return true;
     }
-
 }

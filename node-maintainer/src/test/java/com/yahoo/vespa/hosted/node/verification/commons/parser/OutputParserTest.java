@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -56,7 +57,7 @@ public class OutputParserTest {
 
     @Test
     public void parseOutput_searching_for_word_containing_capital_s() {
-        searchWords = new ArrayList<>(Arrays.asList(REGEX_SEARCH_WORD));
+        searchWords = Collections.singletonList(REGEX_SEARCH_WORD);
         ParseInstructions parseInstructions = new ParseInstructions(1, 8, " ", searchWords);
         List<ParseResult> parseResults = OutputParser.parseOutput(parseInstructions, commandOutput);
         ParseResult expectedParseResult1 = new ParseResult("Should", RETURN_VALUE);
@@ -67,7 +68,7 @@ public class OutputParserTest {
 
     @Test
     public void parseSingleOutput_should_return_first_match() {
-        searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_1));
+        searchWords = Collections.singletonList(SEARCH_WORD_1);
         ParseInstructions parseInstructions = new ParseInstructions(6, 8, " ", searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
         ParseResult expectedParseResult = new ParseResult(SEARCH_WORD_1, RETURN_VALUE);
@@ -76,7 +77,7 @@ public class OutputParserTest {
 
     @Test
     public void parseSingleOutput_should_return_invalid_parseResult() {
-        searchWords = new ArrayList<>(Arrays.asList("No match"));
+        searchWords = Collections.singletonList("No match");
         ParseInstructions parseInstructions = new ParseInstructions(6, 8, " ", searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
         ParseResult expectedParseResult = new ParseResult("invalid", "invalid");

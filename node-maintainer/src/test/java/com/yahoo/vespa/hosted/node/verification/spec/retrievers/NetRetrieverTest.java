@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -84,8 +84,7 @@ public class NetRetrieverTest {
     public void parseNetInterface_get_ipv_from_ifconfigNotIpv6_testFile() throws IOException {
         List<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE + "NoIpv6");
         parseResults = net.parseNetInterface(mockOutput);
-        ArrayList<ParseResult> expextedParseResults = new ArrayList<>(Arrays.asList(
-                new ParseResult("inet", "inet")));
+        List<ParseResult> expextedParseResults = Collections.singletonList(new ParseResult("inet", "inet"));
         assertEquals(expextedParseResults, parseResults);
     }
 
@@ -130,7 +129,7 @@ public class NetRetrieverTest {
     public void parsePingResponse_invalid_ping_response_should_throw_IOException() throws IOException {
         List<String> mockCommandOutput = MockCommandExecutor.readFromFile(INVALID_PING_RESPONSE);
         try {
-            ParseResult parseResult = net.parsePingResponse(mockCommandOutput);
+            net.parsePingResponse(mockCommandOutput);
             fail("Expected an IOException to be thrown");
         } catch (IOException e) {
             String expectedExceptionMessage = "Failed to parse ping output.";

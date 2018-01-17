@@ -58,7 +58,7 @@ public class CoreCollectorTest {
     }
 
     private void mockExec(String[] cmd, String output, String error) throws IOException, InterruptedException {
-        when(processExecuter.exec(cmd)).thenReturn(new Pair<Integer, String>(error.isEmpty() ? 0 : 1, output + error));
+        when(processExecuter.exec(cmd)).thenReturn(new Pair<>(error.isEmpty() ? 0 : 1, output + error));
     }
 
     static final String GDB_PATH = getDefaults().underVespaHome("bin64/gdb");

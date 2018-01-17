@@ -50,7 +50,7 @@ public class IPAddressVerifier {
         if (!isValidIpv6(nodeSpec.getIpv6Address(), expectedHostname)) {
             faultyIpAddresses.add(nodeSpec.getIpv6Address());
         }
-        return faultyIpAddresses.stream().toArray(String[]::new);
+        return faultyIpAddresses.toArray(new String[0]);
     }
 
     private boolean isValidIpv4(String ipv4Address, String expectedHostname) {
@@ -84,9 +84,8 @@ public class IPAddressVerifier {
     protected String reverseLookUp(String ipAddress) throws NamingException {
         Hashtable<String, String> env = new Hashtable<>();
         env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
-        String attributeName = ipAddress;
         DirContext ctx = new InitialDirContext(env);
-        Attributes attrs = ctx.getAttributes(attributeName, new String[]{"PTR"});
+        Attributes attrs = ctx.getAttributes(ipAddress, new String[]{"PTR"});
         for (NamingEnumeration<? extends Attribute> ae = attrs.getAll(); ae.hasMoreElements(); ) {
             Attribute attr = ae.next();
             Enumeration<?> vals = attr.getAll();
@@ -113,7 +112,7 @@ public class IPAddressVerifier {
             }
             String trailingZeroes = "0000";
             String paddedHextet = (reversedHextet + trailingZeroes).substring(0, trailingZeroes.length());
-            String punctuatedHextet = paddedHextet.replaceAll(".(?=)", "$0.");
+            String punctuatedHextet = paddedHextet.replaceAll(".", "$0.");
             newIpAddress.append(punctuatedHextet);
         }
         newIpAddress.append(domain);

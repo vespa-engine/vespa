@@ -15,13 +15,13 @@ public class NodeJsonConverter {
         nodeRepoHardwareInfo.setInterfaceSpeedMbs(1000);
     }
 
-    protected static void setIpv6Interface(NodeSpec nodeSpec, HardwareInfo nodeRepoHardwareInfo) {
+    private static void setIpv6Interface(NodeSpec nodeSpec, HardwareInfo nodeRepoHardwareInfo) {
         if (nodeSpec.getIpv6Address() != null) {
             nodeRepoHardwareInfo.setIpv6Interface(true);
         }
     }
 
-    protected static void setIpv4Interface(NodeSpec nodeSpec, HardwareInfo nodeRepoHardwareInfo) {
+    private static void setIpv4Interface(NodeSpec nodeSpec, HardwareInfo nodeRepoHardwareInfo) {
         if (nodeSpec.getIpv4Address() != null) {
             nodeRepoHardwareInfo.setIpv4Interface(true);
         }

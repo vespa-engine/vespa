@@ -11,6 +11,7 @@ import org.apache.commons.exec.ExecuteException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -78,8 +79,7 @@ public class NetRetriever implements HardwareRetriever {
     protected List<ParseResult> parseNetInterface(List<String> commandOutput) {
         List<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_INTERFACE_IP4, SEARCH_WORD_INTERFACE_IPV6));
         ParseInstructions parseInstructions = new ParseInstructions(INTERFACE_SEARCH_ELEMENT_INDEX, INTERFACE_RETURN_ELEMENT_INDEX, INTERFACE_NAME_REGEX_SPLIT, searchWords);
-        List<ParseResult> parseResults = OutputParser.parseOutput(parseInstructions, commandOutput);
-        return parseResults;
+        return OutputParser.parseOutput(parseInstructions, commandOutput);
     }
 
     protected void findInterfaceSpeed(List<ParseResult> parseResults) {
@@ -93,7 +93,7 @@ public class NetRetriever implements HardwareRetriever {
     }
 
     protected ParseResult parseInterfaceSpeed(List<String> commandOutput) throws IOException {
-        List<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_INTERFACE_SPEED));
+        List<String> searchWords = Collections.singletonList(SEARCH_WORD_INTERFACE_SPEED);
         ParseInstructions parseInstructions = new ParseInstructions(INTERFACE_SPEED_SEARCH_ELEMENT_INDEX, INTERFACE_SPEED_RETURN_ELEMENT_INDEX, INTERFACE_SPEED_REGEX_SPLIT, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
         if (!parseResult.getSearchWord().matches(SEARCH_WORD_INTERFACE_SPEED)) {
@@ -114,7 +114,7 @@ public class NetRetriever implements HardwareRetriever {
     }
 
     protected ParseResult parsePingResponse(List<String> commandOutput) throws IOException {
-        List<String> searchWords = new ArrayList<>(Arrays.asList(PING_SEARCH_WORD));
+        List<String> searchWords = Collections.singletonList(PING_SEARCH_WORD);
         ParseInstructions parseInstructions = new ParseInstructions(PING_SEARCH_ELEMENT_INDEX, PING_RETURN_ELEMENT_INDEX, PING_SPLIT_REGEX_STRING, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
         if (!parseResult.getSearchWord().matches(PING_SEARCH_WORD)) {

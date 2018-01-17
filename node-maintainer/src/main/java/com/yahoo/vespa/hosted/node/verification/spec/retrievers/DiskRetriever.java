@@ -8,8 +8,7 @@ import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseResult;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -69,7 +68,7 @@ public class DiskRetriever implements HardwareRetriever {
     }
 
     protected ParseResult parseDiskType(List<String> commandOutput) throws IOException {
-        List<String> searchWords = new ArrayList<>(Arrays.asList(DISK_NAME));
+        List<String> searchWords = Collections.singletonList(DISK_NAME);
         ParseInstructions parseInstructions = new ParseInstructions(DISK_TYPE_SEARCH_ELEMENT_INDEX, DISK_TYPE_RETURN_ELEMENT_INDEX, DISK_TYPE_REGEX_SPLIT, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
         if (!parseResult.getSearchWord().equals(DISK_NAME)) {
@@ -90,7 +89,7 @@ public class DiskRetriever implements HardwareRetriever {
     }
 
     protected List<ParseResult> parseDiskSize(List<String> commandOutput) {
-        List<String> searchWords = new ArrayList<>(Arrays.asList(DISK_SIZE_SEARCH_WORD));
+        List<String> searchWords = Collections.singletonList(DISK_SIZE_SEARCH_WORD);
         ParseInstructions parseInstructions = new ParseInstructions(DISK_SIZE_SEARCH_ELEMENT_INDEX, DISK_SIZE_RETURN_ELEMENT_INDEX, DISK_SIZE_REGEX_SPLIT, searchWords);
         return OutputParser.parseOutput(parseInstructions, commandOutput);
     }
