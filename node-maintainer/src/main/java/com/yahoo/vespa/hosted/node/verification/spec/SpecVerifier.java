@@ -1,23 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.spec;
 
-import com.yahoo.log.LogSetup;
+import com.google.common.base.Strings;
+import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.hosted.node.verification.Main;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
-import com.yahoo.vespa.hosted.node.verification.commons.HostURLGenerator;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.IPAddressVerifier;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeJsonConverter;
-import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoInfoRetriever;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeSpec;
-import com.yahoo.vespa.hosted.node.verification.commons.report.Reporter;
+import com.yahoo.vespa.hosted.node.verification.commons.report.HardwareDivergenceReport;
 import com.yahoo.vespa.hosted.node.verification.commons.report.SpecVerificationReport;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfoRetriever;
+import io.airlift.command.Command;
+import io.airlift.command.Option;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Optional;
 
 /**
  * Creates two HardwareInfo objects, one with spec from node repository and one from spec retrieved at the node.
@@ -26,44 +24,47 @@ import java.util.logging.Logger;
  * @author olaaun
  * @author sgrostad
  */
-public class SpecVerifier {
+@Command(name = "specification", description = "Verify that node's actual hardware and configuration matches the expected")
+public class SpecVerifier extends Main.VerifierCommand {
 
-    private static final Logger logger = Logger.getLogger(SpecVerifier.class.getName());
+    @Option(name = {"-d", "--disk"}, required = true, description = "Expected disk size in GB")
+    protected double diskAvailableGb;
 
-    public static boolean verifySpec(CommandExecutor commandExecutor, List<URL> nodeInfoUrls) throws IOException {
-        NodeSpec nodeSpec = getNodeRepositoryJSON(nodeInfoUrls);
-        VerifierSettings verifierSettings = new VerifierSettings(nodeSpec);
-        HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor, verifierSettings);
-        SpecVerificationReport specVerificationReport = makeVerificationReport(actualHardware, nodeSpec);
-        Reporter.reportSpecVerificationResults(specVerificationReport, nodeInfoUrls);
-        return specVerificationReport.isValidSpec();
+    @Option(name = {"-m", "--memory"}, required = true, description = "Expected main memory size in GB")
+    protected double mainMemoryAvailableGb;
+
+    @Option(name = {"-c", "--cpu_cores"}, required = true, description = "Expected number of CPU cores")
+    protected double cpuCores;
+
+    @Option(name = {"-s", "--is_ssd"}, required = true, description = "Set to true if disk is SSD", allowedValues = {"true", "false"})
+    protected String fastDisk;
+
+    @Option(name = {"-i", "--ips"}, description = "Comma separated list of IP addresses assigned to this node")
+    protected String ipAddresses;
+
+    @Override
+    public void run(HardwareDivergenceReport hardwareDivergenceReport, CommandExecutor commandExecutor) {
+        String[] ips = Optional.ofNullable(ipAddresses)
+                .filter(s -> !Strings.isNullOrEmpty(s))
+                .map(s -> s.split(","))
+                .orElse(new String[0]);
+
+        NodeSpec nodeSpec = new NodeSpec(diskAvailableGb, mainMemoryAvailableGb, cpuCores, Boolean.valueOf(fastDisk), ips);
+        SpecVerificationReport specVerificationReport = verifySpec(nodeSpec, commandExecutor);
+
+        hardwareDivergenceReport.setSpecVerificationReport(specVerificationReport);
     }
 
-    protected static SpecVerificationReport makeVerificationReport(HardwareInfo actualHardware, NodeSpec nodeSpec) {
+    private SpecVerificationReport verifySpec(NodeSpec nodeSpec, CommandExecutor commandExecutor) {
+        VerifierSettings verifierSettings = new VerifierSettings(nodeSpec);
+        HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor, verifierSettings);
+        return makeVerificationReport(actualHardware, nodeSpec);
+    }
+
+    private static SpecVerificationReport makeVerificationReport(HardwareInfo actualHardware, NodeSpec nodeSpec) {
         SpecVerificationReport specVerificationReport = HardwareNodeComparator.compare(NodeJsonConverter.convertJsonModelToHardwareInfo(nodeSpec), actualHardware);
-        IPAddressVerifier ipAddressVerifier = new IPAddressVerifier();
+        IPAddressVerifier ipAddressVerifier = new IPAddressVerifier(Defaults.getDefaults().vespaHostname());
         ipAddressVerifier.reportFaultyIpAddresses(nodeSpec, specVerificationReport);
         return specVerificationReport;
     }
-
-    protected static NodeSpec getNodeRepositoryJSON(List<URL> nodeInfoUrls) throws IOException {
-        NodeSpec nodeSpec = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
-        return nodeSpec;
-    }
-
-    public static void main(String[] args) {
-        LogSetup.initVespaLogging("spec-verifier");
-        CommandExecutor commandExecutor = new CommandExecutor();
-        List<URL> nodeInfoUrls;
-        if (args.length == 0) {
-            throw new IllegalStateException("Expected config server URL as parameter");
-        }
-        try {
-            nodeInfoUrls = HostURLGenerator.generateNodeInfoUrl(commandExecutor, args[0]);
-            SpecVerifier.verifySpec(commandExecutor, nodeInfoUrls);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, e.getMessage());
-        }
-    }
-
 }

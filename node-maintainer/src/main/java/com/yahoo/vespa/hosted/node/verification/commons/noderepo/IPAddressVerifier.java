@@ -27,6 +27,12 @@ public class IPAddressVerifier {
 
     private static final Logger logger = Logger.getLogger(IPAddressVerifier.class.getName());
 
+    private final String expectedHostname;
+
+    public IPAddressVerifier(String expectedHostname) {
+        this.expectedHostname = expectedHostname;
+    }
+
     public void reportFaultyIpAddresses(NodeSpec nodeSpec, SpecVerificationReport specVerificationReport) {
         String[] faultyIpAddresses = getFaultyIpAddresses(nodeSpec);
         if (faultyIpAddresses.length > 0) {
@@ -35,7 +41,6 @@ public class IPAddressVerifier {
     }
 
     public String[] getFaultyIpAddresses(NodeSpec nodeSpec) {
-        String expectedHostname = nodeSpec.getHostname();
         List<String> faultyIpAddresses = new ArrayList<>();
         if (expectedHostname == null || expectedHostname.equals(""))
             return new String[0];
