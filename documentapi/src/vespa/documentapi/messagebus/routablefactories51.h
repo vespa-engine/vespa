@@ -130,6 +130,9 @@ public:
     protected:
         DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
         bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
+
+        virtual bool encodeBucketSpace(vespalib::stringref bucketSpace, vespalib::GrowableByteBuffer& buf) const;
+        virtual string decodeBucketSpace(document::ByteBuffer&) const;
     public:
         CreateVisitorMessageFactory(const document::DocumentTypeRepo &r) : _repo(r) {}
     };
