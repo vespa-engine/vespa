@@ -27,19 +27,49 @@ struct EvalCtx {
         tensors.push_back(std::move(tensor));
         return id;
     }
+    void replace_tensor(size_t idx, Value::UP tensor) {
+        params[idx] = *tensor;
+        tensors[idx] = std::move(tensor);
+    }
     const Value &eval(const TensorFunction &fun) {
         return fun.eval(SimpleObjectParams(params), stash);
     }
     const TensorFunction &compile(const tensor_function::Node &expr) {
         return engine.compile(expr, stash);
     }
-    Value::UP make_tensor_inject() {
+    Value::UP make_true() {
+        return engine.from_spec(TensorSpec("double").add({}, 1.0));
+    }
+    Value::UP make_false() {
+        return engine.from_spec(TensorSpec("double").add({}, 0.0));
+    }
+    Value::UP make_tensor_matrix_first_half() {
+        return engine.from_spec(
+                TensorSpec("tensor(x[2])")
+                .add({{"x", 0}}, 1.0)
+                .add({{"x", 1}}, 3.0));
+    }
+    Value::UP make_tensor_matrix_second_half() {
+        return engine.from_spec(
+                TensorSpec("tensor(x[2])")
+                .add({{"x", 0}}, 2.0)
+                .add({{"x", 1}}, 4.0));
+    }
+    Value::UP make_tensor_matrix() {
         return engine.from_spec(
                 TensorSpec("tensor(x[2],y[2])")
                 .add({{"x", 0}, {"y", 0}}, 1.0)
                 .add({{"x", 0}, {"y", 1}}, 2.0)
                 .add({{"x", 1}, {"y", 0}}, 3.0)
                 .add({{"x", 1}, {"y", 1}}, 4.0));
+    }
+    Value::UP make_tensor_matrix_renamed() {
+        return engine.from_spec(
+                TensorSpec("tensor(y[2],z[2])")
+                .add({{"z", 0}, {"y", 0}}, 1.0)
+                .add({{"z", 0}, {"y", 1}}, 2.0)
+                .add({{"z", 1}, {"y", 0}}, 3.0)
+                .add({{"z", 1}, {"y", 1}}, 4.0));
     }
     Value::UP make_tensor_reduce_input() {
         return engine.from_spec(
@@ -72,21 +102,21 @@ struct EvalCtx {
                 .add({{"x","2"},{"y","1"}}, 3)
                 .add({{"x","1"},{"y","2"}}, -5));
     }
-    Value::UP make_tensor_apply_lhs() {
+    Value::UP make_tensor_join_lhs() {
         return engine.from_spec(
                 TensorSpec("tensor(x{},y{})")
                 .add({{"x","1"},{"y","1"}}, 1)
                 .add({{"x","2"},{"y","1"}}, 3)
                 .add({{"x","1"},{"y","2"}}, 5));
     }
-    Value::UP make_tensor_apply_rhs() {
+    Value::UP make_tensor_join_rhs() {
         return engine.from_spec(
                 TensorSpec("tensor(y{},z{})")
                 .add({{"y","1"},{"z","1"}}, 7)
                 .add({{"y","2"},{"z","1"}}, 11)
                 .add({{"y","1"},{"z","2"}}, 13));
     }
-    Value::UP make_tensor_apply_output() {
+    Value::UP make_tensor_join_output() {
         return engine.from_spec(
                 TensorSpec("tensor(x{},y{},z{})")
                 .add({{"x","1"},{"y","1"},{"z","1"}}, 7)
@@ -108,10 +138,20 @@ void verify_equal(const Value &expect, const Value &value) {
     EXPECT_EQUAL(expect_spec, value_spec);
 }
 
+TEST("require that const_value works") {
+    EvalCtx ctx(SimpleTensorEngine::ref());
+    Value::UP my_const = ctx.make_tensor_matrix();
+    Value::UP expect = ctx.make_tensor_matrix();
+    const auto &fun = const_value(*my_const, ctx.stash);
+    EXPECT_EQUAL(expect->type(), fun.result_type());
+    const auto &prog = ctx.compile(fun);
+    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+}
+
 TEST("require that tensor injection works") {
     EvalCtx ctx(SimpleTensorEngine::ref());
-    size_t a_id = ctx.add_tensor(ctx.make_tensor_inject());
-    Value::UP expect = ctx.make_tensor_inject();
+    size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix());
+    Value::UP expect = ctx.make_tensor_matrix();
     const auto &fun = inject(ValueType::from_spec("tensor(x[2],y[2])"), a_id, ctx.stash);
     EXPECT_EQUAL(expect->type(), fun.result_type());
     const auto &prog = ctx.compile(fun);
@@ -151,9 +191,9 @@ TEST("require that tensor map works") {
 
 TEST("require that tensor join works") {
     EvalCtx ctx(SimpleTensorEngine::ref());
-    size_t a_id = ctx.add_tensor(ctx.make_tensor_apply_lhs());
-    size_t b_id = ctx.add_tensor(ctx.make_tensor_apply_rhs());
-    Value::UP expect = ctx.make_tensor_apply_output();
+    size_t a_id = ctx.add_tensor(ctx.make_tensor_join_lhs());
+    size_t b_id = ctx.add_tensor(ctx.make_tensor_join_rhs());
+    Value::UP expect = ctx.make_tensor_join_output();
     const auto &fun = join(inject(ValueType::from_spec("tensor(x{},y{})"), a_id, ctx.stash),
                            inject(ValueType::from_spec("tensor(y{},z{})"), b_id, ctx.stash),
                            operation::Mul::f, ctx.stash);
@@ -162,13 +202,73 @@ TEST("require that tensor join works") {
     TEST_DO(verify_equal(*expect, ctx.eval(prog)));
 }
 
+TEST("require that tensor concat works") {
+    EvalCtx ctx(SimpleTensorEngine::ref());
+    size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix_first_half());
+    size_t b_id = ctx.add_tensor(ctx.make_tensor_matrix_second_half());
+    Value::UP expect = ctx.make_tensor_matrix();
+    const auto &fun = concat(inject(ValueType::from_spec("tensor(x[2])"), a_id, ctx.stash),
+                             inject(ValueType::from_spec("tensor(x[2])"), b_id, ctx.stash),
+                             "y", ctx.stash);
+    EXPECT_EQUAL(expect->type(), fun.result_type());
+    const auto &prog = ctx.compile(fun);
+    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+}
+
+TEST("require that tensor rename works") {
+    EvalCtx ctx(SimpleTensorEngine::ref());
+    size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix());
+    Value::UP expect = ctx.make_tensor_matrix_renamed();
+    const auto &fun = rename(inject(ValueType::from_spec("tensor(x[2],y[2])"), a_id, ctx.stash),
+                             {"x"}, {"z"}, ctx.stash);
+    EXPECT_EQUAL(expect->type(), fun.result_type());
+    const auto &prog = ctx.compile(fun);
+    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+}
+
+TEST("require that if_node works") {
+    EvalCtx ctx(SimpleTensorEngine::ref());
+    size_t a_id = ctx.add_tensor(ctx.make_true());
+    size_t b_id = ctx.add_tensor(ctx.make_tensor_matrix_first_half());
+    size_t c_id = ctx.add_tensor(ctx.make_tensor_matrix_second_half());
+    Value::UP expect_true = ctx.make_tensor_matrix_first_half();
+    Value::UP expect_false = ctx.make_tensor_matrix_second_half();
+    const auto &fun = if_node(inject(ValueType::double_type(), a_id, ctx.stash),
+                              inject(ValueType::from_spec("tensor(x[2])"), b_id, ctx.stash),
+                              inject(ValueType::from_spec("tensor(x[2])"), c_id, ctx.stash), ctx.stash);
+    EXPECT_EQUAL(expect_true->type(), fun.result_type());
+    const auto &prog = ctx.compile(fun);
+    TEST_DO(verify_equal(*expect_true, ctx.eval(prog)));
+    ctx.replace_tensor(a_id, ctx.make_false());
+    TEST_DO(verify_equal(*expect_false, ctx.eval(prog)));
+}
+
+TEST("require that if_node gets expected result type") {
+    Stash stash;
+    const Node &a = inject(DoubleValue::double_type(), 0, stash);
+    const Node &b = inject(ValueType::from_spec("tensor(x[2])"), 0, stash);
+    const Node &c = inject(ValueType::from_spec("tensor(x[3])"), 0, stash);
+    const Node &d = inject(ValueType::from_spec("tensor(x[])"), 0, stash);
+    const Node &e = inject(ValueType::from_spec("tensor(y[3])"), 0, stash);
+    const Node &if_same = if_node(a, b, b, stash);
+    const Node &if_similar = if_node(a, b, c, stash);
+    const Node &if_subtype = if_node(a, b, d, stash);
+    const Node &if_different = if_node(a, b, e, stash);
+    EXPECT_EQUAL(if_same.result_type(), ValueType::from_spec("tensor(x[2])"));
+    EXPECT_EQUAL(if_similar.result_type(), ValueType::from_spec("any"));
+    EXPECT_EQUAL(if_subtype.result_type(), ValueType::from_spec("any"));
+    EXPECT_EQUAL(if_different.result_type(), ValueType::from_spec("any"));
+}
+
 TEST("require that push_children works") {
     Stash stash;
     std::vector<Node::Child::CREF> refs;
-    const Node &a = inject(ValueType::double_type(), 0, stash);
-    const Node &b = inject(ValueType::double_type(), 1, stash);
+    const Node &a = inject(DoubleValue::double_type(), 0, stash);
+    const Node &b = inject(DoubleValue::double_type(), 1, stash);
+    const Node &c = const_value(stash.create<DoubleValue>(1.0), stash);
     a.push_children(refs);
     b.push_children(refs);
+    c.push_children(refs);
     ASSERT_EQUAL(refs.size(), 0u);
     //-------------------------------------------------------------------------
     reduce(a, Aggr::SUM, {}, stash).push_children(refs);
@@ -183,6 +283,21 @@ TEST("require that push_children works") {
     ASSERT_EQUAL(refs.size(), 4u);
     EXPECT_EQUAL(&refs[2].get().get(), &a);
     EXPECT_EQUAL(&refs[3].get().get(), &b);
+    //-------------------------------------------------------------------------
+    concat(a, b, "x", stash).push_children(refs);
+    ASSERT_EQUAL(refs.size(), 6u);
+    EXPECT_EQUAL(&refs[4].get().get(), &a);
+    EXPECT_EQUAL(&refs[5].get().get(), &b);
+    //-------------------------------------------------------------------------
+    rename(c, {}, {}, stash).push_children(refs);
+    ASSERT_EQUAL(refs.size(), 7u);
+    EXPECT_EQUAL(&refs[6].get().get(), &c);
+    //-------------------------------------------------------------------------
+    if_node(a, b, c, stash).push_children(refs);
+    ASSERT_EQUAL(refs.size(), 10u);
+    EXPECT_EQUAL(&refs[7].get().get(), &a);
+    EXPECT_EQUAL(&refs[8].get().get(), &b);
+    EXPECT_EQUAL(&refs[9].get().get(), &c);
     //-------------------------------------------------------------------------
 }
 
