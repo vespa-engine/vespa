@@ -86,7 +86,28 @@ public class FileDistributionStatusTest {
     }
 
     @Test
-    public void require_different_statuses__many_hosts() throws IOException {
+    public void require_status_unknown_one_host() throws IOException {
+        Map<String, Double> fileReferenceStatuses = new HashMap<>();
+        fileReferenceStatuses.put("1234", 0.2);
+        FileDistributionStatus status = new MockStatus(statusWithError("localhost", Status.UNKNOWN, fileReferenceStatuses, "connection error"));
+        application = createApplication("localhost");
+
+        HttpResponse response = getStatus(status, application);
+        assertResponse(200,
+                       "{" +
+                               "\"hosts\":[" +
+                               "{\"hostname\":\"localhost\"," +
+                               "\"status\":\"UNKNOWN\"," +
+                               "\"message\":\"connection error\"," +
+                               "\"fileReferences\":[" +
+                               "{\"1234\":0.2}]}" +
+                               "]," +
+                               "\"status\":\"UNKNOWN\"}",
+                       response);
+    }
+
+    @Test
+    public void require_different_statuses_many_hosts() throws IOException {
         application = createApplication("localhost", "localhost2");
 
         Map<String, Double> fileReferenceStatuses = new HashMap<>();

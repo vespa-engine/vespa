@@ -95,14 +95,30 @@ public class FileDistributionStatus extends AbstractComponent {
     }
 
     private StatusAllHosts createStatusForAllHosts(List<HostStatus> hostStatuses) {
-        boolean allFinished = true;
+        int countUnknown = 0;
+        int countInProgress = 0;
+        int countFinished = 0;
         for (HostStatus hostStatus : hostStatuses) {
-            if (hostStatus.status != Status.FINISHED) {
-                allFinished = false;
-                break;
+            switch (hostStatus.status) {
+                case IN_PROGRESS:
+                    countInProgress++;
+                    break;
+                case FINISHED:
+                    countFinished++;
+                    break;
+                case UNKNOWN:
+                    countUnknown++;
+                    break;
+                default:
             }
         }
-        return new StatusAllHosts(allFinished ? Status.FINISHED : Status.IN_PROGRESS, hostStatuses);
+
+        if (countInProgress == 0 && countUnknown == 0)
+            return new StatusAllHosts(Status.FINISHED, hostStatuses);
+        else if (countInProgress == 0 && countFinished == 0)
+            return new StatusAllHosts(Status.UNKNOWN, hostStatuses);
+        else
+            return new StatusAllHosts(Status.IN_PROGRESS, hostStatuses);
     }
 
     private static Integer getRpcPort(ServiceInfo service) {
