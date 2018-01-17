@@ -24,6 +24,7 @@ import com.yahoo.tensor.serialization.TypedBinaryFormat;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +42,7 @@ import java.util.Optional;
 public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
     // TODO: Make system test work with this set to true, then remove the "true" path
-    private static final boolean constantsInConfig = false;
+    private static final boolean constantsInConfig = true;
 
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
 
@@ -197,37 +198,20 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
          * Adds this expression to the application package, such that it can be read later.
          */
         public void writeConverted(RankingExpression expression) {
-            try {
-                // We don't really need to store this as a file - we could keep it in memory in the application
-                // package until we write it to ZooKeeper. However, we need to write constants to the models_generated
-                // directory in any case (as they are distributed over file distribution),
-                // so we just reuse the same mechanism for expressions
-                Path expressionsPath = ApplicationPackage.MODELS_GENERATED_DIR
-                                       .append(arguments.modelPath)
-                                       .append("expressions");
-                createIfNeeded(expressionsPath);
-                IOUtils.writeFile(application.getFileReference(expressionsPath.append(arguments.expressionFileName())),
-                                  expression.getRoot().toString(), false);
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            application.getFile(arguments.expressionPath())
+                       .writeFile(new StringReader(expression.getRoot().toString()));
         }
 
         /** Reads the previously stored ranking expression for these arguments */
         public RankingExpression readConverted() {
-            Path expressionPath = ApplicationPackage.MODELS_GENERATED_DIR
-                                  .append(arguments.modelPath)
-                                  .append("expressions")
-                                  .append(arguments.expressionFileName());
             try {
-                return new RankingExpression(application.getFile(expressionPath).createReader());
+                return new RankingExpression(application.getFile(arguments.expressionPath()).createReader());
             }
             catch (IOException e) {
-                throw new UncheckedIOException("Could not read " + expressionPath, e);
+                throw new UncheckedIOException("Could not read " + arguments.expressionPath(), e);
             }
             catch (ParseException e) {
-                throw new IllegalStateException("Could not parse " + expressionPath, e);
+                throw new IllegalStateException("Could not parse " + arguments.expressionPath(), e);
             }
         }
 
@@ -243,6 +227,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
             // "tbf" ending for "typed binary format" - recognized by the nodes receiving the file:
             Path constantPath = constantsPath.append(name + ".tbf");
+            // Write explicitly as a file on the file system as this is distributed using file distribution
             IOUtils.writeFile(application.getFileReference(constantPath), TypedBinaryFormat.encode(constant));
             return constantPath;
         }
@@ -282,7 +267,12 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         public Optional<String> signature() { return signature; }
         public Optional<String> output() { return output; }
 
-        public String expressionFileName() {
+        public Path expressionPath() {
+            return ApplicationPackage.MODELS_GENERATED_DIR
+                    .append(modelPath).append("expressions").append(expressionFileName());
+        }
+
+        private String expressionFileName() {
             StringBuilder fileName = new StringBuilder();
             signature.ifPresent(s -> fileName.append(s).append("."));
             output.ifPresent(s -> fileName.append(s).append("."));
