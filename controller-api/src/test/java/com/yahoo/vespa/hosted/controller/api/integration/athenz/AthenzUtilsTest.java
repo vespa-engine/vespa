@@ -1,6 +1,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
-import com.yahoo.vespa.hosted.controller.api.identifiers.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
