@@ -1,14 +1,15 @@
 package com.yahoo.vespa.athenz.api;
 
-import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
-import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.startsWith;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author bjorncs

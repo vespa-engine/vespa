@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.controller.athenz.mock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPublicKey;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzService;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPublicKey;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 

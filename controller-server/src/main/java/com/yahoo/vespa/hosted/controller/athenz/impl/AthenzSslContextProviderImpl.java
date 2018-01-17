@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.athenz.impl;
 
 import com.google.inject.Inject;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentityCertificate;
+import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzSslContextProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZtsClient;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;

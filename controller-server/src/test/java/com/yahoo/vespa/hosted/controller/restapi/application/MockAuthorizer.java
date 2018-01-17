@@ -2,14 +2,14 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
+import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TestIdentities;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
+import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
@@ -37,7 +37,7 @@ public class MockAuthorizer extends Authorizer {
         if (domain == null || name == null) return Optional.empty();
         return Optional.of(
                 new AthenzPrincipal(
-                        AthenzUtils.createAthenzIdentity(new AthenzDomain(domain), name),
+                        AthenzIdentities.from(new AthenzDomain(domain), name),
                         new NToken("dummy")));
     }
 

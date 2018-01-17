@@ -10,10 +10,10 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUser;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
+import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.common.ContextAttributes;
 
@@ -100,14 +100,14 @@ public class Authorizer {
                     return false;
                 }
                 AthenzUser user = (AthenzUser) identity;
-                return isGroupMember(user.getUserId(), tenant.getUserGroup().get());
+                return isGroupMember(new UserId(user.getName()), tenant.getUserGroup().get());
             }
             case USER: {
                 if (!(identity instanceof AthenzUser)) {
                     return false;
                 }
                 AthenzUser user = (AthenzUser) identity;
-                return isUserTenantOwner(tenant.getId(), user.getUserId());
+                return isUserTenantOwner(tenant.getId(), new UserId(user.getName()));
             }
         }
         throw new IllegalArgumentException("Unknown tenant type: " + tenant.tenantType());

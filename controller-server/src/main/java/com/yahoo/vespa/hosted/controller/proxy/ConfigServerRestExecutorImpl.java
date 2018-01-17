@@ -7,10 +7,10 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentityVerifier;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
+import com.yahoo.vespa.athenz.utils.AthenzIdentityVerifier;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzSslContextProvider;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -290,7 +290,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
 
         @Override
         public void verify(String hostname, X509Certificate certificate) throws SSLException {
-            AthenzIdentity identity = AthenzUtils.createAthenzIdentity(certificate);
+            AthenzIdentity identity = AthenzIdentities.from(certificate);
             if (!verifier.isTrusted(identity)) {
                 throw new SSLException("Athenz identity is not trusted: " + identity.getFullName());
             }
@@ -298,7 +298,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
 
         @Override
         public void verify(String hostname, String[] cns, String[] subjectAlts) throws SSLException {
-            AthenzIdentity identity = AthenzUtils.createAthenzIdentity(cns[0]);
+            AthenzIdentity identity = AthenzIdentities.from(cns[0]);
             if (!verifier.isTrusted(identity)) {
                 throw new SSLException("Athenz identity is not trusted: " + identity.getFullName());
             }

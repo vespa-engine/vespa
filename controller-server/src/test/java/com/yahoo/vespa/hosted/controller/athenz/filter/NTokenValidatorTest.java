@@ -2,12 +2,11 @@
 package com.yahoo.vespa.hosted.controller.athenz.filter;
 
 import com.yahoo.athenz.auth.token.PrincipalToken;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUser;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
+import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.InvalidTokenException;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsKeystore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -19,7 +18,7 @@ import java.security.PrivateKey;
 import java.time.Instant;
 import java.util.Optional;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils.ZMS_ATHENZ_SERVICE;
+import static com.yahoo.vespa.athenz.utils.AthenzIdentities.ZMS_ATHENZ_SERVICE;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -29,7 +28,7 @@ public class NTokenValidatorTest {
 
     private static final KeyPair TRUSTED_KEY = AthenzTestUtils.generateRsaKeypair();
     private static final KeyPair UNKNOWN_KEY = AthenzTestUtils.generateRsaKeypair();
-    private static final AthenzIdentity IDENTITY = AthenzUser.fromUserId(new UserId("myuser"));
+    private static final AthenzIdentity IDENTITY = AthenzUser.fromUserId("myuser");
 
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();

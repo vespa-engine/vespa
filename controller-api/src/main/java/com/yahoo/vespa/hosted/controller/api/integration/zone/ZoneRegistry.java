@@ -4,8 +4,8 @@ package com.yahoo.vespa.hosted.controller.api.integration.zone;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzService;
 
 import java.net.URI;
 import java.time.Duration;

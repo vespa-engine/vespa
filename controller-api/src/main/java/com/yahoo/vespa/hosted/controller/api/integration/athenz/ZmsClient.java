@@ -1,8 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
-import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPublicKey;
+import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 
 import java.util.List;
 

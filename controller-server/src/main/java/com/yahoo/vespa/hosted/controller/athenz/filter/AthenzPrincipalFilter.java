@@ -6,9 +6,9 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzPrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzUtils;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.NToken;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
+import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsKeystore;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
@@ -28,7 +28,7 @@ import static com.yahoo.vespa.hosted.controller.athenz.filter.SecurityFilterUtil
  *
  * @author bjorncs
  */
-// TODO bjorncs: Move this class into separate container-security bundle
+// TODO bjorncs: Move this class to vespa-athenz bundle
 public class AthenzPrincipalFilter implements SecurityRequestFilter {
 
     private final NTokenValidator validator;
@@ -52,7 +52,7 @@ public class AthenzPrincipalFilter implements SecurityRequestFilter {
     public void filter(DiscFilterRequest request, ResponseHandler responseHandler) {
         try {
             Optional<AthenzPrincipal> certificatePrincipal = getClientCertificate(request)
-                    .map(AthenzUtils::createAthenzIdentity)
+                    .map(AthenzIdentities::from)
                     .map(AthenzPrincipal::new);
             Optional<AthenzPrincipal> nTokenPrincipal = getPrincipalToken(request, principalTokenHeader)
                     .map(validator::validate);
