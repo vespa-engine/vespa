@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentityVerifier;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzSslContextProvider;
@@ -42,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import static java.util.Collections.singleton;
 
@@ -51,6 +53,8 @@ import static java.util.Collections.singleton;
  */
 @SuppressWarnings("unused") // Injected
 public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
+
+    private static final Logger log = Logger.getLogger(ConfigServerRestExecutorImpl.class.getName());
 
     private static final Duration PROXY_REQUEST_TIMEOUT = Duration.ofSeconds(10);
     private static final Set<String> HEADERS_TO_COPY = Collections.singleton("X-HTTP-Method-Override");
@@ -135,10 +139,14 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
                 CloseableHttpResponse response = client.execute(requestBase);
         ) {
-            if (response.getStatusLine().getStatusCode() / 100 == 5) {
+            String content = EntityUtils.toString(response.getEntity());
+            int status = response.getStatusLine().getStatusCode();
+            if (status / 100 == 5) {
                 errorBuilder.append("Talking to server ").append(uri.getHost());
-                errorBuilder.append(", got ").append(response.getStatusLine().getStatusCode()).append(" ")
-                        .append(EntityUtils.toString(response.getEntity())).append("\n");
+                errorBuilder.append(", got ").append(status).append(" ")
+                        .append(content).append("\n");
+                log.log(LogLevel.DEBUG, () -> String.format("Got response from %s with status code %d and content:\n %s",
+                                                            uri.getHost(), status, content));
                 return Optional.empty();
             }
             final Header contentHeader = response.getLastHeader("Content-Type");
@@ -148,17 +156,12 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
             } else {
                 contentType = "application/json";
             }
-            return Optional.of(new ProxyResponse(
-                    proxyRequest,
-                    EntityUtils.toString(response.getEntity()),
-                    response.getStatusLine().getStatusCode(),
-                    Optional.of(uri),
-                    contentType));
-
             // Send response back
+            return Optional.of(new ProxyResponse(proxyRequest, content, status, Optional.of(uri), contentType));
         } catch (IOException|RuntimeException e) {
             errorBuilder.append("Talking to server ").append(uri.getHost());
             errorBuilder.append(" got exception ").append(e.getMessage());
+            log.log(LogLevel.DEBUG, e, () -> "Got exception while sending request to " + uri.getHost());
             return Optional.empty();
         }
     }
