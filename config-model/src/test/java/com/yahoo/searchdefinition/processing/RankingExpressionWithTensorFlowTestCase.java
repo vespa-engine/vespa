@@ -9,7 +9,6 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.yolean.Exceptions;
@@ -26,12 +25,12 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -40,17 +39,17 @@ import static org.junit.Assert.fail;
  */
 public class RankingExpressionWithTensorFlowTestCase {
 
-    private final Path applicationDirectory = Path.fromString("src/test/integration/tensorflow/");
+    private final Path applicationDir = Path.fromString("src/test/integration/tensorflow/");
     private final String vespaExpression = "join(rename(reduce(join(Placeholder, rename(constant(Variable), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(Variable_1), d0, d1), f(a,b)(a + b))";
 
     @After
     public void removeGeneratedConstantTensorFiles() {
-        IOUtils.recursiveDeleteDir(applicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+        IOUtils.recursiveDeleteDir(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
     }
 
     @Test
     public void testMinimalTensorFlowReference() throws ParseException {
-        StoringApplicationPackage application = new StoringApplicationPackage(applicationDirectory);
+        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
         RankProfileSearchFixture search = new RankProfileSearchFixture(
                 application,
                 "  rank-profile my_profile {\n" +
@@ -59,13 +58,13 @@ public class RankingExpressionWithTensorFlowTestCase {
                 "    }\n" +
                 "  }");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertConstant(10, "Variable_1", search);
-        assertConstant(7840, "Variable", search);
+        assertConstant("Variable_1", search, Optional.of(10L));
+        assertConstant("Variable", search, Optional.of(7840L));
     }
 
     @Test
     public void testNestedTensorFlowReference() throws ParseException {
-        StoringApplicationPackage application = new StoringApplicationPackage(applicationDirectory);
+        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
         RankProfileSearchFixture search = new RankProfileSearchFixture(
                 application,
                 "  rank-profile my_profile {\n" +
@@ -74,13 +73,13 @@ public class RankingExpressionWithTensorFlowTestCase {
                 "    }\n" +
                 "  }");
         search.assertFirstPhaseExpression("5 + reduce(" + vespaExpression + ", sum)", "my_profile");
-        assertConstant(10, "Variable_1", search);
-        assertConstant(7840, "Variable", search);
+        assertConstant("Variable_1", search, Optional.of(10L));
+        assertConstant("Variable", search, Optional.of(7840L));
     }
 
     @Test
     public void testTensorFlowReferenceSpecifyingSignature() throws ParseException {
-        StoringApplicationPackage application = new StoringApplicationPackage(applicationDirectory);
+        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
         RankProfileSearchFixture search = new RankProfileSearchFixture(
                 application,
                 "  rank-profile my_profile {\n" +
@@ -93,7 +92,7 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @Test
     public void testTensorFlowReferenceSpecifyingSignatureAndOutput() throws ParseException {
-        StoringApplicationPackage application = new StoringApplicationPackage(applicationDirectory);
+        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
         RankProfileSearchFixture search = new RankProfileSearchFixture(
                 application,
                 "  rank-profile my_profile {\n" +
@@ -107,7 +106,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     @Test
     public void testTensorFlowReferenceSpecifyingNonExistingSignature() throws ParseException {
         try {
-            StoringApplicationPackage application = new StoringApplicationPackage(applicationDirectory);
+            StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
             RankProfileSearchFixture search = new RankProfileSearchFixture(
                     application,
                     "  rank-profile my_profile {\n" +
@@ -129,7 +128,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     @Test
     public void testTensorFlowReferenceSpecifyingNonExistingOutput() throws ParseException {
         try {
-            StoringApplicationPackage application = new StoringApplicationPackage(applicationDirectory);
+            StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
             RankProfileSearchFixture search = new RankProfileSearchFixture(
                     application,
                     "  rank-profile my_profile {\n" +
@@ -150,7 +149,7 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @Test
     public void testImportingFromStoredExpressions() throws ParseException, IOException {
-        StoringApplicationPackage application = new StoringApplicationPackage(applicationDirectory);
+        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
         RankProfileSearchFixture search = new RankProfileSearchFixture(
                 application,
                 "  rank-profile my_profile {\n" +
@@ -159,12 +158,14 @@ public class RankingExpressionWithTensorFlowTestCase {
                 "    }\n" +
                 "  }");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+        assertConstant("Variable_1", search, Optional.of(10L));
+        assertConstant("Variable", search, Optional.of(7840L));
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
-        Path storedApplicationDirectory = applicationDirectory.getParentPath().append("copy");
+        Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
         try {
             storedApplicationDirectory.toFile().mkdirs();
-            IOUtils.copyDirectory(applicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
+            IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                                   storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
             RankProfileSearchFixture searchFromStored = new RankProfileSearchFixture(
@@ -175,6 +176,10 @@ public class RankingExpressionWithTensorFlowTestCase {
                     "    }\n" +
                     "  }");
             searchFromStored.assertFirstPhaseExpression(vespaExpression, "my_profile");
+            // Verify that the constants exists, but don't verify the content as we are not
+            // simulating file distribution in this test
+            assertConstant("Variable_1", searchFromStored, Optional.empty());
+            assertConstant("Variable", searchFromStored, Optional.empty());
         }
         finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
@@ -182,24 +187,24 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     }
 
-    private void assertConstant(int expectedSize, String name, RankProfileSearchFixture search) {
+    /**
+     * Verifies that the constant with the given name exists, and - only if an expected size is given -
+     * that the content of the constant is available and has the expected size.
+     */
+    private void assertConstant(String name, RankProfileSearchFixture search, Optional<Long> expectedSize) {
         try {
-            TensorValue constant = (TensorValue)search.rankProfile("my_profile").getConstants().get(name); // Old way. TODO: Remove
-            if (constant == null) { // New way
-                Path constantApplicationPackagePath = Path.fromString("models.generated/mnist_softmax/saved/constants").append(name + ".tbf");
-                RankingConstant rankingConstant = search.search().getRankingConstants().get(name);
-                assertEquals(name, rankingConstant.getName());
-                assertEquals(constantApplicationPackagePath.toString(), rankingConstant.getFileName());
+            Path constantApplicationPackagePath = Path.fromString("models.generated/mnist_softmax/saved/constants").append(name + ".tbf");
+            RankingConstant rankingConstant = search.search().getRankingConstants().get(name);
+            assertEquals(name, rankingConstant.getName());
+            assertEquals(constantApplicationPackagePath.toString(), rankingConstant.getFileName());
 
-                Path constantPath = applicationDirectory.append(constantApplicationPackagePath);
+            if (expectedSize.isPresent()) {
+                Path constantPath = applicationDir.append(constantApplicationPackagePath);
                 assertTrue("Constant file '" + constantPath + "' has been written",
                            constantPath.toFile().exists());
                 Tensor deserializedConstant = TypedBinaryFormat.decode(Optional.empty(),
                                                                        GrowableByteBuffer.wrap(IOUtils.readFileBytes(constantPath.toFile())));
-                assertEquals(expectedSize, deserializedConstant.size());
-            } else { // Old way. TODO: Remove
-                assertNotNull(name + " is imported", constant);
-                assertEquals(expectedSize, constant.asTensor().size());
+                assertEquals(expectedSize.get().longValue(), deserializedConstant.size());
             }
         }
         catch (IOException e) {
@@ -300,8 +305,8 @@ public class RankingExpressionWithTensorFlowTestCase {
         public List<ApplicationFile> listFiles(PathFilter filter) {
             if ( ! isDirectory()) return Collections.emptyList();
             return Arrays.stream(file.listFiles()).filter(f -> filter.accept(Path.fromString(f.toString())))
-                                                  .map(f -> new StoringApplicationPackageFile(Path.fromString(f.toString()),
-                                                                                                              root))
+                                                  .map(f -> new StoringApplicationPackageFile(asApplicationRelativePath(f),
+                                                                                              root))
                                                   .collect(Collectors.toList());
         }
 
@@ -320,6 +325,25 @@ public class RankingExpressionWithTensorFlowTestCase {
         public int compareTo(ApplicationFile other) {
             return this.getPath().getName().compareTo((other).getPath().getName());
         }
+
+        /** Strips the application package root path prefix from the path of the given file */
+        private Path asApplicationRelativePath(File file) {
+            Path path = Path.fromString(file.toString());
+
+            Iterator<String> pathIterator = path.iterator();
+            // Skip the path elements this shares with the root
+            for (Iterator<String> rootIterator = root.iterator(); rootIterator.hasNext(); ) {
+                String rootElement = rootIterator.next();
+                String pathElement = pathIterator.next();
+                if ( ! rootElement.equals(pathElement)) throw new RuntimeException("Assumption broken");
+            }
+            // Build a path from the remaining
+            Path relative = Path.fromString("");
+            while (pathIterator.hasNext())
+                relative = relative.append(pathIterator.next());
+            return relative;
+        }
+
     }
 
 }

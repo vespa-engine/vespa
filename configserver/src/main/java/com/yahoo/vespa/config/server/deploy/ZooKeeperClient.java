@@ -202,8 +202,8 @@ public class ZooKeeperClient {
         writeDir(app.getFile(Path.fromString(ApplicationPackage.ROUTINGTABLES_DIR)),
                  getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.ROUTINGTABLES_DIR),
                  xmlFilter, true);
-        writeDir(app.getFile(ApplicationPackage.MODELS_GENERATED_DIR),
-                 getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.MODELS_GENERATED_DIR),
+        writeDir(app.getFile(ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR),
+                 getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR),
                  true);
     }
 
