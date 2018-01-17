@@ -260,7 +260,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                                 zoneRegistry.getConfigserverAthenzService(
                                         ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion()))));
         return HttpClientBuilder.create()
-                .setUserAgent("config-server-client")
+                .setUserAgent("config-server-proxy-client")
                 .setSslcontext(sslContextProvider.get())
                 .setHostnameVerifier(new AthenzIdentityVerifierAdapter(hostnameVerifier))
                 .setDefaultRequestConfig(config)
