@@ -7,10 +7,12 @@
 namespace search::datastore {
 
 void
-BufferTypeBase::CleanContext::extraBytesCleaned(uint64_t value) {
+BufferTypeBase::CleanContext::extraBytesCleaned(uint64_t value)
+{
     assert(_extraBytes >= value);
     _extraBytes -= value;
 }
+
 BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
                                uint32_t minClusters,
                                uint32_t maxClusters,
@@ -24,15 +26,15 @@ BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
       _activeUsedElems(0),
       _holdUsedElems(0),
       _lastUsedElems(nullptr)
-{ }
-
+{
+}
 
 BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
                                uint32_t minClusters,
                                uint32_t maxClusters)
     : BufferTypeBase(clusterSize, minClusters, maxClusters, 0u)
-{ }
-
+{
+}
 
 BufferTypeBase::~BufferTypeBase()
 {
@@ -52,12 +54,11 @@ BufferTypeBase::getReservedElements(uint32_t bufferId) const
 void
 BufferTypeBase::flushLastUsed()
 {
-    if (_lastUsedElems != NULL) {
+    if (_lastUsedElems != nullptr) {
         _activeUsedElems += *_lastUsedElems;
-        _lastUsedElems = NULL;
+        _lastUsedElems = nullptr;
     }
 }
-
 
 void
 BufferTypeBase::onActive(uint32_t bufferId, size_t *usedElems, size_t &deadElems, void *buffer)
@@ -73,19 +74,18 @@ BufferTypeBase::onActive(uint32_t bufferId, size_t *usedElems, size_t &deadElems
     }
 }
 
-
 void
 BufferTypeBase::onHold(const size_t *usedElems)
 {
-    if (usedElems == _lastUsedElems)
+    if (usedElems == _lastUsedElems) {
         flushLastUsed();
+    }
     --_activeBuffers;
     ++_holdBuffers;
     assert(_activeUsedElems >= *usedElems);
     _activeUsedElems -= *usedElems;
     _holdUsedElems += *usedElems;
 }
-
 
 void
 BufferTypeBase::onFree(size_t usedElems)
@@ -101,14 +101,14 @@ BufferTypeBase::clampMaxClusters(uint32_t maxClusters)
     _maxClusters = std::min(_maxClusters, maxClusters);
     _minClusters = std::min(_minClusters, _maxClusters);
     _numClustersForNewBuffer = std::min(_numClustersForNewBuffer, _maxClusters);
-};
+}
 
 size_t
 BufferTypeBase::calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const
 {
     size_t reservedElements = getReservedElements(bufferId);
     size_t usedElems = _activeUsedElems;
-    if (_lastUsedElems != NULL) {
+    if (_lastUsedElems != nullptr) {
         usedElems += *_lastUsedElems;
     }
     assert((usedElems % _clusterSize) == 0);

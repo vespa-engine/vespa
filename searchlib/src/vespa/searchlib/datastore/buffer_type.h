@@ -118,7 +118,6 @@ BufferType<EntryType>::destroyElements(void *buffer, size_t numElements)
     }
 }
 
-
 template <typename EntryType>
 void
 BufferType<EntryType>::fallbackCopy(void *newBuffer,
@@ -134,7 +133,6 @@ BufferType<EntryType>::fallbackCopy(void *newBuffer,
     }
 }
 
-
 template <typename EntryType>
 void
 BufferType<EntryType>::initializeReservedElements(void *buffer, size_t reservedElems)
@@ -145,7 +143,6 @@ BufferType<EntryType>::initializeReservedElements(void *buffer, size_t reservedE
         ++e;
     }
 }
-
 
 template <typename EntryType>
 void
