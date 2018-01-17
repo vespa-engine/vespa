@@ -64,7 +64,7 @@ public class NetRetriever implements HardwareRetriever {
         updateHardwareInfoWithNet(parseResults);
     }
 
-    protected List<ParseResult> findInterface() {
+    List<ParseResult> findInterface() {
         List<ParseResult> parseResults = new ArrayList<>();
         try {
             List<String> commandOutput = commandExecutor.executeCommand(NET_FIND_INTERFACE);
@@ -76,13 +76,13 @@ public class NetRetriever implements HardwareRetriever {
         return parseResults;
     }
 
-    protected List<ParseResult> parseNetInterface(List<String> commandOutput) {
+    List<ParseResult> parseNetInterface(List<String> commandOutput) {
         List<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_INTERFACE_IP4, SEARCH_WORD_INTERFACE_IPV6));
         ParseInstructions parseInstructions = new ParseInstructions(INTERFACE_SEARCH_ELEMENT_INDEX, INTERFACE_RETURN_ELEMENT_INDEX, INTERFACE_NAME_REGEX_SPLIT, searchWords);
         return OutputParser.parseOutput(parseInstructions, commandOutput);
     }
 
-    protected void findInterfaceSpeed(List<ParseResult> parseResults) {
+    void findInterfaceSpeed(List<ParseResult> parseResults) {
         try {
             List<String> commandOutput = commandExecutor.executeCommand(NET_CHECK_INTERFACE_SPEED);
             ParseResult parseResult = parseInterfaceSpeed(commandOutput);
@@ -92,7 +92,7 @@ public class NetRetriever implements HardwareRetriever {
         }
     }
 
-    protected ParseResult parseInterfaceSpeed(List<String> commandOutput) throws IOException {
+    ParseResult parseInterfaceSpeed(List<String> commandOutput) throws IOException {
         List<String> searchWords = Collections.singletonList(SEARCH_WORD_INTERFACE_SPEED);
         ParseInstructions parseInstructions = new ParseInstructions(INTERFACE_SPEED_SEARCH_ELEMENT_INDEX, INTERFACE_SPEED_RETURN_ELEMENT_INDEX, INTERFACE_SPEED_REGEX_SPLIT, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
@@ -102,7 +102,7 @@ public class NetRetriever implements HardwareRetriever {
         return parseResult;
     }
 
-    protected void testPingResponse(List<ParseResult> parseResults) {
+    private void testPingResponse(List<ParseResult> parseResults) {
         try {
             List<String> commandOutput = commandExecutor.executeCommand(PING_NET_COMMAND);
             parseResults.add(parsePingResponse(commandOutput));
@@ -113,7 +113,7 @@ public class NetRetriever implements HardwareRetriever {
         }
     }
 
-    protected ParseResult parsePingResponse(List<String> commandOutput) throws IOException {
+    ParseResult parsePingResponse(List<String> commandOutput) throws IOException {
         List<String> searchWords = Collections.singletonList(PING_SEARCH_WORD);
         ParseInstructions parseInstructions = new ParseInstructions(PING_SEARCH_ELEMENT_INDEX, PING_RETURN_ELEMENT_INDEX, PING_SPLIT_REGEX_STRING, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
@@ -123,7 +123,7 @@ public class NetRetriever implements HardwareRetriever {
         return new ParseResult(PING_SEARCH_WORD, parseResult.getValue());
     }
 
-    protected void updateHardwareInfoWithNet(List<ParseResult> parseResults) {
+    void updateHardwareInfoWithNet(List<ParseResult> parseResults) {
         hardwareInfo.setIpv6Interface(false);
         hardwareInfo.setIpv4Interface(false);
         for (ParseResult parseResult : parseResults) {
@@ -147,11 +147,11 @@ public class NetRetriever implements HardwareRetriever {
         }
     }
 
-    protected double convertInterfaceSpeed(String speed) {
+    double convertInterfaceSpeed(String speed) {
         return Double.parseDouble(speed.replaceAll("[^\\d.]", ""));
     }
 
-    protected void setIpv6Connectivity(ParseResult parseResult) {
+    void setIpv6Connectivity(ParseResult parseResult) {
         String pingResponse = parseResult.getValue();
         String packetLoss = pingResponse.replaceAll("[^\\d.]", "");
         if (packetLoss.equals("")) return;

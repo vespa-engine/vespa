@@ -28,19 +28,19 @@ import java.util.Optional;
 public class SpecVerifier extends Main.VerifierCommand {
 
     @Option(name = {"-d", "--disk"}, required = true, description = "Expected disk size in GB")
-    protected double diskAvailableGb;
+    private double diskAvailableGb;
 
     @Option(name = {"-m", "--memory"}, required = true, description = "Expected main memory size in GB")
-    protected double mainMemoryAvailableGb;
+    private double mainMemoryAvailableGb;
 
     @Option(name = {"-c", "--cpu_cores"}, required = true, description = "Expected number of CPU cores")
-    protected double cpuCores;
+    private double cpuCores;
 
     @Option(name = {"-s", "--is_ssd"}, required = true, description = "Set to true if disk is SSD", allowedValues = {"true", "false"})
-    protected String fastDisk;
+    private String fastDisk;
 
     @Option(name = {"-i", "--ips"}, description = "Comma separated list of IP addresses assigned to this node")
-    protected String ipAddresses;
+    private String ipAddresses;
 
     @Override
     public void run(HardwareDivergenceReport hardwareDivergenceReport, CommandExecutor commandExecutor) {

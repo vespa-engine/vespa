@@ -47,7 +47,7 @@ public class DiskRetriever implements HardwareRetriever {
         updateDiskSize();
     }
 
-    protected void updateDiskType() {
+    void updateDiskType() {
         try {
             List<String> commandOutput = commandExecutor.executeCommand(DISK_CHECK_TYPE);
             ParseResult parseResult = parseDiskType(commandOutput);
@@ -57,7 +57,7 @@ public class DiskRetriever implements HardwareRetriever {
         }
     }
 
-    protected void updateDiskSize() {
+    void updateDiskSize() {
         try {
             List<String> commandOutput = commandExecutor.executeCommand(DISK_CHECK_SIZE);
             List<ParseResult> parseResult = parseDiskSize(commandOutput);
@@ -67,7 +67,7 @@ public class DiskRetriever implements HardwareRetriever {
         }
     }
 
-    protected ParseResult parseDiskType(List<String> commandOutput) throws IOException {
+    ParseResult parseDiskType(List<String> commandOutput) throws IOException {
         List<String> searchWords = Collections.singletonList(DISK_NAME);
         ParseInstructions parseInstructions = new ParseInstructions(DISK_TYPE_SEARCH_ELEMENT_INDEX, DISK_TYPE_RETURN_ELEMENT_INDEX, DISK_TYPE_REGEX_SPLIT, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
@@ -77,7 +77,7 @@ public class DiskRetriever implements HardwareRetriever {
         return parseResult;
     }
 
-    protected void setDiskType(ParseResult parseResult) {
+    void setDiskType(ParseResult parseResult) {
         hardwareInfo.setDiskType(DiskType.UNKNOWN);
         String fastDiskSymbol = "0";
         String nonFastDiskSymbol = "1";
@@ -88,13 +88,13 @@ public class DiskRetriever implements HardwareRetriever {
         }
     }
 
-    protected List<ParseResult> parseDiskSize(List<String> commandOutput) {
+    List<ParseResult> parseDiskSize(List<String> commandOutput) {
         List<String> searchWords = Collections.singletonList(DISK_SIZE_SEARCH_WORD);
         ParseInstructions parseInstructions = new ParseInstructions(DISK_SIZE_SEARCH_ELEMENT_INDEX, DISK_SIZE_RETURN_ELEMENT_INDEX, DISK_SIZE_REGEX_SPLIT, searchWords);
         return OutputParser.parseOutput(parseInstructions, commandOutput);
     }
 
-    protected void setDiskSize(List<ParseResult> parseResults) {
+    private void setDiskSize(List<ParseResult> parseResults) {
         double diskSize = 0;
         try {
             for (ParseResult parseResult : parseResults) {

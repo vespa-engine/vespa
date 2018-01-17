@@ -45,7 +45,7 @@ public class MemoryRetriever implements HardwareRetriever {
         }
     }
 
-    protected ParseResult parseMemInfoFile(List<String> commandOutput) throws IOException {
+    ParseResult parseMemInfoFile(List<String> commandOutput) throws IOException {
         List<String> searchWords = Collections.singletonList(SEARCH_WORD);
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, REGEX_SPLIT, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
@@ -55,12 +55,12 @@ public class MemoryRetriever implements HardwareRetriever {
         return parseResult;
     }
 
-    protected void updateMemoryInfo(ParseResult parseResult) {
+    void updateMemoryInfo(ParseResult parseResult) {
         double memory = convertKBToGB(parseResult.getValue());
         hardwareInfo.setMinMainMemoryAvailableGb(memory);
     }
 
-    protected double convertKBToGB(String totMem) {
+    double convertKBToGB(String totMem) {
         String[] split = totMem.split(" ");
         double value = Double.parseDouble(split[0]);
         double kiloToGiga = 1000000.0;

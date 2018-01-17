@@ -45,7 +45,7 @@ public class CPURetriever implements HardwareRetriever {
         }
     }
 
-    protected List<ParseResult> parseCPUInfoFile(List<String> commandOutput) {
+    List<ParseResult> parseCPUInfoFile(List<String> commandOutput) {
         List<String> searchWords = Collections.singletonList(SEARCH_WORD);
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, REGEX_SPLIT, searchWords);
         return OutputParser.parseOutput(parseInstructions, commandOutput);
@@ -55,7 +55,7 @@ public class CPURetriever implements HardwareRetriever {
         hardwareInfo.setMinCpuCores(countCpuCores(parseResults));
     }
 
-    protected int countCpuCores(List<ParseResult> parseResults) {
+    private int countCpuCores(List<ParseResult> parseResults) {
         return parseResults.size();
     }
 

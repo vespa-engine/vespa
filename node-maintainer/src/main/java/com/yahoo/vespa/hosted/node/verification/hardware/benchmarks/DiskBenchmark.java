@@ -49,18 +49,18 @@ public class DiskBenchmark implements Benchmark {
         }
     }
 
-    protected ParseResult parseDiskSpeed(List<String> commandOutput) {
+    ParseResult parseDiskSpeed(List<String> commandOutput) {
         List<String> searchWords = new ArrayList<>(Arrays.asList(KILO_BYTE_SEARCH_WORD, MEGA_BYTE_SEARCH_WORD, GIGA_BYTE_SEARCH_WORD));
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, SPLIT_REGEX_STRING, searchWords);
         return OutputParser.parseSingleOutput(parseInstructions, commandOutput);
     }
 
-    protected void setDiskSpeed(ParseResult parseResult) {
+    void setDiskSpeed(ParseResult parseResult) {
         double diskSpeedMBs = getDiskSpeedInMBs(parseResult);
         benchmarkResults.setDiskSpeedMbs(diskSpeedMBs);
     }
 
-    protected double getDiskSpeedInMBs(ParseResult parseResult) {
+    double getDiskSpeedInMBs(ParseResult parseResult) {
         double diskSpeedMBs = 0;
         double convertKBsToMBs = 1 / 1000.0;
         double convertGBsToMBs = 1000.0;
@@ -85,7 +85,7 @@ public class DiskBenchmark implements Benchmark {
         return diskSpeedMBs;
     }
 
-    protected boolean checkSpeedValidity(String speed) {
+    boolean checkSpeedValidity(String speed) {
         try {
             Double.parseDouble(speed);
         } catch (NullPointerException | NumberFormatException e) {
@@ -94,7 +94,7 @@ public class DiskBenchmark implements Benchmark {
         return true;
     }
 
-    protected Double convertToMBs(String speed, double numberToConvert) {
+    Double convertToMBs(String speed, double numberToConvert) {
         double speedMbs = Double.parseDouble(speed);
         return speedMbs * numberToConvert;
     }

@@ -19,7 +19,7 @@ public class MockCommandExecutor extends CommandExecutor {
 
     private ArrayList<String> mockCommands;
     private int counter;
-    public static final String DUMMY_COMMAND = "DUMMY";
+    private static final String DUMMY_COMMAND = "DUMMY";
 
     public MockCommandExecutor() {
         mockCommands = new ArrayList<>();

@@ -81,7 +81,7 @@ public class IPAddressVerifier {
         return false;
     }
 
-    protected String reverseLookUp(String ipAddress) throws NamingException {
+    String reverseLookUp(String ipAddress) throws NamingException {
         Hashtable<String, String> env = new Hashtable<>();
         env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
         DirContext ctx = new InitialDirContext(env);
@@ -99,7 +99,7 @@ public class IPAddressVerifier {
         return "";
     }
 
-    protected String convertIpv6ToLookupFormat(String ipAddress) {
+    String convertIpv6ToLookupFormat(String ipAddress) {
         StringBuilder newIpAddress = new StringBuilder();
         String doubleColonReplacement = "0.0.0.0.0.0.0.0.0.0.0.0.";
         String domain = "ip6.arpa";
@@ -119,7 +119,7 @@ public class IPAddressVerifier {
         return newIpAddress.toString();
     }
 
-    protected String convertIpv4ToLookupFormat(String ipAddress) {
+    String convertIpv4ToLookupFormat(String ipAddress) {
         String domain = "in-addr.arpa";
         String[] octets = ipAddress.split("\\.");
         StringBuilder convertedIpAddress = new StringBuilder();
