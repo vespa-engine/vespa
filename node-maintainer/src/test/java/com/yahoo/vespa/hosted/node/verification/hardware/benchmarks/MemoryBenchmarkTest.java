@@ -9,14 +9,11 @@ import org.junit.Test;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author sgrostad
  * @author olaaun
  */
-
 public class MemoryBenchmarkTest {
 
     private MemoryBenchmark memoryBenchmark;
@@ -66,51 +63,4 @@ public class MemoryBenchmarkTest {
         parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
         assertEquals(expectedParseResult, parseResult);
     }
-
-    @Test
-    public void memoryReadSpeed_valid_input_should_update_hardwareResults() {
-        Double expectedMemoryReadSpeed = 12.1;
-        memoryBenchmark.updateMemoryReadSpeed(expectedMemoryReadSpeed.toString());
-        assertEquals(expectedMemoryReadSpeed, benchmarkResults.getMemoryReadSpeedGBs(), DELTA);
-    }
-
-    @Test
-    public void memoryReadSpeed_invalid_input_should_not_update_hardwareResults() {
-        memoryBenchmark.updateMemoryReadSpeed("Invalid speed");
-        assertEquals(0D, benchmarkResults.getMemoryReadSpeedGBs(), DELTA);
-    }
-
-    @Test
-    public void memoryWriteSpeed_valid_input_should_update_hardwareResults() {
-        Double expectedMemoryWriteSpeed = 3.8;
-        memoryBenchmark.updateMemoryWriteSpeed(expectedMemoryWriteSpeed.toString());
-        assertEquals(expectedMemoryWriteSpeed, benchmarkResults.getMemoryWriteSpeedGBs(), DELTA);
-    }
-
-    @Test
-    public void memoryWriteSpeed_invalid_input_should_not_update_hardwareResults() {
-        memoryBenchmark.updateMemoryWriteSpeed("Invalid speed");
-        assertEquals(0D, benchmarkResults.getMemoryWriteSpeedGBs(), DELTA);
-    }
-
-    @Test
-    public void isValidMemory_should_return_true_when_parameter_is_number() {
-        String benchmarkOutput = "6.32";
-        boolean validMemory = memoryBenchmark.isValidMemory(benchmarkOutput);
-        assertTrue(validMemory);
-    }
-
-    @Test
-    public void isValidMemory_should_return_false_when_parameter_is_not_number() {
-        String benchmarkOutput = "";
-        boolean validMemory = memoryBenchmark.isValidMemory(benchmarkOutput);
-        assertFalse(validMemory);
-        benchmarkOutput = null;
-        validMemory = memoryBenchmark.isValidMemory(benchmarkOutput);
-        assertFalse(validMemory);
-        benchmarkOutput = "Exit status 127";
-        validMemory = memoryBenchmark.isValidMemory(benchmarkOutput);
-        assertFalse(validMemory);
-    }
-
 }
