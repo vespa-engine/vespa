@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzIdentityVerifier;
@@ -27,6 +26,7 @@ import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
@@ -34,7 +34,6 @@ import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -139,7 +138,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
             if (response.getStatusLine().getStatusCode() / 100 == 5) {
                 errorBuilder.append("Talking to server ").append(uri.getHost());
                 errorBuilder.append(", got ").append(response.getStatusLine().getStatusCode()).append(" ")
-                        .append(streamToString(response.getEntity().getContent())).append("\n");
+                        .append(EntityUtils.toString(response.getEntity())).append("\n");
                 return Optional.empty();
             }
             final Header contentHeader = response.getLastHeader("Content-Type");
@@ -151,7 +150,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
             }
             return Optional.of(new ProxyResponse(
                     proxyRequest,
-                    streamToString(response.getEntity().getContent()),
+                    EntityUtils.toString(response.getEntity()),
                     response.getStatusLine().getStatusCode(),
                     Optional.of(uri),
                     contentType));
@@ -201,17 +200,6 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                     toRequest.addHeader(headerEntry.getKey(), value);
                 }
             }
-        }
-    }
-
-    public static String streamToString(final InputStream inputStream) throws IOException {
-        final StringBuilder out = new StringBuilder();
-        while (true) {
-            byte[] bytesFromStream = IOUtils.readBytes(inputStream, 1024);
-            if (bytesFromStream.length == 0) {
-                return out.toString();
-            }
-            out.append(new String(bytesFromStream, StandardCharsets.UTF_8));
         }
     }
 
