@@ -62,7 +62,7 @@ public abstract class RoutableFactories51 extends RoutableFactories50 {
             return msg;
         }
 
-        protected boolean encodeBucketSpace(String bucketSpace) {
+        protected boolean encodeBucketSpace(String bucketSpace, DocumentSerializer buf) {
             // TODO fixed space repo
             return "default".equals(bucketSpace);
         }
@@ -103,7 +103,7 @@ public abstract class RoutableFactories51 extends RoutableFactories50 {
 
             buf.putInt(null, msg.getVisitorOrdering());
             buf.putInt(null, msg.getMaxBucketsPerVisitor());
-            return encodeBucketSpace(msg.getBucketSpace());
+            return encodeBucketSpace(msg.getBucketSpace(), buf);
         }
     }
 
