@@ -24,7 +24,7 @@ using search::attribute::ConstCharContent;
 using search::tensor::DenseTensorAttribute;
 using search::attribute::IntegerContent;
 using search::attribute::FloatContent;
-using search::tensor::TensorAttribute;
+using search::tensor::ITensorAttribute;
 using search::attribute::WeightedConstCharContent;
 using search::attribute::WeightedIntegerContent;
 using search::attribute::WeightedFloatContent;
@@ -391,24 +391,22 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
                 " Returning empty tensor.", attribute->getName().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
-    const TensorAttribute *tensorAttribute = dynamic_cast<const TensorAttribute *>(attribute);
+    const ITensorAttribute *tensorAttribute = dynamic_cast<const ITensorAttribute *>(attribute);
     if (tensorAttribute == nullptr) {
         LOG(warning, "The attribute vector '%s' could not be converted to a tensor attribute."
                 " Returning empty tensor.", attribute->getName().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
-    if (tensorType != tensorAttribute->getConfig().tensorType()) {
+    if (tensorType != tensorAttribute->getTensorType()) {
         LOG(warning, "The tensor attribute '%s' has tensor type '%s',"
                 " while the feature executor expects type '%s'. Returning empty tensor.",
-                tensorAttribute->getName().c_str(),
-                tensorAttribute->getConfig().tensorType().to_spec().c_str(),
+                attribute->getName().c_str(),
+                tensorAttribute->getTensorType().to_spec().c_str(),
                 tensorType.to_spec().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
     if (tensorType.is_dense()) {
-        const DenseTensorAttribute *denseTensorAttribute = dynamic_cast<const DenseTensorAttribute *>(tensorAttribute);
-        assert(denseTensorAttribute != nullptr);
-        return stash.create<DenseTensorAttributeExecutor>(denseTensorAttribute);
+        return stash.create<DenseTensorAttributeExecutor>(tensorAttribute);
     }
     return stash.create<TensorAttributeExecutor>(tensorAttribute);
 }

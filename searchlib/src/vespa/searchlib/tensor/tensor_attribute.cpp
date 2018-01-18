@@ -162,6 +162,12 @@ TensorAttribute::getEmptyTensor() const
     return createEmptyTensor(_tensorMapper.get());
 }
 
+vespalib::eval::ValueType
+TensorAttribute::getTensorType() const
+{
+    return getConfig().tensorType();
+}
+
 void
 TensorAttribute::clearDocs(DocId lidLow, DocId lidLimit)
 {
