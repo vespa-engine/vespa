@@ -6,6 +6,7 @@
 #include <vector>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/arrayref.h>
+#include "make_tensor_function.h"
 #include "lazy_params.h"
 #include "value_type.h"
 #include "value.h"
@@ -105,6 +106,7 @@ class Node : public TensorFunction
 private:
     ValueType _result_type;
 public:
+    using CREF = std::reference_wrapper<const Node>;
     Node(const ValueType &result_type_in) : _result_type(result_type_in) {}
     const ValueType &result_type() const final override { return _result_type; }
 };
