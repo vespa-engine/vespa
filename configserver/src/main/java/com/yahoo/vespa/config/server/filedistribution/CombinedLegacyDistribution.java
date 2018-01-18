@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
+import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringArray;
@@ -65,7 +66,7 @@ public class CombinedLegacyDistribution implements FileDistribution {
         request.parameters().add(new StringArray(fileReferences.stream().map(FileReference::value).toArray(String[]::new)));
         log.log(LogLevel.DEBUG, "Executing " + request.methodName() + " against " + target.toString());
         target.invokeSync(request, timeout);
-        if (request.isError() && request.errorCode() != 104) {
+        if (request.isError() && request.errorCode() != ErrorCode.CONNECTION) {
             log.log(LogLevel.INFO, request.methodName() + " failed: " + request.errorCode() + " (" + request.errorMessage() + ")");
         }
     }
