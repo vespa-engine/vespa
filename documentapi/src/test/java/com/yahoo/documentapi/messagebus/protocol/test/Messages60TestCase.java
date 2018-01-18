@@ -16,8 +16,8 @@ public class Messages60TestCase extends Messages52TestCase {
 
     @Override
     protected Version version() {
-        return new Version(6, 999, 0);
-    } // TODO finalize version
+        return new Version(6, 197); // TODO finalize version
+    }
 
     @Override
     protected boolean shouldTestCoverage() {
