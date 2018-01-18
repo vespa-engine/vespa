@@ -70,11 +70,8 @@ public class DiskRetriever implements HardwareRetriever {
     ParseResult parseDiskType(List<String> commandOutput) throws IOException {
         List<String> searchWords = Collections.singletonList(DISK_NAME);
         ParseInstructions parseInstructions = new ParseInstructions(DISK_TYPE_SEARCH_ELEMENT_INDEX, DISK_TYPE_RETURN_ELEMENT_INDEX, DISK_TYPE_REGEX_SPLIT, searchWords);
-        ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
-        if (!parseResult.getSearchWord().equals(DISK_NAME)) {
-            throw new IOException("Parsing for disk type failed");
-        }
-        return parseResult;
+        return OutputParser.parseSingleOutput(parseInstructions, commandOutput)
+                .orElseThrow(() -> new IOException("Parsing for disk type failed"));
     }
 
     void setDiskType(ParseResult parseResult) {

@@ -48,11 +48,8 @@ public class MemoryRetriever implements HardwareRetriever {
     ParseResult parseMemInfoFile(List<String> commandOutput) throws IOException {
         List<String> searchWords = Collections.singletonList(SEARCH_WORD);
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, REGEX_SPLIT, searchWords);
-        ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
-        if (!parseResult.getSearchWord().matches(SEARCH_WORD)) {
-            throw new IOException("Failed to parse memory info file.");
-        }
-        return parseResult;
+        return OutputParser.parseSingleOutput(parseInstructions, commandOutput)
+                .orElseThrow(() -> new IOException("Failed to parse memory info file."));
     }
 
     void updateMemoryInfo(ParseResult parseResult) {

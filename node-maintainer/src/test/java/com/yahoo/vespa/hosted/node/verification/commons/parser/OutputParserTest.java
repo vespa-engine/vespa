@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -70,18 +71,17 @@ public class OutputParserTest {
     public void parseSingleOutput_should_return_first_match() {
         searchWords = Collections.singletonList(SEARCH_WORD_1);
         ParseInstructions parseInstructions = new ParseInstructions(6, 8, " ", searchWords);
-        ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
+        Optional<ParseResult> parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
         ParseResult expectedParseResult = new ParseResult(SEARCH_WORD_1, RETURN_VALUE);
-        assertEquals(expectedParseResult, parseResult);
+        assertEquals(Optional.of(expectedParseResult), parseResult);
     }
 
     @Test
     public void parseSingleOutput_should_return_invalid_parseResult() {
         searchWords = Collections.singletonList("No match");
         ParseInstructions parseInstructions = new ParseInstructions(6, 8, " ", searchWords);
-        ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
-        ParseResult expectedParseResult = new ParseResult("invalid", "invalid");
-        assertEquals(expectedParseResult, parseResult);
+        Optional<ParseResult> parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
+        assertEquals(Optional.empty(), parseResult);
     }
 
 }
