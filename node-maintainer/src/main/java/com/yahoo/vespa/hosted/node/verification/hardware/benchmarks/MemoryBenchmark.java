@@ -27,7 +27,8 @@ public class MemoryBenchmark implements Benchmark {
     private static final String MEM_BENCHMARK_DELETE_FOLDER = "rm -rf RAM_test";
     private static final String MEM_BENCHMARK_WRITE_SPEED = "dd if=/dev/zero of=RAM_test/data_tmp bs=1M count=512";
     private static final String MEM_BENCHMARK_READ_SPEED = "dd if=RAM_test/data_tmp of=/dev/null bs=1M count=512";
-    private static final String READ_AND_WRITE_SEARCH_WORD = "GB/s";
+    private static final String READ_AND_WRITE_SEARCH_WORD_GB = "GB/s";
+    private static final String READ_AND_WRITE_SEARCH_WORD_MB = "MB/s";
     private static final String SPLIT_REGEX_STRING = " ";
     private static final int SEARCH_ELEMENT_INDEX = 8;
     private static final int RETURN_ELEMENT_INDEX = 7;
@@ -44,13 +45,12 @@ public class MemoryBenchmark implements Benchmark {
     public void doBenchmark() {
         try {
             setupMountPoint();
-            List<String> commandOutput = commandExecutor.executeCommand(MEM_BENCHMARK_WRITE_SPEED);
-            Optional<ParseResult> parseResult = parseMemorySpeed(commandOutput);
-            parseResult.ifPresent(result -> parseDouble(result.getValue()).ifPresent(benchmarkResults::setMemoryWriteSpeedGBs));
 
-            commandOutput = commandExecutor.executeCommand(MEM_BENCHMARK_READ_SPEED);
-            parseResult = parseMemorySpeed(commandOutput);
-            parseResult.ifPresent(result -> parseDouble(result.getValue()).ifPresent(benchmarkResults::setMemoryReadSpeedGBs));
+            parseMemorySpeed(commandExecutor.executeCommand(MEM_BENCHMARK_WRITE_SPEED))
+                    .ifPresent(benchmarkResults::setMemoryWriteSpeedGBs);
+
+            parseMemorySpeed(commandExecutor.executeCommand(MEM_BENCHMARK_READ_SPEED))
+                    .ifPresent(benchmarkResults::setMemoryReadSpeedGBs);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to perform memory benchmark", e);
         } finally {
@@ -76,8 +76,18 @@ public class MemoryBenchmark implements Benchmark {
         }
     }
 
-    protected Optional<ParseResult> parseMemorySpeed(List<String> commandOutput) {
-        List<String> searchWords = Collections.singletonList(READ_AND_WRITE_SEARCH_WORD);
+    protected Optional<Double> parseMemorySpeed(List<String> commandOutput) {
+        Optional<ParseResult> parseResultGb = parseMemorySpeed(commandOutput, READ_AND_WRITE_SEARCH_WORD_GB);
+        if (parseResultGb.isPresent()) return parseDouble(parseResultGb.get().getValue());
+
+        Optional<ParseResult> parseResultMb = parseMemorySpeed(commandOutput, READ_AND_WRITE_SEARCH_WORD_MB);
+        if (parseResultMb.isPresent()) return parseDouble(parseResultMb.get().getValue()).flatMap(v -> Optional.of(v / 1000.0d));
+
+        return Optional.empty();
+    }
+
+    private Optional<ParseResult> parseMemorySpeed(List<String> commandOutput, String searchWord) {
+        List<String> searchWords = Collections.singletonList(searchWord);
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, SPLIT_REGEX_STRING, searchWords);
         return OutputParser.parseSingleOutput(parseInstructions, commandOutput);
     }

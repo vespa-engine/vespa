@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.hardware.benchmarks;
 
-import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseResult;
 import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,19 +44,27 @@ public class MemoryBenchmarkTest {
     }
 
     @Test
-    public void parseMemorySpeed_valid_output() throws Exception {
+    public void parseMemorySpeed_valid_output() {
         Double expectedSpeed = 12.1;
         String mockOutput = "This is a test \n the memory speed to be found is " + expectedSpeed + " GB/s";
         List<String> mockCommandOutput = commandExecutor.outputFromString(mockOutput);
-        Optional<ParseResult> parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
-        ParseResult expectedParseResult = new ParseResult("GB/s", expectedSpeed.toString());
-        assertEquals(Optional.of(expectedParseResult), parseResult);
+        Optional<Double> parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
+        assertEquals(Optional.of(12.1), parseResult);
     }
 
     @Test
-    public void parseMemorySpeed_invalid_output() throws Exception {
+    public void parseMemorySpeed_slow_but_valid_output() {
+        Double expectedSpeed = 960D;
+        String mockOutput = "This is a test \n the memory speed to be found is " + expectedSpeed + " MB/s";
+        List<String> mockCommandOutput = commandExecutor.outputFromString(mockOutput);
+        Optional<Double> parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
+        assertEquals(Optional.of(0.96), parseResult);
+    }
+
+    @Test
+    public void parseMemorySpeed_invalid_output() {
         List<String> mockCommandOutput = commandExecutor.outputFromString("");
-        Optional<ParseResult> parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
+        Optional<Double> parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
         assertEquals(Optional.empty(), parseResult);
         mockCommandOutput = commandExecutor.outputFromString("Exit status 1");
         parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
