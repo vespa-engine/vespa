@@ -65,7 +65,7 @@ public class CombinedLegacyDistribution implements FileDistribution {
         request.parameters().add(new StringArray(fileReferences.stream().map(FileReference::value).toArray(String[]::new)));
         log.log(LogLevel.DEBUG, "Executing " + request.methodName() + " against " + target.toString());
         target.invokeSync(request, timeout);
-        if (request.isError()) {
+        if (request.isError() && request.errorCode() != 104) {
             log.log(LogLevel.INFO, request.methodName() + " failed: " + request.errorCode() + " (" + request.errorMessage() + ")");
         }
     }
