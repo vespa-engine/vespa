@@ -81,7 +81,7 @@ my $cloudconfig_dir = "$HOME/.cloudconfig";
 my $session_id_file;
 my $configsource_url_used_file = "$cloudconfig_dir/deploy-configsource-url-used";
 
-my $curl_command = 'curl --silent --show-error --connect-timeout 30 --max-time 300';
+my $curl_command = 'curl -A vespa-deploy --silent --show-error --connect-timeout 30 --max-time 300';
 
 my $CURL_PUT = $curl_command . ' --write-out \%{http_code} --request PUT';
 my $CURL_GET = $curl_command . ' --request GET';
