@@ -9,6 +9,9 @@ import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author bjorncs
@@ -17,6 +20,7 @@ public class AthenzSslContextProviderImpl implements AthenzSslContextProvider {
 
     private final AthenzClientFactory clientFactory;
     private final AthenzConfig config;
+    private final AtomicReference<CachedSslContext> cachedSslContext = new AtomicReference<>();
 
     @Inject
     public AthenzSslContextProviderImpl(AthenzClientFactory clientFactory, AthenzConfig config) {
@@ -26,9 +30,32 @@ public class AthenzSslContextProviderImpl implements AthenzSslContextProvider {
 
     @Override
     public SSLContext get() {
-        return new AthenzSslContextBuilder()
-                .withTrustStore(new File(config.athenzCaTrustStore()), "JKS")
-                .withIdentityCertificate(clientFactory.createZtsClientWithServicePrincipal().getIdentityCertificate())
-                .build();
+        CachedSslContext currentCachedSslContext = this.cachedSslContext.get();
+        if (currentCachedSslContext == null || currentCachedSslContext.isExpired()) {
+            SSLContext sslContext = new AthenzSslContextBuilder()
+                    .withTrustStore(new File(config.athenzCaTrustStore()), "JKS")
+                    .withIdentityCertificate(clientFactory.createZtsClientWithServicePrincipal().getIdentityCertificate())
+                    .build();
+            this.cachedSslContext.set(new CachedSslContext(sslContext));
+            return sslContext;
+        }
+        return currentCachedSslContext.sslContext;
+    }
+
+    private static class CachedSslContext {
+        // Conservative expiration. Default expiration for Athenz certificates are 30 days.
+        static final Duration EXPIRATION = Duration.ofDays(1);
+
+        final SSLContext sslContext;
+        final Instant createdAt;
+
+        CachedSslContext(SSLContext sslContext) {
+            this.sslContext = sslContext;
+            this.createdAt = Instant.now();
+        }
+
+        boolean isExpired() {
+            return createdAt.plus(EXPIRATION).isAfter(Instant.now());
+        }
     }
 }
