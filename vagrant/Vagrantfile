@@ -4,7 +4,8 @@
 # For a complete reference, please see the online documentation at https://docs.vagrantup.com.
 Vagrant.configure("2") do |config|
 
-  config.vm.box = "boxcutter/centos7-desktop"
+  config.vm.box = "centos7-desktop"
+  config.vm.box_url = "/Users/bratseth/development/github/vespa-engine/vespa/vagrant/centos7-desktop-17.0915.1.box"
 
   config.ssh.forward_agent = true
 
@@ -25,6 +26,8 @@ Vagrant.configure("2") do |config|
     yum -y install epel-release
     yum -y install centos-release-scl
     yum -y install yum-utils
+    yum -y install boost-devel
+    yum -y install cppunit
     yum -y install git \
         ccache \
         maven \

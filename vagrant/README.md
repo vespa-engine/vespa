@@ -41,12 +41,13 @@ Skip these steps if doing development with CLion.
 CLion is installed as part of the environment and is recommended for C++ development.
 
 #### 1. Bootstrap C++ building
-Go to <vespa-source> directory and execute:
+cd to the vespa/ directory created by git clone and execute:
 
+    ./bootstrap.sh java
     ./bootstrap-cpp.sh . .
 
 #### 2. Start CLion
-Open a terminal inside the virtual CentOS desktop and run:
+Open a terminal inside the virtual CentOS desktop (password is "vagrant") and run:
 
     clion
 
@@ -58,4 +59,9 @@ Go to *File* -> *Settings* -> *Build, Execution, Deployment* -> *CMake*.
 Under *Build Options* specify "-j 4" and click *Apply*.
 
 #### 5. Build all modules
-Choose target **all_modules** from the set of build targets and click build.
+Choose target **all_modules** from the set of build targets at the top right and click build.
+
+#### Troubleshooting
+
+If there are build errors try to run bootstrap-cpp.sh again
+(some of what it does may be undone by clion setup).
