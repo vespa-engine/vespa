@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.verification.commons.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -33,12 +34,10 @@ public class OutputParser {
         return results;
     }
 
-    public static ParseResult parseSingleOutput(ParseInstructions parseInstructions, List<String> commandOutput) {
+    public static Optional<ParseResult> parseSingleOutput(ParseInstructions parseInstructions, List<String> commandOutput) {
         List<ParseResult> parseResults = parseOutput(parseInstructions, commandOutput);
-        if (parseResults.size() == 0) {
-            return new ParseResult("invalid", "invalid");
-        }
-        return parseResults.get(0);
+        if (parseResults.isEmpty()) return Optional.empty();
+        return Optional.ofNullable(parseResults.get(0));
     }
 
     private static boolean matchingSearchWord(List<String> searchWords, String searchWordCandidate) {

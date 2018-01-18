@@ -45,12 +45,12 @@ public class MemoryBenchmark implements Benchmark {
         try {
             setupMountPoint();
             List<String> commandOutput = commandExecutor.executeCommand(MEM_BENCHMARK_WRITE_SPEED);
-            ParseResult parseResult = parseMemorySpeed(commandOutput);
-            parseDouble(parseResult.getValue()).ifPresent(benchmarkResults::setMemoryWriteSpeedGBs);
+            Optional<ParseResult> parseResult = parseMemorySpeed(commandOutput);
+            parseResult.ifPresent(result -> parseDouble(result.getValue()).ifPresent(benchmarkResults::setMemoryWriteSpeedGBs));
 
             commandOutput = commandExecutor.executeCommand(MEM_BENCHMARK_READ_SPEED);
             parseResult = parseMemorySpeed(commandOutput);
-            parseDouble(parseResult.getValue()).ifPresent(benchmarkResults::setMemoryReadSpeedGBs);
+            parseResult.ifPresent(result -> parseDouble(result.getValue()).ifPresent(benchmarkResults::setMemoryReadSpeedGBs));
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to perform memory benchmark", e);
         } finally {
@@ -76,7 +76,7 @@ public class MemoryBenchmark implements Benchmark {
         }
     }
 
-    protected ParseResult parseMemorySpeed(List<String> commandOutput) {
+    protected Optional<ParseResult> parseMemorySpeed(List<String> commandOutput) {
         List<String> searchWords = Collections.singletonList(READ_AND_WRITE_SEARCH_WORD);
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, SPLIT_REGEX_STRING, searchWords);
         return OutputParser.parseSingleOutput(parseInstructions, commandOutput);

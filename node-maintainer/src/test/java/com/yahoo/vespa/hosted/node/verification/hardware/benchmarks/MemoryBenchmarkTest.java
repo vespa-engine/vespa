@@ -7,6 +7,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -48,19 +49,18 @@ public class MemoryBenchmarkTest {
         Double expectedSpeed = 12.1;
         String mockOutput = "This is a test \n the memory speed to be found is " + expectedSpeed + " GB/s";
         List<String> mockCommandOutput = commandExecutor.outputFromString(mockOutput);
-        ParseResult parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
+        Optional<ParseResult> parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
         ParseResult expectedParseResult = new ParseResult("GB/s", expectedSpeed.toString());
-        assertEquals(expectedParseResult, parseResult);
+        assertEquals(Optional.of(expectedParseResult), parseResult);
     }
 
     @Test
     public void parseMemorySpeed_invalid_output() throws Exception {
         List<String> mockCommandOutput = commandExecutor.outputFromString("");
-        ParseResult parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
-        ParseResult expectedParseResult = new ParseResult("invalid", "invalid");
-        assertEquals(expectedParseResult, parseResult);
+        Optional<ParseResult> parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
+        assertEquals(Optional.empty(), parseResult);
         mockCommandOutput = commandExecutor.outputFromString("Exit status 1");
         parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
-        assertEquals(expectedParseResult, parseResult);
+        assertEquals(Optional.empty(), parseResult);
     }
 }

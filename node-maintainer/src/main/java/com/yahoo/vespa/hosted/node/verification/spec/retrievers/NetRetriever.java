@@ -95,11 +95,8 @@ public class NetRetriever implements HardwareRetriever {
     ParseResult parseInterfaceSpeed(List<String> commandOutput) throws IOException {
         List<String> searchWords = Collections.singletonList(SEARCH_WORD_INTERFACE_SPEED);
         ParseInstructions parseInstructions = new ParseInstructions(INTERFACE_SPEED_SEARCH_ELEMENT_INDEX, INTERFACE_SPEED_RETURN_ELEMENT_INDEX, INTERFACE_SPEED_REGEX_SPLIT, searchWords);
-        ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
-        if (!parseResult.getSearchWord().matches(SEARCH_WORD_INTERFACE_SPEED)) {
-            throw new IOException("Failed to parse interface speed output.");
-        }
-        return parseResult;
+        return OutputParser.parseSingleOutput(parseInstructions, commandOutput)
+                .orElseThrow(() -> new IOException("Failed to parse interface speed output."));
     }
 
     private void testPingResponse(List<ParseResult> parseResults) {
@@ -116,11 +113,8 @@ public class NetRetriever implements HardwareRetriever {
     ParseResult parsePingResponse(List<String> commandOutput) throws IOException {
         List<String> searchWords = Collections.singletonList(PING_SEARCH_WORD);
         ParseInstructions parseInstructions = new ParseInstructions(PING_SEARCH_ELEMENT_INDEX, PING_RETURN_ELEMENT_INDEX, PING_SPLIT_REGEX_STRING, searchWords);
-        ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
-        if (!parseResult.getSearchWord().matches(PING_SEARCH_WORD)) {
-            throw new IOException("Failed to parse ping output.");
-        }
-        return new ParseResult(PING_SEARCH_WORD, parseResult.getValue());
+        return new ParseResult(PING_SEARCH_WORD, OutputParser.parseSingleOutput(parseInstructions, commandOutput)
+                .orElseThrow(()->new IOException("Failed to parse ping output.")).getValue());
     }
 
     void updateHardwareInfoWithNet(List<ParseResult> parseResults) {
