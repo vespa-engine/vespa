@@ -2,6 +2,7 @@ package com.yahoo.vespa.athenz.utils;
 
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;

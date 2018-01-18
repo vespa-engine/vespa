@@ -9,7 +9,7 @@ import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
-import com.yahoo.vespa.athenz.utils.AthenzIdentityVerifier;
+import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzSslContextProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneList;
