@@ -7,7 +7,7 @@
 #include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 
 namespace search {
-namespace tensor { class DenseTensorAttribute; }
+namespace tensor { class ITensorAttribute; }
 namespace features {
 
 /**
@@ -17,11 +17,11 @@ namespace features {
 class DenseTensorAttributeExecutor : public fef::FeatureExecutor
 {
 private:
-    const search::tensor::DenseTensorAttribute *_attribute;
+    const search::tensor::ITensorAttribute *_attribute;
     vespalib::tensor::MutableDenseTensorView _tensorView;
 
 public:
-    DenseTensorAttributeExecutor(const search::tensor::DenseTensorAttribute *attribute);
+    DenseTensorAttributeExecutor(const search::tensor::ITensorAttribute *attribute);
     void execute(uint32_t docId) override;
 };
 

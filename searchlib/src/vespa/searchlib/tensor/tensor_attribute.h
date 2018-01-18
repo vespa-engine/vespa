@@ -2,12 +2,11 @@
 
 #pragma once
 
+#include "i_tensor_attribute.h"
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include "tensor_store.h"
 #include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/eval/tensor/tensor_mapper.h>
-
-namespace vespalib { namespace tensor { class Tensor; } }
 
 namespace search {
 
@@ -16,7 +15,7 @@ namespace tensor {
 /**
  * Attribute vector class used to store tensors for all documents in memory.
  */
-class TensorAttribute : public NotImplementedAttribute
+class TensorAttribute : public NotImplementedAttribute, public ITensorAttribute
 {
 protected:
     using RefType = TensorStore::EntryRef;
@@ -33,7 +32,6 @@ protected:
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(TensorAttribute);
     using RefCopyVector = vespalib::Array<RefType>;
-    using Tensor = vespalib::tensor::Tensor;
     TensorAttribute(const vespalib::stringref &baseFileName, const Config &cfg,
                     TensorStore &tensorStore);
     virtual ~TensorAttribute();
@@ -43,13 +41,13 @@ public:
     virtual void removeOldGenerations(generation_t firstUsed) override;
     virtual void onGenerationChange(generation_t generation) override;
     virtual bool addDoc(DocId &docId) override;
-    std::unique_ptr<Tensor> getEmptyTensor() const;
+    virtual std::unique_ptr<Tensor> getEmptyTensor() const override;
+    virtual vespalib::eval::ValueType getTensorType() const override;
     virtual void clearDocs(DocId lidLow, DocId lidLimit) override;
     virtual void onShrinkLidSpace() override;
     virtual uint32_t getVersion() const override;
     RefCopyVector getRefCopy() const;
     virtual void setTensor(DocId docId, const Tensor &tensor) = 0;
-    virtual std::unique_ptr<Tensor> getTensor(DocId docId) const = 0;
     virtual void compactWorst() = 0;
 };
 

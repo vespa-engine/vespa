@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_attribute_executor.h"
-#include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/tensor/i_tensor_attribute.h>
 
 namespace search {
 namespace features {
 
 TensorAttributeExecutor::
-TensorAttributeExecutor(const search::tensor::TensorAttribute *attribute)
+TensorAttributeExecutor(const search::tensor::ITensorAttribute *attribute)
     : _attribute(attribute),
       _emptyTensor(attribute->getEmptyTensor()),
       _tensor()

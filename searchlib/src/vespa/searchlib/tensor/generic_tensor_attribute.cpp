@@ -70,6 +70,12 @@ GenericTensorAttribute::getTensor(DocId docId) const
     return _genericTensorStore.getTensor(ref);
 }
 
+void
+GenericTensorAttribute::getTensor(DocId, vespalib::tensor::MutableDenseTensorView &) const
+{
+    notImplemented();
+}
+
 bool
 GenericTensorAttribute::onLoad()
 {
