@@ -81,7 +81,7 @@ public class MemoryBenchmark implements Benchmark {
         if (parseResultGb.isPresent()) return parseDouble(parseResultGb.get().getValue());
 
         Optional<ParseResult> parseResultMb = parseMemorySpeed(commandOutput, READ_AND_WRITE_SEARCH_WORD_MB);
-        if (parseResultMb.isPresent()) return parseDouble(parseResultMb.get().getValue()).flatMap(v -> Optional.of(v / 1000.0d));
+        if (parseResultMb.isPresent()) return parseDouble(parseResultMb.get().getValue()).map(v -> v / 1000.0d);
 
         return Optional.empty();
     }
