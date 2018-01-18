@@ -25,8 +25,7 @@ const mbus::string DocumentProtocol::NAME = "document";
 
 DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
                                    DocumentTypeRepo::SP repo,
-                                   const string &configId,
-                                   bool enableMultipleBucketSpaces) :
+                                   const string &configId) :
     _routingPolicyRepository(new RoutingPolicyRepository()),
     _routableRepository(new RoutableRepository(loadTypes)),
     _systemState(SystemState::newInstance("")),
@@ -51,7 +50,7 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     vespalib::VersionSpecification version50(5, 0);
     vespalib::VersionSpecification version51(5, 1);
     vespalib::VersionSpecification version52(5, 115);
-    vespalib::VersionSpecification version6(6, 999); // TODO finalize version
+    vespalib::VersionSpecification version6(6, 197); // TODO finalize version
 
     std::vector<vespalib::VersionSpecification> from50 = { version50, version51, version52 };
     std::vector<vespalib::VersionSpecification> from51 = { version51, version52 };
@@ -108,9 +107,7 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     putRoutableFactory(MESSAGE_REMOVEDOCUMENT, IRoutableFactory::SP(new RoutableFactories52::RemoveDocumentMessageFactory()), from52);
 
     // Add 6.x serialization (TODO finalize version)
-    if (enableMultipleBucketSpaces) {
-        putRoutableFactory(MESSAGE_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories60::CreateVisitorMessageFactory(*_repo)), from6);
-    }
+    putRoutableFactory(MESSAGE_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories60::CreateVisitorMessageFactory(*_repo)), from6);
 }
 
 DocumentProtocol::~DocumentProtocol() = default;
