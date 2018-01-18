@@ -205,6 +205,13 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-search</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <!-- OPTIMIZATION: very large (44 MB) and only used for query sorting -->
+          <groupId>com.ibm.icu</groupId>
+          <artifactId>icu4j</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
