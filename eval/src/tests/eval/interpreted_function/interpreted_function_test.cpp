@@ -98,7 +98,7 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
         Stash stash;
         NodeTypes node_types = NodeTypes(function, std::vector<ValueType>(params.params.size(), ValueType::double_type()));
         const auto &tfun = make_tensor_function(engine, function.root(), node_types, stash);
-        const Value &result_value = tfun.eval(params, stash);
+        const Value &result_value = tfun.eval(engine, params, stash);
         report_result(result_value.is_double(), result_value.as_double(), expected_result, description);
     }
 };

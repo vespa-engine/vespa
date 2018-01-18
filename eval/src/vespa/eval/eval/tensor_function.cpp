@@ -11,15 +11,6 @@ namespace vespalib {
 namespace eval {
 namespace tensor_function {
 
-const TensorEngine &infer_engine(const std::initializer_list<Value::CREF> &values) {
-    for (const Value &value: values) {
-        if (auto tensor = value.as_tensor()) {
-            return tensor->engine();
-        }
-    }
-    return SimpleTensorEngine::ref();
-}
-
 //-----------------------------------------------------------------------------
 
 void
@@ -43,7 +34,7 @@ Op2::push_children(std::vector<Child::CREF> &children) const
 //-----------------------------------------------------------------------------
 
 const Value &
-ConstValue::eval(const LazyParams &, Stash &) const
+ConstValue::eval(const TensorEngine &, const LazyParams &, Stash &) const
 {
     return _value;
 }
@@ -51,7 +42,7 @@ ConstValue::eval(const LazyParams &, Stash &) const
 //-----------------------------------------------------------------------------
 
 const Value &
-Inject::eval(const LazyParams &params, Stash &stash) const
+Inject::eval(const TensorEngine &, const LazyParams &params, Stash &stash) const
 {
     return params.resolve(_param_idx, stash);
 }
@@ -59,52 +50,47 @@ Inject::eval(const LazyParams &params, Stash &stash) const
 //-----------------------------------------------------------------------------
 
 const Value &
-Reduce::eval(const LazyParams &params, Stash &stash) const
+Reduce::eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const
 {
-    const Value &a = child().eval(params, stash);
-    const TensorEngine &engine = infer_engine({a});
+    const Value &a = child().eval(engine, params, stash);
     return engine.reduce(a, _aggr, _dimensions, stash);
 }
 
 //-----------------------------------------------------------------------------
 
 const Value &
-Map::eval(const LazyParams &params, Stash &stash) const
+Map::eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const
 {
-    const Value &a = child().eval(params, stash);
-    const TensorEngine &engine = infer_engine({a});
+    const Value &a = child().eval(engine, params, stash);
     return engine.map(a, _function, stash);
 }
 
 //-----------------------------------------------------------------------------
 
 const Value &
-Join::eval(const LazyParams &params, Stash &stash) const
+Join::eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const
 {
-    const Value &a = lhs().eval(params, stash);
-    const Value &b = rhs().eval(params, stash);
-    const TensorEngine &engine = infer_engine({a,b});
+    const Value &a = lhs().eval(engine, params, stash);
+    const Value &b = rhs().eval(engine, params, stash);
     return engine.join(a, b, _function, stash);
 }
 
 //-----------------------------------------------------------------------------
 
 const Value &
-Concat::eval(const LazyParams &params, Stash &stash) const
+Concat::eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const
 {
-    const Value &a = lhs().eval(params, stash);
-    const Value &b = rhs().eval(params, stash);
-    const TensorEngine &engine = infer_engine({a,b});
+    const Value &a = lhs().eval(engine, params, stash);
+    const Value &b = rhs().eval(engine, params, stash);
     return engine.concat(a, b, _dimension, stash);
 }
 
 //-----------------------------------------------------------------------------
 
 const Value &
-Rename::eval(const LazyParams &params, Stash &stash) const
+Rename::eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const
 {
-    const Value &a = child().eval(params, stash);
-    const TensorEngine &engine = infer_engine({a});
+    const Value &a = child().eval(engine, params, stash);
     return engine.rename(a, _from, _to, stash);
 }
 
@@ -119,11 +105,11 @@ If::push_children(std::vector<Child::CREF> &children) const
 }
 
 const Value &
-If::eval(const LazyParams &params, Stash &stash) const
+If::eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const
 {
-    return (cond().eval(params, stash).as_bool()
-            ? true_child().eval(params, stash)
-            : false_child().eval(params, stash));
+    return (cond().eval(engine, params, stash).as_bool()
+            ? true_child().eval(engine, params, stash)
+            : false_child().eval(engine, params, stash));
 }
 
 //-----------------------------------------------------------------------------

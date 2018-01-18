@@ -29,7 +29,7 @@ getCellsRef(const eval::Value &value)
 }
 
 const eval::Value &
-DenseDotProductFunction::eval(const eval::LazyParams &params, Stash &stash) const
+DenseDotProductFunction::eval(const eval::TensorEngine &, const eval::LazyParams &params, Stash &stash) const
 {
     DenseTensorView::CellsRef lhsCells = getCellsRef(params.resolve(_lhsTensorId, stash));
     DenseTensorView::CellsRef rhsCells = getCellsRef(params.resolve(_rhsTensorId, stash));

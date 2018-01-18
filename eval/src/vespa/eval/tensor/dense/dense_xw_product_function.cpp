@@ -72,7 +72,7 @@ getCellsRef(const eval::Value &value)
 } // namespace <unnamed>
 
 const eval::Value &
-DenseXWProductFunction::eval(const eval::LazyParams &params, Stash &stash) const
+DenseXWProductFunction::eval(const eval::TensorEngine &, const eval::LazyParams &params, Stash &stash) const
 {
     DenseTensorView::CellsRef vectorCells = getCellsRef(params.resolve(_vectorId, stash));
     DenseTensorView::CellsRef matrixCells = getCellsRef(params.resolve(_matrixId, stash));
