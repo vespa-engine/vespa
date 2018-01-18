@@ -190,6 +190,7 @@ public class Maintainer {
     private static HttpClient createHttpClient(Duration timeout) {
         int timeoutInMillis = (int) timeout.toMillis();
         return HttpClientBuilder.create()
+                .setUserAgent("node-maintainer")
                 .setDefaultRequestConfig(RequestConfig.custom()
                         .setConnectTimeout(timeoutInMillis)
                         .setConnectionRequestTimeout(timeoutInMillis)
