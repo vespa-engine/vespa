@@ -54,17 +54,12 @@ public class ApplicationList {
 
     /** Returns the subset of applications which are currently upgrading (to any version) */
     public ApplicationList upgrading() {
-        return listOf(list.stream().filter(application -> isUpgrading(application)));
+        return listOf(list.stream().filter(ApplicationList::isUpgrading));
     }
 
     /** Returns the subset of applications which are currently upgrading to the given version */
     public ApplicationList upgradingTo(Version version) {
         return listOf(list.stream().filter(application -> isUpgradingTo(version, application)));
-    }
-
-    /** Returns the subset of applications which are currently upgrading to a version lower than the given version */
-    public ApplicationList upgradingToLowerThan(Version version) {
-        return listOf(list.stream().filter(application -> isUpgradingToLowerThan(version, application)));
     }
 
     /** Returns the subset of applications which are currently not upgrading to the given version */
@@ -79,11 +74,6 @@ public class ApplicationList {
     public ApplicationList notUpgradingTo(Optional<Version> version) {
         if ( ! version.isPresent()) return this;
         return notUpgradingTo(version.get());
-    }
-
-    /** Returns the subset of applications which is currently not deploying a new application revision */
-    public ApplicationList notDeployingApplication() {
-        return listOf(list.stream().filter(application -> ! isDeployingApplicationChange(application)));
     }
 
     /** Returns the subset of applications which is currently not deploying a change */
@@ -178,11 +168,6 @@ public class ApplicationList {
         return listOf(list.stream().sorted(Comparator.comparing(application -> application.oldestDeployedVersion().orElse(Version.emptyVersion))));
     }
 
-    /** Returns the subset of applications that are not currently upgrading */
-    public ApplicationList notCurrentlyUpgrading(Change.VersionChange change, Instant jobTimeoutLimit) {
-        return listOf(list.stream().filter(a -> ! currentlyUpgrading(change, a, jobTimeoutLimit)));
-    }
-
     // ----------------------------------- Internal helpers
 
     private static boolean isUpgrading(Application application) {
@@ -197,28 +182,10 @@ public class ApplicationList {
         return ((Change.VersionChange)application.deploying().get()).version().equals(version);
     }
 
-    private static boolean isUpgradingToLowerThan(Version version, Application application) {
-        if ( ! application.deploying().isPresent()) return false;
-        if ( ! (application.deploying().get() instanceof Change.VersionChange) ) return false;
-        return ((Change.VersionChange)application.deploying().get()).version().isBefore(version);
-    }
-
-    private static boolean isDeployingApplicationChange(Application application) {
-        if ( ! application.deploying().isPresent()) return false;
-        return application.deploying().get() instanceof Change.ApplicationChange;
-    }
-
     private static boolean failingOn(Version version, Application application) {
         return ! JobList.from(application)
                 .failing()
                 .lastCompleted().on(version)
-                .isEmpty();
-    }
-
-    private static boolean currentlyUpgrading(Change.VersionChange change, Application application, Instant jobTimeoutLimit) {
-        return ! JobList.from(application)
-                .running(jobTimeoutLimit)
-                .lastTriggered().on(change.version())
                 .isEmpty();
     }
 
