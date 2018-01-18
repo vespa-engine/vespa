@@ -52,14 +52,14 @@ void verify_result(const TensorSpec &v, const TensorSpec &m, bool happy) {
                                 prod_vec->type().dimensions()[0].size,
                                 expect.type().dimensions()[0].size,
                                 happy);
-    const Value &actual1 = fun1.eval(wrap({*prod_vec, *prod_mat}), stash);
+    const Value &actual1 = fun1.eval(prod_engine, wrap({*prod_vec, *prod_mat}), stash);
     TEST_DO(verify_equal(expect, actual1));
 
     DenseXWProductFunction fun2(expect.type(), 1, 0,
                                 prod_vec->type().dimensions()[0].size,
                                 expect.type().dimensions()[0].size,
                                 happy);
-    const Value &actual2 = fun2.eval(wrap({*prod_mat, *prod_vec}), stash);
+    const Value &actual2 = fun2.eval(prod_engine, wrap({*prod_mat, *prod_vec}), stash);
     TEST_DO(verify_equal(expect, actual2));
 }
 

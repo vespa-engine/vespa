@@ -278,7 +278,7 @@ struct RetainedReduce : Eval {
         ValueType expect_type = ir.result_type();
         const auto &fun = engine.compile(ir, stash);
         Input input(engine.from_spec(a));
-        return Result(engine, check_type(fun.eval(input.get(), stash), expect_type));
+        return Result(engine, check_type(fun.eval(engine, input.get(), stash), expect_type));
     }
 };
 
@@ -293,7 +293,7 @@ struct RetainedMap : Eval {
         ValueType expect_type = ir.result_type();
         const auto &fun = engine.compile(ir, stash);
         Input input(engine.from_spec(a));
-        return Result(engine, check_type(fun.eval(input.get(), stash), expect_type));
+        return Result(engine, check_type(fun.eval(engine, input.get(), stash), expect_type));
     }
 };
 
@@ -311,7 +311,7 @@ struct RetainedJoin : Eval {
         ValueType expect_type = ir.result_type();
         const auto &fun = engine.compile(ir, stash);
         Input input(engine.from_spec(a), engine.from_spec(b));
-        return Result(engine, check_type(fun.eval(input.get(), stash), expect_type));
+        return Result(engine, check_type(fun.eval(engine, input.get(), stash), expect_type));
     }
 };
 

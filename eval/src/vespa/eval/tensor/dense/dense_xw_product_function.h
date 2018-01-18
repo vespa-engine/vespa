@@ -47,7 +47,7 @@ public:
 
     const eval::ValueType &result_type() const override { return _resultType; }
     void push_children(std::vector<Child::CREF> &) const override {}
-    const eval::Value &eval(const eval::LazyParams &params, Stash &stash) const override;
+    const eval::Value &eval(const eval::TensorEngine &engine, const eval::LazyParams &params, Stash &stash) const override;
 };
 
 }

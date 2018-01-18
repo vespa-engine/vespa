@@ -10,6 +10,7 @@ vespa_add_library(eval_eval OBJECT
     interpreted_function.cpp
     key_gen.cpp
     lazy_params.cpp
+    make_tensor_function.cpp
     node_types.cpp
     operation.cpp
     operator_nodes.cpp

@@ -113,7 +113,7 @@ void op_tensor_concat(State &state, uint64_t param) {
 
 void op_tensor_function(State &state, uint64_t param) {
     const TensorFunction &fun = unwrap_param<TensorFunction>(param);
-    state.stack.push_back(fun.eval(*state.params, state.stash));
+    state.stack.push_back(fun.eval(state.engine, *state.params, state.stash));
 }
 
 //-----------------------------------------------------------------------------

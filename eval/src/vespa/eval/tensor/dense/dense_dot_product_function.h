@@ -23,7 +23,7 @@ public:
     size_t rhsTensorId() const { return _rhsTensorId; }
     const eval::ValueType &result_type() const override { return eval::DoubleValue::double_type(); }
     void push_children(std::vector<Child::CREF> &) const override {}
-    const eval::Value &eval(const eval::LazyParams &params, Stash &stash) const override;
+    const eval::Value &eval(const eval::TensorEngine &engine, const eval::LazyParams &params, Stash &stash) const override;
 };
 
 }

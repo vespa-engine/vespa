@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/dense/dense_dot_product_function.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/eval/tensor/dense/dense_tensor_builder.h>
@@ -78,7 +79,7 @@ struct Fixture
     ~Fixture();
     double eval() const {
         Stash stash;
-        const Value &result = function.eval(input.get(), stash);
+        const Value &result = function.eval(DefaultTensorEngine::ref(), input.get(), stash);
         ASSERT_TRUE(result.is_double());
         LOG(info, "eval(): (%s) * (%s) = %f",
             input.param(0).type().to_spec().c_str(),
