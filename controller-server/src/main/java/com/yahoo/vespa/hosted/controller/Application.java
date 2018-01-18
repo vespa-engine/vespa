@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
-import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Change.VersionChange;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -164,17 +164,17 @@ public class Application {
                 .orElse(oldestDeployedVersion().orElse(controller.systemVersion()));
     }
 
-    /** Returns the revision a new deployment to this zone should use for this application, or empty if we don't know */
-    public Optional<ApplicationRevision> deployRevisionIn(ZoneId zone) {
+    /** Returns the application version a deployment to this zone should use, or empty if we don't know */
+    public Optional<ApplicationVersion> deployApplicationVersionIn(ZoneId zone) {
         if (deploying().isPresent() && deploying().get() instanceof Change.ApplicationChange)
-            return ((Change.ApplicationChange) deploying().get()).revision();
+            return ((Change.ApplicationChange) deploying().get()).version();
 
-        return revisionIn(zone);
+        return applicationVersionIn(zone);
     }
 
-    /** Returns the revision this application is or should be deployed with in the given zone, or empty if unknown. */
-    public Optional<ApplicationRevision> revisionIn(ZoneId zone) {
-        return Optional.ofNullable(deployments().get(zone)).map(Deployment::revision);
+    /** Returns the application version that is or should be deployed with in the given zone, or empty if unknown. */
+    public Optional<ApplicationVersion> applicationVersionIn(ZoneId zone) {
+        return Optional.ofNullable(deployments().get(zone)).map(Deployment::applicationVersion);
     }
 
     /** Returns the global rotation of this, if present */

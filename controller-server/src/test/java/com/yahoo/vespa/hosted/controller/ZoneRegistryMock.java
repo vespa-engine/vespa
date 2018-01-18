@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneFilterMock;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -34,9 +35,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Inject
     public ZoneRegistryMock() {
-        this.zones.add(ZoneId.from("prod", "corp-us-east-1"));
-        this.zones.add(ZoneId.from("prod", "us-east-3"));
-        this.zones.add(ZoneId.from("prod", "us-west-1"));
+        zones.add(ZoneId.from("prod", "corp-us-east-1"));
+        zones.add(ZoneId.from("prod", "us-east-3"));
+        zones.add(ZoneId.from("prod", "us-west-1"));
+        zones.add(ZoneId.from("prod", "us-central-1"));
+        zones.add(ZoneId.from("prod", "eu-west-1"));
     }
 
     public ZoneRegistryMock setDeploymentTimeToLive(ZoneId zone, Duration duration) {
@@ -52,6 +55,10 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     public ZoneRegistryMock setZones(List<ZoneId> zones) {
         this.zones = zones;
         return this;
+    }
+
+    public ZoneRegistryMock setZones(ZoneId... zone) {
+        return setZones(Arrays.asList(zone));
     }
 
     public ZoneRegistryMock setSystem(SystemName system) {

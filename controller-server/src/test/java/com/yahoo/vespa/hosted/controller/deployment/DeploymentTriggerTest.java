@@ -247,7 +247,7 @@ public class DeploymentTriggerTest {
                 .region("corp-us-east-1")
                 .region("us-central-1")
                 .region("us-west-1")
-                .region("ap-northeast-1")
+                .region("eu-west-1")
                 .build();
 
         // Component job finishes
@@ -260,7 +260,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionCorpUsEast1);
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionUsCentral1);
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionUsWest1);
-        tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionApNortheast1);
+        tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionEuWest1);
         assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
     }
 
@@ -277,7 +277,7 @@ public class DeploymentTriggerTest {
 
         ApplicationPackageBuilder applicationPackageBuilder = new ApplicationPackageBuilder()
                 .upgradePolicy("canary")
-                // Block revision changes on tuesday in hours 18 and 19
+                // Block application version changes on tuesday in hours 18 and 19
                 .blockChange(true, false, "tue", "18-19", "UTC")
                 .region("us-west-1")
                 .region("us-central-1")

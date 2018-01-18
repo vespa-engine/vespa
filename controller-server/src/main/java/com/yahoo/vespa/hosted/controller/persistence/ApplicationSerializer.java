@@ -15,7 +15,7 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
-import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
@@ -143,7 +143,7 @@ public class ApplicationSerializer {
         zoneIdToSlime(deployment.zone(), object.setObject(zoneField));
         object.setString(versionField, deployment.version().toString());
         object.setLong(deployTimeField, deployment.at().toEpochMilli());
-        toSlime(deployment.revision(), object.setObject(applicationPackageRevisionField));
+        toSlime(deployment.applicationVersion(), object.setObject(applicationPackageRevisionField));
         clusterInfoToSlime(deployment.clusterInfo(), object);
         clusterUtilsToSlime(deployment.clusterUtils(), object);
         metricsToSlime(deployment.metrics(), object);
@@ -197,10 +197,10 @@ public class ApplicationSerializer {
         object.setString(regionField, zone.region().value());
     }
     
-    private void toSlime(ApplicationRevision applicationRevision, Cursor object) {
-        object.setString(applicationPackageHashField, applicationRevision.id());
-        if (applicationRevision.source().isPresent())
-            toSlime(applicationRevision.source().get(), object.setObject(sourceRevisionField));
+    private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
+        object.setString(applicationPackageHashField, applicationVersion.id());
+        if (applicationVersion.source().isPresent())
+            toSlime(applicationVersion.source().get(), object.setObject(sourceRevisionField));
     }
     
     private void toSlime(SourceRevision sourceRevision, Cursor object) {
@@ -236,8 +236,8 @@ public class ApplicationSerializer {
         Cursor object = parent.setObject(jobRunObjectName);
         object.setLong(jobRunIdField, jobRun.get().id());
         object.setString(versionField, jobRun.get().version().toString());
-        if ( jobRun.get().revision().isPresent())
-            toSlime(jobRun.get().revision().get(), object.setObject(revisionField));
+        if ( jobRun.get().applicationVersion().isPresent())
+            toSlime(jobRun.get().applicationVersion().get(), object.setObject(revisionField));
         object.setBool(upgradeField, jobRun.get().upgrade());
         object.setString(reasonField, jobRun.get().reason());
         object.setLong(atField, jobRun.get().at().toEpochMilli());
@@ -249,8 +249,8 @@ public class ApplicationSerializer {
         Cursor object = parentObject.setObject(deployingField);
         if (deploying.get() instanceof Change.VersionChange)
             object.setString(versionField, ((Change.VersionChange)deploying.get()).version().toString());
-        else if (((Change.ApplicationChange)deploying.get()).revision().isPresent())
-            toSlime(((Change.ApplicationChange)deploying.get()).revision().get(), object);
+        else if (((Change.ApplicationChange)deploying.get()).version().isPresent())
+            toSlime(((Change.ApplicationChange)deploying.get()).version().get(), object);
     }
 
     // ------------------ Deserialization
@@ -282,7 +282,7 @@ public class ApplicationSerializer {
 
     private Deployment deploymentFromSlime(Inspector deploymentObject) {
         return new Deployment(zoneIdFromSlime(deploymentObject.field(zoneField)),
-                              applicationRevisionFromSlime(deploymentObject.field(applicationPackageRevisionField)).get(),
+                              applicationVersionFromSlime(deploymentObject.field(applicationPackageRevisionField)).get(),
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
                               clusterUtilsMapFromSlime(deploymentObject.field(clusterUtilsField)),
@@ -340,12 +340,12 @@ public class ApplicationSerializer {
         return ZoneId.from(object.field(environmentField).asString(), object.field(regionField).asString());
     }
 
-    private Optional<ApplicationRevision> applicationRevisionFromSlime(Inspector object) {
+    private Optional<ApplicationVersion> applicationVersionFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
         String applicationPackageHash = object.field(applicationPackageHashField).asString();
         Optional<SourceRevision> sourceRevision = sourceRevisionFromSlime(object.field(sourceRevisionField));
-        return sourceRevision.isPresent() ? Optional.of(ApplicationRevision.from(applicationPackageHash, sourceRevision.get()))
-                                          : Optional.of(ApplicationRevision.from(applicationPackageHash));
+        return sourceRevision.isPresent() ? Optional.of(ApplicationVersion.from(applicationPackageHash, sourceRevision.get()))
+                                          : Optional.of(ApplicationVersion.from(applicationPackageHash));
     }
     
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {
@@ -369,7 +369,7 @@ public class ApplicationSerializer {
         if (versionFieldValue.valid())
             return Optional.of(new Change.VersionChange(Version.fromString(versionFieldValue.asString())));
         else if (object.field(applicationPackageHashField).valid())
-            return Optional.of(Change.ApplicationChange.of(applicationRevisionFromSlime(object).get()));
+            return Optional.of(Change.ApplicationChange.of(applicationVersionFromSlime(object).get()));
         else
             return Optional.of(Change.ApplicationChange.unknown());
     }
@@ -398,7 +398,7 @@ public class ApplicationSerializer {
         if ( ! object.valid()) return Optional.empty();
         return Optional.of(new JobStatus.JobRun(optionalLong(object.field(jobRunIdField)).orElse(-1L), // TODO: Make non-optional after November 2017 -- what about lastTriggered?
                                                 new Version(object.field(versionField).asString()),
-                                                applicationRevisionFromSlime(object.field(revisionField)),
+                                                applicationVersionFromSlime(object.field(revisionField)),
                                                 object.field(upgradeField).asBool(),
                                                 optionalString(object.field(reasonField)).orElse(""), // TODO: Make non-optional after November 2017
                                                 Instant.ofEpochMilli(object.field(atField).asLong())));

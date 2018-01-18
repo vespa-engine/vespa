@@ -7,7 +7,7 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.InstanceEndpoints;
@@ -22,13 +22,13 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
@@ -36,8 +36,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -90,6 +91,7 @@ public class ApplicationController {
     /** For working memory storage and sharing between controllers */
     private final CuratorDb curator;
 
+    private final ArtifactRepository artifactRepository;
     private final RotationRepository rotationRepository;
     private final AthenzClientFactory zmsClientFactory;
     private final NameService nameService;
@@ -102,6 +104,7 @@ public class ApplicationController {
     ApplicationController(Controller controller, ControllerDb db, CuratorDb curator,
                           AthenzClientFactory zmsClientFactory, RotationsConfig rotationsConfig,
                           NameService nameService, ConfigServerClient configserverClient,
+                          ArtifactRepository artifactRepository,
                           RoutingGenerator routingGenerator, Clock clock) {
         this.controller = controller;
         this.db = db;
@@ -112,6 +115,7 @@ public class ApplicationController {
         this.routingGenerator = routingGenerator;
         this.clock = clock;
 
+        this.artifactRepository = artifactRepository;
         this.rotationRepository = new RotationRepository(rotationsConfig, this, curator);
         this.deploymentTrigger = new DeploymentTrigger(controller, curator, clock);
 
@@ -271,7 +275,8 @@ public class ApplicationController {
     /** Deploys an application. If the application does not exist it is created. */
     // TODO: Get rid of the options arg
     public ActivateResult deployApplication(ApplicationId applicationId, ZoneId zone,
-                                            ApplicationPackage applicationPackage, DeployOptions options) {
+                                            Optional<ApplicationPackage> applicationPackageFromDeployer,
+                                            DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
             // TODO: Move application creation outside, to the deploy call in the handler.
             LockedApplication application = get(applicationId)
@@ -281,40 +286,66 @@ public class ApplicationController {
                         return new LockedApplication(new Application(applicationId), lock);
                     });
 
-            // Determine what we are doing
+            // Determine Vespa version to use
             Version version;
-            if (options.deployCurrentVersion)
+            if (options.deployCurrentVersion) {
                 version = application.versionIn(zone, controller);
-            else if (canDeployDirectlyTo(zone, options))
+            } else if (canDeployDirectlyTo(zone, options)) {
                 version = options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
-            else if ( ! application.deploying().isPresent() && ! zone.environment().isManuallyDeployed())
-                return unexpectedDeployment(applicationId, zone, applicationPackage);
-            else
+            } else if ( ! application.deploying().isPresent() && ! zone.environment().isManuallyDeployed()) {
+                return unexpectedDeployment(applicationId, zone, applicationPackageFromDeployer);
+            } else {
                 version = application.deployVersionIn(zone, controller);
+            }
 
             Optional<DeploymentJobs.JobType> jobType = DeploymentJobs.JobType.from(controller.system(), zone);
-            ApplicationRevision revision = toApplicationPackageRevision(applicationPackage, options.screwdriverBuildJob);
+            if (!jobType.isPresent() && !applicationPackageFromDeployer.isPresent()) {
+                throw new IllegalArgumentException("Unable to determine job type from zone '" + zone +
+                                                   "' and no application package was given");
+            }
 
-            if ( ! options.deployCurrentVersion) {
-                // Add missing information to application (unless we're deploying the previous version (initial staging step)
-                application = application.with(applicationPackage.deploymentSpec());
-                application = application.with(applicationPackage.validationOverrides());
-                if (options.screwdriverBuildJob.isPresent() && options.screwdriverBuildJob.get().screwdriverId != null)
-                    application = application.withProjectId(options.screwdriverBuildJob.get().screwdriverId.value());
-                if (application.deploying().isPresent() && application.deploying().get() instanceof Change.ApplicationChange)
-                    application = application.withDeploying(Optional.of(Change.ApplicationChange.of(revision)));
-                if ( ! canDeployDirectlyTo(zone, options) && jobType.isPresent()) {
+            // Determine which application package to use
+            ApplicationPackage applicationPackage;
+            ApplicationVersion applicationVersion;
+            if (applicationPackageFromDeployer.isPresent()) {
+                applicationVersion = toApplicationPackageRevision(applicationPackageFromDeployer.get(),
+                                                                  options.screwdriverBuildJob);
+                applicationPackage = applicationPackageFromDeployer.get();
+            } else {
+                applicationVersion = application.deployApplicationVersion(jobType.get(), controller)
+                                                .orElseThrow(() -> new IllegalArgumentException("Cannot determine application version to use in " + zone));
+                applicationPackage = new ApplicationPackage(artifactRepository.getApplicationPackage(
+                        applicationId, applicationVersion.id())
+                );
+            }
+
+            validate(applicationPackage.deploymentSpec());
+
+            // TODO: Remove after introducing new application version number
+            if (!options.deployCurrentVersion && applicationPackageFromDeployer.isPresent()) {
+                if (application.deploying().isPresent() && application.deploying().get() instanceof Change.ApplicationChange) {
+                    application = application.withDeploying(Optional.of(Change.ApplicationChange.of(applicationVersion)));
+                }
+                if (!canDeployDirectlyTo(zone, options) && jobType.isPresent()) {
                     // Update with (potentially) missing information about what we triggered:
                     // * When someone else triggered the job, we need to store a stand-in triggering event.
-                    // * When this is the system test job, we need to record the new revision, for future use.
+                    // * When this is the system test job, we need to record the new application version,
+                    // for future use.
                     JobStatus.JobRun triggering = getOrCreateTriggering(application, version, jobType.get());
                     application = application.withJobTriggering(jobType.get(),
                                                                 application.deploying(),
                                                                 triggering.at(),
                                                                 version,
-                                                                Optional.of(revision),
+                                                                Optional.of(applicationVersion),
                                                                 triggering.reason());
                 }
+            }
+
+            // Update application with information from application package
+            if (!options.deployCurrentVersion) {
+                // Store information about application package
+                application = application.with(applicationPackage.deploymentSpec());
+                application = application.with(applicationPackage.validationOverrides());
 
                 // Delete zones not listed in DeploymentSpec, if allowed
                 // We do this at deployment time to be able to return a validation failure message when necessary
@@ -326,15 +357,19 @@ public class ApplicationController {
                 store(application); // store missing information even if we fail deployment below
             }
 
-            if ( ! canDeployDirectlyTo(zone, options)) { // validate automated deployment
-                if ( ! application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying()))
+            // Validate automated deployment
+            if (!canDeployDirectlyTo(zone, options)) {
+                if (!application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying())) {
                     throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
                                                        " as " + application.deploying().get() + " is not tested");
+                }
                 Deployment existingDeployment = application.deployments().get(zone);
-                if (zone.environment().isProduction() && existingDeployment != null && existingDeployment.version().isAfter(version))
+                if (zone.environment().isProduction() && existingDeployment != null &&
+                    existingDeployment.version().isAfter(version)) {
                     throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
                                                        " as the requested version " + version + " is older than" +
                                                        " the current version " + existingDeployment.version());
+                }
             }
 
             application = withRotation(application, zone);
@@ -353,11 +388,12 @@ public class ApplicationController {
                     configserverClient.prepare(new DeploymentId(applicationId, zone), options, cnames, rotationNames,
                                                applicationPackage.zippedContent());
             preparedApplication.activate();
-            application = application.withNewDeployment(zone, revision, version, clock.instant());
+            application = application.withNewDeployment(zone, applicationVersion, version, clock.instant());
 
             store(application);
 
-            return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse());
+            return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
+                                      applicationPackage.zippedContent().length);
         }
     }
 
@@ -376,7 +412,8 @@ public class ApplicationController {
         return application;
     }
 
-    private ActivateResult unexpectedDeployment(ApplicationId applicationId, ZoneId zone, ApplicationPackage applicationPackage) {
+    private ActivateResult unexpectedDeployment(ApplicationId applicationId, ZoneId zone,
+                                                Optional<ApplicationPackage> applicationPackage) {
         Log logEntry = new Log();
         logEntry.level = "WARNING";
         logEntry.time = clock.instant().toEpochMilli();
@@ -384,7 +421,9 @@ public class ApplicationController {
         PrepareResponse prepareResponse = new PrepareResponse();
         prepareResponse.log = Collections.singletonList(logEntry);
         prepareResponse.configChangeActions = new ConfigChangeActions(Collections.emptyList(), Collections.emptyList());
-        return new ActivateResult(new RevisionId(applicationPackage.hash()), prepareResponse);
+        return new ActivateResult(new RevisionId(applicationPackage.map(ApplicationPackage::hash)
+                                                                   .orElse("0")), prepareResponse,
+                                  applicationPackage.map(a -> a.zippedContent().length).orElse(0));
     }
 
     private LockedApplication deleteRemovedDeployments(LockedApplication application) {
@@ -445,18 +484,18 @@ public class ApplicationController {
                                  options.deployCurrentVersion);
     }
 
-    private ApplicationRevision toApplicationPackageRevision(ApplicationPackage applicationPackage,
-                                                             Optional<ScrewdriverBuildJob> screwDriverBuildJob) {
-        if ( ! screwDriverBuildJob.isPresent())
-            return ApplicationRevision.from(applicationPackage.hash());
+    private ApplicationVersion toApplicationPackageRevision(ApplicationPackage applicationPackage,
+                                                            Optional<ScrewdriverBuildJob> buildJob) {
+        if ( ! buildJob.isPresent())
+            return ApplicationVersion.from(applicationPackage.hash());
 
-        GitRevision gitRevision = screwDriverBuildJob.get().gitRevision;
+        GitRevision gitRevision = buildJob.get().gitRevision;
         if (gitRevision.repository == null || gitRevision.branch == null || gitRevision.commit == null)
-            return ApplicationRevision.from(applicationPackage.hash());
+            return ApplicationVersion.from(applicationPackage.hash());
 
-        return ApplicationRevision.from(applicationPackage.hash(), new SourceRevision(gitRevision.repository.id(),
-                                                                                      gitRevision.branch.id(),
-                                                                                      gitRevision.commit.id()));
+        return ApplicationVersion.from(applicationPackage.hash(), new SourceRevision(gitRevision.repository.id(),
+                                                                                     gitRevision.branch.id(),
+                                                                                     gitRevision.commit.id()));
     }
 
     /** Register a DNS name for rotation */
@@ -661,7 +700,7 @@ public class ApplicationController {
     }
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system. */
-    public void validate(DeploymentSpec deploymentSpec) {
+    private void validate(DeploymentSpec deploymentSpec) {
         deploymentSpec.zones().stream()
                 .filter(zone -> zone.environment() == Environment.prod)
                 .forEach(zone -> {

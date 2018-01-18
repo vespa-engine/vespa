@@ -19,28 +19,28 @@ import java.util.Objects;
 public class Deployment {
 
     private final ZoneId zone;
-    private final ApplicationRevision revision;
+    private final ApplicationVersion applicationVersion;
     private final Version version;
     private final Instant deployTime;
     private final Map<Id, ClusterUtilization> clusterUtils;
     private final Map<Id, ClusterInfo> clusterInfo;
     private final DeploymentMetrics metrics;
 
-    public Deployment(ZoneId zone, ApplicationRevision revision, Version version, Instant deployTime) {
-        this(zone, revision, version, deployTime, new HashMap<>(), new HashMap<>(), new DeploymentMetrics());
+    public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime) {
+        this(zone, applicationVersion, version, deployTime, new HashMap<>(), new HashMap<>(), new DeploymentMetrics());
     }
 
-    public Deployment(ZoneId zone, ApplicationRevision revision, Version version, Instant deployTime,
+    public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime,
                       Map<Id, ClusterUtilization> clusterUtils, Map<Id, ClusterInfo> clusterInfo, DeploymentMetrics metrics) {
         Objects.requireNonNull(zone, "zone cannot be null");
-        Objects.requireNonNull(revision, "revision cannot be null");
+        Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
         Objects.requireNonNull(version, "version cannot be null");
         Objects.requireNonNull(deployTime, "deployTime cannot be null");
         Objects.requireNonNull(clusterUtils, "clusterUtils cannot be null");
         Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null");
         Objects.requireNonNull(metrics, "deployment metrics cannot be null");
         this.zone = zone;
-        this.revision = revision;
+        this.applicationVersion = applicationVersion;
         this.version = version;
         this.deployTime = deployTime;
         this.clusterUtils = clusterUtils;
@@ -51,10 +51,10 @@ public class Deployment {
     /** Returns the zone this was deployed to */
     public ZoneId zone() { return zone; }
 
-    /** Returns the revision of the application which was deployed */
-    public ApplicationRevision revision() { return revision; }
+    /** Returns the deployed application version */
+    public ApplicationVersion applicationVersion() { return applicationVersion; }
     
-    /** Returns the Vespa version which was deployed */
+    /** Returns the deployed Vespa version */
     public Version version() { return version; }
 
     /** Returns the time this was deployed */
@@ -69,15 +69,15 @@ public class Deployment {
     }
 
     public Deployment withClusterUtils(Map<Id, ClusterUtilization> clusterUtilization) {
-        return new Deployment(zone, revision, version, deployTime, clusterUtilization, clusterInfo, metrics);
+        return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics);
     }
 
     public Deployment withClusterInfo(Map<Id, ClusterInfo> newClusterInfo) {
-        return new Deployment(zone, revision, version, deployTime, clusterUtils, newClusterInfo, metrics);
+        return new Deployment(zone, applicationVersion, version, deployTime, clusterUtils, newClusterInfo, metrics);
     }
 
     public Deployment withMetrics(DeploymentMetrics metrics) {
-        return new Deployment(zone, revision, version, deployTime, clusterUtils, clusterInfo, metrics);
+        return new Deployment(zone, applicationVersion, version, deployTime, clusterUtils, clusterInfo, metrics);
     }
 
     /** @return Key metrics for the deployment (application level) like QPS and document count */
@@ -107,6 +107,6 @@ public class Deployment {
 
     @Override
     public String toString() {
-        return "deployment to " + zone + " of " + revision + " on version " + version + " at " + deployTime;
+        return "deployment to " + zone + " of " + applicationVersion + " on version " + version + " at " + deployTime;
     }
 }

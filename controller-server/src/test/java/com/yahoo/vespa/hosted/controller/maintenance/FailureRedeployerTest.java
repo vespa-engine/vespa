@@ -7,6 +7,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -178,6 +179,7 @@ public class FailureRedeployerTest {
     public void retryIgnoresStaleJobData() throws Exception {
         DeploymentTester tester = new DeploymentTester();
         tester.controllerTester().zoneRegistry().setSystem(SystemName.cd);
+        tester.controllerTester().zoneRegistry().setZones(ZoneId.from("prod", "cd-us-central-1"));
 
         // Current system version, matches version in test data
         Version version = Version.fromString("6.141.117");

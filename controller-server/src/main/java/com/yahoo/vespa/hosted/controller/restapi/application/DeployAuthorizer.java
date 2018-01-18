@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
@@ -16,6 +17,7 @@ import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotAuthorizedException;
 import java.security.Principal;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAthenzIdentities.SCREWDRIVER_DOMAIN;
@@ -41,9 +43,10 @@ public class DeployAuthorizer {
                                              Environment environment,
                                              Tenant tenant,
                                              ApplicationId applicationId,
-                                             ApplicationPackage applicationPackage) {
+                                             Optional<ApplicationPackage> applicationPackage) {
         // Validate that domain in identity configuration (deployment.xml) is same as tenant domain
-        applicationPackage.deploymentSpec().athenzDomain().ifPresent(identityDomain -> {
+        applicationPackage.map(ApplicationPackage::deploymentSpec).flatMap(DeploymentSpec::athenzDomain)
+                          .ifPresent(identityDomain -> {
             AthenzDomain tenantDomain = tenant.getAthensDomain().orElseThrow(() -> new IllegalArgumentException("Identity provider only available to Athenz onboarded tenants"));
             if (! Objects.equals(tenantDomain.getName(), identityDomain.value())) {
                 throw new ForbiddenException(
