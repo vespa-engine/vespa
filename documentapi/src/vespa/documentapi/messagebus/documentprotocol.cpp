@@ -25,7 +25,8 @@ const mbus::string DocumentProtocol::NAME = "document";
 
 DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
                                    DocumentTypeRepo::SP repo,
-                                   const string &configId) :
+                                   const string &configId,
+                                   bool enableMultipleBucketSpaces) :
     _routingPolicyRepository(new RoutingPolicyRepository()),
     _routableRepository(new RoutableRepository(loadTypes)),
     _systemState(SystemState::newInstance("")),
@@ -107,10 +108,12 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     putRoutableFactory(MESSAGE_REMOVEDOCUMENT, IRoutableFactory::SP(new RoutableFactories52::RemoveDocumentMessageFactory()), from52);
 
     // Add 6.x serialization (TODO finalize version)
-    putRoutableFactory(MESSAGE_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories60::CreateVisitorMessageFactory(*_repo)), from6);
+    if (enableMultipleBucketSpaces) {
+        putRoutableFactory(MESSAGE_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories60::CreateVisitorMessageFactory(*_repo)), from6);
+    }
 }
 
-DocumentProtocol::~DocumentProtocol() { }
+DocumentProtocol::~DocumentProtocol() = default;
 
 mbus::IRoutingPolicy::UP
 DocumentProtocol::createPolicy(const mbus::string &name, const mbus::string &param) const

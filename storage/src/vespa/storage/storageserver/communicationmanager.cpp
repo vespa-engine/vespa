@@ -426,8 +426,10 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         // config here.
         _mbus = std::make_unique<mbus::RPCMessageBus>(
                 mbus::ProtocolSet()
-                        .add(std::make_shared<documentapi::DocumentProtocol>(*_component.getLoadTypes(), _component.getTypeRepo()))
-                        .add(std::make_shared<mbusprot::StorageProtocol>(_component.getTypeRepo(), *_component.getLoadTypes(), _component.enableMultipleBucketSpaces())),
+                        .add(std::make_shared<documentapi::DocumentProtocol>(*_component.getLoadTypes(), _component.getTypeRepo(), "",
+                                                                             _component.enableMultipleBucketSpaces()))
+                        .add(std::make_shared<mbusprot::StorageProtocol>(_component.getTypeRepo(), *_component.getLoadTypes(),
+                                                                         _component.enableMultipleBucketSpaces())),
                 params,
                 _configUri);
 
@@ -768,7 +770,8 @@ void CommunicationManager::updateMessagebusProtocol(
         const document::DocumentTypeRepo::SP &repo) {
     if (_mbus.get()) {
         framework::SecondTime now(_component.getClock().getTimeInSeconds());
-        mbus::IProtocol::SP newDocumentProtocol(new documentapi::DocumentProtocol( *_component.getLoadTypes(), repo));
+        mbus::IProtocol::SP newDocumentProtocol(new documentapi::DocumentProtocol(
+                *_component.getLoadTypes(), repo, "", _component.enableMultipleBucketSpaces()));
         std::lock_guard<std::mutex> guard(_earlierGenerationsLock);
         _earlierGenerations.push_back(std::make_pair(now, _mbus->getMessageBus().putProtocol(newDocumentProtocol)));
         mbus::IProtocol::SP newStorageProtocol(new mbusprot::StorageProtocol(repo, *_component.getLoadTypes(), _component.enableMultipleBucketSpaces()));
