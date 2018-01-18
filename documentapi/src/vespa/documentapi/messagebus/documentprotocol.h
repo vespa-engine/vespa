@@ -200,8 +200,7 @@ public:
      */
     DocumentProtocol(const LoadTypeSet& loadTypes,
                      std::shared_ptr<document::DocumentTypeRepo> repo,
-                     const string &configId = "",
-                     bool enableMultipleBucketSpaces = false);
+                     const string &configId = "");
     ~DocumentProtocol();
 
     /**
