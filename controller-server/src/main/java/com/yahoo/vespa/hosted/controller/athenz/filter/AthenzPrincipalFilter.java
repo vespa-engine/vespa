@@ -59,7 +59,7 @@ public class AthenzPrincipalFilter implements SecurityRequestFilter {
 
             if (!certificatePrincipal.isPresent() && !nTokenPrincipal.isPresent()) {
                 String errorMessage = "Unable to authenticate Athenz identity. " +
-                        "Both client certificate missing and principal token header are missing.";
+                        "Either client certificate or principal token is required.";
                 sendErrorResponse(responseHandler, Response.Status.UNAUTHORIZED, errorMessage);
                 return;
             }
