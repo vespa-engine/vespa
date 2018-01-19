@@ -15,9 +15,9 @@ import java.util.*;
  * Status and md5sum for files within an application package.
  *
  * @author hmusum
- * @since 5.1.15
  */
 class SessionContentStatusListResponse extends SessionResponse {
+
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger("SessionContentStatusListResponse");
 
     private final Slime slime = new Slime();
@@ -38,4 +38,5 @@ class SessionContentStatusListResponse extends SessionResponse {
     public void render(OutputStream outputStream) throws IOException {
         new JsonFormat(true).encode(outputStream, slime);
     }
+
 }

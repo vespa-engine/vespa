@@ -10,9 +10,9 @@ import java.io.*;
  * Represents a response for a request to show the status and md5sum of a file in the application package.
  *
  * @author hmusum
- * @since 5.1.15
  */
 public class SessionContentStatusResponse extends SessionResponse {
+
     private final ApplicationFile file;
     private final String urlBase;
     private final ApplicationFile.MetaData metaData;
@@ -51,4 +51,5 @@ public class SessionContentStatusResponse extends SessionResponse {
             this.name = name;
         }
     }
+
 }

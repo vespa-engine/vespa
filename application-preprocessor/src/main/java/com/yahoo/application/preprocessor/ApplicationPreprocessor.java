@@ -59,7 +59,8 @@ public class ApplicationPreprocessor {
         ApplicationPreprocessor preprocessor = new ApplicationPreprocessor(applicationDir, outputDir, environment, region);
         try {
             preprocessor.run();
-            System.out.println("Application preprocessed successfully. Preprocessed application stored in " + new File(applicationDir, ".preprocessed").getAbsolutePath());
+            System.out.println("Application preprocessed successfully. Preprocessed application stored in " +
+                               new File(applicationDir, ".preprocessed").getAbsolutePath());
         } catch (Exception e) {
             System.err.println("Error validating application package: " + Exceptions.toMessageString(e));
             System.exit(1);
