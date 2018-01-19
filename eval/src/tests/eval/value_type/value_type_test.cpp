@@ -433,4 +433,34 @@ TEST("require that types can be concatenated") {
     EXPECT_EQUAL(ValueType::concat(vx_5,   vy_7,   "z"), cxyz_572);
 }
 
+TEST("require that 'either' gives appropriate type") {
+    ValueType error    = ValueType::error_type();
+    ValueType any      = ValueType::any_type();
+    ValueType tensor   = ValueType::tensor_type({});
+    ValueType scalar   = ValueType::double_type();
+    ValueType vx_2     = ValueType::from_spec("tensor(x[2])");
+    ValueType vx_m     = ValueType::from_spec("tensor(x{})");
+    ValueType vx_3     = ValueType::from_spec("tensor(x[3])");
+    ValueType vx_any   = ValueType::from_spec("tensor(x[])");
+    ValueType vy_2     = ValueType::from_spec("tensor(y[2])");
+    ValueType mxy_22   = ValueType::from_spec("tensor(x[2],y[2])");
+    ValueType mxy_23   = ValueType::from_spec("tensor(x[2],y[3])");
+    ValueType mxy_32   = ValueType::from_spec("tensor(x[3],y[2])");
+    ValueType mxy_any2 = ValueType::from_spec("tensor(x[],y[2])");
+    ValueType mxy_2any = ValueType::from_spec("tensor(x[2],y[])");
+
+    EXPECT_EQUAL(ValueType::either(vx_2, error), error);
+    EXPECT_EQUAL(ValueType::either(error, vx_2), error);
+    EXPECT_EQUAL(ValueType::either(vx_2, vx_2), vx_2);
+    EXPECT_EQUAL(ValueType::either(vx_2, scalar), any);
+    EXPECT_EQUAL(ValueType::either(scalar, vx_2), any);
+    EXPECT_EQUAL(ValueType::either(vx_2, mxy_22), tensor);
+    EXPECT_EQUAL(ValueType::either(tensor, vx_2), tensor);
+    EXPECT_EQUAL(ValueType::either(vx_2, vy_2), tensor);
+    EXPECT_EQUAL(ValueType::either(vx_2, vx_m), tensor);
+    EXPECT_EQUAL(ValueType::either(vx_2, vx_3), vx_any);
+    EXPECT_EQUAL(ValueType::either(mxy_22, mxy_23), mxy_2any);
+    EXPECT_EQUAL(ValueType::either(mxy_32, mxy_22), mxy_any2);
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -148,10 +148,7 @@ const Node &rename(const Node &child, const std::vector<vespalib::string> &from,
 }
 
 const Node &if_node(const Node &cond, const Node &true_child, const Node &false_child, Stash &stash) {
-    ValueType result_type = true_child.result_type();
-    if (result_type != false_child.result_type()) {
-        result_type = ValueType::any_type();
-    }
+    ValueType result_type = ValueType::either(true_child.result_type(), false_child.result_type());
     return stash.create<If>(result_type, cond, true_child, false_child);
 }
 

@@ -95,7 +95,11 @@ TensorSpec eval_expr(const Inspector &test, const TensorEngine &engine, bool typ
     InterpretedFunction ifun(engine, fun, types);
     InterpretedFunction::Context ctx(ifun);
     SimpleObjectParams params(param_refs);
-    return engine.to_spec(ifun.eval(ctx, params));
+    const Value &result = ifun.eval(ctx, params);
+    if (typed) {
+        ASSERT_EQUAL(result.type(), types.get_type(fun.root()));
+    }
+    return engine.to_spec(result);
 }
 
 TensorSpec eval_expr_tf(const Inspector &test, const TensorEngine &engine) {
@@ -110,7 +114,10 @@ TensorSpec eval_expr_tf(const Inspector &test, const TensorEngine &engine) {
     SimpleObjectParams params(param_refs);
     NodeTypes types = NodeTypes(fun, get_types(param_values));
     const auto &tfun = make_tensor_function(engine, fun.root(), types, stash);
-    return engine.to_spec(tfun.eval(engine, params, stash));
+    const Value &result = tfun.eval(engine, params, stash);
+    ASSERT_EQUAL(result.type(), tfun.result_type());
+    ASSERT_EQUAL(result.type(), types.get_type(fun.root()));
+    return engine.to_spec(result);
 }
 
 //-----------------------------------------------------------------------------
