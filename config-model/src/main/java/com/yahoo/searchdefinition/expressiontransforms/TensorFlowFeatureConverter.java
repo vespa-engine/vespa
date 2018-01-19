@@ -251,18 +251,20 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             Path constantsPath = ApplicationPackage.MODELS_GENERATED_DIR.append(arguments.modelPath).append("constants");
 
             // "tbf" ending for "typed binary format" - recognized by the nodes receiving the file:
-            Path constantPath = constantsPath.append(name + ".tbf");
+            // Use an absolute path to the constant file to avoid writing it to the .preprocessed sub-directory
+            // then attempting to read it from a context where the root is outside the .preprocessed directory.
+            File constantFile = application.getFileReference(constantsPath.append(name + ".tbf")).getAbsoluteFile();
 
             // Remember the constant in a file we replicate in ZooKeeper
             log.info("Writing converted TensorFlow constant information to " + arguments.rankingConstantsPath().append(name + ".constant"));
             application.getFile(arguments.rankingConstantsPath().append(name + ".constant"))
-                       .writeFile(new StringReader(name + ":" + constant.type() + ":" + constantPath));
+                       .writeFile(new StringReader(name + ":" + constant.type() + ":" + constantFile));
 
             // Write content explicitly as a file on the file system as this is distributed using file distribution
-            log.info("Writing converted TensorFlow constant to " + application.getFileReference(constantPath).getAbsolutePath());
+            log.info("Writing converted TensorFlow constant to " + constantFile);
             createIfNeeded(constantsPath);
-            IOUtils.writeFile(application.getFileReference(constantPath), TypedBinaryFormat.encode(constant));
-            return constantPath;
+            IOUtils.writeFile(constantFile, TypedBinaryFormat.encode(constant));
+            return Path.fromString(constantFile.toString());
         }
 
         private void createIfNeeded(Path path) {
