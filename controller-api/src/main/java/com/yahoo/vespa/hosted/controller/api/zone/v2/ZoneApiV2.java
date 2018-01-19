@@ -11,6 +11,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.Maintena
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.status.StatusReply;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.status.ZoneStatusReply;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -25,6 +28,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -208,4 +212,90 @@ public interface ZoneApiV2 {
     void resumeApplication(@PathParam("environmentId") EnvironmentId environmentId,
                            @PathParam("regionId") RegionId regionId,
                            @PathParam("application") String applicationIdString);
+
+    /**
+     * Get names of all rotations with the status OUT
+     *
+     * @return List of rotation names.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{environmentId}/{regionId}/routing/v1/status")
+    List<String> listRotations(@PathParam("environmentId") EnvironmentId environmentId,
+                               @PathParam("regionId") RegionId regionId);
+
+    /**
+     * Get the status of a rotation
+     *
+     * @param rotation The name of a rotation.
+     * @return The current status of the rotation, wrapped into a {@link StatusReply} object. The value is {@link
+     * RotationStatus#IN} for any rotation that has not been explicitly set to {@link RotationStatus#OUT} using {@link
+     * #setRotationStatus(EnvironmentId, RegionId, String, StatusReply)}.
+     */
+    @GET
+    @Path("/{environmentId}/{regionId}/routing/v1/status/{rotation}")
+    @Produces(MediaType.APPLICATION_JSON)
+    StatusReply getRotationStatus(@PathParam("environmentId") EnvironmentId environmentId,
+                                  @PathParam("regionId") RegionId regionId,
+                                  @PathParam("rotation") String rotation);
+
+    /**
+     * Set or modify rotation status according to payload
+     *
+     * @param rotation The rotation (endpoint) to modify
+     * @param payload The name/status/agent/reason to set
+     * @return The updated status of the rotation wrapped into a {@link StatusReply} object.
+     */
+    @PUT
+    @Path("/{environmentId}/{regionId}/routing/v1/status/{rotation}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    StatusReply setRotationStatus(@PathParam("environmentId") EnvironmentId environmentId,
+                                  @PathParam("regionId") RegionId regionId,
+                                  @PathParam("rotation") String rotation,
+                                  StatusReply payload);
+
+    /**
+     * Set the status of a rotation to IN
+     *
+     * @param rotation The name of a rotation.
+     * @return The updated status of the rotation wrapped into a {@link StatusReply} object.
+     */
+    @DELETE
+    @Path("/{environmentId}/{regionId}/routing/v1/status/{rotation}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Deprecated
+    StatusReply unsetRotation(@PathParam("environmentId") EnvironmentId environmentId,
+                              @PathParam("regionId") RegionId regionId,
+                              @PathParam("rotation") String rotation);
+
+    /**
+     * Set the status of the zone to OUT
+     * @return The updated status of the zone wrapped into a {@link ZoneStatusReply} object.
+     */
+    @PUT
+    @Path("/{environmentId}/{regionId}/routing/v1/status/zone")
+    @Produces(MediaType.APPLICATION_JSON)
+    ZoneStatusReply setZoneRotationInactive(@PathParam("environmentId") EnvironmentId environmentId,
+                                            @PathParam("regionId") RegionId regionId);
+
+    /**
+     * Clears the status of the zone. The routing check will fall back to check individual rotations.
+     * @return The updated status of the zone wrapped into a {@link ZoneStatusReply} object.
+     */
+    @DELETE
+    @Path("/{environmentId}/{regionId}/routing/v1/status/zone")
+    @Produces(MediaType.APPLICATION_JSON)
+    ZoneStatusReply unsetZoneRotationInactive(@PathParam("environmentId") EnvironmentId environmentId,
+                                              @PathParam("regionId") RegionId regionId);
+
+    /**
+     * Get the status of the zone
+     * @return The status of the zone wrapped into a {@link ZoneStatusReply} object.
+     */
+    @GET
+    @Path("/{environmentId}/{regionId}/routing/v1/status/zone")
+    @Produces(MediaType.APPLICATION_JSON)
+    ZoneStatusReply getZoneRotationStatus(@PathParam("environmentId") EnvironmentId environmentId,
+                                          @PathParam("regionId") RegionId regionId);
 }
