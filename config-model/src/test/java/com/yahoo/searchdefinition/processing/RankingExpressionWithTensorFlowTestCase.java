@@ -196,7 +196,7 @@ public class RankingExpressionWithTensorFlowTestCase {
             Path constantApplicationPackagePath = Path.fromString("models.generated/mnist_softmax/saved/constants").append(name + ".tbf");
             RankingConstant rankingConstant = search.search().getRankingConstants().get(name);
             assertEquals(name, rankingConstant.getName());
-            assertEquals(constantApplicationPackagePath.toString(), rankingConstant.getFileName());
+            assertTrue(rankingConstant.getFileName().endsWith(constantApplicationPackagePath.toString()));
 
             if (expectedSize.isPresent()) {
                 Path constantPath = applicationDir.append(constantApplicationPackagePath);

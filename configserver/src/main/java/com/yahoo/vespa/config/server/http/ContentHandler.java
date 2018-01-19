@@ -16,7 +16,6 @@ import java.util.List;
  * are handled by this class.
  *
  * @author hmusum
- * @since 5.1.15
  */
 public class ContentHandler {
 
@@ -72,7 +71,7 @@ public class ContentHandler {
     }
 
     private void createFile(ContentRequest request, ApplicationFile file) {
-        if (!request.hasRequestBody()) {
+        if ( ! request.hasRequestBody()) {
             throw new BadRequestException("Request must contain body when creating a file");
         }
         try {

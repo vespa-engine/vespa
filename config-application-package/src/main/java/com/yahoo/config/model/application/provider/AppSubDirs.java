@@ -45,10 +45,6 @@ public class AppSubDirs {
         return root.first;
     }
 
-    public File templates() {
-        return templates.first;
-    }
-
     public File rules() {
         return rules.first;
     }
