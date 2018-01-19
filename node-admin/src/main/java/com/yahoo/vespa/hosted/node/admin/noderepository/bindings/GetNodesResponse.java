@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * This class represents a response from the /nodes/v2/node/ API. It is designed to be
@@ -43,6 +44,9 @@ public class GetNodesResponse {
         public final Double minCpuCores;
         public final Double minMainMemoryAvailableGb;
         public final Double minDiskAvailableGb;
+        public final Boolean fastDisk;
+        public final Set<String> ipAddresses;
+        public final String hardwareDivergence;
 
         @JsonCreator
         public Node(@JsonProperty("id") String hostname,
@@ -62,7 +66,10 @@ public class GetNodesResponse {
                     @JsonProperty("currentRebootGeneration") Long currentRebootGeneration,
                     @JsonProperty("minCpuCores") Double minCpuCores,
                     @JsonProperty("minMainMemoryAvailableGb") Double minMainMemoryAvailableGb,
-                    @JsonProperty("minDiskAvailableGb") Double minDiskAvailableGb) {
+                    @JsonProperty("minDiskAvailableGb") Double minDiskAvailableGb,
+                    @JsonProperty("fastDisk") Boolean fastDisk,
+                    @JsonProperty("ipAddresses") Set<String> ipAddresses,
+                    @JsonProperty("hardwareDivergence") String hardwareDivergence) {
             this.hostname = hostname;
             this.wantedDockerImage = wantedDockerImage;
             this.currentDockerImage = currentDockerImage;
@@ -81,6 +88,9 @@ public class GetNodesResponse {
             this.minCpuCores = minCpuCores;
             this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
             this.minDiskAvailableGb = minDiskAvailableGb;
+            this.fastDisk = fastDisk;
+            this.ipAddresses = ipAddresses;
+            this.hardwareDivergence = hardwareDivergence;
         }
 
         public String toString() {

@@ -128,9 +128,15 @@ public class NodeAdminStateUpdater {
         if (currentState != RESUMED) return;
 
         try {
-            String hardwareDivergence = maintainer.getHardwareDivergence();
-            NodeAttributes nodeAttributes = new NodeAttributes().withHardwareDivergence(hardwareDivergence);
-            nodeRepository.updateNodeAttributes(dockerHostHostName, nodeAttributes);
+            ContainerNodeSpec nodeSpec = nodeRepository.getContainerNodeSpec(dockerHostHostName)
+                    .orElseThrow(() -> new RuntimeException("Failed to get host's node spec from node-repo"));
+            String hardwareDivergence = maintainer.getHardwareDivergence(nodeSpec);
+
+            // Only update hardware divergence if there is a change.
+            if (!nodeSpec.hardwareDivergence.orElse("null").equals(hardwareDivergence)) {
+                NodeAttributes nodeAttributes = new NodeAttributes().withHardwareDivergence(hardwareDivergence);
+                nodeRepository.updateNodeAttributes(dockerHostHostName, nodeAttributes);
+            }
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to report hardware divergence", e);
         }

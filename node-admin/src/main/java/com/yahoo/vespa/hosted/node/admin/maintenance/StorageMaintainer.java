@@ -21,7 +21,6 @@ import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,7 +36,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
@@ -308,20 +306,33 @@ public class StorageMaintainer {
 
     /**
      * Runs node-maintainer's SpecVerifier and returns its output
+     * @param nodeSpec Node specification containing the excepted values we want to verify against
+     * @return new combined hardware divergence
      * @throws RuntimeException if exit code != 0
      */
-    public String getHardwareDivergence() {
-        String configServers = environment.getConfigServerUris().stream()
-                .map(URI::getHost)
-                .collect(Collectors.joining(","));
-        return executeMaintainer("com.yahoo.vespa.hosted.node.verification.spec.SpecVerifier", configServers);
+    public String getHardwareDivergence(ContainerNodeSpec nodeSpec) {
+        List<String> arguments = new ArrayList<>(Arrays.asList("specification",
+                "--disk", Double.toString(nodeSpec.minDiskAvailableGb),
+                "--memory", Double.toString(nodeSpec.minMainMemoryAvailableGb),
+                "--cpu_cores", Double.toString(nodeSpec.minCpuCores),
+                "--is_ssd", Boolean.toString(nodeSpec.fastDisk),
+                "--ips", String.join(",", nodeSpec.ipAddresses)));
+
+        if (nodeSpec.hardwareDivergence.isPresent()) {
+            arguments.add("--divergence");
+            arguments.add(nodeSpec.hardwareDivergence.get());
+        }
+
+        return executeMaintainer("com.yahoo.vespa.hosted.node.verification.Main", arguments.toArray(new String[0]));
     }
 
 
     private String executeMaintainer(String mainClass, String... args) {
         String[] command = Stream.concat(
-                Stream.of("sudo", "VESPA_HOME=" + getDefaults().vespaHome(),
-                        getDefaults().underVespaHome("libexec/vespa/node-admin/maintenance.sh"), mainClass),
+                Stream.of("sudo",
+                        "VESPA_HOME=" + getDefaults().vespaHome(),
+                        getDefaults().underVespaHome("libexec/vespa/node-admin/maintenance.sh"),
+                        mainClass),
                 Stream.of(args))
                 .toArray(String[]::new);
 
@@ -334,7 +345,7 @@ public class StorageMaintainer {
                         String.format("Maintainer failed to execute command: %s, Exit code: %d, Stdout/stderr: %s",
                                 Arrays.toString(command), result.getFirst(), result.getSecond()));
             }
-            return result.getSecond();
+            return result.getSecond().trim();
         } catch (IOException e) {
             throw new RuntimeException("Failed to execute maintainer", e);
         }
