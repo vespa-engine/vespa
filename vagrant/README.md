@@ -31,7 +31,6 @@ This is needed in order to compile and run tests fast on the local file system i
 
     git clone git@github.com:vespa-engine/vespa.git
 
-
 ## Build C++ modules
 Please follow the build instructions described [here](../README.md#build-c-modules).
 Skip these steps if doing development with CLion.
@@ -51,6 +50,11 @@ Open a terminal inside the virtual CentOS desktop (password is "vagrant") and ru
 
     clion
 
+When promoted, configure c and cpp compilers to 
+
+    /opt/rh/devtoolset-7/root/usr/bin/cc
+    /opt/rh/devtoolset-7/root/usr/bin/c++    
+
 #### 3. Open the Vespa Project
 Go to *File* -> *Open* and choose &lt;vespa-source>&gt;/CMakeLists.txt.
 
@@ -58,10 +62,12 @@ Go to *File* -> *Open* and choose &lt;vespa-source>&gt;/CMakeLists.txt.
 Go to *File* -> *Settings* -> *Build, Execution, Deployment* -> *CMake*.
 Under *Build Options* specify "-j 4" and click *Apply*.
 
+#### 5. Run bootstrap again
+
+    ./bootstrap-cpp.sh . .
+
+(Some of the changes made by it are undone by clion on the first startup.)
+
 #### 5. Build all modules
 Choose target **all_modules** from the set of build targets at the top right and click build.
 
-#### Troubleshooting
-
-If there are build errors try to run bootstrap-cpp.sh again
-(some of what it does may be undone by clion setup).
