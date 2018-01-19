@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -22,7 +23,7 @@ public interface NameService {
     Optional<Record> findRecord(Record.Type type, RecordName name);
 
     /** Find record by type and data */
-    Optional<Record> findRecord(Record.Type type, RecordData data);
+    List<Record> findRecord(Record.Type type, RecordData data);
 
     /** Update existing record */
     void updateRecord(RecordId id, RecordData newData);

@@ -4,9 +4,11 @@ package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * An in-memory name service for testing purposes.
@@ -36,11 +38,10 @@ public class MemoryNameService implements NameService {
     }
 
     @Override
-    public Optional<Record> findRecord(Record.Type type, RecordData data) {
-        return records.values()
-                .stream()
+    public List<Record> findRecord(Record.Type type, RecordData data) {
+        return records.values().stream()
                 .filter(record -> record.type() == type && record.data().equals(data))
-                .findFirst();
+                .collect(Collectors.toList());
     }
 
     @Override
