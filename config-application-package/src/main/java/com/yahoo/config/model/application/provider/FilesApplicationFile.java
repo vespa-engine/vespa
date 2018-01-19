@@ -23,6 +23,7 @@ public class FilesApplicationFile extends ApplicationFile {
     private static final Logger log = Logger.getLogger("FilesApplicationFile");
     private final File file;
     private final ObjectMapper mapper = new ObjectMapper();
+
     public FilesApplicationFile(Path path, File file) {
         super(path);
         this.file = file;

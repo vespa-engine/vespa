@@ -94,7 +94,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
     private ExpressionNode transformFromStoredModel(ModelStore store, RankProfile profile) {
         for (RankingConstant constant : store.readRankingConstants()) {
-            if (!profile.getSearch().getRankingConstants().containsKey(constant.getName()))
+            if ( ! profile.getSearch().getRankingConstants().containsKey(constant.getName()))
                 profile.getSearch().addRankingConstant(constant);
         }
         return store.readConverted().getRoot();
@@ -154,11 +154,11 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
     }
 
     private void transformConstant(ModelStore store, RankProfile profile, String constantName, Tensor constantValue) {
-        if (profile.getSearch().getRankingConstants().containsKey(constantName)) return;
-
         Path constantPath = store.writeConstant(constantName, constantValue);
-        profile.getSearch().addRankingConstant(new RankingConstant(constantName, constantValue.type(),
-                                                                   constantPath.toString()));
+
+        if ( ! profile.getSearch().getRankingConstants().containsKey(constantName))
+            profile.getSearch().addRankingConstant(new RankingConstant(constantName, constantValue.type(),
+                                                                       constantPath.toString()));
     }
 
     private String skippedOutputsDescription(TensorFlowModel.Signature signature) {

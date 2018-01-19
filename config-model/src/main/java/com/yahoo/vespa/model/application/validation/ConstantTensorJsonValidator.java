@@ -41,7 +41,11 @@ public class ConstantTensorJsonValidator {
         else if (fileName.endsWith(".json.lz4")) {
             // don't validate; the cost probably outweights the advantage
         }
+        else if (fileName.endsWith(".tbf")) {
+            // don't validate; internal format, so this constant is written by us
+        }
         else {
+            // (don't mention the internal format to users)
             throw new IllegalArgumentException("Ranking constant file names must end with either '.json' or '.json.lz4'");
         }
     }
