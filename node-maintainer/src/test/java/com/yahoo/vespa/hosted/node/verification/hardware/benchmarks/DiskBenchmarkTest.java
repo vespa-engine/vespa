@@ -6,8 +6,8 @@ import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -58,31 +58,29 @@ public class DiskBenchmarkTest {
     @Test
     public void parseDiskSpeed_valid_input() throws Exception {
         List<String> mockCommandOutput = MockCommandExecutor.readFromFile(VALID_OUTPUT_FILE);
-        ParseResult parseResult = diskBenchmark.parseDiskSpeed(mockCommandOutput);
+        Optional<ParseResult> parseResult = diskBenchmark.parseDiskSpeed(mockCommandOutput);
         ParseResult expectedParseResult = new ParseResult("MB/s", "243");
-        assertEquals(expectedParseResult, parseResult);
+        assertEquals(Optional.of(expectedParseResult), parseResult);
     }
 
     @Test
     public void parseDiskSpeed_invalid_input() throws Exception {
         List<String> mockCommandOutput = MockCommandExecutor.readFromFile(INVALID_OUTPUT_FILE);
-        ParseResult parseResult = diskBenchmark.parseDiskSpeed(mockCommandOutput);
-        ParseResult expectedParseResult = new ParseResult("invalid", "invalid");
-        assertEquals(expectedParseResult, parseResult);
+        Optional<ParseResult> parseResult = diskBenchmark.parseDiskSpeed(mockCommandOutput);
+        assertEquals(Optional.empty(), parseResult);
     }
 
     @Test
     public void setDiskSpeed_valid_input() {
         ParseResult parseResult = new ParseResult("MB/s", "243");
-        diskBenchmark.setDiskSpeed(parseResult);
+        diskBenchmark.setDiskSpeed(Optional.of(parseResult));
         double expectedDiskSpeed = 243;
         assertEquals(expectedDiskSpeed, benchmarkResults.getDiskSpeedMbs(), DELTA);
     }
 
     @Test
     public void setDiskSpeed_invalid_input() {
-        ParseResult parseResult = new ParseResult("invalid", "invalid");
-        diskBenchmark.setDiskSpeed(parseResult);
+        diskBenchmark.setDiskSpeed(Optional.empty());
         double expectedDiskSpeed = 0;
         assertEquals(expectedDiskSpeed, benchmarkResults.getDiskSpeedMbs(), DELTA);
     }

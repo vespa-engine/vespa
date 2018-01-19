@@ -39,7 +39,7 @@ public class DiskRetrieverTest {
         commandExecutor.addCommand(CAT_RESOURCE_PATH + "filesize");
         diskRetriever.updateInfo();
         assertEquals(DiskType.FAST, hardwareInfo.getDiskType());
-        double expectedSize = 1759.84;
+        double expectedSize = 1760.0;
         assertEquals(expectedSize, hardwareInfo.getMinDiskAvailableGb(), DELTA);
     }
 
@@ -54,7 +54,7 @@ public class DiskRetrieverTest {
     public void updateDiskSize__should_store_diskSize_in_hardwareInfo() throws IOException {
         commandExecutor.addCommand(CAT_RESOURCE_PATH + "filesize");
         diskRetriever.updateDiskSize();
-        double expectedSize = 1759.84;
+        double expectedSize = 1760.0;
         assertEquals(expectedSize, hardwareInfo.getMinDiskAvailableGb(), DELTA);
     }
 
@@ -79,7 +79,7 @@ public class DiskRetrieverTest {
     public void parseDiskType_with_invalid_outputstream_does_not_contain_searchword_should_throw_exception() throws Exception {
         List<String> mockOutput = commandExecutor.outputFromString("Name  Rota");
         try {
-            ParseResult parseResult = diskRetriever.parseDiskType(mockOutput);
+            diskRetriever.parseDiskType(mockOutput);
             fail("Should have thrown IOException when outputstream doesn't contain search word");
         } catch (IOException e) {
             String expectedExceptionMessage = "Parsing for disk type failed";
@@ -95,7 +95,7 @@ public class DiskRetrieverTest {
         List<ParseResult> parseResults = diskRetriever.parseDiskSize(mockOutput);
         ParseResult expectedParseResult1 = new ParseResult("Size", "799.65");
         assertEquals(expectedParseResult1, parseResults.get(0));
-        ParseResult expectedParseResult2 = new ParseResult("Size", "960.19");
+        ParseResult expectedParseResult2 = new ParseResult("Size", "960.35");
         assertEquals(expectedParseResult2, parseResults.get(1));
     }
 

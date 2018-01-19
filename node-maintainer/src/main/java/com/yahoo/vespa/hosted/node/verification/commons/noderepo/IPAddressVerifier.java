@@ -27,25 +27,30 @@ public class IPAddressVerifier {
 
     private static final Logger logger = Logger.getLogger(IPAddressVerifier.class.getName());
 
-    public void reportFaultyIpAddresses(NodeRepoJsonModel nodeRepoJsonModel, SpecVerificationReport specVerificationReport) {
-        String[] faultyIpAddresses = getFaultyIpAddresses(nodeRepoJsonModel);
+    private final String expectedHostname;
+
+    public IPAddressVerifier(String expectedHostname) {
+        this.expectedHostname = expectedHostname;
+    }
+
+    public void reportFaultyIpAddresses(NodeSpec nodeSpec, SpecVerificationReport specVerificationReport) {
+        String[] faultyIpAddresses = getFaultyIpAddresses(nodeSpec);
         if (faultyIpAddresses.length > 0) {
             specVerificationReport.setFaultyIpAddresses(faultyIpAddresses);
         }
     }
 
-    public String[] getFaultyIpAddresses(NodeRepoJsonModel jsonModel) {
-        String expectedHostname = jsonModel.getHostname();
+    public String[] getFaultyIpAddresses(NodeSpec nodeSpec) {
         List<String> faultyIpAddresses = new ArrayList<>();
         if (expectedHostname == null || expectedHostname.equals(""))
             return new String[0];
-        if (!isValidIpv4(jsonModel.getIpv4Address(), expectedHostname)) {
-            faultyIpAddresses.add(jsonModel.getIpv4Address());
+        if (!isValidIpv4(nodeSpec.getIpv4Address(), expectedHostname)) {
+            faultyIpAddresses.add(nodeSpec.getIpv4Address());
         }
-        if (!isValidIpv6(jsonModel.getIpv6Address(), expectedHostname)) {
-            faultyIpAddresses.add(jsonModel.getIpv6Address());
+        if (!isValidIpv6(nodeSpec.getIpv6Address(), expectedHostname)) {
+            faultyIpAddresses.add(nodeSpec.getIpv6Address());
         }
-        return faultyIpAddresses.stream().toArray(String[]::new);
+        return faultyIpAddresses.toArray(new String[0]);
     }
 
     private boolean isValidIpv4(String ipv4Address, String expectedHostname) {
@@ -76,12 +81,11 @@ public class IPAddressVerifier {
         return false;
     }
 
-    protected String reverseLookUp(String ipAddress) throws NamingException {
+    String reverseLookUp(String ipAddress) throws NamingException {
         Hashtable<String, String> env = new Hashtable<>();
         env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
-        String attributeName = ipAddress;
         DirContext ctx = new InitialDirContext(env);
-        Attributes attrs = ctx.getAttributes(attributeName, new String[]{"PTR"});
+        Attributes attrs = ctx.getAttributes(ipAddress, new String[]{"PTR"});
         for (NamingEnumeration<? extends Attribute> ae = attrs.getAll(); ae.hasMoreElements(); ) {
             Attribute attr = ae.next();
             Enumeration<?> vals = attr.getAll();
@@ -95,7 +99,7 @@ public class IPAddressVerifier {
         return "";
     }
 
-    protected String convertIpv6ToLookupFormat(String ipAddress) {
+    String convertIpv6ToLookupFormat(String ipAddress) {
         StringBuilder newIpAddress = new StringBuilder();
         String doubleColonReplacement = "0.0.0.0.0.0.0.0.0.0.0.0.";
         String domain = "ip6.arpa";
@@ -108,14 +112,14 @@ public class IPAddressVerifier {
             }
             String trailingZeroes = "0000";
             String paddedHextet = (reversedHextet + trailingZeroes).substring(0, trailingZeroes.length());
-            String punctuatedHextet = paddedHextet.replaceAll(".(?=)", "$0.");
+            String punctuatedHextet = paddedHextet.replaceAll(".", "$0.");
             newIpAddress.append(punctuatedHextet);
         }
         newIpAddress.append(domain);
         return newIpAddress.toString();
     }
 
-    protected String convertIpv4ToLookupFormat(String ipAddress) {
+    String convertIpv4ToLookupFormat(String ipAddress) {
         String domain = "in-addr.arpa";
         String[] octets = ipAddress.split("\\.");
         StringBuilder convertedIpAddress = new StringBuilder();

@@ -7,8 +7,7 @@ import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseInstructions
 import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseResult;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,18 +45,17 @@ public class CPURetriever implements HardwareRetriever {
         }
     }
 
-    protected List<ParseResult> parseCPUInfoFile(List<String> commandOutput) {
-        List<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD));
+    List<ParseResult> parseCPUInfoFile(List<String> commandOutput) {
+        List<String> searchWords = Collections.singletonList(SEARCH_WORD);
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, REGEX_SPLIT, searchWords);
-        List<ParseResult> parseResults = OutputParser.parseOutput(parseInstructions, commandOutput);
-        return parseResults;
+        return OutputParser.parseOutput(parseInstructions, commandOutput);
     }
 
-    protected void setCpuCores(List<ParseResult> parseResults) {
+    void setCpuCores(List<ParseResult> parseResults) {
         hardwareInfo.setMinCpuCores(countCpuCores(parseResults));
     }
 
-    protected int countCpuCores(List<ParseResult> parseResults) {
+    private int countCpuCores(List<ParseResult> parseResults) {
         return parseResults.size();
     }
 

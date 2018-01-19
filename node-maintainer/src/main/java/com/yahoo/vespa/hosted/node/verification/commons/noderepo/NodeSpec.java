@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.commons.noderepo;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
@@ -13,29 +11,25 @@ import java.net.InetAddress;
 import java.util.stream.Stream;
 
 /**
- * Object with the information node repositories has about the node.
+ * Object with the information about a node
  *
- * @author olaaun
- * @author sgrostad
+ * @author freva
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class NodeRepoJsonModel {
+public class NodeSpec {
+    private final double minDiskAvailableGb;
+    private final double minMainMemoryAvailableGb;
+    private final double minCpuCores;
+    private final boolean fastDisk;
+    private final String[] ipAddresses;
 
-    @JsonProperty("minDiskAvailableGb")
-    private double minDiskAvailableGb;
-    @JsonProperty("minMainMemoryAvailableGb")
-    private double minMainMemoryAvailableGb;
-    @JsonProperty("minCpuCores")
-    private double minCpuCores;
-    @JsonProperty("fastDisk")
-    private boolean fastDisk;
-    @JsonProperty("ipAddresses")
-    private String[] ipAddresses;
-    @JsonProperty
-    private String hostname;
-    @JsonProperty
-    private String hardwareDivergence;
-    private String nodeRepoUrl;
+    public NodeSpec(double minDiskAvailableGb, double minMainMemoryAvailableGb, double minCpuCores, boolean fastDisk,
+                    String[] ipAddresses) {
+        this.minDiskAvailableGb = minDiskAvailableGb;
+        this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
+        this.minCpuCores = minCpuCores;
+        this.fastDisk = fastDisk;
+        this.ipAddresses = ipAddresses;
+    }
 
     public HardwareInfo copyToHardwareInfo() {
         HardwareInfo hardwareInfo = new HardwareInfo();
@@ -60,29 +54,4 @@ public class NodeRepoJsonModel {
                 .filter(ip -> ip instanceof Inet4Address)
                 .findFirst().map(InetAddress::getHostAddress).orElse(null);
     }
-
-    public double getMinDiskAvailableGb() {
-        return minDiskAvailableGb;
-    }
-
-    public double getMinMainMemoryAvailableGb() {
-        return minMainMemoryAvailableGb;
-    }
-
-    public double getMinCpuCores() {
-        return minCpuCores;
-    }
-
-    public boolean isFastDisk() {
-        return fastDisk;
-    }
-
-    public String getHostname() {
-        return hostname;
-    }
-
-    public String getHardwareDivergence() {
-        return hardwareDivergence;
-    }
-
 }

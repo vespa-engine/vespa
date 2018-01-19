@@ -48,21 +48,21 @@ public class CPUBenchmark implements Benchmark {
         }
     }
 
-    protected List<ParseResult> parseCpuCyclesPerSec(List<String> commandOutput) {
+    List<ParseResult> parseCpuCyclesPerSec(List<String> commandOutput) {
         List<String> searchWords = new ArrayList<>(Arrays.asList(CYCLES_SEARCH_WORD, SECONDS_SEARCH_WORD));
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, SPLIT_REGEX_STRING, searchWords);
         return OutputParser.parseOutput(parseInstructions, commandOutput);
     }
 
 
-    protected void setCpuCyclesPerSec(List<ParseResult> parseResults) {
+    void setCpuCyclesPerSec(List<ParseResult> parseResults) {
         double cpuCyclesPerSec = getCyclesPerSecond(parseResults);
         if (cpuCyclesPerSec > 0) {
             benchmarkResults.setCpuCyclesPerSec(cpuCyclesPerSec);
         }
     }
 
-    protected double getCyclesPerSecond(List<ParseResult> parseResults) {
+    private double getCyclesPerSecond(List<ParseResult> parseResults) {
         double cycles = -1;
         double seconds = -1;
         for (ParseResult parseResult : parseResults) {
@@ -83,7 +83,7 @@ public class CPUBenchmark implements Benchmark {
         return -1;
     }
 
-    protected double makeCyclesDouble(String cycles) {
+    double makeCyclesDouble(String cycles) {
         cycles = cycles.replaceAll("[^\\d]", "");
         if (checkIfNumber(cycles)) {
             return Double.parseDouble(cycles);
@@ -91,7 +91,7 @@ public class CPUBenchmark implements Benchmark {
         return -1;
     }
 
-    protected double makeSecondsDouble(String seconds) {
+    double makeSecondsDouble(String seconds) {
         seconds = seconds.replaceAll(",", ".");
         if (checkIfNumber(seconds)) {
             return Double.parseDouble(seconds);
@@ -99,7 +99,7 @@ public class CPUBenchmark implements Benchmark {
         return -1;
     }
 
-    protected boolean checkIfNumber(String numberCandidate) {
+    boolean checkIfNumber(String numberCandidate) {
         if (numberCandidate == null || numberCandidate.equals("")) {
             return false;
         }
@@ -111,7 +111,7 @@ public class CPUBenchmark implements Benchmark {
         return true;
     }
 
-    protected double convertToGHz(double cycles, double seconds) {
+    double convertToGHz(double cycles, double seconds) {
         double giga = 1000000000.0;
         return (cycles / seconds) / giga;
     }

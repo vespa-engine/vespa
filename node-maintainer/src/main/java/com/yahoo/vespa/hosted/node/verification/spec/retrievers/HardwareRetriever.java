@@ -5,7 +5,7 @@ package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
  * @author olaaun
  * @author sgrostad
  */
-public interface HardwareRetriever {
+interface HardwareRetriever {
 
     /**
      * Should retrieve spec from some part of the hardware, and store the result in hardwareinfo instance passed to class

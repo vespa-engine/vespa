@@ -7,8 +7,7 @@ import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseInstructions
 import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseResult;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,22 +45,19 @@ public class MemoryRetriever implements HardwareRetriever {
         }
     }
 
-    protected ParseResult parseMemInfoFile(List<String> commandOutput) throws IOException {
-        List<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD));
+    ParseResult parseMemInfoFile(List<String> commandOutput) throws IOException {
+        List<String> searchWords = Collections.singletonList(SEARCH_WORD);
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, REGEX_SPLIT, searchWords);
-        ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
-        if (!parseResult.getSearchWord().matches(SEARCH_WORD)) {
-            throw new IOException("Failed to parse memory info file.");
-        }
-        return parseResult;
+        return OutputParser.parseSingleOutput(parseInstructions, commandOutput)
+                .orElseThrow(() -> new IOException("Failed to parse memory info file."));
     }
 
-    protected void updateMemoryInfo(ParseResult parseResult) {
+    void updateMemoryInfo(ParseResult parseResult) {
         double memory = convertKBToGB(parseResult.getValue());
         hardwareInfo.setMinMainMemoryAvailableGb(memory);
     }
 
-    protected double convertKBToGB(String totMem) {
+    double convertKBToGB(String totMem) {
         String[] split = totMem.split(" ");
         double value = Double.parseDouble(split[0]);
         double kiloToGiga = 1000000.0;

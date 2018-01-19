@@ -38,10 +38,6 @@ public class HardwareDivergenceReport {
 
     @JsonIgnore
     public boolean isHardwareDivergenceReportEmpty() {
-        if (specVerificationReport == null && benchmarkReport == null) {
-            return true;
-        }
-        return false;
+        return specVerificationReport == null && benchmarkReport == null;
     }
-
 }
