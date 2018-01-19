@@ -8,6 +8,7 @@
 #include <sstream>
 
 #include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".bouncer");
 
 namespace storage {
@@ -108,11 +109,14 @@ void
 Bouncer::abortCommandWithTooHighClockSkew(api::StorageMessage& msg,
                                           int maxClockSkewInSeconds)
 {
-    std::shared_ptr<api::StorageReply> reply(
-            static_cast<api::StorageCommand&>(msg).makeReply().release());
+    auto& as_cmd = dynamic_cast<api::StorageCommand&>(msg);
     std::ostringstream ost;
     ost << "Message " << msg.getType() << " is more than "
         << maxClockSkewInSeconds << " seconds in the future.";
+    LOGBP(warning, "Aborting operation from distributor %u: %s",
+          as_cmd.getSourceIndex(), ost.str().c_str());
+
+    std::shared_ptr<api::StorageReply> reply(as_cmd.makeReply().release());
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, ost.str()));
     sendUp(reply);
 }
