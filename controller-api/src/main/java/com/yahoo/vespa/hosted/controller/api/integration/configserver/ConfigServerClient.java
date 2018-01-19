@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
-import com.yahoo.vespa.hosted.controller.api.rotation.Rotation;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.io.IOException;
@@ -28,7 +27,7 @@ public interface ConfigServerClient {
         PrepareResponse prepareResponse();
     }
 
-    PreparedApplication prepare(DeploymentId applicationInstance, DeployOptions deployOptions, Set<String> rotationCnames, Set<Rotation> rotations, byte[] content);
+    PreparedApplication prepare(DeploymentId applicationInstance, DeployOptions deployOptions, Set<String> rotationCnames, Set<String> rotationNames, byte[] content);
 
     List<String> getNodeQueryHost(DeploymentId applicationInstance, String type) throws NoInstanceException;
 

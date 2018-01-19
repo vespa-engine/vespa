@@ -13,10 +13,13 @@ import java.net.URI;
  */
 public class ApplicationRotation {
 
+    // TODO: TLS: Remove all non-secure stuff when all traffic is on HTTPS.
     public static final String DNS_SUFFIX = "global.vespa.yahooapis.com";
     private static final int port = 4080;
+    private static final int securePort = 4443;
 
     private final URI url;
+    private final URI secureUrl;
     private final RotationId id;
 
     public ApplicationRotation(ApplicationId application, RotationId id) {
@@ -25,6 +28,11 @@ public class ApplicationRotation {
                                             sanitize(application.tenant().value()),
                                             DNS_SUFFIX,
                                             port));
+        this.secureUrl = URI.create(String.format("https://%s--%s.%s:%d",
+                                                  sanitize(application.application().value()),
+                                                  sanitize(application.tenant().value()),
+                                                  DNS_SUFFIX,
+                                                  securePort));
         this.id = id;
     }
 
@@ -38,9 +46,19 @@ public class ApplicationRotation {
         return url;
     }
 
+    /** HTTPS URL to this rotation */
+    public URI secureUrl() {
+        return secureUrl;
+    }
+
     /** DNS name for this rotation */
     public String dnsName() {
         return url.getHost();
+    }
+
+    /** DNS name for this rotation */
+    public String secureDnsName() {
+        return secureUrl.getHost();
     }
 
     /** Sanitize by translating '_' to '-' as the former is not allowed in a DNS name */

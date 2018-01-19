@@ -38,7 +38,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
-import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -63,6 +62,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -322,7 +322,7 @@ public class ApplicationController {
             }
 
             if ( ! canDeployDirectlyTo(zone, options)) { // validate automated deployment
-                if (!application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying()))
+                if ( ! application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying()))
                     throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
                                                        " as " + application.deploying().get() + " is not tested");
                 Deployment existingDeployment = application.deployments().get(zone);
@@ -332,33 +332,28 @@ public class ApplicationController {
                                                        " the current version " + existingDeployment.version());
             }
 
-            Optional<Rotation> rotation;
-            try (RotationLock rotationLock = rotationRepository.lock()) {
-                rotation = getRotation(application, zone, rotationLock);
-                if (rotation.isPresent()) {
-                    application = application.with(rotation.get().id());
+            Set<String> rotationNames = new HashSet<>();
+            Set<String> cnames = new HashSet<>();
+            if (zone.environment() == Environment.prod && application.deploymentSpec().globalServiceId().isPresent()) {
+                try (RotationLock rotationLock = rotationRepository.lock()) {
+                    Rotation rotation = rotationRepository.getRotation(application, rotationLock);
+                    application = application.with(rotation.id());
                     store(application); // store assigned rotation even if deployment fails
-                    registerRotationInDns(rotation.get(), application.rotation().get().dnsName());
+
+                    rotationNames.add(rotation.id().asString());
+                    application.rotation().ifPresent(applicationRotation -> {
+                        registerRotationInDns(rotation, applicationRotation.dnsName());
+                        cnames.add(applicationRotation.dnsName());
+                        registerRotationInDns(rotation, applicationRotation.secureDnsName());
+                        cnames.add(applicationRotation.secureDnsName());
+                    });
                 }
             }
-
-            // TODO: Improve config server client interface and simplify
-            Set<String> cnames = application.rotation()
-                                            .map(ApplicationRotation::dnsName)
-                                            .map(Collections::singleton)
-                                            .orElseGet(Collections::emptySet);
-
-            Set<com.yahoo.vespa.hosted.controller.api.rotation.Rotation> rotations = rotation
-                    .map(r -> new com.yahoo.vespa.hosted.controller.api.rotation.Rotation(
-                            new com.yahoo.vespa.hosted.controller.api.identifiers.RotationId(
-                                    r.id().asString()), r.name()))
-                    .map(Collections::singleton)
-                    .orElseGet(Collections::emptySet);
 
             // Carry out deployment
             options = withVersion(version, options);
             ConfigServerClient.PreparedApplication preparedApplication =
-                    configserverClient.prepare(new DeploymentId(applicationId, zone), options, cnames, rotations,
+                    configserverClient.prepare(new DeploymentId(applicationId, zone), options, cnames, rotationNames,
                                                applicationPackage.zippedContent());
             preparedApplication.activate();
             application = application.withNewDeployment(zone, revision, version, clock.instant());
@@ -459,7 +454,7 @@ public class ApplicationController {
             RecordData rotationName = RecordData.fqdn(rotation.name());
             if (record.isPresent()) {
                 // Ensure that the existing record points to the correct rotation
-                if (!record.get().data().equals(rotationName)) {
+                if ( ! record.get().data().equals(rotationName)) {
                     nameService.updateRecord(record.get().id(), rotationName);
                     log.info("Updated mapping for record ID " + record.get().id().asString() + ": '" + dnsName
                              + "' -> '" + rotation.name() + "'");
@@ -472,15 +467,6 @@ public class ApplicationController {
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to register CNAME", e);
         }
-    }
-
-    /** Get an available rotation, if deploying to a production zone and a service ID is specified */
-    private Optional<Rotation> getRotation(Application application, ZoneId zone, RotationLock lock) {
-        if (zone.environment() != Environment.prod ||
-            !application.deploymentSpec().globalServiceId().isPresent()) {
-            return Optional.empty();
-        }
-        return Optional.of(rotationRepository.getRotation(application, lock));
     }
 
     /** Returns the endpoints of the deployment, or empty if obtaining them failed */
