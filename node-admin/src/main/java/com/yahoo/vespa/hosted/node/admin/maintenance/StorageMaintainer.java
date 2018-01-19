@@ -311,7 +311,7 @@ public class StorageMaintainer {
      * @throws RuntimeException if exit code != 0
      */
     public String getHardwareDivergence(ContainerNodeSpec nodeSpec) {
-        List<String> argumnets = new ArrayList<>(Arrays.asList("specification",
+        List<String> arguments = new ArrayList<>(Arrays.asList("specification",
                 "--disk", Double.toString(nodeSpec.minDiskAvailableGb),
                 "--memory", Double.toString(nodeSpec.minMainMemoryAvailableGb),
                 "--cpu_cores", Double.toString(nodeSpec.minCpuCores),
@@ -319,11 +319,11 @@ public class StorageMaintainer {
                 "--ips", String.join(",", nodeSpec.ipAddresses)));
 
         if (nodeSpec.hardwareDivergence.isPresent()) {
-            argumnets.add("--divergence");
-            argumnets.add(nodeSpec.hardwareDivergence.get());
+            arguments.add("--divergence");
+            arguments.add(nodeSpec.hardwareDivergence.get());
         }
 
-        return executeMaintainer("com.yahoo.vespa.hosted.node.verification.Main", argumnets.toArray(new String[0]));
+        return executeMaintainer("com.yahoo.vespa.hosted.node.verification.Main", arguments.toArray(new String[0]));
     }
 
 
