@@ -4,7 +4,8 @@
 # For a complete reference, please see the online documentation at https://docs.vagrantup.com.
 Vagrant.configure("2") do |config|
 
-  config.vm.box = "boxcutter/centos7-desktop"
+  config.vm.box = "TODO"
+  config.vm.box_url = "TODO"
 
   config.ssh.forward_agent = true
 
