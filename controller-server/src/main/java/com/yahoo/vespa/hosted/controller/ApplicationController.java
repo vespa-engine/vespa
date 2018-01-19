@@ -332,23 +332,15 @@ public class ApplicationController {
                                                        " the current version " + existingDeployment.version());
             }
 
+            application = withRotation(application, zone);
+
             Set<String> rotationNames = new HashSet<>();
             Set<String> cnames = new HashSet<>();
-            if (zone.environment() == Environment.prod && application.deploymentSpec().globalServiceId().isPresent()) {
-                try (RotationLock rotationLock = rotationRepository.lock()) {
-                    Rotation rotation = rotationRepository.getRotation(application, rotationLock);
-                    application = application.with(rotation.id());
-                    store(application); // store assigned rotation even if deployment fails
-
-                    rotationNames.add(rotation.id().asString());
-                    application.rotation().ifPresent(applicationRotation -> {
-                        registerRotationInDns(rotation, applicationRotation.dnsName());
-                        cnames.add(applicationRotation.dnsName());
-                        registerRotationInDns(rotation, applicationRotation.secureDnsName());
-                        cnames.add(applicationRotation.secureDnsName());
-                    });
-                }
-            }
+            application.rotation().ifPresent(applicationRotation -> {
+                rotationNames.add(applicationRotation.id().asString());
+                cnames.add(applicationRotation.dnsName());
+                cnames.add(applicationRotation.secureDnsName());
+            });
 
             // Carry out deployment
             options = withVersion(version, options);
@@ -362,6 +354,21 @@ public class ApplicationController {
 
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse());
         }
+    }
+
+    /** Makes sure the application has a global rotation, if eligible. */
+    private LockedApplication withRotation(LockedApplication application, ZoneId zone) {
+        if (zone.environment() == Environment.prod && application.deploymentSpec().globalServiceId().isPresent()) {
+            try (RotationLock rotationLock = rotationRepository.lock()) {
+                Rotation rotation = rotationRepository.getRotation(application, rotationLock);
+                application = application.with(rotation.id());
+                store(application); // store assigned rotation even if deployment fails
+
+                registerRotationInDns(rotation, application.rotation().get().dnsName());
+                registerRotationInDns(rotation, application.rotation().get().secureDnsName());
+            }
+        }
+        return application;
     }
 
     private ActivateResult unexpectedDeployment(ApplicationId applicationId, ZoneId zone, ApplicationPackage applicationPackage) {
