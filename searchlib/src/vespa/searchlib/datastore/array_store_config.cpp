@@ -48,15 +48,16 @@ ArrayStoreConfig::optimizeForHugePage(size_t maxSmallArraySize,
                                       size_t smallPageSize,
                                       size_t entrySize,
                                       size_t maxEntryRefOffset,
-                                      size_t minNumArraysForNewBuffer)
+                                      size_t minNumArraysForNewBuffer,
+                                      float allocGrowFactor)
 {
     AllocSpecVector allocSpecs;
-    allocSpecs.emplace_back(0, maxEntryRefOffset, minNumArraysForNewBuffer); // large array spec;
+    allocSpecs.emplace_back(0, maxEntryRefOffset, minNumArraysForNewBuffer, allocGrowFactor); // large array spec;
     for (size_t arraySize = 1; arraySize <= maxSmallArraySize; ++arraySize) {
         size_t numArraysForNewBuffer = hugePageSize / (entrySize * arraySize);
         numArraysForNewBuffer = capToLimits(numArraysForNewBuffer, minNumArraysForNewBuffer, maxEntryRefOffset);
         numArraysForNewBuffer = alignToSmallPageSize(numArraysForNewBuffer, minNumArraysForNewBuffer, smallPageSize);
-        allocSpecs.emplace_back(0, maxEntryRefOffset, numArraysForNewBuffer);
+        allocSpecs.emplace_back(0, maxEntryRefOffset, numArraysForNewBuffer, allocGrowFactor);
     }
     return ArrayStoreConfig(allocSpecs);
 }

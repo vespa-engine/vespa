@@ -6,6 +6,12 @@
 
 namespace search::datastore {
 
+namespace {
+
+constexpr float DEFAULT_ALLOC_GROW_FACTOR = 0.2;
+
+}
+
 void
 BufferTypeBase::CleanContext::extraBytesCleaned(uint64_t value)
 {
@@ -16,11 +22,13 @@ BufferTypeBase::CleanContext::extraBytesCleaned(uint64_t value)
 BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
                                uint32_t minClusters,
                                uint32_t maxClusters,
-                               uint32_t numClustersForNewBuffer)
+                               uint32_t numClustersForNewBuffer,
+                               float allocGrowFactor)
     : _clusterSize(clusterSize),
       _minClusters(std::min(minClusters, maxClusters)),
       _maxClusters(maxClusters),
       _numClustersForNewBuffer(std::min(numClustersForNewBuffer, maxClusters)),
+      _allocGrowFactor(allocGrowFactor),
       _activeBuffers(0),
       _holdBuffers(0),
       _activeUsedElems(0),
@@ -32,7 +40,7 @@ BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
 BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
                                uint32_t minClusters,
                                uint32_t maxClusters)
-    : BufferTypeBase(clusterSize, minClusters, maxClusters, 0u)
+    : BufferTypeBase(clusterSize, minClusters, maxClusters, 0u, DEFAULT_ALLOC_GROW_FACTOR)
 {
 }
 
@@ -107,25 +115,25 @@ size_t
 BufferTypeBase::calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const
 {
     size_t reservedElements = getReservedElements(bufferId);
-    size_t usedElems = _activeUsedElems;
+    size_t usedElems = (resizing ? 0 : _activeUsedElems);
     if (_lastUsedElems != nullptr) {
         usedElems += *_lastUsedElems;
     }
     assert((usedElems % _clusterSize) == 0);
     size_t usedClusters = usedElems / _clusterSize;
     size_t needClusters = (sizeNeeded + (resizing ? usedElems : reservedElements) + _clusterSize - 1) / _clusterSize;
-    size_t minClusters = _minClusters;
-    size_t numClustersForNewBuffer = _numClustersForNewBuffer;
-    size_t extraGrowClusters = (usedElems != 0) ? numClustersForNewBuffer : 0;
-    uint64_t wantClusters = usedClusters + std::max(minClusters, (resizing ? usedClusters : extraGrowClusters));
-    if (wantClusters < needClusters) {
-        wantClusters = needClusters;
+    size_t growClusters = (usedClusters * _allocGrowFactor);
+    size_t wantClusters = std::max((resizing ? usedClusters : 0u) + growClusters,
+                                   static_cast<size_t>(_minClusters));
+    size_t result = wantClusters;
+    if (result < needClusters) {
+        result = needClusters;
     }
-    if (wantClusters > _maxClusters) {
-        wantClusters = _maxClusters;
+    if (result > _maxClusters) {
+        result = _maxClusters;
     }
-    assert(wantClusters >= needClusters);
-    return wantClusters;
+    assert(result >= needClusters);
+    return result;
 }
 
 }

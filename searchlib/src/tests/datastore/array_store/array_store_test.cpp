@@ -13,6 +13,8 @@ using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
 using MemStats = search::datastore::test::MemStats;
 
+constexpr float ALLOC_GROW_FACTOR = 0.2;
+
 template <typename EntryT, typename RefT = EntryRefT<19> >
 struct Fixture
 {
@@ -28,7 +30,9 @@ struct Fixture
     ReferenceStore refStore;
     generation_t generation;
     Fixture(uint32_t maxSmallArraySize)
-        : store(ArrayStoreConfig(maxSmallArraySize, ArrayStoreConfig::AllocSpec(16, RefT::offsetSize(), 8 * 1024))),
+        : store(ArrayStoreConfig(maxSmallArraySize,
+                                 ArrayStoreConfig::AllocSpec(16, RefT::offsetSize(), 8 * 1024,
+                                                             ALLOC_GROW_FACTOR))),
           refStore(),
           generation(1)
     {}

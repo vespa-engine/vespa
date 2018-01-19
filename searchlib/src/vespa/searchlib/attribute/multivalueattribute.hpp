@@ -10,6 +10,7 @@ namespace multivalueattribute {
 
 constexpr size_t HUGE_MEMORY_PAGE_SIZE = 2 * 1024 * 1024;
 constexpr size_t SMALL_MEMORY_PAGE_SIZE = 4 * 1024;
+constexpr float ALLOC_GROW_FACTOR = 0.2;
 
 }
 
@@ -21,7 +22,9 @@ MultiValueAttribute(const vespalib::string &baseFileName,
       _mvMapping(MultiValueMapping::optimizedConfigForHugePage(1023,
                                                                multivalueattribute::HUGE_MEMORY_PAGE_SIZE,
                                                                multivalueattribute::SMALL_MEMORY_PAGE_SIZE,
-                                                               8 * 1024), cfg.getGrowStrategy())
+                                                               8 * 1024,
+                                                               multivalueattribute::ALLOC_GROW_FACTOR),
+                 cfg.getGrowStrategy())
 {
 }
 

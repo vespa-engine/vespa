@@ -18,11 +18,12 @@
 namespace search::datastore {
 
 constexpr size_t NUMCLUSTERS_FOR_NEW_UNIQUESTORE_BUFFER = 1024u;
+constexpr float ALLOC_GROW_FACTOR = 0.2;
 
 template <typename EntryT, typename RefT>
 UniqueStore<EntryT, RefT>::UniqueStore()
     : _store(),
-      _typeHandler(1, 2u, RefT::offsetSize(), NUMCLUSTERS_FOR_NEW_UNIQUESTORE_BUFFER),
+      _typeHandler(1, 2u, RefT::offsetSize(), NUMCLUSTERS_FOR_NEW_UNIQUESTORE_BUFFER, ALLOC_GROW_FACTOR),
       _typeId(0),
       _dict()
 {
