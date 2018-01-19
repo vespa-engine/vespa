@@ -9,6 +9,7 @@
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -22,7 +23,7 @@ using document::ReferenceDataType;
 using search::attribute::BasicType;
 using search::attribute::Config;
 using search::attribute::IAttributeVector;
-using search::attribute::ImportedAttributeVector;
+using search::attribute::ImportedAttributeVectorFactory;
 using search::attribute::ReferenceAttribute;
 using search::AttributeGuard;
 using search::AttributeVector;
@@ -144,8 +145,7 @@ DocumentDBReferenceResolver::createImportedAttributesRepo(const IAttributeManage
         for (const auto &attr : _importedFieldsCfg.attribute) {
             ReferenceAttribute::SP refAttr = getReferenceAttribute(attr.referencefield, attrMgr);
             AttributeVector::SP targetAttr = getTargetDocumentDB(refAttr->getName())->getAttribute(attr.targetfield);
-            ImportedAttributeVector::SP importedAttr =
-                std::make_shared<ImportedAttributeVector>(attr.name, refAttr, targetAttr, documentMetaStore, useSearchCache);
+            auto importedAttr = ImportedAttributeVectorFactory::create(attr.name, refAttr, targetAttr, documentMetaStore, useSearchCache);
             result->add(importedAttr->getName(), importedAttr);
         }
     }

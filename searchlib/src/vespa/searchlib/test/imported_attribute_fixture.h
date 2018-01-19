@@ -9,6 +9,7 @@
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
@@ -157,7 +158,7 @@ struct ImportedAttributeFixture {
 
     std::shared_ptr<ImportedAttributeVector>
     create_attribute_vector_from_members(vespalib::stringref name = default_imported_attr_name()) {
-        return std::make_shared<ImportedAttributeVector>(name, reference_attr, target_attr, document_meta_store, use_search_cache);
+        return ImportedAttributeVectorFactory::create(name, reference_attr, target_attr, document_meta_store, use_search_cache);
     }
 
     template<typename AttrVecType>
