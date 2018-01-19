@@ -250,14 +250,20 @@ TEST("require that if_node gets expected result type") {
     const Node &c = inject(ValueType::from_spec("tensor(x[3])"), 0, stash);
     const Node &d = inject(ValueType::from_spec("tensor(x[])"), 0, stash);
     const Node &e = inject(ValueType::from_spec("tensor(y[3])"), 0, stash);
+    const Node &f = inject(ValueType::from_spec("double"), 0, stash);
+    const Node &g = inject(ValueType::from_spec("error"), 0, stash);
     const Node &if_same = if_node(a, b, b, stash);
     const Node &if_similar = if_node(a, b, c, stash);
     const Node &if_subtype = if_node(a, b, d, stash);
     const Node &if_different = if_node(a, b, e, stash);
+    const Node &if_different_types = if_node(a, b, f, stash);
+    const Node &if_with_error = if_node(a, b, g, stash);
     EXPECT_EQUAL(if_same.result_type(), ValueType::from_spec("tensor(x[2])"));
-    EXPECT_EQUAL(if_similar.result_type(), ValueType::from_spec("any"));
-    EXPECT_EQUAL(if_subtype.result_type(), ValueType::from_spec("any"));
-    EXPECT_EQUAL(if_different.result_type(), ValueType::from_spec("any"));
+    EXPECT_EQUAL(if_similar.result_type(), ValueType::from_spec("tensor(x[])"));
+    EXPECT_EQUAL(if_subtype.result_type(), ValueType::from_spec("tensor(x[])"));
+    EXPECT_EQUAL(if_different.result_type(), ValueType::from_spec("tensor"));
+    EXPECT_EQUAL(if_different_types.result_type(), ValueType::from_spec("any"));
+    EXPECT_EQUAL(if_with_error.result_type(), ValueType::from_spec("error"));
 }
 
 TEST("require that push_children works") {

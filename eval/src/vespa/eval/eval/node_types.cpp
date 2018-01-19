@@ -94,15 +94,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     void visit(const Neg &node) override { resolve_op1(node); }
     void visit(const Not &node) override { resolve_op1(node); }
     void visit(const If &node) override {
-        ValueType true_type = state.peek(1);
-        ValueType false_type = state.peek(0);
-        if (true_type == false_type) {
-            bind_type(true_type, node);
-        } else if (true_type.is_tensor() && false_type.is_tensor()) {
-            bind_type(ValueType::tensor_type({}), node);
-        } else {
-            bind_type(ValueType::any_type(), node);
-        }
+        bind_type(ValueType::either(state.peek(1), state.peek(0)), node);
     }
     void visit(const Error &node) override {
         bind_type(ValueType::error_type(), node);

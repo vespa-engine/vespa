@@ -90,6 +90,10 @@ TEST("require that if resolves to the appropriate type") {
     TEST_DO(verify("if(tensor,1,2)", "double"));
     TEST_DO(verify("if(double,tensor,tensor)", "tensor"));
     TEST_DO(verify("if(double,any,any)", "any"));
+    TEST_DO(verify("if(double,tensor(a[2]),tensor(a[2]))", "tensor(a[2])"));
+    TEST_DO(verify("if(double,tensor(a[2]),tensor(a[3]))", "tensor(a[])"));
+    TEST_DO(verify("if(double,tensor(a[2]),tensor(a[]))", "tensor(a[])"));
+    TEST_DO(verify("if(double,tensor(a[2]),tensor(a{}))", "tensor"));
     TEST_DO(verify("if(double,tensor(a{}),tensor(a{}))", "tensor(a{})"));
     TEST_DO(verify("if(double,tensor(a{}),tensor(b{}))", "tensor"));
     TEST_DO(verify("if(double,tensor(a{}),tensor)", "tensor"));
