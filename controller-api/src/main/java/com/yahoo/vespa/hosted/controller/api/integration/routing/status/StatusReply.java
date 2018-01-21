@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.routing.status;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 
@@ -10,12 +11,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
  * @author bjorncs
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(value = JsonInclude.Include.NON_NULL)
 public class StatusReply {
 
-    public final RotationStatus status;
-    public final long lastUpdate;
-    public final String cause;
-    public final String agent;
+    @JsonProperty("status") public final RotationStatus status;
+    @JsonProperty("lastUpdate") public final long lastUpdate;
+    @JsonProperty("cause") public final String cause;
+    @JsonProperty("agent") public final String agent;
 
     @JsonCreator
     public StatusReply(@JsonProperty("status") RotationStatus status,
