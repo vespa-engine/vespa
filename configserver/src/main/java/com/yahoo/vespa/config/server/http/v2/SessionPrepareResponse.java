@@ -12,15 +12,18 @@ import com.yahoo.vespa.config.server.http.SessionResponse;
  * Creates a response for SessionPrepareHandler.
  *
  * @author hmusum
- * @since 5.1.28
  */
 class SessionPrepareResponse extends SessionResponse {
 
-    public SessionPrepareResponse(Slime deployLog, TenantName tenantName, HttpRequest request, long sessionId) {
+    SessionPrepareResponse(Slime deployLog, TenantName tenantName, HttpRequest request, long sessionId) {
         this(deployLog, tenantName, request, sessionId, new ConfigChangeActions());
     }
 
-    public SessionPrepareResponse(Slime deployLog, TenantName tenantName, HttpRequest request, long sessionId, ConfigChangeActions actions) {
+    SessionPrepareResponse(PrepareResult result, TenantName tenantName, HttpRequest request) {
+        this(result.deployLog(), tenantName, request, result.sessionId(), result.configChangeActions());
+    }
+
+    private SessionPrepareResponse(Slime deployLog, TenantName tenantName, HttpRequest request, long sessionId, ConfigChangeActions actions) {
         super(deployLog, deployLog.get());
         String message = "Session " + sessionId + " for tenant '" + tenantName.value() + "' prepared.";
         this.root.setString("tenant", tenantName.value());

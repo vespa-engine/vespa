@@ -17,6 +17,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
+import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
@@ -26,8 +27,12 @@ import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
+import com.yahoo.vespa.config.server.configchange.RefeedActions;
+import com.yahoo.vespa.config.server.configchange.RestartActions;
+import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
+import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
@@ -49,6 +54,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -333,11 +339,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return currentActiveApplicationSet;
     }
 
-    public ConfigChangeActions prepare(Tenant tenant, long sessionId, DeployLogger logger, PrepareParams params) {
+    public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams) {
+        validateThatLocalSessionIsNotActive(tenant, sessionId);
         LocalSession session = getLocalSession(tenant, sessionId);
-        ApplicationId appId = params.getApplicationId();
-        Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, appId);
-        return session.prepare(logger, params, currentActiveApplicationSet, tenant.getPath(), clock.instant());
+        ApplicationId applicationId = prepareParams.getApplicationId();
+        Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, applicationId);
+        Slime deployLog = createDeployLog();
+        DeployLogger logger = new DeployHandlerLogger(deployLog.get().setArray("log"), prepareParams.isVerbose(), applicationId);
+        ConfigChangeActions actions = session.prepare(logger, prepareParams, currentActiveApplicationSet, tenant.getPath(), clock.instant());
+        logConfigChangeActions(actions, logger);
+        log.log(LogLevel.INFO, Tenants.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
+        return new PrepareResult(sessionId, actions, deployLog);
     }
 
     private List<ApplicationId> listApplicationIds(Tenant tenant) {
@@ -408,6 +420,27 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             return tenant.getLocalSessionRepo().getSession(applicationRepo.getSessionIdForApplication(applicationId));
         }
         return null;
+    }
+
+    private static void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {
+        RestartActions restartActions = actions.getRestartActions();
+        if ( ! restartActions.isEmpty()) {
+            logger.log(Level.WARNING, "Change(s) between active and new application that require restart:\n" +
+                    restartActions.format());
+        }
+        RefeedActions refeedActions = actions.getRefeedActions();
+        if ( ! refeedActions.isEmpty()) {
+            boolean allAllowed = refeedActions.getEntries().stream().allMatch(RefeedActions.Entry::allowed);
+            logger.log(allAllowed ? Level.INFO : Level.WARNING,
+                       "Change(s) between active and new application that may require re-feed:\n" +
+                               refeedActions.format());
+        }
+    }
+
+    private Slime createDeployLog() {
+        Slime deployLog = new Slime();
+        deployLog.setObject();
+        return deployLog;
     }
 
 }

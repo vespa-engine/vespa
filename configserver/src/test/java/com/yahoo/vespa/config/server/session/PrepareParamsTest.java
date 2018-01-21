@@ -32,17 +32,18 @@ public class PrepareParamsTest {
 
         assertThat(prepareParams.getApplicationId(), is(ApplicationId.defaultId()));
         assertFalse(prepareParams.isDryRun());
+        assertFalse(prepareParams.isVerbose());
         assertFalse(prepareParams.ignoreValidationErrors());
         assertThat(prepareParams.vespaVersion(), is(Optional.<String>empty()));
         assertTrue(prepareParams.getTimeoutBudget().hasTimeLeft());
         assertThat(prepareParams.rotations().size(), is(0));
     }
 
-
-    static final String rotation = "rotation-042.vespa.a02.yahoodns.net";
-    static final String vespaVersion = "6.37.49";
-    static final String request = "http://foo:19071/application/v2/tenant/foo/application/bar?" +
+    private static final String rotation = "rotation-042.vespa.a02.yahoodns.net";
+    private static final String vespaVersion = "6.37.49";
+    private static final String request = "http://foo:19071/application/v2/tenant/foo/application/bar?" +
             PrepareParams.DRY_RUN_PARAM_NAME + "=true&" +
+            PrepareParams.VERBOSE_PARAM_NAME+ "=true&" +
             PrepareParams.IGNORE_VALIDATION_PARAM_NAME + "=false&" +
             PrepareParams.APPLICATION_NAME_PARAM_NAME + "=baz&" +
             PrepareParams.VESPA_VERSION_PARAM_NAME + "=" + vespaVersion;
@@ -55,6 +56,7 @@ public class PrepareParamsTest {
 
         assertThat(prepareParams.getApplicationId().serializedForm(), is("foo:baz:default"));
         assertTrue(prepareParams.isDryRun());
+        assertTrue(prepareParams.isVerbose());
         assertFalse(prepareParams.ignoreValidationErrors());
         Version expectedVersion = Version.fromString(vespaVersion);
         assertThat(prepareParams.vespaVersion().get(), is(expectedVersion));

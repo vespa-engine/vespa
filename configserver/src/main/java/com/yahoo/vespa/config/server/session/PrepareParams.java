@@ -26,6 +26,7 @@ public final class PrepareParams {
     static final String INSTANCE_PARAM_NAME = "instance";
     static final String IGNORE_VALIDATION_PARAM_NAME = "ignoreValidationErrors";
     static final String DRY_RUN_PARAM_NAME = "dryRun";
+    static final String VERBOSE_PARAM_NAME = "verbose";
     static final String VESPA_VERSION_PARAM_NAME = "vespaVersion";
     static final String ROTATIONS_PARAM_NAME = "rotations";
 
@@ -33,15 +34,17 @@ public final class PrepareParams {
     private final TimeoutBudget timeoutBudget;
     private final boolean ignoreValidationErrors;
     private final boolean dryRun;
+    private final boolean verbose;
     private final Optional<Version> vespaVersion;
     private final Set<Rotation> rotations;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
-                         boolean dryRun, Optional<Version> vespaVersion, Set<Rotation> rotations) {
+                         boolean dryRun, boolean verbose, Optional<Version> vespaVersion, Set<Rotation> rotations) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = applicationId;
         this.ignoreValidationErrors = ignoreValidationErrors;
         this.dryRun = dryRun;
+        this.verbose = verbose;
         this.vespaVersion = vespaVersion;
         this.rotations = rotations;
     }
@@ -50,6 +53,7 @@ public final class PrepareParams {
 
         private boolean ignoreValidationErrors = false;
         private boolean dryRun = false;
+        private boolean verbose = false;
         private ApplicationId applicationId = ApplicationId.defaultId();
         private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(30));
         private Optional<Version> vespaVersion = Optional.empty();
@@ -69,6 +73,11 @@ public final class PrepareParams {
 
         public Builder dryRun(boolean dryRun) {
             this.dryRun = dryRun;
+            return this;
+        }
+
+        public Builder verbose(boolean verbose) {
+            this.verbose = verbose;
             return this;
         }
 
@@ -99,14 +108,15 @@ public final class PrepareParams {
 
         public PrepareParams build() {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun, 
-                                     vespaVersion, rotations);
+                                     verbose, vespaVersion, rotations);
         }
 
     }
 
     public static PrepareParams fromHttpRequest(HttpRequest request, TenantName tenant, Duration barrierTimeout) {
-        return new PrepareParams.Builder().ignoreValidationErrors(request.getBooleanProperty(IGNORE_VALIDATION_PARAM_NAME))
+        return new Builder().ignoreValidationErrors(request.getBooleanProperty(IGNORE_VALIDATION_PARAM_NAME))
                                           .dryRun(request.getBooleanProperty(DRY_RUN_PARAM_NAME))
+                                          .verbose(request.getBooleanProperty(VERBOSE_PARAM_NAME))
                                           .timeoutBudget(SessionHandler.getTimeoutBudget(request, barrierTimeout))
                                           .applicationId(createApplicationId(request, tenant))
                                           .vespaVersion(request.getProperty(VESPA_VERSION_PARAM_NAME))
@@ -149,6 +159,10 @@ public final class PrepareParams {
 
     public boolean isDryRun() {
         return dryRun;
+    }
+
+    public boolean isVerbose() {
+        return verbose;
     }
 
     public TimeoutBudget getTimeoutBudget() {
