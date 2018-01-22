@@ -18,7 +18,7 @@ public class RankingConstant {
     private final String name;
     private TensorType tensorType = null;
     private String path = null;
-    private String fileRef = "";
+    private String fileReference = "";
 
     public PathType getPathType() {
         return pathType;
@@ -33,7 +33,7 @@ public class RankingConstant {
     public RankingConstant(String name, TensorType type, String fileName) {
         this(name);
         this.tensorType = type;
-        this.fileName = fileName;
+        this.path = fileName;
         validate();
     }
 
@@ -60,7 +60,7 @@ public class RankingConstant {
     public String getName() { return name; }
     public String getFileName() { return path; }
     public String getUri() { return path; }
-    public String getFileReference() { return fileRef; }
+    public String getFileReference() { return fileReference; }
     public TensorType getTensorType() { return tensorType; }
     public String getType() { return tensorType.toString(); }
 
@@ -75,7 +75,7 @@ public class RankingConstant {
         StringBuilder b = new StringBuilder();
         b.append("constant '").append(name)
          .append(pathType == PathType.FILE ? "' from file '" : " from uri ").append(path)
-         .append("' with ref '").append(fileRef)
+         .append("' with ref '").append(fileReference)
          .append("' of type '").append(tensorType)
          .append("'");
         return b.toString();
