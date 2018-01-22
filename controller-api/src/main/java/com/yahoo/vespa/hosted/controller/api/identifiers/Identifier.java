@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
  */
 public abstract class Identifier {
 
-    protected static final Pattern strictPattern = Pattern.compile("[a-z0-9][a-z0-9-]{0,26}[a-z0-9]");
+    protected static final Pattern strictPattern = Pattern.compile("^(?=.{1,28}$)[a-z0-9](-?[a-z0-9]+)*$");
     private static final Pattern serializedIdentifierPattern = Pattern.compile("[a-zA-Z0-9_-]+");
     private static final Pattern serializedPattern = Pattern.compile("[a-zA-Z0-9_.-]+");
 
