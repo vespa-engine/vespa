@@ -139,7 +139,7 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public boolean networkNATted() {
+    public boolean networkNATed() {
         return config.networkNATted();
     }
 

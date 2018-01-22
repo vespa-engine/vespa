@@ -119,7 +119,7 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
                     .withAddCapability("SYS_ADMIN"); // Needed for perf
 
-            if (!docker.networkNATted()) {
+            if (!docker.networkNATed()) {
                 logger.info("Network not nated - setting up with specific ip address on a macvlan");
                 command.withIpAddress(nodeInetAddress);
                 command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
@@ -146,7 +146,7 @@ public class DockerOperationsImpl implements DockerOperations {
             command.create();
 
             if (isIPv6) {
-                if (!docker.networkNATted()) {
+                if (!docker.networkNATed()) {
                     docker.connectContainerToNetwork(containerName, "bridge");
                 }
 
@@ -154,7 +154,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 setupContainerNetworkConnectivity(containerName, nodeInetAddress);
             } else {
                 docker.startContainer(containerName);
-                if (docker.networkNATted()) {
+                if (docker.networkNATed()) {
                     setupContainerNetworkConnectivity(containerName, nodeInetAddress);
                 }
             }
@@ -178,7 +178,7 @@ public class DockerOperationsImpl implements DockerOperations {
         logger.info("Deleting container " + containerName.asString());
         docker.deleteContainer(containerName);
 
-        if (docker.networkNATted()) {
+        if (docker.networkNATed()) {
             logger.info("Delete iptables NAT rules for " + containerName.asString());
             try {
                 InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname);
@@ -231,7 +231,7 @@ public class DockerOperationsImpl implements DockerOperations {
      * Setup iptables NAT rules and add entry in /etc/hosts for node-admin (resolve container hostnames to private ip)
      */
     private void setupContainerNetworkConnectivity(ContainerName containerName, InetAddress externalAddress) throws IOException {
-        if (docker.networkNATted()) {
+        if (docker.networkNATed()) {
             insertNAT(containerName, externalAddress);
         } else {
             InetAddress hostDefaultGateway = DockerNetworkCreator.getDefaultGatewayLinux(true);
