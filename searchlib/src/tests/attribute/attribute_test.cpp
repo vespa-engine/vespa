@@ -1955,27 +1955,27 @@ AttributeTest::testGeneration()
 {
     { // single value attribute
         Config cfg(BasicType::INT8);
-        cfg.setGrowStrategy(GrowStrategy(2, 0, 2));
+        cfg.setGrowStrategy(GrowStrategy::make(2, 0, 2));
         AttributePtr attr = createAttribute("int8", cfg);
         testGeneration(attr, true);
     }
     { // enum attribute (with fast search)
         Config cfg(BasicType::INT8);
         cfg.setFastSearch(true);
-        cfg.setGrowStrategy(GrowStrategy(2, 0, 2));
+        cfg.setGrowStrategy(GrowStrategy::make(2, 0, 2));
         AttributePtr attr = createAttribute("faint8", cfg);
         testGeneration(attr, false);
     }
     { // multi value attribute
         Config cfg(BasicType::INT8, CollectionType::ARRAY);
-        cfg.setGrowStrategy(GrowStrategy(2, 0, 2));
+        cfg.setGrowStrategy(GrowStrategy::make(2, 0, 2));
         AttributePtr attr = createAttribute("aint8", cfg);
         testGeneration(attr, false);
     }
     { // multi value enum attribute (with fast search)
         Config cfg(BasicType::INT8, CollectionType::ARRAY);
         cfg.setFastSearch(true);
-        cfg.setGrowStrategy(GrowStrategy(2, 0, 2));
+        cfg.setGrowStrategy(GrowStrategy::make(2, 0, 2));
         AttributePtr attr = createAttribute("faaint8", cfg);
         testGeneration(attr, false);
     }
@@ -2245,7 +2245,7 @@ AttributeTest::testReaderDuringLastUpdate(const Config &config, bool fs, bool co
     vespalib::string name(ss.str());
     Config cfg = config;
     cfg.setFastSearch(fs);
-    cfg.setGrowStrategy(GrowStrategy(100, 50, 0));
+    cfg.setGrowStrategy(GrowStrategy::make(100, 50, 0));
 
     LOG(info, "testReaderDuringLastUpdate(%s)", name.c_str());
     AttributePtr attr = AttributeFactory::createAttribute(name, cfg);
