@@ -6,6 +6,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.vespa.hosted.node.admin.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.component.AdminComponent;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
@@ -32,6 +33,7 @@ public class DockerAdminComponent implements AdminComponent {
     private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofSeconds(30);
     private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofSeconds(30);
 
+    private final ConfigServerConfig configServerConfig;
     private final NodeAdminConfig config;
     private final Docker docker;
     private final MetricReceiverWrapper metricReceiver;
@@ -41,10 +43,12 @@ public class DockerAdminComponent implements AdminComponent {
 
     private Optional<NodeAdminStateUpdater> nodeAdminStateUpdater = Optional.empty();
 
-    public DockerAdminComponent(NodeAdminConfig config,
+    public DockerAdminComponent(ConfigServerConfig configServerConfig,
+                                NodeAdminConfig config,
                                 Docker docker,
                                 MetricReceiverWrapper metricReceiver,
                                 ClassLocking classLocking) {
+        this.configServerConfig = configServerConfig;
         this.config = config;
         this.docker = docker;
         this.metricReceiver = metricReceiver;
@@ -57,7 +61,7 @@ public class DockerAdminComponent implements AdminComponent {
             return;
         }
 
-        Environment environment = new Environment();
+        Environment environment = new Environment(configServerConfig);
         requestExecutor = ConfigServerHttpRequestExecutor.create(
                 environment.getConfigServerUris(), environment.getKeyStoreOptions(), environment.getTrustStoreOptions());
         NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor);
