@@ -127,7 +127,7 @@ public class DockerImpl implements Docker {
                 dockerImageGC = Optional.of(new DockerImageGarbageCollector(minAgeToDelete));
 
 
-                if (!config.networkNATted()) {
+                if (!config.networkNATed()) {
                     try {
                         setupDockerNetworkIfNeeded();
                     } catch (Exception e) {
@@ -140,7 +140,7 @@ public class DockerImpl implements Docker {
 
     @Override
     public boolean networkNATed() {
-        return config.networkNATted();
+        return config.networkNATed();
     }
 
     static DefaultDockerClientConfig.Builder buildDockerClientConfig(DockerConfig config) {
