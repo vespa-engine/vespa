@@ -123,10 +123,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 logger.info("Network not nated - setting up with specific ip address on a macvlan");
                 command.withIpAddress(nodeInetAddress);
                 command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
-                command.withVolume("/etc/hosts", "/etc/hosts");
-            } else {
-                logger.info("Network is nated - Adding hostname to /etc/hosts");
-                command.withExtraHost(nodeSpec.hostname, isIPv6 ? "::1" : "127.0.0.1");
+                command.withVolume("/etc/hosts", "/etc/hosts"); // TODO This is probably not nessesary - review later
             }
 
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
