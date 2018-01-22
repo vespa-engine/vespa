@@ -64,14 +64,14 @@ public class ScalarFunctions {
         @Override
         public double applyAsDouble(double left, double right) { return Math.max(left, right); }
         @Override
-        public String toString() { return "f(a,b)(max(a, b)"; }
+        public String toString() { return "f(a,b)(max(a, b))"; }
     }
 
     public static class Min implements DoubleBinaryOperator {
         @Override
         public double applyAsDouble(double left, double right) { return Math.min(left, right); }
         @Override
-        public String toString() { return "f(a,b)(min(a, b)"; }
+        public String toString() { return "f(a,b)(min(a, b))"; }
     }
 
     public static class Multiply implements DoubleBinaryOperator {
@@ -140,7 +140,7 @@ public class ScalarFunctions {
         @Override
         public double applyAsDouble(double operand) { return scale * (operand >= 0.0 ? operand : alpha * (Math.exp(operand)-1)); }
         @Override
-        public String toString() { return String.format("f(a)(%f * if(a >= 0, a, %f*(exp(a)-1))", scale, alpha); }
+        public String toString() { return String.format("f(a)(%f * if(a >= 0, a, %f*(exp(a)-1)))", scale, alpha); }
     }
 
     public static class Rsqrt implements DoubleUnaryOperator {

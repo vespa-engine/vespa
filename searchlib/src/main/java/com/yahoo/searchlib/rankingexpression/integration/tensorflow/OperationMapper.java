@@ -397,7 +397,7 @@ class OperationMapper {
         TensorFunction xCond = new Join(x.function(), conditionFunction.function(), ScalarFunctions.multiply());
         TensorFunction yCond = new Join(y.function(), conditionFunction.function(), new DoubleBinaryOperator() {
             @Override public double applyAsDouble(double a, double b) { return a * (1.0 - b); }
-            @Override public String toString() { return "f(a,b)(a * (1-b)"; }
+            @Override public String toString() { return "f(a,b)(a * (1-b))"; }
         });
 
         TensorFunction outputFunction = new Join(xCond, yCond, ScalarFunctions.add());
