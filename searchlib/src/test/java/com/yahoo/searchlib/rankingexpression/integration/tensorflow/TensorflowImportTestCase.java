@@ -60,7 +60,7 @@ public class TensorflowImportTestCase {
         RankingExpression output = signature.outputExpression("y");
         assertNotNull(output);
         assertEquals("add", output.getName());
-        assertEquals("join(rename(reduce(join(Placeholder, rename(constant('Variable'), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant('Variable_1'), d0, d1), f(a,b)(a + b))",
+        assertEquals("join(rename(reduce(join(Placeholder, rename(constant(\"Variable\"), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(\"Variable_1\"), d0, d1), f(a,b)(a + b))",
                      toNonPrimitiveString(output));
 
         // Test execution
@@ -136,7 +136,7 @@ public class TensorflowImportTestCase {
         assertNotNull(output);
         assertEquals("dnn/outputs/add", output.getName());
         assertEquals("" +
-                     "join(rename(reduce(join(map(join(rename(reduce(join(map(join(rename(reduce(join(map(join(rename(reduce(join(X, rename(constant('dnn/hidden1/weights'), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant('dnn/hidden1/bias'), d0, d1), f(a,b)(a + b)), f(a)(if (a < 0, exp(a) - 1, a))), rename(constant('dnn/hidden2/weights'), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant('dnn/hidden2/bias'), d0, d1), f(a,b)(a + b)), f(a)(max(0,a))), rename(constant('dnn/hidden3/weights'), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant('dnn/hidden3/bias'), d0, d1), f(a,b)(a + b)), f(a)(1 / (1 + exp(-a)))), rename(constant('dnn/outputs/weights'), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant('dnn/outputs/bias'), d0, d1), f(a,b)(a + b))",
+                     "join(rename(reduce(join(map(join(rename(reduce(join(map(join(rename(reduce(join(map(join(rename(reduce(join(X, rename(constant(\"dnn/hidden1/weights\"), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(\"dnn/hidden1/bias\"), d0, d1), f(a,b)(a + b)), f(a)(if (a < 0, exp(a) - 1, a))), rename(constant(\"dnn/hidden2/weights\"), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(\"dnn/hidden2/bias\"), d0, d1), f(a,b)(a + b)), f(a)(max(0,a))), rename(constant(\"dnn/hidden3/weights\"), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(\"dnn/hidden3/bias\"), d0, d1), f(a,b)(a + b)), f(a)(1 / (1 + exp(-a)))), rename(constant(\"dnn/outputs/weights\"), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(\"dnn/outputs/bias\"), d0, d1), f(a,b)(a + b))",
                      toNonPrimitiveString(output));
 
         // Test constants
@@ -184,7 +184,7 @@ public class TensorflowImportTestCase {
 
     private Context contextFrom(TensorFlowModel result) {
         MapContext context = new MapContext();
-        result.constants().forEach((name, tensor) -> context.put("constant('" + name + "')", new TensorValue(tensor)));
+        result.constants().forEach((name, tensor) -> context.put("constant(\"" + name + "\")", new TensorValue(tensor)));
         return context;
     }
 
