@@ -15,11 +15,6 @@
       <isRunningLocally>false</isRunningLocally>
     </config>
 
-    <config name="vespa.hosted.node.admin.node-admin">
-      <isRunningLocally>false</isRunningLocally>
-      <restartOnDeploy>true</restartOnDeploy>
-    </config>
-
     <nodes type="host"/>
 
     <preprocess:include file="variant.xml" required="false"/>
