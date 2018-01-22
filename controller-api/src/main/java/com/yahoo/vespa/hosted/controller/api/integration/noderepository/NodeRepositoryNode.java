@@ -51,6 +51,8 @@ public class NodeRepositoryNode {
     private Boolean hardwareFailure;
     @JsonProperty("hardwareFailureDescription")
     private String hardwareFailureDescription;
+    @JsonProperty("hardwareDivergence")
+    private String hardwareDivergence;
     @JsonProperty("environment")
     private NodeEnvironment environment;
     @JsonProperty("type")
@@ -236,6 +238,14 @@ public class NodeRepositoryNode {
         return hardwareFailureDescription;
     }
 
+    public void setHardwareDivergence(String hardwareDivergence) {
+        this.hardwareDivergence = hardwareDivergence;
+    }
+
+    public String getHardwareDivergence() {
+        return hardwareDivergence;
+    }
+
     public void setHardwareFailureDescription(String hardwareFailureDescription) {
         this.hardwareFailureDescription = hardwareFailureDescription;
     }
@@ -369,6 +379,7 @@ public class NodeRepositoryNode {
                 ", failCount=" + failCount +
                 ", hardwareFailure=" + hardwareFailure +
                 ", hardwareFailureDescription='" + hardwareFailureDescription + '\'' +
+                ", hardwareDivergence='" + hardwareDivergence + '\'' +
                 ", environment=" + environment +
                 ", type=" + type +
                 ", wantedDockerImage='" + wantedDockerImage + '\'' +
