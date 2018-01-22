@@ -88,6 +88,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         return this;
     }
 
+    
     @Override
     public Docker.CreateContainerCommand withEnvironment(String name, String value) {
         assert name.indexOf('=') == -1;
