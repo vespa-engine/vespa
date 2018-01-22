@@ -60,7 +60,7 @@ public class ApplicationPreprocessor {
         try {
             preprocessor.run();
             System.out.println("Application preprocessed successfully. Preprocessed application stored in " +
-                               new File(applicationDir, FilesApplicationPackage.preprocessed).getAbsolutePath());
+                               new File(applicationDir, ".preprocessed").getAbsolutePath());
         } catch (Exception e) {
             System.err.println("Error validating application package: " + Exceptions.toMessageString(e));
             System.exit(1);
