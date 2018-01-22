@@ -126,7 +126,7 @@ class OperationMapper {
         String name = tfNode.getInput(0);
         Tensor defaultValue = getConstantTensor(model, name);
         result.constant(name, defaultValue);
-        result.macro(name, new RankingExpression(name, new ReferenceNode("constant('" + name + "')")));
+        result.macro(name, new RankingExpression(name, new ReferenceNode("constant(\"" + name + "\")")));
         // The default value will be provided by the macro. Users can override macro to change value.
         return new TypedTensorFunction(defaultValue.type(), new VariableTensor(name));
     }
@@ -159,7 +159,7 @@ class OperationMapper {
         Tensor constant = getConstantTensor(model, name);
         result.constant(name, constant);
         return new TypedTensorFunction(constant.type(),
-                new TensorFunctionNode.TensorFunctionExpressionNode(new ReferenceNode("constant('" + name + "')")));
+                new TensorFunctionNode.TensorFunctionExpressionNode(new ReferenceNode("constant(\"" + name + "\")")));
     }
 
     private Tensor getConstantTensor(SavedModelBundle model, String name) {

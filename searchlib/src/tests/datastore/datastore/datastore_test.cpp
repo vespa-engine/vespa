@@ -65,6 +65,8 @@ public:
 
 using GrowthStats = std::vector<int>;
 
+constexpr float ALLOC_GROW_FACTOR = 0.5;
+
 class GrowStore
 {
     using Store = DataStoreT<EntryRefT<22>>;
@@ -76,8 +78,8 @@ class GrowStore
 public:
     GrowStore(size_t minSize, size_t minSwitch)
         : _store(),
-          _firstType(1, 1, 64, 0),
-          _type(1, minSize, 64, minSwitch),
+          _firstType(1, 1, 64, 0, ALLOC_GROW_FACTOR),
+          _type(1, minSize, 64, minSwitch, ALLOC_GROW_FACTOR),
           _typeId(0)
     {
         (void) _store.addType(&_firstType);
@@ -90,16 +92,16 @@ public:
         GrowthStats sizes;
         int i = 0;
         int previ = 0;
-        int prevBuffer = -1;
+        int prevBufferId = -1;
         while (sizes.size() < bufs) {
             RefType iRef(_store.allocator<int>(_typeId).alloc().ref);
-            int buffer = iRef.bufferId();
-            if (buffer != prevBuffer) {
-                if (prevBuffer >= 0) {
+            int bufferId = iRef.bufferId();
+            if (bufferId != prevBufferId) {
+                if (prevBufferId >= 0) {
                     sizes.push_back(i - previ);
                     previ = i;
                 }
-                prevBuffer = buffer;
+                prevBufferId = bufferId;
             }
             ++i;
         }
@@ -460,7 +462,7 @@ void assertGrowStats(GrowthStats expSizes,
                      size_t expInitMemUsage,
                      size_t minSize, size_t minSwitch)
 {
-    EXPECT_EQUAL(expSizes, GrowStore(minSize, minSwitch).getGrowthStats(9));
+    EXPECT_EQUAL(expSizes, GrowStore(minSize, minSwitch).getGrowthStats(expSizes.size()));
     EXPECT_EQUAL(expFirstBufSizes, GrowStore(minSize, minSwitch).getFirstBufGrowStats());
     EXPECT_EQUAL(expInitMemUsage, GrowStore(minSize, minSwitch).getMemoryUsage().allocatedBytes());
 }
@@ -470,22 +472,22 @@ void assertGrowStats(GrowthStats expSizes,
 TEST("require that buffer growth works")
 {
     // Always switch to new buffer, min size 4
-    TEST_DO(assertGrowStats({ 4, 8, 16, 32, 64, 64, 64, 64, 64 },
+    TEST_DO(assertGrowStats({ 4, 4, 4, 6, 9, 13, 20, 30, 45, 64 },
                             { 4 }, 20, 4, 0));
     // Resize if buffer size is less than 4, min size 0
-    TEST_DO(assertGrowStats({ 4, 8, 16, 32, 64, 64, 64, 64, 64 },
-                            { 0, 1, 2, 4 }, 4, 0, 4));
+    TEST_DO(assertGrowStats({ 3, 3, 3, 4, 6, 9, 14, 21, 31, 47 },
+                            { 0, 1, 2, 3 }, 4, 0, 4));
     // Always switch to new buffer, min size 16
-    TEST_DO(assertGrowStats({ 16, 32, 64, 64, 64, 64, 64, 64, 64 },
+    TEST_DO(assertGrowStats({ 16, 16, 16, 24, 36, 54, 64, 64, 64 },
                             { 16 }, 68, 16, 0));
     // Resize if buffer size is less than 16, min size 0
-    TEST_DO(assertGrowStats({ 16, 32, 64, 64, 64, 64, 64, 64, 64 },
-                            { 0, 1, 2, 4, 8, 16 }, 4, 0, 16));
+    TEST_DO(assertGrowStats({ 19, 19, 19, 28, 42, 63, 64, 64, 64 },
+                            { 0, 1, 2, 3, 4, 6, 9, 13, 19 }, 4, 0, 16));
     // Resize if buffer size is less than 16, min size 4
-    TEST_DO(assertGrowStats({ 16, 32, 64, 64, 64, 64, 64, 64, 64 },
-                            { 4, 8, 16 }, 20, 4, 16));
+    TEST_DO(assertGrowStats({ 19, 19, 19, 28, 42, 63, 64, 64, 64 },
+                            { 4, 6, 9, 13, 19 }, 20, 4, 16));
     // Always switch to new buffer, min size 0
-    TEST_DO(assertGrowStats({ 1, 1, 2, 4, 8, 16, 32, 64, 64},
+    TEST_DO(assertGrowStats({ 1, 1, 1, 1, 2, 3, 4, 6, 9 },
                             { 0, 1 }, 4, 0, 0));
 }
 

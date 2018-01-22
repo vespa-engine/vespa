@@ -205,6 +205,10 @@ grow.add int default=1 restart
 ## The number of documents to amortize memory spike cost over
 grow.numdocs int default=10000 restart
 
+## The grow factor used when allocating buffers in the array store
+## used in multi-value attribute vectors to store underlying values.
+grow.multivalueallocfactor double default=0.2 restart
+
 ## Control cache size in bytes.
 summary.cache.maxbytes long default=0
 

@@ -53,7 +53,8 @@ public:
     static datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                                   size_t hugePageSize,
                                                                   size_t smallPageSize,
-                                                                  size_t minNumArraysForNewBuffer);
+                                                                  size_t minNumArraysForNewBuffer,
+                                                                  float allocGrowFactor);
 };
 
 } // namespace search::attribute

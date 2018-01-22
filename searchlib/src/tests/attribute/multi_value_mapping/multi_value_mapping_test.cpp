@@ -59,6 +59,8 @@ public:
     }
 };
 
+constexpr float ALLOC_GROW_FACTOR = 0.2;
+
 template <typename EntryT>
 class Fixture
 {
@@ -72,12 +74,16 @@ protected:
 public:
     using ConstArrayRef = vespalib::ConstArrayRef<EntryT>;
     Fixture(uint32_t maxSmallArraySize)
-        : _mvMapping(ArrayStoreConfig(maxSmallArraySize, ArrayStoreConfig::AllocSpec(0, RefType::offsetSize(), 8 * 1024))),
+        : _mvMapping(ArrayStoreConfig(maxSmallArraySize,
+                                      ArrayStoreConfig::AllocSpec(0, RefType::offsetSize(), 8 * 1024,
+                                      ALLOC_GROW_FACTOR))),
           _attr(_mvMapping)
     {
     }
     Fixture(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer)
-        : _mvMapping(ArrayStoreConfig(maxSmallArraySize, ArrayStoreConfig::AllocSpec(minClusters, maxClusters, numClustersForNewBuffer))),
+        : _mvMapping(ArrayStoreConfig(maxSmallArraySize,
+                                      ArrayStoreConfig::AllocSpec(minClusters, maxClusters, numClustersForNewBuffer,
+                                      ALLOC_GROW_FACTOR))),
           _attr(_mvMapping)
     {
     }

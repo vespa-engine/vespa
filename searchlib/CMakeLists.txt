@@ -108,6 +108,7 @@ vespa_define_module(
     src/tests/common/summaryfeatures
     src/tests/datastore/array_store
     src/tests/datastore/array_store_config
+    src/tests/datastore/buffer_type
     src/tests/datastore/datastore
     src/tests/datastore/unique_store
     src/tests/diskindex/bitvector

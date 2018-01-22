@@ -49,15 +49,7 @@ Test::requireThatAddWordTriggersChangeOfBuffer()
     WordStore ws;
     size_t word = 0;
     uint32_t lastId = 0;
-    size_t lastWord = 0;
     char wordStr[10];
-    size_t entrySize = WordStore::RefType::align(6 + 1);
-    size_t initBufferSpace = 1024u * WordStore::RefType::align(1);
-    size_t bufferSpace = initBufferSpace;
-    size_t bufferWords = (bufferSpace - WordStore::RefType::align(1)) /
-                         entrySize;
-    size_t usedSpace = 0;
-    size_t sumBufferWords = 0;
     for (;;++word) {
         sprintf(wordStr, "%6zu", word);
         // all words uses 12 bytes (include padding)
@@ -68,21 +60,16 @@ Test::requireThatAddWordTriggersChangeOfBuffer()
             LOG(info,
                 "Changed to bufferId %u after %zu words",
                 bufferId, word);
-            EXPECT_EQUAL(bufferWords, word - lastWord);
             lastId = bufferId;
-            lastWord = word;
-            usedSpace += bufferWords * entrySize;
-            sumBufferWords += bufferWords;
-            bufferSpace = usedSpace + initBufferSpace;
-            bufferWords = bufferSpace / entrySize;
         }
         if (bufferId == 4) {
+            lastId = bufferId;
             break;
         }
     }
-    // each buffer can have offsetSize / 12 words
-    EXPECT_EQUAL(sumBufferWords, word);
     LOG(info, "Added %zu words in 4 buffers", word);
+    EXPECT_EQUAL(2047u, word);
+    EXPECT_EQUAL(4u, lastId);
 }
 
 int

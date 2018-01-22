@@ -17,9 +17,9 @@ protected:
     uint32_t _clusterSize;  // Number of elements in an allocation unit
     uint32_t _minClusters;  // Minimum number of clusters to allocate
     uint32_t _maxClusters;  // Maximum number of clusters to allocate
-    // Number of clusters needed before allocating a new buffer
-    // instead of just resizing the first one
+    // Number of clusters needed before allocating a new buffer instead of just resizing the first one
     uint32_t _numClustersForNewBuffer;
+    float _allocGrowFactor;
     uint32_t _activeBuffers;
     uint32_t _holdBuffers;
     size_t _activeUsedElems;    // used elements in all but last active buffer
@@ -38,7 +38,8 @@ public:
     BufferTypeBase(const BufferTypeBase &rhs) = delete;
     BufferTypeBase & operator=(const BufferTypeBase &rhs) = delete;
     BufferTypeBase(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters);
-    BufferTypeBase(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters, uint32_t numClustersForNewBuffer);
+    BufferTypeBase(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters,
+                   uint32_t numClustersForNewBuffer, float allocGrowFactor);
     virtual ~BufferTypeBase();
     virtual void destroyElements(void *buffer, size_t numElements) = 0;
     virtual void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElements) = 0;
@@ -83,7 +84,8 @@ public:
     BufferType(const BufferType &rhs) = delete;
     BufferType & operator=(const BufferType &rhs) = delete;
     BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters);
-    BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters, uint32_t numClustersForNewBuffer);
+    BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters,
+               uint32_t numClustersForNewBuffer, float allocGrowFactor);
     ~BufferType();
     void destroyElements(void *buffer, size_t numElements) override;
     void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElements) override;
@@ -99,8 +101,9 @@ BufferType<EntryType>::BufferType(uint32_t clusterSize, uint32_t minClusters, ui
 { }
 
 template <typename EntryType>
-BufferType<EntryType>::BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters, uint32_t numClustersForNewBuffer)
-    : BufferTypeBase(clusterSize, minClusters, maxClusters, numClustersForNewBuffer),
+BufferType<EntryType>::BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters,
+                                  uint32_t numClustersForNewBuffer, float allocGrowFactor)
+    : BufferTypeBase(clusterSize, minClusters, maxClusters, numClustersForNewBuffer, allocGrowFactor),
       _emptyEntry()
 { }
 
@@ -118,7 +121,6 @@ BufferType<EntryType>::destroyElements(void *buffer, size_t numElements)
     }
 }
 
-
 template <typename EntryType>
 void
 BufferType<EntryType>::fallbackCopy(void *newBuffer,
@@ -134,7 +136,6 @@ BufferType<EntryType>::fallbackCopy(void *newBuffer,
     }
 }
 
-
 template <typename EntryType>
 void
 BufferType<EntryType>::initializeReservedElements(void *buffer, size_t reservedElems)
@@ -145,7 +146,6 @@ BufferType<EntryType>::initializeReservedElements(void *buffer, size_t reservedE
         ++e;
     }
 }
-
 
 template <typename EntryType>
 void

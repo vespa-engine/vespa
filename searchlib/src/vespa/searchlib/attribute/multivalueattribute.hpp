@@ -21,7 +21,9 @@ MultiValueAttribute(const vespalib::string &baseFileName,
       _mvMapping(MultiValueMapping::optimizedConfigForHugePage(1023,
                                                                multivalueattribute::HUGE_MEMORY_PAGE_SIZE,
                                                                multivalueattribute::SMALL_MEMORY_PAGE_SIZE,
-                                                               8 * 1024), cfg.getGrowStrategy())
+                                                               8 * 1024,
+                                                               cfg.getGrowStrategy().getMultiValueAllocGrowFactor()),
+                 cfg.getGrowStrategy())
 {
 }
 

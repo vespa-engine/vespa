@@ -60,7 +60,7 @@ public class TensorflowImportTestCase {
         RankingExpression output = signature.outputExpression("y");
         assertNotNull(output);
         assertEquals("add", output.getName());
-        assertEquals("join(rename(reduce(join(Placeholder, rename(constant('Variable'), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant('Variable_1'), d0, d1), f(a,b)(a + b))",
+        assertEquals("join(rename(reduce(join(Placeholder, rename(constant(\"Variable\"), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(\"Variable_1\"), d0, d1), f(a,b)(a + b))",
                      toNonPrimitiveString(output));
 
         // Test execution
@@ -83,6 +83,7 @@ public class TensorflowImportTestCase {
         assertNotNull(output);
         assertEquals("dnn/batch_normalization_3/batchnorm/add_1", output.getName());
         assertEqualResult(model, result, "X", output.getName());
+
     }
 
     private void assertEqualResult(SavedModelBundle model, TensorFlowModel result, String inputName, String operationName) {
@@ -105,7 +106,7 @@ public class TensorflowImportTestCase {
 
     private Context contextFrom(TensorFlowModel result) {
         MapContext context = new MapContext();
-        result.constants().forEach((name, tensor) -> context.put("constant('" + name + "')", new TensorValue(tensor)));
+        result.constants().forEach((name, tensor) -> context.put("constant(\"" + name + "\")", new TensorValue(tensor)));
         return context;
     }
 

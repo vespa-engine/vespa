@@ -24,7 +24,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
 
     private static final Logger log = Logger.getLogger(LocalSessionRepo.class.getName());
     private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
-    private static final Duration delay = Duration.ofMinutes(1);
+    private static final Duration delay = Duration.ofMinutes(5);
 
     private final ScheduledExecutorService purgeOldSessionsExecutor = new ScheduledThreadPoolExecutor(1);
     private final long sessionLifetime; // in seconds
@@ -65,6 +65,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
 
     // public for testing
     public void purgeOldSessions() {
+        log.log(LogLevel.INFO, "Purging old sessions"); // TODO: Use debug level after 2018-01-29
         try {
             List<LocalSession> sessions = new ArrayList<>(listSessions());
             for (LocalSession candidate : sessions) {
@@ -76,6 +77,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         } catch (Throwable e) {
             log.log(LogLevel.WARNING, "Error when purging old sessions ", e);
         }
+        log.log(LogLevel.INFO, "Done purging old sessions"); // TODO: Use debug level after 2018-01-29
     }
 
     private boolean hasExpired(LocalSession candidate) {
