@@ -186,7 +186,9 @@ public class DockerOperationsImpl implements DockerOperations {
                 String drop = NATCommand.drop(nodeInetAddress, InetAddress.getByName(ipv6Str));
                 Pair<Integer, String> result = processExecuter.exec(drop);
                 if (result.getFirst() != 0) {
-                    logger.warning("Unable to drop NAT rule - error message: " + result.getSecond());
+                    // Might be because the one or two (out of three) rules where not present - debug log and ignore
+                    // Trailing rules will always be overridden by a new one due the fact that we insert
+                    logger.debug("Unable to drop NAT rule - error message: " + result.getSecond());
                 }
             } catch (IOException e) {
                 logger.warning("Unable to drop NAT rule for container " + containerName, e);
@@ -226,18 +228,11 @@ public class DockerOperationsImpl implements DockerOperations {
      * IPv6 gateway in containers connected to more than one docker network
      *
      * For nat:
-     * Setup iptables NAT rules
+     * Setup iptables NAT rules and add entry in /etc/hosts for node-admin (resolve container hostnames to private ip)
      */
     private void setupContainerNetworkConnectivity(ContainerName containerName, InetAddress externalAddress) throws IOException {
         if (docker.networkNATted()) {
-            String ipv6Str = docker.getGlobalIPv6Address(containerName);
-            String natCommand = NATCommand.insert(externalAddress, InetAddress.getByName(ipv6Str));
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-            logger.info("Setting up NAT rules: " + natCommand);
-            Pair<Integer, String> result = processExecuter.exec(natCommand);
-            if (result.getFirst() != 0) {
-                throw new IOException("Unable to setup NAT rule - error message: " + result.getSecond());
-            }
+            insertNAT(containerName, externalAddress);
         } else {
             InetAddress hostDefaultGateway = DockerNetworkCreator.getDefaultGatewayLinux(true);
             executeCommandInNetworkNamespace(containerName,
@@ -333,5 +328,26 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public void deleteUnusedDockerImages() {
         docker.deleteUnusedDockerImages();
+    }
+
+    /**
+     * Only insert NAT rules if they don't exist (or else they will be added)
+     */
+    private void insertNAT(ContainerName containerName, InetAddress externalAddress) throws IOException {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
+        String ipv6Str = docker.getGlobalIPv6Address(containerName);
+
+        // Check if exist
+        String checkCommand = NATCommand.check(externalAddress, InetAddress.getByName(ipv6Str));
+        Pair<Integer, String> result = processExecuter.exec(checkCommand);
+        if (result.getFirst() == 0 ) return;
+
+        // Setup NAT
+        String natCommand = NATCommand.check(externalAddress, InetAddress.getByName(ipv6Str));
+        logger.info("Setting up NAT rules: " + natCommand);
+        result = processExecuter.exec(checkCommand);
+        if (result.getFirst() != 0 ) {
+            throw new IOException("Unable to setup NAT rule - error message: " + result.getSecond());
+        }
     }
 }

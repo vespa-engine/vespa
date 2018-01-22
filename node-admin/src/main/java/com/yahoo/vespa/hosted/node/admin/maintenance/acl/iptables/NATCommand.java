@@ -5,10 +5,12 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 
 /**
- * Creates two commands that:
+ * Creates three ip(6)tables commands customized to map docker containers on a private net to their
+ * respective public ip addresses that all are assign to the host
  *
- *  1. replaces an external/public destination ip to an internal/private ip before routing it (pre-routing)
- *  2. replaces an internal/private source ip to an external/public ip before writing it on the wire (post-routing)
+ *  1. DNAT PRE-ROUTING: replaces an external/public destination ip to an internal/private ip when it arrives on an interface
+ *  2. DNAT LOOPBACK OUTPUT: replaces an internal/public ip destination to an internal/private ip on the loopback device (for host to container communication)
+ *  2. SNAT POST-ROUTING: replaces an internal/private source ip to an external/public ip before writing it on the wire
  *
  * @author smorgrav
  */
@@ -16,6 +18,7 @@ public class NATCommand implements Command {
 
     private final String snatCommand;
     private final String dnatCommand;
+    private final String dnatLoopBackCommand;
 
     public NATCommand(InetAddress externalIp, InetAddress internalIp, String chainCommand) {
         String command = externalIp instanceof Inet6Address ? "ip6tables" : "iptables";
@@ -24,7 +27,11 @@ public class NATCommand implements Command {
                 chainCommand,
                 internalIp.getHostAddress(),
                 externalIp.getHostAddress());
-
+        this.dnatLoopBackCommand = String.format("%s -t nat %s OUTPUT -o lo -d %s -j DNAT --to-destination %s",
+                command,
+                chainCommand,
+                externalIp.getHostAddress(),
+                internalIp.getHostAddress());
         this.dnatCommand = String.format("%s -t nat %s PREROUTING -d %s -j DNAT --to-destination %s",
                 command,
                 chainCommand,
@@ -34,17 +41,25 @@ public class NATCommand implements Command {
 
     @Override
     public String asString() {
-        return snatCommand + "; " + dnatCommand;
+        return concat("&&");
     }
 
     @Override
     public String asString(String commandName) { return asString(); }
 
+    private String concat(String delimiter) {
+        return snatCommand + delimiter + dnatCommand + delimiter + dnatLoopBackCommand;
+    }
+
     public static String insert(InetAddress externalIp, InetAddress internalIp) {
-        return new NATCommand(externalIp, internalIp, "-I").asString();
+        return new NATCommand(externalIp, internalIp, "-I").concat(" && ");
     }
 
     public static String drop(InetAddress externalIp, InetAddress internalIp) {
-        return new NATCommand(externalIp, internalIp, "-D").asString();
+        return new NATCommand(externalIp, internalIp, "-D").concat("; ");
+    }
+
+    public static String check(InetAddress externalIp, InetAddress internalIp) {
+        return new NATCommand(externalIp, internalIp, "-C").concat(" && ");
     }
 }
