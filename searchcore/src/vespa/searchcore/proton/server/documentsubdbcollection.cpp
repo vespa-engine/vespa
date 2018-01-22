@@ -11,11 +11,24 @@
 #include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
 
 using proton::matching::SessionManager;
-using search::index::Schema;
+using search::GrowStrategy;
 using search::SerialNum;
+using search::index::Schema;
 using searchcorespi::IFlushTarget;
 
 namespace proton {
+
+namespace {
+
+GrowStrategy
+makeGrowStrategy(uint32_t docsInitialCapacity,
+                 const DocumentSubDBCollection::ProtonConfig::Grow &growCfg)
+{
+    return GrowStrategy(docsInitialCapacity, growCfg.factor,
+                        growCfg.add, growCfg.multivalueallocfactor);
+}
+
+}
 
 DocumentSubDBCollection::DocumentSubDBCollection(
         IDocumentSubDBOwner &owner,
@@ -49,9 +62,9 @@ DocumentSubDBCollection::DocumentSubDBCollection(
     const ProtonConfig::Distribution & distCfg = protonCfg.distribution;
     _bucketDB = std::make_shared<BucketDBOwner>();
     _bucketDBHandler.reset(new bucketdb::BucketDBHandler(*_bucketDB));
-    search::GrowStrategy searchableGrowth(growCfg.initial * distCfg.searchablecopies, growCfg.factor, growCfg.add);
-    search::GrowStrategy removedGrowth(std::max(1024l, growCfg.initial/100), growCfg.factor, growCfg.add);
-    search::GrowStrategy notReadyGrowth(growCfg.initial * (distCfg.redundancy - distCfg.searchablecopies), growCfg.factor, growCfg.add);
+    GrowStrategy searchableGrowth = makeGrowStrategy(growCfg.initial * distCfg.searchablecopies, growCfg);
+    GrowStrategy removedGrowth = makeGrowStrategy(std::max(1024l, growCfg.initial/100), growCfg);
+    GrowStrategy notReadyGrowth = makeGrowStrategy(growCfg.initial * (distCfg.redundancy - distCfg.searchablecopies), growCfg);
     size_t attributeGrowNumDocs(growCfg.numdocs);
     size_t numSearcherThreads = protonCfg.numsearcherthreads;
 

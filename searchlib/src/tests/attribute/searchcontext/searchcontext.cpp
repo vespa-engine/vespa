@@ -1622,7 +1622,7 @@ SearchContextTest::requireThatFlagAttributeIsWorkingWhenNewDocsAreAdded()
     Config cfg(BasicType::INT8, CollectionType::ARRAY);
     cfg.setFastSearch(true);
     {
-        cfg.setGrowStrategy(GrowStrategy(1, 0, 1));
+        cfg.setGrowStrategy(GrowStrategy::make(1, 0, 1));
         AttributePtr a = AttributeFactory::createAttribute("flags", cfg);
         FlagAttribute & fa = dynamic_cast<FlagAttribute &>(*a);
         addReservedDoc(fa);
@@ -1657,7 +1657,7 @@ SearchContextTest::requireThatFlagAttributeIsWorkingWhenNewDocsAreAdded()
         }
     }
     {
-        cfg.setGrowStrategy(GrowStrategy(4, 0, 4));
+        cfg.setGrowStrategy(GrowStrategy::make(4, 0, 4));
         AttributePtr a = AttributeFactory::createAttribute("flags", cfg);
         FlagAttribute & fa = dynamic_cast<FlagAttribute &>(*a);
         std::vector<uint32_t> exp50;

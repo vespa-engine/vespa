@@ -13,7 +13,7 @@ constexpr size_t MIN_BUFFER_CLUSTERS = 8192;
 
 template <typename EntryT, typename RefT>
 ArrayStore<EntryT, RefT>::LargeArrayType::LargeArrayType(const AllocSpec &spec)
-    : BufferType<LargeArray>(1, spec.minArraysInBuffer, spec.maxArraysInBuffer, spec.numArraysForNewBuffer)
+    : BufferType<LargeArray>(1, spec.minArraysInBuffer, spec.maxArraysInBuffer, spec.numArraysForNewBuffer, spec.allocGrowFactor)
 {
 }
 
@@ -38,7 +38,8 @@ ArrayStore<EntryT, RefT>::initArrayTypes(const ArrayStoreConfig &cfg)
     for (uint32_t arraySize = 1; arraySize <= _maxSmallArraySize; ++arraySize) {
         const AllocSpec &spec = cfg.specForSize(arraySize);
         _smallArrayTypes.push_back(std::make_unique<SmallArrayType>
-                                           (arraySize, spec.minArraysInBuffer, spec.maxArraysInBuffer, spec.numArraysForNewBuffer));
+                                           (arraySize, spec.minArraysInBuffer, spec.maxArraysInBuffer,
+                                            spec.numArraysForNewBuffer, spec.allocGrowFactor));
         uint32_t typeId = _store.addType(_smallArrayTypes.back().get());
         assert(typeId == arraySize); // Enforce 1-to-1 mapping between type ids and sizes for small arrays
     }
@@ -188,14 +189,16 @@ ArrayStoreConfig
 ArrayStore<EntryT, RefT>::optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                      size_t hugePageSize,
                                                      size_t smallPageSize,
-                                                     size_t minNumArraysForNewBuffer)
+                                                     size_t minNumArraysForNewBuffer,
+                                                     float allocGrowFactor)
 {
     return ArrayStoreConfig::optimizeForHugePage(maxSmallArraySize,
                                                  hugePageSize,
                                                  smallPageSize,
                                                  sizeof(EntryT),
                                                  RefT::offsetSize(),
-                                                 minNumArraysForNewBuffer);
+                                                 minNumArraysForNewBuffer,
+                                                 allocGrowFactor);
 }
 
 }

@@ -75,9 +75,10 @@ datastore::ArrayStoreConfig
 MultiValueMapping<EntryT, RefT>::optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                              size_t hugePageSize,
                                                              size_t smallPageSize,
-                                                             size_t minNumArraysForNewBuffer)
+                                                             size_t minNumArraysForNewBuffer,
+                                                             float allocGrowFactor)
 {
-    return ArrayStore::optimizedConfigForHugePage(maxSmallArraySize, hugePageSize, smallPageSize, minNumArraysForNewBuffer);
+    return ArrayStore::optimizedConfigForHugePage(maxSmallArraySize, hugePageSize, smallPageSize, minNumArraysForNewBuffer, allocGrowFactor);
 }
 
 } // namespace search::attribute

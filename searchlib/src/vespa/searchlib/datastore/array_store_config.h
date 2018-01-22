@@ -23,12 +23,16 @@ public:
         size_t maxArraysInBuffer;
         // Number of arrays needed before allocating a new buffer instead of just resizing the first one.
         size_t numArraysForNewBuffer;
+        // Grow factor used when allocating a new buffer.
+        float allocGrowFactor;
         AllocSpec(size_t minArraysInBuffer_,
                   size_t maxArraysInBuffer_,
-                  size_t numArraysForNewBuffer_)
+                  size_t numArraysForNewBuffer_,
+                  float allocGrowFactor_)
             : minArraysInBuffer(minArraysInBuffer_),
               maxArraysInBuffer(maxArraysInBuffer_),
-              numArraysForNewBuffer(numArraysForNewBuffer_) {}
+              numArraysForNewBuffer(numArraysForNewBuffer_),
+              allocGrowFactor(allocGrowFactor_) {}
     };
 
     using AllocSpecVector = std::vector<AllocSpec>;
@@ -61,7 +65,8 @@ public:
                                                 size_t smallPageSize,
                                                 size_t entrySize,
                                                 size_t maxEntryRefOffset,
-                                                size_t minNumArraysForNewBuffer);
+                                                size_t minNumArraysForNewBuffer,
+                                                float allocGrowFactor);
 };
 
 }
