@@ -28,7 +28,6 @@ public interface Docker {
         CreateContainerCommand withManagedBy(String manager);
         CreateContainerCommand withAddCapability(String capabilityName);
         CreateContainerCommand withDropCapability(String capabilityName);
-        CreateContainerCommand withExtraHost(String hostname, String ip);
 
         void create();
     }

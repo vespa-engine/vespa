@@ -39,7 +39,6 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private Optional<String[]> entrypoint = Optional.empty();
     private Set<Capability> addCapabilities = new HashSet<>();
     private Set<Capability> dropCapabilities = new HashSet<>();
-    private List<String> extraHosts = new ArrayList<>();
 
     CreateContainerCommandImpl(DockerClient docker,
                                DockerImage dockerImage,
@@ -110,12 +109,6 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     }
 
     @Override
-    public Docker.CreateContainerCommand withExtraHost(String hostname, String ip) {
-        extraHosts.add(hostname + ":" + ip);
-        return this;
-    }
-
-    @Override
     public Docker.CreateContainerCommand withIpAddress(InetAddress address) {
         if (address instanceof Inet6Address) {
             ipv6Address = Optional.of(address.getHostAddress());
@@ -146,7 +139,6 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .withLabels(labels)
                 .withEnv(environmentAssignments)
                 .withBinds(volumeBinds)
-                .withExtraHosts(extraHosts)
                 .withUlimits(ulimits)
                 .withCapAdd(new ArrayList<>(addCapabilities))
                 .withCapDrop(new ArrayList<>(dropCapabilities));
