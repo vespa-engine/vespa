@@ -40,7 +40,7 @@ import static org.junit.Assert.fail;
 public class RankingExpressionWithTensorFlowTestCase {
 
     private final Path applicationDir = Path.fromString("src/test/integration/tensorflow/");
-    private final String vespaExpression = "join(rename(reduce(join(Placeholder, rename(constant(Variable), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(Variable_1), d0, d1), f(a,b)(a + b))";
+    private final String vespaExpression = "join(rename(reduce(join(Placeholder, rename(constant('Variable'), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant('Variable_1'), d0, d1), f(a,b)(a + b))";
 
     @After
     public void removeGeneratedConstantTensorFiles() {

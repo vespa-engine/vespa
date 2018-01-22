@@ -117,7 +117,7 @@ class OperationMapper {
         Tensor constant = tensorConverter.toVespaTensor(importedTensors.get(0));
         result.constant(name, constant);
         return new TypedTensorFunction(constant.type(),
-                                       new TensorFunctionNode.TensorFunctionExpressionNode(new ReferenceNode("constant(" + name + ")")));
+                                       new TensorFunctionNode.TensorFunctionExpressionNode(new ReferenceNode("constant('" + name + "')")));
     }
 
     TypedTensorFunction matmul(List<TypedTensorFunction> arguments) {
