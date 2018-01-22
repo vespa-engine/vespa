@@ -2,7 +2,7 @@
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
+import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.ScalarFunctions;
 import com.yahoo.yolean.Exceptions;
@@ -105,26 +105,61 @@ public class TensorFlowImporter {
     /** Recursively convert a graph of TensorFlow nodes into a Vespa tensor function expression tree */
     private TypedTensorFunction importNode(NodeDef tfNode, GraphDef graph, SavedModelBundle model, TensorFlowModel result) {
         TypedTensorFunction function = tensorFunctionOf(tfNode, graph, model, result);
-        // We add all intermediate nodes imported as separate expressions. Only those referenced in a signature output
-        // will be used
-        result.expression(tfNode.getName(), new RankingExpression(tfNode.getName(), new TensorFunctionNode(function.function())));
-        return function;
+        try {
+            // We add all intermediate nodes imported as separate expressions. Only those referenced in a signature output
+            // will be used. We parse the TensorFunction here to convert it to a RankingExpression tree
+            result.expression(tfNode.getName(), new RankingExpression(tfNode.getName(), function.function().toString()));
+            return function;
+        }
+        catch (ParseException e) {
+            throw new RuntimeException("Tensorflow function " + function.function() +
+                                       " cannot be parsed as a ranking expression", e);
+        }
     }
+
+
 
     private TypedTensorFunction tensorFunctionOf(NodeDef tfNode, GraphDef graph, SavedModelBundle model, TensorFlowModel result) {
         // Import arguments lazily below, as some nodes have arguments unused arguments leading to unsupported ops
         // TODO: Implement mapping of more functions from https://www.tensorflow.org/api_docs/python/
         switch (tfNode.getOp().toLowerCase()) {
-            case "add" : case "add_n" : return operationMapper.join(importArguments(tfNode, graph, model, result), ScalarFunctions.add());
-            case "acos" : return operationMapper.map(importArguments(tfNode, graph, model, result), ScalarFunctions.acos());
-            case "elu": return operationMapper.map(importArguments(tfNode, graph, model, result), ScalarFunctions.elu());
+            // array ops
+            case "const" : return operationMapper.constant(tfNode, model, result);
+            case "expanddims" : return operationMapper.expandDims(tfNode, model, importArguments(tfNode, graph, model, result));
             case "identity" : return operationMapper.identity(tfNode, model, result);
             case "placeholder" : return operationMapper.placeholder(tfNode, result);
-            case "relu": return operationMapper.map(importArguments(tfNode, graph, model, result), ScalarFunctions.relu());
+            case "placeholderwithdefault" : return operationMapper.placeholderWithDefault(tfNode, model, result);
+            case "reshape" : return operationMapper.reshape(tfNode, model, importArguments(tfNode, graph, model, result));
+            case "squeeze" : return operationMapper.squeeze(tfNode, importArguments(tfNode, graph, model, result));
+
+            // math ops
+            case "add" : case "add_n" : return operationMapper.join(importArguments(tfNode, graph, model, result), ScalarFunctions.add());
+            case "acos" : return operationMapper.map(importArguments(tfNode, graph, model, result), ScalarFunctions.acos());
             case "matmul" : return operationMapper.matmul(importArguments(tfNode, graph, model, result));
+            case "maximum" : return operationMapper.join(importArguments(tfNode, graph, model, result), ScalarFunctions.max());
+            case "mean" : case "reducemean": return operationMapper.mean(tfNode, model, importArguments(tfNode, graph, model, result));
+            case "multiply": case "mul" : return operationMapper.join(importArguments(tfNode, graph, model, result), ScalarFunctions.multiply());
+            case "rsqrt": return operationMapper.map(importArguments(tfNode, graph, model, result), ScalarFunctions.rsqrt());
+            case "where3": case "select" : return operationMapper.select(tfNode, model, result, importArguments(tfNode, graph, model, result));
             case "sigmoid": return operationMapper.map(importArguments(tfNode, graph, model, result), ScalarFunctions.sigmoid());
+            case "squareddifference" : return operationMapper.join(importArguments(tfNode, graph, model, result), ScalarFunctions.squareddifference());
+            case "subtract" : case "sub" : return operationMapper.join(importArguments(tfNode, graph, model, result), ScalarFunctions.subtract());
+
+            // nn ops
+            case "biasadd" : return operationMapper.join(importArguments(tfNode, graph, model, result), ScalarFunctions.add());
+            case "elu": return operationMapper.map(importArguments(tfNode, graph, model, result), ScalarFunctions.elu());
+            case "relu": return operationMapper.map(importArguments(tfNode, graph, model, result), ScalarFunctions.relu());
+            case "selu": return operationMapper.map(importArguments(tfNode, graph, model, result), ScalarFunctions.selu());
             case "softmax" : return operationMapper.softmax(importArguments(tfNode, graph, model, result));
-            default : throw new IllegalArgumentException("Conversion of TensorFlow operation '" + tfNode.getOp() + "' is not supported");
+
+            // evaluation no-ops
+            case "stopgradient" :
+            case "noop":
+                return operationMapper.noOp(importArguments(tfNode, graph, model, result));
+
+            // not supported
+            default :
+                throw new IllegalArgumentException("Conversion of TensorFlow operation '" + tfNode.getOp() + "' is not supported (" + tfNode.getName() + ")");
         }
     }
 

@@ -24,10 +24,12 @@ public class TensorFlowModel {
     private final Map<String, TensorType> arguments = new HashMap<>();
     private final Map<String, Tensor> constants = new HashMap<>();
     private final Map<String, RankingExpression> expressions = new HashMap<>();
+    private final Map<String, RankingExpression> macros = new HashMap<>();
 
     void argument(String name, TensorType argumentType) { arguments.put(name, argumentType); }
     void constant(String name, Tensor constant) { constants.put(name, constant); }
     void expression(String name, RankingExpression expression) { expressions.put(name, expression); }
+    void macro(String name, RankingExpression expression) { macros.put(name, expression); }
 
     /** Returns the given signature. If it does not already exist it is added to this. */
     Signature signature(String name) {
@@ -46,6 +48,11 @@ public class TensorFlowModel {
      * Note that only nodes recursively referenced by a placeholder are added.
      */
     public Map<String, RankingExpression> expressions() { return Collections.unmodifiableMap(expressions); }
+
+    /**
+     * Returns an immutable map of expressions that can be overridden - such as PlaceholderWithDefault/
+     */
+    public Map<String, RankingExpression> macros() { return Collections.unmodifiableMap(macros); }
 
     /** Returns an immutable map of the signatures of this */
     public Map<String, Signature> signatures() { return Collections.unmodifiableMap(signatures); }

@@ -5,8 +5,12 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+
 
 /**
  * @author bratseth
@@ -36,7 +40,10 @@ public class TensorConverter {
         switch (tfTensor.dataType()) {
             case DOUBLE: return new DoubleValues(tfTensor);
             case FLOAT: return new FloatValues(tfTensor);
-            // TODO: The rest
+            case BOOL: return new BoolValues(tfTensor);
+            case UINT8: return new IntValues(tfTensor);
+            case INT32: return new IntValues(tfTensor);
+            case INT64: return new LongValues(tfTensor);
             default:
                 throw new IllegalArgumentException("Cannot convert a tensor with elements of type " +
                                                    tfTensor.dataType() + " to a Vespa tensor");
@@ -92,4 +99,54 @@ public class TensorConverter {
 
     }
 
+    private static class BoolValues extends Values {
+
+        private final ByteBuffer values;
+
+        BoolValues(org.tensorflow.Tensor<?> tfTensor) {
+            super(tfTensor.numElements());
+            values = ByteBuffer.allocate(tfTensor.numElements());
+            tfTensor.writeTo(values);
+        }
+
+        @Override
+        double get(int i) {
+            return values.get(i);
+        }
+
+    }
+
+    private static class IntValues extends Values {
+
+        private final IntBuffer values;
+
+        IntValues(org.tensorflow.Tensor<?> tfTensor) {
+            super(tfTensor.numElements());
+            values = IntBuffer.allocate(tfTensor.numElements());
+            tfTensor.writeTo(values);
+        }
+
+        @Override
+        double get(int i) {
+            return values.get(i);
+        }
+
+    }
+
+    private static class LongValues extends Values {
+
+        private final LongBuffer values;
+
+        LongValues(org.tensorflow.Tensor<?> tfTensor) {
+            super(tfTensor.numElements());
+            values = LongBuffer.allocate(tfTensor.numElements());
+            tfTensor.writeTo(values);
+        }
+
+        @Override
+        double get(int i) {
+            return values.get(i);
+        }
+
+    }
 }

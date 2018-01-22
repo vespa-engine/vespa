@@ -37,8 +37,8 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
      * Creates a new LogForwarder instance.
      */
     // TODO: Use proper types?
-    public LogForwarder(AbstractConfigProducer parent, int index, Config config) {
-        super(parent, "logforwarder." + index);
+    public LogForwarder(AbstractConfigProducer parent, Config config) {
+        super(parent, "logforwarder");
         this.config = config;
         setProp("clustertype", "hosts");
         setProp("clustername", "admin");

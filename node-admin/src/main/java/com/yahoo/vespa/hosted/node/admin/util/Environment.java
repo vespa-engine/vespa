@@ -2,8 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.util;
 
 import com.google.common.base.Strings;
-import com.yahoo.net.HostName;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.ConfigServerConfig;
 
 import java.net.InetAddress;
 import java.net.URI;
@@ -31,15 +32,10 @@ public class Environment {
     private static final DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
     public static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
 
-    private static final String ENV_CONFIGSERVER_SCHEME = "CONFIG_SERVER_SCHEME";
-    private static final String ENV_CONFIGSERVER_HOSTS = "CONFIG_SERVER_ADDRESS";
-    private static final String ENV_CONFIGSERVER_PORT = "CONFIG_SERVER_PORT";
     private static final String ENVIRONMENT = "ENVIRONMENT";
     private static final String REGION = "REGION";
     private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
     private static final String COREDUMP_FEED_ENDPOINT = "COREDUMP_FEED_ENDPOINT";
-    private static final String KEY_STORE_PATH = "KEY_STORE_PATH";
-    private static final String TRUST_STORE_PATH = "TRUST_STORE_PATH";
 
     private final List<URI> configServerHosts;
     private final String environment;
@@ -56,19 +52,29 @@ public class Environment {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    public Environment() {
-        this(getConfigServerUrlsFromEnvironment(),
+    public Environment(ConfigServerConfig configServerConfig) {
+        this(createConfigServerUris(
+                configServerConfig.scheme(),
+                configServerConfig.hosts(),
+                configServerConfig.port()),
+
              getEnvironmentVariable(ENVIRONMENT),
              getEnvironmentVariable(REGION),
-             HostName.getLocalhost(),
+             Defaults.getDefaults().vespaHostname(),
              new InetAddressResolver(),
              new PathResolver(),
              getLogstashNodesFromEnvironment(),
              getEnvironmentVariable(COREDUMP_FEED_ENDPOINT),
 
-            // TODO: Make key store password and type configurable
-             getKeyStoreOptionsFromEnvironment(KEY_STORE_PATH, new char[0], "PKCS12"),
-             getKeyStoreOptionsFromEnvironment(TRUST_STORE_PATH, "changeit".toCharArray(), "JKS"));
+             createKeyStoreOptions(
+                     configServerConfig.keyStoreConfig().path(),
+                     configServerConfig.keyStoreConfig().password().toCharArray(),
+                     configServerConfig.keyStoreConfig().type().name()),
+             createKeyStoreOptions(
+                     configServerConfig.trustStoreConfig().path(),
+                     configServerConfig.trustStoreConfig().password().toCharArray(),
+                     configServerConfig.trustStoreConfig().type().name())
+        );
     }
 
     public Environment(List<URI> configServerHosts,
@@ -119,12 +125,8 @@ public class Environment {
         return getEnvironment() + "." + getRegion();
     }
 
-    private static List<URI> getConfigServerUrlsFromEnvironment() {
-        String scheme = getEnvironmentVariable(ENV_CONFIGSERVER_SCHEME);
-        String configServerHosts = getEnvironmentVariable(ENV_CONFIGSERVER_HOSTS);
-        String port = getEnvironmentVariable(ENV_CONFIGSERVER_PORT);
-
-        return Arrays.stream(configServerHosts.split("[,\\s]+"))
+    private static List<URI> createConfigServerUris(String scheme, List<String> configServerHosts, int port) {
+        return configServerHosts.stream()
                 .map(hostname -> URI.create(scheme + "://" + hostname + ":" + port))
                 .collect(Collectors.toList());
     }
@@ -137,8 +139,8 @@ public class Environment {
         return Arrays.asList(logstashNodes.split("[,\\s]+"));
     }
 
-    private static Optional<KeyStoreOptions> getKeyStoreOptionsFromEnvironment(String pathToKeyStore, char[] password, String type) {
-        return Optional.ofNullable(System.getenv(pathToKeyStore))
+    private static Optional<KeyStoreOptions> createKeyStoreOptions(String pathToKeyStore, char[] password, String type) {
+        return Optional.ofNullable(pathToKeyStore)
                 .filter(path -> !Strings.isNullOrEmpty(path))
                 .map(path -> new KeyStoreOptions(Paths.get(path), password, type));
     }

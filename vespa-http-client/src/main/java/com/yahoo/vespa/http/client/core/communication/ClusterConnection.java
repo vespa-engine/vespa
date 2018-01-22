@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Beta
 public class ClusterConnection implements AutoCloseable {
+
     private final OperationProcessor operationProcessor;
     private final List<IOThread> ioThreads = new ArrayList<>();
     private final int clusterId;

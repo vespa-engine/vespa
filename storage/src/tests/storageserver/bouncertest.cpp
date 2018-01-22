@@ -5,6 +5,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storage/storageserver/bouncer.h>
+#include <vespa/storage/storageserver/bouncer_metrics.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
@@ -122,6 +123,7 @@ BouncerTest::createDummyFeedMessage(api::Timestamp timestamp,
 void
 BouncerTest::testFutureTimestamp()
 {
+    CPPUNIT_ASSERT_EQUAL(uint64_t(0), _manager->metrics().clock_skew_aborts.getValue());
 
     // Fail when future timestamps (more than 5 seconds) are received.
     {
@@ -134,6 +136,7 @@ BouncerTest::testFutureTimestamp()
                              getResult().getResult());
         _upper->reset();
     }
+    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _manager->metrics().clock_skew_aborts.getValue());
 
     // Verify that 1 second clock skew is OK
     {
@@ -151,7 +154,7 @@ BouncerTest::testFutureTimestamp()
         CPPUNIT_ASSERT_EQUAL(1, (int)_lower->getNumCommands());
     }
 
-
+    CPPUNIT_ASSERT_EQUAL(uint64_t(1), _manager->metrics().clock_skew_aborts.getValue());
 }
 
 void

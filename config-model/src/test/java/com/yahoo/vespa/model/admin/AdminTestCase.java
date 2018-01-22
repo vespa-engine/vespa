@@ -270,7 +270,7 @@ public class AdminTestCase {
 
         Set<String> configIds = vespaModel.getConfigIds();
         // 1 logforwarder on each host
-        assertTrue(configIds.toString(), configIds.contains("admin/logforwarder.0"));
+        assertTrue(configIds.toString(), configIds.contains("hosts/myhost0/logforwarder"));
     }
 
     @Test

@@ -7,6 +7,7 @@ import com.yahoo.concurrent.classlock.ClassLocking;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.vespa.hosted.node.admin.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.component.AdminComponent;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminMain;
 
@@ -15,14 +16,11 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
 
     @Inject
     public NodeAdminProvider(ComponentRegistry<AdminComponent> adminRegistry,
+                             ConfigServerConfig configServerConfig,
                              Docker docker,
                              MetricReceiverWrapper metricReceiver,
                              ClassLocking classLocking) {
-        nodeAdminMain = new NodeAdminMain(
-                adminRegistry,
-                docker,
-                metricReceiver,
-                classLocking);
+        nodeAdminMain = new NodeAdminMain(adminRegistry, configServerConfig, docker, metricReceiver, classLocking);
         nodeAdminMain.start();
     }
 
