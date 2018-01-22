@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Contains mappings of TensorFlow operations to the corresponding Vespa tensor functions.
@@ -319,10 +320,12 @@ class OperationMapper {
         for (Iterator<Tensor.Cell> cellIterator = shape.cellIterator(); cellIterator.hasNext();) {
             Tensor.Cell cell = cellIterator.next();
             int size = cell.getValue().intValue();
+            if (size < 0) {
+                size = -1 * (int)shape.reduce(Reduce.Aggregator.prod).asDouble() / tensorSize(inputType).intValue();
+            }
             outputTypeBuilder.indexed(String.format("temp_%d", dimensionIndex), size);
             dimensionIndex++;
         }
-
         return reshape(inputFunction, inputType, outputTypeBuilder.build());
     }
 
@@ -403,7 +406,6 @@ class OperationMapper {
             @Override public double applyAsDouble(double a, double b) { return a * (1.0 - b); }
             @Override public String toString() { return "f(a,b)(a * (1-b))"; }
         });
-
         TensorFunction outputFunction = new Join(xCond, yCond, ScalarFunctions.add());
         return new TypedTensorFunction(x.type(), outputFunction);
     }
