@@ -225,7 +225,7 @@ public class DockerOperationsImpl implements DockerOperations {
      * IPv6 gateway in containers connected to more than one docker network
      *
      * For nat:
-     * Setup iptables NAT rules and add entry in /etc/hosts for node-admin (resolve container hostnames to private ip)
+     * Setup iptables NAT rules to map the hosts public ips to the containers
      */
     private void setupContainerNetworkConnectivity(ContainerName containerName, InetAddress externalAddress) throws IOException {
         if (docker.networkNATed()) {

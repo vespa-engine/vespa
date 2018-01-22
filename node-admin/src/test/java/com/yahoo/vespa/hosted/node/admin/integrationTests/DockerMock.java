@@ -217,7 +217,7 @@ public class DockerMock implements Docker {
         public CreateContainerCommand withDropCapability(String capabilityName) {
             return this;
         }
-        
+
         @Override
         public void create() {
 
