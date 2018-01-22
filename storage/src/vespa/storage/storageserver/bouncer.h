@@ -23,6 +23,8 @@ namespace config { class ConfigUri; }
 
 namespace storage {
 
+class BouncerMetrics;
+
 class Bouncer : public StorageLink,
                 private StateListener,
                 private config::IFetcherCallback<vespa::config::content::core::StorBouncerConfig>
@@ -33,16 +35,18 @@ class Bouncer : public StorageLink,
     lib::NodeState _nodeState;
     const lib::State* _clusterState;
     config::ConfigFetcher _configFetcher;
+    std::unique_ptr<BouncerMetrics> _metrics;
 
 public:
-    explicit Bouncer(StorageComponentRegister& compReg,
-                     const config::ConfigUri & configUri);
-    ~Bouncer();
+    Bouncer(StorageComponentRegister& compReg, const config::ConfigUri & configUri);
+    ~Bouncer() override;
 
     void print(std::ostream& out, bool verbose,
                const std::string& indent) const override;
 
     void configure(std::unique_ptr<vespa::config::content::core::StorBouncerConfig> config) override;
+
+    const BouncerMetrics& metrics() const noexcept;
 
 private:
     void validateConfig(
