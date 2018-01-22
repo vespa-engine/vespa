@@ -1,8 +1,8 @@
+# Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-# Common imports
-import numpy as np
 import tensorflow as tf
 
+from functools import partial
 from tensorflow.examples.tutorials.mnist import input_data
 from datetime import datetime
 
@@ -23,32 +23,29 @@ n_hidden3 = 40
 n_outputs = 10
 
 learning_rate = 0.01
-n_epochs = 40
-batch_size = 50
+n_epochs = 20
+batch_size = 200
+batch_norm_momentum = 0.9
 
 X = tf.placeholder(tf.float32, shape=(None, n_inputs), name="X")
 y = tf.placeholder(tf.int64, shape=(None), name="y")
+training = tf.placeholder_with_default(False, shape=(), name='training')
 
-
-def neuron_layer(X, n_neurons, name, activation=None):
-    with tf.name_scope(name):
-        n_inputs = int(X.get_shape()[1])
-        stddev = 2 / np.sqrt(n_inputs)
-        init = tf.truncated_normal((n_inputs, n_neurons), stddev=stddev)
-        W = tf.Variable(init, name="weights")
-        b = tf.Variable(tf.zeros([n_neurons]), name="bias")
-        Z = tf.matmul(X, W) + b
-        if activation is not None:
-            return activation(Z)
-        else:
-            return Z
-
+def leaky_relu(z, name=None):
+    return tf.maximum(0.01 * z, z, name=name)
 
 with tf.name_scope("dnn"):
-    hidden1 = neuron_layer(X, n_hidden1, name="hidden1", activation=tf.nn.elu)
-    hidden2 = neuron_layer(hidden1, n_hidden2, name="hidden2", activation=tf.nn.relu)
-    hidden3 = neuron_layer(hidden2, n_hidden3, name="hidden3", activation=tf.nn.sigmoid)
-    logits = neuron_layer(hidden3, n_outputs, name="outputs") #, activation=tf.nn.sigmoid)
+    he_init = tf.contrib.layers.variance_scaling_initializer()
+
+    batch_norm_layer = partial(tf.layers.batch_normalization, training=training, momentum=batch_norm_momentum)
+    dense_layer = partial(tf.layers.dense, kernel_initializer=he_init)
+
+    hidden1 = dense_layer(X, n_hidden1, name="hidden1", activation=leaky_relu)
+    bn1 = tf.nn.elu(batch_norm_layer(hidden1))
+    hidden2 = dense_layer(bn1, n_hidden2, name="hidden2", activation=tf.nn.elu)
+    bn2 = tf.nn.elu(batch_norm_layer(hidden2))
+    logits_before_bn = dense_layer(bn2, n_outputs, name="outputs", activation=tf.nn.selu)
+    logits = batch_norm_layer(logits_before_bn)
 
 with tf.name_scope("loss"):
     xentropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y, logits=logits)
@@ -65,21 +62,23 @@ with tf.name_scope("eval"):
 init = tf.global_variables_initializer()
 accuracy_summary = tf.summary.scalar('Accuracy', accuracy)
 file_writer = tf.summary.FileWriter(logdir, tf.get_default_graph())
+extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
 
 with tf.Session() as sess:
     init.run()
     for epoch in range(n_epochs):
         for iteration in range(mnist.train.num_examples // batch_size):
             X_batch, y_batch = mnist.train.next_batch(batch_size)
-            sess.run(training_op, feed_dict={X: X_batch, y: y_batch})
-        acc_train = accuracy.eval(feed_dict={X: X_batch, y: y_batch})
-        acc_val = accuracy.eval(feed_dict={X: mnist.validation.images,
-                                            y: mnist.validation.labels})
-        print(epoch, "Train accuracy:", acc_train, "Val accuracy:", acc_val)
+            sess.run([training_op, extra_update_ops],
+                     feed_dict={training: True, X: X_batch, y: y_batch})
+
+        accuracy_val = accuracy.eval(feed_dict={X: mnist.test.images,
+                                                y: mnist.test.labels})
+        print(epoch, "Test accuracy:", accuracy_val)
 
         # Save summary for tensorboard
         summary_str = accuracy_summary.eval(feed_dict={X: mnist.validation.images,
-                                            y: mnist.validation.labels})
+                                                       y: mnist.validation.labels})
         file_writer.add_summary(summary_str, epoch)
 
     export_path = "saved"
@@ -92,4 +91,5 @@ with tf.Session() as sess:
     builder.save(as_text=True)
 
 file_writer.close()
+
 
