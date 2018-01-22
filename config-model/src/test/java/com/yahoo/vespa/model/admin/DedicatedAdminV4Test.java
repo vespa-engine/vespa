@@ -170,12 +170,12 @@ public class DedicatedAdminV4Test {
 
         Set<String> configIds = model.getConfigIds();
         // 1 logforwarder on each host
-        IntStream.of(0, 1, 2).forEach(i -> assertTrue(configIds.toString(), configIds.contains("admin/logforwarder." + i)));
+        IntStream.of(0, 1, 2).forEach(i -> assertTrue(configIds.toString(), configIds.contains("hosts/myhost"+i+"/logforwarder")));
 
         // First forwarder
         {
             LogforwarderConfig.Builder builder = new LogforwarderConfig.Builder();
-            model.getConfig(builder, "admin/logforwarder.0");
+            model.getConfig(builder, "hosts/myhost0/logforwarder");
             LogforwarderConfig config = new LogforwarderConfig(builder);
 
             assertEquals("foo:123", config.deploymentServer());
@@ -186,7 +186,7 @@ public class DedicatedAdminV4Test {
         // Other host's forwarder
         {
             LogforwarderConfig.Builder builder = new LogforwarderConfig.Builder();
-            model.getConfig(builder, "admin/logforwarder.2");
+            model.getConfig(builder, "hosts/myhost2/logforwarder");
             LogforwarderConfig config = new LogforwarderConfig(builder);
 
             assertEquals("foo:123", config.deploymentServer());

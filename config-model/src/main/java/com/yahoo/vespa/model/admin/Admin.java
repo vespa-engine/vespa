@@ -48,6 +48,11 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     private final List<Slobrok> slobroks = new ArrayList<>();
     private Configserver defaultConfigserver;
     private Logserver logserver;
+    private LogForwarder.Config logForwarderConfig = null;
+
+    public void setLogForwarderConfig(LogForwarder.Config cfg) {
+        this.logForwarderConfig = cfg;
+    }
 
     /**
      * The single cluster controller cluster shared by all content clusters by default when not multitenant.
@@ -186,12 +191,19 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         addLogd(host);
         addConfigProxy(host);
         addFileDistribution(host);
+        if (logForwarderConfig != null) {
+            addLogForwarder(host);
+        }
     }
 
     private void addConfigSentinel(HostResource host, ApplicationId applicationId, Zone zone) {
         ConfigSentinel configSentinel = new ConfigSentinel(host.getHost(), applicationId, zone);
         addAndInitializeService(host, configSentinel);
         host.getHost().setConfigSentinel(configSentinel);
+    }
+
+    private void addLogForwarder(HostResource host) {
+        addAndInitializeService(host, new LogForwarder(host.getHost(), logForwarderConfig));
     }
 
     private void addLogd(HostResource host) {
