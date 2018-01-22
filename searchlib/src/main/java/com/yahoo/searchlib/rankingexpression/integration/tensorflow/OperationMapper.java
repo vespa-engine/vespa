@@ -281,10 +281,14 @@ class OperationMapper {
         if (axis.type().rank() != 0) {
             throw new IllegalArgumentException("Axis argument to ExpandDims must be a scalar");
         }
-        int dimensionToInsert = (int)axis.asDouble();
 
         TensorFunction inputFunction = arguments.get(0).function();
         TensorType inputType = arguments.get(0).type();
+
+        int dimensionToInsert = (int)axis.asDouble();
+        if (dimensionToInsert < 0) {
+            dimensionToInsert = inputType.dimensions().size() - dimensionToInsert;
+        }
 
         TensorType.Builder outputTypeBuilder = new TensorType.Builder();
         int dimensionIndex = 0;
@@ -294,8 +298,8 @@ class OperationMapper {
             if (i == dimensionToInsert) {
                 size = 1L;
             } else {
-                TensorType.Dimension dimension = inputType.dimensions().get(dimensionIndex);
-                size = dimension.size().orElseThrow(() -> new IllegalArgumentException("Dimension has no size"));
+                size = dimensionSize(inputType.dimensions().get(dimensionIndex));
+                dimensionIndex++;
             }
             outputTypeBuilder.indexed(name, size);
         }
