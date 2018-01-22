@@ -581,7 +581,7 @@ struct TensorAttrFixtureBase : FixtureBase<useReadGuard> {
             {   {DocId(2), dummy_gid(3), DocId(3), tensor1 },
                 {DocId(4), dummy_gid(7), DocId(7), tensor2 } };
         this->template reset_with_tensor_reference_mappings<TensorAttribute, std::shared_ptr<Tensor>>(
-                ValueType::from_spec(dense ? "tensor(x[2])" : "tensor(x[})"),
+                ValueType::from_spec(dense ? "tensor(x[2])" : "tensor(x{})"),
                 mappings);
     }
     Tensor::UP getTensor(DocId docId) {
