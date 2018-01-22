@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.component.AdminComponent;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminMain;
-import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 
 public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
     private final NodeAdminMain nodeAdminMain;
@@ -19,7 +18,11 @@ public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
                              Docker docker,
                              MetricReceiverWrapper metricReceiver,
                              ClassLocking classLocking) {
-        nodeAdminMain = new NodeAdminMain(adminRegistry, docker, metricReceiver, classLocking);
+        nodeAdminMain = new NodeAdminMain(
+                adminRegistry,
+                docker,
+                metricReceiver,
+                classLocking);
         nodeAdminMain.start();
     }
 

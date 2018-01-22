@@ -67,6 +67,7 @@ Manage Vespa standalone jdisc container service.
 Options:
   -u USER      Run as USER. Overrides any VESPA_USER environment variable.
   -s SERVICE   The service name.
+  -- ARGS...   Pass the rest of the arguments (ARGS) to the Java invocation
 EOF
 
     exit 1
@@ -89,14 +90,17 @@ FixDataDirectory() {
 StartCommand() {
     local service="$1"
     shift
-
-    if (( $# > 0 )); then
-	Fail "Too many arguments"
-    fi
+    local -a jvm_arguments=("$@")
 
     local service_regex='^[0-9a-zA-Z_-]+$'
     if ! [[ "$service" =~ $service_regex ]]; then
 	Fail "Service must match regex '$service_regex'"
+    fi
+
+    local pidfile="$VESPA_HOME/var/run/$service.pid"
+    if test -r "$pidfile"; then
+	echo "$service is already running as PID $(< "$pidfile") according to $pidfile"
+	return
     fi
 
     # common setup
@@ -135,6 +139,7 @@ StartCommand() {
     FixDataDirectory "$bundlecachedir"
 
     java \
+	"${jvm_arguments[@]}" \
         -Xms128m -Xmx2048m \
         -XX:+PreserveFramePointer \
         -XX:+HeapDumpOnOutOfMemoryError \
@@ -267,6 +272,7 @@ Main() {
 
     local service="standalone/container"
     local user="$VESPA_USER"
+    local -a jvm_arguments=()
 
     while (( $# > 0 )); do
 	case "$1" in
@@ -278,6 +284,11 @@ Main() {
 	    --user|-u)
 		user="$2"
 		shift 2
+		;;
+	    --)
+		shift
+		jvm_arguments=("$@")
+		break
 		;;
 	    *) break ;;
 	esac
@@ -300,7 +311,7 @@ Main() {
 
     case "$command" in
 	help) Usage ;;
-	start) StartCommand "$service" "$@" ;;
+	start) StartCommand "$service" "${jvm_arguments[@]}" ;;
 	stop) StopCommand "$user" "$service" "$@" ;;
 	*) Fail "Unknown command '$command'" ;;
     esac

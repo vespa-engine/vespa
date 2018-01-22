@@ -15,7 +15,8 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
-import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
@@ -77,7 +78,7 @@ public class RunInContainerTest {
 
     @Before
     public void startContainer() throws Exception {
-        // To test the initial NodeAdminStateUpdater convergence towards RESUME, orchestrator should
+        // To test the initial NodeAdminStateUpdaterImpl convergence towards RESUME, orchestrator should
         // deny permission to resume for parent host, otherwise it'll converge to RESUME before REST
         // handler comes up
         doThrow(new RuntimeException()).when(orchestratorMock).resume(parentHostname);
@@ -241,7 +242,7 @@ public class RunInContainerTest {
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, dockerOperationsMock,
                         storageMaintainer, aclMaintainer, environment, Clock.systemUTC(), NODE_AGENT_SCAN_INTERVAL);
         private final NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperationsMock, nodeAgentFactory, storageMaintainer, aclMaintainer, mr, Clock.systemUTC());
-        private final NodeAdminStateUpdater nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepositoryMock,
+        private final NodeAdminStateUpdaterImpl nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(nodeRepositoryMock,
                 orchestratorMock, storageMaintainer, nodeAdmin, "localhost.test.yahoo.com", Clock.systemUTC(), NODE_ADMIN_CONVERGE_STATE_INTERVAL, new ClassLocking());
 
         public NodeAdminProviderWithMocks() {
@@ -249,7 +250,7 @@ public class RunInContainerTest {
         }
 
         @Override
-        public NodeAdminStateUpdater get() {
+        public NodeAdminStateUpdaterImpl get() {
             return nodeAdminStateUpdater;
         }
 

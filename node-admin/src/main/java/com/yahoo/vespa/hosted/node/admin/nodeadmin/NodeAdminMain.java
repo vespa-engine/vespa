@@ -9,11 +9,9 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.component.AdminComponent;
+import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -34,9 +32,7 @@ public class NodeAdminMain implements AutoCloseable {
     private final MetricReceiverWrapper metricReceiver;
     private final ClassLocking classLocking;
 
-    private List<AdminComponent> enabledComponents = new ArrayList<>();
-
-    private Optional<DockerAdminComponent> dockerAdmin = Optional.empty();
+    private AdminComponent mainAdminComponent = null;
 
     public NodeAdminMain(ComponentRegistry<AdminComponent> adminRegistry,
                          Docker docker,
@@ -55,53 +51,46 @@ public class NodeAdminMain implements AutoCloseable {
 
     public void start() {
         NodeAdminConfig config = getConfig();
-
-        if (config.components.isEmpty()) {
-            dockerAdmin = Optional.of(new DockerAdminComponent(
-                    config, docker, metricReceiver, classLocking));
-            enable(dockerAdmin.get());
-        } else {
-            logger.log(LogLevel.INFO, () -> {
-                String registeredComponentsList = adminRegistry
-                        .allComponentsById().keySet().stream()
-                        .map(ComponentId::stringValue)
-                        .collect(Collectors.joining(", "));
-
-                String requestedComponentsList = config.components.stream()
-                        .collect(Collectors.joining(", "));
-
-                return String.format(
-                        "Components registered = '%s', enabled = '%s'",
-                        registeredComponentsList,
-                        requestedComponentsList);
-            });
-
-            for (String componentSpecificationString : config.components) {
-                AdminComponent component =
-                        adminRegistry.getComponent(componentSpecificationString);
-                if (component == null) {
-                    throw new IllegalArgumentException("There is no component named '" +
-                            componentSpecificationString + "'");
-                }
-                enable(component);
-            }
-        }
+        mainAdminComponent = selectAdminComponent(config);
+        mainAdminComponent.enable();
     }
 
-    private void enable(AdminComponent component) {
-        component.enable();
-        enabledComponents.add(component);
+    private AdminComponent selectAdminComponent(NodeAdminConfig config) {
+        if (config.mainComponent == null) {
+            return new DockerAdminComponent(config, docker, metricReceiver, classLocking);
+        }
+
+        logger.log(LogLevel.INFO, () -> {
+            String registeredComponentsList = adminRegistry
+                    .allComponentsById().keySet().stream()
+                    .map(ComponentId::stringValue)
+                    .collect(Collectors.joining(", "));
+
+            return String.format(
+                    "Components registered = '%s', enabled = '%s'",
+                    registeredComponentsList,
+                    config.mainComponent);
+        });
+
+        AdminComponent component = adminRegistry.getComponent(config.mainComponent);
+        if (component == null) {
+            throw new IllegalArgumentException("There is no component named '" +
+                    config.mainComponent + "'");
+        }
+
+        return component;
     }
 
     @Override
     public void close() {
-        int i = enabledComponents.size();
-        while (i --> 0) {
-            enabledComponents.remove(i).disable();
+        if (mainAdminComponent != null) {
+            mainAdminComponent.disable();
+            mainAdminComponent = null;
         }
     }
 
     public NodeAdminStateUpdater getNodeAdminStateUpdater() {
-        return dockerAdmin.get().getNodeAdminStateUpdater();
+        assert mainAdminComponent != null : "start() hasn't been called yet";
+        return mainAdminComponent.getNodeAdminStateUpdater();
     }
 }

@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorImpl;
+import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 
@@ -39,7 +40,7 @@ public class DockerAdminComponent implements AdminComponent {
 
     private ConfigServerHttpRequestExecutor requestExecutor;
 
-    private Optional<NodeAdminStateUpdater> nodeAdminStateUpdater = Optional.empty();
+    private Optional<NodeAdminStateUpdaterImpl> nodeAdminStateUpdater = Optional.empty();
 
     public DockerAdminComponent(NodeAdminConfig config,
                                 Docker docker,
@@ -104,7 +105,7 @@ public class DockerAdminComponent implements AdminComponent {
                 metricReceiver,
                 clock);
 
-        nodeAdminStateUpdater = Optional.of(new NodeAdminStateUpdater(
+        nodeAdminStateUpdater = Optional.of(new NodeAdminStateUpdaterImpl(
                 nodeRepository,
                 orchestrator,
                 storageMaintainer,
@@ -129,6 +130,7 @@ public class DockerAdminComponent implements AdminComponent {
         // TODO: Also stop docker
     }
 
+    @Override
     public NodeAdminStateUpdater getNodeAdminStateUpdater() {
         return nodeAdminStateUpdater.get();
     }
