@@ -59,17 +59,6 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  */
 public class FilesApplicationPackage implements ApplicationPackage {
 
-    /**
-     * The name of the subdirectory (below the original application package root)
-     * where a preprocessed version of this application package is stored.
-     * As it happens, the config model is first created with an application package in this subdirectory,
-     * and later used backed by an application package which is not in this subdirectory.
-     * To enable model code to correct for this, this constant must be publicly known.
-     *
-     * All of this stuff is Very Unfortunate and should be fixed. -Jon
-     */
-    public static final String preprocessed = ".preprocessed";
-
     private static final Logger log = Logger.getLogger(FilesApplicationPackage.class.getName());
     private static final String META_FILE_NAME = ".applicationMetaData";
 
@@ -97,7 +86,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
      * @return an Application package instance
      */
     public static FilesApplicationPackage fromFile(File appDir, boolean includeSourceFiles) {
-        return new Builder(appDir).preprocessedDir(new File(appDir, preprocessed))
+        return new Builder(appDir).preprocessedDir(new File(appDir, ".preprocessed"))
                                   .includeSourceFiles(includeSourceFiles)
                                   .build();
     }
@@ -676,7 +665,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
     @Override
     public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException, TransformerException, ParserConfigurationException, SAXException {
         IOUtils.recursiveDeleteDir(preprocessedDir);
-        IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> ! name.equals(preprocessed) &&
+        IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> ! name.equals(".preprocessed") &&
                                                                                          ! name.equals(SERVICES) &&
                                                                                          ! name.equals(HOSTS) &&
                                                                                          ! name.equals(CONFIG_DEFINITIONS_DIR));
@@ -797,7 +786,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         }
 
         public FilesApplicationPackage build() {
-            return new FilesApplicationPackage(appDir, preprocessedDir.orElse(new File(appDir, preprocessed)),
+            return new FilesApplicationPackage(appDir, preprocessedDir.orElse(new File(appDir, ".preprocessed")),
                                                metaData.orElse(readMetaData(appDir)), includeSourceFiles);
         }
 

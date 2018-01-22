@@ -4,7 +4,6 @@ package com.yahoo.searchdefinition.expressiontransforms;
 import com.google.common.base.Joiner;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.RankProfile;
@@ -255,9 +254,13 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             // "tbf" ending for "typed binary format" - recognized by the nodes receiving the file:
             Path constantPath = constantsPath.append(name + ".tbf");
             Path constantPathCorrected = constantPath;
-            if (application.getFileReference(Path.fromString("")).getAbsolutePath().endsWith(FilesApplicationPackage.preprocessed)
-                && ! constantPath.elements().contains(FilesApplicationPackage.preprocessed)) {
-                constantPathCorrected = Path.fromString(FilesApplicationPackage.preprocessed).append(constantPath);
+            if (application.getFileReference(Path.fromString("")).getAbsolutePath().endsWith(".preprocessed")) {
+                log.info("Correcting TensorFlow constant path by prepending .preprocessed - alternative 1");
+                constantPathCorrected = Path.fromString(".preprocessed").append(constantPath);
+            }
+            else if (application.getFileReference(Path.fromString("")).getAbsolutePath().endsWith(".preprocessed")) {
+                log.info("Correcting TensorFlow constant path by prepending .preprocessed - alternative 2");
+                constantPathCorrected = Path.fromString(".preprocessed").append(constantPath);
             }
 
             // Remember the constant in a file we replicate in ZooKeeper
