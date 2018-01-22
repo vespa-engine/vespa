@@ -114,6 +114,15 @@ std::shared_ptr<AttrVecType> create_wset_attribute(BasicType type,
     return create_typed_attribute<AttrVecType>(type, CollectionType::WSET, fast_search, FilterConfig::Default, name);
 }
 
+template<typename AttrVecType>
+std::shared_ptr<AttrVecType> create_tensor_attribute(const vespalib::eval::ValueType &tensorType,
+                                                     vespalib::stringref name = "parent") {
+    Config cfg(BasicType::Type::TENSOR, CollectionType::Type::SINGLE);
+    cfg.setTensorType(tensorType);
+    return std::dynamic_pointer_cast<AttrVecType>(
+            AttributeFactory::createAttribute(name, std::move(cfg)));
+}
+
 template<typename VectorType>
 void add_n_docs_with_undefined_values(VectorType &vec, size_t n) {
     vec.addDocs(n);
@@ -245,6 +254,15 @@ struct ImportedAttributeFixture {
             for (const auto &v : mapping._value_in_target_attr) {
                 ASSERT_TRUE(target_vec.append(mapping._to_lid, v.value(), v.weight()));
             }
+        });
+    }
+
+    template<typename AttrVecType, typename ValueType>
+    void reset_with_tensor_reference_mappings(const vespalib::eval::ValueType &tensorType,
+                                              const std::vector<LidToLidMapping<ValueType>> &mappings) {
+        reset_with_new_target_attr(create_tensor_attribute<AttrVecType>(tensorType));
+        set_up_and_map<AttrVecType>(mappings, [this](auto &target_vec, auto &mapping) {
+            target_vec.setTensor(mapping._to_lid, *mapping._value_in_target_attr);
         });
     }
 };
