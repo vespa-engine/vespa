@@ -16,6 +16,10 @@ class BitVectorSearchCache;
 class ImportedAttributeVector;
 class ReferenceAttribute;
 
+/*
+ * Factory class used to create proper imported attribute vector based
+ * on target attribute basic type.
+ */
 class ImportedAttributeVectorFactory {
 public:
     static std::shared_ptr<ImportedAttributeVector>
