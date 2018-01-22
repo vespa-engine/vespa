@@ -89,6 +89,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         store.writeConverted(expression);
 
         model.constants().forEach((k, v) -> transformConstant(store, profile, k, v));
+
         return expression.getRoot();
     }
 

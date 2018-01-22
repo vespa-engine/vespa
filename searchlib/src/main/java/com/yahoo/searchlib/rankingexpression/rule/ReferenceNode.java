@@ -72,7 +72,7 @@ public final class ReferenceNode extends CompositeNode {
             myArguments = null;
             myOutput = null;
         } else if (context.getFunction(myName) != null) {
-            // Replace this whole node with a reference to another script.
+            // Replace by the referenced expression
             ExpressionFunction function = context.getFunction(myName);
             if (function != null && myArguments != null && function.arguments().size() == myArguments.size() && myOutput == null) {
                 String myPath = name + this.arguments.expressions();

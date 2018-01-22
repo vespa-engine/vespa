@@ -139,7 +139,9 @@ public class TensorFunctionNode extends CompositeNode {
         final Deque<String> path;
         final CompositeNode parent;
 
-        public static final ExpressionNodeToStringContext empty = new ExpressionNodeToStringContext(null, null, null);
+        public static final ExpressionNodeToStringContext empty = new ExpressionNodeToStringContext(new SerializationContext(),
+                                                                                                    null,
+                                                                                                    null);
 
         public ExpressionNodeToStringContext(SerializationContext context, Deque<String> path, CompositeNode parent) {
             this.context = context;

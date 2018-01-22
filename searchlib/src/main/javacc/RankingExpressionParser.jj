@@ -242,7 +242,7 @@ ExpressionNode value() :
                    LOOKAHEAD(2) ret = ifExpression()                        |
                    LOOKAHEAD(4) ret = function()                            |
                    ret = feature()                                          |
-                   ret = queryFeature()                                     |
+                   ret = legacyQueryFeature()                               |
         ( <LBRACE> ret = expression() <RBRACE> { ret = new EmbracedNode(ret); } ) ) )
     {
         ret = not ? new NotNode(ret) : ret;
@@ -264,15 +264,6 @@ IfNode ifExpression() :
     }
 }
 
-ReferenceNode queryFeature() :
-{
-    String name;
-}
-{
-    ( <DOLLAR> name = identifier() )
-    { return new ReferenceNode("query", Arrays.asList((ExpressionNode)new NameNode(name)), null); }
-}
-
 ReferenceNode feature() :
 {
     List<ExpressionNode> args = null;
@@ -281,6 +272,16 @@ ReferenceNode feature() :
 {
     ( name = identifier() [ <LBRACE> args = args() <RBRACE> ] [ <DOT> out = outs() ] )
     { return new ReferenceNode(name, args, out); }
+}
+
+// Query features can be referenced as "$name" instead of "query(name)". TODO: Warn this is deprecated
+ReferenceNode legacyQueryFeature() :
+{
+    String name;
+}
+{
+    ( <DOLLAR> name = identifier() )
+    { return new ReferenceNode("query", Arrays.asList((ExpressionNode)new NameNode(name)), null); }
 }
 
 String outs() :
@@ -333,7 +334,7 @@ ExpressionNode arg() :
 {
     ( ret = constantPrimitive()                                          |
       LOOKAHEAD(2) ret = feature()                                       |
-      name = identifier()        { ret = new NameNode(name);       } )
+      name = identifier()              { ret = new NameNode(name);       } )
     { return ret; }
 }
 
@@ -342,7 +343,7 @@ ExpressionNode function() :
     ExpressionNode function;
 }
 {
-    ( function = scalarOrTensorFunction() | function = tensorFunction() )
+    ( LOOKAHEAD(2) function = scalarOrTensorFunction() | function = tensorFunction() )
     { return function; }
 }
 
@@ -717,7 +718,7 @@ String identifier() :
     Function func;
 }
 {
-    name = tensorFunctionName() { return name; }            |
+    LOOKAHEAD(2) name = tensorFunctionName() { return name; }            |
     func = unaryFunctionName()  { return func.toString(); } |
     func = binaryFunctionName() { return func.toString(); } |
     <IF>                        { return token.image; }     |
@@ -770,11 +771,25 @@ List<String> tagCommaLeadingList() :
 ConstantNode constantPrimitive() :
 {
     String sign = "";
+    String value;
 }
 {
     ( <SUB> { sign = "-";} ) ?
-    ( <INTEGER> | <FLOAT> | <STRING> )
-    { return new ConstantNode(Value.parse(sign + token.image),sign + token.image); }
+    ( <INTEGER> { value = token.image; } |
+      <FLOAT> { value = token.image; } |
+      value = stringPath() )
+    { return new ConstantNode(Value.parse(sign + value),sign + value); }
+}
+
+// Strings separated by "/"
+String stringPath() :
+{
+    StringBuilder b = new StringBuilder();
+}
+{
+    <STRING> { b.append(token.image); }
+    ( LOOKAHEAD(2) <DIV> <STRING> { b.append("/").append(token.image); } ) *
+    { return b.toString(); }
 }
 
 Value primitiveValue() :
