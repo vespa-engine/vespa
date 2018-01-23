@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 
 import java.time.Duration;
 import java.util.NoSuchElementException;
@@ -40,21 +41,24 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
 
     /** File an ownership issue with the owners of all applications we know about. */
     private void confirmApplicationOwnerships() {
-        for (Application application : controller().applications().asList())
-            if (application.id().instance().value().startsWith("default-pr") || application.productionDeployments().isEmpty())
-                store(null, application.id());
-            else
-                try {
-                    Tenant tenant = ownerOf(application.id());
-                    Optional<IssueId> ourIssueId = application.ownershipIssueId();
-                    ourIssueId = tenant.tenantType() == TenantType.USER
-                            ? ownershipIssues.confirmOwnership(ourIssueId, application.id(), userFor(tenant))
-                            : ownershipIssues.confirmOwnership(ourIssueId, application.id(), propertyIdFor(tenant));
-                    ourIssueId.ifPresent(issueId -> store(issueId, application.id()));
-                }
-                catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
-                    log.log(Level.WARNING, "Exception caught when attempting to file an issue for " + application.id(), e);
-                }
+        ApplicationList.from(controller().applications().asList())
+                .notPullRequest()
+                .hasProductionDeployment()
+                .asList()
+                .forEach(application -> {
+                    try {
+                        Tenant tenant = ownerOf(application.id());
+                        Optional<IssueId> ourIssueId = application.ownershipIssueId();
+                        ourIssueId = tenant.tenantType() == TenantType.USER
+                                ? ownershipIssues.confirmOwnership(ourIssueId, application.id(), userFor(tenant))
+                                : ownershipIssues.confirmOwnership(ourIssueId, application.id(), propertyIdFor(tenant));
+                        ourIssueId.ifPresent(issueId -> store(issueId, application.id()));
+                    }
+                    catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
+                        log.log(Level.WARNING, "Exception caught when attempting to file an issue for " + application.id(), e);
+                    }
+                });
+
     }
 
     /** Escalate ownership issues which have not been closed before a defined amount of time has passed. */
