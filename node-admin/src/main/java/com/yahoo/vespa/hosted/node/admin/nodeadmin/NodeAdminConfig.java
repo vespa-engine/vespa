@@ -7,18 +7,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class NodeAdminConfig {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     /**
-     * A list of components to enable instead of the default.
+     * If null, the default admin component will be used.
      */
-    @JsonProperty("components")
-    public List<String> components = new ArrayList<>();
+    @JsonProperty("main-component")
+    public String mainComponent = null;
 
     public enum Mode {
         aws_tenant,

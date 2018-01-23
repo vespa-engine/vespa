@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
+import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.util.HttpException;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -32,16 +33,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.RESUMED;
-import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN;
-import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.TRANSITIONING;
+import static com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater.State.RESUMED;
+import static com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN;
+import static com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater.State.TRANSITIONING;
 
 /**
  * Pulls information from node repository and forwards containers to run to node admin.
  *
  * @author dybis, stiankri
  */
-public class NodeAdminStateUpdater {
+public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     static final Duration FREEZE_CONVERGENCE_TIMEOUT = Duration.ofMinutes(5);
 
     private final AtomicBoolean terminated = new AtomicBoolean(false);
@@ -67,7 +68,7 @@ public class NodeAdminStateUpdater {
     private Optional<ClassLock> classLock;
     private Instant lastTick;
 
-    public NodeAdminStateUpdater(
+    public NodeAdminStateUpdaterImpl(
             NodeRepository nodeRepository,
             Orchestrator orchestrator,
             StorageMaintainer storageMaintainer,
@@ -111,8 +112,7 @@ public class NodeAdminStateUpdater {
         return this.getClass().getSimpleName() + "@" + Integer.toString(System.identityHashCode(this));
     }
 
-    public enum State { TRANSITIONING, RESUMED, SUSPENDED_NODE_ADMIN, SUSPENDED}
-
+    @Override
     public Map<String, Object> getDebugPage() {
         Map<String, Object> debug = new LinkedHashMap<>();
         synchronized (monitor) {
@@ -142,6 +142,7 @@ public class NodeAdminStateUpdater {
         }
     }
 
+    @Override
     public boolean setResumeStateAndCheckIfResumed(State wantedState) {
         synchronized (monitor) {
             if (this.wantedState != wantedState) {
@@ -309,7 +310,7 @@ public class NodeAdminStateUpdater {
 
         classLocking.interrupt();
 
-        // First we need to stop NodeAdminStateUpdater thread to make sure no new NodeAgents are spawned
+        // First we need to stop NodeAdminStateUpdaterImpl thread to make sure no new NodeAgents are spawned
         signalWorkToBeDone();
         specVerifierScheduler.shutdown();
 
