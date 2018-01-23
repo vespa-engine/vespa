@@ -7,9 +7,10 @@ import com.yahoo.concurrent.classlock.ClassLocking;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.component.AdminComponent;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminMain;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.ConfigServerConfig;
 
 public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
     private final NodeAdminMain nodeAdminMain;

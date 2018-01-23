@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
-import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
@@ -40,7 +40,7 @@ public class DockerTester implements AutoCloseable {
     final CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
     final Docker dockerMock = new DockerMock(callOrderVerifier);
     final NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
-    final NodeAdminStateUpdaterImpl nodeAdminStateUpdater;
+    final NodeAdminStateUpdater nodeAdminStateUpdater;
     final NodeAdmin nodeAdmin;
     private final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
 
@@ -66,7 +66,7 @@ public class DockerTester implements AutoCloseable {
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock,
                 orchestratorMock, dockerOperations, storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL);
         nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer, mr, Clock.systemUTC());
-        nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(nodeRepositoryMock, orchestratorMock, storageMaintainer,
+        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepositoryMock, orchestratorMock, storageMaintainer,
                 nodeAdmin, "basehostname", clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL, new ClassLocking());
         nodeAdminStateUpdater.start();
     }

@@ -67,19 +67,16 @@ EOF
     exit 1
 }
 
-if (( $# == 0 )); then
+if (( $# != 1 )); then
     Usage
 fi
 
-command="$1"
-shift
-
-case "$command" in
+case "$1" in
     start)
-	"$VESPA_HOME"/libexec/vespa/standalone-container.sh start -s node-admin -u root "$@"
+	"$VESPA_HOME"/libexec/vespa/standalone-container.sh start -s node-admin -u root
 	;;
     stop)
-	"$VESPA_HOME"/libexec/vespa/standalone-container.sh stop -s node-admin -u root "$@"
+	"$VESPA_HOME"/libexec/vespa/standalone-container.sh stop -s node-admin -u root
 	;;
     *) Usage ;;
 esac

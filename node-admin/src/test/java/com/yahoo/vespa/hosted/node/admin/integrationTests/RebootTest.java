@@ -5,8 +5,7 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
-import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
-import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -42,7 +41,7 @@ public class RebootTest {
                     "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
                     "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=null,  dockerImage=dockerImage, vespaVersion='null'}");
 
-            NodeAdminStateUpdaterImpl updater = dockerTester.nodeAdminStateUpdater;
+            NodeAdminStateUpdater updater = dockerTester.nodeAdminStateUpdater;
             assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED),
                        is(Optional.of("Not all node agents are frozen.")));
 
