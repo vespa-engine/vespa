@@ -24,6 +24,7 @@ LOG_SETUP("attribute_manager_test");
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
@@ -58,6 +59,7 @@ using search::attribute::BasicType;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::attribute::ImportedAttributeVector;
+using search::attribute::ImportedAttributeVectorFactory;
 using search::attribute::ReferenceAttribute;
 using search::attribute::test::MockGidToLidMapperFactory;
 using search::index::DummyFileHeaderContext;
@@ -137,7 +139,7 @@ struct ImportedAttributesRepoBuilder {
         refAttr->setGidToLidMapperFactory(std::make_shared<MockGidToLidMapperFactory>());
         auto targetAttr = search::AttributeFactory::createAttribute(name + "_target", INT32_SINGLE);
         auto documentMetaStore = std::shared_ptr<search::IDocumentMetaStoreContext>();
-        auto importedAttr = std::make_shared<ImportedAttributeVector>(name, refAttr, targetAttr, documentMetaStore, false);
+        auto importedAttr = ImportedAttributeVectorFactory::create(name, refAttr, targetAttr, documentMetaStore, false);
         _repo->add(name, importedAttr);
     }
     ImportedAttributesRepo::UP build() {
