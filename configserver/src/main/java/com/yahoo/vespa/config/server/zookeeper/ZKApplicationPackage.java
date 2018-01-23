@@ -261,6 +261,8 @@ public class ZKApplicationPackage implements ApplicationPackage {
     @Override
     public File getFileReference(Path pathRelativeToAppDir) {
         String fileName = liveApp.getData(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + pathRelativeToAppDir.getRelative());
+        if (fileName == null)
+            return new File(pathRelativeToAppDir.getRelative()); // File does not exist: Manufacture a non-existing file
         return new File(fileName);
     }
 
