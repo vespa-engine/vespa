@@ -4,8 +4,6 @@ package com.yahoo.jdisc;
 import com.google.inject.ImplementedBy;
 import com.yahoo.jdisc.core.SystemTimer;
 
-import java.time.Instant;
-
 /**
  * <p>This class provides access to the current time in milliseconds, as viewed by the {@link Container}. Inject an
  * instance of this class into any component that needs to access time, instead of using
@@ -29,10 +27,4 @@ public interface Timer {
      */
     long currentTimeMillis();
 
-    /**
-     * Convenience method for getting an java.util.Instance from currentTimeMillis().
-     */
-    default Instant currentTime() {
-        return Instant.ofEpochMilli(currentTimeMillis());
-    }
 }
