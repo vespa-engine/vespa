@@ -585,7 +585,8 @@ struct TensorAttrFixtureBase : FixtureBase<useReadGuard> {
                 mappings);
     }
     Tensor::UP getTensor(DocId docId) {
-        const ITensorAttribute & tensorAttr = dynamic_cast<const ITensorAttribute &>(*this->get_imported_attr());
+        auto imp_attr = this->get_imported_attr();
+        const ITensorAttribute & tensorAttr = dynamic_cast<const ITensorAttribute &>(*imp_attr);
         return tensorAttr.getTensor(docId);
     }
     void assertNoTensor(DocId docId) {
