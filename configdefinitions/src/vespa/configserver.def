@@ -27,7 +27,7 @@ payloadCompressionType enum { UNCOMPRESSED, LZ4 } default=LZ4
 serverId string default="localhost"
 hostedVespa bool default=false
 numParallelTenantLoaders int default=4
-zookeeperLocalhostAffinity bool default=false
+zookeeperLocalhostAffinity bool default=true
 
 # Zone information
 environment string default="prod"
