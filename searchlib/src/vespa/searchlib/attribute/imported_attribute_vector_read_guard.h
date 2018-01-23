@@ -26,7 +26,6 @@ class ImportedAttributeVectorReadGuard : public ImportedAttributeVector
     AttributeEnumGuard                  _target_attribute_enum_guard;
     std::unique_ptr<IGidToLidMapper>    _mapper;
 
-protected:
     uint32_t getReferencedLid(uint32_t lid) const {
         return _referencedLids[lid];
     }

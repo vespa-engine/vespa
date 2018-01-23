@@ -3,20 +3,6 @@
 #include <vespa/searchlib/test/imported_attribute_fixture.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
-#include <vespa/searchlib/tensor/i_tensor_attribute.h>
-#include <vespa/searchlib/tensor/tensor_attribute.h>
-#include <vespa/eval/tensor/tensor_factory.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/default_tensor.h>
-
-using vespalib::eval::ValueType;
-using vespalib::tensor::Tensor;
-using vespalib::tensor::TensorCells;
-using vespalib::tensor::DenseTensorCells;
-using vespalib::tensor::TensorDimensions;
-using vespalib::tensor::TensorFactory;
-using search::tensor::TensorAttribute;
-using search::tensor::ITensorAttribute;
 
 namespace search {
 namespace attribute {
@@ -546,89 +532,6 @@ TEST("onSerializeForDescendingSort() is forwarded with remapped LID to target ve
                     SerializeFixture<SingleStringAttrFixture>>());
     TEST_DO(check_onSerializeForDescendingSort_is_forwarded_with_remapped_lid<
                     SerializeFixture<ReadGuardSingleStringAttrFixture>>());
-}
-
-template <bool useReadGuard = false>
-struct TensorAttrFixtureBase : FixtureBase<useReadGuard> {
-    vespalib::tensor::DefaultTensor::builder builder;
-    std::shared_ptr<Tensor> tensor1;
-    std::shared_ptr<Tensor> tensor2;
-
-    TensorAttrFixtureBase(bool dense)
-        : FixtureBase<useReadGuard>(),
-          builder(),
-          tensor1(),
-          tensor2()
-    {
-        setup(dense);
-    }
-    Tensor::UP createTensor(const TensorCells &cells,
-                            const TensorDimensions &dimensions) {
-        return TensorFactory::create(cells, dimensions, builder);
-    }
-    Tensor::UP createDenseTensor(const DenseTensorCells &cells) const {
-        return TensorFactory::createDense(cells);
-    }
-    void setup(bool dense) {
-        if (dense) {
-            tensor1 = createDenseTensor({ {{{"x",1}}, 11} });
-            tensor2 = createDenseTensor({ {{{"x",0}}, 12}, {{{"x", 1}}, 0} });
-        } else {
-            tensor1 = createTensor({ {{{"x","1"}}, 11} }, { "x" });
-            tensor2 = createTensor({ {{{"x","0"}}, 12} }, { "x" });
-        }
-        const std::vector<ImportedAttributeFixture::LidToLidMapping<std::shared_ptr<Tensor>>> mappings =
-            {   {DocId(2), dummy_gid(3), DocId(3), tensor1 },
-                {DocId(4), dummy_gid(7), DocId(7), tensor2 } };
-        this->template reset_with_tensor_reference_mappings<TensorAttribute, std::shared_ptr<Tensor>>(
-                ValueType::from_spec(dense ? "tensor(x[2])" : "tensor(x{})"),
-                mappings);
-    }
-    Tensor::UP getTensor(DocId docId) {
-        const ITensorAttribute & tensorAttr = dynamic_cast<const ITensorAttribute &>(*this->get_imported_attr());
-        return tensorAttr.getTensor(docId);
-    }
-    void assertNoTensor(DocId docId) {
-        auto tensor = getTensor(docId);
-        EXPECT_TRUE(!tensor);
-    }
-    void assertTensor(DocId docId, const Tensor &expTensor) {
-        auto tensor = getTensor(docId);
-        ASSERT_TRUE(!!tensor);
-        EXPECT_EQUAL(expTensor, *tensor);
-    }
-    void assertTensors() {
-        assertNoTensor(0);
-        assertNoTensor(1);
-        assertTensor(2, *tensor1);
-        assertNoTensor(3);
-        assertTensor(4, *tensor2);
-    }
-};
-
-using TensorAttrFixture = TensorAttrFixtureBase<false>;
-using ReadGuardTensorAttrFixture = TensorAttrFixtureBase<true>;
-
-
-
-TEST_F("Imported sparse tensor", TensorAttrFixture(false))
-{
-    f.assertTensors();
-}
-
-TEST_F("Imported dense tensor", TensorAttrFixture(true))
-{
-    f.assertTensors();
-}
-
-TEST_F("Imported sparse tensor read guard", ReadGuardTensorAttrFixture(false))
-{
-    f.assertTensors();
-}
-
-TEST_F("Imported dense tensor read guard", ReadGuardTensorAttrFixture(true))
-{
-    f.assertTensors();
 }
 
 } // attribute

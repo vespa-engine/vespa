@@ -7,7 +7,6 @@ LOG_SETUP("imported_attributes_repo_test");
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
-#include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 
 using proton::ImportedAttributesRepo;
@@ -15,17 +14,16 @@ using search::AttributeVector;
 using search::attribute::BasicType;
 using search::attribute::Config;
 using search::attribute::ImportedAttributeVector;
-using search::attribute::ImportedAttributeVectorFactory;
 using search::attribute::ReferenceAttribute;
 
 ImportedAttributeVector::SP
 createAttr(const vespalib::string &name)
 {
-    return ImportedAttributeVectorFactory::create(name,
-                                                  ReferenceAttribute::SP(),
-                                                  AttributeVector::SP(),
-                                                  std::shared_ptr<search::IDocumentMetaStoreContext>(),
-                                                  false);
+    return std::make_shared<ImportedAttributeVector>(name,
+                                                     ReferenceAttribute::SP(),
+                                                     AttributeVector::SP(),
+                                                     std::shared_ptr<search::IDocumentMetaStoreContext>(),
+                                                     false);
 }
 
 struct Fixture {
