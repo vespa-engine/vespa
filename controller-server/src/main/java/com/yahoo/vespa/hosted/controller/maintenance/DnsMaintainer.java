@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
@@ -48,14 +47,14 @@ public class DnsMaintainer extends Maintainer {
     /** Remove DNS alias for unassigned rotation */
     private void removeDnsAlias(Rotation rotation) {
         // When looking up CNAME by data, the data must be a FQDN
-        Optional<Record> record = nameService.findRecord(Record.Type.CNAME, RecordData.fqdn(rotation.name()));
-        record.filter(DnsMaintainer::canUpdate)
-              .ifPresent(r -> {
-                  log.info(String.format("Removing DNS record %s (%s) because it points to the unassigned " +
-                                         "rotation %s (%s)", record.get().id().asString(),
-                                         record.get().name().asString(), rotation.id().asString(), rotation.name()));
-                  nameService.removeRecord(r.id());
-              });
+        nameService.findRecord(Record.Type.CNAME, RecordData.fqdn(rotation.name())).stream()
+                .filter(DnsMaintainer::canUpdate)
+                .forEach(record -> {
+                    log.info(String.format("Removing DNS record %s (%s) because it points to the unassigned " +
+                                           "rotation %s (%s)", record.id().asString(),
+                                           record.name().asString(), rotation.id().asString(), rotation.name()));
+                    nameService.removeRecord(record.id());
+                });
     }
 
     /** Returns whether we can update the given record */

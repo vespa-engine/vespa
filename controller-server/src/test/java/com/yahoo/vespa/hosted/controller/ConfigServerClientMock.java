@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
-import com.yahoo.vespa.hosted.controller.api.rotation.Rotation;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
@@ -76,7 +75,7 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
     
     @Override
     public PreparedApplication prepare(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames,
-                                       Set<Rotation> rotations, byte[] content) {
+                                       Set<String> rotationNames, byte[] content) {
         lastPrepareVersion = deployOptions.vespaVersion.map(Version::new).orElse(null);
         if (prepareException != null) {
             RuntimeException prepareException = this.prepareException;

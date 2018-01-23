@@ -46,8 +46,16 @@ public class DnsMaintainerTest {
 
         // Deploy application
         tester.deployCompletely(application, applicationPackage);
-        assertEquals(1, tester.controllerTester().nameService().records().size());
+        assertEquals(2, tester.controllerTester().nameService().records().size());
+
         Optional<Record> record = tester.controllerTester().nameService().findRecord(
+                Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.yahooapis.com")
+                                                                                    );
+        assertTrue(record.isPresent());
+        assertEquals("app1--tenant1.global.vespa.yahooapis.com", record.get().name().asString());
+        assertEquals("rotation-fqdn-01.", record.get().data().asString());
+
+        record = tester.controllerTester().nameService().findRecord(
                 Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
         );
         assertTrue(record.isPresent());
@@ -56,6 +64,8 @@ public class DnsMaintainerTest {
 
         // DnsMaintainer does nothing
         dnsMaintainer.maintain();
+        assertTrue("DNS record is not removed", tester.controllerTester().nameService().findRecord(
+                Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.yahooapis.com")).isPresent());
         assertTrue("DNS record is not removed", tester.controllerTester().nameService().findRecord(
                 Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")).isPresent());
 
@@ -70,7 +80,10 @@ public class DnsMaintainerTest {
         tester.applications().deactivate(application, ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
         tester.applications().deleteApplication(application.id(), Optional.of(new NToken("ntoken")));
 
-        // DnsMaintainer removes record
+        // DnsMaintainer removes records
+        dnsMaintainer.maintain();
+        assertFalse("DNS record removed", tester.controllerTester().nameService().findRecord(
+                Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.yahooapis.com")).isPresent());
         dnsMaintainer.maintain();
         assertFalse("DNS record removed", tester.controllerTester().nameService().findRecord(
                 Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")).isPresent());

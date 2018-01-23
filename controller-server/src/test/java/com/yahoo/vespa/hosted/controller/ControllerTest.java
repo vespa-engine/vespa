@@ -620,12 +620,20 @@ public class ControllerTest {
                 .environment(Environment.prod)
                 .globalServiceId("foo")
                 .region("us-west-1")
-                .region("us-central-1") // Two deployments should result in DNS alias being registered once
+                .region("us-central-1") // Two deployments should result in each DNS alias being registered once
                 .build();
 
         tester.deployCompletely(application, applicationPackage);
-        assertEquals(1, tester.controllerTester().nameService().records().size());
+        assertEquals(2, tester.controllerTester().nameService().records().size());
+
         Optional<Record> record = tester.controllerTester().nameService().findRecord(
+                Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.yahooapis.com")
+                                                                                    );
+        assertTrue(record.isPresent());
+        assertEquals("app1--tenant1.global.vespa.yahooapis.com", record.get().name().asString());
+        assertEquals("rotation-fqdn-01.", record.get().data().asString());
+
+       record = tester.controllerTester().nameService().findRecord(
                 Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
         );
         assertTrue(record.isPresent());
@@ -644,12 +652,20 @@ public class ControllerTest {
                     .environment(Environment.prod)
                     .globalServiceId("foo")
                     .region("us-west-1")
-                    .region("us-central-1") // Two deployments should result in DNS alias being registered once
+                    .region("us-central-1") // Two deployments should result in each DNS alias being registered once
                     .build();
 
             tester.deployCompletely(app1, applicationPackage);
-            assertEquals(1, tester.controllerTester().nameService().records().size());
+            assertEquals(2, tester.controllerTester().nameService().records().size());
+
             Optional<Record> record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.yahooapis.com")
+                                                                                        );
+            assertTrue(record.isPresent());
+            assertEquals("app1--tenant1.global.vespa.yahooapis.com", record.get().name().asString());
+            assertEquals("rotation-fqdn-01.", record.get().data().asString());
+
+            record = tester.controllerTester().nameService().findRecord(
                     Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
             );
             assertTrue(record.isPresent());
@@ -672,7 +688,12 @@ public class ControllerTest {
                                  .containsKey(new RotationId("rotation-id-01")));
             }
 
-            // Record remains
+            // Records remain
+            record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.yahooapis.com")
+            );
+            assertTrue(record.isPresent());
+
             record = tester.controllerTester().nameService().findRecord(
                     Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
             );
@@ -689,13 +710,22 @@ public class ControllerTest {
                     .region("us-central-1")
                     .build();
             tester.deployCompletely(app2, applicationPackage);
-            assertEquals(2, tester.controllerTester().nameService().records().size());
+            assertEquals(4, tester.controllerTester().nameService().records().size());
+
             Optional<Record> record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app2--tenant2.global.vespa.yahooapis.com")
+                                                                                        );
+            assertTrue(record.isPresent());
+            assertEquals("app2--tenant2.global.vespa.yahooapis.com", record.get().name().asString());
+            assertEquals("rotation-fqdn-01.", record.get().data().asString());
+
+            record = tester.controllerTester().nameService().findRecord(
                     Record.Type.CNAME, RecordName.from("app2.tenant2.global.vespa.yahooapis.com")
             );
             assertTrue(record.isPresent());
             assertEquals("app2.tenant2.global.vespa.yahooapis.com", record.get().name().asString());
             assertEquals("rotation-fqdn-01.", record.get().data().asString());
+
         }
 
         // Application 1 is recreated, deployed and assigned a new rotation
@@ -711,13 +741,21 @@ public class ControllerTest {
             app1 = tester.applications().require(app1.id());
             assertEquals("rotation-id-02", app1.rotation().get().id().asString());
 
-            // Existing DNS record is updated to point to the newly assigned rotation
-            assertEquals(2, tester.controllerTester().nameService().records().size());
+            // Existing DNS records are updated to point to the newly assigned rotation
+            assertEquals(4, tester.controllerTester().nameService().records().size());
+
             Optional<Record> record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.yahooapis.com")
+                                                                                        );
+            assertTrue(record.isPresent());
+            assertEquals("rotation-fqdn-02.", record.get().data().asString());
+
+            record = tester.controllerTester().nameService().findRecord(
                     Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
             );
             assertTrue(record.isPresent());
             assertEquals("rotation-fqdn-02.", record.get().data().asString());
+
         }
 
     }
