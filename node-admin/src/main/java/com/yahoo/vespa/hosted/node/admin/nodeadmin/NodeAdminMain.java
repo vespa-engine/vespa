@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
  *  - It will "start" (only) the necessary components.
  *  - Other components MUST NOT try to start (typically in constructor) since the features
  *    they provide is NOT WANTED and possibly destructive, and/or the environment may be
- *    incompatible. For instance, trying to contact the Docker daemon too early will
- *    be fatal: the node admin may not have installed and started the docker daemon.
+ *    incompatible. For instance, trying to contact the Docker daemon too early will be
+ *    fatal: the node admin may not have installed and started the docker daemon.
  */
 public class NodeAdminMain implements AutoCloseable {
     private static final Logger logger = Logger.getLogger(NodeAdminMain.class.getName());
