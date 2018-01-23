@@ -1,5 +1,5 @@
 # Copyright 2018 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-namespace=vespa.hosted.node.admin
+namespace=vespa.hosted.node.admin.config
 
 hosts[]                      string
 port                         int                         default=8080 range=[1,65535]

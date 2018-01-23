@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.util;
 import com.google.common.base.Strings;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.ConfigServerConfig;
+import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 
 import java.net.InetAddress;
 import java.net.URI;
