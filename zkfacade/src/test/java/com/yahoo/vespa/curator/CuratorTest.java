@@ -20,6 +20,8 @@ import static org.junit.Assert.assertThat;
  */
 public class CuratorTest {
 
+    private static String localhost = HostName.getLocalhost();
+
     private String spec1;
     private String spec2;
     private TestingServer test1;
@@ -33,8 +35,8 @@ public class CuratorTest {
         port2 = allocatePort();
         test1 = new TestingServer(port1);
         test2 = new TestingServer(port2);
-        spec1 = "localhost:" + port1;
-        spec2 = "localhost:" + port2;
+        spec1 = localhost + ":" + port1;
+        spec2 = localhost + ":" + port2;
     }
 
     private int allocatePort() {
@@ -52,14 +54,7 @@ public class CuratorTest {
     @Test
     public void require_curator_is_created_from_config() {
         try (Curator curator = createCurator(createTestConfig())) {
-            assertThat(curator.connectionSpec(), is(spec1 + "," + spec2));
-        }
-    }
-
-    @Test
-    public void require_that_curator_can_produce_spec() {
-        try (Curator curator = createCurator(createTestConfig())) {
-            assertThat(curator.connectionSpec(), is(spec1 + "," + spec2));
+            assertThat(curator.zooKeeperEnsembleConnectionSpec(), is(spec1 + "," + spec2));
             assertThat(curator.zooKeeperEnsembleCount(), is(2));
         }
     }
@@ -67,7 +62,7 @@ public class CuratorTest {
     @Test
     public void require_that_server_count_is_correct() {
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
-        builder.zookeeperserver(createZKBuilder("localhost", port1));
+        builder.zookeeperserver(createZKBuilder(localhost, port1));
         try (Curator curator = createCurator(new ConfigserverConfig(builder))) {
             assertThat(curator.zooKeeperEnsembleCount(), is(1));
         }
@@ -91,8 +86,8 @@ public class CuratorTest {
 
     private ConfigserverConfig createTestConfig() {
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
-        builder.zookeeperserver(createZKBuilder("localhost", port1));
-        builder.zookeeperserver(createZKBuilder("localhost", port2));
+        builder.zookeeperserver(createZKBuilder(localhost, port1));
+        builder.zookeeperserver(createZKBuilder(localhost, port2));
         return new ConfigserverConfig(builder);
     }
 
@@ -125,7 +120,7 @@ public class CuratorTest {
         private final static PortRange portRange = new PortRange();
 
         // Get the next port from a pre-allocated range
-        public static int findAvailablePort() {
+        static int findAvailablePort() {
             return portRange.next();
         }
 
