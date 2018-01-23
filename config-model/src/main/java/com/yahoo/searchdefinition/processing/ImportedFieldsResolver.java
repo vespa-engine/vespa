@@ -2,7 +2,6 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.document.TensorDataType;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.RankProfileRegistry;
@@ -66,8 +65,6 @@ public class ImportedFieldsResolver extends Processor {
             fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is not an attribute field. Only attribute fields supported");
         } else if (targetField.doesIndexing()) {
             fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is an index field. Not supported");
-        } else if (targetField.getDataType() instanceof TensorDataType) {
-            fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Is of type 'tensor'. Not supported");
         }
         return targetField;
     }
