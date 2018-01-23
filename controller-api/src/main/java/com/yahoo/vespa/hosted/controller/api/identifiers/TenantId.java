@@ -22,7 +22,7 @@ public class TenantId extends NonDefaultIdentifier {
 
     public static void validate(String id) {
         if (!strictPattern.matcher(id).matches()) {
-            throwInvalidId(id, "Must match pattern " + strictPattern, "tenant");
+            throwInvalidId(id, strictPatternExplanation);
         }
     }
 

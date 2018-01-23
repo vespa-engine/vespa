@@ -22,7 +22,7 @@ public class ApplicationId extends NonDefaultIdentifier {
 
     public static void validate(String id) {
         if (!isLegal(id)) {
-            throwInvalidId(id, "Must match pattern " + strictPattern, "application");
+            throwInvalidId(id, strictPatternExplanation);
         }
     }
 
