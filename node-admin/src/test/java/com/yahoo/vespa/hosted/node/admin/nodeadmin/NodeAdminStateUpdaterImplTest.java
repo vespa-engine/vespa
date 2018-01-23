@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
+import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -32,11 +33,11 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Basic test of NodeAdminStateUpdater
+ * Basic test of NodeAdminStateUpdaterImpl
  *
  * @author freva
  */
-public class NodeAdminStateUpdaterTest {
+public class NodeAdminStateUpdaterImplTest {
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
@@ -45,7 +46,7 @@ public class NodeAdminStateUpdaterTest {
     private final ManualClock clock = new ManualClock();
     private final Duration convergeStateInterval = Duration.ofSeconds(30);
 
-    private final NodeAdminStateUpdater refresher = spy(new NodeAdminStateUpdater(
+    private final NodeAdminStateUpdaterImpl refresher = spy(new NodeAdminStateUpdaterImpl(
             nodeRepository, orchestrator, storageMaintainer, nodeAdmin, parentHostname, clock, convergeStateInterval, null));
 
 
@@ -102,7 +103,7 @@ public class NodeAdminStateUpdaterTest {
         // The second orchestration failure happens after the freeze convergence timeout,
         // and so SHOULD call setFrozen(false)
         when(nodeAdmin.setFrozen(eq(true))).thenReturn(true);
-        when(nodeAdmin.subsystemFreezeDuration()).thenReturn(NodeAdminStateUpdater.FREEZE_CONVERGENCE_TIMEOUT.plusMinutes(1));
+        when(nodeAdmin.subsystemFreezeDuration()).thenReturn(NodeAdminStateUpdaterImpl.FREEZE_CONVERGENCE_TIMEOUT.plusMinutes(1));
         doThrow(new RuntimeException("Cannot allow to suspend because some reason")).doNothing()
                 .when(orchestrator).suspend(eq(parentHostname));
         tickAfter(35);
