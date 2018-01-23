@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.node.admin.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
@@ -13,11 +15,11 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.ssl.SSLContextBuilder;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -61,8 +63,11 @@ public class ConfigServerHttpRequestExecutor implements AutoCloseable {
     private volatile SelfCloseableHttpClient client;
 
     public static ConfigServerHttpRequestExecutor create(
-            Collection<URI> configServerUris, Optional<KeyStoreOptions> keyStoreOptions, Optional<KeyStoreOptions> trustStoreOptions) {
-        Supplier<SelfCloseableHttpClient> clientSupplier = () -> createHttpClient(keyStoreOptions, trustStoreOptions);
+            Collection<URI> configServerUris,
+            Optional<KeyStoreOptions> keyStoreOptions,
+            Optional<KeyStoreOptions> trustStoreOptions,
+            Optional<AthenzIdentity> athenzIdentity) {
+        Supplier<SelfCloseableHttpClient> clientSupplier = () -> createHttpClient(keyStoreOptions, trustStoreOptions, athenzIdentity);
         ConfigServerHttpRequestExecutor requestExecutor = new ConfigServerHttpRequestExecutor(
                 randomizeConfigServerUris(configServerUris), clientSupplier.get());
 
@@ -178,11 +183,13 @@ public class ConfigServerHttpRequestExecutor implements AutoCloseable {
     }
 
     private static SelfCloseableHttpClient createHttpClient(Optional<KeyStoreOptions> keyStoreOptions,
-                                                            Optional<KeyStoreOptions> trustStoreOptions) {
+                                                            Optional<KeyStoreOptions> trustStoreOptions,
+                                                            Optional<AthenzIdentity> athenzIdentity) {
         NODE_ADMIN_LOGGER.info("Creating new HTTP client");
         try {
-            SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
-                    makeSslContext(keyStoreOptions, trustStoreOptions), NoopHostnameVerifier.INSTANCE);
+            SSLContext sslContext = makeSslContext(keyStoreOptions, trustStoreOptions);
+            HostnameVerifier hostnameVerifier = makeHostnameVerifier(athenzIdentity);
+            SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
             return new SelfCloseableHttpClient(sslSocketFactory);
         } catch (Exception e) {
             NODE_ADMIN_LOGGER.error("Failed to create HTTP client with custom SSL Context, proceeding with default", e);
@@ -210,6 +217,12 @@ public class ConfigServerHttpRequestExecutor implements AutoCloseable {
         });
 
         return sslContextBuilder.build();
+    }
+
+    private static HostnameVerifier makeHostnameVerifier(Optional<AthenzIdentity> athenzIdentity) {
+        return athenzIdentity
+                .map(identity -> (HostnameVerifier) new AthenzIdentityVerifier(Collections.singleton(identity)))
+                .orElse(SSLConnectionSocketFactory.getDefaultHostnameVerifier());
     }
 
     @Override

@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.util;
 
 import com.google.common.base.Strings;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.ConfigServerConfig;
@@ -47,6 +49,7 @@ public class Environment {
     private final String feedEndpoint;
     private final Optional<KeyStoreOptions> keyStoreOptions;
     private final Optional<KeyStoreOptions> trustStoreOptions;
+    private final Optional<AthenzIdentity> athenzIdentity;
 
     static {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -73,7 +76,10 @@ public class Environment {
              createKeyStoreOptions(
                      configServerConfig.trustStoreConfig().path(),
                      configServerConfig.trustStoreConfig().password().toCharArray(),
-                     configServerConfig.trustStoreConfig().type().name())
+                     configServerConfig.trustStoreConfig().type().name()),
+            createAthenzIdentity(
+                    configServerConfig.athenzDomain(),
+                    configServerConfig.serviceName())
         );
     }
 
@@ -86,7 +92,8 @@ public class Environment {
                        List<String> logstashNodes,
                        String feedEndpoint,
                        Optional<KeyStoreOptions> keyStoreOptions,
-                       Optional<KeyStoreOptions> trustStoreOptions) {
+                       Optional<KeyStoreOptions> trustStoreOptions,
+                       Optional<AthenzIdentity> athenzIdentity) {
         this.configServerHosts = configServerHosts;
         this.environment = environment;
         this.region = region;
@@ -97,6 +104,7 @@ public class Environment {
         this.feedEndpoint = feedEndpoint;
         this.keyStoreOptions = keyStoreOptions;
         this.trustStoreOptions = trustStoreOptions;
+        this.athenzIdentity = athenzIdentity;
     }
 
     public List<URI> getConfigServerUris() { return configServerHosts; }
@@ -143,6 +151,11 @@ public class Environment {
         return Optional.ofNullable(pathToKeyStore)
                 .filter(path -> !Strings.isNullOrEmpty(path))
                 .map(path -> new KeyStoreOptions(Paths.get(path), password, type));
+    }
+
+    private static Optional<AthenzIdentity> createAthenzIdentity(String athenzDomain, String serviceName) {
+        if (Strings.isNullOrEmpty(athenzDomain) || Strings.isNullOrEmpty(serviceName)) return Optional.empty();
+        return Optional.of(new AthenzService(athenzDomain, serviceName));
     }
 
     public InetAddress getInetAddressForHost(String hostname) throws UnknownHostException {
@@ -219,6 +232,10 @@ public class Environment {
         return trustStoreOptions;
     }
 
+    public Optional<AthenzIdentity> getAthenzIdentity() {
+        return athenzIdentity;
+    }
+
 
     public static class Builder {
         private List<URI> configServerHosts = Collections.emptyList();
@@ -231,6 +248,7 @@ public class Environment {
         private String feedEndpoint;
         private KeyStoreOptions keyStoreOptions;
         private KeyStoreOptions trustStoreOptions;
+        private AthenzIdentity athenzIdentity;
 
         public Builder configServerUris(String... hosts) {
             configServerHosts = Arrays.stream(hosts)
@@ -284,11 +302,16 @@ public class Environment {
             return this;
         }
 
+        public Builder athenzIdentity(AthenzIdentity athenzIdentity) {
+            this.athenzIdentity = athenzIdentity;
+            return this;
+        }
 
         public Environment build() {
             return new Environment(configServerHosts, environment, region, parentHostHostname, inetAddressResolver,
                                    pathResolver, logstashNodes, feedEndpoint,
-                                   Optional.ofNullable(keyStoreOptions), Optional.ofNullable(trustStoreOptions));
+                                   Optional.ofNullable(keyStoreOptions), Optional.ofNullable(trustStoreOptions),
+                                   Optional.ofNullable(athenzIdentity));
         }
     }
 }
