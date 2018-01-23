@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.RankingConstant;
@@ -17,7 +18,6 @@ import java.io.FileNotFoundException;
  *
  * @author Vegard Sjonfjell
  */
-
 public class RankingConstantsValidator extends Validator {
 
     private static class ExceptionMessageCollector {
@@ -62,9 +62,14 @@ public class RankingConstantsValidator extends Validator {
         }
     }
 
-    private void validateRankingConstant(RankingConstant rankingConstant, ApplicationPackage applicationPackage) throws FileNotFoundException {
-        ApplicationFile tensorApplicationFile = applicationPackage.getFile(Path.fromString(rankingConstant.getFileName()));
-        new ConstantTensorJsonValidator().validate(rankingConstant.getFileName(),
+    private void validateRankingConstant(RankingConstant rankingConstant, ApplicationPackage application) throws FileNotFoundException {
+        String constantFile = rankingConstant.getFileName();
+        if (application.getFileReference(Path.fromString("")).getAbsolutePath().endsWith(FilesApplicationPackage.preprocessed) &&
+            constantFile.startsWith(FilesApplicationPackage.preprocessed))
+            constantFile = constantFile.substring(FilesApplicationPackage.preprocessed.length());
+
+        ApplicationFile tensorApplicationFile = application.getFile(Path.fromString(constantFile));
+        new ConstantTensorJsonValidator().validate(constantFile,
                                                    rankingConstant.getTensorType(),
                                                    tensorApplicationFile.createReader());
     }
