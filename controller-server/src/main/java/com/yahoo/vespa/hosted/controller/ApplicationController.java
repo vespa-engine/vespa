@@ -233,7 +233,7 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application already exists
      */
     public Application createApplication(ApplicationId id, Optional<NToken> token) {
-        if ( ! (id.instance().value().equals("default") || id.instance().value().startsWith("default-pr"))) // TODO: Support instances properly
+        if ( ! (id.instance().value().equals("default") || id.instance().value().matches("^default-pr\\d+$"))) // TODO: Support instances properly
             throw new UnsupportedOperationException("Only the instance names 'default' and names starting with 'default-pr' are supported at the moment");
         try (Lock lock = lock(id)) {
             com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
@@ -270,11 +270,13 @@ public class ApplicationController {
     public ActivateResult deployApplication(ApplicationId applicationId, ZoneId zone,
                                             ApplicationPackage applicationPackage, DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
-            // Not ideal, but since we create on missing and return a result computed inside the lock,
-            // the lock-with-action methods cannot be used
+            // TODO: Move application creation outside, to the deploy call in the handler.
             LockedApplication application = get(applicationId)
                     .map(app -> new LockedApplication(app, lock))
-                    .orElseGet(() -> new LockedApplication(new Application(applicationId), lock));
+                    .orElseGet(() -> {
+                        com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(applicationId.application().value());
+                        return new LockedApplication(new Application(applicationId), lock);
+                    });
 
             // Determine what we are doing
             Version version;
