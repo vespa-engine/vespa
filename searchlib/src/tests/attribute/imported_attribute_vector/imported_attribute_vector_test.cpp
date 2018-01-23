@@ -594,7 +594,7 @@ struct TensorAttrFixtureBase : FixtureBase<useReadGuard> {
     }
     void assertTensor(DocId docId, const Tensor &expTensor) {
         auto tensor = getTensor(docId);
-        EXPECT_TRUE(!!tensor);
+        ASSERT_TRUE(!!tensor);
         EXPECT_EQUAL(expTensor, *tensor);
     }
     void assertTensors() {
