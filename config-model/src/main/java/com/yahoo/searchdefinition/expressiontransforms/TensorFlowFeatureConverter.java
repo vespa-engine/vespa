@@ -187,7 +187,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
         public boolean hasTensorFlowModels() {
             try {
-                return application.getFileReference(ApplicationPackage.MODELS_DIR).exists();
+                return application.getFile(ApplicationPackage.MODELS_DIR).exists();
             }
             catch (UnsupportedOperationException e) {
                 return false; // No files -> no TensorFlow models
