@@ -25,6 +25,7 @@ LOG_SETUP("attribute_test");
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/bitvector_search_cache.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
@@ -58,6 +59,7 @@ using search::TuneFileAttributes;
 using search::attribute::BitVectorSearchCache;
 using search::attribute::IAttributeVector;
 using search::attribute::ImportedAttributeVector;
+using search::attribute::ImportedAttributeVectorFactory;
 using search::attribute::ReferenceAttribute;
 using search::index::DummyFileHeaderContext;
 using search::index::schema::CollectionType;
@@ -744,11 +746,11 @@ TEST_F("require that attribute writer spreads write over 3 write contexts", Fixt
 ImportedAttributeVector::SP
 createImportedAttribute(const vespalib::string &name)
 {
-    auto result = std::make_shared<ImportedAttributeVector>(name,
-                                                            ReferenceAttribute::SP(),
-                                                            AttributeVector::SP(),
-                                                            std::shared_ptr<search::IDocumentMetaStoreContext>(),
-                                                            true);
+    auto result = ImportedAttributeVectorFactory::create(name,
+                                                         ReferenceAttribute::SP(),
+                                                         AttributeVector::SP(),
+                                                         std::shared_ptr<search::IDocumentMetaStoreContext>(),
+                                                         true);
     result->getSearchCache()->insert("foo", BitVectorSearchCache::Entry::SP());
     return result;
 }
