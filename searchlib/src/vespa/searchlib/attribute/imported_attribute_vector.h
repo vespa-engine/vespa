@@ -86,7 +86,7 @@ public:
     /*
      * Create an imported attribute with a snapshot of lid to lid mapping.
      */
-    virtual std::unique_ptr<ImportedAttributeVector> makeReadGuard(bool stableEnumGuard) const;
+    std::unique_ptr<ImportedAttributeVector> makeReadGuard(bool stableEnumGuard) const;
 protected:
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available,
                                      const common::BlobConverter * bc) const override;
