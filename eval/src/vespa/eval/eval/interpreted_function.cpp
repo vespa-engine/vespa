@@ -6,6 +6,7 @@
 #include "check_type.h"
 #include "tensor_spec.h"
 #include "operation.h"
+#include "tensor_engine.h"
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
