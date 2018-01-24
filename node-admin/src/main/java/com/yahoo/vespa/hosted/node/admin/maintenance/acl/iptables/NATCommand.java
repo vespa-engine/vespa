@@ -10,7 +10,7 @@ import java.net.InetAddress;
  *
  *  1. DNAT PRE-ROUTING: replaces an external/public destination ip to an internal/private ip when it arrives on an interface
  *  2. DNAT LOOPBACK OUTPUT: replaces an internal/public ip destination to an internal/private ip on the loopback device (for host to container communication)
- *  2. SNAT POST-ROUTING: replaces an internal/private source ip to an external/public ip before writing it on the wire
+ *  3. SNAT POST-ROUTING: replaces an internal/private source ip to an external/public ip before writing it on the wire
  *
  * @author smorgrav
  */
@@ -48,7 +48,7 @@ public class NATCommand implements Command {
     public String asString(String commandName) { return asString(); }
 
     private String concat(String delimiter) {
-        return snatCommand + delimiter + dnatCommand + delimiter + dnatLoopBackCommand;
+        return String.join(delimiter, snatCommand, dnatCommand, dnatLoopBackCommand);
     }
 
     public static String insert(InetAddress externalIp, InetAddress internalIp) {

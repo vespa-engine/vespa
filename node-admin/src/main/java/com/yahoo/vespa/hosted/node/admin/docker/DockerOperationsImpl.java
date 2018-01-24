@@ -328,7 +328,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     /**
-     * Only insert NAT rules if they don't exist (or else they will be added)
+     * Only insert NAT rules if they don't exist (or else they compounded)
      */
     private void insertNAT(ContainerName containerName, InetAddress externalAddress) throws IOException {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
@@ -340,7 +340,7 @@ public class DockerOperationsImpl implements DockerOperations {
         if (result.getFirst() == 0 ) return;
 
         // Setup NAT
-        String natCommand = NATCommand.check(externalAddress, InetAddress.getByName(ipv6Str));
+        String natCommand = NATCommand.insert(externalAddress, InetAddress.getByName(ipv6Str));
         logger.info("Setting up NAT rules: " + natCommand);
         result = processExecuter.exec(checkCommand);
         if (result.getFirst() != 0 ) {
