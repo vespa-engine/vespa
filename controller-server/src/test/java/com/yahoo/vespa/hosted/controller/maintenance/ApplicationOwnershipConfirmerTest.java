@@ -78,8 +78,6 @@ public class ApplicationOwnershipConfirmerTest {
         confirmer.maintain();
         confirmer.maintain();
 
-        assertEquals("Confirmation issue has been forgotten for application without production deployments.", Optional.empty(), userApp.get().ownershipIssueId());
-
         // Time has passed, and a new confirmation issue is in order for the property which is still in production.
         Optional<IssueId> issueId2 = Optional.of(IssueId.from("2"));
         issues.response = issueId2;
@@ -87,8 +85,7 @@ public class ApplicationOwnershipConfirmerTest {
         confirmer.maintain();
 
         assertEquals("A new confirmation issue id is stored when something is returned to the maintainer.", issueId2, propertyApp.get().ownershipIssueId());
-        assertEquals("Confirmation issue for application without production deployments has not been filed.", Optional.empty(), userApp.get().ownershipIssueId());
-
+        assertEquals("Confirmation issue for application without production deployments has not been filed.", issueId, userApp.get().ownershipIssueId());
     }
 
     private class MockOwnershipIssues implements OwnershipIssues {
