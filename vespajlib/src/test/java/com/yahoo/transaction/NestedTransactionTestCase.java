@@ -91,6 +91,19 @@ public class NestedTransactionTestCase {
         }
     }
 
+    @Test
+    public void testMoreThanOneCommitThrows() {
+        NestedTransaction t = new NestedTransaction();
+        t.add(new TransactionTypeA("A1"), TransactionTypeB.class);
+        t.commit();
+        try {
+            t.commit();
+            fail("Expected exception");
+        }
+        catch (IllegalStateException expected) {
+        }
+    }
+
     private static class TransactionTypeA extends MockTransaction {
         public TransactionTypeA(String name) { super(name); }
     }

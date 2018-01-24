@@ -24,6 +24,9 @@ public final class NestedTransaction implements AutoCloseable {
     /** A list of (non-transactional) operations to execute after this transaction has committed successfully */
     private final List<Runnable> onCommitted = new ArrayList<>(2);
 
+    /** Updated when commit() is done, to be able to track if someone tries to commit a second time */
+    private boolean committed = false;
+
     /**
      * Adds a transaction to this.
      *
@@ -45,6 +48,8 @@ public final class NestedTransaction implements AutoCloseable {
 
     /** Perform a 2 phase commit */
     public void commit() {
+        if (committed) throw new IllegalStateException("Transaction already committed");
+
         List<Transaction> organizedTransactions = organizeTransactions(transactions);
 
         // First phase
@@ -75,6 +80,7 @@ public final class NestedTransaction implements AutoCloseable {
                 log.log(Level.WARNING, "A committed task in " + this + " caused an exception", e);
             }
         }
+        committed = true;
     }
 
     public void onCommitted(Runnable runnable) {
