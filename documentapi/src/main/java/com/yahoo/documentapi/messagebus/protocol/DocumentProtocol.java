@@ -300,9 +300,10 @@ public class DocumentProtocol implements Protocol {
         VersionSpecification version52 = new VersionSpecification(5, 115);
         VersionSpecification version6 = new VersionSpecification(6, 197); // TODO change once stable protocol
 
-        List<VersionSpecification> from50 = Arrays.asList(version50, version51, version52);
-        List<VersionSpecification> from51 = Arrays.asList(version51, version52);
-        List<VersionSpecification> from52 = Collections.singletonList(version52);
+        // TODO ensure version semantics
+        List<VersionSpecification> from50 = Arrays.asList(version50, version51, version52, version6);
+        List<VersionSpecification> from51 = Arrays.asList(version51, version52, version6);
+        List<VersionSpecification> from52 = Arrays.asList(version52, version6);
         List<VersionSpecification> from6 = Collections.singletonList(version6); // TODO decide minor version...
 
         // 5.0 serialization (keep alphabetized please)
