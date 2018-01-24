@@ -145,10 +145,10 @@ public class ApplicationList {
 
     /**
      * Returns the subset of applications which are not pull requests: 
-     * Pull requests changes the application instance name to default-pr[pull-request-number]
+     * Pull requests changes the application instance name to (default-pr)?[pull-request-number]
      */
     public ApplicationList notPullRequest() {
-        return listOf(list.stream().filter(a -> ! a.id().instance().value().startsWith("default-pr")));
+        return listOf(list.stream().filter(a -> ! a.id().instance().value().matches("^(default-pr)?\\d+$")));
     }
 
     /** Returns the subset of applications which have at least one production deployment */

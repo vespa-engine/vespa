@@ -233,8 +233,11 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application already exists
      */
     public Application createApplication(ApplicationId id, Optional<NToken> token) {
-        if ( ! (id.instance().value().equals("default") || id.instance().value().matches("^default-pr\\d+$"))) // TODO: Support instances properly
-            throw new UnsupportedOperationException("Only the instance names 'default' and names starting with 'default-pr' are supported at the moment");
+        // TODO: TLS: PR names change to prXXX.
+        if ( ! (   id.instance().value().equals("default")
+                || id.instance().value().matches("^default-pr\\d+$") // TODO: Remove when these no longer deploy.
+                || id.instance().value().matches("^\\d+$"))) // TODO: Support instances properly
+            throw new UnsupportedOperationException("Only the instance names 'default' and names starting with 'default-pr' or which are just the PR number are supported at the moment");
         try (Lock lock = lock(id)) {
             com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
 
