@@ -96,7 +96,7 @@ public class FailedExpirerTest {
                 .failNode(4, "node1")
                 .failWithHardwareFailure("node2", "node3");
 
-        scenario.clock().advance(Duration.ofDays(5));
+        scenario.clock().advance(Duration.ofHours(2));
         scenario.expirer().run();
 
         scenario.assertNodesIn(Node.State.failed, "node1");
