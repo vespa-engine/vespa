@@ -2,6 +2,7 @@
 package com.yahoo.feedapi;
 
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
@@ -106,6 +107,7 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         String loadTypeStr = null;
         String traceStr = null;
         String createIfNonExistentParam = null;
+        boolean useConstantTimeout = false;
 
         if (request != null) {
             routeParam = request.getProperty("route");
@@ -114,6 +116,7 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
             if (timeoutStr != null) {
                 timeoutParam = Double.parseDouble(timeoutStr);
             }
+            useConstantTimeout = request.getBooleanProperty("useconstanttimeout");
 
             priorityParam = request.getProperty("priority");
             traceStr = request.getProperty("tracelevel");
@@ -154,7 +157,7 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
             loadType = LoadType.DEFAULT;
         }
 
-        return new PropertySetter(route, timeout, priority, loadType, retry, abortOnDocumentError, abortOnFeedError, createIfNonExistent, traceStr != null ? Integer.parseInt(traceStr) : 0);
+        return new PropertySetter(useConstantTimeout, route, timeout, priority, loadType, retry, abortOnDocumentError, abortOnFeedError, createIfNonExistent, traceStr != null ? Integer.parseInt(traceStr) : 0);
     }
 
     public long getDefaultTimeoutMillis() { return defaultTimeoutMillis; }
@@ -217,6 +220,8 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         private Route route;
         /** Timeout (in milliseconds) */
         private long timeout;
+        private long startTime;
+        boolean useConstantTimeout;
         /** Explicit priority set. May be null */
         private DocumentProtocol.Priority priority;
         private boolean retryEnabled;
@@ -226,9 +231,10 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         private LoadType loadType;
         private int traceLevel;
 
-        public PropertySetter(Route route, long timeout, DocumentProtocol.Priority priority, LoadType loadType,
+        public PropertySetter(boolean useConstantTimeout, Route route, long timeout, DocumentProtocol.Priority priority, LoadType loadType,
                               boolean retryEnabled, boolean abortOnDocumentError, boolean abortOnFeedError,
                               boolean createIfNonExistent, int traceLevel) {
+            this.useConstantTimeout = useConstantTimeout;
             this.route = route;
             this.timeout = timeout;
             this.priority = priority;
@@ -238,6 +244,13 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
             this.abortOnFeedError = abortOnFeedError;
             this.createIfNonExistent = createIfNonExistent;
             this.traceLevel = traceLevel;
+            this.startTime = SystemTimer.INSTANCE.milliTime();
+        }
+
+        private long getTimeRemaining() {
+            return useConstantTimeout
+                    ? timeout
+                    : timeout - (SystemTimer.INSTANCE.milliTime() - startTime);
         }
 
         public Route getRoute() {
@@ -289,7 +302,7 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
             if (route != null) {
                 msg.setRoute(route);
             }
-            msg.setTimeRemaining(timeout);
+            msg.setTimeRemaining(getTimeRemaining());
             msg.setRetryEnabled(retryEnabled);
             msg.getTrace().setLevel(Math.max(getFeederOptions().getTraceLevel(), traceLevel));
 

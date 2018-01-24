@@ -113,6 +113,7 @@ public class VespaFeeder {
         setPriority(req);
         setCreateIfNonExistent(req);
         setJsonInput(req, input);
+        req.setProperty("useconstanttimeout", "true");
     }
 
     private void setPriority(InputStreamRequest req) {
