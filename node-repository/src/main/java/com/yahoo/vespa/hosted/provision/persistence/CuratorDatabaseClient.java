@@ -139,8 +139,8 @@ public class CuratorDatabaseClient {
             Map<Node.State, List<Node>> nodesByState = nodes.stream().collect(Collectors.groupingBy(Node::state));
             for (Map.Entry<Node.State, List<Node>> entry : nodesByState.entrySet()) {
                 writtenNodes.addAll(writeTo(entry.getKey(), entry.getValue(), agent, reason, nestedTransaction));
-                nestedTransaction.commit();
             }
+            nestedTransaction.commit();
         }
 
         return writtenNodes;
