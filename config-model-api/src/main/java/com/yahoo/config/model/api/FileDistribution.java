@@ -24,7 +24,7 @@ public interface FileDistribution {
      * @param hostName       host which should be notified about file references to download
      * @param fileReferences set of file references to start downloading
      */
-    // TODO: Remove when 6.170 is the last version in use
+    // TODO: Remove when 6.197 is the last version in use
     void startDownload(String hostName, Set<FileReference> fileReferences);
 
     /**
