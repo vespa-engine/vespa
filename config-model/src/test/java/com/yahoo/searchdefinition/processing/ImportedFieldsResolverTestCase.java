@@ -38,18 +38,23 @@ public class ImportedFieldsResolverTestCase {
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 
-    @Test
-    public void valid_imported_fields_are_resolved() {
+    private void resolve_imported_field(String fieldName, String targetFieldName) {
         SearchModel model = new SearchModel();
-        model.addImportedField("my_attribute_field", "ref", "attribute_field").resolve();
+        model.addImportedField(fieldName, "ref", targetFieldName).resolve();
 
         assertEquals(1, model.importedFields.fields().size());
-        ImportedField myField = model.importedFields.fields().get("my_attribute_field");
+        ImportedField myField = model.importedFields.fields().get(fieldName);
         assertNotNull(myField);
-        assertEquals("my_attribute_field", myField.fieldName());
+        assertEquals(fieldName, myField.fieldName());
         assertSame(model.childSearch.getConcreteField("ref"), myField.reference().referenceField());
         assertSame(model.parentSearch, myField.reference().targetSearch());
-        assertSame(model.parentSearch.getConcreteField("attribute_field"), myField.targetField());
+        assertSame(model.parentSearch.getConcreteField(targetFieldName), myField.targetField());
+    }
+
+    @Test
+    public void valid_imported_fields_are_resolved() {
+	resolve_imported_field("my_attribute_field", "attribute_field");
+	resolve_imported_field("my_tensor_field", "tensor_field");
     }
 
     @Test
@@ -84,17 +89,6 @@ public class ImportedFieldsResolverTestCase {
                         "Field 'attribute_and_index' via reference field 'ref': Is an index field. Not supported");
         new SearchModel()
                 .addImportedField("my_attribute_and_index", "ref", "attribute_and_index")
-                .resolve();
-    }
-
-    @Test
-    public void resolver_fails_if_imported_field_is_tensor_type() {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "For search 'child', import field 'my_tensor_field': " +
-                        "Field 'tensor_field' via reference field 'ref': Is of type 'tensor'. Not supported");
-        new SearchModel()
-                .addImportedField("my_tensor_field", "ref", "tensor_field")
                 .resolve();
     }
 
