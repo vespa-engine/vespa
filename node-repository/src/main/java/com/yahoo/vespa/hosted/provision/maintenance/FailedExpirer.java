@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -72,7 +73,7 @@ public class FailedExpirer extends Maintainer {
                 .filter(node -> node.allocation().isPresent() &&
                                 node.allocation().get().membership().cluster().type() == ClusterSpec.Type.container)
                 .collect(Collectors.toList());
-        List<Node> remainingNodes = getExpiredNodes(defaultExpiry);
+        List<Node> remainingNodes = getExpiredNodes(zone.system() == SystemName.cd ? containerExpiry : defaultExpiry);
         remainingNodes.removeAll(containerNodes);
         recycle(containerNodes);
         recycle(remainingNodes);
