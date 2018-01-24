@@ -80,32 +80,28 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
         return std::make_unique<SimpleConstantValue>(_engine.from_spec(TensorSpec("double")));
     }
     if (ends_with(path, ".tbf")) {
-        vespalib::File file(path);
-        file.open(File::READONLY);
-    	std::vector<char> content(file.stat()._size);
-	file.read(&content[0], content.size(), 0);
-        vespalib::nbostream_longlivedbuf stream(&content[0], content.size());
+        vespalib::MappedFileInput file(path);
+	vespalib::Memory content = file.get();
+        vespalib::nbostream stream(content.data, content.size);
         return std::make_unique<SimpleConstantValue>(_engine.decode(stream));
     }
-    else {
-        Slime slime;
-        decode_json(path, slime);
-        std::set<vespalib::string> indexed;
-        for (const auto &dimension: value_type.dimensions()) {
-            if (dimension.is_indexed()) {
-                indexed.insert(dimension.name);
-            }
-        }
-        TensorSpec spec(type);
-        const Inspector &cells = slime.get()["cells"];
-        for (size_t i = 0; i < cells.entries(); ++i) {
-            TensorSpec::Address address;
-            AddressExtractor extractor(indexed, address);
-            cells[i]["address"].traverse(extractor);
-            spec.add(address, cells[i]["value"].asDouble());
-        }
-	return std::make_unique<SimpleConstantValue>(_engine.from_spec(spec));
+    Slime slime;
+    decode_json(path, slime);
+    std::set<vespalib::string> indexed;
+    for (const auto &dimension: value_type.dimensions()) {
+      if (dimension.is_indexed()) {
+	indexed.insert(dimension.name);
+      }
     }
+    TensorSpec spec(type);
+    const Inspector &cells = slime.get()["cells"];
+    for (size_t i = 0; i < cells.entries(); ++i) {
+      TensorSpec::Address address;
+      AddressExtractor extractor(indexed, address);
+      cells[i]["address"].traverse(extractor);
+      spec.add(address, cells[i]["value"].asDouble());
+    }
+    return std::make_unique<SimpleConstantValue>(_engine.from_spec(spec));
 }
 
 } // namespace vespalib::eval
