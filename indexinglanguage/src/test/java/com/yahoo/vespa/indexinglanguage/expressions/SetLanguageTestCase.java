@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class SetLanguageTestCase {
 
@@ -34,10 +34,19 @@ public class SetLanguageTestCase {
     }
 
     @Test
-    public void requireThatLanguageIsSet() {
+    public void testsettingEnglish() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         ctx.setValue(new StringFieldValue("en"));
         new SetLanguageExpression().execute(ctx);
         assertEquals(Language.ENGLISH, ctx.getLanguage());
     }
+
+    @Test
+    public void testSettingUnknown() {
+        ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
+        ctx.setValue(new StringFieldValue("unknown"));
+        new SetLanguageExpression().execute(ctx);
+        assertEquals(Language.UNKNOWN, ctx.getLanguage());
+    }
+
 }

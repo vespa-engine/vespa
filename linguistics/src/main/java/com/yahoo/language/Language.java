@@ -8,7 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * @author rpito
+ * @author Rich Pito
  */
 public enum Language {
 
@@ -87,14 +87,14 @@ public enum Language {
     /** Language tag "chr". */
     CHEROKEE("chr"),
 
-    /** 
+    /**
      * Language tag "zh-hans".
      *
      * @see #fromLocale(Locale)
      */
     CHINESE_SIMPLIFIED("zh-hans"),
 
-    /** 
+    /**
      * Language tag "zh-hant".
      *
      * @see #fromLocale(Locale)
@@ -173,7 +173,7 @@ public enum Language {
     /** Language tag "ha". */
     HAUSA("ha"),
 
-    /** 
+    /**
      * Language tag "he".
      *
      * @see #fromLocale(Locale)
@@ -189,7 +189,7 @@ public enum Language {
     /** Language tag "is". */
     ICELANDIC("is"),
 
-    /** 
+    /**
      * Language tag "id".
      *
      * @see #fromLocale(Locale)
@@ -298,7 +298,7 @@ public enum Language {
     /** Language tag "ne". */
     NEPALI("ne"),
 
-    /** 
+    /**
      * Language tag "nb".
      *
      * @see #fromLocale(Locale)
@@ -476,7 +476,7 @@ public enum Language {
     /** Language tag "xh". */
     XHOSA("xh"),
 
-    /** 
+    /**
      * Language tag "yi".
      *
      * @see #fromLocale(Locale)
