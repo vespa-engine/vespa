@@ -4,7 +4,7 @@ package com.yahoo.language;
 import java.util.Locale;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public final class LocaleFactory {
 
@@ -15,7 +15,7 @@ public final class LocaleFactory {
     }
 
     /**
-     * <p>Implements a simple parser for RFC5646 language tags. The language tag is parsed into a Locale.</p>
+     * Implements a simple parser for RFC5646 language tags. The language tag is parsed into a Locale.
      *
      * @param tag The language tag to parse.
      * @return The corrseponding Locale.

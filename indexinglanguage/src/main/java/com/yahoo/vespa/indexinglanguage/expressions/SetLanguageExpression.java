@@ -2,11 +2,12 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.language.Language;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * Sets the language in the execution context.
+ *
+ * @author Simon Thoresen
  */
 public class SetLanguageExpression extends Expression {
 
@@ -47,4 +48,5 @@ public class SetLanguageExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }
