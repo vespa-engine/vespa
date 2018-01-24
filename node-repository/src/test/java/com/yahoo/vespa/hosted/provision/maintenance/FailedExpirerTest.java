@@ -147,7 +147,7 @@ public class FailedExpirerTest {
 
     @Test
     public void ensure_failed_docker_host_is_not_parked_unless_all_children_are() {
-        FailureScenario scenario = new FailureScenario(SystemName.cd, Environment.prod)
+        FailureScenario scenario = new FailureScenario(SystemName.main, Environment.prod)
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent1")
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent2")
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent3")
