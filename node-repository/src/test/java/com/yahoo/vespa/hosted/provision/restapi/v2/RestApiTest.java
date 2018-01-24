@@ -220,6 +220,10 @@ public class RestApiTest {
                        "{\"message\":\"Updated host4.yahoo.com\"}");
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
+
+        // Allocation enquiry method
+        assertResponse(new Request("http://localhost:8080/nodes/v2/enquiry",
+                Utf8.toBytes("{\"noderepo\":false,\"flavors\":[{\"id\":\"d4\",\"mem\":4,\"disk\":4,\"cores\":4},{\"id\":\"d8\",\"mem\":8,\"disk\":8,\"cores\":8}],\"hosts\":[{\"flavor\":\"d4\",\"count\":5},{\"flavor\":\"d8\",\"count\":5}],\"allocations\":[{\"id\":\"a\",\"flavorid\":\"d4\",\"count\":2},{\"id\":\"b\",\"flavorid\":\"d8\",\"count\":10}]}\n"), Request.Method.GET), "{\"clustercapacity\":{\"d4\":10,\"d8\":3},\"flavorcapacity\":{\"d4\":13,\"d8\":3},\"allocations\":{\"a\":true,\"b\":false}}");
     }
 
     @Test

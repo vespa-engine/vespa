@@ -1,7 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -15,7 +18,6 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
@@ -24,13 +26,18 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeTypeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
+import com.yahoo.vespa.hosted.provision.provisioning.AllocationEnquiry;
+import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.restapi.v2.NodesResponse.ResponseType;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -101,7 +108,67 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
         if (path.equals(    "/nodes/v2/command/")) return ResourcesResponse.fromStrings(request.getUri(), "restart", "reboot");
         if (path.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(maintenance.jobControl());
+        if (path.equals(    "/nodes/v2/enquiry")) return handleAllocationEnquiry(request);
         throw new NotFoundException("Nothing at path '" + path + "'");
+    }
+
+    private HttpResponse handleAllocationEnquiry(HttpRequest request) {
+        ObjectMapper mapper = new ObjectMapper();
+        AllocationEnquiryPayload payload;
+        try {
+            payload = mapper.readValue(request.getData(), AllocationEnquiryPayload.class);
+        } catch (IOException e) {
+            return ErrorResponse.badRequest(e.getMessage());
+        }
+
+        // Build up flavors
+        FlavorConfigBuilder builder = new FlavorConfigBuilder();
+        for (AllocationEnquiryPayload.Flavor flavor : payload.flavors) {
+            builder.addFlavor(flavor.id, flavor.cores, flavor.mem, flavor.disk, Flavor.Type.BARE_METAL);
+        }
+        if (payload.initWithNodeRepo) {
+            for (Flavor flavor : nodeRepository.getAvailableFlavors().getFlavors()) {
+                builder.addFlavor(flavor.name(),
+                        flavor.getMinCpuCores(),
+                        flavor.getMinMainMemoryAvailableGb(),
+                        flavor.getMinDiskAvailableGb(),
+                        Flavor.Type.BARE_METAL);
+            }
+        }
+        NodeFlavors enquiryFlavors = new NodeFlavors(builder.build());
+
+        // Init enquiry object
+        AllocationEnquiry enquiry = new AllocationEnquiry(enquiryFlavors, payload.initWithNodeRepo
+                ? nodeRepository.getNodes()
+                : Collections.emptyList());
+
+        // Add hosts
+        for (AllocationEnquiryPayload.Host host : payload.hosts) {
+            enquiry.addDockerHost(host.flavor, host.count);
+        }
+
+        // Response object to collect some answers
+        AllocationEnquiryResponse response = new AllocationEnquiryResponse();
+
+        // Add allocations
+        for (AllocationEnquiryPayload.Allocation allocation : payload.allocations) {
+            boolean success = enquiry.addCluster(allocation.id, allocation.count, allocation.flavor);
+            if (response.allocations == null) {
+                response.allocations = new HashMap<>();
+            }
+            response.allocations.put(allocation.id, success);
+        }
+
+        // Get aggregate allocation numbers
+        response.flavorCapacity = enquiry.getFlavorCapacity();
+        response.clusterCapacity = enquiry.getClusterCapacity();
+
+        return new HttpResponse(200) {
+            @Override
+            public void render(OutputStream outputStream) throws IOException {
+                mapper.writeValue(outputStream, response);
+            }
+        };
     }
 
     private HttpResponse handlePUT(HttpRequest request) {
