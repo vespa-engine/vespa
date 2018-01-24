@@ -38,7 +38,6 @@ import java.util.Optional;
  * Base class for session handler tests
  *
  * @author hmusum
- * @since 5.1.14
  */
 public class SessionHandlerTest {
 
@@ -233,7 +232,6 @@ public class SessionHandlerTest {
 
         @Override
         public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
-            transaction.commit();
             activated = true;
             lastApplicationId = application;
             lastHosts = hosts;

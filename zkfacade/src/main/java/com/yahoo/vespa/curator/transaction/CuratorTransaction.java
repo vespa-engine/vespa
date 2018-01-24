@@ -6,6 +6,7 @@ import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.api.transaction.CuratorTransactionFinal;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Transaction implementation against ZooKeeper.
@@ -63,6 +64,11 @@ public class CuratorTransaction extends AbstractTransaction {
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return String.join(",", operations().stream().map(operation -> operation.toString()).collect(Collectors.toList()));
     }
 
 }
