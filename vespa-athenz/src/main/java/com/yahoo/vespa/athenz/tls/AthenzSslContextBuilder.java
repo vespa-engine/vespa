@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 
 /**
@@ -67,9 +66,9 @@ public class AthenzSslContextBuilder {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
             TrustManager[] trustManagers =
-                    trustStoreSupplier != null ? createTrustManagers(trustStoreSupplier) : getDefaultTrustManagers();
+                    trustStoreSupplier != null ? createTrustManagers(trustStoreSupplier) : null;
             KeyManager[] keyManagers =
-                    keyStoreSupplier != null ? createKeyManagers(keyStoreSupplier, keyStorePassword) : getDefaultKeyManagers();
+                    keyStoreSupplier != null ? createKeyManagers(keyStoreSupplier, keyStorePassword) : null;
             sslContext.init(keyManagers, trustManagers, null);
             return sslContext;
         } catch (GeneralSecurityException e) {
@@ -81,32 +80,16 @@ public class AthenzSslContextBuilder {
 
     private static TrustManager[] createTrustManagers(KeyStoreSupplier trustStoreSupplier)
             throws GeneralSecurityException, IOException {
-        TrustManagerFactory trustManagerFactory = getTrustManagerFactory();
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         trustManagerFactory.init(trustStoreSupplier.get());
         return trustManagerFactory.getTrustManagers();
     }
 
     private static KeyManager[] createKeyManagers(KeyStoreSupplier keyStoreSupplier, char[] password)
             throws GeneralSecurityException, IOException {
-        KeyManagerFactory keyManagerFactory = getKeyManagerFactory();
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         keyManagerFactory.init(keyStoreSupplier.get(), password);
         return keyManagerFactory.getKeyManagers();
-    }
-
-    private static KeyManager[] getDefaultKeyManagers() throws NoSuchAlgorithmException {
-        return getKeyManagerFactory().getKeyManagers();
-    }
-
-    private static TrustManager[] getDefaultTrustManagers() throws NoSuchAlgorithmException {
-        return getTrustManagerFactory().getTrustManagers();
-    }
-
-    private static KeyManagerFactory getKeyManagerFactory() throws NoSuchAlgorithmException {
-        return KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    }
-
-    private static TrustManagerFactory getTrustManagerFactory() throws NoSuchAlgorithmException {
-        return TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     }
 
     private static KeyStore loadKeyStoreFromFile(File file, char[] password, String keyStoreType)
