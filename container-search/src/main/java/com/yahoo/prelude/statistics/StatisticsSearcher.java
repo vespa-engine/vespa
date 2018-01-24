@@ -9,6 +9,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.metrics.simple.MetricSettings;
 import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.ErrorHit;
@@ -43,6 +44,7 @@ import static com.yahoo.container.protect.Error.*;
 @Before(PhaseNames.RAW_QUERY)
 public class StatisticsSearcher extends Searcher {
 
+    private static final CompoundName IGNORE_QUERY = new CompoundName("metrics.ignore");
     private static final String MAX_QUERY_LATENCY_METRIC = "max_query_latency";
     private static final String EMPTY_RESULTS_METRIC = "empty_results";
     private static final String HITS_PER_QUERY_METRIC = "hits_per_query";
@@ -185,6 +187,10 @@ public class StatisticsSearcher extends Searcher {
      * 3) .....
      */
     public Result search(com.yahoo.search.Query query, Execution execution) {
+        if(query.properties().getBoolean(IGNORE_QUERY,false)){
+            return execution.search(query);
+        }
+
         Metric.Context metricContext = getChainMetricContext(execution.chain().getId().stringValue());
 
         incrQueryCount(metricContext);
