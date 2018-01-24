@@ -4,10 +4,13 @@
 #include <vespa/eval/eval/tensor.h>
 #include <vespa/eval/eval/tensor_engine.h>
 #include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/data/lz4_input_decoder.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <set>
+#include <vector>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.eval.value_cache.constant_tensor_loader");
@@ -54,14 +57,14 @@ void decode_json(const vespalib::string &path, Slime &slime) {
     } else {
         if (ends_with(path, ".lz4")) {
             size_t buffer_size = 64 * 1024;
-            Lz4InputDecoder lz4_decoder(file, buffer_size);            
+            Lz4InputDecoder lz4_decoder(file, buffer_size);
             decode_json(path, lz4_decoder, slime);
             if (lz4_decoder.failed()) {
                 LOG(warning, "file contains lz4 errors (%s): %s",
                     lz4_decoder.reason().c_str(), path.c_str());
             }
         } else {
-            decode_json(path, file, slime);            
+            decode_json(path, file, slime);
         }
     }
 }
@@ -76,23 +79,33 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
         LOG(warning, "invalid type specification: %s", type.c_str());
         return std::make_unique<SimpleConstantValue>(_engine.from_spec(TensorSpec("double")));
     }
-    Slime slime;
-    decode_json(path, slime);
-    std::set<vespalib::string> indexed;
-    for (const auto &dimension: value_type.dimensions()) {
-        if (dimension.is_indexed()) {
-            indexed.insert(dimension.name);
+    if (ends_with(path, ".tbf")) {
+        vespalib::File file(path);
+        file.open(File::READONLY);
+    	std::vector<char> content(file.stat()._size);
+	file.read(&content[0], content.size(), 0);
+        vespalib::nbostream_longlivedbuf stream(&content[0], content.size());
+        return std::make_unique<SimpleConstantValue>(_engine.decode(stream));
+    }
+    else {
+        Slime slime;
+        decode_json(path, slime);
+        std::set<vespalib::string> indexed;
+        for (const auto &dimension: value_type.dimensions()) {
+            if (dimension.is_indexed()) {
+                indexed.insert(dimension.name);
+            }
         }
+        TensorSpec spec(type);
+        const Inspector &cells = slime.get()["cells"];
+        for (size_t i = 0; i < cells.entries(); ++i) {
+            TensorSpec::Address address;
+            AddressExtractor extractor(indexed, address);
+            cells[i]["address"].traverse(extractor);
+            spec.add(address, cells[i]["value"].asDouble());
+        }
+	return std::make_unique<SimpleConstantValue>(_engine.from_spec(spec));
     }
-    TensorSpec spec(type);
-    const Inspector &cells = slime.get()["cells"];
-    for (size_t i = 0; i < cells.entries(); ++i) {
-        TensorSpec::Address address;
-        AddressExtractor extractor(indexed, address);
-        cells[i]["address"].traverse(extractor);
-        spec.add(address, cells[i]["value"].asDouble());
-    }
-    return std::make_unique<SimpleConstantValue>(_engine.from_spec(spec));
 }
 
 } // namespace vespalib::eval
