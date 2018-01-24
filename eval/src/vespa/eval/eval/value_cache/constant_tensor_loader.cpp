@@ -4,13 +4,11 @@
 #include <vespa/eval/eval/tensor.h>
 #include <vespa/eval/eval/tensor_engine.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/data/lz4_input_decoder.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <set>
-#include <vector>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.eval.value_cache.constant_tensor_loader");
