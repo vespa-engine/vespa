@@ -74,44 +74,45 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
         try {
             int busy = busyThreads.incrementAndGet();
             if (busy > maxBusyThreads) {
-                log.warning("too many threads ["+busy+"] busy, returning SERVICE UNAVAILABLE");
+                log.warning("too many threads [" + busy + "] busy, returning SERVICE UNAVAILABLE");
                 return new EmptyResponse(com.yahoo.jdisc.http.HttpResponse.Status.SERVICE_UNAVAILABLE);
             }
-	    boolean asynchronous = request.getBooleanProperty("asynchronous");
+            boolean asynchronous = request.getBooleanProperty("asynchronous");
 
-	    MessagePropertyProcessor.PropertySetter properties = getPropertyProcessor().buildPropertySetter(request);
+            MessagePropertyProcessor.PropertySetter properties = getPropertyProcessor().buildPropertySetter(request);
 
-	    String route = properties.getRoute().toString();
-	    FeedResponse response = new FeedResponse(new RouteMetricSet(route, callback));
+            String route = properties.getRoute().toString();
+            FeedResponse response = new FeedResponse(new RouteMetricSet(route, callback));
 
-	    SingleSender sender = new SingleSender(response, getSharedSender(route), !asynchronous);
-	    sender.addMessageProcessor(properties);
-	    sender.addMessageProcessor(new DocprocMessageProcessor(getDocprocChain(request), getDocprocServiceRegistry(request)));
+            SingleSender sender = new SingleSender(response, getSharedSender(route), !asynchronous);
+            sender.addMessageProcessor(properties);
+            sender.addMessageProcessor(new DocprocMessageProcessor(getDocprocChain(request), getDocprocServiceRegistry(request)));
 
-	    Feeder feeder = createFeeder(sender, request);
-	    feeder.setAbortOnDocumentError(properties.getAbortOnDocumentError());
-	    feeder.setCreateIfNonExistent(properties.getCreateIfNonExistent());
-	    response.setAbortOnFeedError(properties.getAbortOnFeedError());
+            Feeder feeder = createFeeder(sender, request);
+            feeder.setAbortOnDocumentError(properties.getAbortOnDocumentError());
+            feeder.setCreateIfNonExistent(properties.getCreateIfNonExistent());
+            response.setAbortOnFeedError(properties.getAbortOnFeedError());
 
-	    List<String> errors = feeder.parse();
-	    for (String s : errors) {
-		response.addXMLParseError(s);
-	    }
-	    if (errors.size() > 0 && feeder instanceof XMLFeeder) {
-		response.addXMLParseError("If you are trying to feed JSON, set the Content-Type header to application/json.");
-	    }
+            List<String> errors = feeder.parse();
+            for (String s : errors) {
+                response.addXMLParseError(s);
+            }
+            if (errors.size() > 0 && feeder instanceof XMLFeeder) {
+                response.addXMLParseError("If you are trying to feed JSON, set the Content-Type header to application/json.");
+            }
 
-	    sender.done();
+            sender.done();
 
-	    if (asynchronous) {
-		return response;
-	    }
-	    long millis = getTimeoutMillis(request);
-	    boolean completed = sender.waitForPending(millis);
-	    if ( ! completed)
-		response.addError("Timed out after "+millis+" ms waiting for responses");
-	    response.done();
-	    return response;
+            if (asynchronous) {
+                return response;
+            }
+            long millis = getTimeoutMillis(request);
+            boolean completed = sender.waitForPending(millis);
+            if (!completed) {
+                response.addError("Timed out after " + millis + " ms waiting for responses");
+            }
+            response.done();
+            return response;
         } finally {
             busyThreads.decrementAndGet();
         }
