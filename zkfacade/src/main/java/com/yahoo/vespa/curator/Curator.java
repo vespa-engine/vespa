@@ -71,7 +71,7 @@ public class Curator implements AutoCloseable {
     }
 
     private Curator(ConfigserverConfig configserverConfig, String zooKeeperEnsembleConnectionSpec) {
-        this((configserverConfig.zookeeperLocalhostAffinity() || configserverConfig.system().equals("cd")) ?
+        this((configserverConfig.zookeeperLocalhostAffinity()) ?
                 createConnectionSpecForLocalhost(configserverConfig) : zooKeeperEnsembleConnectionSpec,
                 zooKeeperEnsembleConnectionSpec);
     }
@@ -139,7 +139,7 @@ public class Curator implements AutoCloseable {
         }
 
         throw new IllegalArgumentException("Unable to create connect string to localhost: " +
-                "There is no localhost servers specified in config: " + config);
+                "There is no localhost server specified in config: " + config);
     }
 
     private static void validateConnectionSpec(String connectionSpec) {
