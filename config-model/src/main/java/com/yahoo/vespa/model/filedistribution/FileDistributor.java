@@ -104,10 +104,13 @@ public class FileDistributor {
             }
         }
         // Ask other config server to download, for redundancy
+        // TODO: Enable the below when config server is able to receive files properly
+        /*
         if (configServerSpecs != null)
             configServerSpecs.stream()
                     .filter(configServerSpec -> !configServerSpec.getHostName().equals(fileSourceHost))
                     .forEach(spec -> dbHandler.startDownload(spec.getHostName(), spec.getConfigServerPort(), allFilesToSend()));
+                    */
 
         dbHandler.sendDeployedFiles(fileSourceHost, allFilesToSend());
         dbHandler.removeDeploymentsThatHaveDifferentApplicationId(getTargetHostnames());
