@@ -405,7 +405,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
 
     /**
      * Will preallocate in order to avoid resizing.
-     * @param minSize
+     * @param minSize The minimum size to reserve
      */
     public void reserve(int minSize) {
         getFieldMap(minSize);
