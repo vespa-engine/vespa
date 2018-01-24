@@ -67,6 +67,10 @@ TEST_F("require that lz4 compressed dense tensor can be loaded", ConstantTensorL
     TEST_DO(verify_tensor(make_dense_tensor(), f1.create(TEST_PATH("dense.json.lz4"), "tensor(x[2],y[2])")));
 }
 
+TEST_F("require that a binary tensor can be loaded", ConstantTensorLoader(SimpleTensorEngine::ref())) {
+    TEST_DO(verify_tensor(make_dense_tensor(), f1.create(TEST_PATH("dense.tbf"), "tensor(x[2],y[2])")));
+}
+
 TEST_F("require that lz4 compressed sparse tensor can be loaded", ConstantTensorLoader(SimpleTensorEngine::ref())) {
     TEST_DO(verify_tensor(make_sparse_tensor(), f1.create(TEST_PATH("sparse.json.lz4"), "tensor(x{},y{})")));
 }
