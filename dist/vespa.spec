@@ -48,11 +48,11 @@ BuildRequires: llvm-devel >= 4.0
 BuildRequires: boost-devel >= 1.63
 %endif
 %if 0%{?fc27}
-BuildRequires: llvm-devel >= 4.0
+BuildRequires: llvm4.0-devel >= 4.0
 BuildRequires: boost-devel >= 1.64
 %endif
 %if 0%{?fc28}
-BuildRequires: llvm-devel >= 4.0
+BuildRequires: llvm4.0-devel >= 4.0
 BuildRequires: boost-devel >= 1.64
 %endif
 BuildRequires: zookeeper-devel >= 3.4.9
@@ -118,18 +118,22 @@ Requires: boost >= 1.63
 %define _vespa_llvm_version 4.0
 %endif
 %if 0%{?fc27}
-Requires: llvm-libs >= 4.0
+Requires: llvm4.0-libs >= 4.0
 Requires: boost >= 1.64
 %define _vespa_llvm_version 4.0
+%define _vespa_llvm_link_directory /usr/lib64/llvm4.0/lib
+%define _vespa_llvm_include_directory /usr/include/llvm4.0
 %endif
 %if 0%{?fc28}
-Requires: llvm-libs >= 4.0
+Requires: llvm4.0-libs >= 4.0
 Requires: boost >= 1.64
 %define _vespa_llvm_version 4.0
+%define _vespa_llvm_link_directory /usr/lib64/llvm4.0/lib
+%define _vespa_llvm_include_directory /usr/include/llvm4.0
 %endif
 Requires: zookeeper >= 3.4.9
-%define _extra_link_directory /opt/vespa-libtorrent/lib;/opt/vespa-cppunit/lib
-%define _extra_include_directory /opt/vespa-libtorrent/include;/opt/vespa-cppunit/include
+%define _extra_link_directory /opt/vespa-libtorrent/lib;/opt/vespa-cppunit/lib%{?_vespa_llvm_link_directory:;%{_vespa_llvm_link_directory}}
+%define _extra_include_directory /opt/vespa-libtorrent/include;/opt/vespa-cppunit/include%{?_vespa_llvm_include_directory:;%{_vespa_llvm_include_directory}}
 %define _vespa_boost_lib_suffix %{nil}
 %endif
 Requires: java-1.8.0-openjdk
