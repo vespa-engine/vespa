@@ -162,6 +162,11 @@ public class DockerMock implements Docker {
     }
 
 
+    @Override
+    public String getGlobalIPv6Address(ContainerName name) {
+        return "2001:db8:1:2:0:242:ac13:2";
+    }
+
     public static class StartContainerCommandMock implements CreateContainerCommand {
         @Override
         public CreateContainerCommand withLabel(String name, String value) {
