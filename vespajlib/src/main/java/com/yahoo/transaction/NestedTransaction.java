@@ -88,6 +88,11 @@ public final class NestedTransaction implements AutoCloseable {
             transaction.transaction.close();
     }
 
+    @Override
+    public String toString() {
+        return String.join(",", transactions.stream().map(Object::toString).collect(Collectors.toList()));
+    }
+
     private List<Transaction> organizeTransactions(List<ConstrainedTransaction> transactions) {
         return orderTransactions(combineTransactions(transactions), findOrderingConstraints(transactions));
     }
@@ -173,6 +178,11 @@ public final class NestedTransaction implements AutoCloseable {
 
         /** Returns transaction types which should commit after this */
         public Class<? extends Transaction>[] before() { return before; }
+
+        @Override
+        public String toString() {
+            return transaction.toString();
+        }
 
     }
 
