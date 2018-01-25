@@ -2,17 +2,9 @@
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.evaluation.Context;
-import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
-import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
-import org.tensorflow.SavedModelBundle;
-import org.tensorflow.Session;
-
-import java.nio.FloatBuffer;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -24,29 +16,26 @@ public class MnistSoftmaxImportTestCase {
 
     @Test
     public void testMnistSoftmaxImport() {
-        TensorFlowImportTester tester = new TensorFlowImportTester();
-        String modelDir = "src/test/files/integration/tensorflow/mnist_softmax/saved";
-        SavedModelBundle model = SavedModelBundle.load(modelDir, "serve");
-        TensorFlowModel result = new TensorFlowImporter().importModel(model);
+        TensorFlowImportTester tester = new TensorFlowImportTester("src/test/files/integration/tensorflow/mnist_softmax/saved");
 
         // Check constants
-        assertEquals(2, result.constants().size());
+        assertEquals(2, tester.result().constants().size());
 
-        Tensor constant0 = result.constants().get("Variable");
+        Tensor constant0 = tester.result().constants().get("Variable");
         assertNotNull(constant0);
         assertEquals(new TensorType.Builder().indexed("d0", 784).indexed("d1", 10).build(),
                      constant0.type());
         assertEquals(7840, constant0.size());
 
-        Tensor constant1 = result.constants().get("Variable_1");
+        Tensor constant1 = tester.result().constants().get("Variable_1");
         assertNotNull(constant1);
         assertEquals(new TensorType.Builder().indexed("d0", 10).build(),
                      constant1.type());
         assertEquals(10, constant1.size());
 
         // Check signatures
-        assertEquals(1, result.signatures().size());
-        TensorFlowModel.Signature signature = result.signatures().get("serving_default");
+        assertEquals(1, tester.result().signatures().size());
+        TensorFlowModel.Signature signature = tester.result().signatures().get("serving_default");
         assertNotNull(signature);
 
         // ... signature inputs
@@ -64,10 +53,10 @@ public class MnistSoftmaxImportTestCase {
                      output.getRoot().toString());
 
         // Test execution
-        tester.assertEqualResult(model, result, "Placeholder", "Variable/read");
-        tester.assertEqualResult(model, result, "Placeholder", "Variable_1/read");
-        tester.assertEqualResult(model, result, "Placeholder", "MatMul");
-        tester.assertEqualResult(model, result, "Placeholder", "add");
+        tester.assertEqualResult("Placeholder", "Variable/read");
+        tester.assertEqualResult("Placeholder", "Variable_1/read");
+        tester.assertEqualResult("Placeholder", "MatMul");
+        tester.assertEqualResult("Placeholder", "add");
     }
 
 }

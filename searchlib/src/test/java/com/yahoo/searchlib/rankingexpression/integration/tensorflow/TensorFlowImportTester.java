@@ -14,18 +14,28 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Helper for TensorFlow import tests.
- * This currently assumes the TensorFlow model takes a single input named Placeholder, of type tensor(d0[1],d1[784])
+ * Helper for TensorFlow import tests: Imports a model and provides asserts on it.
+ * This currently assumes the TensorFlow model takes a single input of type tensor(d0[1],d1[784])
  *
  * @author bratseth
  */
 public class TensorFlowImportTester {
 
-    // Sizes of the "Placeholder" vector
+    private SavedModelBundle model;
+    private TensorFlowModel result;
+
+    // Sizes of the input vector
     private final int d0Size = 1;
     private final int d1Size = 784;
 
-    public void assertEqualResult(SavedModelBundle model, TensorFlowModel result, String inputName, String operationName) {
+    public TensorFlowImportTester(String modelDir) {
+        model = SavedModelBundle.load(modelDir, "serve");
+        result = new TensorFlowImporter().importModel(model);
+    }
+
+    public TensorFlowModel result() { return result; }
+
+    public void assertEqualResult(String inputName, String operationName) {
         Tensor tfResult = tensorFlowExecute(model, inputName, operationName);
         Context context = contextFrom(result);
         Tensor placeholder = placeholderArgument();
