@@ -464,7 +464,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         QueryProfileProperties queryProfileProperties = properties().getInstance(QueryProfileProperties.class);
         if (queryProfileProperties == null) return null; // Valid
         StringBuilder missingName = new StringBuilder();
-        if (! queryProfileProperties.isComplete(missingName, httpRequest.propertyMap()))
+        if ( ! queryProfileProperties.isComplete(missingName, httpRequest.propertyMap()))
             return "Incomplete query: Parameter '" + missingName + "' is mandatory in " +
                    queryProfileProperties.getQueryProfile() + " but is not set";
         else

@@ -32,7 +32,7 @@ final class AllTypesQueryProfileVisitor extends PrefixQueryProfileVisitor {
     }
 
     private void addReachableTypes(CompoundName name, QueryProfileType type) {
-        types.put(name, type);
+        types.putIfAbsent(name, type); // Types visited earlier has precedence: profile.type overrides profile.inherited.type
         for (FieldDescription fieldDescription : type.fields().values()) {
             if ( ! (fieldDescription.getType() instanceof QueryProfileFieldType)) continue;
             QueryProfileFieldType fieldType = (QueryProfileFieldType)fieldDescription.getType();

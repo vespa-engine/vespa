@@ -205,6 +205,62 @@ public class MandatoryTestCase {
         assertError(null, new Query(HttpRequest.createTestRequest("?myString=aString&myQueryProfile=otherUser&myQueryProfile.myUserString=userString", Method.GET), cRegistry.getComponent("test")));
     }
 
+    private static class Fixture2 {
+
+        final QueryProfileRegistry registry = new QueryProfileRegistry();
+        final QueryProfileTypeRegistry typeRegistry = new QueryProfileTypeRegistry();
+        final QueryProfileType rootType = new QueryProfileType(new ComponentId("root"));
+        final QueryProfileType mandatoryType = new QueryProfileType(new ComponentId("mandatory-type"));
+
+        public Fixture2() {
+            typeRegistry.register(rootType);
+            typeRegistry.register(mandatoryType);
+
+            mandatoryType.inherited().add(rootType);
+            mandatoryType.addField(new FieldDescription("foobar", FieldType.fromString("string", typeRegistry), true));
+        }
+
+    }
+
+    @Test
+    public void testMandatoryInParentType() {
+        Fixture2 fixture = new Fixture2();
+
+        QueryProfile defaultProfile = new QueryProfile("default");
+        defaultProfile.setType(fixture.rootType);
+
+        QueryProfile mandatoryProfile = new QueryProfile("mandatory");
+        mandatoryProfile.setType(fixture.rootType);
+        mandatoryProfile.setType(fixture.mandatoryType);
+
+        fixture.registry.register(defaultProfile);
+        fixture.registry.register(mandatoryProfile);
+        CompiledQueryProfileRegistry cRegistry = fixture.registry.compile();
+
+        assertError("Incomplete query: Parameter 'foobar' is mandatory in query profile 'mandatory' of type 'mandatory-type' but is not set",
+                    new Query(QueryTestCase.httpEncode("?queryProfile=mandatory"), cRegistry.getComponent("mandatory")));
+    }
+
+    @Test
+    public void testMandatoryInParentTypeWithInheritance() {
+        Fixture2 fixture = new Fixture2();
+
+        QueryProfile defaultProfile = new QueryProfile("default");
+        defaultProfile.setType(fixture.rootType);
+
+        QueryProfile mandatoryProfile = new QueryProfile("mandatory");
+        mandatoryProfile.setType(fixture.rootType);
+        mandatoryProfile.addInherited(defaultProfile); // The single difference from the test above
+        mandatoryProfile.setType(fixture.mandatoryType);
+
+        fixture.registry.register(defaultProfile);
+        fixture.registry.register(mandatoryProfile);
+        CompiledQueryProfileRegistry cRegistry = fixture.registry.compile();
+
+        assertError("Incomplete query: Parameter 'foobar' is mandatory in query profile 'mandatory' of type 'mandatory-type' but is not set",
+                    new Query(QueryTestCase.httpEncode("?queryProfile=mandatory"), cRegistry.getComponent("mandatory")));
+    }
+
     private void assertError(String message,Query query) {
         assertEquals(message, query.validate());
     }
