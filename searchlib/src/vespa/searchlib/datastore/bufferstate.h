@@ -73,14 +73,14 @@ public:
     /**
      * Transition from FREE to ACTIVE state.
      *
-     * @param bufferId      Id of buffer to be active.
-     * @param typeId        registered data type for buffer.
-     * @param typeHandler   type handler for registered data type.
-     * @param sizeNeeded    Number of elements needed to be free
-     * @param buffer        start of buffer.
+     * @param bufferId       Id of buffer to be active.
+     * @param typeId         registered data type for buffer.
+     * @param typeHandler    type handler for registered data type.
+     * @param elementsNeeded Number of elements needed to be free
+     * @param buffer         start of buffer.
      */
     void onActive(uint32_t bufferId, uint32_t typeId, BufferTypeBase *typeHandler,
-                  size_t sizeNeeded, void *&buffer);
+                  size_t elementsNeeded, void *&buffer);
 
     /**
      * Transition from ACTIVE to HOLD state.
@@ -151,7 +151,7 @@ public:
     size_t getExtraHoldBytes() const { return _extraHoldBytes; }
     bool getCompacting() const { return _compacting; }
     void setCompacting() { _compacting = true; }
-    void fallbackResize(uint32_t bufferId, uint64_t sizeNeeded, void *&buffer, Alloc &holdBuffer);
+    void fallbackResize(uint32_t bufferId, uint64_t elementsNeeded, void *&buffer, Alloc &holdBuffer);
 
     bool isActive(uint32_t typeId) const {
         return ((_state == ACTIVE) && (_typeId == typeId));
