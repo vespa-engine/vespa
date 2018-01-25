@@ -498,7 +498,10 @@ public class NodeAgentImpl implements NodeAgent {
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
                 storageMaintainer.cleanupNodeStorage(containerName, nodeSpec);
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
+
+                // Remove ourselves from node-repository and freeze until NodeAdmin stops and removes this agent
                 nodeRepository.markNodeAvailableForNewAllocation(hostname);
+                setFrozen(true);
                 break;
             default:
                 throw new RuntimeException("UNKNOWN STATE " + nodeSpec.nodeState.name());
@@ -581,8 +584,8 @@ public class NodeAgentImpl implements NodeAgent {
             }
             String wrappedMetrics = "s:" + params.toString();
 
-            // Push metrics to the metrics proxy in each container - give it maximum 1 seconds to complete
-            String[] command = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:19091",  "setExtraMetrics", wrappedMetrics};
+            // Push metrics to the metrics proxy in each container - give it maximum 2 seconds to complete
+            String[] command = {"vespa-rpc-invoke", "-t", "2", "tcp/localhost:19091", "setExtraMetrics", wrappedMetrics};
             dockerOperations.executeCommandInContainerAsRoot(containerName, 5L, command);
         } catch (DockerExecTimeoutException | JsonProcessingException  e) {
             logger.warning("Unable to push metrics to container: " + containerName, e);
