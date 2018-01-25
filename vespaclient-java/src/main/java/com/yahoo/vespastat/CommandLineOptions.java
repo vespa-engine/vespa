@@ -25,6 +25,7 @@ public class CommandLineOptions {
     private static final String BUCKET_OPTION = "bucket";
     private static final String GID_OPTION = "gid";
     private static final String DOCUMENT_OPTION = "document";
+    private static final String BUCKET_SPACE_OPTION = "bucketspace";
 
     private final Options options = createOptions();
 
@@ -49,6 +50,13 @@ public class CommandLineOptions {
                 .desc("Route to send the messages to, usually the name of the storage cluster.")
                 .argName("route")
                 .longOpt(ROUTE_OPTION)
+                .build());
+
+        options.addOption(Option.builder("s")
+                .hasArg(true)
+                .desc("Stat buckets within the given bucket space. If not provided, 'default' is used.")
+                .argName("space")
+                .longOpt(BUCKET_SPACE_OPTION)
                 .build());
 
         // A group of mutually exclusive options for user, group, bucket, gid and document.
@@ -109,6 +117,7 @@ public class CommandLineOptions {
             builder.setHelp(cl.hasOption(HELP_OPTION));
             builder.setDumpData(cl.hasOption(DUMP_OPTION));
             builder.setRoute(cl.getOptionValue(ROUTE_OPTION, "default"));
+            builder.setBucketSpace(cl.getOptionValue(BUCKET_SPACE_OPTION, "default"));
 
             if (cl.hasOption(USER_OPTION)) {
                 builder.setSelectionType(ClientParameters.SelectionType.USER);

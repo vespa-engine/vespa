@@ -19,4 +19,30 @@ public class RoutableFactories60 extends RoutableFactories52 {
         }
     }
 
+    public static class StatBucketMessageFactory extends RoutableFactories52.StatBucketMessageFactory {
+        @Override
+        protected String decodeBucketSpace(Deserializer deserializer) {
+            return decodeString(deserializer);
+        }
+
+        @Override
+        protected boolean encodeBucketSpace(String bucketSpace, DocumentSerializer buf) {
+            encodeString(bucketSpace, buf);
+            return true;
+        }
+    }
+
+    public static class GetBucketListMessageFactory extends RoutableFactories52.GetBucketListMessageFactory {
+        @Override
+        protected String decodeBucketSpace(Deserializer deserializer) {
+            return decodeString(deserializer);
+        }
+
+        @Override
+        protected boolean encodeBucketSpace(String bucketSpace, DocumentSerializer buf) {
+            encodeString(bucketSpace, buf);
+            return true;
+        }
+    }
+
 }
