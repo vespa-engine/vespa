@@ -47,7 +47,9 @@ public class FileDistributor {
      */
     public FileReference sendUriToHosts(String uri, Collection<Host> hosts) {
         FileReference reference = fileRegistry.addUri(uri);
-        addToFilesToDistribute(reference, hosts);
+        if (reference != null) {
+            addToFilesToDistribute(reference, hosts);
+        }
 
         return reference;
     }
