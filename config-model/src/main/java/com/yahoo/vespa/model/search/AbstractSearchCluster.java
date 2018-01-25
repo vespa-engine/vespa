@@ -40,8 +40,10 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
             for (RankingConstant constant : sds.getSearchDefinition().getSearch().getRankingConstants().values()) {
                 FileReference reference = (constant.getPathType() == RankingConstant.PathType.FILE)
                         ? FileSender.sendFileToServices(constant.getFileName(), backends)
-                        : FileSender.sendUriToServices(constant.getUri(), backends);;
-                constant.setFileReference(reference.value());
+                        : FileSender.sendUriToServices(constant.getUri(), backends);
+                if (reference != null) {
+                    constant.setFileReference(reference.value());
+                }
             }
         }
     }
