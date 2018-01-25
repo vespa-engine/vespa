@@ -5,10 +5,10 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
+import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.applicationmodel.ServiceStatus;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -19,6 +19,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 class ClusterApiImpl implements ClusterApi {
+    private final ApplicationApi applicationApi;
     private final ServiceCluster serviceCluster;
     private final NodeGroup nodeGroup;
     private final Map<HostName, HostStatus> hostStatusMap;
@@ -28,10 +29,12 @@ class ClusterApiImpl implements ClusterApi {
     private final Set<ServiceInstance> servicesNotInGroup;
     private final Set<ServiceInstance> servicesDownAndNotInGroup;
 
-    public ClusterApiImpl(ServiceCluster serviceCluster,
+    public ClusterApiImpl(ApplicationApi applicationApi,
+                          ServiceCluster serviceCluster,
                           NodeGroup nodeGroup,
                           Map<HostName, HostStatus> hostStatusMap,
                           ClusterControllerClientFactory clusterControllerClientFactory) {
+        this.applicationApi = applicationApi;
         this.serviceCluster = serviceCluster;
         this.nodeGroup = nodeGroup;
         this.hostStatusMap = hostStatusMap;
@@ -68,6 +71,11 @@ class ClusterApiImpl implements ClusterApi {
     @Override
     public boolean isStorageCluster() {
         return VespaModelUtil.isStorage(serviceCluster);
+    }
+
+    @Override
+    public ApplicationApi getApplication() {
+        return applicationApi;
     }
 
     @Override

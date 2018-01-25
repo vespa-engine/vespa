@@ -7,6 +7,7 @@ package com.yahoo.vespa.orchestrator.policy;
 public enum ConcurrentSuspensionLimitForCluster {
     ONE_NODE(0),
     TEN_PERCENT(10),
+    TWENTY_PERCENT(20),
     ALL_NODES(100);
 
     int percentage;

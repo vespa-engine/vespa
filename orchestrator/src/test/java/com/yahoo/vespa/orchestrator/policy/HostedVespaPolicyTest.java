@@ -2,6 +2,7 @@
 package com.yahoo.vespa.orchestrator.policy;
 
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
@@ -42,7 +43,7 @@ public class HostedVespaPolicyTest {
         final HostedVespaClusterPolicy clusterPolicy = mock(HostedVespaClusterPolicy.class);
         final HostedVespaPolicy policy = new HostedVespaPolicy(clusterPolicy, clientFactory);
         final ApplicationApi applicationApi = mock(ApplicationApi.class);
-        when(applicationApi.applicationInfo()).thenReturn("tenant:app");
+        when(applicationApi.applicationId()).thenReturn(ApplicationId.fromSerializedForm("tenant:app:default"));
 
         ClusterApi clusterApi1 = mock(ClusterApi.class);
         ClusterApi clusterApi2 = mock(ClusterApi.class);
@@ -93,7 +94,7 @@ public class HostedVespaPolicyTest {
         final HostedVespaClusterPolicy clusterPolicy = mock(HostedVespaClusterPolicy.class);
         final HostedVespaPolicy policy = new HostedVespaPolicy(clusterPolicy, clientFactory);
         final ApplicationApi applicationApi = mock(ApplicationApi.class);
-        when(applicationApi.applicationInfo()).thenReturn("tenant:app");
+        when(applicationApi.applicationId()).thenReturn(ApplicationId.fromSerializedForm("tenant:app:default"));
 
         ClusterApi clusterApi1 = mock(ClusterApi.class);
         ClusterApi clusterApi2 = mock(ClusterApi.class);

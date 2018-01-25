@@ -1,15 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.policy;
 
-import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.applicationmodel.TenantId;
+import com.yahoo.vespa.orchestrator.model.ApplicationApi;
 import com.yahoo.vespa.orchestrator.model.ClusterApi;
 import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
-import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -20,8 +19,14 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 public class HostedVespaClusterPolicyTest {
+    private ApplicationApi applicationApi = mock(ApplicationApi.class);
     private ClusterApi clusterApi = mock(ClusterApi.class);
     private HostedVespaClusterPolicy policy = spy(new HostedVespaClusterPolicy());
+
+    @Before
+    public void setUp() {
+        when(clusterApi.getApplication()).thenReturn(applicationApi);
+    }
 
     @Test
     public void testSlobrokSuspensionLimit() {
@@ -48,7 +53,17 @@ public class HostedVespaClusterPolicyTest {
     }
 
     @Test
+    public void testNodeAdminSuspensionLimit() {
+        when(applicationApi.applicationId()).thenReturn(VespaModelUtil.ZONE_APPLICATION_ID);
+        when(clusterApi.clusterId()).thenReturn(VespaModelUtil.NODE_ADMIN_CLUSTER_ID);
+        when(clusterApi.isStorageCluster()).thenReturn(false);
+        assertEquals(ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT,
+                policy.getConcurrentSuspensionLimit(clusterApi));
+    }
+
+    @Test
     public void testDefaultSuspensionLimit() {
+        when(applicationApi.applicationId()).thenReturn(ApplicationId.fromSerializedForm("a:b:c"));
         when(clusterApi.clusterId()).thenReturn(new ClusterId("some-cluster-id"));
         when(clusterApi.isStorageCluster()).thenReturn(false);
         assertEquals(ConcurrentSuspensionLimitForCluster.TEN_PERCENT,

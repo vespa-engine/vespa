@@ -16,8 +16,10 @@ import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 public class ClusterApiImplTest {
+    final ApplicationApi applicationApi = mock(ApplicationApi.class);
     final ModelTestUtils modelUtils = new ModelTestUtils();
 
     @Test
@@ -42,6 +44,7 @@ public class ClusterApiImplTest {
         );
 
         ClusterApiImpl clusterApi = new ClusterApiImpl(
+                applicationApi,
                 serviceCluster,
                 new NodeGroup(modelUtils.createApplicationInstance(new ArrayList<>()), hostName5),
                 modelUtils.getHostStatusMap(),
@@ -97,6 +100,7 @@ public class ClusterApiImplTest {
                                   boolean expectedNoServicesOutsideGroupIsDown,
                                   HostName... groupNodes) {
         ClusterApiImpl clusterApi = new ClusterApiImpl(
+                applicationApi,
                 serviceCluster,
                 new NodeGroup(modelUtils.createApplicationInstance(new ArrayList<>()), groupNodes),
                 modelUtils.getHostStatusMap(),
@@ -122,6 +126,7 @@ public class ClusterApiImplTest {
         );
 
         ClusterApiImpl clusterApi = new ClusterApiImpl(
+                applicationApi,
                 serviceCluster,
                 new NodeGroup(modelUtils.createApplicationInstance(new ArrayList<>()), hostName1, hostName3),
                 new HashMap<>(),
