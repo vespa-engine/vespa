@@ -41,9 +41,7 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
                 FileReference reference = (constant.getPathType() == RankingConstant.PathType.FILE)
                         ? FileSender.sendFileToServices(constant.getFileName(), backends)
                         : FileSender.sendUriToServices(constant.getUri(), backends);
-                if (reference != null) {
-                    constant.setFileReference(reference.value());
-                }
+                constant.setFileReference(reference.value());
             }
         }
     }

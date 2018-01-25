@@ -75,8 +75,7 @@ public class PreGeneratedFileRegistry implements FileRegistry {
 
     @Override
     public FileReference addUri(String uri) {
-        // TODO: uri's should also be pregenerated.
-        return null;
+        return new FileReference(path2Hash.get(uri));
     }
 
     @Override
