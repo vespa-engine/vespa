@@ -113,9 +113,10 @@ TensorSpec eval_expr_tf(const Inspector &test, const TensorEngine &engine) {
     }
     SimpleObjectParams params(param_refs);
     NodeTypes types = NodeTypes(fun, get_types(param_values));
-    const auto &tfun = make_tensor_function(engine, fun.root(), types, stash);
-    const Value &result = tfun.eval(engine, params, stash);
-    ASSERT_EQUAL(result.type(), tfun.result_type());
+    const auto &plain_fun = make_tensor_function(engine, fun.root(), types, stash);
+    const auto &optimized = engine.optimize(plain_fun, stash);
+    const Value &result = optimized.eval(engine, params, stash);
+    ASSERT_EQUAL(result.type(), plain_fun.result_type());
     ASSERT_EQUAL(result.type(), types.get_type(fun.root()));
     return engine.to_spec(result);
 }

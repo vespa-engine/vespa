@@ -46,9 +46,9 @@ struct ProgramCompiler {
             append(compile_tensor_function(if_node->cond(), stash));
             auto true_prog = compile_tensor_function(if_node->true_child(), stash);
             auto false_prog = compile_tensor_function(if_node->false_child(), stash);
+            true_prog.emplace_back(op_skip, false_prog.size());
             prog.emplace_back(op_skip_if_false, true_prog.size());
             append(true_prog);
-            prog.emplace_back(op_skip, false_prog.size());
             append(false_prog);
         } else {
             stack.emplace_back(node);

@@ -206,17 +206,13 @@ DefaultTensorEngine::decode(nbostream &input) const
 //-----------------------------------------------------------------------------
 
 const TensorFunction &
-DefaultTensorEngine::compile(const eval::tensor_function::Node &expr, Stash &stash) const
+DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
 {
-    using Node = eval::tensor_function::Node;
-    using Child = Node::Child;
+    using Child = TensorFunction::Child;
     Child root(expr);
     std::vector<Child::CREF> nodes({root});
     for (size_t i = 0; i < nodes.size(); ++i) {
-        const Child &child = nodes[i];
-        const Node *node = dynamic_cast<const Node *>(&child.get());
-        assert(node != nullptr);
-        node->push_children(nodes);
+        nodes[i].get().get().push_children(nodes);
     }
     while (!nodes.empty()) {
         const Child &child = nodes.back();

@@ -47,7 +47,7 @@ struct TensorEngine
     virtual void encode(const Value &value, nbostream &output) const = 0;
     virtual Value::UP decode(nbostream &input) const = 0;
 
-    virtual const TensorFunction &compile(const tensor_function::Node &expr, Stash &) const { return expr; }
+    virtual const TensorFunction &optimize(const TensorFunction &expr, Stash &) const { return expr; }
 
     virtual const Value &map(const Value &a, map_fun_t function, Stash &stash) const = 0;
     virtual const Value &join(const Value &a, const Value &b, join_fun_t function, Stash &stash) const = 0;

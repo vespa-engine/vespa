@@ -32,6 +32,21 @@ bool step_labels(std::vector<double> &labels, const ValueType &type) {
     return false;
 }
 
+// TODO(havardpe): generic function pointer resolving for all single
+//                 operation lambdas.
+
+template <typename OP2>
+bool is_op2(const Function &lambda) {
+    if (lambda.num_params() == 2) {
+        if (auto op2 = as<OP2>(lambda.root())) {
+            auto sym1 = as<Symbol>(op2->lhs());
+            auto sym2 = as<Symbol>(op2->rhs());
+            return (sym1 && sym2 && (sym1->id() != sym2->id()));
+        }
+    }
+    return false;
+}
+
 //-----------------------------------------------------------------------------
 
 struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
@@ -135,8 +150,14 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         make_map(node, token.get()->get().get_function<1>());
     }
     void visit(const TensorJoin &node) override {
-        const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
-        make_join(node, token.get()->get().get_function<2>());
+        if (is_op2<Mul>(node.lambda())) {
+            make_join(node, operation::Mul::f);
+        } else if (is_op2<Add>(node.lambda())) {
+            make_join(node, operation::Add::f);
+        } else {
+            const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::SEPARATE));
+            make_join(node, token.get()->get().get_function<2>());
+        }
     }
     void visit(const TensorReduce &node) override {
         make_reduce(node, node.aggr(), node.dimensions());

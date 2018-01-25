@@ -6,6 +6,7 @@
 #include <vespa/eval/eval/llvm/deinline_forest.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include "model.cpp"
 

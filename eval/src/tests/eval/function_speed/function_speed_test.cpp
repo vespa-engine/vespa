@@ -4,6 +4,7 @@
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 

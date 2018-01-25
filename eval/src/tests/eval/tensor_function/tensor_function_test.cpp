@@ -35,7 +35,7 @@ struct EvalCtx {
         return fun.eval(engine, SimpleObjectParams(params), stash);
     }
     const TensorFunction &compile(const tensor_function::Node &expr) {
-        return engine.compile(expr, stash);
+        return engine.optimize(expr, stash);
     }
     Value::UP make_true() {
         return engine.from_spec(TensorSpec("double").add({}, 1.0));
