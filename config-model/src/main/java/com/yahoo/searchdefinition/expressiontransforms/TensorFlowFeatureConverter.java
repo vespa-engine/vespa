@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 /**
  * Replaces instances of the tensorflow(model-path, signature, output)
@@ -45,8 +44,6 @@ import java.util.logging.Logger;
 // TODO: Verify types of macros
 // TODO: Avoid name conflicts across models for constants
 public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
-
-    private static final Logger log = Logger.getLogger(TensorFlowFeatureConverter.class.getName());
 
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
 
@@ -68,8 +65,8 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
         try {
             ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(),
-                                                   feature.getArguments());
-            if (store.hasTensorFlowModels())
+                                              feature.getArguments());
+            if (store.hasTensorFlowModels()) // TODO: Check if we have created a converted model already instead
                 return transformFromTensorFlowModel(store, context.rankProfile());
             else // is should have previously stored model information instead
                 return transformFromStoredModel(store, context.rankProfile());
@@ -206,7 +203,6 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
          * Adds this expression to the application package, such that it can be read later.
          */
         public void writeConverted(RankingExpression expression) {
-            log.info("Writing converted TensorFlow expression to " + arguments.expressionPath());
             application.getFile(arguments.expressionPath())
                        .writeFile(new StringReader(expression.getRoot().toString()));
         }
@@ -214,7 +210,6 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         /** Reads the previously stored ranking expression for these arguments */
         public RankingExpression readConverted() {
             try {
-                log.info("Reading converted TensorFlow expression from " + arguments.expressionPath());
                 return new RankingExpression(application.getFile(arguments.expressionPath()).createReader());
             }
             catch (IOException e) {
@@ -261,12 +256,10 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             }
 
             // Remember the constant in a file we replicate in ZooKeeper
-            log.info("Writing converted TensorFlow constant information to " + arguments.rankingConstantsPath().append(name + ".constant"));
             application.getFile(arguments.rankingConstantsPath().append(name + ".constant"))
                        .writeFile(new StringReader(name + ":" + constant.type() + ":" + constantPathCorrected));
 
             // Write content explicitly as a file on the file system as this is distributed using file distribution
-            log.info("Writing converted TensorFlow constant to " + application.getFileReference(constantPath).getAbsolutePath());
             createIfNeeded(constantsPath);
             IOUtils.writeFile(application.getFileReference(constantPath), TypedBinaryFormat.encode(constant));
             return constantPathCorrected;

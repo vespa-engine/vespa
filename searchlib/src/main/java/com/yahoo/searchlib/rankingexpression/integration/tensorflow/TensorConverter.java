@@ -13,6 +13,8 @@ import java.nio.LongBuffer;
 
 
 /**
+ * Converts TensorFlow tensors into Vespa tensors.
+ *
  * @author bratseth
  */
 public class TensorConverter {
@@ -149,4 +151,5 @@ public class TensorConverter {
         }
 
     }
+
 }

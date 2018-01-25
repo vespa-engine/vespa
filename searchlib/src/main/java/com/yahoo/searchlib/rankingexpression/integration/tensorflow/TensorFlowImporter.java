@@ -159,7 +159,8 @@ public class TensorFlowImporter {
 
             // not supported
             default :
-                throw new IllegalArgumentException("Conversion of TensorFlow operation '" + tfNode.getOp() + "' is not supported (" + tfNode.getName() + ")");
+                throw new IllegalArgumentException("Conversion of TensorFlow operation '" + tfNode.getOp() +
+                                                   "' is not supported (" + tfNode.getName() + ")");
         }
     }
 
