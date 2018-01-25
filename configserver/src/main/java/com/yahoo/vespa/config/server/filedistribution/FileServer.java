@@ -120,6 +120,7 @@ public class FileServer {
         }
 
         target.receive(fileData, new ReplayStatus(success ? 0 : 1, success ? "OK" : errorDescription));
+        fileData.close();
         log.log(LogLevel.DEBUG, "Done serving reference '" + reference.toString() + "' with file '" + file.getAbsolutePath() + "'");
     }
 
