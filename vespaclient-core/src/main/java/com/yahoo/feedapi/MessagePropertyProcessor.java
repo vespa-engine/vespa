@@ -107,7 +107,7 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         String loadTypeStr = null;
         String traceStr = null;
         String createIfNonExistentParam = null;
-        boolean useConstantTimeout = false;
+        Double totalTimeoutParam = null;
 
         if (request != null) {
             routeParam = request.getProperty("route");
@@ -116,7 +116,10 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
             if (timeoutStr != null) {
                 timeoutParam = Double.parseDouble(timeoutStr);
             }
-            useConstantTimeout = request.getBooleanProperty("useconstanttimeout");
+            timeoutStr = request.getProperty("totaltimeout");
+            if (timeoutStr != null) {
+                totalTimeoutParam = Double.parseDouble(timeoutStr);
+            }
 
             priorityParam = request.getProperty("priority");
             traceStr = request.getProperty("tracelevel");
@@ -143,6 +146,8 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
             abortOnFeedError = (abortOnFeedErrorParam == null ? defaultAbortOnSendError : (!"false".equals(abortOnFeedErrorParam)));
             createIfNonExistent = (createIfNonExistentParam == null ? defaultCreateIfNonExistent : ("true".equals(createIfNonExistentParam)));
         }
+        long totalTimeout = (totalTimeoutParam == null) ? timeout : (long)(totalTimeoutParam*1000);
+
         DocumentProtocol.Priority priority = null;
         if (priorityParam != null) {
             priority = DocumentProtocol.getPriorityByName(priorityParam);
@@ -157,7 +162,7 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
             loadType = LoadType.DEFAULT;
         }
 
-        return new PropertySetter(useConstantTimeout, route, timeout, priority, loadType, retry, abortOnDocumentError, abortOnFeedError, createIfNonExistent, traceStr != null ? Integer.parseInt(traceStr) : 0);
+        return new PropertySetter(route, timeout, totalTimeout, priority, loadType, retry, abortOnDocumentError, abortOnFeedError, createIfNonExistent, traceStr != null ? Integer.parseInt(traceStr) : 0);
     }
 
     public long getDefaultTimeoutMillis() { return defaultTimeoutMillis; }
@@ -220,8 +225,8 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         private Route route;
         /** Timeout (in milliseconds) */
         private long timeout;
+        private long totalTimeout;
         private long startTime;
-        boolean useConstantTimeout;
         /** Explicit priority set. May be null */
         private DocumentProtocol.Priority priority;
         private boolean retryEnabled;
@@ -231,12 +236,12 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         private LoadType loadType;
         private int traceLevel;
 
-        public PropertySetter(boolean useConstantTimeout, Route route, long timeout, DocumentProtocol.Priority priority, LoadType loadType,
+        public PropertySetter(Route route, long timeout, long totalTimeout, DocumentProtocol.Priority priority, LoadType loadType,
                               boolean retryEnabled, boolean abortOnDocumentError, boolean abortOnFeedError,
                               boolean createIfNonExistent, int traceLevel) {
-            this.useConstantTimeout = useConstantTimeout;
             this.route = route;
             this.timeout = timeout;
+            this.totalTimeout = totalTimeout;
             this.priority = priority;
             this.loadType = loadType;
             this.retryEnabled = retryEnabled;
@@ -248,9 +253,9 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         }
 
         private long getTimeRemaining() {
-            return useConstantTimeout
+            return (totalTimeout < 0L)
                     ? timeout
-                    : timeout - (SystemTimer.INSTANCE.milliTime() - startTime);
+                    : Math.min(timeout, totalTimeout - (SystemTimer.INSTANCE.milliTime() - startTime));
         }
 
         public Route getRoute() {
