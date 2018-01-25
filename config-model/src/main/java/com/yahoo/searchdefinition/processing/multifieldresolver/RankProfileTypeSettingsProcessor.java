@@ -10,6 +10,8 @@ import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.ImportedField;
+import com.yahoo.searchdefinition.document.ImportedFields;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.processing.Processor;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -17,6 +19,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Optional;
 
 /**
  * Class that processes a search instance and sets type settings on all rank profiles.
@@ -36,6 +39,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     @Override
     public void process() {
         processAttributeFields();
+        processImportedFields();
         processQueryProfileTypes();
 
     }
@@ -47,6 +51,21 @@ public class RankProfileTypeSettingsProcessor extends Processor {
                 addAttributeTypeToRankProfiles(attribute.getName(), attribute.tensorType().get().toString());
             }
         }
+    }
+
+    private void processImportedFields() {
+	Optional<ImportedFields> importedFields = search.importedFields();
+	if (importedFields.isPresent()) {
+	    importedFields.get().fields().forEach((fieldName, field) -> processImportedField(field));
+	}
+    }
+
+    private void processImportedField(ImportedField field) {
+	SDField targetField = field.targetField();
+	Attribute attribute = targetField.getAttributes().get(targetField.getName());
+	if (attribute != null && attribute.tensorType().isPresent()) {
+	    addAttributeTypeToRankProfiles(field.fieldName(), attribute.tensorType().get().toString());
+	}
     }
 
     private void addAttributeTypeToRankProfiles(String attributeName, String attributeType) {

@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * Check that no text field appears before a field that sets language.
  *
- * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
+ * @author Gunnar Gauslaa Bergem
  */
 public class SetLanguage extends Processor {
 
@@ -32,13 +32,12 @@ public class SetLanguage extends Processor {
                 textFieldsWithoutLanguage.add(field.getName());
             }
             if (field.containsExpression(SetLanguageExpression.class) && !textFieldsWithoutLanguage.isEmpty()) {
-                StringBuffer fieldString = new StringBuffer();
+                StringBuilder fieldString = new StringBuilder();
                 for (String fieldName : textFieldsWithoutLanguage) {
                     fieldString.append(fieldName).append(" ");
                 }
                 warn(search, field, "Field '" + field.getName() + "' sets the language for this document, " +
-                        "and should be defined as the first field in the searchdefinition. If you have both header and body fields, this field "+
-                        "should be header, if you require it to affect subsequent header fields and/or any body fields. " +
+                        "and should be defined as the first field in the searchdefinition." +
                         "Preceding text fields that will not have their language set: " +
                         fieldString.toString() +
                         " (This warning is omitted for any subsequent fields that also do set_language.)");
