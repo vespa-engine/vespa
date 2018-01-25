@@ -357,8 +357,9 @@ public class DocumentProtocol implements Protocol {
         putRoutableFactory(MESSAGE_REMOVEDOCUMENT, new RoutableFactories52.RemoveDocumentMessageFactory(), from52);
 
         // 6.x serialization
-        // TODO stat, listbuckets
         putRoutableFactory(MESSAGE_CREATEVISITOR, new RoutableFactories60.CreateVisitorMessageFactory(), from6);
+        putRoutableFactory(MESSAGE_STATBUCKET, new RoutableFactories60.StatBucketMessageFactory(), from6);
+        putRoutableFactory(MESSAGE_GETBUCKETLIST, new RoutableFactories60.GetBucketListMessageFactory(), from6);
     }
 
     /**
