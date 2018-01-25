@@ -2,6 +2,7 @@
 
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
+import com.yahoo.vespa.test.file.TestFileSystem;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import org.junit.Test;
 
