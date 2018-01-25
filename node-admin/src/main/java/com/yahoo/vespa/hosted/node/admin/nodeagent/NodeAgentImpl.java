@@ -58,6 +58,7 @@ public class NodeAgentImpl implements NodeAgent {
     private boolean isFrozen = true;
     private boolean wantFrozen = false;
     private boolean workToDoNow = true;
+    private boolean expectNodeNotInNodeRepo = false;
 
     private final Object monitor = new Object();
 
@@ -378,7 +379,9 @@ public class NodeAgentImpl implements NodeAgent {
         boolean isFrozenCopy;
         synchronized (monitor) {
             while (!workToDoNow) {
-                long remainder = timeBetweenEachConverge.minus(Duration.between(lastConverge, clock.instant())).toMillis();
+                long remainder = timeBetweenEachConverge
+                        .minus(Duration.between(lastConverge, clock.instant()))
+                        .toMillis();
                 if (remainder > 0) {
                     try {
                         monitor.wait(remainder);
@@ -413,7 +416,7 @@ public class NodeAgentImpl implements NodeAgent {
                 // therefore be reset if we get an exception from docker.
                 numberOfUnhandledException++;
                 containerState = UNKNOWN;
-                logger.error("Caught a DockerExecption, resetting containerState to " + containerState, e);
+                logger.error("Caught a DockerException, resetting containerState to " + containerState, e);
             } catch (Exception e) {
                 numberOfUnhandledException++;
                 logger.error("Unhandled exception, ignoring.", e);
@@ -427,9 +430,15 @@ public class NodeAgentImpl implements NodeAgent {
 
     // Public for testing
     void converge() {
-        final ContainerNodeSpec nodeSpec = nodeRepository.getContainerNodeSpec(hostname)
-                .orElseThrow(() ->
-                        new IllegalStateException(String.format("Node '%s' missing from node repository.", hostname)));
+        final Optional<ContainerNodeSpec> nodeSpecOptional = nodeRepository.getContainerNodeSpec(hostname);
+
+        // We just removed the node from node repo, so this is expected until NodeAdmin stop this NodeAgent
+        if (!nodeSpecOptional.isPresent() && expectNodeNotInNodeRepo) return;
+
+        final ContainerNodeSpec nodeSpec = nodeSpecOptional.orElseThrow(() ->
+                new IllegalStateException(String.format("Node '%s' missing from node repository.", hostname)));
+        expectNodeNotInNodeRepo = false;
+
 
         Optional<Container> container = getContainer();
         if (!nodeSpec.equals(lastNodeSpec)) {
@@ -499,6 +508,7 @@ public class NodeAgentImpl implements NodeAgent {
                 storageMaintainer.cleanupNodeStorage(containerName, nodeSpec);
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 nodeRepository.markNodeAvailableForNewAllocation(hostname);
+                expectNodeNotInNodeRepo = true;
                 break;
             default:
                 throw new RuntimeException("UNKNOWN STATE " + nodeSpec.nodeState.name());
