@@ -6,7 +6,7 @@
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/tensor/i_tensor_attribute.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -136,8 +136,8 @@ SingleAttrDFW::insertField(uint32_t docid,
         BasicType::Type t = v.getBasicType();
         switch (t) {
         case BasicType::TENSOR: {
-            const tensor::TensorAttribute &tv =
-                static_cast<const tensor::TensorAttribute &>(v);
+            const tensor::ITensorAttribute &tv =
+                dynamic_cast<const tensor::ITensorAttribute &>(v);
             const auto tensor = tv.getTensor(docid);
             if (tensor) {
                 vespalib::nbostream str;
