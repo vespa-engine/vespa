@@ -49,4 +49,12 @@ public class LazyFileReferenceData extends FileReferenceData {
             throw new RuntimeException(e);
         }
     }
+
+    public void close() {
+        try {
+            channel.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

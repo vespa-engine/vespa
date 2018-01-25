@@ -64,4 +64,10 @@ public abstract class FileReferenceData {
      * @return number of bytes
      */
     public abstract long size();
+
+    /**
+     * Close underlying files
+     *
+     */
+    public abstract void close();
 }

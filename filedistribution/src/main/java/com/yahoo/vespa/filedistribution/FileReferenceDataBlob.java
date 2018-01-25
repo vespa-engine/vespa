@@ -41,4 +41,9 @@ public class FileReferenceDataBlob extends FileReferenceData {
     public long size() {
         return content.length;
     }
+
+    @Override
+    public void close() {
+        // no-op
+    }
 }
