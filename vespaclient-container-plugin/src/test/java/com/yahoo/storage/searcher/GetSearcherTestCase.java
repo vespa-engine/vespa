@@ -259,7 +259,7 @@ public class GetSearcherTestCase {
     public void testConfig() throws Exception {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType);
         GetSearcher searcher = new GetSearcher(new FeedContext(
-                new MessagePropertyProcessor(new FeederConfig(new FeederConfig.Builder().timeout(458).route("route66").retryenabled(false)), defLoadTypeCfg),
+                new MessagePropertyProcessor(new FeederConfig(new FeederConfig.Builder().timeout(58).route("route66").retryenabled(false)), defLoadTypeCfg),
                 factory, docMan, new ClusterList(), new NullFeedMetric()));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
@@ -275,13 +275,13 @@ public class GetSearcherTestCase {
             assertEquals("[all]", gdm.getFieldSet());
             assertEquals(Route.parse("route66"), gdm.getRoute());
             assertFalse(gdm.getRetryEnabled());
-            assertEquals(458000, gdm.getTimeRemaining());
+            assertTrue(58000 >= gdm.getTimeRemaining());
         }
     }
 
     @Test
     public void testConfigChanges() throws Exception {
-        String config = "raw:timeout 458\nroute \"riksveg18\"\nretryenabled true";
+        String config = "raw:timeout 37\nroute \"riksveg18\"\nretryenabled true";
         DocumentSessionFactory factory = new DocumentSessionFactory(docType);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(new FeederConfig(new FeederConfig.Builder().timeout(58).route("riksveg18").retryenabled(true)),
@@ -385,6 +385,7 @@ public class GetSearcherTestCase {
         Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(
                 newQuery("?id[0]=userdoc:kittens:1:2&id[1]=userdoc:kittens:3:4&priority=LOW_2&route=highwaytohell&timeout=123"));
 
+        long lastTimeout = 123000;
         assertEquals(2, factory.messages.size());
         {
             Message m = factory.messages.get(0);
@@ -395,7 +396,8 @@ public class GetSearcherTestCase {
             assertEquals("[all]", gdm.getFieldSet());
             assertEquals(DocumentProtocol.Priority.LOW_2, gdm.getPriority());
             assertEquals(Route.parse("highwaytohell"), gdm.getRoute());
-            assertEquals(123000, gdm.getTimeRemaining());
+            assertTrue(lastTimeout >= gdm.getTimeRemaining());
+            lastTimeout = gdm.getTimeRemaining();
         }
 
         {
@@ -407,7 +409,7 @@ public class GetSearcherTestCase {
             assertEquals("[all]", gdm.getFieldSet());
             assertEquals(DocumentProtocol.Priority.LOW_2, gdm.getPriority());
             assertEquals(Route.parse("highwaytohell"), gdm.getRoute());
-            assertEquals(123000, gdm.getTimeRemaining());
+            assertTrue(lastTimeout >= gdm.getTimeRemaining());
         }
     }
 
