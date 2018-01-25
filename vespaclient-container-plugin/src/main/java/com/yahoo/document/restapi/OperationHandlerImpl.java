@@ -7,6 +7,7 @@ import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.json.JsonWriter;
 import com.yahoo.document.DocumentPut;
+import com.yahoo.document.restapi.resource.RestApi;
 import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.DocumentAccessException;
 import com.yahoo.documentapi.SyncParameters;
@@ -48,11 +49,34 @@ public class OperationHandlerImpl implements OperationHandler {
         List<ClusterDef> enumerateClusters();
     }
 
+    public interface BucketSpaceResolver {
+        Optional<String> clusterBucketSpaceFromDocumentType(String clusterConfigId, String docType);
+    }
+
+    public static class BucketSpaceRoute {
+        private final String clusterRoute;
+        private final String bucketSpace;
+
+        public BucketSpaceRoute(String clusterRoute, String bucketSpace) {
+            this.clusterRoute = clusterRoute;
+            this.bucketSpace = bucketSpace;
+        }
+
+        public String getClusterRoute() {
+            return clusterRoute;
+        }
+
+        public String getBucketSpace() {
+            return bucketSpace;
+        }
+    }
+
     public static final int VISIT_TIMEOUT_MS = 120000;
     public static final int WANTED_DOCUMENT_COUNT_UPPER_BOUND = 1000; // Approximates the max default size of a bucket
     private final DocumentAccess documentAccess;
     private final DocumentApiMetrics metricsHelper;
     private final ClusterEnumerator clusterEnumerator;
+    private final BucketSpaceResolver bucketSpaceResolver;
 
     private static final class SyncSessionFactory extends ResourceFactory<SyncSession> {
         private final DocumentAccess documentAccess;
@@ -67,13 +91,25 @@ public class OperationHandlerImpl implements OperationHandler {
 
     private final ConcurrentResourcePool<SyncSession> syncSessions;
 
-    public OperationHandlerImpl(DocumentAccess documentAccess, MetricReceiver metricReceiver) {
-        this(documentAccess, () -> new ClusterList("client").getStorageClusters(), metricReceiver);
+    private static ClusterEnumerator defaultClusterEnumerator() {
+        return () -> new ClusterList("client").getStorageClusters();
     }
 
-    public OperationHandlerImpl(DocumentAccess documentAccess, ClusterEnumerator clusterEnumerator, MetricReceiver metricReceiver) {
+    private static BucketSpaceResolver defaultBucketResolver() {
+        return (clusterConfigId, docType) -> Optional.ofNullable(BucketSpaceEnumerator
+                .fromConfig(clusterConfigId).getDoctypeToSpaceMapping()
+                .get(docType));
+    }
+
+    public OperationHandlerImpl(DocumentAccess documentAccess, MetricReceiver metricReceiver) {
+        this(documentAccess, defaultClusterEnumerator(), defaultBucketResolver(), metricReceiver);
+    }
+
+    public OperationHandlerImpl(DocumentAccess documentAccess, ClusterEnumerator clusterEnumerator,
+                                BucketSpaceResolver bucketSpaceResolver, MetricReceiver metricReceiver) {
         this.documentAccess = documentAccess;
         this.clusterEnumerator = clusterEnumerator;
+        this.bucketSpaceResolver = bucketSpaceResolver;
         syncSessions = new ConcurrentResourcePool<>(new SyncSessionFactory(documentAccess));
         metricsHelper = new DocumentApiMetrics(metricReceiver, "documentV1");
     }
@@ -280,13 +316,19 @@ public class OperationHandlerImpl implements OperationHandler {
         }
     }
 
-    private String resolveClusterRoute(Optional<String> wantedCluster) throws RestApiException {
+    protected BucketSpaceRoute resolveBucketSpaceRoute(Optional<String> wantedCluster, String docType) throws RestApiException {
         final List<ClusterDef> clusters = clusterEnumerator.enumerateClusters();
-        return resolveClusterRoute(wantedCluster, clusters);
+        ClusterDef clusterDef = resolveClusterDef(wantedCluster, clusters);
+        Optional<String> targetBucketSpace = bucketSpaceResolver.clusterBucketSpaceFromDocumentType(clusterDef.getConfigId(), docType);
+        if (!targetBucketSpace.isPresent()) {
+            throw new RestApiException(Response.createErrorResponse(400, String.format(
+                    "Document type '%s' in cluster '%s' is not mapped to a known bucket space", docType, clusterDef.getName()),
+                    RestUri.apiErrorCodes.UNKNOWN_BUCKET_SPACE)); // TODO own code
+        }
+        return new BucketSpaceRoute(clusterDefToRoute(clusterDef), targetBucketSpace.get());
     }
 
-    // Based on resolveClusterRoute in VdsVisit, protected for testability
-    protected static String resolveClusterRoute(Optional<String> wantedCluster, List<ClusterDef> clusters) throws RestApiException {
+    protected static ClusterDef resolveClusterDef(Optional<String> wantedCluster, List<ClusterDef> clusters) throws RestApiException {
         if (clusters.size() == 0) {
             throw new IllegalArgumentException("Your Vespa cluster does not have any content clusters " +
                     "declared. Visiting feature is not available.");
@@ -296,20 +338,25 @@ public class OperationHandlerImpl implements OperationHandler {
                 throw new RestApiException(Response.createErrorResponse(400, "Several clusters exist: " +
                         clusterListToString(clusters) + " you must specify one. ", RestUri.apiErrorCodes.SEVERAL_CLUSTERS));
             }
-            return clusterDefToRoute(clusters.get(0));
+            return clusters.get(0);
         }
 
         for (ClusterDef clusterDef : clusters) {
             if (clusterDef.getName().equals(wantedCluster.get())) {
-                return clusterDefToRoute(clusterDef);
+                return clusterDef;
             }
         }
         throw new RestApiException(Response.createErrorResponse(400, "Your vespa cluster contains the content clusters " +
                 clusterListToString(clusters) + " not " + wantedCluster.get() + ". Please select a valid vespa cluster.", RestUri.apiErrorCodes.MISSING_CLUSTER));
-
     }
 
-    private static String clusterDefToRoute(ClusterDef clusterDef) {
+    // Based on resolveClusterRoute in VdsVisit, protected for testability
+    // TODO remove in favor of resolveClusterDef
+    protected static String resolveClusterRoute(Optional<String> wantedCluster, List<ClusterDef> clusters) throws RestApiException {
+        return clusterDefToRoute(resolveClusterDef(wantedCluster, clusters));
+    }
+
+    protected static String clusterDefToRoute(ClusterDef clusterDef) {
         return "[Storage:cluster=" + clusterDef.getName() + ";clusterconfigid=" + clusterDef.getConfigId() + "]";
     }
 
@@ -353,7 +400,9 @@ public class OperationHandlerImpl implements OperationHandler {
         params.visitInconsistentBuckets(true); // TODO document this as part of consistency doc
         params.setVisitorOrdering(VisitorOrdering.ASCENDING);
 
-        params.setRoute(resolveClusterRoute(options.cluster));
+        BucketSpaceRoute bucketSpaceRoute = resolveBucketSpaceRoute(options.cluster, restUri.getDocumentType());
+        params.setRoute(bucketSpaceRoute.getClusterRoute());
+        params.setBucketSpace(bucketSpaceRoute.getBucketSpace());
 
         params.setTraceLevel(0);
         params.setPriority(DocumentProtocol.Priority.NORMAL_4);
