@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.types.test;
 
-import com.yahoo.jdisc.http.HttpRequest.Method;
-import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.component.ComponentId;
+import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -13,79 +13,84 @@ import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
 import com.yahoo.search.test.QueryTestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
  */
-public class MandatoryTestCase extends junit.framework.TestCase {
+public class MandatoryTestCase {
 
-    private QueryProfileTypeRegistry registry;
+    private static class Fixture1 {
 
-    private QueryProfileType type, user;
+        final QueryProfileRegistry registry = new QueryProfileRegistry();
+        final QueryProfileTypeRegistry typeRegistry = new QueryProfileTypeRegistry();
+        final QueryProfileType type = new QueryProfileType(new ComponentId("testtype"));
+        final QueryProfileType user = new QueryProfileType(new ComponentId("user"));
 
-    protected @Override void setUp() {
-        type=new QueryProfileType(new ComponentId("testtype"));
-        user=new QueryProfileType(new ComponentId("user"));
-        registry=new QueryProfileTypeRegistry();
-        registry.register(type);
-        registry.register(user);
+        public Fixture1() {
+            typeRegistry.register(type);
+            typeRegistry.register(user);
 
-        addTypeFields(type);
-        addUserFields(user);
+            addTypeFields(type, typeRegistry);
+            addUserFields(user, typeRegistry);
+        }
+
+        private static void addTypeFields(QueryProfileType type, QueryProfileTypeRegistry registry) {
+            type.addField(new FieldDescription("myString", FieldType.fromString("string", registry), true));
+            type.addField(new FieldDescription("myInteger", FieldType.fromString("integer", registry)));
+            type.addField(new FieldDescription("myLong", FieldType.fromString("long", registry)));
+            type.addField(new FieldDescription("myFloat", FieldType.fromString("float", registry)));
+            type.addField(new FieldDescription("myDouble", FieldType.fromString("double", registry)));
+            type.addField(new FieldDescription("myQueryProfile", FieldType.fromString("query-profile", registry)));
+            type.addField(new FieldDescription("myUserQueryProfile", FieldType.fromString("query-profile:user", registry), true));
+        }
+
+        private static void addUserFields(QueryProfileType user, QueryProfileTypeRegistry registry) {
+            user.addField(new FieldDescription("myUserString", FieldType.fromString("string", registry), true));
+            user.addField(new FieldDescription("myUserInteger", FieldType.fromString("integer", registry), true));
+        }
+
     }
 
-    private void addTypeFields(QueryProfileType type) {
-        boolean mandatory=true;
-        type.addField(new FieldDescription("myString", FieldType.fromString("string",registry), mandatory));
-        type.addField(new FieldDescription("myInteger",FieldType.fromString("integer",registry)));
-        type.addField(new FieldDescription("myLong",FieldType.fromString("long",registry)));
-        type.addField(new FieldDescription("myFloat",FieldType.fromString("float",registry)));
-        type.addField(new FieldDescription("myDouble",FieldType.fromString("double",registry)));
-        type.addField(new FieldDescription("myQueryProfile",FieldType.fromString("query-profile",registry)));
-        type.addField(new FieldDescription("myUserQueryProfile", FieldType.fromString("query-profile:user",registry),mandatory));
-    }
-
-    private void addUserFields(QueryProfileType user) {
-        boolean mandatory=true;
-        user.addField(new FieldDescription("myUserString",FieldType.fromString("string",registry),mandatory));
-        user.addField(new FieldDescription("myUserInteger",FieldType.fromString("integer",registry),mandatory));
-    }
-
+    @Test
     public void testMandatoryFullySpecifiedQueryProfile() {
-        QueryProfileRegistry registry = new QueryProfileRegistry();
+        Fixture1 fixture = new Fixture1();
 
         QueryProfile test=new QueryProfile("test");
-        test.setType(type);
-        test.set("myString","aString", registry);
-        registry.register(test);
+        test.setType(fixture.type);
+        test.set("myString", "aString", fixture.registry);
+        fixture.registry.register(test);
 
         QueryProfile myUser=new QueryProfile("user");
-        myUser.setType(user);
-        myUser.set("myUserInteger",1, registry);
-        myUser.set("myUserString",1, registry);
-        test.set("myUserQueryProfile", myUser, registry);
-        registry.register(myUser);
+        myUser.setType(fixture.user);
+        myUser.set("myUserInteger",1, fixture.registry);
+        myUser.set("myUserString",1, fixture.registry);
+        test.set("myUserQueryProfile", myUser, fixture.registry);
+        fixture.registry.register(myUser);
 
-        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        CompiledQueryProfileRegistry cRegistry = fixture.registry.compile();
 
         // Fully specified request
         assertError(null, new Query(QueryTestCase.httpEncode("?queryProfile=test"), cRegistry.getComponent("test")));
     }
 
+    @Test
     public void testMandatoryRequestPropertiesNeeded() {
-        QueryProfileRegistry registry = new QueryProfileRegistry();
+        Fixture1 fixture = new Fixture1();
 
-        QueryProfile test=new QueryProfile("test");
-        test.setType(type);
-        registry.register(test);
+        QueryProfile test = new QueryProfile("test");
+        test.setType(fixture.type);
+        fixture.registry.register(test);
 
-        QueryProfile myUser=new QueryProfile("user");
-        myUser.setType(user);
-        myUser.set("myUserInteger",1, registry);
-        test.set("myUserQueryProfile",myUser, registry);
-        registry.register(myUser);
+        QueryProfile myUser = new QueryProfile("user");
+        myUser.setType(fixture.user);
+        myUser.set("myUserInteger", 1, fixture.registry);
+        test.set("myUserQueryProfile", myUser, fixture.registry);
+        fixture.registry.register(myUser);
 
-        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        CompiledQueryProfileRegistry cRegistry = fixture.registry.compile();
 
         // Underspecified request 1
         assertError("Incomplete query: Parameter 'myString' is mandatory in query profile 'test' of type 'testtype' but is not set",
@@ -100,29 +105,30 @@ public class MandatoryTestCase extends junit.framework.TestCase {
     }
 
     /** Same as above except the whole thing is nested in maps */
+    @Test
     public void testMandatoryNestedInMaps() {
-        QueryProfileRegistry registry = new QueryProfileRegistry();
+        Fixture1 fixture = new Fixture1();
 
-        QueryProfile topMap=new QueryProfile("topMap");
-        registry.register(topMap);
+        QueryProfile topMap = new QueryProfile("topMap");
+        fixture.registry.register(topMap);
 
-        QueryProfile subMap=new QueryProfile("topSubMap");
-        topMap.set("subMap",subMap, registry);
-        registry.register(subMap);
+        QueryProfile subMap = new QueryProfile("topSubMap");
+        topMap.set("subMap", subMap, fixture.registry);
+        fixture.registry.register(subMap);
 
-        QueryProfile test=new QueryProfile("test");
-        test.setType(type);
-        subMap.set("test",test, registry);
-        registry.register(test);
+        QueryProfile test = new QueryProfile("test");
+        test.setType(fixture.type);
+        subMap.set("test", test, fixture.registry);
+        fixture.registry.register(test);
 
-        QueryProfile myUser=new QueryProfile("user");
-        myUser.setType(user);
-        myUser.set("myUserInteger",1, registry);
-        test.set("myUserQueryProfile",myUser, registry);
-        registry.register(myUser);
+        QueryProfile myUser = new QueryProfile("user");
+        myUser.setType(fixture.user);
+        myUser.set("myUserInteger",1, fixture.registry);
+        test.set("myUserQueryProfile", myUser, fixture.registry);
+        fixture.registry.register(myUser);
 
 
-        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        CompiledQueryProfileRegistry cRegistry = fixture.registry.compile();
 
         // Underspecified request 1
         assertError("Incomplete query: Parameter 'subMap.test.myString' is mandatory in query profile 'topMap' but is not set",
@@ -137,13 +143,16 @@ public class MandatoryTestCase extends junit.framework.TestCase {
     }
 
     /** Here, no user query profile is referenced in the query profile, but one is chosen in the request */
+    @Test
     public void testMandatoryUserProfileSetInRequest() {
-        QueryProfile test=new QueryProfile("test");
-        test.setType(type);
+        Fixture1 fixture = new Fixture1();
 
-        QueryProfile myUser=new QueryProfile("user");
-        myUser.setType(user);
-        myUser.set("myUserInteger",1, (QueryProfileRegistry)null);
+        QueryProfile test = new QueryProfile("test");
+        test.setType(fixture.type);
+
+        QueryProfile myUser = new QueryProfile("user");
+        myUser.setType(fixture.user);
+        myUser.set("myUserInteger", 1, null);
 
         QueryProfileRegistry registry = new QueryProfileRegistry();
         registry.register(test);
@@ -163,25 +172,27 @@ public class MandatoryTestCase extends junit.framework.TestCase {
     }
 
     /** Here, a partially specified query profile is added to a non-mandatory field, making the request underspecified */
+    @Test
     public void testNonMandatoryUnderspecifiedUserProfileSetInRequest() {
-        QueryProfileRegistry registry = new QueryProfileRegistry();
+        Fixture1 fixture = new Fixture1();
+
         QueryProfile test = new QueryProfile("test");
-        test.setType(type);
-        registry.register(test);
+        test.setType(fixture.type);
+        fixture.registry.register(test);
 
-        QueryProfile myUser=new QueryProfile("user");
-        myUser.setType(user);
-        myUser.set("myUserInteger", 1, registry);
-        myUser.set("myUserString","userValue", registry);
-        test.set("myUserQueryProfile",myUser, registry);
-        registry.register(myUser);
+        QueryProfile myUser = new QueryProfile("user");
+        myUser.setType(fixture.user);
+        myUser.set("myUserInteger", 1, fixture.registry);
+        myUser.set("myUserString", "userValue", fixture.registry);
+        test.set("myUserQueryProfile", myUser, fixture.registry);
+        fixture.registry.register(myUser);
 
-        QueryProfile otherUser=new QueryProfile("otherUser");
-        otherUser.setType(user);
-        otherUser.set("myUserInteger", 2, registry);
-        registry.register(otherUser);
+        QueryProfile otherUser = new QueryProfile("otherUser");
+        otherUser.setType(fixture.user);
+        otherUser.set("myUserInteger", 2, fixture.registry);
+        fixture.registry.register(otherUser);
 
-        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        CompiledQueryProfileRegistry cRegistry = fixture.registry.compile();
 
         // Fully specified request
         assertError(null, new Query(HttpRequest.createTestRequest("?myString=aString", Method.GET), cRegistry.getComponent("test")));
