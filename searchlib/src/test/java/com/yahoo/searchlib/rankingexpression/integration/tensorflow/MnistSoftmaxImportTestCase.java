@@ -16,26 +16,26 @@ public class MnistSoftmaxImportTestCase {
 
     @Test
     public void testMnistSoftmaxImport() {
-        TensorFlowImportTester tester = new TensorFlowImportTester("src/test/files/integration/tensorflow/mnist_softmax/saved");
+        TestableTensorFlowModel model = new TestableTensorFlowModel("src/test/files/integration/tensorflow/mnist_softmax/saved");
 
         // Check constants
-        assertEquals(2, tester.result().constants().size());
+        assertEquals(2, model.get().constants().size());
 
-        Tensor constant0 = tester.result().constants().get("Variable");
+        Tensor constant0 = model.get().constants().get("Variable");
         assertNotNull(constant0);
         assertEquals(new TensorType.Builder().indexed("d0", 784).indexed("d1", 10).build(),
                      constant0.type());
         assertEquals(7840, constant0.size());
 
-        Tensor constant1 = tester.result().constants().get("Variable_1");
+        Tensor constant1 = model.get().constants().get("Variable_1");
         assertNotNull(constant1);
         assertEquals(new TensorType.Builder().indexed("d0", 10).build(),
                      constant1.type());
         assertEquals(10, constant1.size());
 
         // Check signatures
-        assertEquals(1, tester.result().signatures().size());
-        TensorFlowModel.Signature signature = tester.result().signatures().get("serving_default");
+        assertEquals(1, model.get().signatures().size());
+        TensorFlowModel.Signature signature = model.get().signatures().get("serving_default");
         assertNotNull(signature);
 
         // ... signature inputs
@@ -53,10 +53,10 @@ public class MnistSoftmaxImportTestCase {
                      output.getRoot().toString());
 
         // Test execution
-        tester.assertEqualResult("Placeholder", "Variable/read");
-        tester.assertEqualResult("Placeholder", "Variable_1/read");
-        tester.assertEqualResult("Placeholder", "MatMul");
-        tester.assertEqualResult("Placeholder", "add");
+        model.assertEqualResult("Placeholder", "Variable/read");
+        model.assertEqualResult("Placeholder", "Variable_1/read");
+        model.assertEqualResult("Placeholder", "MatMul");
+        model.assertEqualResult("Placeholder", "add");
     }
 
 }

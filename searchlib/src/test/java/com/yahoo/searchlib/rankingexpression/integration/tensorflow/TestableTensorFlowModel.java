@@ -19,28 +19,28 @@ import static org.junit.Assert.assertEquals;
  *
  * @author bratseth
  */
-public class TensorFlowImportTester {
+public class TestableTensorFlowModel {
 
-    private SavedModelBundle model;
-    private TensorFlowModel result;
+    private SavedModelBundle tensorFlowModel;
+    private TensorFlowModel model;
 
     // Sizes of the input vector
     private final int d0Size = 1;
     private final int d1Size = 784;
 
-    public TensorFlowImportTester(String modelDir) {
-        model = SavedModelBundle.load(modelDir, "serve");
-        result = new TensorFlowImporter().importModel(model);
+    public TestableTensorFlowModel(String modelDir) {
+        tensorFlowModel = SavedModelBundle.load(modelDir, "serve");
+        model = new TensorFlowImporter().importModel(tensorFlowModel);
     }
 
-    public TensorFlowModel result() { return result; }
+    public TensorFlowModel get() { return model; }
 
     public void assertEqualResult(String inputName, String operationName) {
-        Tensor tfResult = tensorFlowExecute(model, inputName, operationName);
-        Context context = contextFrom(result);
+        Tensor tfResult = tensorFlowExecute(tensorFlowModel, inputName, operationName);
+        Context context = contextFrom(model);
         Tensor placeholder = placeholderArgument();
         context.put(inputName, new TensorValue(placeholder));
-        Tensor vespaResult = result.expressions().get(operationName).evaluate(context).asTensor();
+        Tensor vespaResult = model.expressions().get(operationName).evaluate(context).asTensor();
         assertEquals("Operation '" + operationName + "' produces equal results", tfResult, vespaResult);
     }
 
