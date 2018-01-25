@@ -52,10 +52,10 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     vespalib::VersionSpecification version52(5, 115);
     vespalib::VersionSpecification version6(6, 197); // TODO finalize version
 
-    std::vector<vespalib::VersionSpecification> from50 = { version50, version51, version52 };
-    std::vector<vespalib::VersionSpecification> from51 = { version51, version52 };
-    std::vector<vespalib::VersionSpecification> from52 = { version52 };
-    std::vector<vespalib::VersionSpecification> from6 = { version6 };
+    std::vector<vespalib::VersionSpecification> from50 = { version50, version51, version52, version6 };
+    std::vector<vespalib::VersionSpecification> from51 = { version51, version52, version6 };
+    std::vector<vespalib::VersionSpecification> from52 = { version52, version6 };
+    std::vector<vespalib::VersionSpecification> from6  = { version6 };
 
     // Add 5.0 serialization
     putRoutableFactory(MESSAGE_BATCHDOCUMENTUPDATE, IRoutableFactory::SP(new RoutableFactories50::BatchDocumentUpdateMessageFactory(*_repo)), from50);
