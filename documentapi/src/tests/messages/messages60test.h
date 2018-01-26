@@ -10,4 +10,6 @@ protected:
 public:
     Messages60Test();
     bool testCreateVisitorMessage();
+    bool testStatBucketMessage();
+    bool testGetBucketListMessage();
 };

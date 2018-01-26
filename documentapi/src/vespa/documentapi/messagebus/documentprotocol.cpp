@@ -108,6 +108,8 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
 
     // Add 6.x serialization (TODO finalize version)
     putRoutableFactory(MESSAGE_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories60::CreateVisitorMessageFactory(*_repo)), from6);
+    putRoutableFactory(MESSAGE_STATBUCKET, IRoutableFactory::SP(new RoutableFactories60::StatBucketMessageFactory()), from6);
+    putRoutableFactory(MESSAGE_GETBUCKETLIST, IRoutableFactory::SP(new RoutableFactories60::GetBucketListMessageFactory()), from6);
 }
 
 DocumentProtocol::~DocumentProtocol() = default;
