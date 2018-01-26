@@ -371,8 +371,10 @@ EnumStoreTest::testCompaction(bool hasPostings, bool disableReEnumerate)
 {
     // entrySize = 15 before alignment
     uint32_t entrySize = EnumStoreType::alignEntrySize(15);
-    uint32_t bufferSize = entrySize * 5;
-    EnumStoreType ses(bufferSize, hasPostings);
+    uint32_t initBufferSize = entrySize * 5;
+    EnumStoreType ses(initBufferSize, hasPostings);
+    // Note: Sizes of underlying data store buffers are power of 2.
+    uint32_t adjustedBufferSize = vespalib::roundUp2inN(initBufferSize) - RESERVED_BYTES;
     EnumIndex idx;
     std::vector<EnumIndex> indices;
     typename EnumStoreType::Type t = "foo";
@@ -385,18 +387,19 @@ EnumStoreTest::testCompaction(bool hasPostings, bool disableReEnumerate)
 
     // fill with unique values
     for (uint32_t i = 0; i < 5; ++i) {
-        EXPECT_TRUE(ses.getRemaining() == bufferSize - i * entrySize);
+        size_t expRemaining = adjustedBufferSize - i * entrySize;
+        EXPECT_EQUAL(expRemaining, ses.getRemaining());
         ses.addEnum(uniques[i].c_str(), idx);
         ses.incRefCount(idx);
         EXPECT_TRUE(ses.getRefCount(idx));
         indices.push_back(idx);
     }
-    EXPECT_EQUAL(0u, ses.getRemaining());
-    EXPECT_EQUAL(0u, ses.getBuffer(0).remaining());
+    EXPECT_EQUAL(32u, ses.getRemaining());
+    EXPECT_EQUAL(32u, ses.getBuffer(0).remaining());
     EXPECT_EQUAL(entrySize * 5 + RESERVED_BYTES, ses.getBuffer(0).size());
     EXPECT_EQUAL(RESERVED_BYTES, ses.getBuffer(0).getDeadElems());
     uint32_t failEntrySize = ses.getEntrySize("enum05");
-    EXPECT_TRUE(failEntrySize > ses.getRemaining());
+    EXPECT_EQUAL(16u, failEntrySize);
 
     // change from enum00 -> enum01
     ses.decRefCount(indices[0]);
@@ -525,7 +528,9 @@ EnumStoreTest::testReset(bool hasPostings)
     }
 
     ses.reset(builder);
-    EXPECT_EQUAL(RESERVED_BYTES, ses.getRemaining());
+    // Note: Sizes of underlying data store buffers are power of 2.
+    EXPECT_EQUAL(524288u, ses.getCapacity());
+    EXPECT_EQUAL(204272u, ses.getRemaining());
 
     // check for old unique strings
     for (StringVector::iterator iter = uniques.begin(); iter != uniques.end(); ++iter) {
@@ -597,7 +602,8 @@ EnumStoreTest::testHoldListAndGeneration()
         }
     }
 
-    EXPECT_EQUAL(0u, ses.getRemaining());
+    // Note: Sizes of underlying data store buffers are power of 2.
+    EXPECT_EQUAL(432u, ses.getRemaining());
     EXPECT_EQUAL(RESERVED_BYTES, ses.getBuffer(0).getDeadElems());
 
     // remove all uniques
@@ -657,7 +663,8 @@ EnumStoreTest::testMemoryUsage()
     // usage before inserting enums
     MemoryUsage usage = ses.getMemoryUsage();
     EXPECT_EQUAL(ses.getNumUniques(), uint32_t(0));
-    EXPECT_EQUAL(enumStoreAlign(200u) + RESERVED_BYTES, usage.allocatedBytes());
+    // Note: Sizes of underlying data store buffers are power of 2.
+    EXPECT_EQUAL(vespalib::roundUp2inN(enumStoreAlign(200u) + RESERVED_BYTES), usage.allocatedBytes());
     EXPECT_EQUAL(RESERVED_BYTES, usage.usedBytes());
     EXPECT_EQUAL(RESERVED_BYTES, usage.deadBytes());
     EXPECT_EQUAL(0u, usage.allocatedBytesOnHold());
@@ -672,7 +679,8 @@ EnumStoreTest::testMemoryUsage()
     // usage after inserting enums
     usage = ses.getMemoryUsage();
     EXPECT_EQUAL(ses.getNumUniques(), num);
-    EXPECT_EQUAL(enumStoreAlign(200u) + RESERVED_BYTES, usage.allocatedBytes());
+    // Note: Sizes of underlying data store buffers are power of 2.
+    EXPECT_EQUAL(vespalib::roundUp2inN(enumStoreAlign(200u) + RESERVED_BYTES), usage.allocatedBytes());
     EXPECT_EQUAL(num * entrySize + RESERVED_BYTES, usage.usedBytes());
     EXPECT_EQUAL(RESERVED_BYTES, usage.deadBytes());
     EXPECT_EQUAL(0u, usage.allocatedBytesOnHold());
@@ -689,7 +697,8 @@ EnumStoreTest::testMemoryUsage()
     // usage after removing enums
     usage = ses.getMemoryUsage();
     EXPECT_EQUAL(ses.getNumUniques(), num / 2);
-    EXPECT_EQUAL(enumStoreAlign(200u) + RESERVED_BYTES, usage.allocatedBytes());
+    // Note: Sizes of underlying data store buffers are power of 2.
+    EXPECT_EQUAL(vespalib::roundUp2inN(enumStoreAlign(200u) + RESERVED_BYTES), usage.allocatedBytes());
     EXPECT_EQUAL(num * entrySize + RESERVED_BYTES, usage.usedBytes());
     EXPECT_EQUAL((num / 2) * entrySize + RESERVED_BYTES, usage.deadBytes());
     EXPECT_EQUAL(0u, usage.allocatedBytesOnHold());

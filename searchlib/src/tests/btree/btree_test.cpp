@@ -1022,6 +1022,15 @@ Test::requireThatTreeIteratorAssignWorks()
     }
 }
 
+size_t
+adjustAllocatedBytes(size_t nodeCount, size_t nodeSize)
+{
+    // Note: Sizes of underlying data store buffers are power of 2.
+    size_t allocatedBytes = vespalib::roundUp2inN(nodeCount * nodeSize);
+    size_t adjustedNodeCount = allocatedBytes / nodeSize;
+    return adjustedNodeCount * nodeSize;
+}
+
 void
 Test::requireThatMemoryUsageIsCalculated()
 {
@@ -1041,8 +1050,8 @@ Test::requireThatMemoryUsageIsCalculated()
     MemoryUsage mu;
     const uint32_t initialInternalNodes = 128u;
     const uint32_t initialLeafNodes = 128u;
-    mu.incAllocatedBytes(sizeof(INode) * initialInternalNodes);
-    mu.incAllocatedBytes(sizeof(LNode) * initialLeafNodes);
+    mu.incAllocatedBytes(adjustAllocatedBytes(initialInternalNodes, sizeof(INode)));
+    mu.incAllocatedBytes(adjustAllocatedBytes(initialLeafNodes, sizeof(LNode)));
     mu.incUsedBytes(sizeof(INode));
     mu.incDeadBytes(sizeof(INode));
     EXPECT_TRUE(assertMemoryUsage(mu, tm.getMemoryUsage()));
@@ -1071,8 +1080,8 @@ Test::requireThatMemoryUsageIsCalculated()
     gh.incGeneration();
     tm.trimHoldLists(gh.getFirstUsedGeneration());
     mu = MemoryUsage();
-    mu.incAllocatedBytes(sizeof(INode) * initialInternalNodes);
-    mu.incAllocatedBytes(sizeof(LNode) * initialLeafNodes);
+    mu.incAllocatedBytes(adjustAllocatedBytes(initialInternalNodes, sizeof(INode)));
+    mu.incAllocatedBytes(adjustAllocatedBytes(initialLeafNodes, sizeof(LNode)));
     mu.incUsedBytes(sizeof(INode) * 2);
     mu.incDeadBytes(sizeof(INode) * 2);
     mu.incUsedBytes(sizeof(LNode));

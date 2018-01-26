@@ -381,7 +381,7 @@ TEST("requireThatNumDocsAndDocIdLimitIsReturned")
 
 TEST("requireThatWeUnderstandTheMemoryFootprint")
 {
-    constexpr size_t BASE_SIZE = 118860u;
+    constexpr size_t BASE_SIZE = 188172u;
     {
         Setup setup;
         Index index(setup);

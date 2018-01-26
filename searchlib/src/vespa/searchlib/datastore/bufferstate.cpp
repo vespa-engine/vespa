@@ -4,6 +4,7 @@
 #include <limits>
 
 using vespalib::alloc::Alloc;
+using vespalib::alloc::MemoryAllocator;
 
 namespace search::datastore {
 
@@ -30,7 +31,7 @@ BufferState::BufferState()
       _typeId(0),
       _clusterSize(0),
       _compacting(false),
-      _buffer(Alloc::alloc())
+      _buffer(Alloc::alloc(0, MemoryAllocator::HUGEPAGE_SIZE))
 {
 }
 
@@ -53,6 +54,23 @@ struct AllocResult {
     AllocResult(size_t elements_, size_t bytes_) : elements(elements_), bytes(bytes_) {}
 };
 
+size_t
+roundUpToMatchAllocator(size_t sz)
+{
+    if (sz == 0) {
+        return 0;
+    }
+    // We round up the wanted number of bytes to allocate to match
+    // the underlying allocator to ensure little to no waste of allocated memory.
+    if (sz < MemoryAllocator::HUGEPAGE_SIZE) {
+        // Match heap allocator in vespamalloc.
+        return vespalib::roundUp2inN(sz);
+    } else {
+        // Match mmap allocator.
+        return MemoryAllocator::roundUpToHugePages(sz);
+    }
+}
+
 AllocResult
 calcAllocation(uint32_t bufferId,
                BufferTypeBase &typeHandler,
@@ -61,8 +79,9 @@ calcAllocation(uint32_t bufferId,
 {
     size_t allocClusters = typeHandler.calcClustersToAlloc(bufferId, elementsNeeded, resizing);
     size_t allocElements = allocClusters * typeHandler.getClusterSize();
-    size_t allocBytes = allocElements * typeHandler.elementSize();
-    return AllocResult(allocElements, allocBytes);
+    size_t allocBytes = roundUpToMatchAllocator(allocElements * typeHandler.elementSize());
+    size_t adjustedAllocElements = (allocBytes / typeHandler.elementSize());
+    return AllocResult(adjustedAllocElements, allocBytes);
 }
 
 }
