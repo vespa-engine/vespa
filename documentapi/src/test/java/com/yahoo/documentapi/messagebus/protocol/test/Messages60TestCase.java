@@ -33,6 +33,7 @@ public class Messages60TestCase extends Messages52TestCase {
         // version 6.0. When adding tests to this list, please KEEP THEM ORDERED alphabetically like they are now.
 
         out.put(DocumentProtocol.MESSAGE_CREATEVISITOR, new Messages60TestCase.testCreateVisitorMessage());
+        out.put(DocumentProtocol.MESSAGE_STATBUCKET, new Messages60TestCase.testStatBucketMessage());
     }
 
     public class testCreateVisitorMessage implements RunnableTest {

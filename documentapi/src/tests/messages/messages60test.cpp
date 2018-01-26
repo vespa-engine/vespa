@@ -9,6 +9,8 @@ Messages60Test::Messages60Test() {
     // This list MUST mirror the list of routable factories from the DocumentProtocol constructor that support
     // version 6.x. When adding tests to this list, please KEEP THEM ORDERED alphabetically like they are now.
     putTest(DocumentProtocol::MESSAGE_CREATEVISITOR, TEST_METHOD(Messages60Test::testCreateVisitorMessage));
+    putTest(DocumentProtocol::MESSAGE_STATBUCKET, TEST_METHOD(Messages60Test::testStatBucketMessage));
+    putTest(DocumentProtocol::MESSAGE_GETBUCKETLIST, TEST_METHOD(Messages60Test::testGetBucketListMessage));
 }
 
 // TODO code dupe with parent classes
@@ -48,6 +50,43 @@ bool Messages60Test::testCreateVisitorMessage() {
             EXPECT_EQUAL(document::OrderingSpecification::DESCENDING, ref.getVisitorOrdering());
             EXPECT_EQUAL(uint32_t(2), ref.getMaxBucketsPerVisitor());
             EXPECT_EQUAL(string("bjarne"), ref.getBucketSpace());
+        }
+    }
+    return true;
+}
+
+bool Messages60Test::testStatBucketMessage() {
+    StatBucketMessage msg(document::BucketId(16, 123), "id.user=123");
+    msg.setBucketSpace("andrei");
+
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 27u + serializedLength("andrei"), serialize("StatBucketMessage", msg));
+
+    for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
+        mbus::Routable::UP obj = deserialize("StatBucketMessage", DocumentProtocol::MESSAGE_STATBUCKET, lang);
+        if (EXPECT_TRUE(obj.get() != NULL)) {
+            StatBucketMessage &ref = static_cast<StatBucketMessage&>(*obj);
+            EXPECT_EQUAL(document::BucketId(16, 123), ref.getBucketId());
+            EXPECT_EQUAL("id.user=123", ref.getDocumentSelection());
+            EXPECT_EQUAL("andrei", ref.getBucketSpace());
+        }
+    }
+    return true;
+}
+
+bool Messages60Test::testGetBucketListMessage() {
+    GetBucketListMessage msg(document::BucketId(16, 123));
+    msg.setLoadType(_loadTypes["foo"]);
+    msg.setBucketSpace("beartato");
+    EXPECT_EQUAL(string("foo"), msg.getLoadType().getName());
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 12u + serializedLength("beartato"), serialize("GetBucketListMessage", msg));
+
+    for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
+        mbus::Routable::UP obj = deserialize("GetBucketListMessage", DocumentProtocol::MESSAGE_GETBUCKETLIST, lang);
+        if (EXPECT_TRUE(obj.get() != NULL)) {
+            GetBucketListMessage &ref = static_cast<GetBucketListMessage&>(*obj);
+            EXPECT_EQUAL(string("foo"), ref.getLoadType().getName());
+            EXPECT_EQUAL(document::BucketId(16, 123), ref.getBucketId());
+            EXPECT_EQUAL("beartato", ref.getBucketSpace());
         }
     }
     return true;

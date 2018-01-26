@@ -9,14 +9,14 @@ StatBucketMessage::StatBucketMessage() :
     DocumentMessage(),
     _bucketId(document::BucketId()),
     _documentSelection(),
-    _bucketSpace()
+    _bucketSpace("default") // TODO repo
 {}
 
 StatBucketMessage::StatBucketMessage(document::BucketId bucketId, const string& documentSelection) :
     DocumentMessage(),
     _bucketId(bucketId),
     _documentSelection(documentSelection),
-    _bucketSpace()
+    _bucketSpace("default") // TODO repo
 {}
 
 StatBucketMessage::~StatBucketMessage() {
