@@ -19,7 +19,7 @@ import java.nio.LongBuffer;
  */
 public class TensorConverter {
 
-    public Tensor toVespaTensor(org.tensorflow.Tensor<?> tfTensor) {
+    public static Tensor toVespaTensor(org.tensorflow.Tensor<?> tfTensor) {
         TensorType type = toVespaTensorType(tfTensor.shape());
         Values values = readValuesOf(tfTensor);
         IndexedTensor.BoundBuilder builder = (IndexedTensor.BoundBuilder)Tensor.Builder.of(type);
@@ -28,7 +28,7 @@ public class TensorConverter {
         return builder.build();
     }
 
-    private TensorType toVespaTensorType(long[] shape) {
+    private static TensorType toVespaTensorType(long[] shape) {
         TensorType.Builder b = new TensorType.Builder();
         int dimensionIndex = 0;
         for (long dimensionSize : shape) {
@@ -38,7 +38,7 @@ public class TensorConverter {
         return b.build();
     }
 
-    private Values readValuesOf(org.tensorflow.Tensor<?> tfTensor) {
+    private static Values readValuesOf(org.tensorflow.Tensor<?> tfTensor) {
         switch (tfTensor.dataType()) {
             case DOUBLE: return new DoubleValues(tfTensor);
             case FLOAT: return new FloatValues(tfTensor);

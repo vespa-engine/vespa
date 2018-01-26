@@ -19,7 +19,12 @@ final class TypedTensorFunction {
         this.function = function;
     }
 
-    public TensorType type() { return type; }
-    public TensorFunction function() { return function; }
+    public TensorType type() {
+        return type;
+    }
+
+    public TensorFunction function() {
+        return function;
+    }
 
 }

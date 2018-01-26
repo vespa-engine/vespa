@@ -5,8 +5,10 @@ import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -67,6 +69,7 @@ public class TensorFlowModel {
         private final Map<String, String> inputs = new HashMap<>();
         private final Map<String, String> outputs = new HashMap<>();
         private final Map<String, String> skippedOutputs = new HashMap<>();
+        private final List<String> importWarnings = new ArrayList<>();
 
         Signature(String name) {
             this.name = name;
@@ -75,6 +78,7 @@ public class TensorFlowModel {
         void input(String inputName, String argumentName) { inputs.put(inputName, argumentName); }
         void output(String name, String expressionName) { outputs.put(name, expressionName); }
         void skippedOutput(String name, String reason) { skippedOutputs.put(name, reason); }
+        void importWarning(String warning) { importWarnings.add(warning); }
 
         public String name() { return name; }
 
@@ -98,6 +102,11 @@ public class TensorFlowModel {
          * with a string detailing the reason for each
          */
         public Map<String, String> skippedOutputs() { return Collections.unmodifiableMap(skippedOutputs); }
+
+        /**
+         * Returns an immutable list of possibly non-fatal warnings encountered during import.
+         */
+        public List<String> importWarnings() { return Collections.unmodifiableList(importWarnings); }
 
         /** Returns owner().expressions().get(outputs.get(outputName)), e.g the expression this output references */
         public RankingExpression outputExpression(String outputName) { return owner().expressions().get(outputs.get(outputName)); }
