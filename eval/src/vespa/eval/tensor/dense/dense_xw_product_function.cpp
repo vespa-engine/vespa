@@ -69,7 +69,18 @@ getCellsRef(const eval::Value &value)
     return denseTensor.cellsRef();
 }
 
+void op_call_leaf_eval(eval::InterpretedFunction::State &state, uint64_t param) {
+    DenseXWProductFunction *self = (DenseXWProductFunction *)(param);
+    state.stack.push_back(self->eval(state.engine, *state.params, state.stash));
+}
+
 } // namespace <unnamed>
+
+eval::InterpretedFunction::Instruction
+DenseXWProductFunction::compile_self(Stash &) const
+{
+    return eval::InterpretedFunction::Instruction(op_call_leaf_eval, (uint64_t)(this));
+}
 
 const eval::Value &
 DenseXWProductFunction::eval(const eval::TensorEngine &, const eval::LazyParams &params, Stash &stash) const

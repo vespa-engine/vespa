@@ -6,6 +6,7 @@
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/test/eval_spec.h>
 #include <vespa/eval/eval/basic_nodes.h>
+#include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>
@@ -177,7 +178,7 @@ struct InnerProduct {
     InterpretedFunction interpreted;
     ~InnerProduct() {}
     InnerProduct(const vespalib::string &expr)
-        : engine(SimpleTensorEngine::ref()),
+        : engine(DefaultTensorEngine::ref()),
           function(Function::parse({"a", "b"}, expr)),
           a("null"), b("null"), expect("null"),
           types(),
@@ -186,10 +187,10 @@ struct InnerProduct {
               TensorSpec a_in,
               TensorSpec b_in,
               TensorSpec expect_in)
-        : engine(SimpleTensorEngine::ref()),
+        : engine(DefaultTensorEngine::ref()),
           function(Function::parse(expr)),
           a(a_in), b(b_in), expect(expect_in),
-          types(function, {ValueType::from_spec(a.type()), ValueType::from_spec(a.type())}),
+          types(function, {ValueType::from_spec(a.type()), ValueType::from_spec(b.type())}),
           interpreted(engine, function, types) {}
     void verify_optimized() const {
         EXPECT_EQUAL(1u, interpreted.program_size());
@@ -296,13 +297,13 @@ TEST("require that vector matrix multiplication works with tensor function") {
     TEST_DO(XW("reduce(join(b,a,f(x,y)(y*x)),sum,x)").verify_optimized());
 }
 
-TEST("require that matrix multiplication works with tensor function") {
-    TEST_DO(MatMul("reduce(a*b,sum,y)").verify_optimized());
-    TEST_DO(MatMul("reduce(join(a,b,f(x,y)(x*y)),sum,y)").verify_optimized());
-    TEST_DO(MatMul("reduce(b*a,sum,y)").verify_optimized());
-    TEST_DO(MatMul("reduce(join(b,a,f(x,y)(x*y)),sum,y)").verify_optimized());
-    TEST_DO(MatMul("reduce(join(a,b,f(x,y)(y*x)),sum,y)").verify_optimized());
-    TEST_DO(MatMul("reduce(join(b,a,f(x,y)(y*x)),sum,y)").verify_optimized());
+TEST("require that matrix multiplication is not optimized (yet)") {
+    TEST_DO(MatMul("reduce(a*b,sum,y)").verify_not_optimized());
+    TEST_DO(MatMul("reduce(join(a,b,f(x,y)(x*y)),sum,y)").verify_not_optimized());
+    TEST_DO(MatMul("reduce(b*a,sum,y)").verify_not_optimized());
+    TEST_DO(MatMul("reduce(join(b,a,f(x,y)(x*y)),sum,y)").verify_not_optimized());
+    TEST_DO(MatMul("reduce(join(a,b,f(x,y)(y*x)),sum,y)").verify_not_optimized());
+    TEST_DO(MatMul("reduce(join(b,a,f(x,y)(y*x)),sum,y)").verify_not_optimized());
 }
 
 TEST("require that expressions similar to inner product are not optimized") {

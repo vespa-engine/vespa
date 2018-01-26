@@ -3,7 +3,6 @@
 #pragma once
 
 #include "function.h"
-#include "simple_tensor_engine.h"
 #include "node_types.h"
 #include "lazy_params.h"
 #include <vespa/vespalib/util/stash.h>
