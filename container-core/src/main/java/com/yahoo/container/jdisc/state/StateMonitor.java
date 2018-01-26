@@ -31,7 +31,7 @@ public class StateMonitor extends AbstractComponent {
     private final Thread thread;
     private final Timer timer;
     private final long snapshotIntervalMs;
-    private long lastSnapshotTimeMs;
+    private volatile long lastSnapshotTimeMs;
     private volatile MetricSnapshot snapshot;
     private volatile Status status;
     private final TreeSet<String> valueNames = new TreeSet<>();

@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -46,7 +47,7 @@ public class StateHandlerTest {
     private TestDriver driver;
     private StateMonitor monitor;
     private Metric metric;
-    private volatile long currentTimeMillis = 0;
+    private final AtomicLong currentTimeMillis = new AtomicLong(0);
 
     @Before
     public void startTestDriver() {
@@ -58,7 +59,7 @@ public class StateHandlerTest {
 
                     @Override
                     public long currentTimeMillis() {
-                        return currentTimeMillis;
+                        return currentTimeMillis.get();
                     }
                 });
             }
@@ -400,7 +401,7 @@ public class StateHandlerTest {
     }
 
     private void incrementCurrentTime(long val) {
-        currentTimeMillis += val;
+        currentTimeMillis.addAndGet(val);
         monitor.checkTime();
     }
 
