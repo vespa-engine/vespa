@@ -3,7 +3,7 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.TestFileSystem;
+import com.yahoo.vespa.test.file.TestFileSystem;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import org.junit.Test;
 
