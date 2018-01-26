@@ -33,6 +33,7 @@ public class ScalarFunctions {
     public static DoubleUnaryOperator acos() { return new Acos(); }
     public static DoubleUnaryOperator elu() { return new Elu(); }
     public static DoubleUnaryOperator exp() { return new Exp(); }
+    public static DoubleUnaryOperator floor() { return new Floor(); }
     public static DoubleUnaryOperator relu() { return new Relu(); }
     public static DoubleUnaryOperator rsqrt() { return new Rsqrt(); }
     public static DoubleUnaryOperator selu() { return new Selu(); }
@@ -125,6 +126,14 @@ public class ScalarFunctions {
         @Override
         public String toString() { return "f(a)(exp(a))"; }
     }
+
+    public static class Floor implements DoubleUnaryOperator {
+        @Override
+        public double applyAsDouble(double operand) { return Math.floor(operand); }
+        @Override
+        public String toString() { return "f(a)(floor(a))"; }
+    }
+
 
     public static class Relu implements DoubleUnaryOperator {
         @Override
