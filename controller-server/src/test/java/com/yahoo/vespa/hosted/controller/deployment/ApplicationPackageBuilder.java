@@ -71,8 +71,8 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
-    public ApplicationPackageBuilder blockChange(boolean revision, boolean version, 
-                                                 String daySpec, String hourSpec, String zoneSpec) {
+    public ApplicationPackageBuilder blockChange(boolean revision, boolean version, String daySpec, String hourSpec,
+                                                 String zoneSpec) {
         blockChange.append("  <block-change");
         blockChange.append(" revision='").append(revision).append("'");
         blockChange.append(" version='").append(version).append("'");
@@ -93,7 +93,8 @@ public class ApplicationPackageBuilder {
     }
 
     public ApplicationPackageBuilder athenzIdentity(AthenzDomain domain, AthenzService service) {
-        this.athenzIdentityAttributes = String.format("athenz-domain='%s' athenz-service='%s'", domain.value(), service.value());
+        this.athenzIdentityAttributes = String.format("athenz-domain='%s' athenz-service='%s'", domain.value(),
+                                                      service.value());
         return this;
     }
 

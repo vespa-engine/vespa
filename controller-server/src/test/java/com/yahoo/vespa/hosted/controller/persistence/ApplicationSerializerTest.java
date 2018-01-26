@@ -6,14 +6,14 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
-import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
@@ -26,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -60,10 +59,11 @@ public class ApplicationSerializerTest {
                                                                               "</validation-overrides>");
 
         List<Deployment> deployments = new ArrayList<>();
-        ApplicationRevision revision1 = ApplicationRevision.from("appHash1");
-        ApplicationRevision revision2 = ApplicationRevision.from("appHash2", new SourceRevision("repo1", "branch1", "commit1"));
-        deployments.add(new Deployment(zone1, revision1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3))); // One deployment without cluster info and utils
-        deployments.add(new Deployment(zone2, revision2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
+        ApplicationVersion applicationVersion1 = ApplicationVersion.from("appHash1");
+        ApplicationVersion applicationVersion2 = ApplicationVersion
+                .from("appHash2", new SourceRevision("repo1", "branch1", "commit1"));
+        deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3))); // One deployment without cluster info and utils
+        deployments.add(new Deployment(zone2, applicationVersion2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
                 createClusterUtils(3, 0.2), createClusterInfo(3, 4),new DeploymentMetrics(2,3,4,5,6)));
 
         Optional<Long> projectId = Optional.of(123L);
@@ -96,8 +96,8 @@ public class ApplicationSerializerTest {
         assertEquals(original.validationOverrides().xmlForm(), serialized.validationOverrides().xmlForm());
 
         assertEquals(2, serialized.deployments().size());
-        assertEquals(original.deployments().get(zone1).revision(), serialized.deployments().get(zone1).revision());
-        assertEquals(original.deployments().get(zone2).revision(), serialized.deployments().get(zone2).revision());
+        assertEquals(original.deployments().get(zone1).applicationVersion(), serialized.deployments().get(zone1).applicationVersion());
+        assertEquals(original.deployments().get(zone2).applicationVersion(), serialized.deployments().get(zone2).applicationVersion());
         assertEquals(original.deployments().get(zone1).version(), serialized.deployments().get(zone1).version());
         assertEquals(original.deployments().get(zone2).version(), serialized.deployments().get(zone2).version());
         assertEquals(original.deployments().get(zone1).at(), serialized.deployments().get(zone1).at());
@@ -145,18 +145,20 @@ public class ApplicationSerializerTest {
         assertEquals(6, serialized.deployments().get(zone2).metrics().writeLatencyMillis(), Double.MIN_VALUE);
 
         { // test more deployment serialization cases
-            Application original2 = writable(original).withDeploying(Optional.of(Change.ApplicationChange.of(ApplicationRevision.from("hash1"))));
+            Application original2 = writable(original).withDeploying(Optional.of(Change.ApplicationChange.of(ApplicationVersion
+                                                                                                                     .from("hash1"))));
             Application serialized2 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original2));
             assertEquals(original2.deploying(), serialized2.deploying());
-            assertEquals(((Change.ApplicationChange)serialized2.deploying().get()).revision().get().source(),
-                         ((Change.ApplicationChange)original2.deploying().get()).revision().get().source());
+            assertEquals(((Change.ApplicationChange)serialized2.deploying().get()).version().get().source(),
+                         ((Change.ApplicationChange)original2.deploying().get()).version().get().source());
 
-            Application original3 = writable(original).withDeploying(Optional.of(Change.ApplicationChange.of(ApplicationRevision.from("hash1",
-                                                                                                                                      new SourceRevision("a", "b", "c")))));
+            Application original3 = writable(original).withDeploying(Optional.of(Change.ApplicationChange.of(ApplicationVersion
+                                                                                                                     .from("hash1",
+                                                                                                                           new SourceRevision("a", "b", "c")))));
             Application serialized3 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original3));
             assertEquals(original3.deploying(), serialized2.deploying());
-            assertEquals(((Change.ApplicationChange)serialized3.deploying().get()).revision().get().source(),
-                         ((Change.ApplicationChange)original3.deploying().get()).revision().get().source());
+            assertEquals(((Change.ApplicationChange)serialized3.deploying().get()).version().get().source(),
+                         ((Change.ApplicationChange)original3.deploying().get()).version().get().source());
 
             Application original4 = writable(original).withDeploying(Optional.empty());
             Application serialized4 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original4));
@@ -195,7 +197,7 @@ public class ApplicationSerializerTest {
     }
 
     @Test
-    public void testLegacySerialization() throws IOException {
+    public void testLegacySerialization() {
         Application applicationWithSuccessfulJob = applicationSerializer.fromSlime(applicationSlime(false));
         assertFalse("No job error for successful job", applicationWithSuccessfulJob.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest).jobError().isPresent());
 
@@ -211,7 +213,7 @@ public class ApplicationSerializerTest {
     
     @Test
     public void testCompleteApplicationDeserialization() {
-        Application application = applicationSerializer.fromSlime(SlimeUtils.jsonToSlime(longApplicationJson.getBytes(StandardCharsets.UTF_8)));
+        applicationSerializer.fromSlime(SlimeUtils.jsonToSlime(longApplicationJson.getBytes(StandardCharsets.UTF_8)));
         // ok if no error
     }
 

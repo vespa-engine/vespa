@@ -67,14 +67,14 @@ public class DeploymentJobs {
     public DeploymentJobs withTriggering(JobType jobType,
                                          Optional<Change> change,
                                          Version version,
-                                         Optional<ApplicationRevision> revision,
+                                         Optional<ApplicationVersion> applicationVersion,
                                          String reason,
                                          Instant triggerTime) {
         Map<JobType, JobStatus> status = new LinkedHashMap<>(this.status);
         status.compute(jobType, (type, job) -> {
             if (job == null) job = JobStatus.initial(jobType);
-            return job.withTriggering( version,
-                                      revision,
+            return job.withTriggering(version,
+                                      applicationVersion,
                                       change.isPresent() && change.get() instanceof Change.VersionChange,
                                       reason,
                                       triggerTime);
@@ -274,7 +274,7 @@ public class DeploymentJobs {
 
     public enum JobError {
         unknown,
-        outOfCapacity;
+        outOfCapacity
     }
 
 }

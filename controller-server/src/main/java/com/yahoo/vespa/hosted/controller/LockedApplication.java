@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
-import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
@@ -42,7 +42,7 @@ public class LockedApplication extends Application {
      * @param application The application to lock.
      * @param lock The lock for the application.
      */
-    LockedApplication(Application application, Lock lock) {
+    LockedApplication(Application application, @SuppressWarnings("unused") Lock lock) {
         this(new Builder(application));
     }
 
@@ -65,14 +65,17 @@ public class LockedApplication extends Application {
     }
 
     public LockedApplication withJobTriggering(JobType type, Optional<Change> change, Instant triggerTime,
-                                               Version version, Optional<ApplicationRevision> revision, String reason) {
-        return new LockedApplication(new Builder(this).with(deploymentJobs().withTriggering(type, change, version, revision, reason, triggerTime)));
+                                               Version version, Optional<ApplicationVersion> applicationVersion,
+                                               String reason) {
+        return new LockedApplication(new Builder(this).with(deploymentJobs().withTriggering(type, change, version, applicationVersion, reason, triggerTime)));
     }
 
-    public LockedApplication withNewDeployment(ZoneId zone, ApplicationRevision revision, Version version, Instant instant) {
+    public LockedApplication withNewDeployment(ZoneId zone, ApplicationVersion applicationVersion, Version version,
+                                               Instant instant) {
         // Use info from previous deployment if available, otherwise create a new one.
-        Deployment previousDeployment = deployments().getOrDefault(zone, new Deployment(zone, revision, version, instant));
-        Deployment newDeployment = new Deployment(zone, revision, version, instant,
+        Deployment previousDeployment = deployments().getOrDefault(zone, new Deployment(zone, applicationVersion,
+                                                                                        version, instant));
+        Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
                                                   previousDeployment.clusterUtils(),
                                                   previousDeployment.clusterInfo(),
                                                   previousDeployment.metrics());
@@ -142,10 +145,10 @@ public class LockedApplication extends Application {
                : deployVersionIn(jobType.zone(controller.system()).get(), controller);
     }
 
-    public Optional<ApplicationRevision> deployRevisionFor(DeploymentJobs.JobType jobType, Controller controller) {
+    public Optional<ApplicationVersion> deployApplicationVersion(DeploymentJobs.JobType jobType, Controller controller) {
         return jobType == JobType.component
-               ? Optional.empty()
-               : deployRevisionIn(jobType.zone(controller.system()).get());
+                ? Optional.empty()
+                : deployApplicationVersionIn(jobType.zone(controller.system()).get());
     }
 
     /** Don't expose non-leaf sub-objects. */

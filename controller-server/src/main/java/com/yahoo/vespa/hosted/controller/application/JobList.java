@@ -13,8 +13,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError.outOfCapacity;
-
 /**
  * A list of deployment jobs that can be filtered in various ways.
  *
@@ -48,10 +46,10 @@ public class JobList {
 
     // TODO: Add sorting based on various stuff, such as deployment order, time of last completion, etc..
 
-    /** Returns the jobstatuses in this as an immutable list */
+    /** Returns the job statuses in this as an immutable list */
     public List<JobStatus> asList() { return list; }
 
-    /** Returns the jobstatuses in this as an immutable list after mapping with the given function */
+    /** Returns the job statuses in this as an immutable list after mapping with the given function */
     public <Type> List<Type> mapToList(Function<JobStatus, Type> mapper) {
         return ImmutableList.copyOf(list.stream().map(mapper)::iterator);
     }
@@ -68,7 +66,7 @@ public class JobList {
     }
 
     /** Returns the subset of jobs which are current upgrading */
-    public JobList upgrading() { // TODO: Centralise and standardise reasoning about upgrades and revisions.
+    public JobList upgrading() { // TODO: Centralise and standardise reasoning about upgrades and application versions.
         return filter(job ->      job.lastSuccess().isPresent()
                              &&   job.lastTriggered().isPresent()
                              && ! job.lastTriggered().get().at().isBefore(job.lastCompleted().get().at())
@@ -87,7 +85,7 @@ public class JobList {
 
     /** Returns the subset of jobs which must be failing due to an application change */
     public JobList failingApplicationChange() {
-        return filter(job -> failingApplicationChange(job));
+        return filter(JobList::failingApplicationChange);
     }
 
     /** Returns the subset of jobs which are failing with the given job error */
@@ -109,22 +107,22 @@ public class JobList {
 
     /** Returns the list in a state where the next filter is for the lastTriggered run type */
     public JobRunFilter lastTriggered() {
-        return new JobRunFilter(job -> job.lastTriggered());
+        return new JobRunFilter(JobStatus::lastTriggered);
     }
 
     /** Returns the list in a state where the next filter is for the lastCompleted run type */
     public JobRunFilter lastCompleted() {
-        return new JobRunFilter(job -> job.lastCompleted());
+        return new JobRunFilter(JobStatus::lastCompleted);
     }
 
     /** Returns the list in a state where the next filter is for the lastSuccess run type */
     public JobRunFilter lastSuccess() {
-        return new JobRunFilter(job -> job.lastSuccess());
+        return new JobRunFilter(JobStatus::lastSuccess);
     }
 
     /** Returns the list in a state where the next filter is for the firstFailing run type */
     public JobRunFilter firstFailing() {
-        return new JobRunFilter(job -> job.firstFailing());
+        return new JobRunFilter(JobStatus::firstFailing);
     }
 
 
@@ -158,7 +156,7 @@ public class JobList {
         }
 
         public JobList upgrade() {
-            return filter(run -> run.upgrade());
+            return filter(JobRun::upgrade);
         }
 
         /** Transforms the JobRun condition to a JobStatus condition, by considering only the JobRun mapped by which, and executes */
@@ -174,9 +172,9 @@ public class JobList {
     private static boolean failingApplicationChange(JobStatus job) {
         if (   job.isSuccess()) return false;
         if ( ! job.lastSuccess().isPresent()) return true; // An application which never succeeded is surely bad.
-        if ( ! job.lastSuccess().get().revision().isPresent()) return true; // Indicates the component job, which is always an application change.
+        if ( ! job.lastSuccess().get().applicationVersion().isPresent()) return true; // Indicates the component job, which is always an application change.
         if ( ! job.firstFailing().get().version().equals(job.lastSuccess().get().version())) return false; // Version change may be to blame.
-        return ! job.firstFailing().get().revision().equals(job.lastSuccess().get().revision()); // Return whether there is an application change.
+        return ! job.firstFailing().get().applicationVersion().equals(job.lastSuccess().get().applicationVersion()); // Return whether there is an application change.
     }
 
     /** Returns a new JobList which is the result of filtering with the -- possibly negated -- condition */

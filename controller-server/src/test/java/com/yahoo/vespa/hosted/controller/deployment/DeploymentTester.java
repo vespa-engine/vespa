@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
+import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -16,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
@@ -43,6 +45,7 @@ public class DeploymentTester {
 
     // Set a long interval so that maintainers never do scheduled runs during tests
     private static final Duration maintenanceInterval = Duration.ofDays(1);
+    private static final int defaultBuildNumber = 42;
 
     private final ControllerTester tester;
     private final Upgrader upgrader;
@@ -80,6 +83,8 @@ public class DeploymentTester {
     public ControllerTester controllerTester() { return tester; }
 
     public ConfigServerClientMock configServer() { return tester.configServer(); }
+
+    public ArtifactRepositoryMock artifactRepository() { return tester.artifactRepository(); }
 
     public Application application(String name) {
         return application(ApplicationId.from("tenant1", name, "default"));
@@ -154,16 +159,18 @@ public class DeploymentTester {
     }
 
     public static DeploymentJobs.JobReport jobReport(Application application, JobType jobType, boolean success) {
-        return jobReport(application, jobType, Optional.ofNullable(success ? null : unknown));
+        return jobReport(application, jobType, Optional.ofNullable(success ? null : unknown), Optional.empty(), defaultBuildNumber);
     }
 
-    public static DeploymentJobs.JobReport jobReport(Application application, JobType jobType, Optional<DeploymentJobs.JobError> jobError) {
+    public static DeploymentJobs.JobReport jobReport(Application application, JobType jobType,
+                                                     Optional<DeploymentJobs.JobError> jobError,
+                                                     Optional<SourceRevision> sourceRevision, long buildNumber) {
         return new DeploymentJobs.JobReport(
                 application.id(),
                 jobType,
                 application.deploymentJobs().projectId().get(),
-                42,
-                Optional.empty(),
+                buildNumber,
+                sourceRevision,
                 jobError
         );
     }
@@ -204,8 +211,13 @@ public class DeploymentTester {
     }
 
     public void notifyJobCompletion(JobType jobType, Application application, Optional<DeploymentJobs.JobError> jobError) {
+        notifyJobCompletion(jobType, application, jobError, Optional.empty(), defaultBuildNumber);
+    }
+
+    public void notifyJobCompletion(JobType jobType, Application application, Optional<DeploymentJobs.JobError> jobError,
+                                    Optional<SourceRevision> source, long buildNumber) {
         clock().advance(Duration.ofMillis(1));
-        applications().notifyJobCompletion(jobReport(application, jobType, jobError));
+        applications().notifyJobCompletion(jobReport(application, jobType, jobError, source, buildNumber));
     }
 
     public void completeUpgrade(Application application, Version version, String upgradePolicy) {
@@ -233,11 +245,22 @@ public class DeploymentTester {
     }
 
     public void deploy(JobType job, Application application, ApplicationPackage applicationPackage) {
-        deploy(job, application, applicationPackage, false);
+        deploy(job, application, Optional.of(applicationPackage), false);
     }
 
-    public void deploy(JobType job, Application application, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
-        job.zone(controller().system()).ifPresent(zone -> tester.deploy(application, zone, applicationPackage, deployCurrentVersion));
+    public void deploy(JobType job, Application application, ApplicationPackage applicationPackage,
+                       boolean deployCurrentVersion) {
+        deploy(job, application, Optional.of(applicationPackage), deployCurrentVersion);
+    }
+
+    public void deploy(JobType job, Application application, Optional<ApplicationPackage> applicationPackage,
+                       boolean deployCurrentVersion) {
+        job.zone(controller().system()).ifPresent(zone -> tester.deploy(application, zone, applicationPackage,
+                                                                        deployCurrentVersion));
+    }
+
+    public void deployAndNotify(Application application, boolean success, JobType... job) {
+        deployAndNotify(application, Optional.empty(), success, true, job);
     }
 
     public void deployAndNotify(Application application, String upgradePolicy, boolean success, JobType... jobs) {
@@ -251,10 +274,15 @@ public class DeploymentTester {
 
     public void deployAndNotify(Application application, ApplicationPackage applicationPackage, boolean success,
                                 boolean expectOnlyTheseJobs, JobType... jobs) {
+        deployAndNotify(application, Optional.of(applicationPackage), success, expectOnlyTheseJobs, jobs);
+    }
+
+    public void deployAndNotify(Application application, Optional<ApplicationPackage> applicationPackage,
+                                boolean success, boolean expectOnlyTheseJobs, JobType... jobs) {
         consumeJobs(application, expectOnlyTheseJobs, jobs);
         for (JobType job : jobs) {
             if (success) {
-                deploy(job, application, applicationPackage);
+                deploy(job, application, applicationPackage, false);
             }
             notifyJobCompletion(job, application, success);
         }

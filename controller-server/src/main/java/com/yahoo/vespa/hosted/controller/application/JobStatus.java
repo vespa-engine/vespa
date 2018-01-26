@@ -55,20 +55,20 @@ public class JobStatus {
         return new JobStatus(type, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    public JobStatus withTriggering(Version version, Optional<ApplicationRevision> revision,
+    public JobStatus withTriggering(Version version, Optional<ApplicationVersion> applicationVersion,
                                     boolean upgrade, String reason, Instant triggerTime) {
-        return new JobStatus(type, jobError, Optional.of(new JobRun(-1, version, revision, upgrade, reason, triggerTime)),
+        return new JobStatus(type, jobError, Optional.of(new JobRun(-1, version, applicationVersion, upgrade, reason, triggerTime)),
                              lastCompleted, firstFailing, lastSuccess);
     }
 
     public JobStatus withCompletion(long runId, Optional<DeploymentJobs.JobError> jobError, Instant completionTime, Controller controller) {
         Version version;
-        Optional<ApplicationRevision> revision;
+        Optional<ApplicationVersion> applicationVersion;
         boolean upgrade;
         String reason;
         if (type == DeploymentJobs.JobType.component) { // not triggered by us
             version = controller.systemVersion();
-            revision = Optional.empty();
+            applicationVersion = Optional.empty();
             upgrade = false;
             reason = "Application commit";
         }
@@ -79,12 +79,12 @@ public class JobStatus {
         }
         else {
             version = lastTriggered.get().version();
-            revision = lastTriggered.get().revision();
+            applicationVersion = lastTriggered.get().applicationVersion();
             upgrade = lastTriggered.get().upgrade();
             reason = lastTriggered.get().reason();
         }
 
-        JobRun thisCompletion = new JobRun(runId, version, revision, upgrade, reason, completionTime);
+        JobRun thisCompletion = new JobRun(runId, version, applicationVersion, upgrade, reason, completionTime);
 
         Optional<JobRun> firstFailing = this.firstFailing;
         if (jobError.isPresent() &&  ! this.firstFailing.isPresent())
@@ -167,20 +167,21 @@ public class JobStatus {
 
         private final long id;
         private final Version version;
-        private final Optional<ApplicationRevision> revision;
+        // TODO: Make non-optional after introducing new application version number
+        private final Optional<ApplicationVersion> applicationVersion;
         private final boolean upgrade;
         private final String reason;
         private final Instant at;
 
-        public JobRun(long id, Version version, Optional<ApplicationRevision> revision,
+        public JobRun(long id, Version version, Optional<ApplicationVersion> applicationVersion,
                       boolean upgrade, String reason, Instant at) {
             Objects.requireNonNull(version, "version cannot be null");
-            Objects.requireNonNull(revision, "revision cannot be null");
+            Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
             Objects.requireNonNull(reason, "Reason cannot be null");
             Objects.requireNonNull(at, "at cannot be null");
             this.id = id;
             this.version = version;
-            this.revision = revision;
+            this.applicationVersion = applicationVersion;
             this.upgrade = upgrade;
             this.reason = reason;
             this.at = at;
@@ -197,8 +198,8 @@ public class JobStatus {
         /** Returns the Vespa version used on this run */
         public Version version() { return version; }
 
-        /** Returns the application revision used for this run, or empty when not known */
-        public Optional<ApplicationRevision> revision() { return revision; }
+        /** Returns the application version used for this run, or empty when not known */
+        public Optional<ApplicationVersion> applicationVersion() { return applicationVersion; }
 
         /** Returns a human-readable reason for this particular job run */
         public String reason() { return reason; }
@@ -206,12 +207,12 @@ public class JobStatus {
         /** Returns the time if this triggering or completion */
         public Instant at() { return at; }
 
-        // TODO: Consider a version and revision for each JobStatus, to compare against a Target (instead of Change, which is, really, a Target).
+        // TODO: Consider a version and application version for each JobStatus, to compare against a Target (instead of Change, which is, really, a Target).
         /** Returns whether the job last completed for the given change */
         public boolean lastCompletedWas(Change change) {
             if (change instanceof Change.ApplicationChange) {
                 Change.ApplicationChange applicationChange = (Change.ApplicationChange) change;
-                return revision().equals(applicationChange.revision());
+                return applicationVersion().equals(applicationChange.version());
             } else if (change instanceof Change.VersionChange) {
                 Change.VersionChange versionChange = (Change.VersionChange) change;
                 return version().equals(versionChange.version());
@@ -221,7 +222,7 @@ public class JobStatus {
 
         @Override
         public int hashCode() {
-            return Objects.hash(version, revision, upgrade, at);
+            return Objects.hash(version, applicationVersion, upgrade, at);
         }
 
         @Override
@@ -231,14 +232,14 @@ public class JobStatus {
             JobRun jobRun = (JobRun) o;
             return id == jobRun.id &&
                    Objects.equals(version, jobRun.version) &&
-                   Objects.equals(revision, jobRun.revision) &&
+                   Objects.equals(applicationVersion, jobRun.applicationVersion) &&
                    upgrade == jobRun.upgrade &&
                    Objects.equals(at, jobRun.at);
         }
 
         @Override
         public String toString() { return "job run " + id + " of version " + (upgrade() ? "upgrade " : "") + version + " "
-                                          + revision + " at " + at; }
+                                          + applicationVersion + " at " + at; }
 
     }
 

@@ -81,7 +81,7 @@ public class ContainerControllerTester {
         GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
         controller().applications().deployApplication(application.id(),
                                                     zone,
-                                                    applicationPackage,
+                                                    Optional.of(applicationPackage),
                                                     new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, false));
         return application;
     }

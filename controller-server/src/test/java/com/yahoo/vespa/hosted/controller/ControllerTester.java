@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.slime.Slime;
 import com.yahoo.test.ManualClock;
@@ -64,30 +65,32 @@ public final class ControllerTester {
     private final CuratorDb curator;
     private final MemoryNameService nameService;
     private final RotationsConfig rotationsConfig;
+    private final ArtifactRepositoryMock artifactRepository;
 
     private Controller controller;
 
     public ControllerTester() {
         this(new MemoryControllerDb(), new AthenzDbMock(), new ManualClock(), new ConfigServerClientMock(),
              new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), defaultRotationsConfig(),
-             new MemoryNameService());
+             new MemoryNameService(), new ArtifactRepositoryMock());
     }
 
     public ControllerTester(ManualClock clock) {
         this(new MemoryControllerDb(), new AthenzDbMock(), clock, new ConfigServerClientMock(),
              new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), defaultRotationsConfig(),
-             new MemoryNameService());
+             new MemoryNameService(), new ArtifactRepositoryMock());
     }
 
     public ControllerTester(RotationsConfig rotationsConfig) {
         this(new MemoryControllerDb(), new AthenzDbMock(), new ManualClock(), new ConfigServerClientMock(),
-             new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), rotationsConfig, new MemoryNameService());
+             new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), rotationsConfig, new MemoryNameService(),
+             new ArtifactRepositoryMock());
     }
 
     private ControllerTester(ControllerDb db, AthenzDbMock athenzDb, ManualClock clock,
                              ConfigServerClientMock configServer, ZoneRegistryMock zoneRegistry,
                              GitHubMock gitHub, CuratorDb curator, RotationsConfig rotationsConfig,
-                             MemoryNameService nameService) {
+                             MemoryNameService nameService, ArtifactRepositoryMock artifactRepository) {
         this.db = db;
         this.athenzDb = athenzDb;
         this.clock = clock;
@@ -97,8 +100,9 @@ public final class ControllerTester {
         this.curator = curator;
         this.nameService = nameService;
         this.rotationsConfig = rotationsConfig;
+        this.artifactRepository = artifactRepository;
         this.controller = createController(db, curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
-                                           athenzDb, nameService);
+                                           athenzDb, nameService, artifactRepository);
     }
 
     public Controller controller() { return controller; }
@@ -117,10 +121,12 @@ public final class ControllerTester {
 
     public GitHubMock gitHub() { return gitHub; }
 
+    public ArtifactRepositoryMock artifactRepository() { return artifactRepository; }
+
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
     public final void createNewController() {
         controller = createController(db, curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry, athenzDb,
-                                      nameService);
+                                      nameService, artifactRepository);
     }
 
     /** Creates the given tenant and application and deploys it */
@@ -209,6 +215,10 @@ public final class ControllerTester {
     }
 
     public void deploy(Application application, ZoneId zone, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
+        deploy(application, zone, Optional.of(applicationPackage), deployCurrentVersion);
+    }
+
+    public void deploy(Application application, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion) {
         ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(application.deploymentJobs().projectId().get()));
         GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
         controller().applications().deployApplication(application.id(),
@@ -231,7 +241,8 @@ public final class ControllerTester {
     private static Controller createController(ControllerDb db, CuratorDb curator, RotationsConfig rotationsConfig,
                                                ConfigServerClientMock configServerClientMock, ManualClock clock,
                                                GitHubMock gitHubClientMock, ZoneRegistryMock zoneRegistryMock,
-                                               AthenzDbMock athensDb, MemoryNameService nameService) {
+                                               AthenzDbMock athensDb, MemoryNameService nameService,
+                                               ArtifactRepository artifactRepository) {
         Controller controller = new Controller(db,
                                                curator,
                                                rotationsConfig,
@@ -247,7 +258,8 @@ public final class ControllerTester {
                                                new MockRoutingGenerator(),
                                                new ChefMock(),
                                                clock,
-                                               new AthenzClientFactoryMock(athensDb));
+                                               new AthenzClientFactoryMock(athensDb),
+                                               artifactRepository);
         controller.updateVersionStatus(VersionStatus.compute(controller));
         return controller;
     }

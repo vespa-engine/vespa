@@ -2,10 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api;
 
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
-
-import java.util.List;
 
 /**
  * @author Oyvind Gronnesby
@@ -14,17 +11,23 @@ public class ActivateResult {
 
     private final RevisionId revisionId;
     private final PrepareResponse prepareResponse;
+    private final long applicationZipSizeBytes;
 
-    public ActivateResult(RevisionId revisionId, PrepareResponse prepareResponse) {
+    public ActivateResult(RevisionId revisionId, PrepareResponse prepareResponse, long applicationZipSizeBytes) {
         this.revisionId = revisionId;
         this.prepareResponse = prepareResponse;
+        this.applicationZipSizeBytes = applicationZipSizeBytes;
     }
 
-    public RevisionId getRevisionId() {
+    public long applicationZipSizeBytes() {
+        return applicationZipSizeBytes;
+    }
+
+    public RevisionId revisionId() {
         return revisionId;
     }
 
-    public PrepareResponse getPrepareResponse() {
+    public PrepareResponse prepareResponse() {
         return prepareResponse;
     }
 

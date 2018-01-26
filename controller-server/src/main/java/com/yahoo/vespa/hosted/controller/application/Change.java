@@ -18,18 +18,19 @@ public abstract class Change {
     /** Returns true if this change is blocked by the given spec at the given instant */
     public abstract boolean blockedBy(DeploymentSpec deploymentSpec, Instant instant);
     
-    /** A change to the application package revision of an application */
+    /** A change to the application package version of an application */
     public static class ApplicationChange extends Change {
+
+        // TODO: Make non-optional
+        private final Optional<ApplicationVersion> version;
         
-        private final Optional<ApplicationRevision> revision;
-        
-        private ApplicationChange(Optional<ApplicationRevision> revision) {
-            Objects.requireNonNull(revision, "revision cannot be null");
-            this.revision = revision;
+        private ApplicationChange(Optional<ApplicationVersion> version) {
+            Objects.requireNonNull(version, "version cannot be null");
+            this.version = version;
         }
         
-        /** The revision this changes to, or empty if not known yet */
-        public Optional<ApplicationRevision> revision() { return revision; }
+        /** The application package version in this change, or empty if not known yet */
+        public Optional<ApplicationVersion> version() { return version; }
 
         @Override
         public boolean blockedBy(DeploymentSpec deploymentSpec, Instant instant) {
@@ -37,13 +38,13 @@ public abstract class Change {
         }
 
         @Override
-        public int hashCode() { return revision.hashCode(); }
+        public int hashCode() { return version.hashCode(); }
         
         @Override
         public boolean equals(Object other) {
             if (this == other) return true;
             if ( ! (other instanceof ApplicationChange)) return false;
-            return ((ApplicationChange)other).revision.equals(this.revision);
+            return ((ApplicationChange)other).version.equals(this.version);
         }
 
         /** 
@@ -56,13 +57,13 @@ public abstract class Change {
             return new ApplicationChange(Optional.empty());
         }
         
-        public static ApplicationChange of(ApplicationRevision revision) {
-            return new ApplicationChange(Optional.of(revision));
+        public static ApplicationChange of(ApplicationVersion version) {
+            return new ApplicationChange(Optional.of(version));
         }
 
         @Override
         public String toString() { 
-            return "application change to " + revision.map(ApplicationRevision::toString).orElse("an unknown revision"); 
+            return "application change to " + version.map(ApplicationVersion::toString).orElse("an unknown version");
         }
         
     }

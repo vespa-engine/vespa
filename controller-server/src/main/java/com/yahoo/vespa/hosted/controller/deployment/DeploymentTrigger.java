@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Change.VersionChange;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -79,15 +80,25 @@ public class DeploymentTrigger {
     public void triggerFromCompletion(JobReport report) {
         applications().lockOrThrow(report.applicationId(), application -> {
             application = application.withJobCompletion(report, clock.instant(), controller);
+            application = application.withProjectId(report.projectId());
 
             // Handle successful starting and ending
             if (report.success()) {
                 if (report.jobType() == JobType.component) {
-                    if (acceptNewRevisionNow(application)) {
+                    if (acceptNewApplicationVersionNow(application)) {
                         // Set this as the change we are doing, unless we are already pushing a platform change
                         if ( ! ( application.deploying().isPresent() &&
-                                 (application.deploying().get() instanceof Change.VersionChange)))
-                            application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
+                                 application.deploying().get() instanceof Change.VersionChange)) {
+                            Change.ApplicationChange applicationChange = Change.ApplicationChange.unknown();
+                            // TODO: Remove guard when source is always reported by component
+                            if (report.sourceRevision().isPresent()) {
+                                applicationChange = Change.ApplicationChange.of(
+                                        ApplicationVersion.from(report.sourceRevision().get(),
+                                                                report.buildNumber())
+                                );
+                            }
+                            application = application.withDeploying(Optional.of(applicationChange));
+                        }
                     }
                     else { // postpone
                         applications().store(application.withOutstandingChange(true));
@@ -133,11 +144,11 @@ public class DeploymentTrigger {
             if (change instanceof VersionChange) {
                 if (((VersionChange)change).version().isAfter(deployment.version())) return false; // later is ok
             }
-            else if (((Change.ApplicationChange)change).revision().isPresent()) {
-                if ( ! ((Change.ApplicationChange)change).revision().get().equals(deployment.revision())) return false;
+            else if (((Change.ApplicationChange)change).version().isPresent()) {
+                if ( ! ((Change.ApplicationChange)change).version().get().equals(deployment.applicationVersion())) return false;
             }
             else {
-                return false; // If we don't yet know the revision we are changing to, then we are not complete
+                return false; // If we don't yet know the application version we are deploying, then we are not complete
             }
 
         }
@@ -203,8 +214,8 @@ public class DeploymentTrigger {
     }
 
     /**
-     * Returns true if the previous job has completed successfully with a revision and/or version which is
-     * newer (different) than the one last completed successfully in next
+     * Returns true if the previous job has completed successfully with a application version and/or  Vespa version
+     * which is newer (different) than the one last completed successfully in next
      */
     private boolean changesAvailable(Application application, JobStatus previous, JobStatus next) {
         if ( ! application.deploying().isPresent()) return false;
@@ -242,11 +253,11 @@ public class DeploymentTrigger {
 
             return true;
         }
-        else { // revision changes do not need to handle downgrading
+        else { // Application version changes do not need to handle downgrading
             if ( ! previous.lastSuccess().isPresent()) return false;
             if ( ! next.lastSuccess().isPresent()) return true;
-            return previous.lastSuccess().get().revision().isPresent() &&
-                   ! previous.lastSuccess().get().revision().equals(next.lastSuccess().get().revision());
+            return previous.lastSuccess().get().applicationVersion().isPresent() &&
+                   ! previous.lastSuccess().get().applicationVersion().equals(next.lastSuccess().get().applicationVersion());
         }
     }
 
@@ -357,7 +368,7 @@ public class DeploymentTrigger {
                                              application.deploying(),
                                              clock.instant(),
                                              application.deployVersionFor(jobType, controller),
-                                             application.deployRevisionFor(jobType, controller),
+                                             application.deployApplicationVersion(jobType, controller),
                                              reason);
     }
 
@@ -406,7 +417,7 @@ public class DeploymentTrigger {
                   .orElse(false);
     }
 
-    private boolean acceptNewRevisionNow(LockedApplication application) {
+    private boolean acceptNewApplicationVersionNow(LockedApplication application) {
         if ( ! application.deploying().isPresent()) return true;
 
         if (application.deploying().get() instanceof Change.ApplicationChange) return true; // more changes are ok
@@ -415,7 +426,8 @@ public class DeploymentTrigger {
 
         if (application.isBlocked(clock.instant())) return true; // allow testing changes while upgrade blocked (debatable)
 
-        // Otherwise, the application is currently upgrading, without failures, and we should wait with the revision.
+        // Otherwise, the application is currently upgrading, without failures, and we should wait with the new
+        // application version.
         return false;
     }
 

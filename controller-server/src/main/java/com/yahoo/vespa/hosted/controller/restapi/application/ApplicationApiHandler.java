@@ -54,7 +54,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterCost;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
@@ -352,8 +352,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             Cursor deployingObject = object.setObject("deploying");
             if (application.deploying().get() instanceof Change.VersionChange)
                 deployingObject.setString("version", ((Change.VersionChange)application.deploying().get()).version().toString());
-            else if (((Change.ApplicationChange)application.deploying().get()).revision().isPresent())
-                toSlime(((Change.ApplicationChange)application.deploying().get()).revision().get(), deployingObject.setObject("revision"));
+            else if (((Change.ApplicationChange)application.deploying().get()).version().isPresent())
+                toSlime(((Change.ApplicationChange)application.deploying().get()).version().get(), deployingObject.setObject("revision"));
         }
 
         // Jobs sorted according to deployment spec
@@ -453,14 +453,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
         response.setString("version", deployment.version().toFullString());
-        response.setString("revision", deployment.revision().id());
+        response.setString("revision", deployment.applicationVersion().id());
         response.setLong("deployTimeEpochMs", deployment.at().toEpochMilli());
         controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
                 .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli()));
 
         controller.applications().get(deploymentId.applicationId()).flatMap(application -> application.deploymentJobs().projectId())
                 .ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
-        sourceRevisionToSlime(deployment.revision().source(), response);
+        sourceRevisionToSlime(deployment.applicationVersion().source(), response);
 
         // Cost
         DeploymentCost appCost = deployment.calculateCost();
@@ -477,10 +477,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         metricsObject.setDouble("writeLatencyMillis", metrics.writeLatencyMillis());
     }
 
-    private void toSlime(ApplicationRevision revision, Cursor object) {
-        object.setString("hash", revision.id());
-        if (revision.source().isPresent())
-            sourceRevisionToSlime(revision.source(), object.setObject("source"));
+    private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
+        object.setString("hash", applicationVersion.id());
+        if (applicationVersion.source().isPresent())
+            sourceRevisionToSlime(applicationVersion.source(), object.setObject("source"));
     }
 
     private void sourceRevisionToSlime(Optional<SourceRevision> revision, Cursor object) {
@@ -775,12 +775,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Map<String, byte[]> dataParts = new MultipartParser().parse(request);
         if ( ! dataParts.containsKey("deployOptions"))
             return ErrorResponse.badRequest("Missing required form part 'deployOptions'");
-        if ( ! dataParts.containsKey("applicationZip"))
-            return ErrorResponse.badRequest("Missing required form part 'applicationZip'");
 
         Inspector deployOptions = SlimeUtils.jsonToSlime(dataParts.get("deployOptions")).get();
 
-        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get("applicationZip"));
+        Optional<ApplicationPackage> applicationPackage = Optional.ofNullable(dataParts.get("applicationZip"))
+                                                                  .map(ApplicationPackage::new);
         DeployAuthorizer deployAuthorizer = new DeployAuthorizer(controller.zoneRegistry(), athenzClientFactory);
         Tenant tenant = controller.tenants().tenant(new TenantId(tenantName)).orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
         Principal principal = authorizer.getPrincipal(request);
@@ -791,12 +790,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  optional("vespaVersion", deployOptions).map(Version::new),
                                                                  deployOptions.field("ignoreValidationErrors").asBool(),
                                                                  deployOptions.field("deployCurrentVersion").asBool());
-        controller.applications().validate(applicationPackage.deploymentSpec());
         ActivateResult result = controller.applications().deployApplication(applicationId,
                                                                             zone,
                                                                             applicationPackage,
                                                                             deployOptionsJsonClass);
-        return new SlimeJsonResponse(toSlime(result, dataParts.get("applicationZip").length));
+        return new SlimeJsonResponse(toSlime(result));
     }
 
     private HttpResponse deleteTenant(String tenantName, HttpRequest request) {
@@ -972,7 +970,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void toSlime(JobStatus.JobRun jobRun, Cursor object) {
         object.setLong("id", jobRun.id());
         object.setString("version", jobRun.version().toFullString());
-        jobRun.revision().ifPresent(revision -> toSlime(revision, object.setObject("revision")));
+        jobRun.applicationVersion().ifPresent(applicationVersion -> toSlime(applicationVersion,
+                                                                            object.setObject("revision")));
         object.setString("reason", jobRun.reason());
         object.setLong("at", jobRun.at().toEpochMilli());
     }
@@ -1027,14 +1026,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                          "/application/" + application.id().application().value(), request.getUri()).toString());
     }
 
-    private Slime toSlime(ActivateResult result, long applicationZipSizeBytes) {
+    private Slime toSlime(ActivateResult result) {
         Slime slime = new Slime();
         Cursor object = slime.setObject();
-        object.setString("revisionId", result.getRevisionId().id());
-        object.setLong("applicationZipSize", applicationZipSizeBytes);
+        object.setString("revisionId", result.revisionId().id());
+        object.setLong("applicationZipSize", result.applicationZipSizeBytes());
         Cursor logArray = object.setArray("prepareMessages");
-        if (result.getPrepareResponse().log != null) {
-            for (Log logMessage : result.getPrepareResponse().log) {
+        if (result.prepareResponse().log != null) {
+            for (Log logMessage : result.prepareResponse().log) {
                 Cursor logObject = logArray.addObject();
                 logObject.setLong("time", logMessage.time);
                 logObject.setString("level", logMessage.level);
@@ -1045,7 +1044,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor changeObject = object.setObject("configChangeActions");
 
         Cursor restartActionsArray = changeObject.setArray("restart");
-        for (RestartAction restartAction : result.getPrepareResponse().configChangeActions.restartActions) {
+        for (RestartAction restartAction : result.prepareResponse().configChangeActions.restartActions) {
             Cursor restartActionObject = restartActionsArray.addObject();
             restartActionObject.setString("clusterName", restartAction.clusterName);
             restartActionObject.setString("clusterType", restartAction.clusterType);
@@ -1055,7 +1054,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
 
         Cursor refeedActionsArray = changeObject.setArray("refeed");
-        for (RefeedAction refeedAction : result.getPrepareResponse().configChangeActions.refeedActions) {
+        for (RefeedAction refeedAction : result.prepareResponse().configChangeActions.refeedActions) {
             Cursor refeedActionObject = refeedActionsArray.addObject();
             refeedActionObject.setString("name", refeedAction.name);
             refeedActionObject.setBool("allowed", refeedAction.allowed);
