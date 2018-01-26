@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 
 /**
  * A list of applications which can be filtered in various ways.
- * 
+ *
  * @author bratseth
  */
 public class ApplicationList {
@@ -27,9 +27,9 @@ public class ApplicationList {
     private ApplicationList(Iterable<Application> applications) {
         this.list = ImmutableList.copyOf(applications);
     }
-    
+
     // ----------------------------------- Factories
-    
+
     public static ApplicationList from(Iterable<Application> applications) {
         return new ApplicationList(applications);
     }
@@ -67,7 +67,7 @@ public class ApplicationList {
         return listOf(list.stream().filter(application -> ! isUpgradingTo(version, application)));
     }
 
-    /** 
+    /**
      * Returns the subset of applications which are currently not upgrading to the given version,
      * or returns all if no version is specified
      */
@@ -125,7 +125,7 @@ public class ApplicationList {
     public ApplicationList without(UpgradePolicy policy) {
         return listOf(list.stream().filter(a ->  a.deploymentSpec().upgradePolicy() != policy));
     }
-    
+
     /** Returns the subset of applications which have at least one deployment on a lower version than the given one */
     public ApplicationList onLowerVersionThan(Version version) {
         return listOf(list.stream()
@@ -134,7 +134,7 @@ public class ApplicationList {
     }
 
     /**
-     * Returns the subset of applications which are not pull requests: 
+     * Returns the subset of applications which are not pull requests:
      * Pull requests changes the application instance name to (default-pr)?[pull-request-number]
      */
     public ApplicationList notPullRequest() {
@@ -172,14 +172,14 @@ public class ApplicationList {
 
     private static boolean isUpgrading(Application application) {
         if ( ! (application.deploying().isPresent()) ) return false;
-        if ( ! (application.deploying().get() instanceof Change.VersionChange) ) return false;
+        if ( ! (application.deploying() instanceof Change.VersionChange) ) return false;
         return true;
     }
 
     private static boolean isUpgradingTo(Version version, Application application) {
         if ( ! (application.deploying().isPresent()) ) return false;
-        if ( ! (application.deploying().get() instanceof Change.VersionChange) ) return false;
-        return ((Change.VersionChange)application.deploying().get()).version().equals(version);
+        if ( ! (application.deploying() instanceof Change.VersionChange) ) return false;
+        return ((Change.VersionChange)application.deploying()).version().equals(version);
     }
 
     private static boolean failingOn(Version version, Application application) {

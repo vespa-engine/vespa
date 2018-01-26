@@ -64,7 +64,7 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).with(deploymentJobs().withCompletion(report, notificationTime, controller)));
     }
 
-    public LockedApplication withJobTriggering(JobType type, Optional<Change> change, Instant triggerTime,
+    public LockedApplication withJobTriggering(JobType type, Change change, Instant triggerTime,
                                                Version version, ApplicationVersion applicationVersion,
                                                String reason) {
         return new LockedApplication(new Builder(this).with(deploymentJobs().withTriggering(type, change, version, applicationVersion, reason, triggerTime)));
@@ -119,7 +119,7 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).with(validationOverrides));
     }
 
-    public LockedApplication withDeploying(Optional<Change> deploying) {
+    public LockedApplication withDeploying(Change deploying) {
         return new LockedApplication(new Builder(this).withDeploying(deploying));
     }
 
@@ -166,7 +166,7 @@ public class LockedApplication extends Application {
         private ValidationOverrides validationOverrides;
         private Map<ZoneId, Deployment> deployments;
         private DeploymentJobs deploymentJobs;
-        private Optional<Change> deploying;
+        private Change deploying;
         private boolean hasOutstandingChange;
         private Optional<IssueId> ownershipIssueId;
         private ApplicationMetrics metrics;
@@ -205,7 +205,7 @@ public class LockedApplication extends Application {
             return this;
         }
 
-        private Builder withDeploying(Optional<Change> deploying) {
+        private Builder withDeploying(Change deploying) {
             this.deploying = deploying;
             return this;
         }

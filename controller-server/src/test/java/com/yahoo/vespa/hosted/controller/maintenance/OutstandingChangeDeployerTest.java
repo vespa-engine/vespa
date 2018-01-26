@@ -20,28 +20,28 @@ import static org.junit.Assert.assertTrue;
  * @author bratseth
  */
 public class OutstandingChangeDeployerTest {
-    
+
     @Test
     public void testChangeDeployer() {
         DeploymentTester tester = new DeploymentTester();
         tester.configServer().setDefaultVersion(new Version(6, 1));
-        OutstandingChangeDeployer deployer = new OutstandingChangeDeployer(tester.controller(), Duration.ofMinutes(10), 
+        OutstandingChangeDeployer deployer = new OutstandingChangeDeployer(tester.controller(), Duration.ofMinutes(10),
                                                                            new JobControl(new MockCuratorDb()));
         tester.createAndDeploy("app1", 11, "default");
         tester.createAndDeploy("app2", 22, "default");
 
         Version version = new Version(6, 2);
         tester.deploymentTrigger().triggerChange(tester.application("app1").id(), new Change.VersionChange(version));
-        
-        assertEquals(new Change.VersionChange(version), tester.application("app1").deploying().get());
+
+        assertEquals(new Change.VersionChange(version), tester.application("app1").deploying());
         assertFalse(tester.application("app1").hasOutstandingChange());
         tester.notifyJobCompletion(DeploymentJobs.JobType.component, tester.application("app1"), true);
         assertTrue(tester.application("app1").hasOutstandingChange());
         assertEquals(1, tester.buildSystem().jobs().size());
-        
+
         deployer.maintain();
         assertEquals("No effect as job is in progress", 1, tester.buildSystem().jobs().size());
-        
+
         tester.deployCompletely("app1");
         assertEquals("Upgrade done", 0, tester.buildSystem().jobs().size());
 

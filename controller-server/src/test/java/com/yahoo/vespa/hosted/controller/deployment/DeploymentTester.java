@@ -18,8 +18,8 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
-import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
+import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 
@@ -95,9 +95,9 @@ public class DeploymentTester {
     }
 
     public Optional<Change.VersionChange> versionChange(ApplicationId application) {
-        return application(application).deploying()
-                .filter(c -> c instanceof Change.VersionChange)
-                .map(Change.VersionChange.class::cast);
+        Change change = application(application).deploying();
+        if (change instanceof Change.VersionChange) return Optional.of((Change.VersionChange)change);
+        return Optional.empty();
     }
 
     public void updateVersionStatus() {
@@ -226,7 +226,7 @@ public class DeploymentTester {
 
     public void completeUpgrade(Application application, Version version, ApplicationPackage applicationPackage) {
         assertTrue(application + " has a deployment", applications().require(application.id()).deploying().isPresent());
-        assertEquals(new Change.VersionChange(version), applications().require(application.id()).deploying().get());
+        assertEquals(new Change.VersionChange(version), applications().require(application.id()).deploying());
         completeDeployment(application, applicationPackage, Optional.empty(), true);
     }
 
@@ -240,7 +240,7 @@ public class DeploymentTester {
 
     private void completeUpgradeWithError(Application application, Version version, ApplicationPackage applicationPackage, Optional<JobType> failOnJob) {
         assertTrue(applications().require(application.id()).deploying().isPresent());
-        assertEquals(new Change.VersionChange(version), applications().require(application.id()).deploying().get());
+        assertEquals(new Change.VersionChange(version), applications().require(application.id()).deploying());
         completeDeployment(application, applicationPackage, failOnJob, true);
     }
 

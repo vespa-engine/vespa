@@ -13,13 +13,12 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
-import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
+import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -321,7 +320,7 @@ public class DeploymentTriggerTest {
                                                                  new JobControl(tester.controllerTester().curator()));
         LockedApplication app = (LockedApplication)tester.createAndDeploy("default0", 3, "default");
         // Store that we are upgrading but don't start the system-tests job
-        tester.controller().applications().store(app.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.2")))));
+        tester.controller().applications().store(app.withDeploying(new Change.VersionChange(Version.fromString("6.2"))));
         assertEquals(0, tester.buildSystem().jobs().size());
         readyJobsTrigger.run();
         assertEquals(1, tester.buildSystem().jobs().size());

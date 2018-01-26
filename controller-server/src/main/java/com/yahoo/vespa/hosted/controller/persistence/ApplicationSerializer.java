@@ -243,14 +243,14 @@ public class ApplicationSerializer {
         object.setLong(atField, jobRun.get().at().toEpochMilli());
     }
 
-    private void toSlime(Optional<Change> deploying, Cursor parentObject) {
+    private void toSlime(Change deploying, Cursor parentObject) {
         if ( ! deploying.isPresent()) return;
 
         Cursor object = parentObject.setObject(deployingField);
-        if (deploying.get() instanceof Change.VersionChange)
-            object.setString(versionField, ((Change.VersionChange)deploying.get()).version().toString());
-        else if (((Change.ApplicationChange)deploying.get()).version() != ApplicationVersion.unknown)
-            toSlime(((Change.ApplicationChange)deploying.get()).version(), object);
+        if (deploying instanceof Change.VersionChange)
+            object.setString(versionField, ((Change.VersionChange)deploying).version().toString());
+        else if (((Change.ApplicationChange)deploying).version() != ApplicationVersion.unknown)
+            toSlime(((Change.ApplicationChange)deploying).version(), object);
     }
 
     // ------------------ Deserialization
@@ -263,7 +263,7 @@ public class ApplicationSerializer {
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml(root.field(validationOverridesField).asString());
         List<Deployment> deployments = deploymentsFromSlime(root.field(deploymentsField));
         DeploymentJobs deploymentJobs = deploymentJobsFromSlime(root.field(deploymentJobsField));
-        Optional<Change> deploying = changeFromSlime(root.field(deployingField));
+        Change deploying = changeFromSlime(root.field(deployingField));
         boolean outstandingChange = root.field(outstandingChangeField).asBool();
         Optional<IssueId> ownershipIssueId = optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
@@ -363,15 +363,15 @@ public class ApplicationSerializer {
         return new DeploymentJobs(projectId, jobStatusList, issueId);
     }
 
-    private Optional<Change> changeFromSlime(Inspector object) {
-        if ( ! object.valid()) return Optional.empty();
+    private Change changeFromSlime(Inspector object) {
+        if ( ! object.valid()) return Change.empty();
         Inspector versionFieldValue = object.field(versionField);
         if (versionFieldValue.valid())
-            return Optional.of(new Change.VersionChange(Version.fromString(versionFieldValue.asString())));
+            return new Change.VersionChange(Version.fromString(versionFieldValue.asString()));
         else if (object.field(applicationPackageHashField).valid())
-            return Optional.of(Change.ApplicationChange.of(applicationVersionFromSlime(object)));
+            return Change.ApplicationChange.of(applicationVersionFromSlime(object));
         else
-            return Optional.of(Change.ApplicationChange.unknown());
+            return Change.ApplicationChange.unknown();
     }
 
     private List<JobStatus> jobStatusListFromSlime(Inspector array) {

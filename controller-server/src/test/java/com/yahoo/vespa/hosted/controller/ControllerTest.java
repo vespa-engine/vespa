@@ -103,12 +103,12 @@ public class ControllerTest {
         tester.notifyJobCompletion(component, app1, true);
         assertEquals("Application version is currently not known",
                      ApplicationVersion.unknown,
-                     ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying().get()).version());
+                     ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying()).version());
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
 
-        ApplicationVersion applicationVersion = ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying().get()).version();
+        ApplicationVersion applicationVersion = ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying()).version();
         assertTrue("Application version has been set during deployment", applicationVersion != ApplicationVersion.unknown);
         assertStatus(JobStatus.initial(stagingTest)
                               .withTriggering(version1, applicationVersion, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
@@ -223,8 +223,7 @@ public class ControllerTest {
         ApplicationVersion expectedVersion = ApplicationVersion.from(source, 37);
         assertEquals(expectedVersionString, ((Change.ApplicationChange) tester.controller().applications()
                                                                               .require(app1.id())
-                                                                              .deploying()
-                                                                              .get()).version().id());
+                                                                              .deploying()).version().id());
 
         // Deploy without application package
         tester.deployAndNotify(app1, true, systemTest);
@@ -670,7 +669,7 @@ public class ControllerTest {
         Application app = tester.createApplication(tenant, "app1", "default", 1);
 
         tester.controller().applications().lockOrThrow(app.id(), application -> {
-            application = application.withDeploying(Optional.of(new Change.VersionChange(Version.fromString("6.3"))));
+            application = application.withDeploying(new Change.VersionChange(Version.fromString("6.3")));
             applications.store(application);
             try {
                 tester.deploy(app, ZoneId.from("prod", "us-east-3"));

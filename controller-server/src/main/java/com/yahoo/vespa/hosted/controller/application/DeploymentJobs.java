@@ -65,7 +65,7 @@ public class DeploymentJobs {
     }
 
     public DeploymentJobs withTriggering(JobType jobType,
-                                         Optional<Change> change,
+                                         Change change,
                                          Version version,
                                          ApplicationVersion applicationVersion,
                                          String reason,
@@ -75,7 +75,7 @@ public class DeploymentJobs {
             if (job == null) job = JobStatus.initial(jobType);
             return job.withTriggering(version,
                                       applicationVersion,
-                                      change.isPresent() && change.get() instanceof Change.VersionChange,
+                                      change instanceof Change.VersionChange,
                                       reason,
                                       triggerTime);
         });
@@ -117,14 +117,14 @@ public class DeploymentJobs {
     }
 
     /** Returns whether change can be deployed to the given environment */
-    public boolean isDeployableTo(Environment environment, Optional<Change> change) {
+    public boolean isDeployableTo(Environment environment, Change change) {
         if (environment == null || ! change.isPresent()) {
             return true;
         }
         if (environment == Environment.staging) {
-            return isSuccessful(change.get(), JobType.systemTest);
+            return isSuccessful(change, JobType.systemTest);
         } else if (environment == Environment.prod) {
-            return isSuccessful(change.get(), JobType.stagingTest);
+            return isSuccessful(change, JobType.stagingTest);
         }
         return true; // other environments do not have any preconditions
     }

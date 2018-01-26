@@ -14,8 +14,28 @@ import java.util.Objects;
  */
 public abstract class Change {
 
+    private static NoChange none = new NoChange();
+
     /** Returns true if this change is blocked by the given spec at the given instant */
     public abstract boolean blockedBy(DeploymentSpec deploymentSpec, Instant instant);
+
+    public abstract boolean isPresent();
+
+    public static Change empty() { return none; }
+
+    public static class NoChange extends Change {
+
+        private NoChange() { }
+
+        @Override
+        public boolean isPresent() { return false; }
+
+        @Override
+        public boolean blockedBy(DeploymentSpec deploymentSpec, Instant instant) {
+            return false;
+        }
+
+    }
 
     /** A change to the application package version of an application */
     public static class ApplicationChange extends Change {
@@ -26,6 +46,9 @@ public abstract class Change {
             Objects.requireNonNull(version, "version cannot be null");
             this.version = version;
         }
+
+        @Override
+        public boolean isPresent() { return true; }
 
         /** The application package version in this change, or empty if not known yet */
         public ApplicationVersion version() { return version; }
@@ -75,6 +98,9 @@ public abstract class Change {
             Objects.requireNonNull(version, "version cannot be null");
             this.version = version;
         }
+
+        @Override
+        public boolean isPresent() { return true; }
 
         /** The Vespa version this changes to */
         public Version version() { return version; }

@@ -350,10 +350,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Currently deploying change
         if (application.deploying().isPresent()) {
             Cursor deployingObject = object.setObject("deploying");
-            if (application.deploying().get() instanceof Change.VersionChange)
-                deployingObject.setString("version", ((Change.VersionChange)application.deploying().get()).version().toString());
-            else if (((Change.ApplicationChange)application.deploying().get()).version() != ApplicationVersion.unknown)
-                toSlime(((Change.ApplicationChange)application.deploying().get()).version(), deployingObject.setObject("revision"));
+            if (application.deploying() instanceof Change.VersionChange)
+                deployingObject.setString("version", ((Change.VersionChange)application.deploying()).version().toString());
+            else if (((Change.ApplicationChange)application.deploying()).version() != ApplicationVersion.unknown)
+                toSlime(((Change.ApplicationChange)application.deploying()).version(), deployingObject.setObject("revision"));
         }
 
         // Jobs sorted according to deployment spec
@@ -713,7 +713,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         controller.applications().lockOrThrow(id, application -> {
             if (application.deploying().isPresent())
                 throw new IllegalArgumentException("Can not start a deployment of " + application + " at this time: " +
-                                                           application.deploying().get() + " is in progress");
+                                                           application.deploying() + " is in progress");
 
             controller.applications().deploymentTrigger().triggerChange(application.id(), new Change.VersionChange(version));
         });
@@ -724,14 +724,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse cancelDeploy(String tenantName, String applicationName) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         Application application = controller.applications().require(id);
-        Optional<Change> change = application.deploying();
+        Change change = application.deploying();
         if ( ! change.isPresent())
             return new MessageResponse("No deployment in progress for " + application + " at this time");
 
         controller.applications().lockOrThrow(id, lockedApplication ->
             controller.applications().deploymentTrigger().cancelChange(id));
 
-        return new MessageResponse("Cancelled " + change.get() + " for " + application);
+        return new MessageResponse("Cancelled " + change + " for " + application);
     }
 
     /** Schedule restart of deployment, or specific host in a deployment */

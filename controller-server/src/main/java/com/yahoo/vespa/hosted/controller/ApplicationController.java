@@ -322,9 +322,9 @@ public class ApplicationController {
             validate(applicationPackage.deploymentSpec());
 
             // TODO: Remove after introducing new application version number
-            if (!options.deployCurrentVersion && applicationPackageFromDeployer.isPresent()) {
-                if (application.deploying().isPresent() && application.deploying().get() instanceof Change.ApplicationChange) {
-                    application = application.withDeploying(Optional.of(Change.ApplicationChange.of(applicationVersion)));
+            if ( ! options.deployCurrentVersion && applicationPackageFromDeployer.isPresent()) {
+                if (application.deploying() instanceof Change.ApplicationChange) {
+                    application = application.withDeploying(Change.ApplicationChange.of(applicationVersion));
                 }
                 if (!canDeployDirectlyTo(zone, options) && jobType.isPresent()) {
                     // Update with (potentially) missing information about what we triggered:
@@ -361,7 +361,7 @@ public class ApplicationController {
             if (!canDeployDirectlyTo(zone, options)) {
                 if (!application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying())) {
                     throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
-                                                       " as " + application.deploying().get() + " is not tested");
+                                                       " as " + application.deploying() + " is not tested");
                 }
                 Deployment existingDeployment = application.deployments().get(zone);
                 if (zone.environment().isProduction() && existingDeployment != null &&
