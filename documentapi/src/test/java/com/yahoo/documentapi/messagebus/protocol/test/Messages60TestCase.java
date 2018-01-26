@@ -6,6 +6,7 @@ import com.yahoo.document.BucketId;
 import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.GetBucketListMessage;
 import com.yahoo.documentapi.messagebus.protocol.StatBucketMessage;
 import com.yahoo.text.Utf8;
 
@@ -34,6 +35,7 @@ public class Messages60TestCase extends Messages52TestCase {
 
         out.put(DocumentProtocol.MESSAGE_CREATEVISITOR, new Messages60TestCase.testCreateVisitorMessage());
         out.put(DocumentProtocol.MESSAGE_STATBUCKET, new Messages60TestCase.testStatBucketMessage());
+        out.put(DocumentProtocol.MESSAGE_GETBUCKETLIST, new Messages60TestCase.testGetBucketListMessage());
     }
 
     public class testCreateVisitorMessage implements RunnableTest {
@@ -95,6 +97,26 @@ public class Messages60TestCase extends Messages52TestCase {
                 assertEquals(new BucketId(16, 123), msg.getBucketId());
                 assertEquals("id.user=123", msg.getDocumentSelection());
                 assertEquals("default", msg.getLoadType().getName());
+                assertEquals(BUCKET_SPACE, msg.getBucketSpace());
+            }
+        }
+    }
+
+    public class testGetBucketListMessage implements RunnableTest {
+
+        private static final String BUCKET_SPACE = "beartato";
+
+        @Override
+        public void run() {
+            GetBucketListMessage msg = new GetBucketListMessage(new BucketId(16, 123));
+            msg.setLoadType(loadTypes.getNameMap().get("foo"));
+            msg.setBucketSpace(BUCKET_SPACE);
+            assertEquals(BASE_MESSAGE_LENGTH + 12 + serializedLength(BUCKET_SPACE), serialize("GetBucketListMessage", msg));
+
+            for (Language lang : LANGUAGES) {
+                msg = (GetBucketListMessage)deserialize("GetBucketListMessage", DocumentProtocol.MESSAGE_GETBUCKETLIST, lang);
+                assertEquals(new BucketId(16, 123), msg.getBucketId());
+                assertEquals("foo", msg.getLoadType().getName());
                 assertEquals(BUCKET_SPACE, msg.getBucketSpace());
             }
         }
