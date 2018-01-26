@@ -114,7 +114,7 @@ public class ApplicationSerializerTest {
 
         assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
 
-        assertEquals(original.deploying(), serialized.deploying());
+        assertEquals(original.change(), serialized.change());
         assertEquals(original.rotation().get().id(), serialized.rotation().get().id());
 
         // Test cluster utilization
@@ -147,20 +147,20 @@ public class ApplicationSerializerTest {
         { // test more deployment serialization cases
             Application original2 = writable(original).withDeploying(Change.of(ApplicationVersion.from("hash1")));
             Application serialized2 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original2));
-            assertEquals(original2.deploying(), serialized2.deploying());
-            assertEquals(serialized2.deploying().application().get().source(),
-                         original2.deploying().application().get().source());
+            assertEquals(original2.change(), serialized2.change());
+            assertEquals(serialized2.change().application().get().source(),
+                         original2.change().application().get().source());
 
             Application original3 = writable(original).withDeploying(Change.of(ApplicationVersion.from("hash1",
                                                                                                        new SourceRevision("a", "b", "c"))));
             Application serialized3 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original3));
-            assertEquals(original3.deploying(), serialized2.deploying());
-            assertEquals(serialized3.deploying().application().get().source(),
-                         original3.deploying().application().get().source());
+            assertEquals(original3.change(), serialized2.change());
+            assertEquals(serialized3.change().application().get().source(),
+                         original3.change().application().get().source());
 
             Application original4 = writable(original).withDeploying(Change.empty());
             Application serialized4 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original4));
-            assertEquals(original4.deploying(), serialized4.deploying());
+            assertEquals(original4.change(), serialized4.change());
         }
     }
 

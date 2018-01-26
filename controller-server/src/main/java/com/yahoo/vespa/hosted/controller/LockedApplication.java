@@ -178,7 +178,7 @@ public class LockedApplication extends Application {
             this.validationOverrides = application.validationOverrides();
             this.deployments = application.deployments();
             this.deploymentJobs = application.deploymentJobs();
-            this.deploying = application.deploying();
+            this.deploying = application.change();
             this.hasOutstandingChange = application.hasOutstandingChange();
             this.ownershipIssueId = application.ownershipIssueId();
             this.metrics = application.metrics();

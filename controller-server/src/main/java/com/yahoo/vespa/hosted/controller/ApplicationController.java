@@ -291,7 +291,7 @@ public class ApplicationController {
                 version = application.versionIn(zone, controller);
             } else if (canDeployDirectlyTo(zone, options)) {
                 version = options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
-            } else if ( ! application.deploying().isPresent() && ! zone.environment().isManuallyDeployed()) {
+            } else if (! application.change().isPresent() && ! zone.environment().isManuallyDeployed()) {
                 return unexpectedDeployment(applicationId, zone, applicationPackageFromDeployer);
             } else {
                 version = application.deployVersionIn(zone, controller);
@@ -322,8 +322,8 @@ public class ApplicationController {
 
             // TODO: Remove after introducing new application version number
             if ( ! options.deployCurrentVersion && applicationPackageFromDeployer.isPresent()) {
-                if (application.deploying().application().isPresent()) {
-                    application = application.withDeploying(application.deploying().with(applicationVersion));
+                if (application.change().application().isPresent()) {
+                    application = application.withDeploying(application.change().with(applicationVersion));
                 }
                 if (!canDeployDirectlyTo(zone, options) && jobType.isPresent()) {
                     // Update with (potentially) missing information about what we triggered:
@@ -332,7 +332,7 @@ public class ApplicationController {
                     // for future use.
                     JobStatus.JobRun triggering = getOrCreateTriggering(application, version, jobType.get());
                     application = application.withJobTriggering(jobType.get(),
-                                                                application.deploying(),
+                                                                application.change(),
                                                                 triggering.at(),
                                                                 version,
                                                                 applicationVersion,
@@ -358,9 +358,9 @@ public class ApplicationController {
 
             // Validate automated deployment
             if (!canDeployDirectlyTo(zone, options)) {
-                if (!application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying())) {
+                if (!application.deploymentJobs().isDeployableTo(zone.environment(), application.change())) {
                     throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
-                                                       " as " + application.deploying() + " is not tested");
+                                                       " as " + application.change() + " is not tested");
                 }
                 Deployment existingDeployment = application.deployments().get(zone);
                 if (zone.environment().isProduction() && existingDeployment != null &&

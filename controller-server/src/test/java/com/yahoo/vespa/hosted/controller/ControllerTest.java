@@ -103,12 +103,12 @@ public class ControllerTest {
         tester.notifyJobCompletion(component, app1, true);
         assertEquals("Application version is currently not known",
                      ApplicationVersion.unknown,
-                     tester.controller().applications().require(app1.id()).deploying().application().get());
+                     tester.controller().applications().require(app1.id()).change().application().get());
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
 
-        ApplicationVersion applicationVersion = tester.controller().applications().require(app1.id()).deploying().application().get();
+        ApplicationVersion applicationVersion = tester.controller().applications().require(app1.id()).change().application().get();
         assertTrue("Application version has been set during deployment", applicationVersion != ApplicationVersion.unknown);
         assertStatus(JobStatus.initial(stagingTest)
                               .withTriggering(version1, applicationVersion, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
@@ -223,7 +223,7 @@ public class ControllerTest {
         ApplicationVersion expectedVersion = ApplicationVersion.from(source, 37);
         assertEquals(expectedVersionString, tester.controller().applications()
                                                                .require(app1.id())
-                                                               .deploying().application().get().id());
+                                                               .change().application().get().id());
 
         // Deploy without application package
         tester.deployAndNotify(app1, true, systemTest);
@@ -377,7 +377,7 @@ public class ControllerTest {
         app1 = applications.require(app1.id());
         assertEquals("Application change preserves version", systemVersion, app1.oldestDeployedVersion().get());
         assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
-        assertFalse("Change deployed", app1.deploying().isPresent());
+        assertFalse("Change deployed", app1.change().isPresent());
 
         // Version upgrade changes system version
         applications.deploymentTrigger().triggerChange(app1.id(), Change.of(newSystemVersion));

@@ -148,7 +148,7 @@ public class DeploymentTester {
     /** Deploy application completely using the given application package */
     public void deployCompletely(Application application, ApplicationPackage applicationPackage) {
         notifyJobCompletion(JobType.component, application, true);
-        assertTrue(applications().require(application.id()).deploying().isPresent());
+        assertTrue(applications().require(application.id()).change().isPresent());
         completeDeployment(application, applicationPackage, Optional.empty(), true);
     }
 
@@ -172,7 +172,7 @@ public class DeploymentTester {
     /** Deploy application using the given application package, but expecting to stop after test phases */
     public void deployTestOnly(Application application, ApplicationPackage applicationPackage) {
         notifyJobCompletion(JobType.component, application, true);
-        assertTrue(applications().require(application.id()).deploying().isPresent());
+        assertTrue(applications().require(application.id()).change().isPresent());
         completeDeployment(application, applicationPackage, Optional.empty(), false);
     }
 
@@ -190,13 +190,13 @@ public class DeploymentTester {
             }
         }
         if (failOnJob.isPresent()) {
-            assertTrue(applications().require(application.id()).deploying().isPresent());
+            assertTrue(applications().require(application.id()).change().isPresent());
             assertTrue(applications().require(application.id()).deploymentJobs().hasFailures());
         } else if (includingProductionZones) {
-            assertFalse(applications().require(application.id()).deploying().isPresent());
+            assertFalse(applications().require(application.id()).change().isPresent());
         }
         else {
-            assertTrue(applications().require(application.id()).deploying().isPresent());
+            assertTrue(applications().require(application.id()).change().isPresent());
         }
     }
 
@@ -219,8 +219,8 @@ public class DeploymentTester {
     }
 
     public void completeUpgrade(Application application, Version version, ApplicationPackage applicationPackage) {
-        assertTrue(application + " has a deployment", applications().require(application.id()).deploying().isPresent());
-        assertEquals(Change.of(version), applications().require(application.id()).deploying());
+        assertTrue(application + " has a deployment", applications().require(application.id()).change().isPresent());
+        assertEquals(Change.of(version), applications().require(application.id()).change());
         completeDeployment(application, applicationPackage, Optional.empty(), true);
     }
 
@@ -233,8 +233,8 @@ public class DeploymentTester {
     }
 
     private void completeUpgradeWithError(Application application, Version version, ApplicationPackage applicationPackage, Optional<JobType> failOnJob) {
-        assertTrue(applications().require(application.id()).deploying().isPresent());
-        assertEquals(Change.of(version), applications().require(application.id()).deploying());
+        assertTrue(applications().require(application.id()).change().isPresent());
+        assertEquals(Change.of(version), applications().require(application.id()).change());
         completeDeployment(application, applicationPackage, failOnJob, true);
     }
 

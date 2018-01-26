@@ -33,7 +33,7 @@ public class OutstandingChangeDeployerTest {
         Version version = new Version(6, 2);
         tester.deploymentTrigger().triggerChange(tester.application("app1").id(), Change.of(version));
 
-        assertEquals(Change.of(version), tester.application("app1").deploying());
+        assertEquals(Change.of(version), tester.application("app1").change());
         assertFalse(tester.application("app1").hasOutstandingChange());
         tester.notifyJobCompletion(DeploymentJobs.JobType.component, tester.application("app1"), true);
         assertTrue(tester.application("app1").hasOutstandingChange());

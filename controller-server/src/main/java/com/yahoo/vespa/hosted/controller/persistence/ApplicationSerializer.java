@@ -125,7 +125,7 @@ public class ApplicationSerializer {
         root.setString(validationOverridesField, application.validationOverrides().xmlForm());
         deploymentsToSlime(application.deployments().values(), root.setArray(deploymentsField));
         toSlime(application.deploymentJobs(), root.setObject(deploymentJobsField));
-        toSlime(application.deploying(), root);
+        toSlime(application.change(), root);
         root.setBool(outstandingChangeField, application.hasOutstandingChange());
         application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());

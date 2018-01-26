@@ -54,7 +54,7 @@ public class ApplicationList {
 
     /** Returns the subset of applications which are currently upgrading (to any version) */
     public ApplicationList upgrading() {
-        return listOf(list.stream().filter(application -> application.deploying().platform().isPresent()));
+        return listOf(list.stream().filter(application -> application.change().platform().isPresent()));
     }
 
     /** Returns the subset of applications which are currently upgrading to the given version */
@@ -78,7 +78,7 @@ public class ApplicationList {
 
     /** Returns the subset of applications which is currently not deploying a change */
     public ApplicationList notDeploying() {
-        return listOf(list.stream().filter(application -> ! application.deploying().isPresent()));
+        return listOf(list.stream().filter(application -> ! application.change().isPresent()));
     }
 
     /** Returns the subset of applications which currently does not have any failing jobs */
@@ -171,7 +171,7 @@ public class ApplicationList {
     // ----------------------------------- Internal helpers
 
     private static boolean isUpgradingTo(Version version, Application application) {
-        return application.deploying().platform().equals(Optional.of(version));
+        return application.change().platform().equals(Optional.of(version));
     }
 
     private static boolean failingOn(Version version, Application application) {

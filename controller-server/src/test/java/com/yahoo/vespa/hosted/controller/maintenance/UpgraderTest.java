@@ -173,11 +173,11 @@ public class UpgraderTest {
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
         assertEquals("Upgrade of defaults are scheduled", 5, tester.buildSystem().jobs().size());
-        assertEquals(version54, tester.application(default0.id()).deploying().platform().get());
-        assertEquals(version54, tester.application(default1.id()).deploying().platform().get());
-        assertEquals(version54, tester.application(default2.id()).deploying().platform().get());
-        assertEquals(version54, tester.application(default3.id()).deploying().platform().get());
-        assertEquals(version54, tester.application(default4.id()).deploying().platform().get());
+        assertEquals(version54, tester.application(default0.id()).change().platform().get());
+        assertEquals(version54, tester.application(default1.id()).change().platform().get());
+        assertEquals(version54, tester.application(default2.id()).change().platform().get());
+        assertEquals(version54, tester.application(default3.id()).change().platform().get());
+        assertEquals(version54, tester.application(default4.id()).change().platform().get());
         tester.completeUpgrade(default0, version54, "default");
         // State: Default applications started upgrading to 5.4 (and one completed)
         Version version55 = Version.fromString("5.5");
@@ -189,11 +189,11 @@ public class UpgraderTest {
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
         assertEquals("Upgrade of defaults are scheduled", 5, tester.buildSystem().jobs().size());
-        assertEquals(version55, tester.application(default0.id()).deploying().platform().get());
-        assertEquals(version54, tester.application(default1.id()).deploying().platform().get());
-        assertEquals(version54, tester.application(default2.id()).deploying().platform().get());
-        assertEquals(version54, tester.application(default3.id()).deploying().platform().get());
-        assertEquals(version54, tester.application(default4.id()).deploying().platform().get());
+        assertEquals(version55, tester.application(default0.id()).change().platform().get());
+        assertEquals(version54, tester.application(default1.id()).change().platform().get());
+        assertEquals(version54, tester.application(default2.id()).change().platform().get());
+        assertEquals(version54, tester.application(default3.id()).change().platform().get());
+        assertEquals(version54, tester.application(default4.id()).change().platform().get());
         tester.completeUpgrade(default1, version54, "default");
         tester.completeUpgrade(default2, version54, "default");
         tester.completeUpgradeWithError(default3, version54, "default", DeploymentJobs.JobType.stagingTest);
@@ -215,7 +215,7 @@ public class UpgraderTest {
         assertEquals("Upgrade of defaults are scheduled on 5.4 instead, since 5.5 broken: " +
                      "This is default3 since it failed upgrade on both 5.4 and 5.5",
                      1, tester.buildSystem().jobs().size());
-        assertEquals("5.4", tester.application(default3.id()).deploying().platform().get().toString());
+        assertEquals("5.4", tester.application(default3.id()).change().platform().get().toString());
     }
 
     @Test
@@ -319,7 +319,7 @@ public class UpgraderTest {
         tester.notifyJobCompletion(DeploymentJobs.JobType.stagingTest, app, false);
         assertTrue("Retries exhausted", tester.buildSystem().jobs().isEmpty());
         assertTrue("Failure is recorded", tester.application(app.id()).deploymentJobs().hasFailures());
-        assertTrue("Application has pending change", tester.application(app.id()).deploying().isPresent());
+        assertTrue("Application has pending change", tester.application(app.id()).change().isPresent());
 
         // New version is released
         version = Version.fromString("5.2");
@@ -378,7 +378,7 @@ public class UpgraderTest {
         tester.upgrader().maintain();
 
         // 5th app passes system-test, but does not trigger next job as upgrade is cancelled
-        assertFalse("No change present", tester.applications().require(default4.id()).deploying().isPresent());
+        assertFalse("No change present", tester.applications().require(default4.id()).change().isPresent());
         tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default4, true);
         assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
     }
@@ -475,7 +475,7 @@ public class UpgraderTest {
         assertEquals(v2, tester.application("default0").deployments().get(ZoneId.from("prod.us-west-1")).version());
         assertEquals("Last zone is upgraded to v1",
                      v1, tester.application("default0").deployments().get(ZoneId.from("prod.us-east-3")).version());
-        assertFalse(tester.application("default0").deploying().isPresent());
+        assertFalse(tester.application("default0").change().isPresent());
     }
 
     @Test
@@ -746,7 +746,7 @@ public class UpgraderTest {
         // 5th app never reports back and has a dead job, but no ongoing change
         Application deadLocked = tester.applications().require(default4.id());
         assertTrue("Jobs in progress", deadLocked.deploymentJobs().isRunning(tester.controller().applications().deploymentTrigger().jobTimeoutLimit()));
-        assertFalse("No change present", deadLocked.deploying().isPresent());
+        assertFalse("No change present", deadLocked.change().isPresent());
 
         // 4 out of 5 applications are repaired and confidence is restored
         ApplicationPackage defaultApplicationPackageV2 = new ApplicationPackageBuilder()

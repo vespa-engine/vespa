@@ -348,10 +348,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("application", application.id().application().value());
         object.setString("instance", application.id().instance().value());
         // Currently deploying change
-        if (application.deploying().isPresent()) {
+        if (application.change().isPresent()) {
             Cursor deployingObject = object.setObject("deploying");
-            application.deploying().platform().ifPresent(v -> deployingObject.setString("version", v.toString()));
-            application.deploying().application()
+            application.change().platform().ifPresent(v -> deployingObject.setString("version", v.toString()));
+            application.change().application()
                                    .filter(v -> v != ApplicationVersion.unknown)
                                    .ifPresent(v -> toSlime(v, deployingObject.setObject("revision")));
         }
@@ -711,9 +711,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         controller.applications().lockOrThrow(id, application -> {
-            if (application.deploying().isPresent())
+            if (application.change().isPresent())
                 throw new IllegalArgumentException("Can not start a deployment of " + application + " at this time: " +
-                                                           application.deploying() + " is in progress");
+                                                   application.change() + " is in progress");
 
             controller.applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
         });
@@ -724,7 +724,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse cancelDeploy(String tenantName, String applicationName) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         Application application = controller.applications().require(id);
-        Change change = application.deploying();
+        Change change = application.change();
         if ( ! change.isPresent())
             return new MessageResponse("No deployment in progress for " + application + " at this time");
 

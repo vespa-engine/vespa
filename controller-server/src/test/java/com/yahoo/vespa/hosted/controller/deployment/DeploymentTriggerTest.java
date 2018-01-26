@@ -220,13 +220,13 @@ public class DeploymentTriggerTest {
         tester.deploy(DeploymentJobs.JobType.productionUsWest1, app, applicationPackage);
         tester.notifyJobCompletion(DeploymentJobs.JobType.productionUsWest1, app, true);
         assertTrue("Change is present as not all jobs are complete",
-                   tester.applications().require(app.id()).deploying().isPresent());
+                   tester.applications().require(app.id()).change().isPresent());
 
         // All jobs complete
         tester.deploy(DeploymentJobs.JobType.productionUsEast3, app, applicationPackage);
         tester.notifyJobCompletion(DeploymentJobs.JobType.productionUsEast3, app, true);
         assertFalse("Change has been deployed",
-                    tester.applications().require(app.id()).deploying().isPresent());
+                    tester.applications().require(app.id()).change().isPresent());
     }
 
     @Test
@@ -349,7 +349,7 @@ public class DeploymentTriggerTest {
         // Extra notification for last job
         tester.notifyJobCompletion(JobType.productionCorpUsEast1, application, true);
         assertFalse("Change has been deployed",
-                    tester.applications().require(application.id()).deploying().isPresent());
+                    tester.applications().require(application.id()).change().isPresent());
         assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());
     }
 
