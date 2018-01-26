@@ -57,25 +57,18 @@ public class JobStatus {
 
     public JobStatus withTriggering(Version version, ApplicationVersion applicationVersion,
                                     boolean upgrade, String reason, Instant triggerTime) {
-        return withTriggering(version,
-                              applicationVersion == ApplicationVersion.unknown ? Optional.empty() : Optional.of(applicationVersion),
-                              upgrade, reason, triggerTime);
-    }
-
-    public JobStatus withTriggering(Version version, Optional<ApplicationVersion> applicationVersion,
-                                    boolean upgrade, String reason, Instant triggerTime) {
         return new JobStatus(type, jobError, Optional.of(new JobRun(-1, version, applicationVersion, upgrade, reason, triggerTime)),
                              lastCompleted, firstFailing, lastSuccess);
     }
 
     public JobStatus withCompletion(long runId, Optional<DeploymentJobs.JobError> jobError, Instant completionTime, Controller controller) {
         Version version;
-        Optional<ApplicationVersion> applicationVersion;
+        ApplicationVersion applicationVersion;
         boolean upgrade;
         String reason;
         if (type == DeploymentJobs.JobType.component) { // not triggered by us
             version = controller.systemVersion();
-            applicationVersion = Optional.empty();
+            applicationVersion = ApplicationVersion.unknown;
             upgrade = false;
             reason = "Application commit";
         }
@@ -174,13 +167,12 @@ public class JobStatus {
 
         private final long id;
         private final Version version;
-        // TODO: Make non-optional after introducing new application version number
-        private final Optional<ApplicationVersion> applicationVersion;
+        private final ApplicationVersion applicationVersion;
         private final boolean upgrade;
         private final String reason;
         private final Instant at;
 
-        public JobRun(long id, Version version, Optional<ApplicationVersion> applicationVersion,
+        public JobRun(long id, Version version, ApplicationVersion applicationVersion,
                       boolean upgrade, String reason, Instant at) {
             Objects.requireNonNull(version, "version cannot be null");
             Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
@@ -206,7 +198,7 @@ public class JobStatus {
         public Version version() { return version; }
 
         /** Returns the application version used for this run, or empty when not known */
-        public Optional<ApplicationVersion> applicationVersion() { return applicationVersion; }
+        public ApplicationVersion applicationVersion() { return applicationVersion; }
 
         /** Returns a human-readable reason for this particular job run */
         public String reason() { return reason; }
@@ -218,14 +210,9 @@ public class JobStatus {
         /** Returns whether the job last completed for the given change */
         public boolean lastCompletedWas(Change change) {
             if (change instanceof Change.ApplicationChange) {
-                Change.ApplicationChange applicationChange = (Change.ApplicationChange) change;
-                if ( ! applicationVersion().isPresent())
-                    return  applicationChange.version() == ApplicationVersion.unknown;
-                else
-                    return applicationVersion().get().equals(applicationChange.version());
+                return ((Change.ApplicationChange) change).version().equals(applicationVersion);
             } else if (change instanceof Change.VersionChange) {
-                Change.VersionChange versionChange = (Change.VersionChange) change;
-                return version().equals(versionChange.version());
+                return version().equals(((Change.VersionChange) change).version());
             }
             throw new IllegalArgumentException("Unexpected change: " + change.getClass());
         }

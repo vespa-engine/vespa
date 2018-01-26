@@ -255,7 +255,7 @@ public class DeploymentTrigger {
         else { // Application version changes do not need to handle downgrading
             if ( ! previous.lastSuccess().isPresent()) return false;
             if ( ! next.lastSuccess().isPresent()) return true;
-            return previous.lastSuccess().get().applicationVersion().isPresent() &&
+            return previous.lastSuccess().get().applicationVersion() != ApplicationVersion.unknown &&
                    ! previous.lastSuccess().get().applicationVersion().equals(next.lastSuccess().get().applicationVersion());
         }
     }
@@ -367,7 +367,7 @@ public class DeploymentTrigger {
                                              application.deploying(),
                                              clock.instant(),
                                              application.deployVersionFor(jobType, controller),
-                                             application.deployApplicationVersion(jobType, controller),
+                                             application.deployApplicationVersion(jobType, controller).orElse(ApplicationVersion.unknown),
                                              reason);
     }
 

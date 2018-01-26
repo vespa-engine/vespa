@@ -70,10 +70,10 @@ public class ApplicationSerializerTest {
         List<JobStatus> statusList = new ArrayList<>();
 
         statusList.add(JobStatus.initial(DeploymentJobs.JobType.systemTest)
-                                .withTriggering(Version.fromString("5.6.7"), Optional.empty(), true, "Test", Instant.ofEpochMilli(7))
+                                .withTriggering(Version.fromString("5.6.7"), ApplicationVersion.unknown, true, "Test", Instant.ofEpochMilli(7))
                                 .withCompletion(30, Optional.empty(), Instant.ofEpochMilli(8), tester.controller()));
         statusList.add(JobStatus.initial(DeploymentJobs.JobType.stagingTest)
-                                .withTriggering(Version.fromString("5.6.6"), Optional.empty(), true, "Test 2", Instant.ofEpochMilli(5))
+                                .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, true, "Test 2", Instant.ofEpochMilli(5))
                                 .withCompletion(11, Optional.of(JobError.unknown), Instant.ofEpochMilli(6), tester.controller()));
 
         DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, Optional.empty());

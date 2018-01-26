@@ -336,7 +336,7 @@ public class ApplicationController {
                                                                 application.deploying(),
                                                                 triggering.at(),
                                                                 version,
-                                                                Optional.of(applicationVersion),
+                                                                applicationVersion,
                                                                 triggering.reason());
                 }
             }
@@ -474,7 +474,7 @@ public class ApplicationController {
     }
 
     private JobStatus.JobRun incompleteTriggeringEvent(Version version) {
-        return new JobStatus.JobRun(-1, version, Optional.empty(), false, "", clock.instant());
+        return new JobStatus.JobRun(-1, version, ApplicationVersion.unknown, false, "", clock.instant());
     }
 
     private DeployOptions withVersion(Version version, DeployOptions options) {

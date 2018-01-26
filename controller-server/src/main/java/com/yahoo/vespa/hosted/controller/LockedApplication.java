@@ -65,7 +65,7 @@ public class LockedApplication extends Application {
     }
 
     public LockedApplication withJobTriggering(JobType type, Optional<Change> change, Instant triggerTime,
-                                               Version version, Optional<ApplicationVersion> applicationVersion,
+                                               Version version, ApplicationVersion applicationVersion,
                                                String reason) {
         return new LockedApplication(new Builder(this).with(deploymentJobs().withTriggering(type, change, version, applicationVersion, reason, triggerTime)));
     }

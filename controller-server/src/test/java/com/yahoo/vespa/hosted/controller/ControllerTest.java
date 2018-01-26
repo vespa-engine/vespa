@@ -231,12 +231,12 @@ public class ControllerTest {
         tester.deployAndNotify(app1, true, stagingTest);
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
         assertStatus(JobStatus.initial(stagingTest)
-                              .withTriggering(version1, Optional.of(expectedVersion), false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                              .withTriggering(version1, expectedVersion, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
                               .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
 
         // Causes first deployment job to be triggered
         assertStatus(JobStatus.initial(productionCorpUsEast1)
-                              .withTriggering(version1, Optional.of(expectedVersion), false, "", tester.clock().instant()), app1.id(), tester.controller());
+                              .withTriggering(version1, expectedVersion, false, "", tester.clock().instant()), app1.id(), tester.controller());
         tester.clock().advance(Duration.ofSeconds(1));
 
         // production job (failing)
@@ -244,7 +244,7 @@ public class ControllerTest {
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
 
         JobStatus expectedJobStatus = JobStatus.initial(productionCorpUsEast1)
-                                               .withTriggering(version1, Optional.of(expectedVersion), false, "", tester.clock().instant())
+                                               .withTriggering(version1, expectedVersion, false, "", tester.clock().instant())
                                                .withCompletion(42, Optional.of(JobError.unknown), tester.clock().instant(), tester.controller());
 
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
@@ -270,20 +270,20 @@ public class ControllerTest {
         tester.deployAndNotify(app1, Optional.empty(), true, false, systemTest);
         expectedVersion = ApplicationVersion.from(source, 38);
         assertStatus(JobStatus.initial(systemTest)
-                              .withTriggering(version1, Optional.of(expectedVersion), false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                              .withTriggering(version1, expectedVersion, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
                               .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
         tester.deployAndNotify(app1, Optional.empty(), true, true, stagingTest);
 
         // production job succeeding now
         tester.deployAndNotify(app1, Optional.empty(), true, true, productionCorpUsEast1);
         expectedJobStatus = expectedJobStatus
-                .withTriggering(version1, Optional.of(expectedVersion), false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                .withTriggering(version1, expectedVersion, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
                 .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller());
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
 
         // causes triggering of next production job
         assertStatus(JobStatus.initial(productionUsEast3)
-                              .withTriggering(version1, Optional.of(expectedVersion), false, "", tester.clock().instant()),
+                              .withTriggering(version1, expectedVersion, false, "", tester.clock().instant()),
                      app1.id(), tester.controller());
         tester.deployAndNotify(app1, Optional.empty(), true, true, productionUsEast3);
 

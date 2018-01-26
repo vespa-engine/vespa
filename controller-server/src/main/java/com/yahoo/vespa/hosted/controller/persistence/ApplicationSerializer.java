@@ -236,8 +236,8 @@ public class ApplicationSerializer {
         Cursor object = parent.setObject(jobRunObjectName);
         object.setLong(jobRunIdField, jobRun.get().id());
         object.setString(versionField, jobRun.get().version().toString());
-        if ( jobRun.get().applicationVersion().isPresent())
-            toSlime(jobRun.get().applicationVersion().get(), object.setObject(revisionField));
+        if ( jobRun.get().applicationVersion() != ApplicationVersion.unknown)
+            toSlime(jobRun.get().applicationVersion(), object.setObject(revisionField));
         object.setBool(upgradeField, jobRun.get().upgrade());
         object.setString(reasonField, jobRun.get().reason());
         object.setLong(atField, jobRun.get().at().toEpochMilli());
@@ -282,7 +282,7 @@ public class ApplicationSerializer {
 
     private Deployment deploymentFromSlime(Inspector deploymentObject) {
         return new Deployment(zoneIdFromSlime(deploymentObject.field(zoneField)),
-                              applicationVersionFromSlime(deploymentObject.field(applicationPackageRevisionField)).get(),
+                              applicationVersionFromSlime(deploymentObject.field(applicationPackageRevisionField)),
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
                               clusterUtilsMapFromSlime(deploymentObject.field(clusterUtilsField)),
@@ -340,12 +340,12 @@ public class ApplicationSerializer {
         return ZoneId.from(object.field(environmentField).asString(), object.field(regionField).asString());
     }
 
-    private Optional<ApplicationVersion> applicationVersionFromSlime(Inspector object) {
-        if ( ! object.valid()) return Optional.empty();
+    private ApplicationVersion applicationVersionFromSlime(Inspector object) {
+        if ( ! object.valid()) return ApplicationVersion.unknown;
         String applicationPackageHash = object.field(applicationPackageHashField).asString();
         Optional<SourceRevision> sourceRevision = sourceRevisionFromSlime(object.field(sourceRevisionField));
-        return sourceRevision.isPresent() ? Optional.of(ApplicationVersion.from(applicationPackageHash, sourceRevision.get()))
-                                          : Optional.of(ApplicationVersion.from(applicationPackageHash));
+        return sourceRevision.isPresent() ? ApplicationVersion.from(applicationPackageHash, sourceRevision.get())
+                                          : ApplicationVersion.from(applicationPackageHash);
     }
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {
@@ -369,7 +369,7 @@ public class ApplicationSerializer {
         if (versionFieldValue.valid())
             return Optional.of(new Change.VersionChange(Version.fromString(versionFieldValue.asString())));
         else if (object.field(applicationPackageHashField).valid())
-            return Optional.of(Change.ApplicationChange.of(applicationVersionFromSlime(object).get()));
+            return Optional.of(Change.ApplicationChange.of(applicationVersionFromSlime(object)));
         else
             return Optional.of(Change.ApplicationChange.unknown());
     }

@@ -67,7 +67,7 @@ public class DeploymentJobs {
     public DeploymentJobs withTriggering(JobType jobType,
                                          Optional<Change> change,
                                          Version version,
-                                         Optional<ApplicationVersion> applicationVersion,
+                                         ApplicationVersion applicationVersion,
                                          String reason,
                                          Instant triggerTime) {
         Map<JobType, JobStatus> status = new LinkedHashMap<>(this.status);

@@ -970,8 +970,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void toSlime(JobStatus.JobRun jobRun, Cursor object) {
         object.setLong("id", jobRun.id());
         object.setString("version", jobRun.version().toFullString());
-        jobRun.applicationVersion().ifPresent(applicationVersion -> toSlime(applicationVersion,
-                                                                            object.setObject("revision")));
+        if (jobRun.applicationVersion() != ApplicationVersion.unknown)
+            toSlime(jobRun.applicationVersion(), object.setObject("revision"));
         object.setString("reason", jobRun.reason());
         object.setLong("at", jobRun.at().toEpochMilli());
     }

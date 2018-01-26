@@ -172,7 +172,7 @@ public class JobList {
     private static boolean failingApplicationChange(JobStatus job) {
         if (   job.isSuccess()) return false;
         if ( ! job.lastSuccess().isPresent()) return true; // An application which never succeeded is surely bad.
-        if ( ! job.lastSuccess().get().applicationVersion().isPresent()) return true; // Indicates the component job, which is always an application change.
+        if ( job.lastSuccess().get().applicationVersion() == ApplicationVersion.unknown) return true; // Indicates the component job, which is always an application change.
         if ( ! job.firstFailing().get().version().equals(job.lastSuccess().get().version())) return false; // Version change may be to blame.
         return ! job.firstFailing().get().applicationVersion().equals(job.lastSuccess().get().applicationVersion()); // Return whether there is an application change.
     }
