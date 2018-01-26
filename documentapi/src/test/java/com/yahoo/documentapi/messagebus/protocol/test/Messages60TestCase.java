@@ -6,6 +6,7 @@ import com.yahoo.document.BucketId;
 import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.StatBucketMessage;
 import com.yahoo.text.Utf8;
 
 import java.util.Map;
@@ -72,6 +73,27 @@ public class Messages60TestCase extends Messages52TestCase {
                 assertEquals("34", Utf8.toString(msg.getParameters().get("anothervar")));
                 assertEquals(OrderingSpecification.DESCENDING, msg.getVisitorOrdering());
                 assertEquals(2, msg.getMaxBucketsPerVisitor());
+                assertEquals(BUCKET_SPACE, msg.getBucketSpace());
+            }
+        }
+    }
+
+    public class testStatBucketMessage implements RunnableTest {
+
+        private static final String BUCKET_SPACE = "andrei";
+
+        @Override
+        public void run() {
+            StatBucketMessage msg = new StatBucketMessage(new BucketId(16, 123), "id.user=123");
+            msg.setLoadType(null);
+            msg.setBucketSpace(BUCKET_SPACE);
+            assertEquals(BASE_MESSAGE_LENGTH + 27 + serializedLength(BUCKET_SPACE), serialize("StatBucketMessage", msg));
+
+            for (Language lang : LANGUAGES) {
+                msg = (StatBucketMessage)deserialize("StatBucketMessage", DocumentProtocol.MESSAGE_STATBUCKET, lang);
+                assertEquals(new BucketId(16, 123), msg.getBucketId());
+                assertEquals("id.user=123", msg.getDocumentSelection());
+                assertEquals("default", msg.getLoadType().getName());
                 assertEquals(BUCKET_SPACE, msg.getBucketSpace());
             }
         }
