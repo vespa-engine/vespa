@@ -38,7 +38,7 @@ import java.util.Optional;
 /**
  * Serializes applications to/from slime.
  * This class is multithread safe.
- * 
+ *
  * @author bratseth
  */
 public class ApplicationSerializer {
@@ -67,12 +67,12 @@ public class ApplicationSerializer {
     private final String repositoryField = "repositoryField";
     private final String branchField = "branchField";
     private final String commitField = "commitField";
-    
+
     // DeploymentJobs fields
     private final String projectIdField = "projectId";
     private final String jobStatusField = "jobStatus";
     private final String issueIdField = "jiraIssueId";
-    
+
     // JobStatus field
     private final String jobTypeField = "jobType";
     private final String errorField = "jobError";
@@ -80,7 +80,7 @@ public class ApplicationSerializer {
     private final String lastCompletedField = "lastCompleted";
     private final String firstFailingField = "firstFailing";
     private final String lastSuccessField = "lastSuccess";
-    
+
     // JobRun fields
     private final String jobRunIdField = "id";
     private final String versionField = "version";
@@ -116,7 +116,7 @@ public class ApplicationSerializer {
 
 
     // ------------------ Serialization
-    
+
     public Slime toSlime(Application application) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
@@ -138,7 +138,7 @@ public class ApplicationSerializer {
         for (Deployment deployment : deployments)
             deploymentToSlime(deployment, array.addObject());
     }
-    
+
     private void deploymentToSlime(Deployment deployment, Cursor object) {
         zoneIdToSlime(deployment.zone(), object.setObject(zoneField));
         object.setString(versionField, deployment.version().toString());
@@ -196,19 +196,19 @@ public class ApplicationSerializer {
         object.setString(environmentField, zone.environment().value());
         object.setString(regionField, zone.region().value());
     }
-    
+
     private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
         object.setString(applicationPackageHashField, applicationVersion.id());
         if (applicationVersion.source().isPresent())
             toSlime(applicationVersion.source().get(), object.setObject(sourceRevisionField));
     }
-    
+
     private void toSlime(SourceRevision sourceRevision, Cursor object) {
         object.setString(repositoryField, sourceRevision.repository());
         object.setString(branchField, sourceRevision.branch());
         object.setString(commitField, sourceRevision.commit());
     }
-    
+
     private void toSlime(DeploymentJobs deploymentJobs, Cursor cursor) {
         deploymentJobs.projectId().ifPresent(projectId -> cursor.setLong(projectIdField, projectId));
         jobStatusToSlime(deploymentJobs.jobStatus().values(), cursor.setArray(jobStatusField));
@@ -219,7 +219,7 @@ public class ApplicationSerializer {
         for (JobStatus jobStatus : jobStatuses)
             toSlime(jobStatus, jobStatusArray.addObject());
     }
-    
+
     private void toSlime(JobStatus jobStatus, Cursor object) {
         object.setString(jobTypeField, jobStatus.type().jobName());
         if (jobStatus.jobError().isPresent())
@@ -230,7 +230,7 @@ public class ApplicationSerializer {
         jobRunToSlime(jobStatus.firstFailing(), object, firstFailingField);
         jobRunToSlime(jobStatus.lastSuccess(), object, lastSuccessField);
     }
-    
+
     private void jobRunToSlime(Optional<JobStatus.JobRun> jobRun, Cursor parent, String jobRunObjectName) {
         if ( ! jobRun.isPresent()) return;
         Cursor object = parent.setObject(jobRunObjectName);
@@ -242,22 +242,22 @@ public class ApplicationSerializer {
         object.setString(reasonField, jobRun.get().reason());
         object.setLong(atField, jobRun.get().at().toEpochMilli());
     }
-    
+
     private void toSlime(Optional<Change> deploying, Cursor parentObject) {
         if ( ! deploying.isPresent()) return;
 
         Cursor object = parentObject.setObject(deployingField);
         if (deploying.get() instanceof Change.VersionChange)
             object.setString(versionField, ((Change.VersionChange)deploying.get()).version().toString());
-        else if (((Change.ApplicationChange)deploying.get()).version().isPresent())
-            toSlime(((Change.ApplicationChange)deploying.get()).version().get(), object);
+        else if (((Change.ApplicationChange)deploying.get()).version() != ApplicationVersion.unknown)
+            toSlime(((Change.ApplicationChange)deploying.get()).version(), object);
     }
 
     // ------------------ Deserialization
 
     public Application fromSlime(Slime slime) {
         Inspector root = slime.get();
-        
+
         ApplicationId id = ApplicationId.fromSerializedForm(root.field(idField).asString());
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(root.field(deploymentSpecField).asString(), false);
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml(root.field(validationOverridesField).asString());
@@ -347,7 +347,7 @@ public class ApplicationSerializer {
         return sourceRevision.isPresent() ? Optional.of(ApplicationVersion.from(applicationPackageHash, sourceRevision.get()))
                                           : Optional.of(ApplicationVersion.from(applicationPackageHash));
     }
-    
+
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
         return Optional.of(new SourceRevision(object.field(repositoryField).asString(),
@@ -373,13 +373,13 @@ public class ApplicationSerializer {
         else
             return Optional.of(Change.ApplicationChange.unknown());
     }
-    
+
     private List<JobStatus> jobStatusListFromSlime(Inspector array) {
         List<JobStatus> jobStatusList = new ArrayList<>();
         array.traverse((ArrayTraverser) (int i, Inspector item) -> jobStatusList.add(jobStatusFromSlime(item)));
         return jobStatusList;
     }
-    
+
     private JobStatus jobStatusFromSlime(Inspector object) {
         DeploymentJobs.JobType jobType = DeploymentJobs.JobType.fromJobName(object.field(jobTypeField).asString());
 

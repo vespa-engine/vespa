@@ -55,6 +55,13 @@ public class JobStatus {
         return new JobStatus(type, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
+    public JobStatus withTriggering(Version version, ApplicationVersion applicationVersion,
+                                    boolean upgrade, String reason, Instant triggerTime) {
+        return withTriggering(version,
+                              applicationVersion == ApplicationVersion.unknown ? Optional.empty() : Optional.of(applicationVersion),
+                              upgrade, reason, triggerTime);
+    }
+
     public JobStatus withTriggering(Version version, Optional<ApplicationVersion> applicationVersion,
                                     boolean upgrade, String reason, Instant triggerTime) {
         return new JobStatus(type, jobError, Optional.of(new JobRun(-1, version, applicationVersion, upgrade, reason, triggerTime)),
@@ -212,7 +219,10 @@ public class JobStatus {
         public boolean lastCompletedWas(Change change) {
             if (change instanceof Change.ApplicationChange) {
                 Change.ApplicationChange applicationChange = (Change.ApplicationChange) change;
-                return applicationVersion().equals(applicationChange.version());
+                if ( ! applicationVersion().isPresent())
+                    return  applicationChange.version() == ApplicationVersion.unknown;
+                else
+                    return applicationVersion().get().equals(applicationChange.version());
             } else if (change instanceof Change.VersionChange) {
                 Change.VersionChange versionChange = (Change.VersionChange) change;
                 return version().equals(versionChange.version());

@@ -13,14 +13,24 @@ import java.util.Optional;
  */
 public class ApplicationVersion {
 
+    // TODO: Remove the need for this
+    public static final ApplicationVersion unknown = new ApplicationVersion();
+
     // Never changes. Only used to create a valid version number for the bundle
     private static final String majorVersion = "1.0";
 
     // TODO: Remove after introducing new application version
     private final Optional<String> applicationPackageHash;
 
+    // TODO: Make mandatory
     private final Optional<SourceRevision> source;
     private final Optional<Long> buildNumber;
+
+    private ApplicationVersion() {
+        this.applicationPackageHash = Optional.empty();
+        this.source = Optional.empty();
+        this.buildNumber = Optional.empty();
+    }
 
     private ApplicationVersion(Optional<String> applicationPackageHash, Optional<SourceRevision> source,
                                Optional<Long> buildNumber) {
@@ -30,14 +40,14 @@ public class ApplicationVersion {
         if (buildNumber.isPresent() && !source.isPresent()) {
             throw new IllegalArgumentException("both buildNumber and source must be set if buildNumber is set");
         }
-        if (!buildNumber.isPresent() && !applicationPackageHash.isPresent()) {
+        if ( ! buildNumber.isPresent() && ! applicationPackageHash.isPresent()) {
             throw new IllegalArgumentException("applicationPackageHash must be given if buildNumber is unset");
         }
         this.applicationPackageHash = applicationPackageHash;
         this.source = source;
         this.buildNumber = buildNumber;
     }
-    
+
     /** Create an application package revision where there is no information about its source */
     public static ApplicationVersion from(String applicationPackageHash) {
         return new ApplicationVersion(Optional.of(applicationPackageHash), Optional.empty(), Optional.empty());
@@ -61,7 +71,7 @@ public class ApplicationVersion {
         return String.format("%s.%d-%s", majorVersion, buildNumber.get(), abbreviateCommit(source.get().commit()));
     }
 
-    /** 
+    /**
      * Returns information about the source of this revision, or empty if the source is not know/defined
      * (which is the case for command-line deployment from developers, but never for deployment jobs)
      */
@@ -69,17 +79,17 @@ public class ApplicationVersion {
 
     /** Returns the build number that built this version */
     public Optional<Long> buildNumber() { return buildNumber; }
-    
+
     @Override
     public int hashCode() { return applicationPackageHash.hashCode(); }
-    
+
     @Override
     public boolean equals(Object other) {
         if (this == other) return true;
         if ( ! (other instanceof ApplicationVersion)) return false;
         return this.applicationPackageHash.equals(((ApplicationVersion)other).applicationPackageHash);
     }
-    
+
     @Override
     public String toString() {
         if (buildNumber.isPresent()) {

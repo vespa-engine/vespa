@@ -144,15 +144,14 @@ public class DeploymentTrigger {
             if (change instanceof VersionChange) {
                 if (((VersionChange)change).version().isAfter(deployment.version())) return false; // later is ok
             }
-            else if (((Change.ApplicationChange)change).version().isPresent()) {
-                if ( ! ((Change.ApplicationChange)change).version().get().equals(deployment.applicationVersion())) return false;
+            else if (((Change.ApplicationChange)change).version() != ApplicationVersion.unknown) {
+                if ( ! ((Change.ApplicationChange)change).version().equals(deployment.applicationVersion())) return false;
             }
             else {
                 return false; // If we don't yet know the application version we are deploying, then we are not complete
             }
 
         }
-
         return true;
     }
 

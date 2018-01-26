@@ -101,14 +101,15 @@ public class ControllerTest {
         Version version1 = Version.fromString("6.1"); // Set in config server mock
         Application app1 = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.notifyJobCompletion(component, app1, true);
-        assertFalse("Application version is currently not known",
-                    ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying().get()).version().isPresent());
+        assertEquals("Application version is currently not known",
+                     ApplicationVersion.unknown,
+                     ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying().get()).version());
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
 
-        Optional<ApplicationVersion> applicationVersion = ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying().get()).version();
-        assertTrue("Application version has been set during deployment", applicationVersion.isPresent());
+        ApplicationVersion applicationVersion = ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying().get()).version();
+        assertTrue("Application version has been set during deployment", applicationVersion != ApplicationVersion.unknown);
         assertStatus(JobStatus.initial(stagingTest)
                               .withTriggering(version1, applicationVersion, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
                               .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
@@ -166,7 +167,7 @@ public class ControllerTest {
         tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
 
         assertEquals(5, applications.get(app1.id()).get().deploymentJobs().jobStatus().size());
-        
+
         // prod zone removal is not allowed
         applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -178,7 +179,7 @@ public class ControllerTest {
             fail("Expected exception due to unallowed production deployment removal");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("deployment-removal: application 'tenant1.app1' is deployed in corp-us-east-1, but does not include this zone in deployment.xml", e.getMessage());            
+            assertEquals("deployment-removal: application 'tenant1.app1' is deployed in corp-us-east-1, but does not include this zone in deployment.xml", e.getMessage());
         }
         assertNotNull("Zone was not removed",
                       applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(SystemName.main).get()));
@@ -223,7 +224,7 @@ public class ControllerTest {
         assertEquals(expectedVersionString, ((Change.ApplicationChange) tester.controller().applications()
                                                                               .require(app1.id())
                                                                               .deploying()
-                                                                              .get()).version().get().id());
+                                                                              .get()).version().id());
 
         // Deploy without application package
         tester.deployAndNotify(app1, true, systemTest);
@@ -325,7 +326,7 @@ public class ControllerTest {
                    applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(SystemName.main).get()));
         assertNull("Deployment job was removed", applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1));
     }
-    
+
     @Test
     public void testDeployVersion() {
         // Setup system
@@ -415,7 +416,7 @@ public class ControllerTest {
         controller.updateVersionStatus(new VersionStatus(versions));
         return newSystemVersion;
     }
-    
+
     @Test
     public void testPullRequestDeployment() {
         // Setup system
@@ -427,7 +428,7 @@ public class ControllerTest {
         ApplicationId app1 = tester.createAndDeploy("tenant1",  "domain1",
                                                     "application1", Environment.staging,
                                                     app1ProjectId).id();
-        
+
         // pull-request deployment - uses different instance id
         ApplicationId app1pr = tester.createAndDeploy("tenant1",  "domain1",
                                                       "application1", "default-pr1",
@@ -461,7 +462,7 @@ public class ControllerTest {
                            .filter(app -> app.id().application().equals(app2.application()))
                            .count());
     }
-    
+
     @Test
     public void testFailingSinceUpdates() {
         // Setup system
@@ -474,13 +475,13 @@ public class ControllerTest {
         Instant initialFailure = tester.clock().instant();
         tester.notifyJobCompletion(component, app, true);
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
-        assertEquals("Failure age is right at initial failure", 
+        assertEquals("Failure age is right at initial failure",
                      initialFailure.plus(Duration.ofMillis(2)), firstFailing(app, tester).get().at());
 
         // Failure again -- failingSince should remain the same
         tester.clock().advance(Duration.ofMillis(1000));
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
-        assertEquals("Failure age is right at second consecutive failure", 
+        assertEquals("Failure age is right at second consecutive failure",
                      initialFailure.plus(Duration.ofMillis(2)), firstFailing(app, tester).get().at());
 
         // Success resets failingSince
@@ -491,27 +492,27 @@ public class ControllerTest {
         // Complete deployment
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
-        
+
         // Two repeated failures again.
         // Initial failure
         tester.clock().advance(Duration.ofMillis(1000));
         initialFailure = tester.clock().instant();
         tester.notifyJobCompletion(component, app, true);
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
-        assertEquals("Failure age is right at initial failure", 
+        assertEquals("Failure age is right at initial failure",
                      initialFailure.plus(Duration.ofMillis(2)), firstFailing(app, tester).get().at());
 
         // Failure again -- failingSince should remain the same
         tester.clock().advance(Duration.ofMillis(1000));
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
-        assertEquals("Failure age is right at second consecutive failure", 
+        assertEquals("Failure age is right at second consecutive failure",
                      initialFailure.plus(Duration.ofMillis(2)), firstFailing(app, tester).get().at());
     }
 
     private Optional<JobStatus.JobRun> firstFailing(Application application, DeploymentTester tester) {
         return tester.controller().applications().get(application.id()).get().deploymentJobs().jobStatus().get(systemTest).firstFailing();
     }
-    
+
     @Test
     public void testMigratingTenantToAthenzWillModifyAthenzDomainsCorrectly() {
         ControllerTester tester = new ControllerTester();

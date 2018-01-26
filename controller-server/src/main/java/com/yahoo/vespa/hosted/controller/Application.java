@@ -30,9 +30,9 @@ import java.util.stream.Collectors;
 
 /**
  * An instance of an application.
- * 
+ *
  * This is immutable.
- * 
+ *
  * @author bratseth
  */
 public class Application {
@@ -57,11 +57,11 @@ public class Application {
     }
 
     /** Used from persistence layer: Do not use */
-    public Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides, 
+    public Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                        List<Deployment> deployments, DeploymentJobs deploymentJobs, Optional<Change> deploying,
                        boolean outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
                        Optional<RotationId> rotation) {
-        this(id, deploymentSpec, validationOverrides, 
+        this(id, deploymentSpec, validationOverrides,
              deployments.stream().collect(Collectors.toMap(Deployment::zone, d -> d)),
              deploymentJobs, deploying, outstandingChange, ownershipIssueId, metrics, rotation);
     }
@@ -91,24 +91,24 @@ public class Application {
     }
 
     public ApplicationId id() { return id; }
-    
-    /** 
-     * Returns the last deployed deployment spec of this application, 
-     * or the empty deployment spec if it has never been deployed 
+
+    /**
+     * Returns the last deployed deployment spec of this application,
+     * or the empty deployment spec if it has never been deployed
      */
     public DeploymentSpec deploymentSpec() { return deploymentSpec; }
 
     /**
-     * Returns the last deployed validation overrides of this application, 
+     * Returns the last deployed validation overrides of this application,
      * or the empty validation overrides if it has never been deployed
      * (or was deployed with an empty/missing validation overrides)
      */
     public ValidationOverrides validationOverrides() { return validationOverrides; }
-    
+
     /** Returns an immutable map of the current deployments of this */
     public Map<ZoneId, Deployment> deployments() { return deployments; }
 
-    /** 
+    /**
      * Returns an immutable map of the current *production* deployments of this
      * (deployments also includes manually deployed environments)
      */
@@ -121,7 +121,7 @@ public class Application {
     public DeploymentJobs deploymentJobs() { return deploymentJobs; }
 
     /**
-     * Returns the change that is currently in the process of being deployed on this application, 
+     * Returns the change that is currently in the process of being deployed on this application,
      * or empty if no change is currently being deployed.
      */
     public Optional<Change> deploying() { return deploying; }
@@ -166,8 +166,13 @@ public class Application {
 
     /** Returns the application version a deployment to this zone should use, or empty if we don't know */
     public Optional<ApplicationVersion> deployApplicationVersionIn(ZoneId zone) {
-        if (deploying().isPresent() && deploying().get() instanceof Change.ApplicationChange)
-            return ((Change.ApplicationChange) deploying().get()).version();
+        if (deploying().isPresent() && deploying().get() instanceof Change.ApplicationChange) {
+            ApplicationVersion version = ((Change.ApplicationChange) deploying().get()).version();
+            if (version == ApplicationVersion.unknown)
+                return Optional.empty();
+            else
+                return Optional.of(version);
+        }
 
         return applicationVersionIn(zone);
     }
