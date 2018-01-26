@@ -112,7 +112,7 @@ BufferTypeBase::clampMaxClusters(uint32_t maxClusters)
 }
 
 size_t
-BufferTypeBase::calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const
+BufferTypeBase::calcClustersToAlloc(uint32_t bufferId, size_t elementsNeeded, bool resizing) const
 {
     size_t reservedElements = getReservedElements(bufferId);
     size_t usedElems = (resizing ? 0 : _activeUsedElems);
@@ -121,7 +121,7 @@ BufferTypeBase::calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool r
     }
     assert((usedElems % _clusterSize) == 0);
     size_t usedClusters = usedElems / _clusterSize;
-    size_t needClusters = (sizeNeeded + (resizing ? usedElems : reservedElements) + _clusterSize - 1) / _clusterSize;
+    size_t needClusters = (elementsNeeded + (resizing ? usedElems : reservedElements) + _clusterSize - 1) / _clusterSize;
     size_t growClusters = (usedClusters * _allocGrowFactor);
     size_t wantClusters = std::max((resizing ? usedClusters : 0u) + growClusters,
                                    static_cast<size_t>(_minClusters));

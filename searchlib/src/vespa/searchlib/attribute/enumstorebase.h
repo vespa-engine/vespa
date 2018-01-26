@@ -288,6 +288,9 @@ public:
     uint32_t getRemaining() const {
         return _store.getBufferState(_store.getActiveBufferId(TYPE_ID)).remaining();
     }
+    uint32_t getCapacity() const {
+        return _store.getBufferState(_store.getActiveBufferId(TYPE_ID)).capacity();
+    }
     MemoryUsage getMemoryUsage() const;
     MemoryUsage getTreeMemoryUsage() const { return _enumDict->getTreeMemoryUsage(); }
 

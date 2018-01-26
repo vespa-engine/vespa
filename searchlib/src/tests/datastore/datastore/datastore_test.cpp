@@ -11,6 +11,8 @@ LOG_SETUP("datastore_test");
 namespace search {
 namespace datastore {
 
+using vespalib::alloc::MemoryAllocator;
+
 struct IntReclaimer
 {
     static void reclaim(int *) {}
@@ -65,21 +67,22 @@ public:
 
 using GrowthStats = std::vector<int>;
 
-constexpr float ALLOC_GROW_FACTOR = 0.5;
+constexpr float ALLOC_GROW_FACTOR = 0.4;
+constexpr size_t HUGE_PAGE_CLUSTER_SIZE = (MemoryAllocator::HUGEPAGE_SIZE / sizeof(int));
 
 class GrowStore
 {
-    using Store = DataStoreT<EntryRefT<22>>;
+    using Store = DataStoreT<EntryRefT<24>>;
     using RefType = Store::RefType;
     Store _store;
     BufferType<int> _firstType;
     BufferType<int> _type;
     uint32_t _typeId;
 public:
-    GrowStore(size_t minSize, size_t minSwitch)
+    GrowStore(size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer)
         : _store(),
-          _firstType(1, 1, 64, 0, ALLOC_GROW_FACTOR),
-          _type(1, minSize, 64, minSwitch, ALLOC_GROW_FACTOR),
+          _firstType(1, 1, maxClusters, 0, ALLOC_GROW_FACTOR),
+          _type(1, minClusters, maxClusters, numClustersForNewBuffer, ALLOC_GROW_FACTOR),
           _typeId(0)
     {
         (void) _store.addType(&_firstType);
@@ -460,11 +463,11 @@ namespace {
 void assertGrowStats(GrowthStats expSizes,
                      GrowthStats expFirstBufSizes,
                      size_t expInitMemUsage,
-                     size_t minSize, size_t minSwitch)
+                     size_t minClusters, size_t numClustersForNewBuffer, size_t maxClusters = 128)
 {
-    EXPECT_EQUAL(expSizes, GrowStore(minSize, minSwitch).getGrowthStats(expSizes.size()));
-    EXPECT_EQUAL(expFirstBufSizes, GrowStore(minSize, minSwitch).getFirstBufGrowStats());
-    EXPECT_EQUAL(expInitMemUsage, GrowStore(minSize, minSwitch).getMemoryUsage().allocatedBytes());
+    EXPECT_EQUAL(expSizes, GrowStore(minClusters, maxClusters, numClustersForNewBuffer).getGrowthStats(expSizes.size()));
+    EXPECT_EQUAL(expFirstBufSizes, GrowStore(minClusters, maxClusters, numClustersForNewBuffer).getFirstBufGrowStats());
+    EXPECT_EQUAL(expInitMemUsage, GrowStore(minClusters, maxClusters, numClustersForNewBuffer).getMemoryUsage().allocatedBytes());
 }
 
 }
@@ -472,23 +475,29 @@ void assertGrowStats(GrowthStats expSizes,
 TEST("require that buffer growth works")
 {
     // Always switch to new buffer, min size 4
-    TEST_DO(assertGrowStats({ 4, 4, 4, 6, 9, 13, 20, 30, 45, 64 },
+    TEST_DO(assertGrowStats({ 4, 4, 4, 4, 8, 16, 16, 32, 64, 64 },
                             { 4 }, 20, 4, 0));
     // Resize if buffer size is less than 4, min size 0
-    TEST_DO(assertGrowStats({ 3, 3, 3, 4, 6, 9, 14, 21, 31, 47 },
-                            { 0, 1, 2, 3 }, 4, 0, 4));
+    TEST_DO(assertGrowStats({ 4, 4, 4, 4, 8, 16, 16, 32, 64, 64 },
+                            { 0, 1, 2, 4 }, 4, 0, 4));
     // Always switch to new buffer, min size 16
-    TEST_DO(assertGrowStats({ 16, 16, 16, 24, 36, 54, 64, 64, 64 },
+    TEST_DO(assertGrowStats({ 16, 16, 16, 32, 32, 64, 128, 128, 128 },
                             { 16 }, 68, 16, 0));
     // Resize if buffer size is less than 16, min size 0
-    TEST_DO(assertGrowStats({ 19, 19, 19, 28, 42, 63, 64, 64, 64 },
-                            { 0, 1, 2, 3, 4, 6, 9, 13, 19 }, 4, 0, 16));
+    TEST_DO(assertGrowStats({ 16, 16, 16, 32, 32, 64, 128, 128, 128 },
+                            { 0, 1, 2, 4, 8, 16 }, 4, 0, 16));
     // Resize if buffer size is less than 16, min size 4
-    TEST_DO(assertGrowStats({ 19, 19, 19, 28, 42, 63, 64, 64, 64 },
-                            { 4, 6, 9, 13, 19 }, 20, 4, 16));
+    TEST_DO(assertGrowStats({ 16, 16, 16, 32, 32, 64, 128, 128, 128 },
+                            { 4, 8, 16 }, 20, 4, 16));
     // Always switch to new buffer, min size 0
-    TEST_DO(assertGrowStats({ 1, 1, 1, 1, 2, 3, 4, 6, 9 },
+    TEST_DO(assertGrowStats({ 1, 1, 1, 1, 1, 2, 2, 4, 8, 8, 16, 32 },
                             { 0, 1 }, 4, 0, 0));
+
+    // Buffers with sizes larger than the huge page size of the mmap allocator.
+    ASSERT_EQUAL(524288u, HUGE_PAGE_CLUSTER_SIZE);
+    TEST_DO(assertGrowStats({ 262144, 262144, 262144, 524288, 524288, 524288 * 2, 524288 * 3, 524288 * 4, 524288 * 5, 524288 * 5 },
+                            { 0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144 },
+                            4, 0, HUGE_PAGE_CLUSTER_SIZE / 2, HUGE_PAGE_CLUSTER_SIZE * 5));
 }
 
 }

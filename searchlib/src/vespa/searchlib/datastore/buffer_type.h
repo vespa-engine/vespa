@@ -60,12 +60,12 @@ public:
     /**
      * Calculate number of clusters to allocate for new buffer.
      *
-     * @param sizeNeeded number of elements needed now
+     * @param elementsNeeded number of elements needed now
      * @param clusterRefSize number of clusters expressable via reference type
      *
      * @return number of clusters to allocate for new buffer
      */
-    virtual size_t calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const;
+    virtual size_t calcClustersToAlloc(uint32_t bufferId, size_t elementsNeeded, bool resizing) const;
 
     void clampMaxClusters(uint32_t maxClusters);
 

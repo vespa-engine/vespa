@@ -4,6 +4,7 @@
 #include <limits>
 
 using vespalib::alloc::Alloc;
+using vespalib::alloc::MemoryAllocator;
 
 namespace search::datastore {
 
@@ -30,7 +31,7 @@ BufferState::BufferState()
       _typeId(0),
       _clusterSize(0),
       _compacting(false),
-      _buffer(Alloc::alloc())
+      _buffer(Alloc::alloc(0, MemoryAllocator::HUGEPAGE_SIZE))
 {
 }
 
@@ -45,11 +46,50 @@ BufferState::~BufferState()
     assert(_freeList.empty());
 }
 
+namespace {
+
+struct AllocResult {
+    size_t elements;
+    size_t bytes;
+    AllocResult(size_t elements_, size_t bytes_) : elements(elements_), bytes(bytes_) {}
+};
+
+size_t
+roundUpToMatchAllocator(size_t sz)
+{
+    if (sz == 0) {
+        return 0;
+    }
+    // We round up the wanted number of bytes to allocate to match
+    // the underlying allocator to ensure little to no waste of allocated memory.
+    if (sz < MemoryAllocator::HUGEPAGE_SIZE) {
+        // Match heap allocator in vespamalloc.
+        return vespalib::roundUp2inN(sz);
+    } else {
+        // Match mmap allocator.
+        return MemoryAllocator::roundUpToHugePages(sz);
+    }
+}
+
+AllocResult
+calcAllocation(uint32_t bufferId,
+               BufferTypeBase &typeHandler,
+               size_t elementsNeeded,
+               bool resizing)
+{
+    size_t allocClusters = typeHandler.calcClustersToAlloc(bufferId, elementsNeeded, resizing);
+    size_t allocElements = allocClusters * typeHandler.getClusterSize();
+    size_t allocBytes = roundUpToMatchAllocator(allocElements * typeHandler.elementSize());
+    size_t adjustedAllocElements = (allocBytes / typeHandler.elementSize());
+    return AllocResult(adjustedAllocElements, allocBytes);
+}
+
+}
 
 void
 BufferState::onActive(uint32_t bufferId, uint32_t typeId,
                       BufferTypeBase *typeHandler,
-                      size_t sizeNeeded,
+                      size_t elementsNeeded,
                       void *&buffer)
 {
     assert(buffer == NULL);
@@ -69,13 +109,12 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
 
     size_t reservedElements = typeHandler->getReservedElements(bufferId);
     (void) reservedElements;
-    size_t allocClusters = typeHandler->calcClustersToAlloc(bufferId, sizeNeeded, false);
-    size_t allocSize = allocClusters * typeHandler->getClusterSize();
-    assert(allocSize >= reservedElements + sizeNeeded);
-    _buffer.create(allocSize * typeHandler->elementSize()).swap(_buffer);
+    AllocResult alloc = calcAllocation(bufferId, *typeHandler, elementsNeeded, false);
+    assert(alloc.elements >= reservedElements + elementsNeeded);
+    _buffer.create(alloc.bytes).swap(_buffer);
     buffer = _buffer.get();
-    assert(buffer != NULL || allocSize == 0u);
-    _allocElems = allocSize;
+    assert(buffer != NULL || alloc.elements == 0u);
+    _allocElems = alloc.elements;
     _state = ACTIVE;
     _typeHandler = typeHandler;
     _typeId = typeId;
@@ -227,26 +266,23 @@ BufferState::disableElemHoldList()
 
 void
 BufferState::fallbackResize(uint32_t bufferId,
-                            uint64_t sizeNeeded,
+                            uint64_t elementsNeeded,
                             void *&buffer,
                             Alloc &holdBuffer)
 {
     assert(_state == ACTIVE);
     assert(_typeHandler != NULL);
     assert(holdBuffer.get() == NULL);
-    size_t allocClusters = _typeHandler->calcClustersToAlloc(bufferId,
-                                                             sizeNeeded,
-                                                             true);
-    size_t allocSize = allocClusters * _typeHandler->getClusterSize();
-    assert(allocSize >= _usedElems + sizeNeeded);
-    assert(allocSize > _allocElems);
-    Alloc newBuffer = _buffer.create(allocSize * _typeHandler->elementSize());
+    AllocResult alloc = calcAllocation(bufferId, *_typeHandler, elementsNeeded, true);
+    assert(alloc.elements >= _usedElems + elementsNeeded);
+    assert(alloc.elements > _allocElems);
+    Alloc newBuffer = _buffer.create(alloc.bytes);
     _typeHandler->fallbackCopy(newBuffer.get(), buffer, _usedElems);
     holdBuffer.swap(_buffer);
     std::atomic_thread_fence(std::memory_order_release);
     _buffer = std::move(newBuffer);
     buffer = _buffer.get();
-    _allocElems = allocSize;
+    _allocElems = alloc.elements;
     std::atomic_thread_fence(std::memory_order_release);
 }
 
