@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.Change.VersionChange;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
@@ -87,16 +86,11 @@ public class DeploymentTrigger {
                 if (report.jobType() == JobType.component) {
                     if (acceptNewApplicationVersionNow(application)) {
                         // Set this as the change we are doing, unless we are already pushing a platform change
-                        if ( ! ( application.deploying() instanceof Change.VersionChange)) {
-                            Change.ApplicationChange applicationChange = Change.ApplicationChange.unknown();
-                            // TODO: Remove guard when source is always reported by component
-                            if (report.sourceRevision().isPresent()) {
-                                applicationChange = Change.ApplicationChange.of(
-                                        ApplicationVersion.from(report.sourceRevision().get(),
-                                                                report.buildNumber())
-                                );
-                            }
-                            application = application.withDeploying(applicationChange);
+                        if ( ! ( application.deploying().platform().isPresent())) {
+                            ApplicationVersion applicationVersion = ApplicationVersion.unknown;
+                            if (report.sourceRevision().isPresent())
+                                applicationVersion = ApplicationVersion.from(report.sourceRevision().get(), report.buildNumber());
+                            application = application.withDeploying(Change.of(applicationVersion));
                         }
                     }
                     else { // postpone
@@ -140,11 +134,11 @@ public class DeploymentTrigger {
             if (deployment == null) return false;
 
             // Check actual job outcome (the deployment)
-            if (change instanceof VersionChange) {
-                if (((VersionChange)change).version().isAfter(deployment.version())) return false; // later is ok
+            if (change.platform().isPresent()) {
+                if (change.platform().get().isAfter(deployment.version())) return false; // later is ok
             }
-            else if (((Change.ApplicationChange)change).version() != ApplicationVersion.unknown) {
-                if ( ! ((Change.ApplicationChange)change).version().equals(deployment.applicationVersion())) return false;
+            else if (change.application().isPresent() && change.application().get() != ApplicationVersion.unknown) { // TODO: Should not be "else"
+                if ( ! change.application().get().equals(deployment.applicationVersion())) return false;
             }
             else {
                 return false; // If we don't yet know the application version we are deploying, then we are not complete
@@ -172,8 +166,8 @@ public class DeploymentTrigger {
         // Should the first step be triggered?
         if ( ! jobs.isEmpty() && jobs.get(0).equals(JobType.systemTest) ) {
             JobStatus systemTestStatus = application.deploymentJobs().jobStatus().get(JobType.systemTest);
-            if (application.deploying() instanceof Change.VersionChange) {
-                Version target = ((Change.VersionChange) application.deploying()).version();
+            if (application.deploying().platform().isPresent()) {
+                Version target = application.deploying().platform().get();
                 if (systemTestStatus == null
                     || ! systemTestStatus.lastTriggered().isPresent()
                     || ! systemTestStatus.isSuccess()
@@ -219,10 +213,8 @@ public class DeploymentTrigger {
         if ( ! application.deploying().isPresent()) return false;
         if (next == null) return true;
 
-        Change change = application.deploying();
-
-        if (change instanceof Change.VersionChange) { // Propagate upgrade while making sure we never downgrade
-            Version targetVersion = ((Change.VersionChange)change).version();
+        if (application.deploying().platform().isPresent()) { // Propagate upgrade while making sure we never downgrade
+            Version targetVersion = application.deploying().platform().get();
 
             if (next.type().isTest()) {
                 // Is it not yet this job's turn to upgrade?
@@ -271,10 +263,9 @@ public class DeploymentTrigger {
                 throw new IllegalArgumentException("Could not start " + change + " on " + application + ": " +
                                                    application.deploying() + " is already in progress");
             application = application.withDeploying(change);
-            if (change instanceof Change.ApplicationChange)
+            if (change.application().isPresent())
                 application = application.withOutstandingChange(false);
-            application = trigger(JobType.systemTest, application, false,
-                                  (change instanceof Change.VersionChange ? "Upgrading to " + ((Change.VersionChange)change).version() : "Deploying " + change));
+            application = trigger(JobType.systemTest, application, false, change.toString());
             applications().store(application);
         });
     }
@@ -381,8 +372,8 @@ public class DeploymentTrigger {
             application.deploying().blockedBy(application.deploymentSpec(), clock.instant())) return false;
 
         // Don't downgrade or redeploy the same version in production needlessly
-        if (application.deploying() instanceof VersionChange &&
-            jobType.isProduction() && alreadyDeployed(((VersionChange) application.deploying()).version(), application, jobType)) return false;
+        if (application.deploying().platform().isPresent() &&
+            jobType.isProduction() && alreadyDeployed((application.deploying().platform().get()), application, jobType)) return false;
 
         if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) return false;
         if  ( ! hasJob(jobType, application)) return false;
@@ -418,7 +409,7 @@ public class DeploymentTrigger {
     private boolean acceptNewApplicationVersionNow(LockedApplication application) {
         if ( ! application.deploying().isPresent()) return true;
 
-        if (application.deploying() instanceof Change.ApplicationChange) return true; // more changes are ok
+        if (application.deploying().application().isPresent()) return true; // more application changes are ok
 
         if (application.deploymentJobs().hasFailures()) return true; // allow changes to fix upgrade problems
 

@@ -94,12 +94,6 @@ public class DeploymentTester {
         return controller().applications().require(application);
     }
 
-    public Optional<Change.VersionChange> versionChange(ApplicationId application) {
-        Change change = application(application).deploying();
-        if (change instanceof Change.VersionChange) return Optional.of((Change.VersionChange)change);
-        return Optional.empty();
-    }
-
     public void updateVersionStatus() {
         controller().updateVersionStatus(VersionStatus.compute(controller(), tester.controller().systemVersion()));
     }
@@ -226,7 +220,7 @@ public class DeploymentTester {
 
     public void completeUpgrade(Application application, Version version, ApplicationPackage applicationPackage) {
         assertTrue(application + " has a deployment", applications().require(application.id()).deploying().isPresent());
-        assertEquals(new Change.VersionChange(version), applications().require(application.id()).deploying());
+        assertEquals(Change.of(version), applications().require(application.id()).deploying());
         completeDeployment(application, applicationPackage, Optional.empty(), true);
     }
 
@@ -240,7 +234,7 @@ public class DeploymentTester {
 
     private void completeUpgradeWithError(Application application, Version version, ApplicationPackage applicationPackage, Optional<JobType> failOnJob) {
         assertTrue(applications().require(application.id()).deploying().isPresent());
-        assertEquals(new Change.VersionChange(version), applications().require(application.id()).deploying());
+        assertEquals(Change.of(version), applications().require(application.id()).deploying());
         completeDeployment(application, applicationPackage, failOnJob, true);
     }
 

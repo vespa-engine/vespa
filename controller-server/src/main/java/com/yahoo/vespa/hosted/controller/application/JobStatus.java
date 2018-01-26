@@ -209,12 +209,9 @@ public class JobStatus {
         // TODO: Consider a version and application version for each JobStatus, to compare against a Target (instead of Change, which is, really, a Target).
         /** Returns whether the job last completed for the given change */
         public boolean lastCompletedWas(Change change) {
-            if (change instanceof Change.ApplicationChange) {
-                return ((Change.ApplicationChange) change).version().equals(applicationVersion);
-            } else if (change instanceof Change.VersionChange) {
-                return version().equals(((Change.VersionChange) change).version());
-            }
-            throw new IllegalArgumentException("Unexpected change: " + change.getClass());
+            if (change.platform().isPresent() && ! change.platform().get().equals(version())) return false;
+            if (change.application().isPresent() && ! change.application().get().equals(applicationVersion)) return false;
+            return true;
         }
 
         @Override

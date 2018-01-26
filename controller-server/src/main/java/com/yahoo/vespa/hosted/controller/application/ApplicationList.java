@@ -54,7 +54,7 @@ public class ApplicationList {
 
     /** Returns the subset of applications which are currently upgrading (to any version) */
     public ApplicationList upgrading() {
-        return listOf(list.stream().filter(ApplicationList::isUpgrading));
+        return listOf(list.stream().filter(application -> application.deploying().platform().isPresent()));
     }
 
     /** Returns the subset of applications which are currently upgrading to the given version */
@@ -170,16 +170,8 @@ public class ApplicationList {
 
     // ----------------------------------- Internal helpers
 
-    private static boolean isUpgrading(Application application) {
-        if ( ! (application.deploying().isPresent()) ) return false;
-        if ( ! (application.deploying() instanceof Change.VersionChange) ) return false;
-        return true;
-    }
-
     private static boolean isUpgradingTo(Version version, Application application) {
-        if ( ! (application.deploying().isPresent()) ) return false;
-        if ( ! (application.deploying() instanceof Change.VersionChange) ) return false;
-        return ((Change.VersionChange)application.deploying()).version().equals(version);
+        return application.deploying().platform().equals(Optional.of(version));
     }
 
     private static boolean failingOn(Version version, Application application) {

@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.Change.VersionChange;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -152,10 +151,7 @@ public class Application {
 
     /** Returns the version a new deployment to this zone should use for this application */
     public Version deployVersionIn(ZoneId zone, Controller controller) {
-        if (deploying() instanceof VersionChange)
-            return ((Change.VersionChange) deploying()).version();
-
-        return versionIn(zone, controller);
+        return deploying.platform().orElse(versionIn(zone, controller));
     }
 
     /** Returns the current version this application has, or if none; should use, in the given zone */
@@ -166,8 +162,8 @@ public class Application {
 
     /** Returns the application version a deployment to this zone should use, or empty if we don't know */
     public Optional<ApplicationVersion> deployApplicationVersionIn(ZoneId zone) {
-        if (deploying() instanceof Change.ApplicationChange) {
-            ApplicationVersion version = ((Change.ApplicationChange) deploying()).version();
+        if (deploying().application().isPresent()) {
+            ApplicationVersion version = deploying().application().get();
             if (version == ApplicationVersion.unknown)
                 return Optional.empty();
             else

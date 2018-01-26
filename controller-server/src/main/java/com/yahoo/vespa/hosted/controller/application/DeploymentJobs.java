@@ -75,7 +75,7 @@ public class DeploymentJobs {
             if (job == null) job = JobStatus.initial(jobType);
             return job.withTriggering(version,
                                       applicationVersion,
-                                      change instanceof Change.VersionChange,
+                                      change.platform().isPresent(),
                                       reason,
                                       triggerTime);
         });

@@ -39,7 +39,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerato
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
@@ -323,8 +322,8 @@ public class ApplicationController {
 
             // TODO: Remove after introducing new application version number
             if ( ! options.deployCurrentVersion && applicationPackageFromDeployer.isPresent()) {
-                if (application.deploying() instanceof Change.ApplicationChange) {
-                    application = application.withDeploying(Change.ApplicationChange.of(applicationVersion));
+                if (application.deploying().application().isPresent()) {
+                    application = application.withDeploying(application.deploying().with(applicationVersion));
                 }
                 if (!canDeployDirectlyTo(zone, options) && jobType.isPresent()) {
                     // Update with (potentially) missing information about what we triggered:

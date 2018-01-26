@@ -247,10 +247,10 @@ public class ApplicationSerializer {
         if ( ! deploying.isPresent()) return;
 
         Cursor object = parentObject.setObject(deployingField);
-        if (deploying instanceof Change.VersionChange)
-            object.setString(versionField, ((Change.VersionChange)deploying).version().toString());
-        else if (((Change.ApplicationChange)deploying).version() != ApplicationVersion.unknown)
-            toSlime(((Change.ApplicationChange)deploying).version(), object);
+        if (deploying.platform().isPresent())
+            object.setString(versionField, deploying.platform().get().toString());
+        if (deploying.application().isPresent() && deploying.application().get() != ApplicationVersion.unknown)
+            toSlime(deploying.application().get(), object);
     }
 
     // ------------------ Deserialization
@@ -366,12 +366,14 @@ public class ApplicationSerializer {
     private Change changeFromSlime(Inspector object) {
         if ( ! object.valid()) return Change.empty();
         Inspector versionFieldValue = object.field(versionField);
+        Change change = Change.empty();
         if (versionFieldValue.valid())
-            return new Change.VersionChange(Version.fromString(versionFieldValue.asString()));
-        else if (object.field(applicationPackageHashField).valid())
-            return Change.ApplicationChange.of(applicationVersionFromSlime(object));
-        else
-            return Change.ApplicationChange.unknown();
+            change = Change.of(Version.fromString(versionFieldValue.asString()));
+        if (object.field(applicationPackageHashField).valid())
+            change = change.with(applicationVersionFromSlime(object));
+        if ( ! change.isPresent()) // A deploy object with no fields -> unknown application change
+            change = Change.of(ApplicationVersion.unknown);
+        return change;
     }
 
     private List<JobStatus> jobStatusListFromSlime(Inspector array) {

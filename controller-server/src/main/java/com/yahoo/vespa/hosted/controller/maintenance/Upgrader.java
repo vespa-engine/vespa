@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 
 /**
  * Maintenance job which schedules applications for Vespa version upgrade
- * 
+ *
  * @author bratseth
  * @author mpolden
  */
@@ -39,7 +39,7 @@ public class Upgrader extends Maintainer {
      * Schedule application upgrades. Note that this implementation must be idempotent.
      */
     @Override
-    public void maintain() {        
+    public void maintain() {
         // Determine target versions for each upgrade policy
         Optional<Version> canaryTarget = controller().versionStatus().systemVersion().map(VespaVersion::versionNumber);
         Optional<Version> defaultTarget = newestVersionWithConfidence(VespaVersion.Confidence.normal);
@@ -66,26 +66,25 @@ public class Upgrader extends Maintainer {
         defaultTarget.ifPresent(target -> upgrade(applications().with(UpgradePolicy.defaultPolicy), target));
         conservativeTarget.ifPresent(target -> upgrade(applications().with(UpgradePolicy.conservative), target));
     }
-    
+
     private Optional<Version> newestVersionWithConfidence(VespaVersion.Confidence confidence) {
         return reversed(controller().versionStatus().versions()).stream()
                                                                 .filter(v -> v.confidence().equalOrHigherThan(confidence))
                                                                 .findFirst()
                                                                 .map(VespaVersion::versionNumber);
     }
-    
+
     private List<VespaVersion> reversed(List<VespaVersion> versions) {
         List<VespaVersion> reversed = new ArrayList<>(versions.size());
         for (int i = 0; i < versions.size(); i++)
             reversed.add(versions.get(versions.size() - 1 - i));
         return reversed;
     }
-    
+
     /** Returns a list of all applications */
     private ApplicationList applications() { return ApplicationList.from(controller().applications().asList()); }
-    
+
     private void upgrade(ApplicationList applications, Version version) {
-        Change.VersionChange change = new Change.VersionChange(version);
         applications = applications.notPullRequest(); // Pull requests are deployed as separate applications to test then deleted; No need to upgrade
         applications = applications.hasProductionDeployment();
         applications = applications.onLowerVersionThan(version);
@@ -96,7 +95,7 @@ public class Upgrader extends Maintainer {
         applications = applications.first(numberOfApplicationsToUpgrade()); // throttle upgrades
         for (Application application : applications.asList()) {
             try {
-                controller().applications().deploymentTrigger().triggerChange(application.id(), change);
+                controller().applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
             } catch (IllegalArgumentException e) {
                 log.log(Level.INFO, "Could not trigger change: " + Exceptions.toMessageString(e));
             }

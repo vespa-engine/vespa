@@ -350,10 +350,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Currently deploying change
         if (application.deploying().isPresent()) {
             Cursor deployingObject = object.setObject("deploying");
-            if (application.deploying() instanceof Change.VersionChange)
-                deployingObject.setString("version", ((Change.VersionChange)application.deploying()).version().toString());
-            else if (((Change.ApplicationChange)application.deploying()).version() != ApplicationVersion.unknown)
-                toSlime(((Change.ApplicationChange)application.deploying()).version(), deployingObject.setObject("revision"));
+            application.deploying().platform().ifPresent(v -> deployingObject.setString("version", v.toString()));
+            application.deploying().application()
+                                   .filter(v -> v != ApplicationVersion.unknown)
+                                   .ifPresent(v -> toSlime(v, deployingObject.setObject("revision")));
         }
 
         // Jobs sorted according to deployment spec
@@ -715,7 +715,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 throw new IllegalArgumentException("Can not start a deployment of " + application + " at this time: " +
                                                            application.deploying() + " is in progress");
 
-            controller.applications().deploymentTrigger().triggerChange(application.id(), new Change.VersionChange(version));
+            controller.applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
         });
         return new MessageResponse("Triggered deployment of application '" + id + "' on version " + version);
     }

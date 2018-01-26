@@ -320,7 +320,7 @@ public class DeploymentTriggerTest {
                                                                  new JobControl(tester.controllerTester().curator()));
         LockedApplication app = (LockedApplication)tester.createAndDeploy("default0", 3, "default");
         // Store that we are upgrading but don't start the system-tests job
-        tester.controller().applications().store(app.withDeploying(new Change.VersionChange(Version.fromString("6.2"))));
+        tester.controller().applications().store(app.withDeploying(Change.of(Version.fromString("6.2"))));
         assertEquals(0, tester.buildSystem().jobs().size());
         readyJobsTrigger.run();
         assertEquals(1, tester.buildSystem().jobs().size());

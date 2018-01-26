@@ -103,12 +103,12 @@ public class ControllerTest {
         tester.notifyJobCompletion(component, app1, true);
         assertEquals("Application version is currently not known",
                      ApplicationVersion.unknown,
-                     ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying()).version());
+                     tester.controller().applications().require(app1.id()).deploying().application().get());
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
 
-        ApplicationVersion applicationVersion = ((Change.ApplicationChange)tester.controller().applications().require(app1.id()).deploying()).version();
+        ApplicationVersion applicationVersion = tester.controller().applications().require(app1.id()).deploying().application().get();
         assertTrue("Application version has been set during deployment", applicationVersion != ApplicationVersion.unknown);
         assertStatus(JobStatus.initial(stagingTest)
                               .withTriggering(version1, applicationVersion, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
@@ -221,9 +221,9 @@ public class ControllerTest {
         tester.artifactRepository().put(app1.id(), applicationPackage, expectedVersionString);
         tester.notifyJobCompletion(component, app1, Optional.empty(), Optional.of(source), 37);
         ApplicationVersion expectedVersion = ApplicationVersion.from(source, 37);
-        assertEquals(expectedVersionString, ((Change.ApplicationChange) tester.controller().applications()
-                                                                              .require(app1.id())
-                                                                              .deploying()).version().id());
+        assertEquals(expectedVersionString, tester.controller().applications()
+                                                               .require(app1.id())
+                                                               .deploying().application().get().id());
 
         // Deploy without application package
         tester.deployAndNotify(app1, true, systemTest);
@@ -380,8 +380,7 @@ public class ControllerTest {
         assertFalse("Change deployed", app1.deploying().isPresent());
 
         // Version upgrade changes system version
-        Change.VersionChange change = new Change.VersionChange(newSystemVersion);
-        applications.deploymentTrigger().triggerChange(app1.id(), change);
+        applications.deploymentTrigger().triggerChange(app1.id(), Change.of(newSystemVersion));
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
@@ -669,13 +668,13 @@ public class ControllerTest {
         Application app = tester.createApplication(tenant, "app1", "default", 1);
 
         tester.controller().applications().lockOrThrow(app.id(), application -> {
-            application = application.withDeploying(new Change.VersionChange(Version.fromString("6.3")));
+            application = application.withDeploying(Change.of(Version.fromString("6.3")));
             applications.store(application);
             try {
                 tester.deploy(app, ZoneId.from("prod", "us-east-3"));
                 fail("Expected exception");
             } catch (IllegalArgumentException e) {
-                assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.us-east-3 as version change to 6.3 is not tested", e.getMessage());
+                assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.us-east-3 as upgrade to 6.3 is not tested", e.getMessage());
             }
         });
     }
