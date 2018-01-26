@@ -66,10 +66,10 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         try {
             ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(),
                                               feature.getArguments());
-            if (store.hasTensorFlowModels()) // TODO: Check if we have created a converted model already instead
-                return transformFromTensorFlowModel(store, context.rankProfile());
-            else // is should have previously stored model information instead
+            if (store.hasStoredModel())
                 return transformFromStoredModel(store, context.rankProfile());
+            else // not converted yet - access TensorFlow model files
+                return transformFromTensorFlowModel(store, context.rankProfile());
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use tensorflow model from " + feature, e);
@@ -182,12 +182,12 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
         public FeatureArguments arguments() { return arguments; }
 
-        public boolean hasTensorFlowModels() {
+        public boolean hasStoredModel() {
             try {
-                return application.getFile(ApplicationPackage.MODELS_DIR).exists();
+                return application.getFile(arguments.expressionPath()).exists();
             }
             catch (UnsupportedOperationException e) {
-                return false; // No files -> no TensorFlow models
+                return false;
             }
         }
 
