@@ -63,7 +63,7 @@ public class DockerOperationsImpl implements DockerOperations {
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/yms_agent"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/ysar"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/ystatus"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/zpe_policy_updater"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/zpu"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/cache"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/crash"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/db/jdisc"), false);
@@ -80,6 +80,7 @@ public class DockerOperationsImpl implements DockerOperations {
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/yca"), true);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/ycore++"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/zookeeper"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/zpe"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("tmp"), false);
     }
 
