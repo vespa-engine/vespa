@@ -21,4 +21,6 @@ public class TestFileSystem {
                 .build();
         return Jimfs.newFileSystem(configuration);
     }
+
+    private TestFileSystem() { }
 }

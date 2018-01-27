@@ -32,7 +32,8 @@ public class AddYumRepo {
         FileWriter fileWriter = new FileWriter(path, this::getRepoFileContent)
                 .withOwner("root")
                 .withGroup("root")
-                .withPermissions("rw-r--r--");
+                .withPermissions("rw-r--r--")
+                .onlyIfFileDoesNotAlreadyExist();
 
         return fileWriter.converge(context);
     }

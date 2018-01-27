@@ -1,10 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,7 +16,10 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.Set;
+
+import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
 
 // @Immutable
 public class UnixPath {
@@ -34,8 +37,14 @@ public class UnixPath {
         return path;
     }
 
-    public void createParents() {
-        uncheck(() -> Files.createDirectories(path.getParent()));
+    public boolean createParents() {
+        Path parent = path.getParent();
+        if (Files.isDirectory(parent)) {
+            return false;
+        }
+
+        uncheck(() -> Files.createDirectories(parent));
+        return true;
     }
 
     public String readUtf8File() {
@@ -49,7 +58,7 @@ public class UnixPath {
     }
 
     public String getPermissions() {
-        return PosixFilePermissions.toString(getAttributes().permissions());
+        return getAttributes().permissions();
     }
 
     /**
@@ -69,7 +78,7 @@ public class UnixPath {
     }
 
     public String getOwner() {
-        return getAttributes().owner().getName();
+        return getAttributes().owner();
     }
 
     public void setOwner(String owner) {
@@ -79,7 +88,7 @@ public class UnixPath {
     }
 
     public String getGroup() {
-        return getAttributes().group().getName();
+        return getAttributes().group();
     }
 
     public void setGroup(String group) {
@@ -89,37 +98,29 @@ public class UnixPath {
     }
 
     public Instant getLastModifiedTime() {
-        return uncheck(() -> Files.getLastModifiedTime(path)).toInstant();
+        return getAttributes().lastModifiedTime();
     }
 
-    private PosixFileAttributes getAttributes() {
-        return uncheck(() ->
+    public FileAttributes getAttributes() {
+        PosixFileAttributes attributes = uncheck(() ->
                 Files.getFileAttributeView(path, PosixFileAttributeView.class).readAttributes());
+        return new FileAttributes(attributes);
     }
 
-    @FunctionalInterface
-    private interface SupplierThrowingIOException<T> {
-        T get() throws IOException;
-    }
-
-    private static <T> T uncheck(SupplierThrowingIOException<T> supplier) {
+    public Optional<FileAttributes> getAttributesIfExists() {
         try {
-            return supplier.get();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            return Optional.of(getAttributes());
+        } catch (UncheckedIOException e) {
+            if (e.getCause() instanceof NoSuchFileException) {
+                return Optional.empty();
+            }
+
+            throw e;
         }
     }
 
-    @FunctionalInterface
-    private interface RunnableThrowingIOException<T> {
-        void run() throws IOException;
-    }
-
-    private static <T> void uncheck(RunnableThrowingIOException<T> runnable) {
-        try {
-            runnable.run();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    @Override
+    public String toString() {
+        return path.toString();
     }
 }

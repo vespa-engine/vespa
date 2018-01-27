@@ -33,10 +33,11 @@ public class FileWriterTest {
         FileWriter writer = new FileWriter(path, () -> content)
                 .withPermissions(permissions)
                 .withOwner(owner)
-                .withGroup(group);
+                .withGroup(group)
+                .onlyIfFileDoesNotAlreadyExist();
         TaskContext context = mock(TaskContext.class);
         assertTrue(writer.converge(context));
-        verify(context, times(1)).logSystemModification(any(), eq("Writing file " + path));
+        verify(context, times(1)).logSystemModification(any(), eq("Creating file " + path));
 
         UnixPath unixPath = new UnixPath(path);
         assertEquals(content, unixPath.readUtf8File());

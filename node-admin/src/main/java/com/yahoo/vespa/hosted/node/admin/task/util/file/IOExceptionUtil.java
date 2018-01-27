@@ -1,8 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Optional;
 
 public class IOExceptionUtil {
     public static <T> void uncheck(RunnableThrowingIOException<T> runnable) {
@@ -30,5 +32,21 @@ public class IOExceptionUtil {
     @FunctionalInterface
     public interface RunnableThrowingIOException<T> {
         void run() throws IOException;
+    }
+
+    /**
+     * Useful if it's not known whether a file or directory exists, in case e.g.
+     * FileNotFoundException is thrown and the caller wants an Optional.empty() in that case.
+     */
+    public static <T> Optional<T> ifExists(SupplierThrowingIOException<T> supplier) {
+        try {
+            return Optional.ofNullable(uncheck(supplier));
+        } catch (UncheckedIOException e) {
+            if (e.getCause() instanceof FileNotFoundException) {
+                return Optional.empty();
+            }
+
+            throw e;
+        }
     }
 }
