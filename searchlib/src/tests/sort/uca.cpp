@@ -34,7 +34,7 @@ void Test::testFromDat()
     
     coll->setStrength(Collator::PRIMARY);
 
-    std::vector<uint16_t> u16buffer(100);
+    std::vector<UChar> u16buffer(100);
     std::vector<uint8_t>  u8buffer(10);
 
     int fd = open("sort-blobs.dat", O_RDONLY);
