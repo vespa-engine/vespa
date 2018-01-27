@@ -6,56 +6,48 @@ import org.glassfish.jersey.internal.util.Producer;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
-import java.util.logging.Logger;
 
 public class FileWriter {
-    private static final Logger logger = Logger.getLogger(FileWriter.class.getName());
-
     private final Path path;
+    private final FileSync fileSync;
+    private final PartialFileData.Builder fileDataBuilder = PartialFileData.builder();
     private final Producer<String> contentProducer;
 
-    private Optional<String> owner = Optional.empty();
-    private Optional<String> group = Optional.empty();
-    private Optional<String> permissions = Optional.empty();
+    private boolean overwriteExistingFile = true;
 
     public FileWriter(Path path, Producer<String> contentProducer) {
         this.path = path;
+        this.fileSync = new FileSync(path);
         this.contentProducer = contentProducer;
     }
 
     public FileWriter withOwner(String owner) {
-        this.owner = Optional.of(owner);
+        fileDataBuilder.withOwner(owner);
         return this;
     }
 
     public FileWriter withGroup(String group) {
-        this.group = Optional.of(group);
+        fileDataBuilder.withGroup(group);
         return this;
     }
 
     public FileWriter withPermissions(String permissions) {
-        this.permissions = Optional.of(permissions);
+        fileDataBuilder.withPermissions(permissions);
+        return this;
+    }
+
+    public FileWriter onlyIfFileDoesNotAlreadyExist() {
+        overwriteExistingFile = false;
         return this;
     }
 
     public boolean converge(TaskContext context) {
-        // TODO: Only return false if content, permission, etc would be unchanged.
-        if (Files.isRegularFile(path)) {
+        if (!overwriteExistingFile && Files.isRegularFile(path)) {
             return false;
         }
 
-        context.logSystemModification(logger,"Writing file " + path);
-
-        String content = contentProducer.call();
-
-        UnixPath unixPath = new UnixPath(path);
-        unixPath.createParents();
-        unixPath.writeUtf8File(content);
-        permissions.ifPresent(unixPath::setPermissions);
-        owner.ifPresent(unixPath::setOwner);
-        group.ifPresent(unixPath::setGroup);
-
-        return true;
+        fileDataBuilder.withContent(contentProducer.call());
+        PartialFileData fileData = fileDataBuilder.create();
+        return fileSync.convergeTo(context, fileData);
     }
 }
