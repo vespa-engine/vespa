@@ -49,6 +49,8 @@ public:
 
     public:
         Tag();
+        Tag(const Tag &);
+        Tag & operator=(const Tag &);
         Tag(const vespalib::string &name, float val);
         Tag(const vespalib::string &name, double val);
         Tag(const vespalib::string &name, int8_t val);
