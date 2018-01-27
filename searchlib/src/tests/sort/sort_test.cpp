@@ -62,7 +62,7 @@ void Test::testIcu()
 {
     {
         const std::string src("Creation of Bob2007 this is atumated string\this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string; _ 12345567890-=,./;'[;");
-        std::vector<uint16_t> u16Buffer(100);
+        std::vector<UChar> u16Buffer(100);
         UErrorCode status = U_ZERO_ERROR;
         int32_t u16Wanted(0);
         u_strFromUTF8(&u16Buffer[0], u16Buffer.size(), &u16Wanted, src.c_str(), -1, &status);
