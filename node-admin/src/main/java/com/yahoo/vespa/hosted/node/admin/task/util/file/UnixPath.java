@@ -1,10 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -108,15 +106,7 @@ public class UnixPath {
     }
 
     public Optional<FileAttributes> getAttributesIfExists() {
-        try {
-            return Optional.of(getAttributes());
-        } catch (UncheckedIOException e) {
-            if (e.getCause() instanceof NoSuchFileException) {
-                return Optional.empty();
-            }
-
-            throw e;
-        }
+        return IOExceptionUtil.ifExists(() -> getAttributes());
     }
 
     @Override
