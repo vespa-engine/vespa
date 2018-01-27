@@ -16,6 +16,10 @@ const uint32_t           GenericHeader::VERSION(1);
 const GenericHeader::Tag GenericHeader::EMPTY;
 const size_t             ALIGNMENT=0x1000;
 
+GenericHeader::Tag::~Tag()  = default;
+GenericHeader::Tag::Tag(const Tag &) = default;
+GenericHeader::Tag & GenericHeader::Tag::operator=(const Tag &) = default;
+
 GenericHeader::Tag::Tag() :
     _type(TYPE_EMPTY),
     _name(""),
@@ -155,8 +159,6 @@ GenericHeader::Tag::Tag(const vespalib::string &name, const vespalib::string &va
 {
     // empty
 }
-
-GenericHeader::Tag::~Tag() { }
 
 size_t
 GenericHeader::Tag::getSize() const
