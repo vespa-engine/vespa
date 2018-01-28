@@ -2,6 +2,7 @@
 
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
+import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
 import java.nio.file.FileSystem;
@@ -18,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 
 public class FileSyncTest {
     private final TestTaskContext taskContext = new TestTaskContext();
-    private final FileSystem fileSystem = taskContext.fileSystem();
+    private final FileSystem fileSystem = TestFileSystem.create();
 
     private final Path path = fileSystem.getPath("/dir/file.txt");
     private final UnixPath unixPath = new UnixPath(path);

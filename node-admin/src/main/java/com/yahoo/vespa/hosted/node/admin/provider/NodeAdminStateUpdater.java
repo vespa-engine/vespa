@@ -1,9 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.provider;
 
-import java.util.Map;
+import javax.annotation.concurrent.ThreadSafe;
 
-public interface NodeAdminStateUpdater {
+@ThreadSafe
+public interface NodeAdminStateUpdater extends NodeAdminDebugHandler {
     enum State { TRANSITIONING, RESUMED, SUSPENDED_NODE_ADMIN, SUSPENDED}
 
     /**
@@ -12,6 +13,4 @@ public interface NodeAdminStateUpdater {
      * has converged.
      */
     boolean setResumeStateAndCheckIfResumed(State wantedState);
-
-    Map<String, Object> getDebugPage();
 }
