@@ -26,7 +26,6 @@ private:
     DocumentDBConfig::SP _pendingConfigSnapshot;
     bool                 _ignoreForwardedConfig;
     mutable std::mutex   _pendingConfigMutex;
-    config::ConfigKeySet _extraConfigKeys;
 
     search::index::Schema::SP
     buildSchema(const DocumentDBConfig::AttributesConfig & newAttributesConfig,
@@ -42,8 +41,6 @@ public:
 
     void forwardConfig(const BootstrapConfigSP & config);
     const config::ConfigKeySet createConfigKeySet() const;
-    void setExtraConfigKeys(const config::ConfigKeySet & extraConfigKeys) { _extraConfigKeys = extraConfigKeys; }
-    const config::ConfigKeySet & getExtraConfigKeys() const { return _extraConfigKeys; }
     const vespalib::string & getConfigId() const { return _configId; }
 };
 
@@ -54,10 +51,8 @@ class DocumentDBConfigHelper
 {
 public:
     DocumentDBConfigHelper(const config::DirSpec &spec, const vespalib::string &docTypeName);
-    DocumentDBConfigHelper(const config::DirSpec &spec, const vespalib::string &docTypeName,
-                           const config::ConfigKeySet &extraConfigKeys);
-
     ~DocumentDBConfigHelper();
+
     bool nextGeneration(int timeoutInMillis);
     DocumentDBConfig::SP getConfig() const;
     void forwardConfig(const std::shared_ptr<BootstrapConfig> & config);
