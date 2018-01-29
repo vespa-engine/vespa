@@ -6,6 +6,8 @@ import java.util.Optional;
 
 /**
  * Represents a subset of a file's content, owner, group, and permissions.
+ *
+ * @author hakonhall
  */
 // @Immutable
 public class PartialFileData {

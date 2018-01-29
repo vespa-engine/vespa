@@ -19,6 +19,11 @@ import java.util.Set;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
 
+/**
+ * Thin wrapper around java.nio.file.Path, especially nice for UNIX-specific features.
+ *
+ * @author hakonhall
+ */
 // @Immutable
 public class UnixPath {
     private final Path path;

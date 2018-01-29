@@ -7,6 +7,9 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.FileWriter;
 import java.nio.file.Path;
 import java.util.regex.Pattern;
 
+/**
+ * @author hakonhall
+ */
 public class AddYumRepo {
     private static final Pattern REPOSITORY_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
 

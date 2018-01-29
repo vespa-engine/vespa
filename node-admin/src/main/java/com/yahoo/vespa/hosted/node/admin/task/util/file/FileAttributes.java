@@ -6,6 +6,11 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
 
+/**
+ * This wrapper around PosixFileAttributes.
+ * 
+ * @author hakonhall
+ */
 public class FileAttributes {
     private final PosixFileAttributes attributes;
 

@@ -3,6 +3,9 @@ package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
 import java.nio.file.Path;
 
+/**
+ * @author hakonhall
+ */
 public interface ChildProcess extends AutoCloseable {
     ChildProcess waitForTermination();
     int exitValue();

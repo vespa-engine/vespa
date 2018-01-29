@@ -7,6 +7,8 @@ import java.nio.file.Path;
 
 /**
  * Represents a forked child process that still exists or has terminated.
+ *
+ * @author hakonhall
  */
 public class ChildProcessImpl implements ChildProcess {
     private final Process process;

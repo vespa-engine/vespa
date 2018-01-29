@@ -7,6 +7,11 @@ import org.glassfish.jersey.internal.util.Producer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+/**
+ * Write a file
+ *
+ * @author hakonhall
+ */
 public class FileWriter {
     private final Path path;
     private final FileSync fileSync;

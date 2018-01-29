@@ -18,4 +18,6 @@ public interface TaskContext {
     FileSystem fileSystem();
 
     void logSystemModification(Logger logger, String actionDescription);
+
+    default boolean executeSubtask(IdempotentTask task) { return false; }
 }
