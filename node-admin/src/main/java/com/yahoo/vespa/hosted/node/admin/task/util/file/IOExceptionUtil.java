@@ -6,6 +6,9 @@ import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
 import java.util.Optional;
 
+/**
+ * @author hakonhall
+ */
 public class IOExceptionUtil {
     public static <T> void uncheck(RunnableThrowingIOException<T> runnable) {
         try {

@@ -7,6 +7,8 @@ import java.util.Optional;
 
 /**
  * Class to avoid repeated reads of file content when the file seldom changes.
+ *
+ * @author hakonhall
  */
 class FileContentCache {
     private final UnixPath path;

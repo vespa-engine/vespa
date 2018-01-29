@@ -9,6 +9,11 @@ import org.apache.velocity.app.VelocityEngine;
 import java.io.StringWriter;
 import java.nio.file.Path;
 
+/**
+ * Make a file based on a Velocity template file.
+ *
+ * @author hakonhall
+ */
 public class TemplateFile {
     private final Path templatePath;
     private final VelocityEngine velocityEngine;

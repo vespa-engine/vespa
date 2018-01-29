@@ -13,6 +13,11 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * Class to fork and exec a program, and gets its exit status and output.
+ *
+ * @author hakonhall
+ */
 public class Command {
     private static Logger logger = Logger.getLogger(Command.class.getName());
     private static Pattern ARGUMENT_PATTERN = Pattern.compile("^[a-zA-Z0-9=@%/+:.,_-]+$");

@@ -16,6 +16,8 @@ import java.util.logging.Logger;
  * mutating file operations, e.g. setting file content, setting owner, etc.
  *
  * Only changes to the file is logged.
+ *
+ * @author hakohall
  */
 // @ThreadUnsafe
 public class FileSync {

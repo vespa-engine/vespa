@@ -12,6 +12,9 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+/**
+ * @author hakonhall
+ */
 public class Yum {
     private static Logger logger = Logger.getLogger(Yum.class.getName());
 
