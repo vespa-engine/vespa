@@ -5,6 +5,11 @@ package com.yahoo.vespa.hosted.node.admin.provider;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Map;
 
+/**
+ * Interface for supporting debug info to introspect e.g. internal state.
+ *
+ * @author hakon
+ */
 @ThreadSafe
 public interface NodeAdminDebugHandler {
     /**

@@ -9,6 +9,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+/**
+ * Class to make it easier to implement a NodeAdminDebugHandler:
+ *  - Forward to sub-NodeAdminDebugHandlers with addHandler,
+ *  - Specify constants with addConstant
+ *  - Forwarding to methods that dynamically build debug objects with addThreadSafeSupplier.
+ *
+ * @author hakon
+ */
 @ThreadSafe
 public class DebugHandlerHelper implements NodeAdminDebugHandler {
     private Object monitor = new Object();
