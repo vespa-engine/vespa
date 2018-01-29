@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.util.regex.Pattern;
 
 public class AddYumRepo {
-    private static final Pattern REPOSITORY_ID_PATTERN = Pattern.compile("^[a-zA-Z_-]+$");
+    private static final Pattern REPOSITORY_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
 
     private final String repositoryId; // e.g. "platform_rpms-latest"
     private final String name; // e.g. "Platform RPM Latest Repo"
