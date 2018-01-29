@@ -64,7 +64,11 @@ public class DockerAdminComponent implements AdminComponent {
 
         Environment environment = new Environment(configServerConfig);
         requestExecutor = ConfigServerHttpRequestExecutor.create(
-                environment.getConfigServerUris(), environment.getKeyStoreOptions(), environment.getTrustStoreOptions());
+                environment.getConfigServerUris(),
+                environment.getKeyStoreOptions(),
+                environment.getTrustStoreOptions(),
+                environment.getAthenzIdentity());
+
         NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor);
         Orchestrator orchestrator = new OrchestratorImpl(requestExecutor);
 
