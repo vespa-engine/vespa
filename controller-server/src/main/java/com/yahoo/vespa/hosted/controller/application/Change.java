@@ -9,98 +9,90 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A change to an application
- * 
+ * The changes to an application we currently wish to complete deploying.
+ * A goal of the system is to deploy platform and application versions separately.
+ * However, this goal must some times be traded against others, so a change can
+ * consist of both an application and platform version change.
+ *
+ * This is immutable.
+ *
  * @author bratseth
  */
-public abstract class Change {
+public final class Change {
 
-    /** Returns true if this change is blocked by the given spec at the given instant */
-    public abstract boolean blockedBy(DeploymentSpec deploymentSpec, Instant instant);
-    
-    /** A change to the application package version of an application */
-    public static class ApplicationChange extends Change {
+    private static final Change empty = new Change(Optional.empty(), Optional.empty());
 
-        // TODO: Make non-optional
-        private final Optional<ApplicationVersion> version;
-        
-        private ApplicationChange(Optional<ApplicationVersion> version) {
-            Objects.requireNonNull(version, "version cannot be null");
-            this.version = version;
-        }
-        
-        /** The application package version in this change, or empty if not known yet */
-        public Optional<ApplicationVersion> version() { return version; }
+    /** The platform version we are upgrading to, or empty if none */
+    private final Optional<Version> platform;
 
-        @Override
-        public boolean blockedBy(DeploymentSpec deploymentSpec, Instant instant) {
-            return ! deploymentSpec.canChangeRevisionAt(instant);
-        }
+    /** The application version we are changing to, or empty if none */
+    private final Optional<ApplicationVersion> application;
 
-        @Override
-        public int hashCode() { return version.hashCode(); }
-        
-        @Override
-        public boolean equals(Object other) {
-            if (this == other) return true;
-            if ( ! (other instanceof ApplicationChange)) return false;
-            return ((ApplicationChange)other).version.equals(this.version);
-        }
-
-        /** 
-         * Creates an application change which we don't know anything about.
-         * We are notified that a change has occurred by completion of the component job
-         * but do not get to know about what the change is until a subsequent deployment
-         * happens.
-         */
-        public static ApplicationChange unknown() {
-            return new ApplicationChange(Optional.empty());
-        }
-        
-        public static ApplicationChange of(ApplicationVersion version) {
-            return new ApplicationChange(Optional.of(version));
-        }
-
-        @Override
-        public String toString() { 
-            return "application change to " + version.map(ApplicationVersion::toString).orElse("an unknown version");
-        }
-        
+    private Change(Optional<Version> platform, Optional<ApplicationVersion> application) {
+        Objects.requireNonNull(platform, "platform cannot be null");
+        Objects.requireNonNull(application, "application cannot be null");
+        this.platform = platform;
+        this.application = application;
     }
 
-    /** A change to the Vespa version running an application */
-    public static class VersionChange extends Change {
+    /** Returns true if this change is blocked by the given spec at the given instant */
+    public boolean blockedBy(DeploymentSpec deploymentSpec, Instant instant) {
+        if (platform.isPresent() && ! deploymentSpec.canUpgradeAt(instant)) return true;
+        if (application.isPresent() && ! deploymentSpec.canChangeRevisionAt(instant)) return true;
+        return false;
+    }
 
-        private final Version version;
+    /** Returns whether a change shoudl currently be deployed */
+    public boolean isPresent() {
+        return platform.isPresent() || application.isPresent();
+    }
 
-        public VersionChange(Version version) {
-            Objects.requireNonNull(version, "version cannot be null");
-            this.version = version;
-        }
+    /** Returns the platform version change which should currently be deployed, if any */
+    public Optional<Version> platform() { return platform; }
 
-        /** The Vespa version this changes to */
-        public Version version() { return version; }
+    /** Returns the application version change which should currently be deployed, if any */
+    public Optional<ApplicationVersion> application() { return application; }
 
-        @Override
-        public boolean blockedBy(DeploymentSpec deploymentSpec, Instant instant) {
-            return ! deploymentSpec.canUpgradeAt(instant);
-        }
+    /** Returns an instance representing no change */
+    public static Change empty() { return empty; }
 
-        @Override
-        public int hashCode() { return version.hashCode(); }
+    /** Returns a version of this change which replaces or adds this application change */
+    public Change with(ApplicationVersion applicationVersion) {
+        return new Change(platform, Optional.of(applicationVersion));
+    }
 
-        @Override
-        public boolean equals(Object other) {
-            if (this == other) return true;
-            if ( ! (other instanceof VersionChange)) return false;
-            return ((VersionChange)other).version.equals(this.version);
-        }
+    @Override
+    public int hashCode() { return Objects.hash(platform, application); }
 
-        @Override
-        public String toString() { 
-            return "version change to " + version; 
-        }
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof Change)) return false;
+        Change o = (Change)other;
+        if ( ! o.platform.equals(this.platform)) return false;
+        if ( ! o.application.equals(this.application)) return false;
+        return true;
+    }
 
+    @Override
+    public String toString() {
+        String platformString = platform.map(v -> "upgrade to " + v).orElse(null);
+        String applicationString = application.map(v -> "application change to " + v).orElse(null);
+        if (platformString != null && applicationString != null)
+            return platformString + " and " + applicationString;
+        if (platformString != null)
+            return platformString;
+        if (applicationString != null)
+            return applicationString;
+        return "no change";
+    }
+
+    public static Change of(ApplicationVersion applicationVersion) {
+        return new Change(Optional.empty(), Optional.of(applicationVersion));
+    }
+
+    public static Change of(Version platformChange) {
+        return new Change(Optional.of(platformChange), Optional.empty());
     }
 
 }

@@ -46,7 +46,7 @@ public class DeploymentOrder {
     /** Returns a list of jobs to trigger after the given job */
     // TODO: This does too much - should just tell us the order, as advertised
     public List<JobType> nextAfter(JobType job, LockedApplication application) {
-        if ( ! application.deploying().isPresent()) { // Change was cancelled
+        if ( ! application.change().isPresent()) { // Change was cancelled
             return Collections.emptyList();
         }
 

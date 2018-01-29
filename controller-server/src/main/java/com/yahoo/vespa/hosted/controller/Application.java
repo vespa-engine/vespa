@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.Change.VersionChange;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -30,9 +29,9 @@ import java.util.stream.Collectors;
 
 /**
  * An instance of an application.
- * 
+ *
  * This is immutable.
- * 
+ *
  * @author bratseth
  */
 public class Application {
@@ -42,7 +41,7 @@ public class Application {
     private final ValidationOverrides validationOverrides;
     private final Map<ZoneId, Deployment> deployments;
     private final DeploymentJobs deploymentJobs;
-    private final Optional<Change> deploying;
+    private final Change change;
     private final boolean outstandingChange;
     private final Optional<IssueId> ownershipIssueId;
     private final ApplicationMetrics metrics;
@@ -52,22 +51,22 @@ public class Application {
     public Application(ApplicationId id) {
         this(id, DeploymentSpec.empty, ValidationOverrides.empty, Collections.emptyMap(),
              new DeploymentJobs(Optional.empty(), Collections.emptyList(), Optional.empty()),
-             Optional.empty(), false, Optional.empty(), new ApplicationMetrics(0, 0),
+             Change.empty(), false, Optional.empty(), new ApplicationMetrics(0, 0),
              Optional.empty());
     }
 
     /** Used from persistence layer: Do not use */
-    public Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides, 
-                       List<Deployment> deployments, DeploymentJobs deploymentJobs, Optional<Change> deploying,
+    public Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
+                       List<Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                        boolean outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
                        Optional<RotationId> rotation) {
-        this(id, deploymentSpec, validationOverrides, 
+        this(id, deploymentSpec, validationOverrides,
              deployments.stream().collect(Collectors.toMap(Deployment::zone, d -> d)),
-             deploymentJobs, deploying, outstandingChange, ownershipIssueId, metrics, rotation);
+             deploymentJobs, change, outstandingChange, ownershipIssueId, metrics, rotation);
     }
 
     Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
-                Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Optional<Change> deploying,
+                Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                 boolean outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
                 Optional<RotationId> rotation) {
         Objects.requireNonNull(id, "id cannot be null");
@@ -75,7 +74,7 @@ public class Application {
         Objects.requireNonNull(validationOverrides, "validationOverrides cannot be null");
         Objects.requireNonNull(deployments, "deployments cannot be null");
         Objects.requireNonNull(deploymentJobs, "deploymentJobs cannot be null");
-        Objects.requireNonNull(deploying, "deploying cannot be null");
+        Objects.requireNonNull(change, "change cannot be null");
         Objects.requireNonNull(metrics, "metrics cannot be null");
         Objects.requireNonNull(rotation, "rotation cannot be null");
         this.id = id;
@@ -83,7 +82,7 @@ public class Application {
         this.validationOverrides = validationOverrides;
         this.deployments = ImmutableMap.copyOf(deployments);
         this.deploymentJobs = deploymentJobs;
-        this.deploying = deploying;
+        this.change = change;
         this.outstandingChange = outstandingChange;
         this.ownershipIssueId = ownershipIssueId;
         this.metrics = metrics;
@@ -91,24 +90,24 @@ public class Application {
     }
 
     public ApplicationId id() { return id; }
-    
-    /** 
-     * Returns the last deployed deployment spec of this application, 
-     * or the empty deployment spec if it has never been deployed 
+
+    /**
+     * Returns the last deployed deployment spec of this application,
+     * or the empty deployment spec if it has never been deployed
      */
     public DeploymentSpec deploymentSpec() { return deploymentSpec; }
 
     /**
-     * Returns the last deployed validation overrides of this application, 
+     * Returns the last deployed validation overrides of this application,
      * or the empty validation overrides if it has never been deployed
      * (or was deployed with an empty/missing validation overrides)
      */
     public ValidationOverrides validationOverrides() { return validationOverrides; }
-    
+
     /** Returns an immutable map of the current deployments of this */
     public Map<ZoneId, Deployment> deployments() { return deployments; }
 
-    /** 
+    /**
      * Returns an immutable map of the current *production* deployments of this
      * (deployments also includes manually deployed environments)
      */
@@ -121,10 +120,10 @@ public class Application {
     public DeploymentJobs deploymentJobs() { return deploymentJobs; }
 
     /**
-     * Returns the change that is currently in the process of being deployed on this application, 
-     * or empty if no change is currently being deployed.
+     * Returns the change that should currently be deployed for this application,
+     * which is empty when no change is in progress.
      */
-    public Optional<Change> deploying() { return deploying; }
+    public Change change() { return change; }
 
     /**
      * Returns whether this has an outstanding change (in the source repository), which
@@ -152,10 +151,7 @@ public class Application {
 
     /** Returns the version a new deployment to this zone should use for this application */
     public Version deployVersionIn(ZoneId zone, Controller controller) {
-        if (deploying().isPresent() && deploying().get() instanceof VersionChange)
-            return ((Change.VersionChange) deploying().get()).version();
-
-        return versionIn(zone, controller);
+        return change.platform().orElse(versionIn(zone, controller));
     }
 
     /** Returns the current version this application has, or if none; should use, in the given zone */
@@ -166,8 +162,13 @@ public class Application {
 
     /** Returns the application version a deployment to this zone should use, or empty if we don't know */
     public Optional<ApplicationVersion> deployApplicationVersionIn(ZoneId zone) {
-        if (deploying().isPresent() && deploying().get() instanceof Change.ApplicationChange)
-            return ((Change.ApplicationChange) deploying().get()).version();
+        if (change().application().isPresent()) {
+            ApplicationVersion version = change().application().get();
+            if (version == ApplicationVersion.unknown)
+                return Optional.empty();
+            else
+                return Optional.of(version);
+        }
 
         return applicationVersionIn(zone);
     }

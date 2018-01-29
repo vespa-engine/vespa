@@ -18,8 +18,8 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
-import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
+import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 
@@ -94,12 +94,6 @@ public class DeploymentTester {
         return controller().applications().require(application);
     }
 
-    public Optional<Change.VersionChange> versionChange(ApplicationId application) {
-        return application(application).deploying()
-                .filter(c -> c instanceof Change.VersionChange)
-                .map(Change.VersionChange.class::cast);
-    }
-
     public void updateVersionStatus() {
         controller().updateVersionStatus(VersionStatus.compute(controller(), tester.controller().systemVersion()));
     }
@@ -154,7 +148,7 @@ public class DeploymentTester {
     /** Deploy application completely using the given application package */
     public void deployCompletely(Application application, ApplicationPackage applicationPackage) {
         notifyJobCompletion(JobType.component, application, true);
-        assertTrue(applications().require(application.id()).deploying().isPresent());
+        assertTrue(applications().require(application.id()).change().isPresent());
         completeDeployment(application, applicationPackage, Optional.empty(), true);
     }
 
@@ -178,7 +172,7 @@ public class DeploymentTester {
     /** Deploy application using the given application package, but expecting to stop after test phases */
     public void deployTestOnly(Application application, ApplicationPackage applicationPackage) {
         notifyJobCompletion(JobType.component, application, true);
-        assertTrue(applications().require(application.id()).deploying().isPresent());
+        assertTrue(applications().require(application.id()).change().isPresent());
         completeDeployment(application, applicationPackage, Optional.empty(), false);
     }
 
@@ -196,13 +190,13 @@ public class DeploymentTester {
             }
         }
         if (failOnJob.isPresent()) {
-            assertTrue(applications().require(application.id()).deploying().isPresent());
+            assertTrue(applications().require(application.id()).change().isPresent());
             assertTrue(applications().require(application.id()).deploymentJobs().hasFailures());
         } else if (includingProductionZones) {
-            assertFalse(applications().require(application.id()).deploying().isPresent());
+            assertFalse(applications().require(application.id()).change().isPresent());
         }
         else {
-            assertTrue(applications().require(application.id()).deploying().isPresent());
+            assertTrue(applications().require(application.id()).change().isPresent());
         }
     }
 
@@ -225,8 +219,8 @@ public class DeploymentTester {
     }
 
     public void completeUpgrade(Application application, Version version, ApplicationPackage applicationPackage) {
-        assertTrue(application + " has a deployment", applications().require(application.id()).deploying().isPresent());
-        assertEquals(new Change.VersionChange(version), applications().require(application.id()).deploying().get());
+        assertTrue(application + " has a deployment", applications().require(application.id()).change().isPresent());
+        assertEquals(Change.of(version), applications().require(application.id()).change());
         completeDeployment(application, applicationPackage, Optional.empty(), true);
     }
 
@@ -239,8 +233,8 @@ public class DeploymentTester {
     }
 
     private void completeUpgradeWithError(Application application, Version version, ApplicationPackage applicationPackage, Optional<JobType> failOnJob) {
-        assertTrue(applications().require(application.id()).deploying().isPresent());
-        assertEquals(new Change.VersionChange(version), applications().require(application.id()).deploying().get());
+        assertTrue(applications().require(application.id()).change().isPresent());
+        assertEquals(Change.of(version), applications().require(application.id()).change());
         completeDeployment(application, applicationPackage, failOnJob, true);
     }
 

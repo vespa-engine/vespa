@@ -98,7 +98,7 @@ import java.util.logging.Level;
 /**
  * This implements the application/v4 API which is used to deploy and manage applications
  * on hosted Vespa.
- * 
+ *
  * @author bratseth
  * @author mpolden
  */
@@ -123,7 +123,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     public Duration getTimeout() {
         return Duration.ofMinutes(20); // deploys may take a long time;
     }
-    
+
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
@@ -156,7 +156,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
         }
     }
-    
+
     private HttpResponse handleGET(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
         if (path.matches("/application/v4/")) return root(request);
@@ -213,7 +213,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true, request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
-    
+
     private HttpResponse handleOPTIONS() {
         // We implement this to avoid redirect loops on OPTIONS requests from browsers, but do not really bother
         // spelling out the methods supported at each path, which we should
@@ -235,7 +235,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 ? recursiveRoot(request)
                 : new ResourceResponse(request, "user", "tenant", "tenant-pipeline", "athensDomain", "property", "cookiefreshness");
     }
-    
+
     private HttpResponse authenticatedUser(HttpRequest request) {
         String userIdString = request.getProperty("userOverride");
         if (userIdString == null)
@@ -243,7 +243,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                     .map(UserId::id)
                     .orElseThrow(() -> new ForbiddenException("You must be authenticated or specify userOverride"));
         UserId userId = new UserId(userIdString);
-        
+
         List<Tenant> tenants = controller.tenants().asList(userId);
 
         Slime slime = new Slime();
@@ -255,7 +255,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         response.setBool("tenantExists", tenants.stream().map(Tenant::getId).anyMatch(id -> id.isTenantFor(userId)));
         return new SlimeJsonResponse(slime);
     }
-    
+
     private HttpResponse tenants(HttpRequest request) {
         Slime slime = new Slime();
         Cursor response = slime.setArray();
@@ -263,7 +263,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             tenantInTenantsListToSlime(tenant, request.getUri(), response.addObject());
         return new SlimeJsonResponse(slime);
     }
-    
+
     /** Lists the screwdriver project id for each application */
     private HttpResponse tenantPipelines() {
         Slime slime = new Slime();
@@ -281,7 +281,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         response.setArray("brokenTenantPipelines"); // not used but may need to be present
         return new SlimeJsonResponse(slime);
     }
-    
+
     private HttpResponse athenzDomains(HttpRequest request) {
         Slime slime = new Slime();
         Cursor response = slime.setObject();
@@ -307,7 +307,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse cookieFreshness(HttpRequest request) {
         Slime slime = new Slime();
         String passThruHeader = request.getHeader(SetBouncerPassthruHeaderFilter.BOUNCER_PASSTHRU_HEADER_FIELD);
-        slime.setObject().setBool("shouldRefreshCookie", 
+        slime.setObject().setBool("shouldRefreshCookie",
                                   ! SetBouncerPassthruHeaderFilter.BOUNCER_PASSTHRU_COOKIE_OK.equals(passThruHeader));
         return new SlimeJsonResponse(slime);
     }
@@ -332,7 +332,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             toSlime(application, array.addObject(), request);
         return new SlimeJsonResponse(slime);
     }
-    
+
     private HttpResponse application(String tenantName, String applicationName, HttpRequest request) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
         Application application =
@@ -348,12 +348,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("application", application.id().application().value());
         object.setString("instance", application.id().instance().value());
         // Currently deploying change
-        if (application.deploying().isPresent()) {
+        if (application.change().isPresent()) {
             Cursor deployingObject = object.setObject("deploying");
-            if (application.deploying().get() instanceof Change.VersionChange)
-                deployingObject.setString("version", ((Change.VersionChange)application.deploying().get()).version().toString());
-            else if (((Change.ApplicationChange)application.deploying().get()).version().isPresent())
-                toSlime(((Change.ApplicationChange)application.deploying().get()).version().get(), deployingObject.setObject("revision"));
+            application.change().platform().ifPresent(v -> deployingObject.setString("version", v.toString()));
+            application.change().application()
+                                   .filter(v -> v != ApplicationVersion.unknown)
+                                   .ifPresent(v -> toSlime(v, deployingObject.setObject("revision")));
         }
 
         // Jobs sorted according to deployment spec
@@ -594,7 +594,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         response.setResponse(result, serviceName, restPath);
         return response;
     }
-    
+
     private HttpResponse createUser(HttpRequest request) {
         Optional<UserId> user = userFrom(request);
         if ( ! user.isPresent() ) throw new ForbiddenException("Not authenticated.");
@@ -711,11 +711,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         controller.applications().lockOrThrow(id, application -> {
-            if (application.deploying().isPresent())
+            if (application.change().isPresent())
                 throw new IllegalArgumentException("Can not start a deployment of " + application + " at this time: " +
-                                                           application.deploying().get() + " is in progress");
+                                                   application.change() + " is in progress");
 
-            controller.applications().deploymentTrigger().triggerChange(application.id(), new Change.VersionChange(version));
+            controller.applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
         });
         return new MessageResponse("Triggered deployment of application '" + id + "' on version " + version);
     }
@@ -724,14 +724,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse cancelDeploy(String tenantName, String applicationName) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         Application application = controller.applications().require(id);
-        Optional<Change> change = application.deploying();
+        Change change = application.change();
         if ( ! change.isPresent())
             return new MessageResponse("No deployment in progress for " + application + " at this time");
 
         controller.applications().lockOrThrow(id, lockedApplication ->
             controller.applications().deploymentTrigger().cancelChange(id));
 
-        return new MessageResponse("Cancelled " + change.get() + " for " + application);
+        return new MessageResponse("Cancelled " + change + " for " + application);
     }
 
     /** Schedule restart of deployment, or specific host in a deployment */
@@ -970,8 +970,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void toSlime(JobStatus.JobRun jobRun, Cursor object) {
         object.setLong("id", jobRun.id());
         object.setString("version", jobRun.version().toFullString());
-        jobRun.applicationVersion().ifPresent(applicationVersion -> toSlime(applicationVersion,
-                                                                            object.setObject("revision")));
+        if (jobRun.applicationVersion() != ApplicationVersion.unknown)
+            toSlime(jobRun.applicationVersion(), object.setObject("revision"));
         object.setString("reason", jobRun.reason());
         object.setLong("at", jobRun.at().toEpochMilli());
     }
