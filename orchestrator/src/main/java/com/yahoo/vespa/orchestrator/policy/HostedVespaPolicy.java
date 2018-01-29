@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.policy;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -22,7 +23,6 @@ import java.util.logging.Logger;
  */
 
 public class HostedVespaPolicy implements Policy {
-
     public static final String APPLICATION_SUSPENDED_CONSTRAINT = "application-suspended";
     public static final String ENOUGH_SERVICES_UP_CONSTRAINT = "enough-services-up";
     public static final String SET_NODE_STATE_CONSTRAINT = "controller-set-node-state";
@@ -81,8 +81,8 @@ public class HostedVespaPolicy implements Policy {
             throw new HostStateChangeDeniedException(
                     applicationApi.getNodeGroup(),
                     HostedVespaPolicy.APPLICATION_SUSPENDED_CONSTRAINT,
-                    "Unable to test availability constraints as the application " + applicationApi.applicationInfo()
-                            + " is allowed to be down");
+                    "Unable to test availability constraints as the application " +
+                            applicationApi.applicationId() + " is allowed to be down");
         }
 
         // Apply per-cluster policy

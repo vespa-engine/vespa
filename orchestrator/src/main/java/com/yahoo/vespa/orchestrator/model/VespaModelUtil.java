@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.model;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
@@ -29,10 +30,13 @@ import static com.yahoo.collections.CollectionUtil.first;
  * @author hakonhall
  */
 public class VespaModelUtil {
-
     private static final Logger log = Logger.getLogger(VespaModelUtil.class.getName());
 
+    public static final ApplicationId ZONE_APPLICATION_ID =
+            ApplicationId.from("hosted-vespa", "routing", "default");
+
     public static final ClusterId ADMIN_CLUSTER_ID = new ClusterId("admin");
+    public static final ClusterId NODE_ADMIN_CLUSTER_ID = new ClusterId("node-admin");
 
     public static final ServiceType SLOBROK_SERVICE_TYPE = new ServiceType("slobrok");
     public static final ServiceType CLUSTER_CONTROLLER_SERVICE_TYPE = new ServiceType("container-clustercontroller");

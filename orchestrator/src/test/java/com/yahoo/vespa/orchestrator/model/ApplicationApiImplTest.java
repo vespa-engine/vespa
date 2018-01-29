@@ -19,10 +19,10 @@ public class ApplicationApiImplTest {
     final ModelTestUtils modelUtils = new ModelTestUtils();
 
     @Test
-    public void testApplicationInfo() {
+    public void testApplicationId() {
         ApplicationApiImpl applicationApi =
                 modelUtils.createApplicationApiImpl(modelUtils.createApplicationInstance(new ArrayList<>()));
-        assertEquals("tenant:application-name:foo:bar:default", applicationApi.applicationInfo());
+        assertEquals("tenant:application-name:default", applicationApi.applicationId().serializedForm());
     }
 
     @Test

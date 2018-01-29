@@ -7,6 +7,8 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 import java.util.Optional;
 
 public interface ClusterApi {
+    ApplicationApi getApplication();
+
     NodeGroup getNodeGroup();
 
     String clusterInfo();
