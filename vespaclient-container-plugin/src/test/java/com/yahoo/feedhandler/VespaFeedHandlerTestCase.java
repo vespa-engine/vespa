@@ -640,7 +640,7 @@ public class VespaFeedHandlerTestCase {
     @Test
     public void testOverrides() throws Exception {
         setup(null);
-        Result res = testFeed(xmlFilesPath + "test10b.xml", "feed?timeout=2.222&route=storage&priority=HIGH_2");
+        Result res = testFeed(xmlFilesPath + "test10b.xml", "feed?timeout=2.222&route=storage&priority=HIGH_2&totaltimeout=-1");
 
         assertEquals(2, res.messages.size());
 
@@ -648,6 +648,54 @@ public class VespaFeedHandlerTestCase {
             assertEquals(2222, m.getTimeRemaining());
             assertEquals(Route.parse("storage"), m.getRoute());
             assertEquals(DocumentProtocol.Priority.HIGH_2, ((DocumentMessage)m).getPriority());
+        }
+    }
+
+    @Test
+    public void testTimeoutWithNoUpperBound() throws Exception {
+        setup(null);
+        Result res = testFeed(xmlFilesPath + "test10b.xml", "feed?timeout=2.222&totaltimeout=-1");
+
+        assertEquals(2, res.messages.size());
+
+        for (Message m : res.messages) {
+            assertEquals(2222, m.getTimeRemaining());
+        }
+    }
+
+    @Test
+    public void testTimeout() throws Exception {
+        setup(null);
+        Result res = testFeed(xmlFilesPath + "test10b.xml", "feed?timeout=2.222");
+
+        assertEquals(2, res.messages.size());
+
+        for (Message m : res.messages) {
+            assertTrue(2222 >= m.getTimeRemaining());
+        }
+    }
+
+    @Test
+    public void testTotalTimeout() throws Exception {
+        setup(null);
+        Result res = testFeed(xmlFilesPath + "test10b.xml", "feed?totaltimeout=2.222");
+
+        assertEquals(2, res.messages.size());
+
+        for (Message m : res.messages) {
+            assertTrue(2222 >= m.getTimeRemaining());
+        }
+    }
+
+    @Test
+    public void testTotalTimeoutAndNormalTimeout() throws Exception {
+        setup(null);
+        Result res = testFeed(xmlFilesPath + "test10b.xml", "feed?totaltimeout=1000&timeout=2.222");
+
+        assertEquals(2, res.messages.size());
+
+        for (Message m : res.messages) {
+            assertEquals(2222, m.getTimeRemaining());
         }
     }
 
