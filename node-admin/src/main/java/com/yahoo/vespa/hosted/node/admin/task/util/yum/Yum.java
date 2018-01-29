@@ -5,22 +5,26 @@ import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.ChildProcess;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Command;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * @author hakonhall
  */
 public class Yum {
-    private static Logger logger = Logger.getLogger(Yum.class.getName());
+    private static final Pattern INSTALL_NOOP_PATTERN =
+            Pattern.compile("\nNothing to do\n$");
+    private static final Pattern UPGRADE_NOOP_PATTERN =
+            Pattern.compile("\nNo packages marked for update\n$");
+    private static final Pattern REMOVE_NOOP_PATTERN =
+            Pattern.compile("\nNo Packages marked for removal\n$");
 
     private final TaskContext taskContext;
     private final Supplier<Command> commandSupplier;
-    private List<String> packages = new ArrayList<>();
 
     public Yum(TaskContext taskContext) {
         this.taskContext = taskContext;
@@ -30,57 +34,86 @@ public class Yum {
     /**
      * @param packages A list of packages, each package being of the form name-1.2.3-1.el7.noarch
      */
-    public Install install(String... packages) {
-        return new Install(taskContext, Arrays.asList(packages));
+    public GenericYumCommand install(String... packages) {
+        return newYumCommand("install", packages, INSTALL_NOOP_PATTERN);
     }
 
-    public class Install {
+    public GenericYumCommand upgrade(String... packages) {
+        return newYumCommand("upgrade", packages, UPGRADE_NOOP_PATTERN);
+    }
+
+    public GenericYumCommand remove(String... packages) {
+        return newYumCommand("remove", packages, REMOVE_NOOP_PATTERN);
+    }
+
+    private GenericYumCommand newYumCommand(String yumCommand,
+                                            String[] packages,
+                                            Pattern noopPattern) {
+        return new GenericYumCommand(
+                taskContext,
+                commandSupplier,
+                yumCommand,
+                Arrays.asList(packages),
+                noopPattern);
+    }
+
+    public static class GenericYumCommand {
+        private static Logger logger = Logger.getLogger(Yum.class.getName());
+
         private final TaskContext taskContext;
+        private final Supplier<Command> commandSupplier;
+        private final String yumCommand;
         private final List<String> packages;
+        private final Pattern commandOutputNoopPattern;
         private Optional<String> enabledRepo = Optional.empty();
 
-        public Install(TaskContext taskContext, List<String> packages) {
+        private GenericYumCommand(TaskContext taskContext,
+                                  Supplier<Command> commandSupplier,
+                                  String yumCommand,
+                                  List<String> packages,
+                                  Pattern commandOutputNoopPattern) {
             this.taskContext = taskContext;
+            this.commandSupplier = commandSupplier;
+            this.yumCommand = yumCommand;
             this.packages = packages;
+            this.commandOutputNoopPattern = commandOutputNoopPattern;
 
             if (packages.isEmpty()) {
                 throw new IllegalArgumentException("No packages specified");
             }
         }
 
-        public Install enableRepo(String repo) {
+        @SuppressWarnings("unchecked")
+        public GenericYumCommand enableRepo(String repo) {
             enabledRepo = Optional.of(repo);
             return this;
         }
 
         public boolean converge() {
-            if (packages.stream().allMatch(Yum.this::isInstalled)) {
-                return false;
-            }
-
-            execute();
-            return true;
-        }
-
-        private void execute() {
             Command command = commandSupplier.get();
-            command.add("yum", "install", "--assumeyes");
+            command.add("yum", yumCommand, "--assumeyes");
             enabledRepo.ifPresent(repo -> command.add("--enablerepo=" + repo));
             command.add(packages);
-            command.spawn(logger).waitForTermination().throwIfFailed();
+            ChildProcess childProcess = command
+                    .spawnProgramWithoutSideEffects()
+                    .waitForTermination()
+                    .throwIfFailed();
+
+            // There's no way to figure out whether a yum command would have been a no-op.
+            // Therefore, run the command and parse the output to decide.
+            String output = childProcess.getUtf8Output();
+            if (commandOutputNoopPattern.matcher(output).matches()) {
+                return false;
+            } else {
+                childProcess.logAsModifyingSystemAfterAll(logger);
+                return true;
+            }
         }
     }
 
+    // For testing
     Yum(TaskContext taskContext, Supplier<Command> commandSupplier) {
         this.taskContext = taskContext;
         this.commandSupplier = commandSupplier;
-    }
-
-    private boolean isInstalled(String package_) {
-        ChildProcess childProcess = commandSupplier.get()
-                .add("yum", "list", "installed", package_)
-                .spawnWithoutLoggingCommand();
-        childProcess.waitForTermination();
-        return childProcess.exitValue() == 0;
     }
 }

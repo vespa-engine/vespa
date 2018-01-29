@@ -50,6 +50,14 @@ public class TestCommand extends Command {
 
             @Override
             public Path getProcessOutputPath() { return null; }
+
+            @Override
+            public void logAsModifyingSystemAfterAll(Logger logger) { }
+
+            @Override
+            public String commandLine() {
+                return "program";
+            }
         };
     }
 

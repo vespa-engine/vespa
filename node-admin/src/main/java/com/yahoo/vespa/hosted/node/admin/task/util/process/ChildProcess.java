@@ -2,15 +2,26 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
 import java.nio.file.Path;
+import java.util.logging.Logger;
 
 /**
  * @author hakonhall
  */
 public interface ChildProcess extends AutoCloseable {
+    String commandLine();
     ChildProcess waitForTermination();
     int exitValue();
     ChildProcess throwIfFailed();
     String getUtf8Output();
+
+    /**
+     * Only call this if process was spawned under the assumption the program had no side
+     * effects (see Command::spawnProgramWithoutSideEffects).  If it is determined later
+     * that the program did in fact have side effects (modified system), this method can
+     * be used to log that fact. Alternatively, call TaskContext::logSystemModification
+     * directly.
+     */
+    void logAsModifyingSystemAfterAll(Logger logger);
 
     @Override
     void close();

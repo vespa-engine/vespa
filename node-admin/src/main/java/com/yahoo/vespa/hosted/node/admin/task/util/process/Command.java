@@ -56,7 +56,7 @@ public class Command {
                 .redirectOutput(temporaryFile.toFile());
         Process process = IOExceptionUtil.uncheck(builder::start);
 
-        return new ChildProcessImpl(process, temporaryFile, commandLine);
+        return new ChildProcessImpl(context, process, temporaryFile, commandLine);
     }
 
     String commandLine() {
@@ -89,7 +89,15 @@ public class Command {
         return "\"" + doubleQuoteEscaped + "\"";
     }
 
-    public ChildProcess spawnWithoutLoggingCommand() {
+    /**
+     * Spawns a process that do not modify the system.
+     *
+     * This method can also be used to spawn a process that MAY have side effects
+     * to be determined at some later time. The caller is then responsible for calling
+     * TaskContext::logSystemModification afterwards. The caller is encouraged to
+     * call ChildProcess::logAsModifyingSystemAfterAll to do this.
+     */
+    public ChildProcess spawnProgramWithoutSideEffects() {
         return spawn(null);
     }
 }
