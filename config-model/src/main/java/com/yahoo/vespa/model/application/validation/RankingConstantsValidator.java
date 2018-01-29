@@ -63,15 +63,19 @@ public class RankingConstantsValidator extends Validator {
     }
 
     private void validateRankingConstant(RankingConstant rankingConstant, ApplicationPackage application) throws FileNotFoundException {
-        String constantFile = rankingConstant.getFileName();
-        if (application.getFileReference(Path.fromString("")).getAbsolutePath().endsWith(FilesApplicationPackage.preprocessed) &&
-            constantFile.startsWith(FilesApplicationPackage.preprocessed))
-            constantFile = constantFile.substring(FilesApplicationPackage.preprocessed.length());
+        // TODO: Handle validation of URI soon too.
+        if (rankingConstant.getPathType() == RankingConstant.PathType.FILE) {
+            String constantFile = rankingConstant.getFileName();
+            if (application.getFileReference(Path.fromString("")).getAbsolutePath().endsWith(FilesApplicationPackage.preprocessed) &&
+                    constantFile.startsWith(FilesApplicationPackage.preprocessed)) {
+                constantFile = constantFile.substring(FilesApplicationPackage.preprocessed.length());
+            }
 
-        ApplicationFile tensorApplicationFile = application.getFile(Path.fromString(constantFile));
-        new ConstantTensorJsonValidator().validate(constantFile,
-                                                   rankingConstant.getTensorType(),
-                                                   tensorApplicationFile.createReader());
+            ApplicationFile tensorApplicationFile = application.getFile(Path.fromString(constantFile));
+            new ConstantTensorJsonValidator().validate(constantFile,
+                    rankingConstant.getTensorType(),
+                    tensorApplicationFile.createReader());
+        }
     }
 
 }

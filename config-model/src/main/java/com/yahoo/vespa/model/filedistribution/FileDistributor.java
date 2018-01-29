@@ -38,9 +38,29 @@ public class FileDistributor {
         return reference;
     }
 
+    /**
+     * Adds the given file to the associated application packages' registry of file and marks the file
+     * for distribution to the given hosts.
+     * <b>Note: This class receives ownership of the given collection.</b>
+     *
+     * @return the reference to the file, created by the application package
+     */
+    public FileReference sendUriToHosts(String uri, Collection<Host> hosts) {
+        FileReference reference = fileRegistry.addUri(uri);
+        if (reference != null) {
+            addToFilesToDistribute(reference, hosts);
+        }
+
+        return reference;
+    }
+
     /** Same as sendFileToHost(relativePath,Collections.singletonList(host) */
     public FileReference sendFileToHost(String relativePath, Host host) {
         return sendFileToHosts(relativePath, Arrays.asList(host));
+    }
+
+    public FileReference sendUriToHost(String uri, Host host) {
+        return sendUriToHosts(uri, Arrays.asList(host));
     }
 
     private void addToFilesToDistribute(FileReference reference, Collection<Host> hosts) {

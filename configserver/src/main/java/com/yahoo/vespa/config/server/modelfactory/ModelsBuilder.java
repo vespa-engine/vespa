@@ -104,6 +104,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                         log.log(LogLevel.WARNING, "Unexpected error when building model ", e);
                         throw new InternalServerException(applicationId + ": Error loading model", e);
                     } else {
+                        log.log(LogLevel.WARNING, "Input error when building model ", e);
                         throw new IllegalArgumentException(applicationId + ": Error loading model", e);
                     }
                 } else {

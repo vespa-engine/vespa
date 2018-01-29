@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -48,6 +49,7 @@ public class RankingConstantTest {
         assertEquals(TENSOR_NAME, constant.getName());
         assertEquals(TENSOR_FILE, constant.getFileName());
         assertEquals(TENSOR_TYPE, constant.getType());
+        assertEquals(RankingConstant.PathType.FILE, constant.getPathType());
 
         assertFalse(constantIterator.hasNext());
     }
@@ -101,6 +103,82 @@ public class RankingConstantTest {
         Search search = searchBuilder.getSearch();
         RankingConstant constant = search.getRankingConstants().values().iterator().next();
         assertEquals("simplename", constant.getFileName());
+    }
+
+    @Test
+    public void constant_uri_is_allowed() throws Exception {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
+        searchBuilder.importString(joinLines(
+                "search test {",
+                "  document test { }",
+                "  constant foo {",
+                "    type: tensor(x{})",
+                "    uri: http://somwhere.far.away/in/another-galaxy",
+                "  }",
+                "}"
+        ));
+        searchBuilder.build();
+        Search search = searchBuilder.getSearch();
+        RankingConstant constant = search.getRankingConstants().values().iterator().next();
+        assertEquals(RankingConstant.PathType.URI, constant.getPathType());
+        assertEquals("http://somwhere.far.away/in/another-galaxy", constant.getUri());
+    }
+    @Test
+    public void constant_uri_with_port_is_allowed() throws Exception {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
+        searchBuilder.importString(joinLines(
+                "search test {",
+                "  document test { }",
+                "  constant foo {",
+                "    type: tensor(x{})",
+                "    uri: http://somwhere.far.away:4080/in/another-galaxy",
+                "  }",
+                "}"
+        ));
+        searchBuilder.build();
+        Search search = searchBuilder.getSearch();
+        RankingConstant constant = search.getRankingConstants().values().iterator().next();
+        assertEquals(RankingConstant.PathType.URI, constant.getPathType());
+        assertEquals("http://somwhere.far.away:4080/in/another-galaxy", constant.getUri());
+    }
+    @Test
+    public void constant_uri_no_dual_slashes_is_allowed() throws Exception {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
+        searchBuilder.importString(joinLines(
+                "search test {",
+                "  document test { }",
+                "  constant foo {",
+                "    type: tensor(x{})",
+                "    uri: http:somwhere.far.away/in/another-galaxy",
+                "  }",
+                "}"
+        ));
+        searchBuilder.build();
+        Search search = searchBuilder.getSearch();
+        RankingConstant constant = search.getRankingConstants().values().iterator().next();
+        assertEquals(RankingConstant.PathType.URI, constant.getPathType());
+        assertEquals("http:somwhere.far.away/in/another-galaxy", constant.getUri());
+    }
+    @Test
+    public void constant_uri_only_supports_http() throws Exception {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
+        thrown.expect(ParseException.class);
+        thrown.expectMessage("Encountered \" <IDENTIFIER> \"ftp \"\" at line 5, column 10.\n" +
+                "Was expecting:\n" +
+                "    <URI_PATH> ...");
+        searchBuilder.importString(joinLines(
+                "search test {",
+                "  document test { }",
+                "  constant foo {",
+                "    type: tensor(x{})",
+                "    uri: ftp:somwhere.far.away/in/another-galaxy",
+                "  }",
+                "}"
+        ));
     }
 
 }

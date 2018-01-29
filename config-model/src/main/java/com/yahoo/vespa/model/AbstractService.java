@@ -508,6 +508,13 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
             throw new RuntimeException("File does not exist: '" + relativePath + "'.");
         }
     }
+    public FileReference sendUri(String uri) {
+        try {
+            return getRoot().getFileDistributor().sendUriToHost(uri, getHost());
+        } catch (PathDoesNotExistException e) {
+            throw new RuntimeException("Uri does not exist: '" + uri + "'.");
+        }
+    }
 
     /**
      *
