@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
@@ -69,14 +70,7 @@ public class UnixPath {
      *                    and no permissions for others.
      */
     public void setPermissions(String permissions) {
-        Set<PosixFilePermission> permissionSet;
-        try {
-            permissionSet = PosixFilePermissions.fromString(permissions);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Failed to set permissions '" +
-                    permissions + "' on path " + path, e);
-        }
-
+        Set<PosixFilePermission> permissionSet = getPosixFilePermissionsFromString(permissions);
         uncheck(() -> Files.setPosixFilePermissions(path, permissionSet));
     }
 
@@ -114,8 +108,27 @@ public class UnixPath {
         return IOExceptionUtil.ifExists(() -> getAttributes());
     }
 
+    public void createDirectory(String permissions) {
+        Set<PosixFilePermission> set = getPosixFilePermissionsFromString(permissions);
+        FileAttribute<Set<PosixFilePermission>> attribute = PosixFilePermissions.asFileAttribute(set);
+        uncheck(() -> Files.createDirectory(path, attribute));
+    }
+
+    public void createDirectory() {
+        uncheck(() -> Files.createDirectory(path));
+    }
+
     @Override
     public String toString() {
         return path.toString();
+    }
+
+    private Set<PosixFilePermission> getPosixFilePermissionsFromString(String permissions) {
+        try {
+            return PosixFilePermissions.fromString(permissions);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Failed to set permissions '" +
+                    permissions + "' on path " + path, e);
+        }
     }
 }

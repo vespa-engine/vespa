@@ -7,8 +7,6 @@ import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
@@ -39,56 +37,12 @@ public class FileSync {
     public boolean convergeTo(TaskContext taskContext, PartialFileData partialFileData) {
         FileAttributesCache currentAttributes = new FileAttributesCache(path);
 
-        boolean modifiedSystem = false;
+        boolean modifiedSystem = maybeUpdateContent(taskContext, partialFileData.getContent(), currentAttributes);
 
-        modifiedSystem |= maybeUpdateContent(taskContext, partialFileData.getContent(), currentAttributes);
-
-        modifiedSystem |= convergeAttribute(
-                taskContext,
-                "owner",
-                partialFileData.getOwner(),
-                () -> currentAttributes.get().owner(),
-                path::setOwner);
-
-        modifiedSystem |= convergeAttribute(
-                taskContext,
-                "group",
-                partialFileData.getGroup(),
-                () -> currentAttributes.get().group(),
-                path::setGroup);
-
-        modifiedSystem |= convergeAttribute(
-                taskContext,
-                "permissions",
-                partialFileData.getPermissions(),
-                () -> currentAttributes.get().permissions(),
-                path::setPermissions);
+        AttributeSync attributeSync = new AttributeSync(path.toPath()).with(partialFileData);
+        modifiedSystem |= attributeSync.converge(taskContext, currentAttributes);
 
         return modifiedSystem;
-    }
-
-    private boolean convergeAttribute(TaskContext taskContext,
-                                      String attributeName,
-                                      Optional<String> wantedValue,
-                                      Supplier<String> currentValueSupplier,
-                                      Consumer<String> valueSetter) {
-        if (!wantedValue.isPresent()) {
-            return false;
-        }
-
-        String currentValue = currentValueSupplier.get();
-        if (Objects.equals(wantedValue.get(), currentValue)) {
-            return false;
-        } else {
-            String actionDescription = String.format("Changing %s of %s from %s to %s",
-                    attributeName,
-                    path,
-                    currentValue,
-                    wantedValue.get());
-            taskContext.logSystemModification(logger, actionDescription);
-            valueSetter.accept(wantedValue.get());
-            return true;
-        }
     }
 
     private boolean maybeUpdateContent(TaskContext taskContext,
