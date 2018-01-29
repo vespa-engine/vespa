@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  *  - Specify constants with addConstant
  *  - Forwarding to methods that dynamically build debug objects with addThreadSafeSupplier.
  *
- * @author hakon
+ * @author hakonhall
  */
 @ThreadSafe
 public class DebugHandlerHelper implements NodeAdminDebugHandler {

@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * Interface for supporting debug info to introspect e.g. internal state.
  *
- * @author hakon
+ * @author hakonhall
  */
 @ThreadSafe
 public interface NodeAdminDebugHandler {
