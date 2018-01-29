@@ -20,7 +20,7 @@ import java.util.Optional;
  */
 public final class Change {
 
-    private static Change empty = new Change(Optional.empty(), Optional.empty());
+    private static final Change empty = new Change(Optional.empty(), Optional.empty());
 
     /** The platform version we are upgrading to, or empty if none */
     private final Optional<Version> platform;

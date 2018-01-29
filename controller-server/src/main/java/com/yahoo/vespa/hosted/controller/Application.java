@@ -74,7 +74,7 @@ public class Application {
         Objects.requireNonNull(validationOverrides, "validationOverrides cannot be null");
         Objects.requireNonNull(deployments, "deployments cannot be null");
         Objects.requireNonNull(deploymentJobs, "deploymentJobs cannot be null");
-        Objects.requireNonNull(change, "deploying cannot be null");
+        Objects.requireNonNull(change, "change cannot be null");
         Objects.requireNonNull(metrics, "metrics cannot be null");
         Objects.requireNonNull(rotation, "rotation cannot be null");
         this.id = id;
