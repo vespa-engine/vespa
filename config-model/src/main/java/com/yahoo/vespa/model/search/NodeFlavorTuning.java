@@ -30,6 +30,12 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         tuneFlushStrategyMemoryLimits(builder.flush.memory);
         tuneFlushStrategyTlsSize(builder.flush.memory);
         tuneSummaryReadIo(builder.summary.read);
+        tuneSummaryCache(builder.summary.cache);
+    }
+
+    private void tuneSummaryCache(ProtonConfig.Summary.Cache.Builder builder) {
+        long memoryLimitBytes = (long) ((nodeFlavor.getMinMainMemoryAvailableGb() * 0.05) * GB);
+        builder.maxbytes(memoryLimitBytes);
     }
 
     private void setHwInfo(ProtonConfig.Builder builder) {

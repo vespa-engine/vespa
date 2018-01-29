@@ -87,6 +87,12 @@ public class NodeFlavorTuningTest {
     }
 
     @Test
+    public void require_that_summary_cache_max_bytes_is_set_based_on_memory() {
+        assertEquals(1*GB/20, configFromMemorySetting(1).summary().cache().maxbytes());
+        assertEquals(256*GB/20, configFromMemorySetting(256).summary().cache().maxbytes());
+    }
+
+    @Test
     public void require_that_docker_node_is_tagged_with_shared_disk() {
         assertSharedDisk(true, true);
         assertSharedDisk(false, false);
