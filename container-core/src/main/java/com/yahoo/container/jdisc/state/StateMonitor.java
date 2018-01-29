@@ -11,6 +11,7 @@ import com.yahoo.log.LogLevel;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -38,12 +39,19 @@ public class StateMonitor extends AbstractComponent {
 
     @Inject
     public StateMonitor(HealthMonitorConfig config, Timer timer) {
+        this(config, timer, runnable -> {
+            Thread thread = new Thread(runnable, "StateMonitor");
+            thread.setDaemon(true);
+            return thread;
+        });
+    }
+
+    StateMonitor(HealthMonitorConfig config, Timer timer, ThreadFactory threadFactory) {
         this.timer = timer;
         this.snapshotIntervalMs = (long)(config.snapshot_interval() * TimeUnit.SECONDS.toMillis(1));
         this.lastSnapshotTimeMs = timer.currentTimeMillis();
         this.status = Status.valueOf(config.initialStatus());
-        thread = new Thread(StateMonitor.this::run, "StateMonitor");
-        thread.setDaemon(true);
+        thread = threadFactory.newThread(this::run);
         thread.start();
     }
 
@@ -69,6 +77,7 @@ public class StateMonitor extends AbstractComponent {
     /** Returns the interval between each metrics snapshot used by this */
     public long getSnapshotIntervalMillis() { return snapshotIntervalMs; }
 
+    /** NOTE: For unit testing only. May lead to undefined behaviour if StateMonitor thread is running simultaneously **/
     boolean checkTime() {
         long now = timer.currentTimeMillis();
         if (now < lastSnapshotTimeMs + snapshotIntervalMs) {
