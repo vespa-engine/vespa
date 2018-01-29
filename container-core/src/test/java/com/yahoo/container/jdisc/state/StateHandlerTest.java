@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -36,6 +37,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Simon Thoresen Hult
@@ -51,30 +53,20 @@ public class StateHandlerTest {
 
     @Before
     public void startTestDriver() {
-        driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(new AbstractModule() {
-
+        Timer timer = this.currentTimeMillis::get;
+        this.driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(new AbstractModule() {
             @Override
             protected void configure() {
-                bind(Timer.class).toInstance(new Timer() {
-
-                    @Override
-                    public long currentTimeMillis() {
-                        return currentTimeMillis.get();
-                    }
-                });
+                bind(Timer.class).toInstance(timer);
             }
         });
         ContainerBuilder builder = driver.newContainerBuilder();
-        builder.guiceModules().install(new AbstractModule() {
-
-            @Override
-            protected void configure() {
-                bind(HealthMonitorConfig.class)
-                        .toInstance(new HealthMonitorConfig(new HealthMonitorConfig.Builder().snapshot_interval(
-                                TimeUnit.MILLISECONDS.toSeconds(SNAPSHOT_INTERVAL))));
-            }
-        });
-        monitor = builder.guiceModules().getInstance(StateMonitor.class);
+        HealthMonitorConfig healthMonitorConfig =
+                new HealthMonitorConfig(
+                        new HealthMonitorConfig.Builder()
+                                .snapshot_interval(TimeUnit.MILLISECONDS.toSeconds(SNAPSHOT_INTERVAL)));
+        ThreadFactory threadFactory = ignored -> mock(Thread.class);
+        this.monitor = new StateMonitor(healthMonitorConfig, timer, threadFactory);
         builder.guiceModules().install(new AbstractModule() {
 
             @Override
