@@ -44,8 +44,6 @@ public:
      */
     void close();
 
-    DocumentDBConfig::SP getDocumentDBConfig(const DocTypeName & docTypeName) const;
-
     void Run(FastOS_ThreadInterface * thread, void *arg) override;
 
 private:

@@ -6,7 +6,6 @@
 #include "i_proton_configurer.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton_config_fetcher");
@@ -80,11 +79,9 @@ void
 ProtonConfigFetcher::updateDocumentDBConfigs(const BootstrapConfig::SP & bootstrapConfig, const ConfigSnapshot & snapshot)
 {
     lock_guard guard(_mutex);
-    for (DBManagerMap::iterator it(_dbManagerMap.begin()), mt(_dbManagerMap.end());
-         it != mt;
-         it++) {
-        it->second->forwardConfig(bootstrapConfig);
-        it->second->update(snapshot);
+    for (auto & entry : _dbManagerMap) {
+        entry.second->forwardConfig(bootstrapConfig);
+        entry.second->update(snapshot);
     }
 }
 
@@ -179,17 +176,6 @@ ProtonConfigFetcher::close()
         _retriever.close();
         _threadPool.Close();
     }
-}
-
-DocumentDBConfig::SP
-ProtonConfigFetcher::getDocumentDBConfig(const DocTypeName & docTypeName) const
-{
-    lock_guard guard(_mutex);
-    DBManagerMap::const_iterator it(_dbManagerMap.find(docTypeName));
-    if (it == _dbManagerMap.end())
-        return DocumentDBConfig::SP();
-
-    return it->second->getConfig();
 }
 
 void

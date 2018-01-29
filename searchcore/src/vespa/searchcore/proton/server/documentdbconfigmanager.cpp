@@ -167,8 +167,6 @@ deriveConfig(const ProtonConfig::Summary & summary, const ProtonConfig::Flush::M
     DocumentStore::Config config(getStoreConfig(summary.cache));
     const ProtonConfig::Summary::Log & log(summary.log);
     const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
-    const
-
     WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes);
     LogDataStore::Config logConfig;
     logConfig.setMaxFileSize(log.maxfilesize)
