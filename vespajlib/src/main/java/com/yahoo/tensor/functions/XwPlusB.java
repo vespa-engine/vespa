@@ -14,7 +14,7 @@ public class XwPlusB extends CompositeTensorFunction {
 
     private final TensorFunction x, w, b;
     private final String dimension;
-    
+
     public XwPlusB(TensorFunction x, TensorFunction w, TensorFunction b, String dimension) {
         this.x = x;
         this.w = w;
@@ -23,10 +23,10 @@ public class XwPlusB extends CompositeTensorFunction {
     }
 
     @Override
-    public List<TensorFunction> functionArguments() { return ImmutableList.of(x, w, b); }
+    public List<TensorFunction> arguments() { return ImmutableList.of(x, w, b); }
 
     @Override
-    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+    public TensorFunction withArguments(List<TensorFunction> arguments) {
         if ( arguments.size() != 3)
             throw new IllegalArgumentException("XwPlusB must have 3 arguments, got " + arguments.size());
         return new XwPlusB(arguments.get(0), arguments.get(1), arguments.get(2), dimension);
@@ -43,7 +43,7 @@ public class XwPlusB extends CompositeTensorFunction {
                         primitiveB,
                         ScalarFunctions.add());
     }
-    
+
     @Override
     public String toString(ToStringContext context) {
         return "xw_plus_b(" + x.toString(context) + ", " +

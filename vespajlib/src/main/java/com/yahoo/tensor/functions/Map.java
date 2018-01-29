@@ -2,8 +2,6 @@
 package com.yahoo.tensor.functions;
 
 import com.google.common.annotations.Beta;
-import com.google.common.collect.ImmutableMap;
-import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
@@ -39,10 +37,10 @@ public class Map extends PrimitiveTensorFunction {
     public DoubleUnaryOperator mapper() { return mapper; }
 
     @Override
-    public List<TensorFunction> functionArguments() { return Collections.singletonList(argument); }
+    public List<TensorFunction> arguments() { return Collections.singletonList(argument); }
 
     @Override
-    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+    public TensorFunction withArguments(List<TensorFunction> arguments) {
         if ( arguments.size() != 1)
             throw new IllegalArgumentException("Map must have 1 argument, got " + arguments.size());
         return new Map(arguments.get(0), mapper);
@@ -51,6 +49,11 @@ public class Map extends PrimitiveTensorFunction {
     @Override
     public PrimitiveTensorFunction toPrimitive() {
         return new Map(argument.toPrimitive(), mapper);
+    }
+
+    @Override
+    public TensorType type(EvaluationContext context) {
+        return argument.type(context);
     }
 
     @Override

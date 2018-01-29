@@ -3,6 +3,7 @@ package com.yahoo.tensor.evaluation;
 
 import com.google.common.annotations.Beta;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.PrimitiveTensorFunction;
 import com.yahoo.tensor.functions.TensorFunction;
 import com.yahoo.tensor.functions.ToStringContext;
@@ -25,13 +26,16 @@ public class VariableTensor extends PrimitiveTensorFunction {
     }
 
     @Override
-    public List<TensorFunction> functionArguments() { return Collections.emptyList(); }
+    public List<TensorFunction> arguments() { return Collections.emptyList(); }
 
     @Override
-    public TensorFunction replaceArguments(List<TensorFunction> arguments) { return this; }
+    public TensorFunction withArguments(List<TensorFunction> arguments) { return this; }
 
     @Override
     public PrimitiveTensorFunction toPrimitive() { return this; }
+
+    @Override
+    public TensorType type(EvaluationContext context) { return context.getTensorType(name); }
 
     @Override
     public Tensor evaluate(EvaluationContext context) {

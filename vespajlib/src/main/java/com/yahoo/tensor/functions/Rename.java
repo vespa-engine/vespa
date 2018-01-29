@@ -26,6 +26,7 @@ public class Rename extends PrimitiveTensorFunction {
     private final TensorFunction argument;
     private final List<String> fromDimensions;
     private final List<String> toDimensions;
+    private final Map<String, String> fromToMap;
 
     public Rename(TensorFunction argument, String fromDimension, String toDimension) {
         this(argument, ImmutableList.of(fromDimension), ImmutableList.of(toDimension));
@@ -43,13 +44,24 @@ public class Rename extends PrimitiveTensorFunction {
         this.argument = argument;
         this.fromDimensions = ImmutableList.copyOf(fromDimensions);
         this.toDimensions = ImmutableList.copyOf(toDimensions);
+        this.fromToMap = fromToMap(fromDimensions, toDimensions);
+    }
+
+    public List<String> fromDimensions() { return fromDimensions; }
+    public List<String> toDimensions() { return toDimensions; }
+
+    private static Map<String, String> fromToMap(List<String> fromDimensions, List<String> toDimensions) {
+        Map<String, String> map = new HashMap<>();
+        for (int i = 0; i < fromDimensions.size(); i++)
+            map.put(fromDimensions.get(i), toDimensions.get(i));
+        return map;
     }
 
     @Override
-    public List<TensorFunction> functionArguments() { return Collections.singletonList(argument); }
+    public List<TensorFunction> arguments() { return Collections.singletonList(argument); }
 
     @Override
-    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+    public TensorFunction withArguments(List<TensorFunction> arguments) {
         if ( arguments.size() != 1)
             throw new IllegalArgumentException("Rename must have 1 argument, got " + arguments.size());
         return new Rename(arguments.get(0), fromDimensions, toDimensions);
@@ -59,11 +71,22 @@ public class Rename extends PrimitiveTensorFunction {
     public PrimitiveTensorFunction toPrimitive() { return this; }
 
     @Override
+    public TensorType type(EvaluationContext context) {
+        return type(argument.type(context));
+    }
+
+    private TensorType type(TensorType type) {
+        TensorType.Builder builder = new TensorType.Builder();
+        for (TensorType.Dimension dimension : type.dimensions())
+            builder.dimension(dimension.withName(fromToMap.getOrDefault(dimension.name(), dimension.name())));
+        return builder.build();
+    }
+
+    @Override
     public Tensor evaluate(EvaluationContext context) {
         Tensor tensor = argument.evaluate(context);
 
-        Map<String, String> fromToMap = fromToMap();
-        TensorType renamedType = rename(tensor.type(), fromToMap);
+        TensorType renamedType = type(tensor.type());
 
         // an array which lists the index of each label in the renamed type
         int[] toIndexes = new int[tensor.type().dimensions().size()];
@@ -82,13 +105,6 @@ public class Rename extends PrimitiveTensorFunction {
         return builder.build();
     }
 
-    private TensorType rename(TensorType type, Map<String, String> fromToMap) {
-        TensorType.Builder builder = new TensorType.Builder();
-        for (TensorType.Dimension dimension : type.dimensions())
-            builder.dimension(dimension.withName(fromToMap.getOrDefault(dimension.name(), dimension.name())));
-        return builder.build();
-    }
-
     private TensorAddress rename(TensorAddress address, int[] toIndexes) {
         String[] reorderedLabels = new String[toIndexes.length];
         for (int i = 0; i < toIndexes.length; i++)
@@ -100,13 +116,6 @@ public class Rename extends PrimitiveTensorFunction {
     public String toString(ToStringContext context) {
         return "rename(" + argument.toString(context) + ", " +
                        toVectorString(fromDimensions) + ", " + toVectorString(toDimensions) + ")";
-    }
-
-    private Map<String, String> fromToMap() {
-        Map<String, String> map = new HashMap<>();
-        for (int i = 0; i < fromDimensions.size(); i++)
-            map.put(fromDimensions.get(i), toDimensions.get(i));
-        return map;
     }
 
     private String toVectorString(List<String> elements) {

@@ -41,14 +41,20 @@ public class MapContext extends Context {
             boundValue.freeze();
     }
 
+    /** Returns the type of the given value key, or null if it is not bound. */
+    @Override
+    public ValueType getType(String key) {
+        Value value = bindings.get(key);
+        if (value == null) return null;
+        return value.type();
+    }
+
     /**
      * Returns the value of a key. 0 is returned if the given key is not bound in this.
      */
     @Override
     public Value get(String key) {
-        Value value = bindings.get(key);
-        if (value == null) return DoubleValue.zero;
-        return value;
+        return bindings.getOrDefault(key, DoubleValue.zero);
     }
 
     /**
@@ -67,7 +73,7 @@ public class MapContext extends Context {
         if (frozen) return bindings;
         return Collections.unmodifiableMap(bindings);
     }
-    
+
     /** Returns a new, modifiable context containing all the bindings of this */
     public MapContext thawedCopy() { return new MapContext(new HashMap<>(bindings)); }
 

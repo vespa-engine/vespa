@@ -4,6 +4,7 @@ package com.yahoo.searchlib.rankingexpression.evaluation;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.Set;
@@ -17,16 +18,28 @@ import java.util.stream.Collectors;
 public abstract class Context implements EvaluationContext {
 
     /**
-     * <p>Returns the value of a simple variable name.</p>
+     * Returns the value of a simple variable name.
      *
      * @param name the name of the variable whose value to return.
      * @return the value of the named variable.
      */
     public abstract Value get(String name);
 
+    /** Returns the type of the value of the given variable as a tensor type, or null if there is no such variable */
+    @Override
+    public TensorType getTensorType(String name) {
+        ValueType type = getType(name);
+        if (type == null) return null;
+        if (type.isTensor()) return type.tensorType().get();
+        return TensorType.empty; // double as tensor
+    }
+
     /** Returns a variable as a tensor */
     @Override
     public Tensor getTensor(String name) { return get(name).asTensor(); }
+
+    /** Returns the type of the value of the given variable, or null if there is no such variable */
+    public abstract ValueType getType(String name);
 
     /**
      * <p>Returns the value of a <i>structured variable</i> on the form

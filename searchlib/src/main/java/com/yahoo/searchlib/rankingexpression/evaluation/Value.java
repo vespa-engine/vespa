@@ -19,6 +19,9 @@ public abstract class Value {
 
     private boolean frozen=false;
 
+    /** Returns the type of this value */
+    public abstract ValueType type();
+
     /** Returns this value as a double, or throws UnsupportedOperationException if it cannot be represented as a double */
     public abstract double asDouble();
 

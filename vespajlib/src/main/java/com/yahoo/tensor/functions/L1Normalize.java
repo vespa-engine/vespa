@@ -14,17 +14,17 @@ public class L1Normalize extends CompositeTensorFunction {
 
     private final TensorFunction argument;
     private final String dimension;
-    
+
     public L1Normalize(TensorFunction argument, String dimension) {
         this.argument = argument;
         this.dimension = dimension;
     }
 
     @Override
-    public List<TensorFunction> functionArguments() { return Collections.singletonList(argument); }
+    public List<TensorFunction> arguments() { return Collections.singletonList(argument); }
 
     @Override
-    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+    public TensorFunction withArguments(List<TensorFunction> arguments) {
         if ( arguments.size() != 1)
             throw new IllegalArgumentException("L1Normalize must have 1 argument, got " + arguments.size());
         return new L1Normalize(arguments.get(0), dimension);
@@ -38,7 +38,7 @@ public class L1Normalize extends CompositeTensorFunction {
                         new Reduce(primitiveArgument, Reduce.Aggregator.sum, dimension),
                         ScalarFunctions.divide());
     }
-    
+
     @Override
     public String toString(ToStringContext context) {
         return "l1_normalize(" + argument.toString(context) + ", " + dimension + ")";

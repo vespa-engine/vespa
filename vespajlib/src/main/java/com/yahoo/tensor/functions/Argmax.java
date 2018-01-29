@@ -14,17 +14,17 @@ public class Argmax extends CompositeTensorFunction {
 
     private final TensorFunction argument;
     private final String dimension;
-    
+
     public Argmax(TensorFunction argument, String dimension) {
         this.argument = argument;
         this.dimension = dimension;
     }
 
     @Override
-    public List<TensorFunction> functionArguments() { return Collections.singletonList(argument); }
+    public List<TensorFunction> arguments() { return Collections.singletonList(argument); }
 
     @Override
-    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+    public TensorFunction withArguments(List<TensorFunction> arguments) {
         if ( arguments.size() != 1)
             throw new IllegalArgumentException("Argmax must have 1 argument, got " + arguments.size());
         return new Argmax(arguments.get(0), dimension);
@@ -37,7 +37,7 @@ public class Argmax extends CompositeTensorFunction {
                         new Reduce(primitiveArgument, Reduce.Aggregator.max, dimension),
                         ScalarFunctions.equal());
     }
-    
+
     @Override
     public String toString(ToStringContext context) {
         return "argmax(" + argument.toString(context) + ", " + dimension + ")";

@@ -4,16 +4,16 @@ package com.yahoo.searchlib.rankingexpression.evaluation;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
-import com.yahoo.tensor.TensorType;
 
 /**
  * A value which acts as a double in numerical context.
  *
  * @author bratseth
- * @since 5.1.21
  */
 public abstract class DoubleCompatibleValue extends Value {
+
+    @Override
+    public ValueType type() { return ValueType.doubleType(); }
 
     @Override
     public boolean hasDouble() { return true; }

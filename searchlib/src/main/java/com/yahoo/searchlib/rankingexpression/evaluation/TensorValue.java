@@ -25,6 +25,9 @@ public class TensorValue extends Value {
     }
 
     @Override
+    public ValueType type() { return ValueType.doubleType(); }
+
+    @Override
     public double asDouble() {
         if (hasDouble())
             return value.get(TensorAddress.of());

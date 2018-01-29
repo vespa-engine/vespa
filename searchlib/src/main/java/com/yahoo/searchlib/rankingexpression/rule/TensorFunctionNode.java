@@ -5,7 +5,9 @@ import com.google.common.annotations.Beta;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.searchlib.rankingexpression.evaluation.ValueType;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.functions.PrimitiveTensorFunction;
 import com.yahoo.tensor.functions.TensorFunction;
@@ -35,7 +37,7 @@ public class TensorFunctionNode extends CompositeNode {
 
     @Override
     public List<ExpressionNode> children() {
-        return function.functionArguments().stream()
+        return function.arguments().stream()
                                            .map(this::toExpressionNode)
                                            .collect(Collectors.toList());
     }
@@ -52,7 +54,7 @@ public class TensorFunctionNode extends CompositeNode {
         List<TensorFunction> wrappedChildren = children.stream()
                                                         .map(TensorFunctionExpressionNode::new)
                                                         .collect(Collectors.toList());
-        return new TensorFunctionNode(function.replaceArguments(wrappedChildren));
+        return new TensorFunctionNode(function.withArguments(wrappedChildren));
     }
 
     @Override
@@ -60,6 +62,9 @@ public class TensorFunctionNode extends CompositeNode {
         // Serialize as primitive
         return function.toPrimitive().toString(new ExpressionNodeToStringContext(context, path, this));
     }
+
+    @Override
+    public ValueType type(Context context) { return ValueType.tensorType(function.type(context)); }
 
     @Override
     public Value evaluate(Context context) {
@@ -84,7 +89,7 @@ public class TensorFunctionNode extends CompositeNode {
         }
 
         @Override
-        public List<TensorFunction> functionArguments() {
+        public List<TensorFunction> arguments() {
             if (expression instanceof CompositeNode)
                 return ((CompositeNode)expression).children().stream()
                                                              .map(TensorFunctionExpressionNode::new)
@@ -94,7 +99,7 @@ public class TensorFunctionNode extends CompositeNode {
         }
 
         @Override
-        public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+        public TensorFunction withArguments(List<TensorFunction> arguments) {
             if (arguments.size() == 0) return this;
             List<ExpressionNode> unwrappedChildren = arguments.stream()
                                                               .map(arg -> ((TensorFunctionExpressionNode)arg).expression)
@@ -106,12 +111,17 @@ public class TensorFunctionNode extends CompositeNode {
         public PrimitiveTensorFunction toPrimitive() { return this; }
 
         @Override
+        public TensorType type(EvaluationContext context) {
+            return expression.type((Context)context).tensorType().orElse(TensorType.empty);
+        }
+
+        @Override
         public Tensor evaluate(EvaluationContext context) {
             Value result = expression.evaluate((Context)context);
             if ( ! ( result instanceof TensorValue))
                 throw new IllegalArgumentException("Attempted to evaluate tensor function '" + expression + "', " +
                                                    "but this returns " + result + ", not a tensor");
-            return ((TensorValue)result).asTensor();
+            return result.asTensor();
         }
 
         @Override
