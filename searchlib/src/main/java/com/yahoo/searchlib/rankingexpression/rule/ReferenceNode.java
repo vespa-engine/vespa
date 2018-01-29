@@ -5,6 +5,7 @@ import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.searchlib.rankingexpression.evaluation.ValueType;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -105,8 +106,14 @@ public final class ReferenceNode extends CompositeNode {
     }
 
     @Override
+    public ValueType type(Context context) {
+        // Don't support outputs of different type, for simplicity
+        return context.getType(name);
+    }
+
+    @Override
     public Value evaluate(Context context) {
-        if (arguments.expressions().size()==0 && output==null)
+        if (arguments.expressions().isEmpty() && output == null)
             return context.get(name);
         return context.get(name, arguments, output);
     }

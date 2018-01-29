@@ -47,7 +47,7 @@ public abstract class ExpressionNode implements Serializable {
      * @param context the variable type bindings to use for this evaluation
      * @throws IllegalArgumentException if there are variables which are not bound in the given map
      */
-    public ValueType type(Context context) { return ValueType.doubleType(); } // double is default
+    public abstract ValueType type(Context context);
 
     /**
      * Returns the value of evaluating this expression over the given context.

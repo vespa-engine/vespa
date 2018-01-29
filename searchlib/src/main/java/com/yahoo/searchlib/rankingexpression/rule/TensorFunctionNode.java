@@ -64,7 +64,7 @@ public class TensorFunctionNode extends CompositeNode {
     }
 
     @Override
-    public ValueType type(Context context) { return ValueType.tensorType(function.type(context)); }
+    public ValueType type(Context context) { return ValueType.of(function.type(context)); }
 
     @Override
     public Value evaluate(Context context) {
@@ -112,7 +112,7 @@ public class TensorFunctionNode extends CompositeNode {
 
         @Override
         public TensorType type(EvaluationContext context) {
-            return expression.type((Context)context).tensorType().orElse(TensorType.empty);
+            return expression.type((Context)context).tensorType();
         }
 
         @Override

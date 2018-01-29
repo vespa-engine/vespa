@@ -30,8 +30,7 @@ public abstract class Context implements EvaluationContext {
     public TensorType getTensorType(String name) {
         ValueType type = getType(name);
         if (type == null) return null;
-        if (type.isTensor()) return type.tensorType().get();
-        return TensorType.empty; // double as tensor
+        return type.tensorType();
     }
 
     /** Returns a variable as a tensor */

@@ -6,6 +6,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.BooleanValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.searchlib.rankingexpression.evaluation.ValueType;
 import com.yahoo.tensor.Tensor;
 
 import java.util.ArrayList;
@@ -55,6 +56,11 @@ public class SetMembershipNode extends BooleanNode {
         }
         b.append("]");
         return b.toString();
+    }
+
+    @Override
+    public ValueType type(Context context) {
+        return ValueType.doubleType();
     }
 
     @Override

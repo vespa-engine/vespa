@@ -4,6 +4,8 @@ package com.yahoo.searchlib.rankingexpression.rule;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.searchlib.rankingexpression.evaluation.ValueType;
+import com.yahoo.tensor.functions.Join;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,16 +66,29 @@ public final class FunctionNode extends CompositeNode {
     }
 
     @Override
+    public ValueType type(Context context) {
+        if (arguments.expressions().size() == 0)
+            return ValueType.doubleType();
+
+        ValueType argument1Type = arguments.expressions().get(0).type(context);
+        if (arguments.expressions().size() == 1)
+            return argument1Type;
+
+        ValueType argument2Type = arguments.expressions().get(1).type(context);
+        return ValueType.of(Join.outputType(argument1Type.tensorType(), argument2Type.tensorType()));
+    }
+
+    @Override
     public Value evaluate(Context context) {
         if (arguments.expressions().size() == 0)
-            return DoubleValue.zero.function(function,DoubleValue.zero);
+            return DoubleValue.zero.function(function ,DoubleValue.zero);
 
         Value argument1 = arguments.expressions().get(0).evaluate(context);
         if (arguments.expressions().size() == 1)
             return argument1.function(function, DoubleValue.zero);
 
         Value argument2 = arguments.expressions().get(1).evaluate(context);
-        return argument1.function(function,argument2);
+        return argument1.function(function, argument2);
     }
 
     /** Returns a new function node with the children replaced by the given children */

@@ -3,6 +3,7 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.searchlib.rankingexpression.evaluation.ValueType;
 
 import java.util.Deque;
 
@@ -28,6 +29,9 @@ public final class NameNode extends ExpressionNode {
     public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
         return name;
     }
+
+    @Override
+    public ValueType type(Context context) { throw new RuntimeException("Named nodes can not have a type"); }
 
     @Override
     public Value evaluate(Context context) {
