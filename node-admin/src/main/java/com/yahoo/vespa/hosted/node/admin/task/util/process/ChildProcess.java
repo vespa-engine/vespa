@@ -15,6 +15,13 @@ public interface ChildProcess extends AutoCloseable {
     String getUtf8Output();
 
     /**
+     * Returns an UnexpectedOutputException that includes a snippet of the output in the message.
+     *
+     * @param problem Problem description, e.g. "Output is not of the form ^NAME=VALUE$"
+     */
+    UnexpectedOutputException newUnexpectedOutputException(String problem);
+
+    /**
      * Only call this if process was spawned under the assumption the program had no side
      * effects (see Command::spawnProgramWithoutSideEffects).  If it is determined later
      * that the program did in fact have side effects (modified system), this method can
