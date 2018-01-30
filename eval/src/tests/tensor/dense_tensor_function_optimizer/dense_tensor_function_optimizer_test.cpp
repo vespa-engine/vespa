@@ -26,16 +26,22 @@ optimizeDotProduct(const vespalib::string &lhsType,
     return DenseTensorFunctionOptimizer::optimize(reduceNode, stash);
 }
 
+void assertParam(const TensorFunction &node, size_t expect_idx) {
+    auto inject = as<Inject>(node);
+    ASSERT_TRUE(inject);
+    EXPECT_EQUAL(inject->param_idx(), expect_idx);
+}
+
 void
 assertOptimizedDotProduct(const vespalib::string &lhsType,
-                         const vespalib::string &rhsType)
+                          const vespalib::string &rhsType)
 {
     Stash stash;
     const TensorFunction &func = optimizeDotProduct(lhsType, rhsType, stash);
     const DenseDotProductFunction *dotProduct = as<DenseDotProductFunction>(func);
     ASSERT_TRUE(dotProduct);
-    EXPECT_EQUAL(1u, dotProduct->lhsTensorId());
-    EXPECT_EQUAL(3u, dotProduct->rhsTensorId());
+    TEST_DO(assertParam(dotProduct->lhs(), 1));
+    TEST_DO(assertParam(dotProduct->rhs(), 3));
 }
 
 void
@@ -79,10 +85,10 @@ assertOptimizedXWProduct(const vespalib::string &vecTypeStr,
     ASSERT_TRUE(xwProduct);
     ASSERT_TRUE(inv_xwProduct);
     ASSERT_TRUE(common_idx != ValueType::Dimension::npos);
-    EXPECT_EQUAL(xwProduct->vectorId(), 1u);
-    EXPECT_EQUAL(inv_xwProduct->vectorId(), 3u);
-    EXPECT_EQUAL(xwProduct->matrixId(), 3u);
-    EXPECT_EQUAL(inv_xwProduct->matrixId(), 1u);
+    TEST_DO(assertParam(xwProduct->lhs(), 1));
+    TEST_DO(assertParam(inv_xwProduct->lhs(), 3));
+    TEST_DO(assertParam(xwProduct->rhs(), 3));
+    TEST_DO(assertParam(inv_xwProduct->rhs(), 1));
     EXPECT_EQUAL(xwProduct->vectorSize(), vecType.dimensions()[0].size);
     EXPECT_EQUAL(inv_xwProduct->vectorSize(), vecType.dimensions()[0].size);
     EXPECT_EQUAL(xwProduct->resultSize(), matType.dimensions()[1 - common_idx].size);

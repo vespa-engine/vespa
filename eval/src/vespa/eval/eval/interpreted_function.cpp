@@ -56,14 +56,6 @@ InterpretedFunction::State::init(const LazyParams &params_in) {
     if_cnt = 0;
 }
 
-void
-InterpretedFunction::State::replace(size_t prune_cnt, const Value &value) {
-    for (size_t i = 0; i < prune_cnt; ++i) {
-        stack.pop_back();
-    }
-    stack.push_back(value);
-}
-
 InterpretedFunction::Context::Context(const InterpretedFunction &ifun)
     : _state(ifun._tensor_engine)
 {

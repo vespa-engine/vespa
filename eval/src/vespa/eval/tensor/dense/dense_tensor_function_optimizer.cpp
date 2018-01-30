@@ -48,7 +48,7 @@ bool isDenseXWProduct(const ValueType &res, const ValueType &vec, const ValueTyp
 
 const TensorFunction &createDenseXWProduct(const ValueType &res, const Inject &vec, const Inject &mat, Stash &stash) {
     bool common_is_inner = (mat.result_type().dimension_index(vec.result_type().dimensions()[0].name) == 1);
-    return stash.create<DenseXWProductFunction>(res, vec.param_idx(), mat.param_idx(),
+    return stash.create<DenseXWProductFunction>(res, vec, mat,
                                                 vec.result_type().dimensions()[0].size,
                                                 res.dimensions()[0].size,
                                                 common_is_inner);
@@ -66,7 +66,7 @@ struct InnerProductFunctionOptimizer
                 const Inject *rhs = as<Inject>(join->rhs());
                 if (lhs && rhs) {
                     if (isDenseDotProduct(result_type, lhs->result_type(), rhs->result_type())) {
-                        return stash.create<DenseDotProductFunction>(lhs->param_idx(), rhs->param_idx());
+                        return stash.create<DenseDotProductFunction>(*lhs, *rhs);
                     }
                     if (isDenseXWProduct(result_type, lhs->result_type(), rhs->result_type())) {
                         return createDenseXWProduct(result_type, *lhs, *rhs, stash);

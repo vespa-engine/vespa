@@ -10,19 +10,14 @@ namespace vespalib::tensor {
 /**
  * Tensor function for a dot product between two 1-dimensional dense tensors.
  */
-class DenseDotProductFunction : public eval::TensorFunction
+class DenseDotProductFunction : public eval::tensor_function::Op2
 {
 private:
-    size_t _lhsTensorId;
-    size_t _rhsTensorId;
     hwaccelrated::IAccelrated::UP _hwAccelerator;
 
 public:
-    DenseDotProductFunction(size_t lhsTensorId_, size_t rhsTensorId_);
-    size_t lhsTensorId() const { return _lhsTensorId; }
-    size_t rhsTensorId() const { return _rhsTensorId; }
-    const eval::ValueType &result_type() const override { return eval::DoubleValue::double_type(); }
-    void push_children(std::vector<Child::CREF> &) const override {}
+    DenseDotProductFunction(const eval::TensorFunction &lhs_in,
+                            const eval::TensorFunction &rhs_in);
     eval::InterpretedFunction::Instruction compile_self(Stash &stash) const override;
     const eval::Value &eval(const eval::TensorEngine &engine, const eval::LazyParams &params, Stash &stash) const override;
 };

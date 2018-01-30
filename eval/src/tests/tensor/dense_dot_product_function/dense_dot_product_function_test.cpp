@@ -73,8 +73,10 @@ public:
 
 struct Fixture
 {
-    DenseDotProductFunction function;
     FunctionInput input;
+    tensor_function::Inject a;
+    tensor_function::Inject b;
+    DenseDotProductFunction function;
     Fixture(size_t lhsNumCells, size_t rhsNumCells);
     ~Fixture();
     double eval() const {
@@ -90,8 +92,10 @@ struct Fixture
 };
 
 Fixture::Fixture(size_t lhsNumCells, size_t rhsNumCells)
-    : function(0, 1),
-      input(lhsNumCells, rhsNumCells)
+    : input(lhsNumCells, rhsNumCells),
+      a(input.param(0).type(), 0),
+      b(input.param(1).type(), 1),
+      function(a, b)
 { }
 
 Fixture::~Fixture() { }
