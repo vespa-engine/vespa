@@ -1,33 +1,31 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=cloud.config
 
+# Ports
 rpcport int default=19070
 httpport int default=19071
 numthreads int default=16
 
-# TODO: This seems to be only used by the the status API? If so this is unnecessary duplication and potentially lying: Remove
-zookeepercfg string default="conf/zookeeper/zookeeper.cfg"
-
+# ZooKeeper
 zookeeperserver[].hostname string
 zookeeperserver[].port int default=2181
-# in seconds
-zookeeper.barrierTimeout long default=120
+zookeeper.barrierTimeout long default=120 # in seconds
+zookeeperLocalhostAffinity bool default=true
+
+# Misc
 configModelPluginDir[] string
 configServerDBDir string default="var/db/vespa/config_server/serverdb/"
 configDefinitionsDir string default="share/vespa/configdefinitions/"
-maxgetconfigclients int default=1000000
-maxoutputbuffersize int default=65536
-# in seconds
-sessionLifetime long default=3600
-applicationDirectory string default="conf/configserver-app"
+sessionLifetime long default=3600 # in seconds
 masterGeneration long default=0
 multitenant bool default=false
 numDelayedResponseThreads int default=1
-payloadCompressionType enum { UNCOMPRESSED, LZ4 } default=LZ4
 serverId string default="localhost"
 hostedVespa bool default=false
 numParallelTenantLoaders int default=4
-zookeeperLocalhostAffinity bool default=true
+
+# Configserver app
+applicationDirectory string default="conf/configserver-app"
 
 # Zone information
 environment string default="prod"
@@ -38,7 +36,11 @@ defaultAdminFlavor string default="default"
 defaultContainerFlavor string default="default"
 defaultContentFlavor string default="default"
 
+# RPC protocol
+maxgetconfigclients int default=1000000
+maxoutputbuffersize int default=65536
 useVespaVersionInRequest bool default=false
+payloadCompressionType enum { UNCOMPRESSED, LZ4 } default=LZ4
 
 # Docker config
 dockerRegistry string default=""
