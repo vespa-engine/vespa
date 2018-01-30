@@ -23,7 +23,7 @@ struct CommunicationManagerTest : public CppUnit::TestFixture {
     void testSimple();
     void testDistPendingLimitConfigsArePropagatedToMessageBus();
     void testStorPendingLimitConfigsArePropagatedToMessageBus();
-    void testCommandsAreDequeuedInPriorityOrder();
+    void testCommandsAreDequeuedInFifoOrder();
     void testRepliesAreDequeuedInFifoOrder();
     void bucket_space_config_can_be_updated_live();
     void unmapped_bucket_space_documentapi_request_returns_error_reply();
@@ -47,7 +47,7 @@ struct CommunicationManagerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testSimple);
     CPPUNIT_TEST(testDistPendingLimitConfigsArePropagatedToMessageBus);
     CPPUNIT_TEST(testStorPendingLimitConfigsArePropagatedToMessageBus);
-    CPPUNIT_TEST(testCommandsAreDequeuedInPriorityOrder);
+    CPPUNIT_TEST(testCommandsAreDequeuedInFifoOrder);
     CPPUNIT_TEST(testRepliesAreDequeuedInFifoOrder);
     CPPUNIT_TEST(bucket_space_config_can_be_updated_live);
     CPPUNIT_TEST(unmapped_bucket_space_documentapi_request_returns_error_reply);
@@ -175,7 +175,7 @@ CommunicationManagerTest::testStorPendingLimitConfigsArePropagatedToMessageBus()
 }
 
 void
-CommunicationManagerTest::testCommandsAreDequeuedInPriorityOrder()
+CommunicationManagerTest::testCommandsAreDequeuedInFifoOrder()
 {
     mbus::Slobrok slobrok;
     vdstestlib::DirConfig storConfig(getStandardConfig(true));
@@ -190,8 +190,8 @@ CommunicationManagerTest::testCommandsAreDequeuedInPriorityOrder()
 
     // Message dequeing does not start before we invoke `open` on the storage
     // link chain, so we enqueue messages in randomized priority order before
-    // doing so. After starting the thread, we should then get messages down
-    // the chain in a deterministic, prioritized order.
+    // doing so. After starting the thread, we should get messages down
+    // the chain in a deterministic FIFO order and _not_ priority-order.
     // Lower number == higher priority.
     std::vector<api::StorageMessage::Priority> pris{200, 0, 255, 128};
     for (auto pri : pris) {
@@ -200,7 +200,6 @@ CommunicationManagerTest::testCommandsAreDequeuedInPriorityOrder()
     storage.open();
     storageLink->waitForMessages(pris.size(), MESSAGE_WAIT_TIME_SEC);
 
-    std::sort(pris.begin(), pris.end());
     for (size_t i = 0; i < pris.size(); ++i) {
         // Casting is just to avoid getting mismatched values printed to the
         // output verbatim as chars.

@@ -26,23 +26,16 @@ using vespalib::make_string;
 
 namespace storage {
 
-PriorityQueue::PriorityQueue() :
-    _queue(),
-    _queueMonitor(),
-    _msgCounter(0)
-{ }
+Queue::Queue() = default;
+Queue::~Queue() = default;
 
-PriorityQueue::~PriorityQueue()
-{ }
-
-bool PriorityQueue::getNext(std::shared_ptr<api::StorageMessage>& msg, int timeout)
-{
+bool Queue::getNext(std::shared_ptr<api::StorageMessage>& msg, int timeout) {
     vespalib::MonitorGuard sync(_queueMonitor);
     bool first = true;
     while (true) { // Max twice
         if (!_queue.empty()) {
             LOG(spam, "Picking message from queue");
-            msg = _queue.top().second;
+            msg = _queue.front();
             _queue.pop();
             return true;
         }
@@ -56,31 +49,18 @@ bool PriorityQueue::getNext(std::shared_ptr<api::StorageMessage>& msg, int timeo
     return false;
 }
 
-void
-PriorityQueue::enqueue(const std::shared_ptr<api::StorageMessage>& msg)
-{
+void Queue::enqueue(const std::shared_ptr<api::StorageMessage>& msg) {
     vespalib::MonitorGuard sync(_queueMonitor);
-    const uint8_t priority(msg->getType().isReply()
-            ? FIXED_REPLY_PRIORITY
-            : msg->getPriority());
-    Key key(priority, _msgCounter);
-    // We make a simplifying--though reasonable--assumption that we'll never
-    // process more than UINT64_MAX replies before process restart.
-    ++_msgCounter;
-    _queue.push(std::make_pair(key, msg));
+    _queue.emplace(msg);
     sync.unsafeSignalUnlock();
 }
 
-void
-PriorityQueue::signal()
-{
+void Queue::signal() {
     vespalib::MonitorGuard sync(_queueMonitor);
     sync.unsafeSignalUnlock();
 }
 
-int
-PriorityQueue::size()
-{
+size_t Queue::size() const {
     vespalib::MonitorGuard sync(_queueMonitor);
     return _queue.size();
 }

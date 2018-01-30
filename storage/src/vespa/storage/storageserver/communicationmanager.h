@@ -43,49 +43,15 @@ class VisitorThread;
 class FNetListener;
 class RPCRequestWrapper;
 
-class PriorityQueue {
+class Queue {
 private:
-    struct Key {
-        uint8_t priority {255};
-        uint64_t seqNum {0};
-
-        Key(uint8_t pri, uint64_t seq)
-            : priority(pri), seqNum(seq)
-        {
-        }
-    };
-    using ValueType = std::pair<Key, api::StorageMessage::SP>;
-
-    struct PriorityThenFifoCmp {
-        bool operator()(const ValueType& lhs,
-                        const ValueType& rhs) const noexcept
-        {
-            // priority_queue has largest element on top, so reverse order
-            // since our semantics have 0 as the highest priority.
-            if (lhs.first.priority != rhs.first.priority) {
-                return (lhs.first.priority > rhs.first.priority);
-            }
-            return (lhs.first.seqNum > rhs.first.seqNum);
-        }
-    };
-
-    using QueueType = std::priority_queue<
-            ValueType,
-            std::vector<ValueType>,
-            PriorityThenFifoCmp>;
-
-    // Sneakily chosen priority such that effectively only RPC commands are
-    // allowed in front of replies. Replies must have the same effective
-    // priority or they will get reordered and all hell breaks loose.
-    static constexpr uint8_t FIXED_REPLY_PRIORITY = 1;
-
+    using QueueType = std::queue<api::StorageMessage::SP>;
     QueueType _queue;
     vespalib::Monitor _queueMonitor;
-    uint64_t _msgCounter;
 
 public:
-    PriorityQueue();
-    virtual ~PriorityQueue();
+    Queue();
+    ~Queue();
 
     /**
      * Returns the next event from the event queue
@@ -97,17 +63,14 @@ public:
     bool getNext(std::shared_ptr<api::StorageMessage>& msg, int timeout);
 
     /**
-     * If `msg` is a StorageCommand, enqueues it using the priority stored in
-     * the command. If it's a reply, enqueues it using a fixed but very high
-     * priority that ensure replies are processed before commands but also
-     * ensures that replies are FIFO-ordered relative to each other.
+     * Enqueue msg in FIFO order.
      */
     void enqueue(const std::shared_ptr<api::StorageMessage>& msg);
 
     /** Signal queue monitor. */
     void signal();
 
-    int size();
+    size_t size() const;
 };
 
 class StorageTransportContext : public api::TransportContext {
@@ -137,7 +100,7 @@ private:
     CommunicationManagerMetrics _metrics;
 
     std::unique_ptr<FNetListener> _listener;
-    PriorityQueue _eventQueue;
+    Queue _eventQueue;
     // XXX: Should perhaps use a configsubscriber and poll from StorageComponent ?
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
     using EarlierProtocol = std::pair<framework::SecondTime, mbus::IProtocol::SP>;
