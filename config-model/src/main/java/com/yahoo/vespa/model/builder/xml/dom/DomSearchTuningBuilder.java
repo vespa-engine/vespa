@@ -220,6 +220,8 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
          for (Element e : XML.getChildren(spec)) {
             if (equals("maxsize", e)) {
                 c.maxSize = asLong(e);
+            } else if (equals("maxsize-percent", e)) {
+                c.maxSizePercent = asDouble(e);
             } else if (equals("maxentries", e)) {
                 parent.deployLogger().log(Level.WARNING, "Element 'maxentries is deprecated and ignored. Will only limit by size.");
             } else if (equals("initialentries", e)) {

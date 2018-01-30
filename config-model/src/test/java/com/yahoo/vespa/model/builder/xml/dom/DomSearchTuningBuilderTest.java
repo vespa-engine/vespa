@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.collections.CollectionUtil;
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.vespa.config.search.core.PartitionsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.text.StringUtilities;
@@ -176,6 +175,7 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "<store>",
                 "<cache>",
                 "<maxsize>128</maxsize>",
+                "<maxsize-percent>30.7</maxsize-percent>",
                 "<initialentries>64</initialentries>",
                 "<compression>",
                 "<type>none</type>",
@@ -199,6 +199,7 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertEquals(Tuning.SearchNode.IoType.DIRECTIO, t.searchNode.summary.io.write);
         assertEquals(Tuning.SearchNode.IoType.DIRECTIO, t.searchNode.summary.io.read);
         assertEquals(128, t.searchNode.summary.store.cache.maxSize.longValue());
+        assertEquals(30.7, t.searchNode.summary.store.cache.maxSizePercent.doubleValue(), DELTA);
         assertEquals(Tuning.SearchNode.Summary.Store.Compression.Type.NONE,
                 t.searchNode.summary.store.cache.compression.type);
         assertEquals(3, t.searchNode.summary.store.cache.compression.level.intValue());
@@ -222,6 +223,24 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertThat(cfg, containsString("summary.log.chunk.compression.type LZ4"));
         assertThat(cfg, containsString("summary.log.chunk.compression.level 5"));
     }
+
+    @Test
+    public void requireThatWeCanGiveSummaryCacheSizeInPercentage() {
+        Tuning t = createTuning(parseXml("<summary>",
+                "<store>",
+                "<cache>",
+                "<maxsize-percent>30.7</maxsize-percent>",
+                "</cache>",
+                "</store>",
+                "</summary>"));
+
+        assertNull(t.searchNode.summary.store.cache.maxSize);
+        assertEquals(30.7, t.searchNode.summary.store.cache.maxSizePercent.doubleValue(),DELTA);
+
+        String cfg = getProtonCfg(t);
+        assertThat(cfg, containsString("summary.cache.maxbytes -30"));
+    }
+
 
     @Test
     public void requireThatWeCanParseInitializeTag() {

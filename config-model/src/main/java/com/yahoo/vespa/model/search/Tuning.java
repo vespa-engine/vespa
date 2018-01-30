@@ -243,6 +243,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
 
                 public static class Component {
                     public Long maxSize = null;
+                    public Double maxSizePercent = null;
                     public Long initialEntries = null;
                     public Compression compression = null;
                     private final boolean outputInt;
@@ -257,9 +258,11 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
 
                     public void getConfig(ProtonConfig.Summary.Cache.Builder cache) {
                         if (outputInt) {
+                            if (maxSizePercent !=null) cache.maxbytes(-maxSizePercent.longValue());
                             if (maxSize!=null) cache.maxbytes(maxSize.intValue());
                             if (initialEntries!=null) cache.initialentries(initialEntries.intValue());
                         } else {
+                            if (maxSizePercent !=null) cache.maxbytes(-maxSizePercent.longValue());
                             if (maxSize!=null) cache.maxbytes(maxSize);
                             if (initialEntries!=null) cache.initialentries(initialEntries);
                         }
