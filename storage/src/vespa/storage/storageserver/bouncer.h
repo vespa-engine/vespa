@@ -57,8 +57,8 @@ private:
     void abortCommandForUnavailableNode(api::StorageMessage&,
                                         const lib::State&);
 
-    void abortCommandWithTooHighClockSkew(api::StorageMessage& msg,
-                                          int maxClockSkewInSeconds);
+    void rejectCommandWithTooHighClockSkew(api::StorageMessage& msg,
+                                           int maxClockSkewInSeconds);
 
     void abortCommandDueToClusterDown(api::StorageMessage&);
 

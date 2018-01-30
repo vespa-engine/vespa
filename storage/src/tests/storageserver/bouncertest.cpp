@@ -131,7 +131,7 @@ BouncerTest::testFutureTimestamp()
 
         CPPUNIT_ASSERT_EQUAL(1, (int)_upper->getNumReplies());
         CPPUNIT_ASSERT_EQUAL(0, (int)_upper->getNumCommands());
-        CPPUNIT_ASSERT_EQUAL(api::ReturnCode::ABORTED,
+        CPPUNIT_ASSERT_EQUAL(api::ReturnCode::REJECTED,
                              static_cast<api::RemoveReply&>(*_upper->getReply(0)).
                              getResult().getResult());
         _upper->reset();

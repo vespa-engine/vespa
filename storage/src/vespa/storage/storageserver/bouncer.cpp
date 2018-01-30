@@ -113,19 +113,19 @@ Bouncer::abortCommandForUnavailableNode(api::StorageMessage& msg,
 }
 
 void
-Bouncer::abortCommandWithTooHighClockSkew(api::StorageMessage& msg,
+Bouncer::rejectCommandWithTooHighClockSkew(api::StorageMessage& msg,
                                           int maxClockSkewInSeconds)
 {
     auto& as_cmd = dynamic_cast<api::StorageCommand&>(msg);
     std::ostringstream ost;
     ost << "Message " << msg.getType() << " is more than "
         << maxClockSkewInSeconds << " seconds in the future.";
-    LOGBP(warning, "Aborting operation from distributor %u: %s",
+    LOGBP(warning, "Rejecting operation from distributor %u: %s",
           as_cmd.getSourceIndex(), ost.str().c_str());
     _metrics->clock_skew_aborts.inc();
 
     std::shared_ptr<api::StorageReply> reply(as_cmd.makeReply().release());
-    reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, ost.str()));
+    reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED, ost.str()));
     sendUp(reply);
 }
 
@@ -271,7 +271,7 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
         timestamp /= 1000000;
         uint64_t currentTime = _component.getClock().getTimeInSeconds().getTime();
         if (timestamp > currentTime + maxClockSkewInSeconds) {
-            abortCommandWithTooHighClockSkew(*msg, maxClockSkewInSeconds);
+            rejectCommandWithTooHighClockSkew(*msg, maxClockSkewInSeconds);
             return true;
         }
     }
