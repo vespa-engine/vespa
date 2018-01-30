@@ -144,9 +144,11 @@ public class ContentSearchClusterTest {
     }
 
     @Test
-    public void require_that_bucket_spaces_config_is_produced_for_content_cluster() throws Exception {
+    public void require_that_all_document_types_belong_to_default_bucket_space_by_default() throws Exception {
         BucketspacesConfig config = getBucketspacesConfig(createClusterWithGlobalType());
-        assertBucketspacesConfigWithTwoDocumentTypes(config);
+        assertEquals(2, config.documenttype().size());
+        assertDocumentType("global", "default", config.documenttype(0));
+        assertDocumentType("regular", "default", config.documenttype(1));
         // Safeguard against flipping the switch
         assertFalse(config.enable_multiple_bucket_spaces());
     }
@@ -154,14 +156,10 @@ public class ContentSearchClusterTest {
     @Test
     public void require_that_multiple_bucket_spaces_can_be_enabled() throws Exception {
         BucketspacesConfig config = getBucketspacesConfig(createClusterWithMultipleBucketSpacesEnabled());
-        assertBucketspacesConfigWithTwoDocumentTypes(config);
-        assertTrue(config.enable_multiple_bucket_spaces());
-    }
-
-    private static void assertBucketspacesConfigWithTwoDocumentTypes(BucketspacesConfig config) {
         assertEquals(2, config.documenttype().size());
         assertDocumentType("global", "global", config.documenttype(0));
         assertDocumentType("regular", "default", config.documenttype(1));
+        assertTrue(config.enable_multiple_bucket_spaces());
     }
 
 }

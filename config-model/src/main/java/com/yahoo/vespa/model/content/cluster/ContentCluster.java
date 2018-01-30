@@ -722,7 +722,8 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         for (NewDocumentType docType : getDocumentDefinitions().values()) {
             BucketspacesConfig.Documenttype.Builder docTypeBuilder = new BucketspacesConfig.Documenttype.Builder();
             docTypeBuilder.name(docType.getName());
-            String bucketSpace = (isGloballyDistributed(docType) ? GLOBAL_BUCKET_SPACE : DEFAULT_BUCKET_SPACE);
+            String bucketSpace = ((enableMultipleBucketSpaces && isGloballyDistributed(docType))
+                    ? GLOBAL_BUCKET_SPACE : DEFAULT_BUCKET_SPACE);
             docTypeBuilder.bucketspace(bucketSpace);
             builder.documenttype(docTypeBuilder);
         }
