@@ -15,7 +15,8 @@ public class JSONLogTestCase extends junit.framework.TestCase {
 
     private AccessLogEntry newAccessLogEntry(final String query) {
         final AccessLogEntry entry = new AccessLogEntry();
-        entry.setURI(newQueryUri(query));
+        entry.setRawQuery("query="+query);
+        entry.setRawPath("");
         entry.setIpV4Address(ipAddress);
         entry.setHttpMethod("GET");
         entry.setHttpVersion("HTTP/1.1");
@@ -156,7 +157,8 @@ public class JSONLogTestCase extends junit.framework.TestCase {
 
     public void test_useragent_with_quotes() throws Exception {
         final AccessLogEntry entry = new AccessLogEntry();
-        entry.setURI(newQueryUri("test"));
+        entry.setRawQuery("query=test");
+        entry.setRawPath("");
         entry.setIpV4Address(ipAddress);
         entry.setHttpMethod("GET");
         entry.setHttpVersion("HTTP/1.1");

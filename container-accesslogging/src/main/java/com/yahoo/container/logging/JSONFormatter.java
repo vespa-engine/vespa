@@ -10,7 +10,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.URI;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +52,7 @@ public class JSONFormatter {
             generator.writeNumberField("responsesize", accessLogEntry.getReturnedContentSize());
             generator.writeNumberField("code", accessLogEntry.getStatusCode());
             generator.writeStringField("method", accessLogEntry.getHttpMethod());
-            generator.writeStringField("uri", getNormalizedURI(accessLogEntry.getURI()));
+            generator.writeStringField("uri", getNormalizedURI(accessLogEntry.getRawPath(), accessLogEntry.getRawQuery().orElse(null)));
             generator.writeStringField("version", accessLogEntry.getHttpVersion());
             generator.writeStringField("agent", accessLogEntry.getUserAgent());
             generator.writeStringField("host", accessLogEntry.getHostString());
@@ -179,14 +178,8 @@ public class JSONFormatter {
         return duration.setScale(3, BigDecimal.ROUND_HALF_UP);
     }
 
-    private String getNormalizedURI(URI uri) {
-        URI normalizedURI = uri.normalize();
-        String uriString = normalizedURI.getPath();
-        if (normalizedURI.getRawQuery() != null) {
-            uriString = uriString + "?" + normalizedURI.getRawQuery();
-        }
-
-        return uriString;
+    private static String getNormalizedURI(String rawPath, String rawQuery) {
+        return rawQuery != null ? rawPath + "?" + rawQuery : rawPath;
     }
 
 }
