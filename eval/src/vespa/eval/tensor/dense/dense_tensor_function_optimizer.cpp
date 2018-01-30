@@ -66,7 +66,7 @@ struct InnerProductFunctionOptimizer
                 const Inject *rhs = as<Inject>(join->rhs());
                 if (lhs && rhs) {
                     if (isDenseDotProduct(result_type, lhs->result_type(), rhs->result_type())) {
-                        return stash.create<DenseDotProductFunction>(lhs->param_idx(), rhs->param_idx());
+                        return stash.create<DenseDotProductFunction>(*lhs, *rhs);
                     }
                     if (isDenseXWProduct(result_type, lhs->result_type(), rhs->result_type())) {
                         return createDenseXWProduct(result_type, *lhs, *rhs, stash);

@@ -193,7 +193,7 @@ struct InnerProduct {
           types(function, {ValueType::from_spec(a.type()), ValueType::from_spec(b.type())}),
           interpreted(engine, function, types) {}
     void verify_optimized() const {
-        EXPECT_EQUAL(1u, interpreted.program_size());
+        EXPECT_LESS(interpreted.program_size(), 4u);
         InterpretedFunction::Context ctx(interpreted);
         Value::UP va = engine.from_spec(a);
         Value::UP vb = engine.from_spec(b);

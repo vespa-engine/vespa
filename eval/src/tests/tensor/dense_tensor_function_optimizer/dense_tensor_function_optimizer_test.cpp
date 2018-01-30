@@ -26,16 +26,22 @@ optimizeDotProduct(const vespalib::string &lhsType,
     return DenseTensorFunctionOptimizer::optimize(reduceNode, stash);
 }
 
+void assertParam(const TensorFunction &node, size_t expect_idx) {
+    auto inject = as<Inject>(node);
+    ASSERT_TRUE(inject);
+    EXPECT_EQUAL(inject->param_idx(), expect_idx);
+}
+
 void
 assertOptimizedDotProduct(const vespalib::string &lhsType,
-                         const vespalib::string &rhsType)
+                          const vespalib::string &rhsType)
 {
     Stash stash;
     const TensorFunction &func = optimizeDotProduct(lhsType, rhsType, stash);
     const DenseDotProductFunction *dotProduct = as<DenseDotProductFunction>(func);
     ASSERT_TRUE(dotProduct);
-    EXPECT_EQUAL(1u, dotProduct->lhsTensorId());
-    EXPECT_EQUAL(3u, dotProduct->rhsTensorId());
+    TEST_DO(assertParam(dotProduct->lhs(), 1));
+    TEST_DO(assertParam(dotProduct->rhs(), 3));
 }
 
 void
