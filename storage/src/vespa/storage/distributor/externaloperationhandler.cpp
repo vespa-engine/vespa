@@ -105,12 +105,15 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(
 std::shared_ptr<api::StorageMessage>
 ExternalOperationHandler::makeConcurrentMutationRejectionReply(
         api::StorageCommand& cmd,
-        const document::DocumentId& docId) const {
+        const document::DocumentId& docId,
+        PersistenceOperationMetricSet& persistenceMetrics) const {
+    auto err_msg = vespalib::make_string(
+            "A mutating operation for document '%s' is already in progress",
+            docId.toString().c_str());
+    LOG(debug, "Aborting incoming %s operation: %s", cmd.getType().toString().c_str(), err_msg.c_str());
+    persistenceMetrics.failures.concurrent_mutations++;
     api::StorageReply::UP reply(cmd.makeReply());
-    reply->setResult(api::ReturnCode(
-            api::ReturnCode::BUSY, vespalib::make_string(
-                    "A mutating operation for document '%s' is already in progress",
-                    docId.toString().c_str())));
+    reply->setResult(api::ReturnCode(api::ReturnCode::BUSY, err_msg));
     return std::shared_ptr<api::StorageMessage>(reply.release());
 }
 
@@ -125,10 +128,8 @@ bool ExternalOperationHandler::allowMutation(const SequencingHandle& handle) con
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
 {
-    if (!checkTimestampMutationPreconditions(
-            *cmd, getBucketId(cmd->getDocumentId()),
-            getMetrics().puts[cmd->getLoadType()]))
-    {
+    auto& metrics = getMetrics().puts[cmd->getLoadType()];
+    if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
         return true;
     }
 
@@ -142,7 +143,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
                                              _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
                                              cmd, getMetrics().puts[cmd->getLoadType()], std::move(handle));
     } else {
-        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId()));
+        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
 
     return true;
@@ -151,10 +152,8 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
 {
-    if (!checkTimestampMutationPreconditions(
-            *cmd, getBucketId(cmd->getDocumentId()),
-            getMetrics().updates[cmd->getLoadType()]))
-    {
+    auto& metrics = getMetrics().updates[cmd->getLoadType()];
+    if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
         return true;
     }
 
@@ -167,7 +166,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
                                                         _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
                                                         cmd, getMetrics(), std::move(handle));
     } else {
-        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId()));
+        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
 
     return true;
@@ -176,10 +175,8 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Remove)
 {
-    if (!checkTimestampMutationPreconditions(
-            *cmd, getBucketId(cmd->getDocumentId()),
-            getMetrics().removes[cmd->getLoadType()]))
-    {
+    auto& metrics = getMetrics().removes[cmd->getLoadType()];
+    if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
         return true;
     }
 
@@ -196,7 +193,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Remove)
                 getMetrics().removes[cmd->getLoadType()],
                 std::move(handle));
     } else {
-        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId()));
+        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
 
     return true;

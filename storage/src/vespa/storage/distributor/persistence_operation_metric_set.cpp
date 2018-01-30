@@ -26,7 +26,9 @@ PersistenceFailuresMetricSet::PersistenceFailuresMetricSet(MetricSet* owner)
       inconsistent_bucket("inconsistent_bucket", "",
                           "The number of operations failed due to buckets "
                           "being in an inconsistent state or not found", this),
-      notfound("notfound", "", "The number of operations that failed because the document did not exist", this)
+      notfound("notfound", "", "The number of operations that failed because the document did not exist", this),
+      concurrent_mutations("concurrent_mutations", "", "The number of operations that were transiently failed due "
+                           "to a mutating operation already being in progress for its document ID", this)
 {
     sum.addMetricToSum(notready);
     sum.addMetricToSum(notconnected);
@@ -38,7 +40,8 @@ PersistenceFailuresMetricSet::PersistenceFailuresMetricSet(MetricSet* owner)
     sum.addMetricToSum(inconsistent_bucket);
     sum.addMetricToSum(notfound);
 }
-PersistenceFailuresMetricSet::~PersistenceFailuresMetricSet() { }
+
+PersistenceFailuresMetricSet::~PersistenceFailuresMetricSet() = default;
 
 MetricSet *
 PersistenceFailuresMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,

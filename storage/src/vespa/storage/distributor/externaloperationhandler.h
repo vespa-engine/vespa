@@ -64,7 +64,8 @@ private:
             PersistenceOperationMetricSet& persistenceMetrics);
     std::shared_ptr<api::StorageMessage> makeConcurrentMutationRejectionReply(
             api::StorageCommand& cmd,
-            const document::DocumentId& docId) const;
+            const document::DocumentId& docId,
+            PersistenceOperationMetricSet& persistenceMetrics) const;
     bool allowMutation(const SequencingHandle& handle) const;
 
     DistributorMetricSet& getMetrics() { return getDistributor().getMetrics(); }
