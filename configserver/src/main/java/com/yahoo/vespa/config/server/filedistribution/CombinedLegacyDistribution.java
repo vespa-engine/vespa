@@ -69,5 +69,6 @@ public class CombinedLegacyDistribution implements FileDistribution {
         if (request.isError() && request.errorCode() != ErrorCode.CONNECTION) {
             log.log(LogLevel.INFO, request.methodName() + " failed: " + request.errorCode() + " (" + request.errorMessage() + ")");
         }
+        target.close();
     }
 }
