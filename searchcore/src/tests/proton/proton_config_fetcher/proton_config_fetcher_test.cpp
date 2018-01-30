@@ -367,9 +367,14 @@ TEST_FF("require that docstore config computes cachesize automatically if unset"
     f1.protonBuilder.summary.cache.maxbytes = 2000;
     auto config = getDocumentDBConfig(f1, f2, hwInfo);
     EXPECT_EQUAL(2000ul, config->getStoreConfig().getMaxCacheBytes());
-    f1.protonBuilder.summary.cache.maxbytes = -1;
+
+    f1.protonBuilder.summary.cache.maxbytes = -7;
     config = getDocumentDBConfig(f1, f2, hwInfo);
-    EXPECT_EQUAL(50000ul, config->getStoreConfig().getMaxCacheBytes());
+    EXPECT_EQUAL(70000ul, config->getStoreConfig().getMaxCacheBytes());
+
+    f1.protonBuilder.summary.cache.maxbytes = -700;
+    config = getDocumentDBConfig(f1, f2, hwInfo);
+    EXPECT_EQUAL(500000ul, config->getStoreConfig().getMaxCacheBytes());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

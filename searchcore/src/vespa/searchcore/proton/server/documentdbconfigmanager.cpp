@@ -160,7 +160,9 @@ deriveCompression(const T & config) {
 DocumentStore::Config
 getStoreConfig(const ProtonConfig::Summary::Cache & cache, const HwInfo & hwInfo)
 {
-    size_t maxBytes = (cache.maxbytes < 0) ? hwInfo.memory().sizeBytes()*0.05 : cache.maxbytes;
+    size_t maxBytes = (cache.maxbytes < 0)
+                      ? (hwInfo.memory().sizeBytes()*std::min(50l, -cache.maxbytes))/100l
+                      : cache.maxbytes;
     return DocumentStore::Config(deriveCompression(cache.compression), maxBytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
 }
 

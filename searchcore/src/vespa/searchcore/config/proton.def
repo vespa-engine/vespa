@@ -210,7 +210,9 @@ grow.numdocs int default=10000 restart
 grow.multivalueallocfactor double default=0.2 restart
 
 ## Control cache size in bytes.
-summary.cache.maxbytes long default=0
+## Postive numbers are absolute in bytes.
+## Negative numbers are a percentage of memory.
+summary.cache.maxbytes long default=-5
 
 ## Include visits in the cache, if the visitoperation allows it.
 ## This will enable another separate cache of summary.cache.maxbytes size.
