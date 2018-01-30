@@ -65,7 +65,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
 
     // public for testing
     public void purgeOldSessions() {
-        log.log(LogLevel.INFO, "Purging old sessions"); // TODO: Use debug level after 2018-01-29
+        log.log(LogLevel.DEBUG, "Purging old sessions");
         try {
             List<LocalSession> sessions = new ArrayList<>(listSessions());
             for (LocalSession candidate : sessions) {
@@ -77,7 +77,7 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         } catch (Throwable e) {
             log.log(LogLevel.WARNING, "Error when purging old sessions ", e);
         }
-        log.log(LogLevel.INFO, "Done purging old sessions"); // TODO: Use debug level after 2018-01-29
+        log.log(LogLevel.DEBUG, "Done purging old sessions");
     }
 
     private boolean hasExpired(LocalSession candidate) {
