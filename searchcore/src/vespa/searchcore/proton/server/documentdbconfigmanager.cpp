@@ -2,6 +2,8 @@
 
 #include "documentdbconfigmanager.h"
 #include "bootstrapconfig.h"
+#include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summarymap.h>
@@ -10,7 +12,6 @@
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/vespalib/time/time_box.h>
 
 #include <vespa/log/log.h>
@@ -157,14 +158,15 @@ deriveCompression(const T & config) {
 }
 
 DocumentStore::Config
-getStoreConfig(const ProtonConfig::Summary::Cache & cache)
+getStoreConfig(const ProtonConfig::Summary::Cache & cache, const HwInfo & hwInfo)
 {
-    return DocumentStore::Config(deriveCompression(cache.compression), cache.maxbytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
+    size_t maxBytes = (cache.maxbytes < 0) ? hwInfo.memory().sizeBytes()*0.05 : cache.maxbytes;
+    return DocumentStore::Config(deriveCompression(cache.compression), maxBytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
 }
 
 LogDocumentStore::Config
-deriveConfig(const ProtonConfig::Summary & summary, const ProtonConfig::Flush::Memory & flush) {
-    DocumentStore::Config config(getStoreConfig(summary.cache));
+deriveConfig(const ProtonConfig::Summary & summary, const ProtonConfig::Flush::Memory & flush, const HwInfo & hwInfo) {
+    DocumentStore::Config config(getStoreConfig(summary.cache, hwInfo));
     const ProtonConfig::Summary::Log & log(summary.log);
     const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
     WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes);
@@ -177,8 +179,8 @@ deriveConfig(const ProtonConfig::Summary & summary, const ProtonConfig::Flush::M
     return LogDocumentStore::Config(config, logConfig);
 }
 
-search::LogDocumentStore::Config buildStoreConfig(const ProtonConfig & proton) {
-    return deriveConfig(proton.summary, proton.flush.memory);
+search::LogDocumentStore::Config buildStoreConfig(const ProtonConfig & proton, const HwInfo & hwInfo) {
+    return deriveConfig(proton.summary, proton.flush.memory, hwInfo);
 }
 
 using AttributesConfigSP = DocumentDBConfig::AttributesConfigSP;
@@ -201,7 +203,7 @@ filterImportedAttributes(const AttributesConfigSP &attrCfg)
 }
 
 void
-DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
+DocumentDBConfigManager::update(const ConfigSnapshot &snapshot, const HwInfo & hwInfo)
 {
     using RankProfilesConfigSP = DocumentDBConfig::RankProfilesConfigSP;
     using RankingConstantsConfigSP = std::shared_ptr<vespa::config::search::core::RankingConstantsConfig>;
@@ -313,7 +315,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
 
     Schema::SP schema(buildSchema(*newAttributesConfig, *newSummaryConfig, *newIndexschemaConfig));
     newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig, _docTypeName);
-    search::LogDocumentStore::Config storeConfig = buildStoreConfig(_bootstrapConfig->getProtonConfig());
+    search::LogDocumentStore::Config storeConfig = buildStoreConfig(_bootstrapConfig->getProtonConfig(), hwInfo);
     if (newMaintenanceConfig && oldMaintenanceConfig && *newMaintenanceConfig == *oldMaintenanceConfig) {
         newMaintenanceConfig = oldMaintenanceConfig;
     }
@@ -375,7 +377,8 @@ forwardConfig(const BootstrapConfig::SP & config)
 }
 
 DocumentDBConfigHelper::DocumentDBConfigHelper(const DirSpec &spec, const vespalib::string &docTypeName)
-    : _mgr("", docTypeName),
+    : _hwInfo(std::make_unique<HwInfo>()),
+      _mgr("", docTypeName),
       _retriever(make_unique<ConfigRetriever>(_mgr.createConfigKeySet(), make_shared<ConfigContext>(spec)))
 { }
 
@@ -387,7 +390,7 @@ DocumentDBConfigHelper::nextGeneration(int timeoutInMillis)
     ConfigSnapshot snapshot(_retriever->getBootstrapConfigs(timeoutInMillis));
     if (snapshot.empty())
         return false;
-    _mgr.update(snapshot);
+    _mgr.update(snapshot, *_hwInfo);
     return true;
 }
 

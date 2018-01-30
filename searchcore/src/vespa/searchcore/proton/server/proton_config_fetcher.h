@@ -17,6 +17,7 @@ namespace proton {
 
 class BootstrapConfig;
 class IProtonConfigurer;
+class HwInfo;
 
 /**
  * A ProtonConfigFetcher monitors all config in proton and document dbs for change
@@ -27,7 +28,7 @@ class ProtonConfigFetcher : public FastOS_Runnable
 public:
     using BootstrapConfigSP = std::shared_ptr<BootstrapConfig>;
 
-    ProtonConfigFetcher(const config::ConfigUri & configUri, IProtonConfigurer &owner, uint64_t subscribeTimeout);
+    ProtonConfigFetcher(const config::ConfigUri & configUri, const HwInfo & hwInfo,IProtonConfigurer &owner, uint64_t subscribeTimeout);
     ~ProtonConfigFetcher();
     /**
      * Get the current config generation.
@@ -52,9 +53,10 @@ private:
     using TimePoint = std::chrono::time_point<Clock>;
     using OldDocumentTypeRepo = std::pair<TimePoint, std::shared_ptr<document::DocumentTypeRepo>>;
 
-    BootstrapConfigManager _bootstrapConfigManager;
+    BootstrapConfigManager  _bootstrapConfigManager;
     config::ConfigRetriever _retriever;
-    IProtonConfigurer & _owner;
+    IProtonConfigurer     & _owner;
+    const HwInfo          & _hwInfo;
 
     mutable std::mutex _mutex; // Protects maps
     using lock_guard = std::lock_guard<std::mutex>;

@@ -17,10 +17,11 @@ using namespace std::chrono_literals;
 
 namespace proton {
 
-ProtonConfigFetcher::ProtonConfigFetcher(const config::ConfigUri & configUri, IProtonConfigurer &owner, uint64_t subscribeTimeout)
+ProtonConfigFetcher::ProtonConfigFetcher(const config::ConfigUri & configUri, const HwInfo &hwInfo, IProtonConfigurer &owner, uint64_t subscribeTimeout)
     : _bootstrapConfigManager(configUri.getConfigId()),
       _retriever(_bootstrapConfigManager.createConfigKeySet(), configUri.getContext(), subscribeTimeout),
       _owner(owner),
+      _hwInfo(hwInfo),
       _mutex(),
       _dbManagerMap(),
       _threadPool(128 * 1024, 1),
@@ -81,7 +82,7 @@ ProtonConfigFetcher::updateDocumentDBConfigs(const BootstrapConfig::SP & bootstr
     lock_guard guard(_mutex);
     for (auto & entry : _dbManagerMap) {
         entry.second->forwardConfig(bootstrapConfig);
-        entry.second->update(snapshot);
+        entry.second->update(snapshot, _hwInfo);
     }
 }
 

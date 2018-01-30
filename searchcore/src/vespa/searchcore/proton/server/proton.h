@@ -110,6 +110,7 @@ private:
     TransportServer::UP             _fs4Server;
     vespalib::ThreadStackExecutor   _executor;
     ProtonConfigurer                _protonConfigurer;
+    HwInfo                          _hwInfo;
     ProtonConfigFetcher             _protonConfigFetcher;
     std::unique_ptr<vespalib::ThreadStackExecutorBase> _warmupExecutor;
     std::unique_ptr<vespalib::ThreadStackExecutorBase> _summaryExecutor;
@@ -124,7 +125,6 @@ private:
     bool                            _initStarted;
     bool                            _initComplete;
     bool                            _initDocumentDbsInSequence;
-    HwInfo                          _hwInfo;
     std::unique_ptr<HwInfoSampler>  _hwInfoSampler;
     std::shared_ptr<IDocumentDBReferenceRegistry> _documentDBReferenceRegistry;
 

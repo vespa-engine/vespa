@@ -188,7 +188,8 @@ Proton::Proton(const config::ConfigUri & configUri,
       // serializing startup.
       _executor(1, 128 * 1024),
       _protonConfigurer(_executor, *this),
-      _protonConfigFetcher(configUri, _protonConfigurer, subscribeTimeout),
+      _hwInfo(),
+      _protonConfigFetcher(configUri, _hwInfo, _protonConfigurer, subscribeTimeout),
       _warmupExecutor(),
       _summaryExecutor(),
       _queryLimiter(),
@@ -202,7 +203,6 @@ Proton::Proton(const config::ConfigUri & configUri,
       _initStarted(false),
       _initComplete(false),
       _initDocumentDbsInSequence(false),
-      _hwInfo(),
       _hwInfoSampler(),
       _documentDBReferenceRegistry()
 {

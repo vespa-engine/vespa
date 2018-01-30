@@ -10,6 +10,8 @@
 namespace proton {
 
 class BootstrapConfig;
+class HwInfo;
+
 /**
  * This class manages the subscription for documentdb configs.
  */
@@ -35,7 +37,7 @@ private:
 public:
     DocumentDBConfigManager(const vespalib::string &configId, const vespalib::string &docTypeName);
     ~DocumentDBConfigManager();
-    void update(const config::ConfigSnapshot & snapshot);
+    void update(const config::ConfigSnapshot & snapshot, const HwInfo & hwInfo);
 
     DocumentDBConfig::SP getConfig() const;
 
@@ -57,6 +59,7 @@ public:
     DocumentDBConfig::SP getConfig() const;
     void forwardConfig(const std::shared_ptr<BootstrapConfig> & config);
 private:
+    std::unique_ptr<HwInfo> _hwInfo;
     DocumentDBConfigManager _mgr;
     std::unique_ptr<config::ConfigRetriever> _retriever;
 };

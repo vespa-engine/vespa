@@ -14,12 +14,12 @@
 #include <vespa/searchcore/proton/server/proton_config_fetcher.h>
 #include <vespa/searchcore/proton/server/proton_config_snapshot.h>
 #include <vespa/searchcore/proton/server/i_proton_configurer.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/config-bucketspaces.h>
-#include <mutex>
 
 using namespace config;
 using namespace proton;
@@ -60,6 +60,7 @@ struct ConfigTestFixture {
     ConfigSet set;
     IConfigContext::SP context;
     int idcounter;
+    HwInfo hwInfo;
 
     ConfigTestFixture(const std::string & id)
         : configId(id),
@@ -232,12 +233,18 @@ TEST_FFF("require that bootstrap config manager updates config", ConfigTestFixtu
 }
 
 DocumentDBConfig::SP
-getDocumentDBConfig(ConfigTestFixture &f, DocumentDBConfigManager &mgr)
+getDocumentDBConfig(ConfigTestFixture &f, DocumentDBConfigManager &mgr, const HwInfo & hwInfo)
 {
     ConfigRetriever retriever(mgr.createConfigKeySet(), f.context);
     mgr.forwardConfig(f.getBootstrapConfig(1));
-    mgr.update(retriever.getBootstrapConfigs()); // Cheating, but we only need the configs
+    mgr.update(retriever.getBootstrapConfigs(), hwInfo); // Cheating, but we only need the configs
     return mgr.getConfig();
+}
+
+DocumentDBConfig::SP
+getDocumentDBConfig(ConfigTestFixture &f, DocumentDBConfigManager &mgr)
+{
+    return getDocumentDBConfig(f, mgr, HwInfo());
 }
 
 TEST_FF("require that documentdb config manager subscribes for config",
@@ -274,7 +281,7 @@ TEST_FF("require that documentdb config manager builds schema with imported attr
 TEST_FFF("require that proton config fetcher follows changes to bootstrap",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f1.hwInfo, f2, 60000)) {
     f3.start();
     ASSERT_TRUE(f2._configured);
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
@@ -289,7 +296,7 @@ TEST_FFF("require that proton config fetcher follows changes to bootstrap",
 TEST_FFF("require that proton config fetcher follows changes to doctypes",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f1.hwInfo, f2, 60000)) {
     f3.start();
 
     f2._configured = false;
@@ -309,7 +316,7 @@ TEST_FFF("require that proton config fetcher follows changes to doctypes",
 TEST_FFF("require that proton config fetcher reconfigures dbowners",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f1.hwInfo, f2, 60000)) {
     f3.start();
     ASSERT_FALSE(f2.getDocumentDBConfig("typea"));
 
@@ -349,6 +356,20 @@ TEST_FF("require that prune removed documents interval can be set based on age",
     f1.addDocType("test");
     auto config = getDocumentDBConfig(f1, f2);
     EXPECT_EQUAL(20, config->getMaintenanceConfigSP()->getPruneRemovedDocumentsConfig().getInterval());
+}
+
+TEST_FF("require that docstore config computes cachesize automatically if unset",
+        ConfigTestFixture("test"),
+        DocumentDBConfigManager(f1.configId + "/test", "test"))
+{
+    HwInfo hwInfo(HwInfo::Disk(1, false, false), HwInfo::Memory(1000000), HwInfo::Cpu(1));
+    f1.addDocType("test");
+    f1.protonBuilder.summary.cache.maxbytes = 2000;
+    auto config = getDocumentDBConfig(f1, f2, hwInfo);
+    EXPECT_EQUAL(2000ul, config->getStoreConfig().getMaxCacheBytes());
+    f1.protonBuilder.summary.cache.maxbytes = -1;
+    config = getDocumentDBConfig(f1, f2, hwInfo);
+    EXPECT_EQUAL(50000ul, config->getStoreConfig().getMaxCacheBytes());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -46,8 +46,7 @@ public:
                     const ProtonConfigSP &protonConfig,
                     const FiledistributorrpcConfigSP &filedistRpcConfSP,
                     const BucketspacesConfigSP &bucketspaces,
-                    const search::TuneFileDocumentDB::SP &
-                    _tuneFileDocumentDB);
+                    const search::TuneFileDocumentDB::SP &_tuneFileDocumentDB);
     ~BootstrapConfig();
 
     const document::DocumenttypesConfig &
