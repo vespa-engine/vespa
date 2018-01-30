@@ -21,7 +21,7 @@ CyclicBucketSpaceIterator(const ContentBucketSpaceRepo::BucketSpaces &bucketSpac
 }
 
 ModifiedBucketChecker::BucketIdListResult::BucketIdListResult()
-    : _bucketSpace(document::BucketSpace::placeHolder()),
+    : _bucketSpace(document::BucketSpace::invalid()),
       _buckets()
 {
 }

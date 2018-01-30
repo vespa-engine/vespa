@@ -9,12 +9,11 @@
 #include <vespa/storage/storageutil/log.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/persistence/spi/fixed_bucket_spaces.h>
 #include <thread>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".bucketmover");
-
-using document::BucketSpace;
 
 namespace storage::bucketmover {
 
@@ -116,7 +115,7 @@ BucketMover::startNewRun()
     // If so, we have to spawn off an individual Run per space, as it encompasses
     // both a (disk) distribution and a bucket database.
     _currentRun = std::make_unique<bucketmover::Run>(
-            _component.getBucketSpaceRepo().get(document::BucketSpace::placeHolder()),
+            _component.getBucketSpaceRepo().get(spi::FixedBucketSpaces::default_space()),
             *_component.getStateUpdater().getReportedNodeState(),
             _component.getIndex(),
             _component.getClock());
@@ -364,7 +363,7 @@ BucketMover::storageDistributionChanged()
 }
 
 lib::Distribution::DiskDistribution BucketMover::currentDiskDistribution() const {
-    auto distribution = _component.getBucketSpaceRepo().get(document::BucketSpace::placeHolder()).getDistribution();
+    auto distribution = _component.getBucketSpaceRepo().get(spi::FixedBucketSpaces::default_space()).getDistribution();
     return distribution->getDiskDistribution();
 }
 

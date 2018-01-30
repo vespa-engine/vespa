@@ -28,7 +28,7 @@ public:
         }
 
     private:
-        ScanResult(bool done) : _done(done), _bucketSpace(document::BucketSpace::placeHolder()), _entry() {}
+        ScanResult(bool done) : _done(done), _bucketSpace(document::BucketSpace::invalid()), _entry() {}
         ScanResult(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e) : _done(false), _bucketSpace(bucketSpace), _entry(e) {}
     };
 
