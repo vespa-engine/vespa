@@ -57,27 +57,31 @@ public class JobStatus {
 
     public JobStatus withTriggering(Version version, ApplicationVersion applicationVersion,
                                     boolean upgrade, String reason, Instant triggerTime) {
-        return new JobStatus(type, jobError, Optional.of(new JobRun(-1, version, applicationVersion, upgrade, reason, triggerTime)),
+        return new JobStatus(type, jobError, Optional.of(new JobRun(-1, version, applicationVersion, upgrade,
+                                                                    reason, triggerTime)),
                              lastCompleted, firstFailing, lastSuccess);
     }
 
-    public JobStatus withCompletion(long runId, Optional<DeploymentJobs.JobError> jobError, Instant completionTime, Controller controller) {
+    public JobStatus withCompletion(long runId, Optional<DeploymentJobs.JobError> jobError, Instant completionTime,
+                                    Controller controller) {
+        return withCompletion(runId, ApplicationVersion.unknown, jobError, completionTime, controller);
+    }
+
+    public JobStatus withCompletion(long runId, ApplicationVersion applicationVersion,
+                                    Optional<DeploymentJobs.JobError> jobError, Instant completionTime,
+                                    Controller controller) {
         Version version;
-        ApplicationVersion applicationVersion;
         boolean upgrade;
         String reason;
         if (type == DeploymentJobs.JobType.component) { // not triggered by us
             version = controller.systemVersion();
-            applicationVersion = ApplicationVersion.unknown;
             upgrade = false;
             reason = "Application commit";
-        }
-        else if (! lastTriggered.isPresent()) {
+        } else if (! lastTriggered.isPresent()) {
             throw new IllegalStateException("Got notified about completion of " + this +
                                             ", but that has neither been triggered nor deployed");
 
-        }
-        else {
+        } else {
             version = lastTriggered.get().version();
             applicationVersion = lastTriggered.get().applicationVersion();
             upgrade = lastTriggered.get().upgrade();
@@ -197,7 +201,7 @@ public class JobStatus {
         /** Returns the Vespa version used on this run */
         public Version version() { return version; }
 
-        /** Returns the application version used for this run, or empty when not known */
+        /** Returns the application version used in this run */
         public ApplicationVersion applicationVersion() { return applicationVersion; }
 
         /** Returns a human-readable reason for this particular job run */
