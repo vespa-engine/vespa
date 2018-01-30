@@ -83,19 +83,7 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
     public static void populateAccessLogEntryFromHttpServletRequest(
             final HttpServletRequest request,
             final AccessLogEntry accessLogEntry) {
-        final String quotedPath = request.getRequestURI();
-        final String quotedQuery = request.getQueryString();
-        try {
-            final StringBuilder uriBuffer = new StringBuilder();
-            uriBuffer.append(quotedPath);
-            if (quotedQuery != null) {
-                uriBuffer.append('?').append(quotedQuery);
-            }
-            final URI uri = new URI(uriBuffer.toString());
-            accessLogEntry.setURI(uri);
-        } catch (URISyntaxException e) {
-            setUriFromMalformedInput(accessLogEntry, quotedPath, quotedQuery);
-        }
+        setUriFromRequest(request, accessLogEntry);
 
         final String remoteAddress = getRemoteAddress(request);
         final int remotePort = getRemotePort(request);
@@ -142,16 +130,38 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
                 .orElseGet(request::getRemotePort);
     }
 
-    private static void setUriFromMalformedInput(final AccessLogEntry accessLogEntry, final String quotedPath, final String quotedQuery) {
+    @SuppressWarnings("deprecation")
+    private static void setUriFromRequest(HttpServletRequest request, AccessLogEntry accessLogEntry) {
+        tryCreateUriFromRequest(request)
+                .ifPresent(accessLogEntry::setURI); // setURI is deprecated
+    }
+
+    // This is a mess and does not work correctly
+    private static Optional<URI> tryCreateUriFromRequest(HttpServletRequest request) {
+        final String quotedQuery = request.getQueryString();
+        final String quotedPath = request.getRequestURI();
+        try {
+            final StringBuilder uriBuffer = new StringBuilder();
+            uriBuffer.append(quotedPath);
+            if (quotedQuery != null) {
+                uriBuffer.append('?').append(quotedQuery);
+            }
+            return Optional.of(new URI(uriBuffer.toString()));
+        } catch (URISyntaxException e) {
+            return setUriFromMalformedInput(quotedPath, quotedQuery);
+        }
+    }
+
+    private static Optional<URI> setUriFromMalformedInput(final String quotedPath, final String quotedQuery) {
         try {
             final String scheme = null;
             final String authority = null;
             final String fragment = null;
-            final URI uri = new URI(scheme, authority, unquote(quotedPath), unquote(quotedQuery), fragment);
-            accessLogEntry.setURI(uri);
+            return Optional.of(new URI(scheme, authority, unquote(quotedPath), unquote(quotedQuery), fragment));
         } catch (URISyntaxException e) {
             // I have no idea how this can happen here now...
             logger.log(Level.WARNING, "Could not convert String URI to URI object", e);
+            return Optional.empty();
         }
     }
 

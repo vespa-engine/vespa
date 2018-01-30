@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 /**
  * @author bakksjo
  */
+@SuppressWarnings("deprecation") // AccessLogEntry.setURI/getURI are deprecated
 public class AccessLogRequestLogTest {
     @Test
     public void requireThatQueryWithUnquotedSpecialCharactersIsHandled() {
