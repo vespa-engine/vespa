@@ -85,10 +85,10 @@ assertOptimizedXWProduct(const vespalib::string &vecTypeStr,
     ASSERT_TRUE(xwProduct);
     ASSERT_TRUE(inv_xwProduct);
     ASSERT_TRUE(common_idx != ValueType::Dimension::npos);
-    EXPECT_EQUAL(xwProduct->vectorId(), 1u);
-    EXPECT_EQUAL(inv_xwProduct->vectorId(), 3u);
-    EXPECT_EQUAL(xwProduct->matrixId(), 3u);
-    EXPECT_EQUAL(inv_xwProduct->matrixId(), 1u);
+    TEST_DO(assertParam(xwProduct->lhs(), 1));
+    TEST_DO(assertParam(inv_xwProduct->lhs(), 3));
+    TEST_DO(assertParam(xwProduct->rhs(), 3));
+    TEST_DO(assertParam(inv_xwProduct->rhs(), 1));
     EXPECT_EQUAL(xwProduct->vectorSize(), vecType.dimensions()[0].size);
     EXPECT_EQUAL(inv_xwProduct->vectorSize(), vecType.dimensions()[0].size);
     EXPECT_EQUAL(xwProduct->resultSize(), matType.dimensions()[1 - common_idx].size);

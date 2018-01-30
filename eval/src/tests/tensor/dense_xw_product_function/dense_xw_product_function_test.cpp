@@ -20,6 +20,7 @@ LOG_SETUP("dense_dot_product_function_test");
 using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::tensor;
+using namespace vespalib::eval::tensor_function;
 
 const TensorEngine &ref_engine = SimpleTensorEngine::ref();
 const TensorEngine &prod_engine = DefaultTensorEngine::ref();
@@ -48,14 +49,20 @@ void verify_result(const TensorSpec &v, const TensorSpec &m, bool happy) {
     Value::UP prod_vec = prod_engine.from_spec(v);
     Value::UP prod_mat = prod_engine.from_spec(m);
 
-    DenseXWProductFunction fun1(expect.type(), 0, 1,
+    Inject vec_first(prod_vec->type(), 0);
+    Inject mat_last(prod_mat->type(), 1);
+
+    DenseXWProductFunction fun1(expect.type(), vec_first, mat_last,
                                 prod_vec->type().dimensions()[0].size,
                                 expect.type().dimensions()[0].size,
                                 happy);
     const Value &actual1 = fun1.eval(prod_engine, wrap({*prod_vec, *prod_mat}), stash);
     TEST_DO(verify_equal(expect, actual1));
 
-    DenseXWProductFunction fun2(expect.type(), 1, 0,
+    Inject vec_last(prod_vec->type(), 1);
+    Inject mat_first(prod_mat->type(), 0);
+
+    DenseXWProductFunction fun2(expect.type(), vec_last, mat_first,
                                 prod_vec->type().dimensions()[0].size,
                                 expect.type().dimensions()[0].size,
                                 happy);
