@@ -392,28 +392,18 @@ public abstract class RoutableFactories50 {
 
     public static class GetBucketListMessageFactory extends DocumentMessageFactory {
 
-        protected String decodeBucketSpace(Deserializer deserializer) {
-            return "default"; // TODO fixed space repo
-        }
-
         @Override
         protected DocumentMessage doDecode(DocumentDeserializer buf) {
             GetBucketListMessage msg = new GetBucketListMessage();
             msg.setBucketId(new BucketId(buf.getLong(null)));
-            msg.setBucketSpace(decodeBucketSpace(buf));
             return msg;
-        }
-
-        protected boolean encodeBucketSpace(String bucketSpace, DocumentSerializer buf) {
-            // TODO fixed space repo
-            return "default".equals(bucketSpace);
         }
 
         @Override
         protected boolean doEncode(DocumentMessage obj, DocumentSerializer buf) {
             GetBucketListMessage msg = (GetBucketListMessage)obj;
             buf.putLong(null, msg.getBucketId().getRawId());
-            return encodeBucketSpace(msg.getBucketSpace(), buf);
+            return true;
         }
     }
 
@@ -841,22 +831,12 @@ public abstract class RoutableFactories50 {
 
     public static class StatBucketMessageFactory extends DocumentMessageFactory {
 
-        protected String decodeBucketSpace(Deserializer deserializer) {
-            return "default"; // TODO fixed space repo
-        }
-
         @Override
         protected DocumentMessage doDecode(DocumentDeserializer buf) {
             StatBucketMessage msg = new StatBucketMessage();
             msg.setBucketId(new BucketId(buf.getLong(null)));
             msg.setDocumentSelection(decodeString(buf));
-            msg.setBucketSpace(decodeBucketSpace(buf));
             return msg;
-        }
-
-        protected boolean encodeBucketSpace(String bucketSpace, DocumentSerializer buf) {
-            // TODO fixed space repo
-            return "default".equals(bucketSpace);
         }
 
         @Override
@@ -864,7 +844,7 @@ public abstract class RoutableFactories50 {
             StatBucketMessage msg = (StatBucketMessage)obj;
             buf.putLong(null, msg.getBucketId().getRawId());
             encodeString(msg.getDocumentSelection(), buf);
-            return encodeBucketSpace(msg.getBucketSpace(), buf);
+            return true;
         }
     }
 

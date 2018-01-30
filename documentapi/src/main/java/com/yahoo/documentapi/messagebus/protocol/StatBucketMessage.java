@@ -6,7 +6,6 @@ import com.yahoo.document.BucketId;
 public class StatBucketMessage extends DocumentMessage {
 
     private BucketId bucketId;
-    private String bucketSpace = "default";
     private String documentSelection;
 
     StatBucketMessage() {
@@ -14,12 +13,7 @@ public class StatBucketMessage extends DocumentMessage {
     }
 
     public StatBucketMessage(BucketId bucket, String documentSelection) {
-        this(bucket, "default", documentSelection);
-    }
-
-    public StatBucketMessage(BucketId bucketId, String bucketSpace, String documentSelection) {
-        this.bucketId = bucketId;
-        this.bucketSpace = bucketSpace;
+        this.bucketId = bucket;
         this.documentSelection = documentSelection;
     }
 
@@ -39,14 +33,6 @@ public class StatBucketMessage extends DocumentMessage {
         this.documentSelection = documentSelection;
     }
 
-    public String getBucketSpace() {
-        return bucketSpace;
-    }
-
-    public void setBucketSpace(String bucketSpace) {
-        this.bucketSpace = bucketSpace;
-    }
-
     @Override
     public DocumentReply createReply() {
         return new StatBucketReply();
@@ -54,7 +40,7 @@ public class StatBucketMessage extends DocumentMessage {
 
     @Override
     public int getApproxSize() {
-        return super.getApproxSize() + 8 + bucketSpace.length() + documentSelection.length();
+        return super.getApproxSize() + 8 + documentSelection.length();
     }
 
     @Override

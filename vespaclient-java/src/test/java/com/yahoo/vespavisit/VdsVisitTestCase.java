@@ -130,8 +130,7 @@ public class VdsVisitTestCase {
                 "--ordering", "ascending",
                 "--skipbucketsonfatalerrors",
                 "--abortonclusterdown",
-                "--visitremoves",
-                "--bucketspace", "outerspace"
+                "--visitremoves"
         };
         VdsVisit.ArgumentParser parser = createMockArgumentParser();
         VdsVisit.VdsVisitParameters allParams = parser.parse(args);
@@ -175,9 +174,8 @@ public class VdsVisitTestCase {
         printStream.flush();
         String nl = System.getProperty("line.separator"); // the joys of running tests on windows
         assertEquals(
-                        "Time out visitor after 123456789 ms." + nl +
+                "Time out visitor after 123456789 ms." + nl +
                         "Visiting documents matching: 'id.user=1234'" + nl +
-                        "Visiting bucket space: outerspace" + nl +
                         "Visiting in the inclusive timestamp range 5678 - 9012." + nl +
                         "Visiting field set foodoc.bar,foodoc.baz." + nl +
                         "Visiting inconsistent buckets." + nl +

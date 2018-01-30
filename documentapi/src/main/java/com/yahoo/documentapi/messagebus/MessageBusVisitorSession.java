@@ -595,7 +595,6 @@ public class MessageBusVisitorSession implements VisitorSession {
             msg.setTimeRemaining(messageTimeoutMs);
             msg.setBuckets(Arrays.asList(bucket.getSuperbucket(), bucket.getProgress()));
             msg.setDocumentSelection(params.getDocumentSelection());
-            msg.setBucketSpace(params.getBucketSpace());
             msg.setFromTimestamp(params.getFromTimestamp());
             msg.setToTimestamp(params.getToTimestamp());
             msg.setMaxPendingReplyCount(params.getMaxPending());

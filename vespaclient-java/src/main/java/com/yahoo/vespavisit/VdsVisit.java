@@ -336,14 +336,6 @@ public class VdsVisit {
                 .desc("Output documents as JSON")
                 .hasArg(false)
                 .build());
-
-        options.addOption(Option.builder()
-                .longOpt("bucketspace")
-                .hasArg(true)
-                .argName("space")
-                .desc("Bucket space to visit ('default' or 'global). If not specified, 'default' is used.")
-                .build());
-
         return options;
     }
 
@@ -449,9 +441,6 @@ public class VdsVisit {
             }
             if (line.hasOption("s")) {
                 params.setDocumentSelection(line.getOptionValue("s"));
-            }
-            if (line.hasOption("bucketspace")) {
-                params.setBucketSpace(line.getOptionValue("bucketspace"));
             }
             if (line.hasOption("f")) {
                 params.setFromTimestamp(((Number) line.getParsedOptionValue("f")).longValue());
@@ -618,7 +607,6 @@ public class VdsVisit {
         } else {
             out.println("Visiting documents matching: " + params.getDocumentSelection());
         }
-        out.println(String.format("Visiting bucket space: %s", params.getBucketSpace()));
         if (params.getFromTimestamp() != 0 && params.getToTimestamp() != 0) {
             out.println("Visiting in the inclusive timestamp range "
                                + params.getFromTimestamp() + " - " + params.getToTimestamp() + ".");

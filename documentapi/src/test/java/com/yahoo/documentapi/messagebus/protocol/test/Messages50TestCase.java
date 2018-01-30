@@ -190,7 +190,6 @@ public class Messages50TestCase extends MessagesTestBase {
             assertEquals("CreateVisitorMessage(" +
                     "No buckets, " +
                     "selection 'true and false or true', " +
-                    "bucket space 'default', " +
                     "library SomeLibrary, including removes, " +
                     "get fields: [all]" +
                     ")",
@@ -201,7 +200,6 @@ public class Messages50TestCase extends MessagesTestBase {
             assertEquals("CreateVisitorMessage(" +
                     "Bucket BucketId(0x40000000000004d2), " +
                     "selection 'true and false or true', " +
-                    "bucket space 'default', " +
                     "library SomeLibrary, including removes, " +
                     "get fields: [all]" +
                     ")",
@@ -218,7 +216,6 @@ public class Messages50TestCase extends MessagesTestBase {
                     "5 buckets: BucketId(0x40000000000004d2) BucketId(0x40000000000004d3) BucketId(0x40000000000004d4) ..., " +
                     "time 10001-20002, " +
                     "selection 'true and false or true', " +
-                    "bucket space 'default', " +
                     "library SomeLibrary, including removes, " +
                     "get fields: [all], " +
                     "visit inconsistent buckets" +

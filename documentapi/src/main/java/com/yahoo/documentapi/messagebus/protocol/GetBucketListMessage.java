@@ -6,19 +6,13 @@ import com.yahoo.document.BucketId;
 public class GetBucketListMessage extends DocumentMessage {
 
     private BucketId bucketId;
-    private String bucketSpace = "default";
 
     GetBucketListMessage() {
         // must be deserialized into
     }
 
     public GetBucketListMessage(BucketId bucketId) {
-        this(bucketId, "default");
-    }
-
-    public GetBucketListMessage(BucketId bucketId, String bucketSpace) {
         this.bucketId = bucketId;
-        this.bucketSpace = bucketSpace;
     }
 
     public BucketId getBucketId() {
@@ -29,14 +23,6 @@ public class GetBucketListMessage extends DocumentMessage {
         bucketId = id;
     }
 
-    public String getBucketSpace() {
-        return bucketSpace;
-    }
-
-    public void setBucketSpace(String bucketSpace) {
-        this.bucketSpace = bucketSpace;
-    }
-
     @Override
     public DocumentReply createReply() {
         return new StatBucketReply();
@@ -44,7 +30,7 @@ public class GetBucketListMessage extends DocumentMessage {
 
     @Override
     public int getApproxSize() {
-        return super.getApproxSize() + 8 + bucketSpace.length();
+        return super.getApproxSize() + 8;
     }
 
     @Override
