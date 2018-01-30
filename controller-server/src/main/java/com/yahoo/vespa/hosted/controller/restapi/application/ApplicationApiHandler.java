@@ -478,9 +478,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
-        object.setString("hash", applicationVersion.id());
-        if (applicationVersion.source().isPresent())
+        if (!applicationVersion.isUnknown()) {
+            object.setString("hash", applicationVersion.id());
             sourceRevisionToSlime(applicationVersion.source(), object.setObject("source"));
+        }
     }
 
     private void sourceRevisionToSlime(Optional<SourceRevision> revision, Cursor object) {
@@ -970,7 +971,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void toSlime(JobStatus.JobRun jobRun, Cursor object) {
         object.setLong("id", jobRun.id());
         object.setString("version", jobRun.version().toFullString());
-        if (jobRun.applicationVersion() != ApplicationVersion.unknown)
+        if (!jobRun.applicationVersion().isUnknown())
             toSlime(jobRun.applicationVersion(), object.setObject("revision"));
         object.setString("reason", jobRun.reason());
         object.setLong("at", jobRun.at().toEpochMilli());

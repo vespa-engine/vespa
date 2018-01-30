@@ -6,7 +6,6 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -15,6 +14,7 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -61,6 +61,7 @@ public class ApplicationSerializer {
     private final String environmentField = "environment";
     private final String regionField = "region";
     private final String deployTimeField = "deployTime";
+    private final String applicationBuildNumberField = "applicationBuildNumber";
     private final String applicationPackageRevisionField = "applicationPackageRevision";
     private final String applicationPackageHashField = "applicationPackageHash";
     private final String sourceRevisionField = "sourceRevision";
@@ -198,9 +199,15 @@ public class ApplicationSerializer {
     }
 
     private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
-        object.setString(applicationPackageHashField, applicationVersion.id());
-        if (applicationVersion.source().isPresent())
+        if (applicationVersion.buildNumber().isPresent() && applicationVersion.source().isPresent()) {
+            object.setLong(applicationBuildNumberField, applicationVersion.buildNumber().get());
             toSlime(applicationVersion.source().get(), object.setObject(sourceRevisionField));
+        } else if (applicationVersion.applicationPackageHash().isPresent()) { // TODO: Remove after 2018-03-01
+            object.setString(applicationPackageHashField, applicationVersion.applicationPackageHash().get());
+            if (applicationVersion.source().isPresent()){
+                toSlime(applicationVersion.source().get(), object.setObject(sourceRevisionField));
+            }
+        }
     }
 
     private void toSlime(SourceRevision sourceRevision, Cursor object) {
@@ -236,7 +243,7 @@ public class ApplicationSerializer {
         Cursor object = parent.setObject(jobRunObjectName);
         object.setLong(jobRunIdField, jobRun.get().id());
         object.setString(versionField, jobRun.get().version().toString());
-        if ( jobRun.get().applicationVersion() != ApplicationVersion.unknown)
+        if ( ! jobRun.get().applicationVersion().isUnknown())
             toSlime(jobRun.get().applicationVersion(), object.setObject(revisionField));
         object.setBool(upgradeField, jobRun.get().upgrade());
         object.setString(reasonField, jobRun.get().reason());
@@ -249,7 +256,7 @@ public class ApplicationSerializer {
         Cursor object = parentObject.setObject(deployingField);
         if (deploying.platform().isPresent())
             object.setString(versionField, deploying.platform().get().toString());
-        if (deploying.application().isPresent() && deploying.application().get() != ApplicationVersion.unknown)
+        if (deploying.application().isPresent() && !deploying.application().get().isUnknown())
             toSlime(deploying.application().get(), object);
     }
 
@@ -342,10 +349,17 @@ public class ApplicationSerializer {
 
     private ApplicationVersion applicationVersionFromSlime(Inspector object) {
         if ( ! object.valid()) return ApplicationVersion.unknown;
-        String applicationPackageHash = object.field(applicationPackageHashField).asString();
+        Optional<String> applicationPackageHash = optionalString(object.field(applicationPackageHashField));
+        Optional<Long> applicationBuildNumber = optionalLong(object.field(applicationBuildNumberField));
         Optional<SourceRevision> sourceRevision = sourceRevisionFromSlime(object.field(sourceRevisionField));
-        return sourceRevision.isPresent() ? ApplicationVersion.from(applicationPackageHash, sourceRevision.get())
-                                          : ApplicationVersion.from(applicationPackageHash);
+        if (applicationPackageHash.isPresent()) { // TODO: Remove after 2018-03-01
+            return sourceRevision.map(sr -> ApplicationVersion.from(applicationPackageHash.get(), sr))
+                                 .orElseGet(() -> ApplicationVersion.from(applicationPackageHash.get()));
+        }
+        if (!sourceRevision.isPresent() || !applicationBuildNumber.isPresent()) {
+            return ApplicationVersion.unknown;
+        }
+        return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.get());
     }
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {
@@ -369,7 +383,8 @@ public class ApplicationSerializer {
         Change change = Change.empty();
         if (versionFieldValue.valid())
             change = Change.of(Version.fromString(versionFieldValue.asString()));
-        if (object.field(applicationPackageHashField).valid())
+        if (object.field(applicationBuildNumberField).valid() ||
+            object.field(applicationPackageHashField).valid()) // TODO: Remove after 2018-03-01
             change = change.with(applicationVersionFromSlime(object));
         if ( ! change.isPresent()) // A deploy object with no fields -> unknown application change
             change = Change.of(ApplicationVersion.unknown);
