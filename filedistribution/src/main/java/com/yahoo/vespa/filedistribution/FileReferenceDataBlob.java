@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 public class FileReferenceDataBlob extends FileReferenceData {
     private final byte[] content;
     private final long xxhash;
+    private boolean contentRead = false;
 
     public FileReferenceDataBlob(FileReference fileReference, String filename, Type type, byte[] content) {
         this(fileReference, filename, type, content, XXHashFactory.fastestInstance().hash64().hash(ByteBuffer.wrap(content), 0));
@@ -27,10 +28,16 @@ public class FileReferenceDataBlob extends FileReferenceData {
     public ByteBuffer content() {
         return ByteBuffer.wrap(content);
     }
+
     @Override
     public int nextContent(ByteBuffer bb) {
-        bb.put(content);
-        return content.length;
+        if (contentRead) {
+            return -1;
+        } else {
+            contentRead = true;
+            bb.put(content);
+            return content.length;
+        }
     }
 
     @Override
