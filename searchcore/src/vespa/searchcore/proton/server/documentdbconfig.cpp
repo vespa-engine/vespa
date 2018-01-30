@@ -63,8 +63,7 @@ DocumentDBConfig::DocumentDBConfig(
                const DocumentDBMaintenanceConfig::SP &maintenance,
                const search::LogDocumentStore::Config & storeConfig,
                const vespalib::string &configId,
-               const vespalib::string &docTypeName,
-               const config::ConfigSnapshot & extraConfigs)
+               const vespalib::string &docTypeName)
     : _configId(configId),
       _docTypeName(docTypeName),
       _generation(generation),
@@ -82,7 +81,6 @@ DocumentDBConfig::DocumentDBConfig(
       _schema(schema),
       _maintenance(maintenance),
       _storeConfig(storeConfig),
-      _extraConfigs(extraConfigs),
       _orig(),
       _delayedAttributeAspects(false)
 { }
@@ -107,7 +105,6 @@ DocumentDBConfig(const DocumentDBConfig &cfg)
       _schema(cfg._schema),
       _maintenance(cfg._maintenance),
       _storeConfig(cfg._storeConfig),
-      _extraConfigs(cfg._extraConfigs),
       _orig(cfg._orig),
       _delayedAttributeAspects(false)
 { }
@@ -216,8 +213,7 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
                 o._maintenance,
                 o._storeConfig,
                 o._configId,
-                o._docTypeName,
-                o._extraConfigs);
+                o._docTypeName);
     ret->_orig = orig;
     return ret;
 }
@@ -257,8 +253,7 @@ DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) 
             _maintenance,
             _storeConfig,
             _configId,
-            _docTypeName,
-            _extraConfigs);
+            _docTypeName);
 }
 
 DocumentDBConfig::SP
@@ -293,8 +288,7 @@ DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const Docum
                    n._maintenance,
                    n._storeConfig,
                    n._configId,
-                   n._docTypeName,
-                   n._extraConfigs);
+                   n._docTypeName);
     result->_delayedAttributeAspects = true;
     return result;
 }

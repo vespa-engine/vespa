@@ -50,12 +50,6 @@ makeSnapDirBaseName(SerialNum serialNum)
     return os.str();
 }
 
-vespalib::string
-makeExtraConfigsFileName(const vespalib::string &snapDir)
-{
-    return snapDir + "/extraconfigs.dat";
-}
-
 
 void
 fsyncFile(const vespalib::string &fileName)
@@ -88,35 +82,9 @@ saveHelper(const vespalib::string &snapDir,
 
 template <class Config>
 void
-save(const vespalib::string &snapDir,
-     const Config &config)
+save(const vespalib::string &snapDir, const Config &config)
 {
     saveHelper(snapDir, config.defName(), config);
-}
-
-void writeExtraConfigs(const vespalib::string &snapDir,
-                       const DocumentDBConfig &snapshot)
-{
-    vespalib::string extraName(makeExtraConfigsFileName(snapDir));
-    config::FileConfigSnapshotWriter writer(extraName);
-    bool extraConfigsWriterResult = writer.write(snapshot.getExtraConfigs());
-    assert(extraConfigsWriterResult);
-    (void) extraConfigsWriterResult;
-    fsyncFile(extraName);
-}
-
-config::ConfigSnapshot
-readExtraConfigs(const vespalib::string &snapDir)
-{
-    vespalib::string fileName = makeExtraConfigsFileName(snapDir);
-    if (vespalib::fileExists(fileName)) {
-        config::FileConfigSnapshotReader reader(fileName);
-        return reader.read();
-    } else {
-        LOG(warning, "Did not find data file for extra configs '%s' during loading of config snapshot. "
-            "Using empty extra configs set.", fileName.c_str());
-    }
-    return config::ConfigSnapshot();
 }
 
 
@@ -329,7 +297,6 @@ FileConfigManager::saveConfig(const DocumentDBConfig &snapshot,
     assert(saveHistorySchemaRes);
     (void) saveHistorySchemaRes;
 
-    writeExtraConfigs(snapDir, snapshot);
     _info.validateSnapshot(serialNum);
 
     bool saveValidSnap = _info.save();
@@ -393,20 +360,13 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
      * of default values here instead of the current values from the config
      * server.
      */
-    BootstrapConfig::SP bootstrap(
-            new BootstrapConfig(1,
-                                docTypesCfg,
-                                repo,
-                                _protonConfig,
-                                filedistRpcConf,
-                                bucketspaces,
-                                currentSnapshot.getTuneFileDocumentDBSP()));
+    auto bootstrap = std::make_shared<BootstrapConfig>(1, docTypesCfg, repo, _protonConfig, filedistRpcConf,
+                                                       bucketspaces,currentSnapshot.getTuneFileDocumentDBSP());
     dbc.forwardConfig(bootstrap);
     dbc.nextGeneration(0);
 
     loadedSnapshot = dbc.getConfig();
     loadedSnapshot->setConfigId(_configId);
-    loadedSnapshot->setExtraConfigs(readExtraConfigs(snapDir));
 }
 
 

@@ -28,7 +28,6 @@ private:
     search::LogDocumentStore::Config _store;
     vespalib::string _configId;
     vespalib::string _docTypeName;
-    config::ConfigSnapshot _extraConfig;
 
 public:
     DocumentDBConfigBuilder(int64_t generation,

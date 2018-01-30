@@ -43,10 +43,8 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(int64_t generation,
       _maintenance(std::make_shared<DocumentDBMaintenanceConfig>()),
       _store(),
       _configId(configId),
-      _docTypeName(docTypeName),
-      _extraConfig()
-{
-}
+      _docTypeName(docTypeName)
+{ }
 
 
 DocumentDBConfigBuilder::DocumentDBConfigBuilder(const DocumentDBConfig &cfg)
@@ -66,10 +64,8 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(const DocumentDBConfig &cfg)
       _maintenance(cfg.getMaintenanceConfigSP()),
       _store(cfg.getStoreConfig()),
       _configId(cfg.getConfigId()),
-      _docTypeName(cfg.getDocTypeName()),
-      _extraConfig(cfg.getExtraConfigs())
-{
-}
+      _docTypeName(cfg.getDocTypeName())
+{}
 
 DocumentDBConfigBuilder::~DocumentDBConfigBuilder() {}
 
@@ -93,8 +89,7 @@ DocumentDBConfigBuilder::build()
             _maintenance,
             _store,
             _configId,
-            _docTypeName,
-            _extraConfig);
+            _docTypeName);
 }
 
 }

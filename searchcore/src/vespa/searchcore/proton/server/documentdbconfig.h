@@ -118,7 +118,6 @@ private:
     search::index::Schema::SP        _schema;
     MaintenanceConfigSP              _maintenance;
     search::LogDocumentStore::Config _storeConfig;
-    config::ConfigSnapshot           _extraConfigs;
     SP                               _orig;
     bool                             _delayedAttributeAspects;
 
@@ -156,8 +155,7 @@ public:
                      const DocumentDBMaintenanceConfig::SP &maintenance,
                      const search::LogDocumentStore::Config & storeConfig,
                      const vespalib::string &configId,
-                     const vespalib::string &docTypeName,
-                     const config::ConfigSnapshot &extraConfig = config::ConfigSnapshot());
+                     const vespalib::string &docTypeName);
 
     DocumentDBConfig(const DocumentDBConfig &cfg);
     ~DocumentDBConfig();
@@ -202,9 +200,6 @@ public:
     ComparisonResult compare(const DocumentDBConfig &rhs) const;
 
     bool valid() const;
-
-    const config::ConfigSnapshot &getExtraConfigs() const { return _extraConfigs; }
-    void setExtraConfigs(const config::ConfigSnapshot &extraConfigs) { _extraConfigs = extraConfigs; }
 
     /**
      * Only keep configs needed for replay of transaction log.
