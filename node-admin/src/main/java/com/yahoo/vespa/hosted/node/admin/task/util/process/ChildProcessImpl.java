@@ -2,9 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
@@ -13,18 +13,29 @@ import java.util.logging.Logger;
  * @author hakonhall
  */
 public class ChildProcessImpl implements ChildProcess {
+    public static final int MAX_OUTPUT_PREFIX = 200;
+    public static final int MAX_OUTPUT_SUFFIX = 200;
+    // Omitting a number of chars less than 10 or less than 10% would be ridiculous.
+    public static final int MAX_OUTPUT_SLACK = Math.max(10, (10 * (MAX_OUTPUT_PREFIX + MAX_OUTPUT_SUFFIX)) / 100);
+
     private final TaskContext taskContext;
-    private final Process process;
-    private final Path processOutputPath;
+    private final ProcessApi process;
     private final String commandLine;
+
+    private Optional<String> utf8OutputCache = Optional.empty();
 
     ChildProcessImpl(TaskContext taskContext,
                      Process process,
                      Path processOutputPath,
                      String commandLine) {
+        this(taskContext, new ProcessApiImpl(process, processOutputPath), commandLine);
+    }
+
+    ChildProcessImpl(TaskContext taskContext,
+                     ProcessApi process,
+                     String commandLine) {
         this.taskContext = taskContext;
         this.process = process;
-        this.processOutputPath = processOutputPath;
         this.commandLine = commandLine;
     }
 
@@ -34,49 +45,63 @@ public class ChildProcessImpl implements ChildProcess {
     }
 
     public String getUtf8Output() {
-        waitForTermination();
-        return new UnixPath(processOutputPath).readUtf8File();
+        if (!utf8OutputCache.isPresent()) {
+            waitForTermination();
+            utf8OutputCache = Optional.of(process.getUtf8Output());
+        }
+
+        return utf8OutputCache.get();
     }
 
     public ChildProcessImpl waitForTermination() {
-        while (true) {
-            try {
-                process.waitFor();
-            } catch (InterruptedException e) {
-                // ignoring
-                continue;
-            }
-
-            return this;
-        }
+        process.waitForTermination();
+        return this;
     }
 
     public int exitValue() {
         waitForTermination();
-        return process.exitValue();
+        return process.exitCode();
     }
 
     public ChildProcess throwIfFailed() {
         waitForTermination();
-        if (process.exitValue() != 0) {
-            throw new CommandException("Execution of program [" + commandLine +
-                    "] failed, stdout/stderr was: <" + suffixOfOutputForLog() + ">");
+        int exitCode = process.exitCode();
+        if (exitCode != 0) {
+            String message = debugDescription("terminated with non-zero exit code " + exitCode);
+            throw new CommandException(message);
         }
 
         return this;
     }
 
-    private String suffixOfOutputForLog() {
-        String output = getUtf8Output();
+    @Override
+    public UnexpectedOutputException newUnexpectedOutputException(String problem) {
+        String message = debugDescription("output was not of the expected format: " + problem);
+        throw new UnexpectedOutputException(message);
+    }
 
-        final int maxTrailingChars = 300;
-        if (output.length() <= maxTrailingChars) {
-            return output;
+    private String debugDescription(String problem) {
+        StringBuilder stringBuilder = new StringBuilder()
+                .append("Command '")
+                .append(commandLine())
+                .append("' ")
+                .append(problem)
+                .append(": stdout/stderr: '");
+
+        String possiblyHugeOutput = getUtf8Output();
+        if (possiblyHugeOutput.length() <= MAX_OUTPUT_PREFIX + MAX_OUTPUT_SUFFIX + MAX_OUTPUT_SLACK) {
+            stringBuilder.append(possiblyHugeOutput);
+        } else {
+            stringBuilder.append(possiblyHugeOutput.substring(0, MAX_OUTPUT_PREFIX))
+                    .append("... [")
+                    .append(possiblyHugeOutput.length() - MAX_OUTPUT_PREFIX - MAX_OUTPUT_SUFFIX)
+                    .append(" chars omitted] ...")
+                    .append(possiblyHugeOutput.substring(possiblyHugeOutput.length() - MAX_OUTPUT_SUFFIX));
         }
 
-        int numSkippedChars = output.length() - maxTrailingChars;
-        output = output.substring(numSkippedChars);
-        return "[" + numSkippedChars + " chars omitted]..." + output;
+        stringBuilder.append("'");
+
+        return stringBuilder.toString();
     }
 
     @Override
@@ -86,15 +111,11 @@ public class ChildProcessImpl implements ChildProcess {
 
     @Override
     public void close() {
-        if (process.isAlive()) {
-            process.destroyForcibly();
-            waitForTermination();
-        }
-        processOutputPath.toFile().delete();
+        process.close();
     }
 
     @Override
     public Path getProcessOutputPath() {
-        return processOutputPath;
+        return process.getProcessOutputPath();
     }
 }
