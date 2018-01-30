@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
+import com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
@@ -17,15 +18,12 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.ssl.SSLContextBuilder;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -197,24 +195,11 @@ public class ConfigServerHttpRequestExecutor implements AutoCloseable {
         }
     }
 
-    private static SSLContext makeSslContext(Optional<KeyStoreOptions> keyStoreOptions, Optional<KeyStoreOptions> trustStoreOptions)
-            throws KeyManagementException, NoSuchAlgorithmException {
-        SSLContextBuilder sslContextBuilder = new SSLContextBuilder();
-        keyStoreOptions.ifPresent(options -> {
-            try {
-                sslContextBuilder.loadKeyMaterial(options.getKeyStore(), options.password);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        trustStoreOptions.ifPresent(options -> {
-            try {
-                sslContextBuilder.loadTrustMaterial(options.getKeyStore(), null);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+    private static SSLContext makeSslContext(Optional<KeyStoreOptions> keyStoreOptions, Optional<KeyStoreOptions> trustStoreOptions) {
+        AthenzSslContextBuilder sslContextBuilder = new AthenzSslContextBuilder();
+        trustStoreOptions.ifPresent(options -> sslContextBuilder.withTrustStore(options.path.toFile(), options.type));
+        keyStoreOptions.ifPresent(options ->
+                sslContextBuilder.withKeyStore(options.path.toFile(), options.password, options.type));
 
         return sslContextBuilder.build();
     }
