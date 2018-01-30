@@ -18,12 +18,18 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.nio.file.Path;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.Security;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -65,6 +71,8 @@ public class ConfigServerHttpRequestExecutor implements AutoCloseable {
             Optional<KeyStoreOptions> keyStoreOptions,
             Optional<KeyStoreOptions> trustStoreOptions,
             Optional<AthenzIdentity> athenzIdentity) {
+        Security.addProvider(new BouncyCastleProvider());
+
         Supplier<SelfCloseableHttpClient> clientSupplier = () -> createHttpClient(keyStoreOptions, trustStoreOptions, athenzIdentity);
         ConfigServerHttpRequestExecutor requestExecutor = new ConfigServerHttpRequestExecutor(
                 randomizeConfigServerUris(configServerUris), clientSupplier.get());
@@ -198,8 +206,14 @@ public class ConfigServerHttpRequestExecutor implements AutoCloseable {
     private static SSLContext makeSslContext(Optional<KeyStoreOptions> keyStoreOptions, Optional<KeyStoreOptions> trustStoreOptions) {
         AthenzSslContextBuilder sslContextBuilder = new AthenzSslContextBuilder();
         trustStoreOptions.ifPresent(options -> sslContextBuilder.withTrustStore(options.path.toFile(), options.type));
-        keyStoreOptions.ifPresent(options ->
-                sslContextBuilder.withKeyStore(options.path.toFile(), options.password, options.type));
+        keyStoreOptions.ifPresent(options -> {
+            try {
+                KeyStore keyStore = loadKeyStoreFromFileWithProvider(options.path, options.password, options.type, "BC");
+                sslContextBuilder.withKeyStore(keyStore, options.password);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to read key store", e);
+            }
+        });
 
         return sslContextBuilder.build();
     }
@@ -222,5 +236,14 @@ public class ConfigServerHttpRequestExecutor implements AutoCloseable {
         } while (!clientRefresherScheduler.isTerminated());
 
         client.close();
+    }
+
+    private static KeyStore loadKeyStoreFromFileWithProvider(Path path, char[] password, String keyStoreType, String provider)
+            throws IOException, GeneralSecurityException {
+        KeyStore keyStore = KeyStore.getInstance(keyStoreType, provider);
+        try (FileInputStream in = new FileInputStream(path.toFile())) {
+            keyStore.load(in, password);
+        }
+        return keyStore;
     }
 }
