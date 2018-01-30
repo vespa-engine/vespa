@@ -21,7 +21,7 @@ createDoc(const DocumentTypeRepo &repo, const string &type_name, const string &i
 
 }
 
-static constexpr int MESSAGE_BASE_LENGTH = 5;
+static const int MESSAGE_BASE_LENGTH = 5;
 
 Messages52Test::Messages52Test()
 {

@@ -298,13 +298,10 @@ public class DocumentProtocol implements Protocol {
         VersionSpecification version50 = new VersionSpecification(5, 0);
         VersionSpecification version51 = new VersionSpecification(5, 1);
         VersionSpecification version52 = new VersionSpecification(5, 115);
-        VersionSpecification version6 = new VersionSpecification(6, 999); // TODO change once stable protocol
 
-        // TODO ensure version semantics
-        List<VersionSpecification> from50 = Arrays.asList(version50, version51, version52, version6);
-        List<VersionSpecification> from51 = Arrays.asList(version51, version52, version6);
-        List<VersionSpecification> from52 = Arrays.asList(version52, version6);
-        List<VersionSpecification> from6 = Collections.singletonList(version6); // TODO decide minor version...
+        List<VersionSpecification> from50 = Arrays.asList(version50, version51, version52);
+        List<VersionSpecification> from51 = Arrays.asList(version51, version52);
+        List<VersionSpecification> from52 = Arrays.asList(version52);
 
         // 5.0 serialization (keep alphabetized please)
         putRoutableFactory(MESSAGE_BATCHDOCUMENTUPDATE, new RoutableFactories50.BatchDocumentUpdateMessageFactory(), from50);
@@ -355,11 +352,6 @@ public class DocumentProtocol implements Protocol {
         putRoutableFactory(MESSAGE_PUTDOCUMENT, new RoutableFactories52.PutDocumentMessageFactory(), from52);
         putRoutableFactory(MESSAGE_UPDATEDOCUMENT, new RoutableFactories52.UpdateDocumentMessageFactory(), from52);
         putRoutableFactory(MESSAGE_REMOVEDOCUMENT, new RoutableFactories52.RemoveDocumentMessageFactory(), from52);
-
-        // 6.x serialization
-        putRoutableFactory(MESSAGE_CREATEVISITOR, new RoutableFactories60.CreateVisitorMessageFactory(), from6);
-        putRoutableFactory(MESSAGE_STATBUCKET, new RoutableFactories60.StatBucketMessageFactory(), from6);
-        putRoutableFactory(MESSAGE_GETBUCKETLIST, new RoutableFactories60.GetBucketListMessageFactory(), from6);
     }
 
     /**

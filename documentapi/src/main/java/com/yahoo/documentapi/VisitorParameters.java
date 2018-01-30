@@ -20,7 +20,6 @@ import java.util.TreeMap;
 public class VisitorParameters extends Parameters {
 
     private String documentSelection;
-    private String bucketSpace = "default";
     private String visitorLibrary = "DumpVisitor";
     private int maxPending = 32;
     private long timeoutMs = -1;
@@ -70,7 +69,6 @@ public class VisitorParameters extends Parameters {
      */
     public VisitorParameters(VisitorParameters params) {
         setDocumentSelection(params.getDocumentSelection());
-        setBucketSpace(params.getBucketSpace());
         setVisitorLibrary(params.getVisitorLibrary());
         setMaxPending(params.getMaxPending());
         setTimeoutMs(params.getTimeoutMs());
@@ -109,9 +107,6 @@ public class VisitorParameters extends Parameters {
 
     /** @return The selection string used for visiting. */
     public String getDocumentSelection() { return documentSelection; }
-
-    /** @return The bucket space to visit */
-    public String getBucketSpace() { return bucketSpace; }
 
     /** @return What visitor library to use for the visiting. The library in question must be installed on each storage node in the target cluster. */
     public String getVisitorLibrary() { return visitorLibrary; }
@@ -196,9 +191,6 @@ public class VisitorParameters extends Parameters {
 
     /** Set the document selection expression */
     public void setDocumentSelection(String selection) { documentSelection = selection; }
-
-    /** Set which (single) bucket space this visiting will be against. */
-    public void setBucketSpace(String bucketSpace) { this.bucketSpace = bucketSpace; }
 
     /** Set which visitor library is used for visiting in storage. DumpVisitor is most common implementation. */
     public void setVisitorLibrary(String library) { visitorLibrary = library; }
@@ -351,11 +343,11 @@ public class VisitorParameters extends Parameters {
         this.dynamicMaxBucketsIncreaseFactor = dynamicMaxBucketsIncreaseFactor;
     }
 
+    // Inherit docs from Object
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append("VisitorParameters(\n")
                 .append("  Document selection: ").append(documentSelection).append('\n')
-                .append("  Bucket space:       ").append(bucketSpace).append('\n')
                 .append("  Visitor library:    ").append(visitorLibrary).append('\n')
                 .append("  Max pending:        ").append(maxPending).append('\n')
                 .append("  Timeout (ms):       ").append(timeoutMs).append('\n')

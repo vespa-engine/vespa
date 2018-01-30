@@ -2560,25 +2560,6 @@ public class MessageBusVisitorSessionTestCase {
                 mc.controlHandler.toString());
     }
 
-    @Test
-    public void visit_default_bucket_space_unless_explicitly_given() {
-        MockComponents mc = createDefaultMock("");
-        mc.visitorSession.start();
-        mc.executor.expectAndProcessTasks(1);
-        CreateVisitorMessage cmd = (CreateVisitorMessage)mc.sender.getAndRemoveMessage(0);
-        assertEquals("default", cmd.getBucketSpace());
-    }
-
-    @Test
-    public void explicitly_provided_bucket_space_is_propagated_to_visitor_commands() {
-        MockComponents mc = createDefaultMock("");
-        mc.params.setBucketSpace("upside down");
-        mc.visitorSession.start();
-        mc.executor.expectAndProcessTasks(1);
-        CreateVisitorMessage cmd = (CreateVisitorMessage)mc.sender.getAndRemoveMessage(0);
-        assertEquals("upside down", cmd.getBucketSpace());
-    }
-
     /**
      * TODOs:
      *   - parameter validation (max pending, ...)

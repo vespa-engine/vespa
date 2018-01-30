@@ -11,7 +11,7 @@ CreateVisitorMessage::CreateVisitorMessage() :
     _instanceId(),
     _controlDestination(),
     _dataDestination(),
-    _bucketSpace("default"), // TODO repo
+    _bucketSpace(),
     _docSelection(),
     _maxPendingReplyCount(8),
     _buckets(),
@@ -35,7 +35,7 @@ CreateVisitorMessage::CreateVisitorMessage(const string& libraryName,
     _instanceId(instanceId),
     _controlDestination(controlDestination),
     _dataDestination(dataDestination),
-    _bucketSpace("default"), // TODO repo
+    _bucketSpace(),
     _docSelection(),
     _maxPendingReplyCount(8),
     _buckets(),

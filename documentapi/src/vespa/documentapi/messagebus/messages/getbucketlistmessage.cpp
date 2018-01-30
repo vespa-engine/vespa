@@ -9,7 +9,7 @@ namespace documentapi {
 GetBucketListMessage::GetBucketListMessage(const document::BucketId &bucketId) :
     DocumentMessage(),
     _bucketId(bucketId),
-    _bucketSpace("default") // TODO repo
+    _bucketSpace()
 {
 }
 

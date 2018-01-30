@@ -86,7 +86,6 @@ RoutableFactories51::CreateVisitorMessageFactory::doDecode(document::ByteBuffer 
     msg.setVisitorDispatcherVersion(50);
     msg.setVisitorOrdering((document::OrderingSpecification::Order)decodeInt(buf));
     msg.setMaxBucketsPerVisitor(decodeInt(buf));
-    msg.setBucketSpace(decodeBucketSpace(buf));
 
     return ret;
 }
@@ -125,18 +124,8 @@ RoutableFactories51::CreateVisitorMessageFactory::doEncode(const DocumentMessage
 
     buf.putInt(msg.getVisitorOrdering());
     buf.putInt(msg.getMaxBucketsPerVisitor());
-    return encodeBucketSpace(msg.getBucketSpace(), buf);
-}
 
-bool RoutableFactories51::CreateVisitorMessageFactory::encodeBucketSpace(
-        vespalib::stringref bucketSpace,
-        vespalib::GrowableByteBuffer& buf) const {
-    (void) buf;
-    return (bucketSpace == "default"); // TODO used fixed repo here
-}
-
-string RoutableFactories51::CreateVisitorMessageFactory::decodeBucketSpace(document::ByteBuffer&) const {
-    return "default"; // TODO fixed bucket repo
+    return true;
 }
 
 DocumentMessage::UP

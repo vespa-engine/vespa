@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol.test;
 
+import com.google.common.annotations.Beta;
 import com.yahoo.component.Version;
 import com.yahoo.document.*;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
@@ -14,6 +15,7 @@ import static org.junit.Assert.assertEquals;
  * @author Vegard Sjonfjell
  */
 
+@Beta
 public class Messages52TestCase extends Messages51TestCase {
 
     @Override
@@ -38,6 +40,7 @@ public class Messages52TestCase extends Messages51TestCase {
         out.put(DocumentProtocol.MESSAGE_REMOVEDOCUMENT, new testRemoveDocumentMessage());
     }
 
+    private static int BASE_MESSAGE_LENGTH = 5;
     private static String CONDITION_STRING = "There's just one condition";
 
     public class testPutDocumentMessage implements RunnableTest {

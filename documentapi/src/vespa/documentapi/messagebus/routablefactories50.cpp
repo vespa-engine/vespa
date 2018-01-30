@@ -404,24 +404,11 @@ RoutableFactories50::EmptyBucketsReplyFactory::doEncode(const DocumentReply &obj
     return true;
 }
 
-bool RoutableFactories50::GetBucketListMessageFactory::encodeBucketSpace(
-        vespalib::stringref bucketSpace,
-        vespalib::GrowableByteBuffer& buf) const {
-    (void) buf;
-    return (bucketSpace == "default"); // TODO used fixed repo here
-}
-
-string RoutableFactories50::GetBucketListMessageFactory::decodeBucketSpace(document::ByteBuffer&) const {
-    return "default"; // TODO fixed bucket repo
-}
-
 DocumentMessage::UP
 RoutableFactories50::GetBucketListMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
     document::BucketId bucketId(decodeLong(buf));
-    auto msg = std::make_unique<GetBucketListMessage>(bucketId);
-    msg->setBucketSpace(decodeBucketSpace(buf));
-    return msg;
+    return std::make_unique<GetBucketListMessage>(bucketId);
 }
 
 bool
@@ -429,7 +416,7 @@ RoutableFactories50::GetBucketListMessageFactory::doEncode(const DocumentMessage
 {
     const GetBucketListMessage &msg = static_cast<const GetBucketListMessage&>(obj);
     buf.putLong(msg.getBucketId().getRawId());
-    return encodeBucketSpace(msg.getBucketSpace(), buf);
+    return true;
 }
 
 DocumentReply::UP
@@ -842,17 +829,6 @@ RoutableFactories50::QueryResultReplyFactory::doEncode(const DocumentReply &obj,
     return true;
 }
 
-bool RoutableFactories50::StatBucketMessageFactory::encodeBucketSpace(
-        vespalib::stringref bucketSpace,
-        vespalib::GrowableByteBuffer& buf) const {
-    (void) buf;
-    return (bucketSpace == "default"); // TODO used fixed repo here
-}
-
-string RoutableFactories50::StatBucketMessageFactory::decodeBucketSpace(document::ByteBuffer&) const {
-    return "default"; // TODO fixed bucket repo
-}
-
 DocumentMessage::UP
 RoutableFactories50::StatBucketMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
@@ -861,7 +837,6 @@ RoutableFactories50::StatBucketMessageFactory::doDecode(document::ByteBuffer &bu
 
     msg.setBucketId(document::BucketId(decodeLong(buf)));
     msg.setDocumentSelection(decodeString(buf));
-    msg.setBucketSpace(decodeBucketSpace(buf));
 
     return ret;
 }
@@ -873,7 +848,8 @@ RoutableFactories50::StatBucketMessageFactory::doEncode(const DocumentMessage &o
 
     buf.putLong(msg.getBucketId().getRawId());
     buf.putString(msg.getDocumentSelection());
-    return encodeBucketSpace(msg.getBucketSpace(), buf);
+
+    return true;
 }
 
 DocumentReply::UP
