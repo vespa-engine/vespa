@@ -85,6 +85,12 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
             final AccessLogEntry accessLogEntry) {
         setUriFromRequest(request, accessLogEntry);
 
+        accessLogEntry.setRawPath(request.getRequestURI());
+        String queryString = request.getQueryString();
+        if (queryString != null) {
+            accessLogEntry.setRawQuery(queryString);
+        }
+
         final String remoteAddress = getRemoteAddress(request);
         final int remotePort = getRemotePort(request);
         final String peerAddress = request.getRemoteAddr();
