@@ -75,17 +75,11 @@ public class FileReceiver {
             currentHash = 0;
             fileReferenceDir = new File(downloadDirectory, reference.value());
             this.tmpDir = tmpDirectory;
-            try {
-                Files.createDirectories(fileReferenceDir.toPath());
-            } catch (IOException e) {
-                log.log(LogLevel.ERROR, "Failed creating directory(" + fileReferenceDir.toPath() + "): " + e.getMessage(), e);
-                throw new RuntimeException("Failed creating directory(" + fileReferenceDir.toPath() + "): ", e);
-            }
 
             try {
                 inprogressFile = Files.createTempFile(tmpDirectory.toPath(), fileName, ".inprogress").toFile();
             } catch (IOException e) {
-                String msg = "Failed creating temp file for inprogress file for(" + fileName + ") in '" + fileReferenceDir.toPath() + "': ";
+                String msg = "Failed creating temp file for inprogress file for " + fileName + " in '" + tmpDirectory.toPath() + "': ";
                 log.log(LogLevel.ERROR, msg + e.getMessage(), e);
                 throw new RuntimeException(msg, e);
             }
@@ -124,6 +118,12 @@ public class FileReceiver {
                     CompressedFileReference.decompress(inprogressFile, decompressedDir);
                     moveFileToDestination(decompressedDir, fileReferenceDir);
                 } else {
+                    try {
+                        Files.createDirectories(fileReferenceDir.toPath());
+                    } catch (IOException e) {
+                        log.log(LogLevel.ERROR, "Failed creating directory (" + fileReferenceDir.toPath() + "): " + e.getMessage(), e);
+                        throw new RuntimeException("Failed creating directory (" + fileReferenceDir.toPath() + "): ", e);
+                    }
                     log.log(LogLevel.DEBUG, "Uncompressed file, moving to " + file.getAbsolutePath());
                     moveFileToDestination(inprogressFile, file);
                 }

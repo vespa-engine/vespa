@@ -2,6 +2,7 @@
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
@@ -12,11 +13,15 @@ import org.junit.rules.TemporaryFolder;
 
 import static org.junit.Assert.assertEquals;
 
-
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class FileReceiverTest {
     private File root;
@@ -48,6 +53,23 @@ public class FileReceiverTest {
         transferPartsAndAssert(new FileReference("ref-a"), "myfile-3", all, 3);
     }
 
+    @Test
+    public void receiveCompressedParts() throws IOException{
+        File dirWithFiles = temporaryFolder.newFolder("files");
+        FileWriter writerA = new FileWriter(new File(dirWithFiles, "a"));
+        writerA.write("1");
+        writerA.close();
+        FileWriter writerB = new FileWriter(new File(dirWithFiles, "b"));
+        writerB.write("2");
+        writerB.close();
+
+        byte[] data = CompressedFileReference.compress(dirWithFiles);
+        transferCompressedData(new FileReference("ref"), "a", data);
+        File downloadDir = new File(root, "ref");
+        assertEquals("1", IOUtils.readFile(new File(downloadDir, "a")));
+        assertEquals("2", IOUtils.readFile(new File(downloadDir, "b")));
+    }
+
     private void transferPartsAndAssert(FileReference ref, String fileName, String all, int numParts) throws IOException {
         byte [] allContent = Utf8.toBytes(all);
 
@@ -68,5 +90,12 @@ public class FileReceiverTest {
         byte [] allReadBytes = Files.readAllBytes(file.toPath());
         file.delete();
         assertEquals(all, Utf8.toString(allReadBytes));
+    }
+
+    private void transferCompressedData(FileReference ref, String fileName, byte[] data) throws IOException {
+        FileReceiver.Session session =
+                new FileReceiver.Session(root, tempDir, 1, ref, FileReferenceData.Type.compressed, fileName, data.length);
+        session.addPart(0, data);
+        session.close(hasher.hash(ByteBuffer.wrap(data), 0));
     }
 }
