@@ -16,12 +16,10 @@ import java.util.regex.Pattern;
  * @author hakonhall
  */
 public class Yum {
-    private static final Pattern INSTALL_NOOP_PATTERN =
-            Pattern.compile("\nNothing to do\n$");
-    private static final Pattern UPGRADE_NOOP_PATTERN =
-            Pattern.compile("\nNo packages marked for update\n$");
-    private static final Pattern REMOVE_NOOP_PATTERN =
-            Pattern.compile("\nNo Packages marked for removal\n$");
+    // Note: "(?dm)" makes newline be \n (only), and enables multiline mode where ^$ match lines with find()
+    private static final Pattern INSTALL_NOOP_PATTERN = Pattern.compile("(?dm)^Nothing to do$");
+    private static final Pattern UPGRADE_NOOP_PATTERN = Pattern.compile("(?dm)^No packages marked for update$");
+    private static final Pattern REMOVE_NOOP_PATTERN = Pattern.compile("(?dm)^No Packages marked for removal$");
 
     private final TaskContext taskContext;
     private final Supplier<Command> commandSupplier;
@@ -58,7 +56,7 @@ public class Yum {
     }
 
     public static class GenericYumCommand {
-        private static Logger logger = Logger.getLogger(Yum.class.getName());
+        private static Logger logger = Logger.getLogger(GenericYumCommand.class.getName());
 
         private final TaskContext taskContext;
         private final Supplier<Command> commandSupplier;
@@ -102,7 +100,7 @@ public class Yum {
             // There's no way to figure out whether a yum command would have been a no-op.
             // Therefore, run the command and parse the output to decide.
             String output = childProcess.getUtf8Output();
-            if (commandOutputNoopPattern.matcher(output).matches()) {
+            if (commandOutputNoopPattern.matcher(output).find()) {
                 return false;
             } else {
                 childProcess.logAsModifyingSystemAfterAll(logger);
