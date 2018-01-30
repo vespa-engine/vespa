@@ -6,7 +6,7 @@
 class Messages60Test : public Messages52Test {
 protected:
     // TODO finalize version
-    const vespalib::Version getVersion() const override { return vespalib::Version(6, 197); }
+    const vespalib::Version getVersion() const override { return vespalib::Version(6, 999); }
 public:
     Messages60Test();
     bool testCreateVisitorMessage();
