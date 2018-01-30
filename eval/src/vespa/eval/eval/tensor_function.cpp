@@ -40,53 +40,49 @@ void op_load_const(State &state, uint64_t param) {
     state.stack.push_back(unwrap_param<Value>(param));
 }
 
-void op_load_param(State &state, uint64_t param) {
-    state.stack.push_back(state.params->resolve(param, state.stash));
-}
-
 //-----------------------------------------------------------------------------
 
 void op_double_map(State &state, uint64_t param) {
-    state.replace(1, state.stash.create<DoubleValue>(to_map_fun(param)(state.peek(0).as_double())));
+    state.pop_push(state.stash.create<DoubleValue>(to_map_fun(param)(state.peek(0).as_double())));
 }
 
 void op_double_mul(State &state, uint64_t) {
-    state.replace(2, state.stash.create<DoubleValue>(state.peek(1).as_double() * state.peek(0).as_double()));
+    state.pop_pop_push(state.stash.create<DoubleValue>(state.peek(1).as_double() * state.peek(0).as_double()));
 }
 
 void op_double_add(State &state, uint64_t) {
-    state.replace(2, state.stash.create<DoubleValue>(state.peek(1).as_double() + state.peek(0).as_double()));
+    state.pop_pop_push(state.stash.create<DoubleValue>(state.peek(1).as_double() + state.peek(0).as_double()));
 }
 
 void op_double_join(State &state, uint64_t param) {
-    state.replace(2, state.stash.create<DoubleValue>(to_join_fun(param)(state.peek(1).as_double(), state.peek(0).as_double())));
+    state.pop_pop_push(state.stash.create<DoubleValue>(to_join_fun(param)(state.peek(1).as_double(), state.peek(0).as_double())));
 }
 
 //-----------------------------------------------------------------------------
 
 void op_tensor_map(State &state, uint64_t param) {
-    state.replace(1, state.engine.map(state.peek(0), to_map_fun(param), state.stash));
+    state.pop_push(state.engine.map(state.peek(0), to_map_fun(param), state.stash));
 }
 
 void op_tensor_join(State &state, uint64_t param) {
-    state.replace(2, state.engine.join(state.peek(1), state.peek(0), to_join_fun(param), state.stash));
+    state.pop_pop_push(state.engine.join(state.peek(1), state.peek(0), to_join_fun(param), state.stash));
 }
 
 using ReduceParams = std::pair<Aggr,std::vector<vespalib::string>>;
 void op_tensor_reduce(State &state, uint64_t param) {
     const ReduceParams &params = unwrap_param<ReduceParams>(param);
-    state.replace(1, state.engine.reduce(state.peek(0), params.first, params.second, state.stash));
+    state.pop_push(state.engine.reduce(state.peek(0), params.first, params.second, state.stash));
 }
 
 using RenameParams = std::pair<std::vector<vespalib::string>,std::vector<vespalib::string>>;
 void op_tensor_rename(State &state, uint64_t param) {
     const RenameParams &params = unwrap_param<RenameParams>(param);
-    state.replace(1, state.engine.rename(state.peek(0), params.first, params.second, state.stash));
+    state.pop_push(state.engine.rename(state.peek(0), params.first, params.second, state.stash));
 }
 
 void op_tensor_concat(State &state, uint64_t param) {
     const vespalib::string &dimension = unwrap_param<vespalib::string>(param);
-    state.replace(2, state.engine.concat(state.peek(1), state.peek(0), dimension, state.stash));
+    state.pop_pop_push(state.engine.concat(state.peek(1), state.peek(0), dimension, state.stash));
 }
 
 } // namespace vespalib::eval::tensor_function
@@ -136,7 +132,7 @@ Inject::eval(const TensorEngine &, const LazyParams &params, Stash &stash) const
 Instruction
 Inject::compile_self(Stash &) const
 {
-    return Instruction(op_load_param, _param_idx);
+    return Instruction::fetch_param(_param_idx);
 }
 
 //-----------------------------------------------------------------------------

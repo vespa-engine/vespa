@@ -41,7 +41,13 @@ public:
         const Value &peek(size_t ridx) const {
             return stack[stack.size() - 1 - ridx];
         }
-        void replace(size_t prune_cnt, const Value &value);
+        void pop_push(const Value &value) {
+            stack.back() = value;
+        }
+        void pop_pop_push(const Value &value) {
+            stack.pop_back();
+            stack.back() = value;
+        }
     };
     class Context {
         friend class InterpretedFunction;
@@ -61,8 +67,16 @@ public:
             : function(function_in), param(0) {}
         Instruction(op_function function_in, uint64_t param_in)
             : function(function_in), param(param_in) {}
-        void update_param(uint64_t param_in) { param = param_in; }
-        void perform(State &state) const { function(state, param); }
+        void perform(State &state) const {
+            if (function == nullptr) {
+                state.stack.push_back(state.params->resolve(param, state.stash));
+            } else {
+                function(state, param);
+            }
+        }
+        static Instruction fetch_param(size_t param_idx) {
+            return Instruction(nullptr, param_idx);
+        }
     };
 
 private:
