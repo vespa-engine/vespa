@@ -50,7 +50,7 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     vespalib::VersionSpecification version50(5, 0);
     vespalib::VersionSpecification version51(5, 1);
     vespalib::VersionSpecification version52(5, 115);
-    vespalib::VersionSpecification version6(6, 197); // TODO finalize version
+    vespalib::VersionSpecification version6(6, 999); // TODO finalize version
 
     std::vector<vespalib::VersionSpecification> from50 = { version50, version51, version52, version6 };
     std::vector<vespalib::VersionSpecification> from51 = { version51, version52, version6 };
