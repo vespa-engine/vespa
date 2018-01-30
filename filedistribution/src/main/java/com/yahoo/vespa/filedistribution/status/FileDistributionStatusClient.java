@@ -34,7 +34,6 @@ public class FileDistributionStatusClient {
     private static final String statusInProgress = "IN_PROGRESS";
     private static final String statusFinished = "FINISHED";
 
-
     private final String tenantName;
     private final String applicationName;
     private final String instanceName;
@@ -134,23 +133,28 @@ public class FileDistributionStatusClient {
     private String inProgressOutput(JsonNode hosts) {
         ArrayList<String> statusPerHost = new ArrayList<>();
         for (JsonNode host : hosts) {
-            StringBuilder sb = new StringBuilder();
             String status = host.get("status").asText();
-            sb.append(host.get("hostname").asText()).append(": ").append(status);
-            if (status.equals(statusUnknown))
-                sb.append(" (").append(host.get("message").asText()).append(")");
-            else if (status.equals(statusInProgress)) {
-                JsonNode fileReferencesArray = host.get("fileReferences");
-                int size = fileReferencesArray.size();
-                int finished = 0;
-                for (JsonNode element : fileReferencesArray) {
-                    for (Iterator<Map.Entry<String, JsonNode>> it = element.fields(); it.hasNext(); ) {
-                        Map.Entry<String, JsonNode> fileReferenceStatus = it.next();
-                        if (fileReferenceStatus.getValue().asDouble() == 1.0)
-                            finished++;
+            StringBuilder sb = new StringBuilder(host.get("hostname").asText()).append(": ").append(status);
+            switch (status) {
+                case statusUnknown:
+                    sb.append(" (").append(host.get("message").asText()).append(")");
+                    break;
+                case statusInProgress:
+                    JsonNode fileReferencesArray = host.get("fileReferences");
+                    int finished = 0;
+                    for (JsonNode element : fileReferencesArray) {
+                        for (Iterator<Map.Entry<String, JsonNode>> it = element.fields(); it.hasNext(); ) {
+                            Map.Entry<String, JsonNode> fileReferenceStatus = it.next();
+                            if (fileReferenceStatus.getValue().asDouble() == 1.0)
+                                finished++;
+                        }
                     }
-                }
-                sb.append(" (" + finished + " of " + size + " finished)");
+                    sb.append(" (" + finished + " of " + fileReferencesArray.size() + " finished)");
+                    break;
+                case statusFinished:
+                    break; // Nothing to add
+                default:
+                    throw new RuntimeException("Unknown status " + status);
             }
             statusPerHost.add(sb.toString());
         }
