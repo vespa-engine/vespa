@@ -2,7 +2,7 @@
 namespace=vespa.config.search.core
 
 ## Base directory. The default is ignored as it is assigned by the model
-basedir       string default="tmp" restart
+basedir       string default="." restart
 
 ## specifies the port number for the persistent internal transport
 ## protocol provided for a multi-level dispatch system.

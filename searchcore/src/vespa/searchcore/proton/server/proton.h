@@ -12,7 +12,6 @@
 #include "proton_configurer.h"
 #include "rpc_hooks.h"
 #include "bootstrapconfig.h"
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
@@ -38,7 +37,6 @@
 namespace proton {
 
 class DiskMemUsageSampler;
-class HwInfoSampler;
 class IDocumentDBReferenceRegistry;
 
 class Proton : public IProtonConfigurerOwner,
@@ -110,7 +108,6 @@ private:
     TransportServer::UP             _fs4Server;
     vespalib::ThreadStackExecutor   _executor;
     ProtonConfigurer                _protonConfigurer;
-    HwInfo                          _hwInfo;
     ProtonConfigFetcher             _protonConfigFetcher;
     std::unique_ptr<vespalib::ThreadStackExecutorBase> _warmupExecutor;
     std::unique_ptr<vespalib::ThreadStackExecutorBase> _summaryExecutor;
@@ -125,7 +122,6 @@ private:
     bool                            _initStarted;
     bool                            _initComplete;
     bool                            _initDocumentDbsInSequence;
-    std::unique_ptr<HwInfoSampler>  _hwInfoSampler;
     std::shared_ptr<IDocumentDBReferenceRegistry> _documentDBReferenceRegistry;
 
     IDocumentDBConfigOwner *

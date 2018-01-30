@@ -60,7 +60,6 @@ struct ConfigTestFixture {
     ConfigSet set;
     IConfigContext::SP context;
     int idcounter;
-    HwInfo hwInfo;
 
     ConfigTestFixture(const std::string & id)
         : configId(id),
@@ -147,14 +146,15 @@ struct ConfigTestFixture {
                 documenttypesBuilder == bootstrapConfig->getDocumenttypesConfig());
     }
 
-    BootstrapConfig::SP getBootstrapConfig(int64_t generation) const {
+    BootstrapConfig::SP getBootstrapConfig(int64_t generation, const HwInfo & hwInfo) const {
         return BootstrapConfig::SP(new BootstrapConfig(generation,
-                                                       BootstrapConfig::DocumenttypesConfigSP(new DocumenttypesConfig(documenttypesBuilder)),
-                                                       DocumentTypeRepo::SP(new DocumentTypeRepo(documenttypesBuilder)),
-                                                       BootstrapConfig::ProtonConfigSP(new ProtonConfig(protonBuilder)),
+                                                       std::make_shared<DocumenttypesConfig>(documenttypesBuilder),
+                                                       std::make_shared<DocumentTypeRepo>(documenttypesBuilder),
+                                                       std::make_shared<ProtonConfig>(protonBuilder),
                                                        std::make_shared<FiledistributorrpcConfig>(),
                                                        std::make_shared<BucketspacesConfig>(bucketspacesBuilder),
-                                                       std::make_shared<TuneFileDocumentDB>()));
+                                                       std::make_shared<TuneFileDocumentDB>(),
+                                                       hwInfo));
     }
 
     void reload() { context->reload(); }
@@ -236,8 +236,8 @@ DocumentDBConfig::SP
 getDocumentDBConfig(ConfigTestFixture &f, DocumentDBConfigManager &mgr, const HwInfo & hwInfo)
 {
     ConfigRetriever retriever(mgr.createConfigKeySet(), f.context);
-    mgr.forwardConfig(f.getBootstrapConfig(1));
-    mgr.update(retriever.getBootstrapConfigs(), hwInfo); // Cheating, but we only need the configs
+    mgr.forwardConfig(f.getBootstrapConfig(1, hwInfo));
+    mgr.update(retriever.getBootstrapConfigs()); // Cheating, but we only need the configs
     return mgr.getConfig();
 }
 
@@ -281,7 +281,7 @@ TEST_FF("require that documentdb config manager builds schema with imported attr
 TEST_FFF("require that proton config fetcher follows changes to bootstrap",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f1.hwInfo, f2, 60000)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000)) {
     f3.start();
     ASSERT_TRUE(f2._configured);
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
@@ -296,7 +296,7 @@ TEST_FFF("require that proton config fetcher follows changes to bootstrap",
 TEST_FFF("require that proton config fetcher follows changes to doctypes",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f1.hwInfo, f2, 60000)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000)) {
     f3.start();
 
     f2._configured = false;
@@ -316,7 +316,7 @@ TEST_FFF("require that proton config fetcher follows changes to doctypes",
 TEST_FFF("require that proton config fetcher reconfigures dbowners",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f1.hwInfo, f2, 60000)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000)) {
     f3.start();
     ASSERT_FALSE(f2.getDocumentDBConfig("typea"));
 

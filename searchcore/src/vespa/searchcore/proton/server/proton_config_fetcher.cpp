@@ -17,11 +17,10 @@ using namespace std::chrono_literals;
 
 namespace proton {
 
-ProtonConfigFetcher::ProtonConfigFetcher(const config::ConfigUri & configUri, const HwInfo &hwInfo, IProtonConfigurer &owner, uint64_t subscribeTimeout)
+ProtonConfigFetcher::ProtonConfigFetcher(const config::ConfigUri & configUri, IProtonConfigurer &owner, uint64_t subscribeTimeout)
     : _bootstrapConfigManager(configUri.getConfigId()),
       _retriever(_bootstrapConfigManager.createConfigKeySet(), configUri.getContext(), subscribeTimeout),
       _owner(owner),
-      _hwInfo(hwInfo),
       _mutex(),
       _dbManagerMap(),
       _threadPool(128 * 1024, 1),
@@ -66,8 +65,7 @@ ProtonConfigFetcher::pruneManagerMap(const BootstrapConfig::SP & config)
         if (_dbManagerMap.find(docTypeName) != _dbManagerMap.end()) {
             mgr = _dbManagerMap[docTypeName];
         } else {
-            mgr = DocumentDBConfigManager::SP(new DocumentDBConfigManager
-                    (ddb.configid, docTypeName.getName()));
+            mgr = std::make_shared<DocumentDBConfigManager>(ddb.configid, docTypeName.getName());
         }
         set.add(mgr->createConfigKeySet());
         newMap[docTypeName] = mgr;
@@ -82,7 +80,7 @@ ProtonConfigFetcher::updateDocumentDBConfigs(const BootstrapConfig::SP & bootstr
     lock_guard guard(_mutex);
     for (auto & entry : _dbManagerMap) {
         entry.second->forwardConfig(bootstrapConfig);
-        entry.second->update(snapshot, _hwInfo);
+        entry.second->update(snapshot);
     }
 }
 

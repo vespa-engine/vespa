@@ -205,7 +205,7 @@ filterImportedAttributes(const AttributesConfigSP &attrCfg)
 }
 
 void
-DocumentDBConfigManager::update(const ConfigSnapshot &snapshot, const HwInfo & hwInfo)
+DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
 {
     using RankProfilesConfigSP = DocumentDBConfig::RankProfilesConfigSP;
     using RankingConstantsConfigSP = std::shared_ptr<vespa::config::search::core::RankingConstantsConfig>;
@@ -259,10 +259,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot, const HwInfo & h
     }
 
     if (snapshot.isChanged<RankProfilesConfig>(_configId, currentGeneration)) {
-        newRankProfilesConfig =
-            RankProfilesConfigSP(
-                    snapshot.getConfig<RankProfilesConfig>(_configId).
-                    release());
+        newRankProfilesConfig = snapshot.getConfig<RankProfilesConfig>(_configId);
     }
     if (snapshot.isChanged<RankingConstantsConfig>(_configId, currentGeneration)) {
         RankingConstantsConfigSP newRankingConstantsConfig = RankingConstantsConfigSP(
@@ -290,34 +287,34 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot, const HwInfo & h
         newRankingConstants = std::make_shared<RankingConstants>(constants);
     }
     if (snapshot.isChanged<IndexschemaConfig>(_configId, currentGeneration)) {
-        std::unique_ptr<IndexschemaConfig> indexschemaConfig = snapshot.getConfig<IndexschemaConfig>(_configId);
+        newIndexschemaConfig = snapshot.getConfig<IndexschemaConfig>(_configId);
         search::index::Schema schema;
-        search::index::SchemaBuilder::build(*indexschemaConfig, schema);
+        search::index::SchemaBuilder::build(*newIndexschemaConfig, schema);
         if (!search::index::SchemaUtil::validateSchema(schema)) {
             LOG(error, "Cannot use bad index schema, validation failed");
             abort();
         }
-        newIndexschemaConfig = IndexschemaConfigSP(indexschemaConfig.release());
     }
     if (snapshot.isChanged<AttributesConfig>(_configId, currentGeneration)) {
-        newAttributesConfig = AttributesConfigSP(snapshot.getConfig<AttributesConfig>(_configId).release());
+        newAttributesConfig = snapshot.getConfig<AttributesConfig>(_configId);
     }
     if (snapshot.isChanged<SummaryConfig>(_configId, currentGeneration)) {
-        newSummaryConfig = SummaryConfigSP(snapshot.getConfig<SummaryConfig>(_configId).release());
+        newSummaryConfig = snapshot.getConfig<SummaryConfig>(_configId);
     }
     if (snapshot.isChanged<SummarymapConfig>(_configId, currentGeneration)) {
-        newSummarymapConfig = SummarymapConfigSP(snapshot.getConfig<SummarymapConfig>(_configId).release());
+        newSummarymapConfig = snapshot.getConfig<SummarymapConfig>(_configId);
     }
     if (snapshot.isChanged<JuniperrcConfig>(_configId, currentGeneration)) {
-        newJuniperrcConfig = JuniperrcConfigSP(snapshot.getConfig<JuniperrcConfig>(_configId).release());
+        newJuniperrcConfig = snapshot.getConfig<JuniperrcConfig>(_configId);
     }
     if (snapshot.isChanged<ImportedFieldsConfig>(_configId, currentGeneration)) {
-        newImportedFieldsConfig = ImportedFieldsConfigSP(snapshot.getConfig<ImportedFieldsConfig>(_configId).release());
+        newImportedFieldsConfig = snapshot.getConfig<ImportedFieldsConfig>(_configId);
     }
 
     Schema::SP schema(buildSchema(*newAttributesConfig, *newSummaryConfig, *newIndexschemaConfig));
     newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig, _docTypeName);
-    search::LogDocumentStore::Config storeConfig = buildStoreConfig(_bootstrapConfig->getProtonConfig(), hwInfo);
+    search::LogDocumentStore::Config storeConfig = buildStoreConfig(_bootstrapConfig->getProtonConfig(),
+                                                                    _bootstrapConfig->getHwInfo());
     if (newMaintenanceConfig && oldMaintenanceConfig && *newMaintenanceConfig == *oldMaintenanceConfig) {
         newMaintenanceConfig = oldMaintenanceConfig;
     }
@@ -379,8 +376,7 @@ forwardConfig(const BootstrapConfig::SP & config)
 }
 
 DocumentDBConfigHelper::DocumentDBConfigHelper(const DirSpec &spec, const vespalib::string &docTypeName)
-    : _hwInfo(std::make_unique<HwInfo>()),
-      _mgr("", docTypeName),
+    : _mgr("", docTypeName),
       _retriever(make_unique<ConfigRetriever>(_mgr.createConfigKeySet(), make_shared<ConfigContext>(spec)))
 { }
 
@@ -392,7 +388,7 @@ DocumentDBConfigHelper::nextGeneration(int timeoutInMillis)
     ConfigSnapshot snapshot(_retriever->getBootstrapConfigs(timeoutInMillis));
     if (snapshot.empty())
         return false;
-    _mgr.update(snapshot, *_hwInfo);
+    _mgr.update(snapshot);
     return true;
 }
 
