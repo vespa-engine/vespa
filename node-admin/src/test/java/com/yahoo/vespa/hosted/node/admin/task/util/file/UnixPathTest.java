@@ -13,6 +13,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * @author hakonhall
+ */
 public class UnixPathTest {
     final FileSystem fileSystem = TestFileSystem.create();
 
@@ -62,5 +65,16 @@ public class UnixPathTest {
 
         unixPath.setGroup("group");
         assertEquals("group", unixPath.getGroup());
+    }
+
+    @Test
+    public void createDirectoryWithPermissions() {
+        FileSystem fs = TestFileSystem.create();
+        Path path = fs.getPath("dir");
+        UnixPath unixPath = new UnixPath(path);
+        String permissions = "rwxr-xr--";
+        unixPath.createDirectory(permissions);
+        assertTrue(Files.isDirectory(path));
+        assertEquals(permissions, unixPath.getPermissions());
     }
 }
