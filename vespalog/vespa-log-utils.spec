@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # Force special prefix for Vespa
 %define _prefix /opt/vespa
@@ -7,7 +7,7 @@ Name:           vespa-log-utils
 Version:        %version
 Release:        1%{?dist}
 BuildArch:      noarch
-Summary:        Vespa Node Admin
+Summary:        Vespa log utilities
 Group:          Applications/Databases
 License:        Commercial
 URL:            http://vespa.ai
