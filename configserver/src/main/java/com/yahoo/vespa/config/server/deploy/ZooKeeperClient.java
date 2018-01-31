@@ -180,10 +180,6 @@ public class ZooKeeperClient {
                   getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH));
         writeFile(app.getFile(Path.fromString(ApplicationPackage.VALIDATION_OVERRIDES.getName())),
                   getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH));
-
-        writeDir(app.getFile(Path.fromString(ApplicationPackage.TEMPLATES_DIR)),
-                 getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH),
-                 true);
         writeDir(app.getFile(ApplicationPackage.RULES_DIR),
                  getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.RULES_DIR),
                  srFilter, true);

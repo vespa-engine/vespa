@@ -14,7 +14,6 @@ import java.io.File;
 public class AppSubDirs {
 
     final Tuple2<File, String> root;
-    final Tuple2<File, String> templates;
     public final Tuple2<File, String> rules;
     final Tuple2<File, String> searchchains;
     final Tuple2<File, String> docprocchains;
@@ -24,7 +23,6 @@ public class AppSubDirs {
 
     public AppSubDirs(File root) {
         this.root = new Tuple2<>(root, root.getName());
-        templates = createTuple(ApplicationPackage.TEMPLATES_DIR);
         rules = createTuple(ApplicationPackage.RULES_DIR.getRelative());
         searchchains = createTuple(ApplicationPackage.SEARCHCHAINS_DIR);
         docprocchains = createTuple(ApplicationPackage.DOCPROCCHAINS_DIR);
