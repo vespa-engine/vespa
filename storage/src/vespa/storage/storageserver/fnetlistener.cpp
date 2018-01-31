@@ -125,8 +125,7 @@ FNetListener::RPC_getNodeState2(FRT_RPCRequest *req)
     vespalib::string expected(req->GetParams()->GetValue(0)._string._str,
                          req->GetParams()->GetValue(0)._string._len);
 
-    std::shared_ptr<api::GetNodeStateCommand> cmd(
-            new api::GetNodeStateCommand(expected != "unknown"
+    auto cmd(std::make_shared<api::GetNodeStateCommand>(expected != "unknown"
                                          ? std::make_unique<lib::NodeState>(expected)
                                          : std::unique_ptr<lib::NodeState>()));
 
@@ -138,7 +137,7 @@ FNetListener::RPC_getNodeState2(FRT_RPCRequest *req)
         // Create a request object to avoid needing a separate transport type
     cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::make_unique<RPCRequestWrapper>(req)));
     req->Detach();
-    _comManager.enqueue(cmd);
+    _comManager.enqueue(std::move(cmd));
 }
 
 void
@@ -153,13 +152,13 @@ FNetListener::RPC_setSystemState2(FRT_RPCRequest *req)
                                     req->GetParams()->GetValue(0)._string._len);
     lib::ClusterState systemState(systemStateStr);
 
-    std::shared_ptr<api::SetSystemStateCommand> cmd(std::make_shared<api::SetSystemStateCommand>(systemState));
+    auto cmd(std::make_shared<api::SetSystemStateCommand>(systemState));
     cmd->setPriority(api::StorageMessage::VERYHIGH);
 
     // Create a request object to avoid needing a separate transport type
     cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::make_unique<RPCRequestWrapper>(req)));
     req->Detach();
-    _comManager.enqueue(cmd);
+    _comManager.enqueue(std::move(cmd));
 }
 
 }

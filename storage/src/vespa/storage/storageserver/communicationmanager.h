@@ -45,7 +45,7 @@ class RPCRequestWrapper;
 
 class Queue {
 private:
-    using QueueType = std::queue<api::StorageMessage::SP>;
+    using QueueType = std::queue<std::shared_ptr<api::StorageMessage>>;
     QueueType _queue;
     vespalib::Monitor _queueMonitor;
 
@@ -65,7 +65,7 @@ public:
     /**
      * Enqueue msg in FIFO order.
      */
-    void enqueue(const std::shared_ptr<api::StorageMessage>& msg);
+    void enqueue(std::shared_ptr<api::StorageMessage> msg);
 
     /** Signal queue monitor. */
     void signal();
@@ -150,7 +150,7 @@ public:
                          const config::ConfigUri & configUri);
     ~CommunicationManager();
 
-    void enqueue(const std::shared_ptr<api::StorageMessage> & msg);
+    void enqueue(std::shared_ptr<api::StorageMessage> msg);
     mbus::RPCMessageBus& getMessageBus() { assert(_mbus.get()); return *_mbus; }
     const PriorityConverter& getPriorityConverter() const { return _docApiConverter.getPriorityConverter(); }
 
