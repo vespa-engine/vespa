@@ -40,12 +40,13 @@ makeBaseConfigSnapshot()
 
     DBCM dbcm(spec, "test");
     DocumenttypesConfigSP dtcfg(config::ConfigGetter<DocumenttypesConfig>::getConfig("", spec).release());
-    BootstrapConfig::SP b(new BootstrapConfig(1, dtcfg,
+    BootstrapConfig::SP b(new BootstrapConfig(1,
+                                              dtcfg,
                                               DocumentTypeRepo::SP(new DocumentTypeRepo(*dtcfg)),
                                               std::make_shared<ProtonConfig>(),
                                               std::make_shared<FiledistributorrpcConfig>(),
                                               std::make_shared<BucketspacesConfig>(),
-                                              std::make_shared<TuneFileDocumentDB>(), HwInfo()));
+                                              std::make_shared<TuneFileDocumentDB>()));
     dbcm.forwardConfig(b);
     dbcm.nextGeneration(0);
     DocumentDBConfig::SP snap = dbcm.getConfig();

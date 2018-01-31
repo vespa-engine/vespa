@@ -23,9 +23,6 @@ public:
         uint64_t sizeBytes() const { return _sizeBytes; }
         bool slow() const { return _slow; }
         bool shared() const { return _shared; }
-        bool operator == (const Disk & rhs) const {
-            return (_sizeBytes == rhs._sizeBytes) && (_slow == rhs._slow) && (_shared == rhs._shared);
-        }
     };
 
     class Memory {
@@ -34,7 +31,6 @@ public:
     public:
         Memory(uint64_t sizeBytes_) : _sizeBytes(sizeBytes_) {}
         uint64_t sizeBytes() const { return _sizeBytes; }
-        bool operator == (const Memory & rhs) const { return _sizeBytes == rhs._sizeBytes; }
     };
 
     class Cpu {
@@ -43,7 +39,6 @@ public:
     public:
         Cpu(uint32_t cores_) : _cores(cores_) {}
         uint32_t cores() const { return _cores; }
-        bool operator == (const Cpu & rhs) const { return _cores == rhs._cores; }
     };
 
 private:
@@ -71,9 +66,6 @@ public:
     const Disk &disk() const { return _disk; }
     const Memory &memory() const { return _memory; }
     const Cpu &cpu() const { return _cpu; }
-    bool operator == (const HwInfo & rhs) const {
-        return (_cpu == rhs._cpu) && (_disk == rhs._disk) && (_memory == rhs._memory);
-    }
 };
 
 }

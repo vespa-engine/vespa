@@ -99,7 +99,7 @@ Fixture::Fixture()
                               std::make_shared<ProtonConfig>(),
                               std::make_shared<FiledistributorrpcConfig>(),
                               std::make_shared<BucketspacesConfig>(),
-                              tuneFileDocumentDB, HwInfo()));
+                              tuneFileDocumentDB));
     mgr.forwardConfig(b);
     mgr.nextGeneration(0);
     _db.reset(new DocumentDB(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, _clock, DocTypeName("typea"),

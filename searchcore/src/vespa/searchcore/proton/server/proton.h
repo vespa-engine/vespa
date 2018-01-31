@@ -12,6 +12,7 @@
 #include "proton_configurer.h"
 #include "rpc_hooks.h"
 #include "bootstrapconfig.h"
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
@@ -37,6 +38,7 @@
 namespace proton {
 
 class DiskMemUsageSampler;
+class HwInfoSampler;
 class IDocumentDBReferenceRegistry;
 
 class Proton : public IProtonConfigurerOwner,
@@ -122,6 +124,8 @@ private:
     bool                            _initStarted;
     bool                            _initComplete;
     bool                            _initDocumentDbsInSequence;
+    HwInfo                          _hwInfo;
+    std::unique_ptr<HwInfoSampler>  _hwInfoSampler;
     std::shared_ptr<IDocumentDBReferenceRegistry> _documentDBReferenceRegistry;
 
     IDocumentDBConfigOwner *

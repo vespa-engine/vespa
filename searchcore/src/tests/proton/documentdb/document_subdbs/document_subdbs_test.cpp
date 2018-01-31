@@ -284,7 +284,7 @@ struct MyConfigSnapshot
                                  std::make_shared<ProtonConfig>(),
                                  std::make_shared<FiledistributorrpcConfig>(),
                                  std::make_shared<BucketspacesConfig>(),
-                                 tuneFileDocumentDB, HwInfo());
+                                 tuneFileDocumentDB);
         config::DirSpec spec(cfgDir);
         DocumentDBConfigHelper mgr(spec, "searchdocument");
         mgr.forwardConfig(_bootstrap);

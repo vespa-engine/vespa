@@ -208,7 +208,7 @@ public:
                                                    std::make_shared<ProtonConfig>(),
                                                    std::make_shared<FiledistributorrpcConfig>(),
                                                    std::make_shared<BucketspacesConfig>(),
-                                                   _tuneFileDocumentDB, _hwInfo);
+                                                   _tuneFileDocumentDB);
         _configMgr.forwardConfig(b);
         _configMgr.nextGeneration(0);
         if (! FastOS_File::MakeDirectory((std::string("tmpdb/") + docTypeName).c_str())) { abort(); }
