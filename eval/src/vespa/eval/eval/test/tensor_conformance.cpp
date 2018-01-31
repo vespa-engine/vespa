@@ -234,87 +234,6 @@ struct ImmediateRename : Eval {
 
 //-----------------------------------------------------------------------------
 
-const size_t tensor_id_a = 11;
-const size_t tensor_id_b = 12;
-
-// input used when evaluating in retained mode
-struct Input {
-    std::vector<Value::UP> tensors;
-    std::vector<Value::CREF> params;
-    ~Input() {}
-    void pad_params() {
-        for (size_t i = 0; i < tensor_id_a; ++i) {
-            params.push_back(ErrorValue::instance);
-        }
-    }
-    Input(Value::UP a) : tensors() {
-        pad_params();
-        tensors.push_back(std::move(a));
-        params.emplace_back(*tensors.back());
-    }
-    Input(Value::UP a, Value::UP b) : tensors() {
-        pad_params();
-        tensors.push_back(std::move(a));
-        params.emplace_back(*tensors.back());
-        tensors.push_back(std::move(b));
-        params.emplace_back(*tensors.back());
-    }
-    SimpleObjectParams get() const {
-        return SimpleObjectParams(params);
-    }
-};
-
-// evaluate tensor reduce operation using tensor engine retained api
-struct RetainedReduce : Eval {
-    Aggr aggr;
-    std::vector<vespalib::string> dimensions;
-    RetainedReduce(Aggr aggr_in) : aggr(aggr_in), dimensions() {}
-    RetainedReduce(Aggr aggr_in, const vespalib::string &dimension)
-        : aggr(aggr_in), dimensions({dimension}) {}
-    Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
-        Stash stash;
-        auto a_type = ValueType::from_spec(a.type());
-        const auto &ir = tensor_function::reduce(tensor_function::inject(a_type, tensor_id_a, stash), aggr, dimensions, stash);
-        ValueType expect_type = ir.result_type();
-        const auto &fun = engine.optimize(ir, stash);
-        Input input(engine.from_spec(a));
-        return Result(engine, check_type(fun.eval(engine, input.get(), stash), expect_type));
-    }
-};
-
-// evaluate tensor map operation using tensor engine retained api
-struct RetainedMap : Eval {
-    map_fun_t function;
-    RetainedMap(map_fun_t function_in) : function(function_in) {}
-    Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
-        Stash stash;
-        auto a_type = ValueType::from_spec(a.type());
-        const auto &ir = tensor_function::map(tensor_function::inject(a_type, tensor_id_a, stash), function, stash);
-        ValueType expect_type = ir.result_type();
-        const auto &fun = engine.optimize(ir, stash);
-        Input input(engine.from_spec(a));
-        return Result(engine, check_type(fun.eval(engine, input.get(), stash), expect_type));
-    }
-};
-
-// evaluate tensor join operation using tensor engine retained api
-struct RetainedJoin : Eval {
-    join_fun_t function;
-    RetainedJoin(join_fun_t function_in) : function(function_in) {}
-    Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
-        Stash stash;
-        auto a_type = ValueType::from_spec(a.type());
-        auto b_type = ValueType::from_spec(b.type());
-        const auto &ir = tensor_function::join(tensor_function::inject(a_type, tensor_id_a, stash),
-                                               tensor_function::inject(b_type, tensor_id_b, stash),
-                                               function, stash);
-        ValueType expect_type = ir.result_type();
-        const auto &fun = engine.optimize(ir, stash);
-        Input input(engine.from_spec(a), engine.from_spec(b));
-        return Result(engine, check_type(fun.eval(engine, input.get(), stash), expect_type));
-    }
-};
-
 // placeholder used for unused values in a sequence
 const double X = error_value;
 
@@ -419,7 +338,6 @@ struct TestContext {
                         AggrNames::name_of(aggr)->c_str(), domain.dimension.c_str());
                 TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
                 TEST_DO(verify_reduce_result(ImmediateReduce(aggr, domain.dimension), input, expect));
-                TEST_DO(verify_reduce_result(RetainedReduce(aggr, domain.dimension), input, expect));
             }
             {
                 Eval::Result expect = ImmediateReduce(aggr).eval(ref_engine, input);
@@ -428,7 +346,6 @@ struct TestContext {
                 vespalib::string expr = make_string("reduce(a,%s)", AggrNames::name_of(aggr)->c_str());
                 TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
                 TEST_DO(verify_reduce_result(ImmediateReduce(aggr), input, expect));
-                TEST_DO(verify_reduce_result(RetainedReduce(aggr), input, expect));
             }
         }
     }
@@ -463,7 +380,6 @@ struct TestContext {
 
     void test_map_op(const vespalib::string &expr, map_fun_t op, const Sequence &seq) {
         TEST_DO(test_map_op(ImmediateMap(op), op, seq));
-        TEST_DO(test_map_op(RetainedMap(op), op, seq));
         TEST_DO(test_map_op(Expr_T(expr), op, seq));
         TEST_DO(test_map_op(Expr_T(make_string("map(x,f(a)(%s))", expr.c_str())), op, seq));
     }
@@ -740,7 +656,6 @@ struct TestContext {
 
     void test_apply_op(const vespalib::string &expr, join_fun_t op, const Sequence &seq) {
         TEST_DO(test_apply_op(ImmediateJoin(op), op, seq));
-        TEST_DO(test_apply_op(RetainedJoin(op), op, seq));
         TEST_DO(test_apply_op(Expr_TT(expr), op, seq));
         TEST_DO(test_apply_op(Expr_TT(make_string("join(x,y,f(a,b)(%s))", expr.c_str())), op, seq));
     }
