@@ -12,7 +12,6 @@
 #include "proton_config_snapshot.h"
 #include "fileconfigmanager.h"
 
-#include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
 #include <vespa/searchcore/proton/flushengine/prepare_restart_flush_strategy.h>
