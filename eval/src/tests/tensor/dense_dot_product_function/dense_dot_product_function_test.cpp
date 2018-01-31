@@ -80,8 +80,9 @@ struct Fixture
     Fixture(size_t lhsNumCells, size_t rhsNumCells);
     ~Fixture();
     double eval() const {
-        Stash stash;
-        const Value &result = function.eval(DefaultTensorEngine::ref(), input.get(), stash);
+        InterpretedFunction ifun(DefaultTensorEngine::ref(), function);
+        InterpretedFunction::Context ictx(ifun);
+        const Value &result = ifun.eval(ictx, input.get());
         ASSERT_TRUE(result.is_double());
         LOG(info, "eval(): (%s) * (%s) = %f",
             input.param(0).type().to_spec().c_str(),
