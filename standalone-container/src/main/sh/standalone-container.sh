@@ -108,7 +108,6 @@ StartCommand() {
 
     # stuff for the process:
     local appdir="$VESPA_HOME/conf/$service-app"
-    local pidfile="$VESPA_HOME/var/run/$service.pid"
     local cfpfile="$VESPA_HOME/var/jdisc_core/$service.properties"
     local bundlecachedir="$VESPA_HOME/var/vespa/bundlecache/$service"
 
@@ -116,6 +115,8 @@ StartCommand() {
 
     fixlimits
     checkjava
+
+    FixDataDirectory "$(dirname "$pidfile")"
 
     local vespa_log="$VESPA_HOME/logs/vespa/vespa.log"
     export VESPA_LOG_TARGET="file:$vespa_log"
