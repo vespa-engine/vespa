@@ -83,4 +83,17 @@ public class SessionHandler extends HttpHandler {
         return deployLog;
     }
 
+    protected static boolean shouldIgnoreLockFailure(HttpRequest request) {
+        return request.getBooleanProperty("force");
+    }
+
+    /**
+     * True if this request should ignore activation failure because the session was made from an active session that is not active now
+     * @param request a {@link com.yahoo.container.jdisc.HttpRequest}
+     * @return true if ignore failure
+     */
+    protected static boolean shouldIgnoreSessionStaleFailure(HttpRequest request) {
+        return request.getBooleanProperty("force");
+    }
+
 }

@@ -353,6 +353,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return new PrepareResult(sessionId, actions, deployLog);
     }
 
+    public PrepareResult prepareAndActivate(Tenant tenant, long sessionId, PrepareParams prepareParams,
+                                            boolean ignoreLockFailure, boolean ignoreSessionStaleFailure, Instant now) {
+        PrepareResult result = prepare(tenant, sessionId, prepareParams, now);
+        activate(tenant, sessionId, prepareParams.getTimeoutBudget(), ignoreLockFailure, ignoreSessionStaleFailure);
+        return result;
+    }
+
     private List<ApplicationId> listApplicationIds(Tenant tenant) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         return applicationRepo.listApplications();
