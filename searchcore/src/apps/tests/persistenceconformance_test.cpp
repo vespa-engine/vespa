@@ -183,7 +183,7 @@ public:
                                                   std::make_shared<ProtonConfig>(),
                                                   std::make_shared<FiledistributorrpcConfig>(),
                                                   std::make_shared<BucketspacesConfig>(),
-                                                  tuneFileDocDB));
+                                                  tuneFileDocDB, HwInfo()));
         mgr.forwardConfig(b);
         mgr.nextGeneration(0);
         return DocumentDB::SP(

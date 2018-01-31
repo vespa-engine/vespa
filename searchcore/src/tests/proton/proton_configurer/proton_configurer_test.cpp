@@ -171,7 +171,7 @@ struct ConfigFixture {
                                                        BootstrapConfig::ProtonConfigSP(new ProtonConfig(_protonBuilder)),
                                                        std::make_shared<FiledistributorrpcConfig>(),
                                                        std::make_shared<BucketspacesConfig>(_bucketspacesBuilder),
-                                                       std::make_shared<TuneFileDocumentDB>()));
+                                                       std::make_shared<TuneFileDocumentDB>(), HwInfo()));
     }
 
     std::shared_ptr<ProtonConfigSnapshot> getConfigSnapshot()

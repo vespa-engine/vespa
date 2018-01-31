@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/config/config.h>
 #include "documentdbconfig.h"
+#include <vespa/config/config.h>
 #include <mutex>
 
 namespace proton {
 
 class BootstrapConfig;
+
 /**
  * This class manages the subscription for documentdb configs.
  */

@@ -65,8 +65,7 @@ ProtonConfigFetcher::pruneManagerMap(const BootstrapConfig::SP & config)
         if (_dbManagerMap.find(docTypeName) != _dbManagerMap.end()) {
             mgr = _dbManagerMap[docTypeName];
         } else {
-            mgr = DocumentDBConfigManager::SP(new DocumentDBConfigManager
-                    (ddb.configid, docTypeName.getName()));
+            mgr = std::make_shared<DocumentDBConfigManager>(ddb.configid, docTypeName.getName());
         }
         set.add(mgr->createConfigKeySet());
         newMap[docTypeName] = mgr;
