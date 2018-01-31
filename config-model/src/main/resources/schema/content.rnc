@@ -337,6 +337,7 @@ Tuning = element tuning {
          element store {
             element cache {
                element maxsize { xsd:nonNegativeInteger }? &
+               element maxsize-percent { xsd:double { minInclusive = "0.0" maxInclusive = "50.0" } }? &
                element initialentries { xsd:nonNegativeInteger }? &
                element maxentries { xsd:nonNegativeInteger }? &
                TuningCompression?
