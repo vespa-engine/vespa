@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.process;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
@@ -21,44 +22,27 @@ public class TestCommand extends Command {
                        String out) {
         super(context);
         this.expectedCommandLine = expectedCommandLine;
-        this.childProcess = new ChildProcess() {
+
+        ProcessApi processApi = new ProcessApi() {
             @Override
-            public ChildProcess waitForTermination() {
-                return this;
-            }
+            public void waitForTermination() {}
 
             @Override
-            public int exitValue() {
-                return exitValue;
-            }
+            public int exitCode() { return exitValue; }
 
             @Override
-            public ChildProcess throwIfFailed() {
-                if (exitValue != 0) {
-                    throw new CommandException("exited with " + exitValue);
-                }
-                return this;
-            }
-
-            @Override
-            public String getUtf8Output() {
-                return out;
-            }
+            public String getUtf8Output() { return out; }
 
             @Override
             public void close() { }
 
             @Override
-            public Path getProcessOutputPath() { return null; }
-
-            @Override
-            public void logAsModifyingSystemAfterAll(Logger logger) { }
-
-            @Override
-            public String commandLine() {
-                return "program";
+            public Path getProcessOutputPath() {
+                return Paths.get("/foo");
             }
         };
+
+        this.childProcess = new ChildProcessImpl(context, processApi, expectedCommandLine);
     }
 
     @Override

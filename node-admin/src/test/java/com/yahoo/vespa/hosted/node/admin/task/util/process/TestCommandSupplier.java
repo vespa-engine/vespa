@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
+/**
+ * @author hakonhall
+ */
 public class TestCommandSupplier implements Supplier<Command> {
     private final TaskContext taskContext;
     private final List<TestCommand> expectedInvocations = new ArrayList<>();
@@ -24,7 +27,8 @@ public class TestCommandSupplier implements Supplier<Command> {
     @Override
     public Command get() {
         if (index >= expectedInvocations.size()) {
-            throw new IllegalStateException("Too many command invocations");
+            throw new IllegalStateException("Too many command invocations: Expected to create " +
+                    expectedInvocations.size() + " Command objects");
         }
 
         return expectedInvocations.get(index++);

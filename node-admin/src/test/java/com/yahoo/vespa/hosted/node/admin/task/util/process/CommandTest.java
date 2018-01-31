@@ -76,9 +76,9 @@ public class CommandTest {
                 childProcess.waitForTermination().throwIfFailed();
                 fail();
             } catch (CommandException e) {
-                assertEquals("Execution of program [bash -c \"echo foo; echo bar >&2; exit 1\"] failed, stdout/stderr was: <foo\n" +
+                assertEquals("Command 'bash -c \"echo foo; echo bar >&2; exit 1\"' terminated with non-zero exit code 1: stdout/stderr: 'foo\n" +
                                 "bar\n" +
-                                ">",
+                                "'",
                         e.getMessage());
             }
         }
