@@ -102,25 +102,6 @@ TensorSpec eval_expr(const Inspector &test, const TensorEngine &engine, bool typ
     return engine.to_spec(result);
 }
 
-TensorSpec eval_expr_tf(const Inspector &test, const TensorEngine &engine) {
-    Stash stash;
-    Function fun = Function::parse(test["expression"].asString().make_string());
-    std::vector<Value::UP> param_values;
-    std::vector<Value::CREF> param_refs;
-    for (size_t i = 0; i < fun.num_params(); ++i) {
-        param_values.emplace_back(engine.from_spec(extract_value(test["inputs"][fun.param_name(i)])));
-        param_refs.emplace_back(*param_values.back());
-    }
-    SimpleObjectParams params(param_refs);
-    NodeTypes types = NodeTypes(fun, get_types(param_values));
-    const auto &plain_fun = make_tensor_function(engine, fun.root(), types, stash);
-    const auto &optimized = engine.optimize(plain_fun, stash);
-    const Value &result = optimized.eval(engine, params, stash);
-    ASSERT_EQUAL(result.type(), plain_fun.result_type());
-    ASSERT_EQUAL(result.type(), types.get_type(fun.root()));
-    return engine.to_spec(result);
-}
-
 //-----------------------------------------------------------------------------
 
 std::vector<vespalib::string> extract_fields(const Inspector &object) {
@@ -187,8 +168,6 @@ void evaluate(Input &in, Output &out) {
                                    eval_expr(slime.get(), DefaultTensorEngine::ref(), false));
                            insert_value(slime["result"], "cpp_ref_typed",
                                    eval_expr(slime.get(), SimpleTensorEngine::ref(), true));
-                           insert_value(slime["result"], "cpp_tensor_function",
-                                   eval_expr_tf(slime.get(), DefaultTensorEngine::ref()));
                            write_compact(slime, out);
                        };
     auto handle_summary = [&out](Slime &slime)
