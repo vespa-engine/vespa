@@ -42,7 +42,6 @@ public class FilesApplicationPackageTest {
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
 
         ApplicationPackage processed = app.preprocess(new Zone(Environment.dev, RegionName.defaultName()),
-                                                      (ruleBaseDir, outputDir) -> {},
                                                       new BaseDeployLogger());
         assertTrue(new File(appDir, ".preprocessed").exists());
         String expectedServices = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
