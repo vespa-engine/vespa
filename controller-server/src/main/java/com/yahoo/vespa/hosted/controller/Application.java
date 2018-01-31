@@ -7,9 +7,9 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -149,6 +149,16 @@ public class Application {
                 .min(Comparator.naturalOrder());
     }
 
+    /**
+     * Returns the oldest application version this has deployed in a permanent zone (not test or staging),
+     * or empty version if it is not deployed anywhere
+     */
+    public Optional<ApplicationVersion> oldestDeployedApplicationVersion() {
+        return productionDeployments().values().stream()
+                .map(Deployment::applicationVersion)
+                .min(Comparator.naturalOrder());
+    }
+
     /** Returns the version a new deployment to this zone should use for this application */
     public Version deployVersionIn(ZoneId zone, Controller controller) {
         return change.platform().orElse(versionIn(zone, controller));
@@ -157,19 +167,18 @@ public class Application {
     /** Returns the current version this application has, or if none; should use, in the given zone */
     public Version versionIn(ZoneId zone, Controller controller) {
         return Optional.ofNullable(deployments().get(zone)).map(Deployment::version) // Already deployed in this zone: Use that version
-                .orElse(oldestDeployedVersion().orElse(controller.systemVersion()));
+                       .orElse(oldestDeployedVersion().orElse(controller.systemVersion()));
     }
 
     /** Returns the application version a deployment to this zone should use, or empty if we don't know */
     public Optional<ApplicationVersion> deployApplicationVersionIn(ZoneId zone) {
         if (change().application().isPresent()) {
             ApplicationVersion version = change().application().get();
-            if (version == ApplicationVersion.unknown)
+            if (version.isUnknown())
                 return Optional.empty();
             else
                 return Optional.of(version);
         }
-
         return applicationVersionIn(zone);
     }
 
