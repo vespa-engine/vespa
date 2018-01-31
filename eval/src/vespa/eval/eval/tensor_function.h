@@ -87,18 +87,6 @@ struct TensorFunction
      **/
     virtual InterpretedFunction::Instruction compile_self(Stash &stash) const = 0;
 
-    /**
-     * Evaluate this tensor function based on the given
-     * parameters. The given stash can be used to store temporary
-     * objects that need to be kept alive for the return value to be
-     * valid. The return value must conform to 'result_type'.
-     *
-     * @return result of evaluating this tensor function
-     * @param engine the tensor engine we are using for evaluation
-     * @param params external values needed to evaluate this function
-     * @param stash heterogeneous object store
-     **/
-    virtual const Value &eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const = 0;
     virtual ~TensorFunction() {}
 };
 
@@ -169,7 +157,6 @@ private:
     const Value &_value;
 public:
     ConstValue(const Value &value_in) : Leaf(value_in.type()), _value(value_in) {}
-    const Value &eval(const TensorEngine &engine, const LazyParams &params, Stash &) const final override;
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
 };
 
@@ -183,7 +170,6 @@ public:
     Inject(const ValueType &result_type_in, size_t param_idx_in)
         : Leaf(result_type_in), _param_idx(param_idx_in) {}
     size_t param_idx() const { return _param_idx; }
-    const Value &eval(const TensorEngine &engine, const LazyParams &params, Stash &) const final override;
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
 };
 
@@ -202,7 +188,6 @@ public:
         : Op1(result_type_in, child_in), _aggr(aggr_in), _dimensions(dimensions_in) {}
     Aggr aggr() const { return _aggr; }
     const std::vector<vespalib::string> &dimensions() const { return _dimensions; }
-    const Value &eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const final override;
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
 };
 
@@ -218,7 +203,6 @@ public:
         map_fun_t function_in)
         : Op1(result_type_in, child_in), _function(function_in) {}
     map_fun_t function() const { return _function; }
-    const Value &eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const final override;
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
 };
 
@@ -235,7 +219,6 @@ public:
          join_fun_t function_in)
         : Op2(result_type_in, lhs_in, rhs_in), _function(function_in) {}
     join_fun_t function() const { return _function; }
-    const Value &eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const final override;
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
 };
 
@@ -252,7 +235,6 @@ public:
            const vespalib::string &dimension_in)
         : Op2(result_type_in, lhs_in, rhs_in), _dimension(dimension_in) {}
     const vespalib::string &dimension() const { return _dimension; }
-    const Value &eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const final override;
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
 };
 
@@ -271,7 +253,6 @@ public:
         : Op1(result_type_in, child_in), _from(from_in), _to(to_in) {}
     const std::vector<vespalib::string> &from() const { return _from; }
     const std::vector<vespalib::string> &to() const { return _to; }
-    const Value &eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const final override;
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
 };
 
@@ -293,7 +274,6 @@ public:
     const TensorFunction &true_child() const { return _true_child.get(); }
     const TensorFunction &false_child() const { return _false_child.get(); }
     void push_children(std::vector<Child::CREF> &children) const final override;    
-    const Value &eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const final override;
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
 };
 
