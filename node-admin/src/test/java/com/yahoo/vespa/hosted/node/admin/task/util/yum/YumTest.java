@@ -26,7 +26,7 @@ public class YumTest {
         commandSupplier.expectCommand(
                 "yum install --assumeyes --enablerepo=repo-name package-1 package-2",
                 0,
-                "\nNothing to do\n");
+                "foobar\nNothing to do\n");
 
         Yum yum = new Yum(taskContext, commandSupplier);
         assertFalse(yum
@@ -40,7 +40,7 @@ public class YumTest {
         commandSupplier.expectCommand(
                 "yum upgrade --assumeyes package-1 package-2",
                 0,
-                "\nNo packages marked for update\n");
+                "foobar\nNo packages marked for update\n");
 
         assertFalse(new Yum(taskContext, commandSupplier)
                 .upgrade("package-1", "package-2")
@@ -52,7 +52,7 @@ public class YumTest {
         commandSupplier.expectCommand(
                 "yum remove --assumeyes package-1 package-2",
                 0,
-                "\nNo Packages marked for removal\n");
+                "foobar\nNo Packages marked for removal\n");
 
         assertFalse(new Yum(taskContext, commandSupplier)
                 .remove("package-1", "package-2")
