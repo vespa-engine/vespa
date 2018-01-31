@@ -2,7 +2,6 @@
 
 #include "fileconfigmanager.h"
 #include "bootstrapconfig.h"
-#include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/config/print/fileconfigsnapshotreader.h>
 #include <vespa/config/print/fileconfigsnapshotwriter.h>
@@ -12,7 +11,9 @@
 #include <vespa/config-summarymap.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/fastos/file.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <fstream>
 #include <sstream>
 #include <fcntl.h>
 
@@ -359,16 +360,8 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
      * of default values here instead of the current values from the config
      * server.
      */
-    const ProtonConfig &protonConfig = *_protonConfig;
-    const auto &hwDiskCfg = protonConfig.hwinfo.disk;
-    const auto &hwMemoryCfg = protonConfig.hwinfo.memory;
-    const auto &hwCpuCfg = protonConfig.hwinfo.cpu;
-    HwInfoSampler::Config samplerCfg(hwDiskCfg.size, hwDiskCfg.writespeed, hwDiskCfg.slowwritespeedlimit,
-                                     hwDiskCfg.samplewritesize, hwDiskCfg.shared, hwMemoryCfg.size, hwCpuCfg.cores);
-    HwInfoSampler sampler(protonConfig.basedir, samplerCfg);
     auto bootstrap = std::make_shared<BootstrapConfig>(1, docTypesCfg, repo, _protonConfig, filedistRpcConf,
-                                                       bucketspaces,currentSnapshot.getTuneFileDocumentDBSP(),
-                                                       sampler.hwInfo());
+                                                       bucketspaces,currentSnapshot.getTuneFileDocumentDBSP());
     dbc.forwardConfig(bootstrap);
     dbc.nextGeneration(0);
 

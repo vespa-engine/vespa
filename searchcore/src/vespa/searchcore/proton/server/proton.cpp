@@ -202,6 +202,8 @@ Proton::Proton(const config::ConfigUri & configUri,
       _initStarted(false),
       _initComplete(false),
       _initDocumentDbsInSequence(false),
+      _hwInfo(),
+      _hwInfoSampler(),
       _documentDBReferenceRegistry()
 {
     _documentDBReferenceRegistry = std::make_shared<DocumentDBReferenceRegistry>();
@@ -229,12 +231,22 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 {
     assert( _initStarted && ! _initComplete );
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
-    const HwInfo & hwInfo = configSnapshot->getHwInfo();
-
+    const auto &hwDiskCfg = protonConfig.hwinfo.disk;
+    const auto &hwMemoryCfg = protonConfig.hwinfo.memory;
+    const auto &hwCpuCfg = protonConfig.hwinfo.cpu;
+    HwInfoSampler::Config samplerCfg(hwDiskCfg.size,
+                                     hwDiskCfg.writespeed,
+                                     hwDiskCfg.slowwritespeedlimit,
+                                     hwDiskCfg.samplewritesize,
+                                     hwDiskCfg.shared,
+                                     hwMemoryCfg.size,
+                                     hwCpuCfg.cores);
+    _hwInfoSampler = std::make_unique<HwInfoSampler>(protonConfig.basedir, samplerCfg);
+    _hwInfo = _hwInfoSampler->hwInfo();
     setFS4Compression(protonConfig);
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>
                            (protonConfig.basedir,
-                            diskMemUsageSamplerConfig(protonConfig, hwInfo));
+                            diskMemUsageSamplerConfig(protonConfig, _hwInfo));
 
     _metricsEngine.reset(new MetricsEngine());
     _metricsEngine->addMetricsHook(_metricsHook);
@@ -251,8 +263,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     switch (flush.strategy) {
     case ProtonConfig::Flush::MEMORY: {
         auto memoryFlush = std::make_shared<MemoryFlush>(
-                MemoryFlushConfigUpdater::convertConfig(flush.memory, hwInfo.memory()), fastos::ClockSystem::now());
-        _memoryFlushConfigUpdater = std::make_unique<MemoryFlushConfigUpdater>(memoryFlush, flush.memory, hwInfo.memory());
+                MemoryFlushConfigUpdater::convertConfig(flush.memory, _hwInfo.memory()), fastos::ClockSystem::now());
+        _memoryFlushConfigUpdater = std::make_unique<MemoryFlushConfigUpdater>(memoryFlush, flush.memory, _hwInfo.memory());
         _diskMemUsageSampler->notifier().addDiskMemUsageListener(_memoryFlushConfigUpdater.get());
         strategy = memoryFlush;
         break;
@@ -284,7 +296,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     vespalib::string fileConfigId;
     _warmupExecutor.reset(new vespalib::ThreadStackExecutor(4, 128*1024));
 
-    const size_t summaryThreads = deriveCompactionCompressionThreads(protonConfig, hwInfo.cpu());
+    const size_t summaryThreads = deriveCompactionCompressionThreads(protonConfig, _hwInfo.cpu());
     _summaryExecutor.reset(new vespalib::BlockingThreadStackExecutor(summaryThreads, 128*1024, summaryThreads*16));
     InitializeThreads initializeThreads;
     if (protonConfig.initialize.threads > 0) {
@@ -339,7 +351,7 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
                             protonConfig.search.memory.limiter.minhits);
     const DocumentTypeRepo::SP repo = configSnapshot->getDocumentTypeRepoSP();
 
-    _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, configSnapshot->getHwInfo()));
+    _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, _hwInfo));
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setConfig(protonConfig.flush.memory);
         _flushEngine->kick();
@@ -533,7 +545,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                                       _fileHeaderContext,
                                       std::move(config_store),
                                       initializeThreads,
-                                      bootstrapConfig->getHwInfo()));
+                                      _hwInfo));
     try {
         ret->start();
     } catch (vespalib::Exception &e) {

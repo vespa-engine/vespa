@@ -52,9 +52,9 @@ private:
     using TimePoint = std::chrono::time_point<Clock>;
     using OldDocumentTypeRepo = std::pair<TimePoint, std::shared_ptr<document::DocumentTypeRepo>>;
 
-    BootstrapConfigManager  _bootstrapConfigManager;
+    BootstrapConfigManager _bootstrapConfigManager;
     config::ConfigRetriever _retriever;
-    IProtonConfigurer     & _owner;
+    IProtonConfigurer & _owner;
 
     mutable std::mutex _mutex; // Protects maps
     using lock_guard = std::lock_guard<std::mutex>;
@@ -71,4 +71,6 @@ private:
     void rememberDocumentTypeRepo(std::shared_ptr<document::DocumentTypeRepo> repo);
 };
 
+
 } // namespace proton
+

@@ -29,30 +29,29 @@ BootstrapConfig::BootstrapConfig(
                const ProtonConfigSP &protonConfig,
                const FiledistributorrpcConfigSP &filedistRpcConfSP,
                const BucketspacesConfigSP &bucketspaces,
-               const search::TuneFileDocumentDB::SP &tuneFileDocumentDB,
-               const HwInfo & hwInfo)
+               const search::TuneFileDocumentDB::SP &tuneFileDocumentDB)
     : _documenttypes(documenttypes),
       _repo(repo),
       _proton(protonConfig),
       _fileDistributorRpc(filedistRpcConfSP),
       _bucketspaces(bucketspaces),
       _tuneFileDocumentDB(tuneFileDocumentDB),
-      _hwInfo(hwInfo),
       _generation(generation)
 { }
 
-BootstrapConfig::~BootstrapConfig() = default;
+BootstrapConfig::~BootstrapConfig() { }
 
 bool
 BootstrapConfig::operator==(const BootstrapConfig &rhs) const
 {
-    return equals<DocumenttypesConfig>(_documenttypes.get(), rhs._documenttypes.get()) &&
+    return equals<DocumenttypesConfig>(_documenttypes.get(),
+                                       rhs._documenttypes.get()) &&
         _repo.get() == rhs._repo.get() &&
         equals<ProtonConfig>(_proton.get(), rhs._proton.get()) &&
         equals<FiledistributorrpcConfig>(_fileDistributorRpc.get(), rhs._fileDistributorRpc.get()) &&
         equals<BucketspacesConfig>(_bucketspaces.get(), rhs._bucketspaces.get()) &&
-        equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(), rhs._tuneFileDocumentDB.get()) &&
-        (_hwInfo == rhs._hwInfo);
+        equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(),
+                                   rhs._tuneFileDocumentDB.get());
 }
 
 
@@ -61,5 +60,6 @@ BootstrapConfig::valid() const
 {
     return _documenttypes && _repo && _proton && _fileDistributorRpc && _bucketspaces && _tuneFileDocumentDB;
 }
+
 
 } // namespace proton
