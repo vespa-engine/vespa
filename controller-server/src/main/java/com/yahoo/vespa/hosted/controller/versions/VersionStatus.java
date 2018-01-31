@@ -136,7 +136,10 @@ public class VersionStatus {
             versionMap.put(infrastructureVersion, DeploymentStatistics.empty(infrastructureVersion));
         }
 
-        for (Application application : ApplicationList.from(applications).notPullRequest().asList()) {
+        ApplicationList applicationList = ApplicationList.from(applications)
+                                                         .notPullRequest()
+                                                         .hasProductionDeployment();
+        for (Application application : applicationList.asList()) {
             // Note that each version deployed on this application in production exists
             // (ignore non-production versions)
             for (Deployment deployment : application.productionDeployments().values()) {
