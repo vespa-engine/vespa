@@ -53,13 +53,20 @@ public class DeploymentApiTest extends ControllerContainerTest {
                 .region("corp-us-east-1")
                 .build();
 
-        // 2 applications deploy on current system version
+        // 3 applications deploy on current system version
         Application failingApplication = tester.createApplication("domain1", "tenant1",
                                                                   "application1");
         Application productionApplication = tester.createApplication("domain2", "tenant2",
                                                                      "application2");
+        Application applicationWithoutDeployment = tester.createApplication("domain3", "tenant3",
+                                                                             "application3");
         deployCompletely(failingApplication, applicationPackage, projectId, true);
         deployCompletely(productionApplication, applicationPackage, projectId, true);
+
+        // Deploy once so that job information is stored, then remove the deployment
+        deployCompletely(applicationWithoutDeployment, applicationPackage, projectId, true);
+        tester.controller().applications().deactivate(applicationWithoutDeployment,
+                                                      ZoneId.from("prod", "corp-us-east-1"));
 
         // New version released
         version = Version.fromString("5.1");
@@ -95,13 +102,15 @@ public class DeploymentApiTest extends ControllerContainerTest {
     private void deployCompletely(Application application, ApplicationPackage applicationPackage, long projectId,
                                   boolean success) {
         tester.notifyJobCompletion(application.id(), projectId, true, component);
-        tester.deploy(application, applicationPackage, ZoneId.from(Environment.test, RegionName.from("us-east-1")), projectId);
+        tester.deploy(application, applicationPackage, ZoneId.from(Environment.test, RegionName.from("us-east-1")),
+                      projectId);
         tester.notifyJobCompletion(application.id(), projectId, true, systemTest);
-        tester.deploy(application, applicationPackage, ZoneId.from(Environment.staging, RegionName.from("us-east-3")), projectId);
+        tester.deploy(application, applicationPackage, ZoneId.from(Environment.staging, RegionName.from("us-east-3")),
+                      projectId);
         tester.notifyJobCompletion(application.id(), projectId, success, stagingTest);
         if (success) {
-            tester.deploy(application, applicationPackage, ZoneId.from(Environment.prod, RegionName.from("corp-us-east-1")),
-                          projectId);
+            tester.deploy(application, applicationPackage, ZoneId.from(Environment.prod,
+                                                                       RegionName.from("corp-us-east-1")), projectId);
             tester.notifyJobCompletion(application.id(), projectId, true, productionCorpUsEast1);
         }
     }
