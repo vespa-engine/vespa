@@ -43,15 +43,5 @@ DenseDotProductFunction::compile_self(Stash &) const
     return eval::InterpretedFunction::Instruction(my_op, (uint64_t)(_hwAccelerator.get()));
 }
 
-const eval::Value &
-DenseDotProductFunction::eval(const eval::TensorEngine &engine, const eval::LazyParams &params, Stash &stash) const
-{
-    DenseTensorView::CellsRef lhsCells = getCellsRef(lhs().eval(engine, params, stash));
-    DenseTensorView::CellsRef rhsCells = getCellsRef(rhs().eval(engine, params, stash));
-    size_t numCells = std::min(lhsCells.size(), rhsCells.size());
-    double result = _hwAccelerator->dotProduct(lhsCells.cbegin(), rhsCells.cbegin(), numCells);
-    return stash.create<eval::DoubleValue>(result);
-}
-
 }
 

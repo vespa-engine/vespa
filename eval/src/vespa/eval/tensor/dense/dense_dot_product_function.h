@@ -19,7 +19,6 @@ public:
     DenseDotProductFunction(const eval::TensorFunction &lhs_in,
                             const eval::TensorFunction &rhs_in);
     eval::InterpretedFunction::Instruction compile_self(Stash &stash) const override;
-    const eval::Value &eval(const eval::TensorEngine &engine, const eval::LazyParams &params, Stash &stash) const override;
 };
 
 }
