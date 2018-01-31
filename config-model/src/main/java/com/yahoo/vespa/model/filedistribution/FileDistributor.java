@@ -123,14 +123,11 @@ public class FileDistributor {
                 dbHandler.startDownload(host.getHostname(), ConfigProxy.BASEPORT, filesToSendToHost(host));
             }
         }
-        // Ask other config server to download, for redundancy
-        // TODO: Enable the below when config server is able to receive files properly
-        /*
+        // Ask other config servers to download, for redundancy
         if (configServerSpecs != null)
             configServerSpecs.stream()
                     .filter(configServerSpec -> !configServerSpec.getHostName().equals(fileSourceHost))
                     .forEach(spec -> dbHandler.startDownload(spec.getHostName(), spec.getConfigServerPort(), allFilesToSend()));
-                    */
 
         dbHandler.sendDeployedFiles(fileSourceHost, allFilesToSend());
         dbHandler.removeDeploymentsThatHaveDifferentApplicationId(getTargetHostnames());
