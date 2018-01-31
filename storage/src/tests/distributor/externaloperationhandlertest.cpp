@@ -60,6 +60,12 @@ class ExternalOperationHandlerTest : public CppUnit::TestFixture,
                 .safe_time_not_reached.getLongValue("count");
     }
 
+    int64_t concurrent_mutatations_metric_count(
+            const metrics::LoadMetric<PersistenceOperationMetricSet>& metrics) const {
+        return metrics[documentapi::LoadType::DEFAULT].failures
+                .concurrent_mutations.getLongValue("count");
+    }
+
     void set_up_distributor_for_sequencing_test();
 
     const vespalib::string _dummy_id{"id:foo:testdoctype1::bar"};
@@ -395,35 +401,41 @@ void ExternalOperationHandlerTest::reject_put_with_concurrent_mutation_to_same_i
     assert_second_command_rejected_due_to_concurrent_mutation(
             makePutCommand("testdoctype1", _dummy_id),
             makePutCommand("testdoctype1", _dummy_id), _dummy_id);
+    CPPUNIT_ASSERT_EQUAL(int64_t(1), concurrent_mutatations_metric_count(getDistributor().getMetrics().puts));
 }
 
 void ExternalOperationHandlerTest::do_not_reject_put_operations_to_different_ids() {
     assert_second_command_not_rejected_due_to_concurrent_mutation(
             makePutCommand("testdoctype1", "id:foo:testdoctype1::baz"),
             makePutCommand("testdoctype1", "id:foo:testdoctype1::foo"));
+    CPPUNIT_ASSERT_EQUAL(int64_t(0), concurrent_mutatations_metric_count(getDistributor().getMetrics().puts));
 }
 
 void ExternalOperationHandlerTest::reject_remove_with_concurrent_mutation_to_same_id() {
     assert_second_command_rejected_due_to_concurrent_mutation(
             makeRemoveCommand(_dummy_id), makeRemoveCommand(_dummy_id), _dummy_id);
+    CPPUNIT_ASSERT_EQUAL(int64_t(1), concurrent_mutatations_metric_count(getDistributor().getMetrics().removes));
 }
 
 void ExternalOperationHandlerTest::do_not_reject_remove_operations_to_different_ids() {
     assert_second_command_not_rejected_due_to_concurrent_mutation(
             makeRemoveCommand("id:foo:testdoctype1::baz"),
             makeRemoveCommand("id:foo:testdoctype1::foo"));
+    CPPUNIT_ASSERT_EQUAL(int64_t(0), concurrent_mutatations_metric_count(getDistributor().getMetrics().removes));
 }
 
 void ExternalOperationHandlerTest::reject_update_with_concurrent_mutation_to_same_id() {
     assert_second_command_rejected_due_to_concurrent_mutation(
             makeUpdateCommand("testdoctype1", _dummy_id),
             makeUpdateCommand("testdoctype1", _dummy_id), _dummy_id);
+    CPPUNIT_ASSERT_EQUAL(int64_t(1), concurrent_mutatations_metric_count(getDistributor().getMetrics().updates));
 }
 
 void ExternalOperationHandlerTest::do_not_reject_update_operations_to_different_ids() {
     assert_second_command_not_rejected_due_to_concurrent_mutation(
             makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::baz"),
             makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::foo"));
+    CPPUNIT_ASSERT_EQUAL(int64_t(0), concurrent_mutatations_metric_count(getDistributor().getMetrics().updates));
 }
 
 void ExternalOperationHandlerTest::operation_destruction_allows_new_mutations_for_id() {

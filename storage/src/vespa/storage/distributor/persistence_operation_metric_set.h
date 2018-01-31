@@ -14,7 +14,7 @@ class ReturnCode;
 class PersistenceFailuresMetricSet : public metrics::MetricSet
 {
 public:
-    PersistenceFailuresMetricSet(metrics::MetricSet* owner);
+    explicit PersistenceFailuresMetricSet(metrics::MetricSet* owner);
     ~PersistenceFailuresMetricSet();
 
     metrics::SumMetric<metrics::LongCountMetric> sum;
@@ -27,6 +27,7 @@ public:
     metrics::LongCountMetric busy;
     metrics::LongCountMetric inconsistent_bucket;
     metrics::LongCountMetric notfound;
+    metrics::LongCountMetric concurrent_mutations;
 
     MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                       metrics::MetricSet* owner, bool includeUnused) const override;
