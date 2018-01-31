@@ -20,12 +20,7 @@ public:
     ~BootstrapConfigManager();
     const config::ConfigKeySet createConfigKeySet() const;
 
-    std::shared_ptr<BootstrapConfig>
-    getConfig() const
-    {
-        std::lock_guard<std::mutex> lock(_pendingConfigMutex);
-        return _pendingConfigSnapshot;
-    }
+    std::shared_ptr<BootstrapConfig> getConfig() const;
     void update(const config::ConfigSnapshot & snapshot);
 
 private:

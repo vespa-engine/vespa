@@ -2,8 +2,11 @@
 
 #include "bootstrapconfigmanager.h"
 #include "bootstrapconfig.h"
+#include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/searchlib/common/tunefileinfo.hpp>
+#include <vespa/vespalib/io/fileutil.h>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.bootstrapconfigmanager");
@@ -36,6 +39,13 @@ BootstrapConfigManager::createConfigKeySet() const
                          .add<DocumenttypesConfig>(_configId)
                          .add<FiledistributorrpcConfig>(_configId)
                          .add<BucketspacesConfig>(_configId);
+}
+
+std::shared_ptr<BootstrapConfig>
+BootstrapConfigManager::getConfig() const
+{
+    std::lock_guard<std::mutex> lock(_pendingConfigMutex);
+    return _pendingConfigSnapshot;
 }
 
 void
@@ -83,21 +93,17 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
 
     if (snapshot.isChanged<FiledistributorrpcConfig>(_configId, currentGen)) {
         LOG(info, "Filedistributorrpc config is changed");
-        auto p = snapshot.getConfig<FiledistributorrpcConfig>(_configId);
-        newFiledistRpcConfSP = BootstrapConfig::FiledistributorrpcConfigSP(std::move(p));
+        newFiledistRpcConfSP = snapshot.getConfig<FiledistributorrpcConfig>(_configId);
     }
 
     if (snapshot.isChanged<DocumenttypesConfig>(_configId, currentGen)) {
         LOG(spam, "Documenttypes config is changed");
-        std::unique_ptr<DocumenttypesConfig> documenttypesConfig = snapshot.getConfig<DocumenttypesConfig>(_configId);
-        DocumentTypeRepo::SP repo(new DocumentTypeRepo(*documenttypesConfig));
-        newDocumenttypesConfig = DocumenttypesConfigSP(documenttypesConfig.release());
-        newRepo = repo;
+        newDocumenttypesConfig = snapshot.getConfig<DocumenttypesConfig>(_configId);
+        newRepo = std::make_shared<DocumentTypeRepo>(*newDocumenttypesConfig);
     }
     if (snapshot.isChanged<BucketspacesConfig>(_configId, currentGen)) {
         LOG(spam, "Bucketspaces config is changed");
-        std::unique_ptr<BucketspacesConfig> bucketspacesConfig = snapshot.getConfig<BucketspacesConfig>(_configId);
-        newBucketspacesConfig = std::move(bucketspacesConfig);
+        newBucketspacesConfig = snapshot.getConfig<BucketspacesConfig>(_configId);
     }
     assert(newProtonConfig);
     assert(newFiledistRpcConfSP);
@@ -106,8 +112,18 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
     assert(newDocumenttypesConfig);
     assert(newRepo);
 
+    const ProtonConfig &protonConfig = *newProtonConfig;
+    const auto &hwDiskCfg = protonConfig.hwinfo.disk;
+    const auto &hwMemoryCfg = protonConfig.hwinfo.memory;
+    const auto &hwCpuCfg = protonConfig.hwinfo.cpu;
+    HwInfoSampler::Config samplerCfg(hwDiskCfg.size, hwDiskCfg.writespeed, hwDiskCfg.slowwritespeedlimit,
+                                     hwDiskCfg.samplewritesize, hwDiskCfg.shared, hwMemoryCfg.size, hwCpuCfg.cores);
+    vespalib::mkdir(protonConfig.basedir, true);
+    HwInfoSampler sampler(protonConfig.basedir, samplerCfg);
+
     auto newSnapshot(std::make_shared<BootstrapConfig>(snapshot.getGeneration(), newDocumenttypesConfig, newRepo,
-                                                       newProtonConfig, newFiledistRpcConfSP, newBucketspacesConfig, newTuneFileDocumentDB));
+                                                       newProtonConfig, newFiledistRpcConfSP, newBucketspacesConfig,
+                                                       newTuneFileDocumentDB, sampler.hwInfo()));
 
     assert(newSnapshot->valid());
     {
