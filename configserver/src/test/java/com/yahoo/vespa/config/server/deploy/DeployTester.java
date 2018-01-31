@@ -33,7 +33,6 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.Curator;
@@ -134,20 +133,16 @@ public class DeployTester {
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
     public ApplicationId deployApp(String appName, String vespaVersion, Instant now)  {
-
         Tenant tenant = tenant();
-        LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new TimeoutBudget(clock, Duration.ofSeconds(60)));
+        TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
         ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());
         PrepareParams.Builder paramsBuilder = new PrepareParams.Builder().applicationId(id);
         if (vespaVersion != null)
             paramsBuilder.vespaVersion(vespaVersion);
-        session.prepare(new SilentDeployLogger(),
-                        paramsBuilder.build(),
-                        Optional.empty(),
-                        tenant.getPath(),
-                        now);
-        session.createActivateTransaction().commit();
-        tenant.getLocalSessionRepo().addSession(session);
+
+        long sessionId = applicationRepository.createSession(tenant, timeoutBudget, testApp, appName);
+        applicationRepository.prepare(tenant, sessionId, paramsBuilder.build(), now);
+        applicationRepository.activate(tenant, sessionId, timeoutBudget, false, false);
         this.id = id;
         return id;
     }

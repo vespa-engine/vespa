@@ -49,6 +49,7 @@ import java.io.File;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -339,14 +340,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return currentActiveApplicationSet;
     }
 
-    public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams) {
+    public PrepareResult prepare(Tenant tenant, long sessionId, PrepareParams prepareParams, Instant now) {
         validateThatLocalSessionIsNotActive(tenant, sessionId);
         LocalSession session = getLocalSession(tenant, sessionId);
         ApplicationId applicationId = prepareParams.getApplicationId();
         Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, applicationId);
         Slime deployLog = createDeployLog();
         DeployLogger logger = new DeployHandlerLogger(deployLog.get().setArray("log"), prepareParams.isVerbose(), applicationId);
-        ConfigChangeActions actions = session.prepare(logger, prepareParams, currentActiveApplicationSet, tenant.getPath(), clock.instant());
+        ConfigChangeActions actions = session.prepare(logger, prepareParams, currentActiveApplicationSet, tenant.getPath(), now);
         logConfigChangeActions(actions, logger);
         log.log(LogLevel.INFO, Tenants.logPre(applicationId) + "Session " + sessionId + " prepared successfully. ");
         return new PrepareResult(sessionId, actions, deployLog);
