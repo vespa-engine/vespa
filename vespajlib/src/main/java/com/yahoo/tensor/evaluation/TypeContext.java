@@ -1,8 +1,11 @@
-package com.yahoo.tensor.evaluation;// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.tensor.evaluation;
 
 import com.yahoo.tensor.TensorType;
 
 /**
+ * Provides type information about a context (set of variable bindings).
+ *
  * @author bratseth
  */
 public interface TypeContext {

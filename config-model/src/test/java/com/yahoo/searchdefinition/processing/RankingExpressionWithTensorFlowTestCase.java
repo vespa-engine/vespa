@@ -80,6 +80,45 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
+    public void testTensorFlowReferenceMissingMacro() throws ParseException {
+        try {
+            RankProfileSearchFixture search = new RankProfileSearchFixture(
+                    new StoringApplicationPackage(applicationDir),
+                    "  rank-profile my_profile {\n" +
+                    "    first-phase {\n" +
+                    "      expression: tensorflow('mnist_softmax/saved')" +
+                    "    }\n" +
+                    "  }");
+            search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+            fail("Expecting exception");
+        }
+        catch (IllegalArgumentException expected) {
+            assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from " +
+                         "tensorflow('mnist_softmax/saved'): " +
+                         "Model refers Placeholder 'Placeholder' of type tensor(d0[],d1[784]) but this macro is " +
+                         "not present in rank profile 'my_profile'",
+                         Exceptions.toMessageString(expected));
+        }
+    }
+
+    @Test
+    public void testTensorFlowReferenceWithWrongMacroType() throws ParseException {
+        try {
+            RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d5[10])(0.0)",
+                                                          "tensorflow('mnist_softmax/saved')");
+            search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+            fail("Expecting exception");
+        }
+        catch (IllegalArgumentException expected) {
+            assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from " +
+                         "tensorflow('mnist_softmax/saved'): " +
+                         "Model refers Placeholder 'Placeholder' of type tensor(d0[],d1[784]) which must be produced " +
+                         "by a macro in the rank profile, but this macro produces type tensor(d0[2],d5[10])",
+                         Exceptions.toMessageString(expected));
+        }
+    }
+
+    @Test
     public void testTensorFlowReferenceSpecifyingNonExistingSignature() throws ParseException {
         try {
             RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",

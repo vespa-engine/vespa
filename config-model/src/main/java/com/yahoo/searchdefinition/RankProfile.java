@@ -708,7 +708,8 @@ public class RankProfile implements Serializable, Cloneable {
     private void checkNameCollisions(Map<String, Macro> macros, Map<String, Value> constants) {
         for (Map.Entry<String, Macro> macroEntry : macros.entrySet()) {
             if (constants.get(macroEntry.getKey()) != null)
-                throw new IllegalArgumentException("Cannot have both a constant and macro named '" + macroEntry.getKey() + "'");
+                throw new IllegalArgumentException("Cannot have both a constant and macro named '" +
+                                                   macroEntry.getKey() + "'");
         }
     }
 

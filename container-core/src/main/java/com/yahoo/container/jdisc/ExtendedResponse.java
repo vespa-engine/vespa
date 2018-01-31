@@ -1,18 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
-import java.io.IOException;
-import java.io.OutputStream;
-
 import com.yahoo.container.handler.Coverage;
 import com.yahoo.container.handler.Timing;
 import com.yahoo.container.logging.HitCounts;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 /**
- * An HTTP response supporting async rendering and extended information for
- * logging.
+ * An HTTP response supporting async rendering and extended information for logging.
  *
  * @author Steinar Knutsen
  */

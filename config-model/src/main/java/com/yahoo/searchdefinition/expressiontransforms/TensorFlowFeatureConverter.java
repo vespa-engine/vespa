@@ -189,7 +189,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
                 throw new IllegalArgumentException("Model refers Placeholder '" + macroName +
                                                    "' of type " + requiredType +
                                                    " which must be produced by a macro in the rank profile, but " +
-                                                   "this macro produces type " + actualType + " in " + profile);
+                                                   "this macro produces type " + actualType);
         }
     }
 
