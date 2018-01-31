@@ -21,9 +21,8 @@ import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespaclient.config.FeederConfig;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.Executor;
-import java.util.logging.Logger;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
@@ -34,20 +33,19 @@ import java.util.logging.Logger;
  */
 public final class VespaFeedHandler extends VespaFeedHandlerBase {
 
-    private final static Logger log = Logger.getLogger(VespaFeedHandler.class.getName());
     public static final String JSON_INPUT = "jsonInput";
 
-    private AtomicInteger busyThreads = new AtomicInteger(0);
+    private final AtomicInteger busyThreads = new AtomicInteger(0);
     private final int maxBusyThreads;
 
-
+    @SuppressWarnings("unused")
     @Inject
-    public VespaFeedHandler(FeederConfig feederConfig, 
-                            LoadTypeConfig loadTypeConfig, 
+    public VespaFeedHandler(FeederConfig feederConfig,
+                            LoadTypeConfig loadTypeConfig,
                             DocumentmanagerConfig documentmanagerConfig,
                             SlobroksConfig slobroksConfig,
                             ClusterListConfig clusterListConfig,
-                            Executor executor, 
+                            Executor executor,
                             Metric metric) throws Exception {
         super(feederConfig, loadTypeConfig, documentmanagerConfig, slobroksConfig, clusterListConfig, executor, metric);
         this.maxBusyThreads = feederConfig.maxbusythreads();
@@ -73,10 +71,9 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
         }
         try {
             int busy = busyThreads.incrementAndGet();
-            if (busy > maxBusyThreads) {
-                log.warning("too many threads [" + busy + "] busy, returning SERVICE UNAVAILABLE");
+            if (busy > maxBusyThreads)
                 return new EmptyResponse(com.yahoo.jdisc.http.HttpResponse.Status.SERVICE_UNAVAILABLE);
-            }
+
             boolean asynchronous = request.getBooleanProperty("asynchronous");
 
             MessagePropertyProcessor.PropertySetter properties = getPropertyProcessor().buildPropertySetter(request);
