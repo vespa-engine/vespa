@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -54,6 +53,8 @@ public class RestApi extends LoggingRequestHandler {
     private static final String CLUSTER = "cluster";
     private static final String CONTINUATION = "continuation";
     private static final String WANTED_DOCUMENT_COUNT = "wantedDocumentCount";
+    private static final String FIELD_SET = "fieldSet";
+    private static final String CONCURRENCY = "concurrency";
     private static final String APPLICATION_JSON = "application/json";
     private final OperationHandler operationHandler;
     private SingleDocumentParser singleDocumentParser;
@@ -122,9 +123,17 @@ public class RestApi extends LoggingRequestHandler {
         return property.map(RestApi::parseBooleanStrict);
     }
 
-    private static Optional<Integer> parseInteger(String parameter, HttpRequest request) throws NumberFormatException {
+    private static int parsePositiveInt(String str) throws NumberFormatException {
+        int parsed = Integer.parseInt(str);
+        if (parsed <= 0) {
+            throw new IllegalArgumentException("Parsed number was negative or zero");
+        }
+        return parsed;
+    }
+
+    private static Optional<Integer> parsePositiveIntegerRequestParameter(String parameter, HttpRequest request) throws NumberFormatException {
         Optional<String> property = requestProperty(parameter, request);
-        return property.map(Integer::parseInt);
+        return property.map(RestApi::parsePositiveInt);
     }
 
     @Override
@@ -255,17 +264,32 @@ public class RestApi extends LoggingRequestHandler {
                 documentSelection = "id.group='" + group.value + "'";
             }
         }
+        // TODO can refactor this quite a bit with Builder in place...
         Optional<String> cluster = Optional.ofNullable(request.getProperty(CLUSTER));
         Optional<String> continuation = Optional.ofNullable(request.getProperty(CONTINUATION));
+        Optional<String> fieldSet = Optional.ofNullable(request.getProperty(FIELD_SET));
         Optional<Integer> wantedDocumentCount;
         try {
-            wantedDocumentCount = parseInteger(WANTED_DOCUMENT_COUNT, request);
+            wantedDocumentCount = parsePositiveIntegerRequestParameter(WANTED_DOCUMENT_COUNT, request);
         } catch (IllegalArgumentException e) {
-            return createInvalidParameterResponse(WANTED_DOCUMENT_COUNT, "Expected integer");
+            return createInvalidParameterResponse(WANTED_DOCUMENT_COUNT, "Expected positive integer");
+        }
+        // TODO refactor
+        Optional<Integer> concurrency;
+        try {
+            concurrency = parsePositiveIntegerRequestParameter(CONCURRENCY, request);
+        } catch (IllegalArgumentException e) {
+            return createInvalidParameterResponse(CONCURRENCY, "Expected positive integer");
         }
 
-        final OperationHandler.VisitOptions options = new OperationHandler.VisitOptions(cluster, continuation, wantedDocumentCount);
-        final OperationHandler.VisitResult visit = operationHandler.visit(restUri, documentSelection, options);
+        final OperationHandler.VisitOptions.Builder optionsBuilder = OperationHandler.VisitOptions.builder();
+        cluster.ifPresent(c -> optionsBuilder.cluster(c));
+        continuation.ifPresent(c -> optionsBuilder.continuation(c));
+        wantedDocumentCount.ifPresent(count -> optionsBuilder.wantedDocumentCount(count));
+        fieldSet.ifPresent(fs -> optionsBuilder.fieldSet(fs));
+        concurrency.ifPresent(c -> optionsBuilder.concurrency(c));
+
+        final OperationHandler.VisitResult visit = operationHandler.visit(restUri, documentSelection, optionsBuilder.build());
         final ObjectNode resultNode = mapper.createObjectNode();
         visit.token.ifPresent(t -> resultNode.put(CONTINUATION, t));
         resultNode.putArray(DOCUMENTS).addPOJO(visit.documentsAsJsonList);

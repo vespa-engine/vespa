@@ -304,11 +304,43 @@ public class RestApiTest {
     }
 
     @Test
-    public void wanted_document_count_parameter_returns_error_response() throws IOException {
+    public void invalid_wanted_document_count_parameter_returns_error_response() throws IOException {
         Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?wantedDocumentCount=aardvark", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
         String rest = doRest(get);
-        assertThat(rest, containsString("Invalid 'wantedDocumentCount' value. Expected integer"));
+        assertThat(rest, containsString("Invalid 'wantedDocumentCount' value. Expected positive integer"));
+    }
+
+    @Test
+    public void negative_document_count_parameter_returns_error_response() throws IOException {
+        Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?wantedDocumentCount=-1", getFirstListenPort()));
+        HttpGet get = new HttpGet(request.getUri());
+        String rest = doRest(get);
+        assertThat(rest, containsString("Invalid 'wantedDocumentCount' value. Expected positive integer"));
+    }
+
+    @Test
+    public void fieldset_parameter_is_propagated() throws IOException {
+        Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?fieldSet=foo,baz", getFirstListenPort()));
+        HttpGet get = new HttpGet(request.getUri());
+        String rest = doRest(get);
+        assertThat(rest, containsString("field set: 'foo,baz'"));
+    }
+
+    @Test
+    public void concurrency_parameter_is_propagated() throws IOException {
+        Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?concurrency=42", getFirstListenPort()));
+        HttpGet get = new HttpGet(request.getUri());
+        String rest = doRest(get);
+        assertThat(rest, containsString("concurrency: 42"));
+    }
+
+    @Test
+    public void invalid_concurrency_parameter_returns_error_response() throws IOException {
+        Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?concurrency=badgers", getFirstListenPort()));
+        HttpGet get = new HttpGet(request.getUri());
+        String rest = doRest(get);
+        assertThat(rest, containsString("Invalid 'concurrency' value. Expected positive integer"));
     }
 
     private String doRest(HttpRequestBase request) throws IOException {

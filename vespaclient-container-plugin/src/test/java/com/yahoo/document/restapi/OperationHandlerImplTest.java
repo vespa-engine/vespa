@@ -6,6 +6,7 @@ import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
+import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vespaclient.ClusterDef;
@@ -21,7 +22,9 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -119,16 +122,20 @@ public class OperationHandlerImplTest {
         }
     }
 
+    private static OperationHandler.VisitOptions.Builder optionsBuilder() {
+        return OperationHandler.VisitOptions.builder();
+    }
+
     private static RestUri dummyVisitUri() throws Exception {
         return new RestUri(new URI("http://localhost/document/v1/namespace/document-type/docid/"));
     }
 
     private static OperationHandler.VisitOptions visitOptionsWithWantedDocumentCount(int wantedDocumentCount) {
-        return new OperationHandler.VisitOptions(Optional.empty(), Optional.empty(), Optional.of(wantedDocumentCount));
+        return optionsBuilder().wantedDocumentCount(wantedDocumentCount).build();
     }
 
     private static OperationHandler.VisitOptions emptyVisitOptions() {
-        return new OperationHandler.VisitOptions(Optional.empty(), Optional.empty(), Optional.empty());
+        return optionsBuilder().build();
     }
 
     @Test
@@ -205,6 +212,32 @@ public class OperationHandlerImplTest {
 
         params = generatedParametersFromVisitOptions(visitOptionsWithWantedDocumentCount(Integer.MAX_VALUE));
         assertThat(params.getMaxTotalHits(), is((long)OperationHandlerImpl.WANTED_DOCUMENT_COUNT_UPPER_BOUND));
+    }
+
+    @Test
+    public void field_set_covers_all_fields_by_default() throws Exception {
+        VisitorParameters params = generatedParametersFromVisitOptions(emptyVisitOptions());
+        assertThat(params.fieldSet(), equalTo("document-type:[document]"));
+    }
+
+    @Test
+    public void provided_fieldset_is_propagated_to_visitor_parameters() throws Exception {
+        VisitorParameters params = generatedParametersFromVisitOptions(optionsBuilder().fieldSet("document-type:bjarne").build());
+        assertThat(params.fieldSet(), equalTo("document-type:bjarne"));
+    }
+
+    @Test
+    public void concurrency_is_1_by_default() throws Exception {
+        VisitorParameters params = generatedParametersFromVisitOptions(emptyVisitOptions());
+        assertThat(params.getThrottlePolicy(), instanceOf(StaticThrottlePolicy.class));
+        assertThat(((StaticThrottlePolicy)params.getThrottlePolicy()).getMaxPendingCount(), is((int)1));
+    }
+
+    @Test
+    public void concurrency_is_propagated_to_visitor_parameters() throws Exception {
+        VisitorParameters params = generatedParametersFromVisitOptions(optionsBuilder().concurrency(3).build());
+        assertThat(params.getThrottlePolicy(), instanceOf(StaticThrottlePolicy.class));
+        assertThat(((StaticThrottlePolicy)params.getThrottlePolicy()).getMaxPendingCount(), is((int)3));
     }
 
 }
