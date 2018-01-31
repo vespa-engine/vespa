@@ -70,7 +70,11 @@ DocsumContext::createReply()
         if (docId != search::endDocId && !rci.mustSkip) {
             Slime slime(Slime::Params(std::move(symbols)));
             vespalib::slime::SlimeInserter inserter(slime);
-            _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, slime, inserter);
+            if (_request.expired()) {
+                inserter.insertString(Memory("timed out"));
+            } else {
+                _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, slime, inserter);
+            }
             uint32_t docsumLen = (slime.get().type().getId() != NIX::ID)
                                    ? IDocsumWriter::slime2RawBuf(slime, buf)
                                    : 0;
@@ -102,12 +106,16 @@ DocsumContext::createSlimeReply()
     Cursor & array = root.setArray(DOCSUMS);
     const Symbol docsumSym = response->insert(DOCSUM);
     IDocsumWriter::ResolveClassInfo rci = _docsumWriter.resolveClassInfo(_docsumState._args.getResultClassName(), _docsumStore.getSummaryClassId());
-    for (uint32_t i = 0; i < _docsumState._docsumcnt; ++i) {
+    for (uint32_t i = 0; (i < _docsumState._docsumcnt); ++i) {
         uint32_t docId = _docsumState._docsumbuf[i];
         Cursor & docSumC = array.addObject();
         ObjectSymbolInserter inserter(docSumC, docsumSym);
-        if (docId != search::endDocId && !rci.mustSkip) {
-            _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, *response, inserter);
+        if ((docId != search::endDocId) && !rci.mustSkip) {
+            if (_request.expired()) {
+                inserter.insertString(Memory("timed out"));
+            } else {
+                _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, *response, inserter);
+            }
         }
     }
     return response;
