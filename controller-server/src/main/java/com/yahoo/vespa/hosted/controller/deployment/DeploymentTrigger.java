@@ -78,8 +78,7 @@ public class DeploymentTrigger {
      */
     public void triggerFromCompletion(JobReport report) {
         applications().lockOrThrow(report.applicationId(), application -> {
-            application = application.withJobCompletion(report, applicationVersionFrom(report), clock.instant(),
-                                                        controller);
+            application = application.withJobCompletion(report, clock.instant(), controller);
             application = application.withProjectId(report.projectId());
 
             // Handle successful starting and ending
@@ -90,9 +89,8 @@ public class DeploymentTrigger {
                         if ( ! ( application.change().platform().isPresent())) {
                             ApplicationVersion applicationVersion = ApplicationVersion.unknown;
                             if (report.sourceRevision().isPresent())
-                                applicationVersion = ApplicationVersion.from(report.sourceRevision().get(),
-                                                                             report.buildNumber());
-                            application = application.withChange(Change.of(applicationVersion));
+                                applicationVersion = ApplicationVersion.from(report.sourceRevision().get(), report.buildNumber());
+                            application = application.withDeploying(Change.of(applicationVersion));
                         }
                     }
                     else { // postpone
@@ -102,7 +100,7 @@ public class DeploymentTrigger {
                 }
                 else if (deploymentComplete(application)) {
                     // change completed
-                    application = application.withChange(Change.empty());
+                    application = application.withDeploying(Change.empty());
                 }
             }
 
@@ -141,7 +139,7 @@ public class DeploymentTrigger {
             }
             if (change.application().isPresent()) {
                 // If we don't yet know the application version we are deploying, then we are not complete
-                if (change.application().get().isUnknown()) return false;
+                if (change.application().get() == ApplicationVersion.unknown) return false;
                 if ( ! change.application().get().equals(deployment.applicationVersion())) return false;
             }
         }
@@ -262,7 +260,7 @@ public class DeploymentTrigger {
             if (application.change().isPresent() && ! application.deploymentJobs().hasFailures())
                 throw new IllegalArgumentException("Could not start " + change + " on " + application + ": " +
                                                    application.change() + " is already in progress");
-            application = application.withChange(change);
+            application = application.withDeploying(change);
             if (change.application().isPresent())
                 application = application.withOutstandingChange(false);
             application = trigger(JobType.systemTest, application, false, change.toString());
@@ -278,7 +276,7 @@ public class DeploymentTrigger {
     public void cancelChange(ApplicationId applicationId) {
         applications().lockOrThrow(applicationId, application -> {
             buildSystem.removeJobs(application.id());
-            applications().store(application.withChange(Change.empty()));
+            applications().store(application.withDeploying(Change.empty()));
         });
     }
 
@@ -357,15 +355,8 @@ public class DeploymentTrigger {
                                              application.change(),
                                              clock.instant(),
                                              application.deployVersionFor(jobType, controller),
-                                             application.deployApplicationVersion(jobType, controller)
-                                                        .orElse(ApplicationVersion.unknown),
+                                             application.deployApplicationVersion(jobType, controller).orElse(ApplicationVersion.unknown),
                                              reason);
-    }
-
-    /** Create application version from job report */
-    private ApplicationVersion applicationVersionFrom(JobReport report) {
-        return report.sourceRevision().map(sr -> ApplicationVersion.from(sr, report.buildNumber()))
-                     .orElse(ApplicationVersion.unknown);
     }
 
     /** Returns true if the given proposed job triggering should be effected */
