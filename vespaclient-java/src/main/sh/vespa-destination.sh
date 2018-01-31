@@ -62,6 +62,8 @@ export MALLOC_ARENA_MAX=1 #Does not need fast allocation
 exec java \
 -server -enableassertions \
 -XX:ThreadStackSize=512 \
+-verbose:gc \
+-Xms4g -Xmx4g -XX:NewRatio=1
 -Djava.library.path=${VESPA_HOME}/libexec64/native:${VESPA_HOME}/lib64 \
 -XX:MaxDirectMemorySize=32m -Djava.awt.headless=true $(getJavaOptionsIPV46) \
 -cp ${VESPA_HOME}/lib/jars/vespaclient-java-jar-with-dependencies.jar:$CLASSPATH com.yahoo.dummyreceiver.DummyReceiver "$@"
