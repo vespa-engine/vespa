@@ -10,7 +10,6 @@ import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.model.ConfigProxy;
 
 import java.util.Collection;
 import java.util.Set;
@@ -35,10 +34,6 @@ public class CombinedLegacyDistribution implements FileDistribution {
     @Override
     public void sendDeployedFiles(String hostName, Set<FileReference> fileReferences) {
         legacy.sendDeployedFiles(hostName, fileReferences);
-    }
-
-    public void startDownload(String hostName, Set<FileReference> fileReferences) {
-        startDownload(hostName, ConfigProxy.BASEPORT, fileReferences);
     }
 
     @Override
