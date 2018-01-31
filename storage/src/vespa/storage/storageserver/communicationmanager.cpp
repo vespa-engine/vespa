@@ -275,7 +275,7 @@ struct PlaceHolderBucketResolver : public BucketResolver {
     }
     virtual vespalib::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
         assert(bucketSpace == spi::FixedBucketSpaces::default_space());
-        return "default";
+        return spi::FixedBucketSpaces::to_string(bucketSpace);
     }
 };
 
