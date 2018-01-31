@@ -377,4 +377,19 @@ TEST_FF("require that docstore config computes cachesize automatically if unset"
     EXPECT_EQUAL(500000ul, config->getStoreConfig().getMaxCacheBytes());
 }
 
+TEST("test HwInfo equality") {
+    EXPECT_TRUE(HwInfo::Cpu(1) == HwInfo::Cpu(1));
+    EXPECT_FALSE(HwInfo::Cpu(1) == HwInfo::Cpu(2));
+    EXPECT_TRUE(HwInfo::Memory(1) == HwInfo::Memory(1));
+    EXPECT_FALSE(HwInfo::Memory(1) == HwInfo::Memory(2));
+    EXPECT_TRUE(HwInfo::Disk(1, false, false) == HwInfo::Disk(1, false,false));
+    EXPECT_FALSE(HwInfo::Disk(1, false, false) == HwInfo::Disk(1, false,true));
+    EXPECT_FALSE(HwInfo::Disk(1, false, false) == HwInfo::Disk(1, true,false));
+    EXPECT_FALSE(HwInfo::Disk(1, false, false) == HwInfo::Disk(2, false,false));
+    EXPECT_TRUE(HwInfo(HwInfo::Disk(1, false, false), 1ul, 1ul) == HwInfo(HwInfo::Disk(1, false,false), 1ul, 1ul));
+    EXPECT_FALSE(HwInfo(HwInfo::Disk(1, false, false), 1ul, 1ul) == HwInfo(HwInfo::Disk(1, false,false), 1ul, 2ul));
+    EXPECT_FALSE(HwInfo(HwInfo::Disk(1, false, false), 1ul, 1ul) == HwInfo(HwInfo::Disk(1, false,false), 2ul, 1ul));
+    EXPECT_FALSE(HwInfo(HwInfo::Disk(1, false, false), 1ul, 1ul) == HwInfo(HwInfo::Disk(2, false,false), 1ul, 1ul));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

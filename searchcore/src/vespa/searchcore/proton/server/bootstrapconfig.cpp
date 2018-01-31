@@ -51,7 +51,8 @@ BootstrapConfig::operator==(const BootstrapConfig &rhs) const
         equals<ProtonConfig>(_proton.get(), rhs._proton.get()) &&
         equals<FiledistributorrpcConfig>(_fileDistributorRpc.get(), rhs._fileDistributorRpc.get()) &&
         equals<BucketspacesConfig>(_bucketspaces.get(), rhs._bucketspaces.get()) &&
-        equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(), rhs._tuneFileDocumentDB.get());
+        equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(), rhs._tuneFileDocumentDB.get()) &&
+        (_hwInfo == rhs._hwInfo);
 }
 
 
