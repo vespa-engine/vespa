@@ -18,7 +18,7 @@ public:
     fastos::TimeStamp getTimeout() const { return _timeOfDoom -_startTime; }
     fastos::TimeStamp getTimeUsed() const;
     fastos::TimeStamp getTimeLeft() const;
-    bool expired() const { return getTimeLeft() > 0l; }
+    bool expired() const { return getTimeLeft() <= 0l; }
 
     const vespalib::stringref getStackRef() const {
         return vespalib::stringref(&stackDump[0], stackDump.size());
