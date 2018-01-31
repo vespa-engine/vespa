@@ -7,6 +7,7 @@
 #include "distributor_bucket_space.h"
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
+#include <vespa/persistence/spi/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/xmlstream.hpp>
 #include <climits>
 
@@ -92,7 +93,7 @@ PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, 
 void
 PendingClusterState::logConstructionInformation() const
 {
-    const auto &distributorBucketSpace(_bucketSpaceRepo.get(BucketSpace::placeHolder()));
+    const auto &distributorBucketSpace(_bucketSpaceRepo.get(spi::FixedBucketSpaces::default_space()));
     const auto &distribution(distributorBucketSpace.getDistribution());
     LOG(debug,
         "New PendingClusterState constructed with previous cluster "

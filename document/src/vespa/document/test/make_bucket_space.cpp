@@ -6,7 +6,7 @@ namespace document::test {
 
 BucketSpace makeBucketSpace()
 {
-    return BucketSpace::placeHolder();
+    return BucketSpace(1);
 }
 
 BucketSpace makeBucketSpace(const vespalib::string &docTypeName)

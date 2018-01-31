@@ -27,6 +27,7 @@
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/component/testcomponentregister.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/fixed_bucket_spaces.h>
 #include <vespa/document/base/testdocman.h>
 
 namespace storage {
@@ -125,7 +126,7 @@ public:
     uint16_t getPartition(const document::BucketId&);
 
     StorBucketDatabase& getStorageBucketDatabase() override {
-        return _compReg.getBucketSpaceRepo().get(document::BucketSpace::placeHolder()).bucketDatabase();
+        return _compReg.getBucketSpaceRepo().get(spi::FixedBucketSpaces::default_space()).bucketDatabase();
     }
 
 private:

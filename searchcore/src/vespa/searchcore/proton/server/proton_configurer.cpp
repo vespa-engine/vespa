@@ -34,7 +34,7 @@ getBucketSpace(const BootstrapConfig &bootstrapConfig, const DocTypeName &name)
         ost << "Could not map from document type name '" << name.getName() << "' to bucket space name";
         throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
     }
-    return document::BucketSpace::placeHolder();
+    return storage::spi::FixedBucketSpaces::default_space();
 }
 
 }

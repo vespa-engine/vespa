@@ -212,7 +212,7 @@ private:
 void
 MemFilePersistenceProvider::handleBucketCorruption(const FileSpecification& file) const
 {
-    spi::Bucket fixBucket(document::Bucket(document::BucketSpace::placeHolder(),
+    spi::Bucket fixBucket(document::Bucket(spi::FixedBucketSpaces::default_space(),
                                            file.getBucketId()),
                           spi::PartitionId(file.getDirectory().getIndex()));
 

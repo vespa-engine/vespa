@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "move.h"
+#include <vespa/persistence/spi/fixed_bucket_spaces.h>
 #include <ostream>
 
 namespace storage {
@@ -9,7 +10,7 @@ namespace bucketmover {
 Move::Move()
     : _sourceDisk(0),
       _targetDisk(0),
-      _bucket(document::BucketSpace::placeHolder(), document::BucketId(0)),
+      _bucket(),
       _totalDocSize(0),
       _priority(255)
 {
