@@ -277,7 +277,7 @@ public interface ApplicationPackage {
      *
      * @return A new application package instance pointing to a new location
      */
-    // TODO: Remove when last version in use is 6.170
+    // TODO: Remove when last version in use is 6.202
     default ApplicationPackage preprocess(Zone zone, RuleConfigDeriver ruleConfigDeriver, DeployLogger logger)
         throws IOException, TransformerException, ParserConfigurationException, SAXException {
         throw new UnsupportedOperationException("This application package does not support preprocessing");

@@ -178,7 +178,7 @@ public class SessionPreparer {
 
         void preprocess() {
             try {
-                this.applicationPackage = context.getApplicationPackage().preprocess(properties.zone(), null, logger);
+                this.applicationPackage = context.getApplicationPackage().preprocess(properties.zone(), logger);
             } catch (IOException | TransformerException | ParserConfigurationException | SAXException e) {
                 throw new RuntimeException("Error deploying application package", e);
             }
