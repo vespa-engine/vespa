@@ -69,6 +69,19 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                                               queryProfileType);
         RankProfileSearchFixture search = fixtureWith("query(mytensor)",
                                                       "tensorflow('mnist_softmax/saved')",
+                                                      null,
+                                                      application);
+        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+        assertConstant("Variable_1", search, Optional.of(10L));
+        assertConstant("Variable", search, Optional.of(7840L));
+    }
+
+    @Test
+    public void testTensorFlowReferenceWithDocumentFeature() throws ParseException {
+        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
+        RankProfileSearchFixture search = fixtureWith("attribute(mytensor)",
+                                                      "tensorflow('mnist_softmax/saved')",
+                                                      "field mytensor type tensor(d0[],d1[784]) { indexing: attribute }",
                                                       application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
         assertConstant("Variable_1", search, Optional.of(10L));
@@ -186,6 +199,7 @@ public class RankingExpressionWithTensorFlowTestCase {
             StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
             RankProfileSearchFixture searchFromStored = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                                                                     "tensorflow('mnist_softmax/saved')",
+                                                                    null,
                                                                     storedApplication);
             searchFromStored.assertFirstPhaseExpression(vespaExpression, "my_profile");
             // Verify that the constants exists, but don't verify the content as we are not
@@ -225,11 +239,18 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     private RankProfileSearchFixture fixtureWith(String placeholderExpression, String firstPhaseExpression) {
-        return fixtureWith(placeholderExpression, firstPhaseExpression, new StoringApplicationPackage(applicationDir));
+        return fixtureWith(placeholderExpression, firstPhaseExpression, null,
+                           new StoringApplicationPackage(applicationDir));
+    }
+
+    private RankProfileSearchFixture fixtureWith(String placeholderExpression, String firstPhaseExpression, String field) {
+        return fixtureWith(placeholderExpression, firstPhaseExpression, field,
+                           new StoringApplicationPackage(applicationDir));
     }
 
     private RankProfileSearchFixture fixtureWith(String placeholderExpression,
                                                  String firstPhaseExpression,
+                                                 String field,
                                                  StoringApplicationPackage application) {
         try {
             return new RankProfileSearchFixture(
@@ -241,7 +262,8 @@ public class RankingExpressionWithTensorFlowTestCase {
                     "    first-phase {\n" +
                     "      expression: " + firstPhaseExpression +
                     "    }\n" +
-                    "  }");
+                    "  }",
+                    field);
         }
         catch (ParseException e) {
             throw new IllegalArgumentException(e);

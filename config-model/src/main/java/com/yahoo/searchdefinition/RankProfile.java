@@ -750,8 +750,9 @@ public class RankProfile implements Serializable, Cloneable {
         getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));
 
         // Add attributes
-        for (SDField field : getSearch().allConcreteFields())
+        for (SDField field : getSearch().allConcreteFields()) {
             field.getAttributes().forEach((k, a) -> context.setType(FeatureNames.asAttributeFeature(k), a.tensorType().orElse(TensorType.empty)));
+        }
 
         // Add query features from rank profile types reached from the "default" profile
         QueryProfile profile = queryProfilesOf(getSearch().sourceApplication()).getComponent("default");
