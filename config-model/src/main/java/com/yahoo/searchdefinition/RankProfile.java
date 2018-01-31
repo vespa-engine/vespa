@@ -747,7 +747,7 @@ public class RankProfile implements Serializable, Cloneable {
         TypeMapContext context = new TypeMapContext();
 
         // Add constants
-        getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));
+        getSearch().getRankingConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.getTensorType()));
 
         // Add attributes
         for (SDField field : getSearch().allConcreteFields()) {

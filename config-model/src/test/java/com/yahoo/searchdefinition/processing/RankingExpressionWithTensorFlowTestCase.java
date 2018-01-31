@@ -59,6 +59,17 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
+    public void testTensorFlowReferenceWithConstantFeature() throws ParseException {
+        RankProfileSearchFixture search = fixtureWith("constant(mytensor)",
+                                                      "tensorflow('mnist_softmax/saved')",
+                                                      "constant mytensor { file: ignored\ntype: tensor(d0[7],d1[784]) }",
+                                                      null);
+        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+        assertConstant("Variable_1", search, Optional.of(10L));
+        assertConstant("Variable", search, Optional.of(7840L));
+    }
+
+    @Test
     public void testTensorFlowReferenceWithQueryFeature() throws ParseException {
         String queryProfile = "<query-profile id='default' type='root'/>";
         String queryProfileType = "<query-profile-type id='root'>" +
@@ -69,6 +80,7 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                                               queryProfileType);
         RankProfileSearchFixture search = fixtureWith("query(mytensor)",
                                                       "tensorflow('mnist_softmax/saved')",
+                                                      null,
                                                       null,
                                                       application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
@@ -82,6 +94,7 @@ public class RankingExpressionWithTensorFlowTestCase {
         RankProfileSearchFixture search = fixtureWith("attribute(mytensor)",
                                                       "tensorflow('mnist_softmax/saved')",
                                                       "field mytensor type tensor(d0[],d1[784]) { indexing: attribute }",
+                                                      null,
                                                       application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
         assertConstant("Variable_1", search, Optional.of(10L));
@@ -200,6 +213,7 @@ public class RankingExpressionWithTensorFlowTestCase {
             RankProfileSearchFixture searchFromStored = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                                                                     "tensorflow('mnist_softmax/saved')",
                                                                     null,
+                                                                    null,
                                                                     storedApplication);
             searchFromStored.assertFirstPhaseExpression(vespaExpression, "my_profile");
             // Verify that the constants exists, but don't verify the content as we are not
@@ -239,17 +253,19 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     private RankProfileSearchFixture fixtureWith(String placeholderExpression, String firstPhaseExpression) {
-        return fixtureWith(placeholderExpression, firstPhaseExpression, null,
+        return fixtureWith(placeholderExpression, firstPhaseExpression, null, null,
                            new StoringApplicationPackage(applicationDir));
     }
 
-    private RankProfileSearchFixture fixtureWith(String placeholderExpression, String firstPhaseExpression, String field) {
-        return fixtureWith(placeholderExpression, firstPhaseExpression, field,
+    private RankProfileSearchFixture fixtureWith(String placeholderExpression, String firstPhaseExpression,
+                                                 String constant, String field) {
+        return fixtureWith(placeholderExpression, firstPhaseExpression, field, constant,
                            new StoringApplicationPackage(applicationDir));
     }
 
     private RankProfileSearchFixture fixtureWith(String placeholderExpression,
                                                  String firstPhaseExpression,
+                                                 String constant,
                                                  String field,
                                                  StoringApplicationPackage application) {
         try {
@@ -257,12 +273,13 @@ public class RankingExpressionWithTensorFlowTestCase {
                     application,
                     "  rank-profile my_profile {\n" +
                     "    macro Placeholder() {\n" +
-                    "        expression: " + placeholderExpression +
+                    "      expression: " + placeholderExpression +
                     "    }\n" +
                     "    first-phase {\n" +
                     "      expression: " + firstPhaseExpression +
                     "    }\n" +
                     "  }",
+                    constant,
                     field);
         }
         catch (ParseException e) {

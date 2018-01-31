@@ -29,12 +29,14 @@ class RankProfileSearchFixture {
     }
 
     RankProfileSearchFixture(ApplicationPackage applicationpackage, String rankProfiles) throws ParseException {
-        this(applicationpackage, rankProfiles, null);
+        this(applicationpackage, rankProfiles, null, null);
     }
 
-    RankProfileSearchFixture(ApplicationPackage applicationpackage, String rankProfiles, String field) throws ParseException {
+    RankProfileSearchFixture(ApplicationPackage applicationpackage, String rankProfiles, String field, String constant)
+            throws ParseException {
         SearchBuilder builder = new SearchBuilder(applicationpackage, rankProfileRegistry);
         String sdContent = "search test {\n" +
+                           "  " + (constant != null ? constant : "") +
                            "  document test {\n" +
                            (field != null ? field : "") +
                            "  }\n" +
