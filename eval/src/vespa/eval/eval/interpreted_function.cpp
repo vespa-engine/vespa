@@ -61,6 +61,15 @@ InterpretedFunction::Context::Context(const InterpretedFunction &ifun)
 {
 }
 
+InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const TensorFunction &function)
+    : _program(),
+      _stash(),
+      _num_params(0),
+      _tensor_engine(engine)
+{
+    _program = compile_tensor_function(function, _stash);
+}
+
 InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, size_t num_params_in, const NodeTypes &types)
     : _program(),
       _stash(),
