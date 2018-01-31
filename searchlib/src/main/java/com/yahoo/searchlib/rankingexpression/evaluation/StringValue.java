@@ -5,6 +5,7 @@ import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 
 /**
  * A string value.
@@ -29,7 +30,7 @@ public class StringValue extends Value {
     }
 
     @Override
-    public ValueType type() { return ValueType.doubleType(); }
+    public TensorType type() { return TensorType.empty; }
 
     /** Returns the hashcode of this, to enable strings to be encoded (with reasonable safely) as doubles for optimization */
     @Override

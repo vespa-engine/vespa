@@ -4,7 +4,8 @@ package com.yahoo.searchlib.rankingexpression.rule;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.evaluation.ValueType;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.functions.Join;
 
 import java.util.ArrayList;
@@ -66,16 +67,16 @@ public final class FunctionNode extends CompositeNode {
     }
 
     @Override
-    public ValueType type(Context context) {
+    public TensorType type(TypeContext context) {
         if (arguments.expressions().size() == 0)
-            return ValueType.doubleType();
+            return TensorType.empty;
 
-        ValueType argument1Type = arguments.expressions().get(0).type(context);
+        TensorType argument1Type = arguments.expressions().get(0).type(context);
         if (arguments.expressions().size() == 1)
             return argument1Type;
 
-        ValueType argument2Type = arguments.expressions().get(1).type(context);
-        return ValueType.of(Join.outputType(argument1Type.tensorType(), argument2Type.tensorType()));
+        TensorType argument2Type = arguments.expressions().get(1).type(context);
+        return Join.outputType(argument1Type, argument2Type);
     }
 
     @Override

@@ -2,10 +2,12 @@
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author lesters
@@ -15,6 +17,18 @@ public class DropoutImportTestCase {
     @Test
     public void testDropoutImport() {
         TestableTensorFlowModel model = new TestableTensorFlowModel("src/test/files/integration/tensorflow/dropout/saved");
+
+        // Check (provided) macros
+        assertEquals(1, model.get().macros().size());
+        assertTrue(model.get().macros().containsKey("training/input"));
+        assertEquals("constant(\"training/input\")", model.get().macros().get("training/input").getRoot().toString());
+
+        // Check required macros
+        assertEquals(1, model.get().requiredMacros().size());
+        assertTrue(model.get().requiredMacros().containsKey("X"));
+        assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(),
+                     model.get().requiredMacros().get("X"));
+
         TensorFlowModel.Signature signature = model.get().signature("serving_default");
 
         assertEquals("Has skipped outputs",

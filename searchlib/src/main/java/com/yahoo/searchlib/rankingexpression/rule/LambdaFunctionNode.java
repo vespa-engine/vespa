@@ -5,7 +5,8 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.evaluation.ValueType;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.Deque;
@@ -56,8 +57,8 @@ public class LambdaFunctionNode extends CompositeNode {
     }
 
     @Override
-    public ValueType type(Context context) {
-        return ValueType.doubleType(); // by definition - no nested lambdas
+    public TensorType type(TypeContext context) {
+        return TensorType.empty; // by definition - no nested lambdas
     }
 
     /** Evaluate this in a context which must have the arguments bound */

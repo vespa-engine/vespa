@@ -7,6 +7,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -60,7 +61,7 @@ public class Generate extends PrimitiveTensorFunction {
     public PrimitiveTensorFunction toPrimitive() { return this; }
 
     @Override
-    public TensorType type(EvaluationContext context) { return type; }
+    public TensorType type(TypeContext context) { return type; }
 
     @Override
     public Tensor evaluate(EvaluationContext context) {

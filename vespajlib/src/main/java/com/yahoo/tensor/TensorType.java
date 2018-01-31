@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
  * A tensor type with its dimensions. This is immutable.
  * <p>
  * A dimension can be indexed (bound or unbound) or mapped.
- * Currently, we only support tensor types where all dimensions have the same type.
  *
  * @author geirst
  * @author bratseth
@@ -27,6 +26,7 @@ import java.util.stream.Collectors;
 @Beta
 public class TensorType {
 
+    /** The empty tensor type - which is the same as a double */
     public static final TensorType empty = new TensorType(Collections.emptyList());
 
     /** Sorted list of the dimensions of this */

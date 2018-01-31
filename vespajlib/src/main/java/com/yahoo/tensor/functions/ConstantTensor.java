@@ -5,6 +5,7 @@ import com.google.common.annotations.Beta;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,7 +42,7 @@ public class ConstantTensor extends PrimitiveTensorFunction {
     public PrimitiveTensorFunction toPrimitive() { return this; }
 
     @Override
-    public TensorType type(EvaluationContext context) { return constant.type(); }
+    public TensorType type(TypeContext context) { return constant.type(); }
 
     @Override
     public Tensor evaluate(EvaluationContext context) { return constant; }

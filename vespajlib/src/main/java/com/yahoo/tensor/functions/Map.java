@@ -6,6 +6,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -52,7 +53,7 @@ public class Map extends PrimitiveTensorFunction {
     }
 
     @Override
-    public TensorType type(EvaluationContext context) {
+    public TensorType type(TypeContext context) {
         return argument.type(context);
     }
 

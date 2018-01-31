@@ -31,24 +31,19 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     private Map<String, Attribute> attributes = new java.util.LinkedHashMap<>();
     private Map<String, Attribute> importedAttributes = new java.util.LinkedHashMap<>();
 
-    /**
-     * Flag indicating if a position-attribute has been found
-     */
+    /** Whether this has any position attribute */
     private boolean hasPosition = false;
 
     public AttributeFields(Search search) {
         derive(search);
     }
 
-    /**
-     * Derives everything from a field
-     */
+    /** Derives everything from a field */
     @Override
     protected void derive(ImmutableSDField field, Search search) {
         if (field.usesStructOrMap() &&
             !field.getDataType().equals(PositionDataType.INSTANCE) &&
-            !field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE)))
-        {
+            !field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE))) {
             return; // Ignore struct fields for indexed search (only implemented for streaming search)
         }
         if (field.isImportedField()) {
@@ -58,9 +53,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         }
     }
 
-    /**
-     * Return an attribute by name, or null if it doesn't exist
-     */
+    /** Returns an attribute by name, or null if it doesn't exist */
     public Attribute getAttribute(String attributeName) {
         return attributes.get(attributeName);
     }
@@ -69,9 +62,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         return getAttribute(attributeName) != null;
     }
 
-    /**
-     * Derives one attribute. TODO: Support non-default named attributes
-     */
+    /** Derives one attribute. TODO: Support non-default named attributes */
     private void deriveAttributes(ImmutableSDField field) {
         for (Attribute fieldAttribute : field.getAttributes().values()) {
             deriveAttribute(field, fieldAttribute);
@@ -107,9 +98,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         }
     }
 
-    /**
-     * Returns a read only attribute iterator
-     */
+    /** Returns a read only attribute iterator */
     public Iterator attributeIterator() {
         return attributes().iterator();
     }
@@ -201,4 +190,5 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
             }
         }
     }
+
 }

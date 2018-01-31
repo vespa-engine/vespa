@@ -39,8 +39,8 @@ public class QueryProfileXMLReader {
      * @throws RuntimeException if <code>directory</code> is not a readable directory, or if there is some error in the XML
      */
     public QueryProfileRegistry read(String directory) {
-        List<NamedReader> queryProfileReaders=new ArrayList<>();
-        List<NamedReader> queryProfileTypeReaders=new ArrayList<>();
+        List<NamedReader> queryProfileReaders = new ArrayList<>();
+        List<NamedReader> queryProfileTypeReaders = new ArrayList<>();
         try {
             File dir=new File(directory);
             if ( !dir.isDirectory() ) throw new IllegalArgumentException("Could not read query profiles: '" +
@@ -86,16 +86,16 @@ public class QueryProfileXMLReader {
      * Read the XML file readers into a registry. This does not close the readers.
      * This method is used directly from the admin system.
      */
-    public QueryProfileRegistry read(List<NamedReader> queryProfileTypeReaders,List<NamedReader> queryProfileReaders) {
-        QueryProfileRegistry registry=new QueryProfileRegistry();
+    public QueryProfileRegistry read(List<NamedReader> queryProfileTypeReaders, List<NamedReader> queryProfileReaders) {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
 
         // Phase 1
-        List<Element> queryProfileTypeElements=createQueryProfileTypes(queryProfileTypeReaders,registry.getTypeRegistry());
-        List<Element> queryProfileElements=createQueryProfiles(queryProfileReaders,registry);
+        List<Element> queryProfileTypeElements = createQueryProfileTypes(queryProfileTypeReaders, registry.getTypeRegistry());
+        List<Element> queryProfileElements = createQueryProfiles(queryProfileReaders, registry);
 
         // Phase 2
-        fillQueryProfileTypes(queryProfileTypeElements,registry.getTypeRegistry());
-        fillQueryProfiles(queryProfileElements,registry);
+        fillQueryProfileTypes(queryProfileTypeElements, registry.getTypeRegistry());
+        fillQueryProfiles(queryProfileElements, registry);
         return registry;
     }
 

@@ -5,6 +5,7 @@ import com.google.common.annotations.Beta;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 /**
  * A composite tensor function is a tensor function which can be expressed (less tersely)
@@ -17,7 +18,7 @@ public abstract class CompositeTensorFunction extends TensorFunction {
 
     /** Finds the type this produces by first converting it to a primitive function */
     @Override
-    public final TensorType type(EvaluationContext context) { return toPrimitive().type(context); }
+    public final TensorType type(TypeContext context) { return toPrimitive().type(context); }
 
     /** Evaluates this by first converting it to a primitive function */
     @Override

@@ -4,8 +4,8 @@ package com.yahoo.searchlib.rankingexpression.rule;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.evaluation.ValueType;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.Deque;
@@ -48,7 +48,7 @@ public class GeneratorLambdaFunctionNode extends CompositeNode {
     }
 
     @Override
-    public ValueType type(Context context) { return ValueType.of(type); }
+    public TensorType type(TypeContext context) { return type; }
 
     /** Evaluate this in a context which must have the arguments bound */
     @Override

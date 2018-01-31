@@ -41,7 +41,6 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-// TODO: Verify types of macros
 // TODO: Avoid name conflicts across models for constants
 public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
@@ -84,6 +83,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         Signature signature = chooseSignature(model, store.arguments().signature());
         String output = chooseOutput(signature, store.arguments().output());
         RankingExpression expression = model.expressions().get(output);
+        verifyRequiredMacros(expression, model.requiredMacros(), profile);
         store.writeConverted(expression);
 
         model.constants().forEach((k, v) -> transformConstant(store, profile, k, v));
@@ -165,6 +165,44 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         StringBuilder b = new StringBuilder(": ");
         signature.skippedOutputs().forEach((k, v) -> b.append("Skipping output '").append(k).append("': ").append(v));
         return b.toString();
+    }
+
+    /**
+     * Verify that the macros referred in the given expression exists in the given rank profile,
+     * and return tensors of the types specified in requiredMacros.
+     */
+    private void verifyRequiredMacros(RankingExpression expression, Map<String, TensorType> requiredMacros,
+                                      RankProfile profile) {
+        List<String> macroNames = new ArrayList<>();
+        addMacroNamesIn(expression.getRoot(), macroNames);
+        for (String macroName : macroNames) {
+            TensorType requiredType = requiredMacros.get(macroName);
+            if (requiredType == null) continue; // Not a required macro
+
+            RankProfile.Macro macro = profile.getMacros().get(macroName);
+            if (macro == null)
+                throw new IllegalArgumentException("Model refers Placeholder '" + macroName +
+                                                   "' of type " + requiredType + " but this macro is not present in " +
+                                                   profile);
+            TensorType actualType = macro.getRankingExpression().getRoot().type(profile.typeContext());
+            if ( ! actualType.isAssignableTo(requiredType))
+                throw new IllegalArgumentException("Model refers Placeholder '" + macroName +
+                                                   "' of type " + requiredType +
+                                                   " which must be produced by a macro in the rank profile, but " +
+                                                   "this macro produces type " + actualType + " in " + profile);
+        }
+    }
+
+    private void addMacroNamesIn(ExpressionNode node, List<String> names) {
+        if (node instanceof ReferenceNode) {
+            ReferenceNode referenceNode = (ReferenceNode)node;
+            if (referenceNode.getOutput() == null) // macro references cannot specify outputs
+                names.add(referenceNode.getName());
+        }
+        else if (node instanceof CompositeNode) {
+            for (ExpressionNode child : ((CompositeNode)node).children())
+                addMacroNamesIn(child, names);
+        }
     }
 
     /**

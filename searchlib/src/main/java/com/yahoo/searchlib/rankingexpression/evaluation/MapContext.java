@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
+import com.yahoo.tensor.TensorType;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,21 +15,11 @@ import java.util.Set;
  */
 public class MapContext extends Context {
 
-    private Map<String,Value> bindings=new HashMap<>();
+    private Map<String, Value> bindings = new HashMap<>();
 
     private boolean frozen = false;
 
     public MapContext() {
-    }
-
-    /**
-     * Freezes this.
-     * Returns this for convenience.
-     */
-    public MapContext freeze() {
-        if ( ! frozen)
-            bindings = Collections.unmodifiableMap(bindings);
-        return this;
     }
 
     /**
@@ -41,27 +33,32 @@ public class MapContext extends Context {
             boundValue.freeze();
     }
 
+    /**
+     * Freezes this.
+     * Returns this for convenience.
+     */
+    public MapContext freeze() {
+        if ( ! frozen)
+            bindings = Collections.unmodifiableMap(bindings);
+        return this;
+    }
+
     /** Returns the type of the given value key, or null if it is not bound. */
     @Override
-    public ValueType getType(String key) {
+    public TensorType getType(String key) {
         Value value = bindings.get(key);
         if (value == null) return null;
         return value.type();
     }
 
-    /**
-     * Returns the value of a key. 0 is returned if the given key is not bound in this.
-     */
+    /** Returns the value of a key. 0 is returned if the given key is not bound in this. */
     @Override
     public Value get(String key) {
         return bindings.getOrDefault(key, DoubleValue.zero);
     }
 
     /**
-     * Sets the value of a key.
-     * The value is frozen by this.
-     *
-     * @since 5.1.5
+     * Sets the value of a key.The value is frozen by this.
      */
     @Override
     public void put(String key,Value value) {

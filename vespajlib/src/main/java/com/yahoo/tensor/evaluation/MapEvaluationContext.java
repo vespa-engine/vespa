@@ -20,7 +20,7 @@ public class MapEvaluationContext implements EvaluationContext {
     public void put(String name, Tensor tensor) { bindings.put(name, tensor); }
 
     @Override
-    public TensorType getTensorType(String name) {
+    public TensorType getType(String name) {
         Tensor tensor = bindings.get(name);
         if (tensor == null) return null;
         return tensor.type();

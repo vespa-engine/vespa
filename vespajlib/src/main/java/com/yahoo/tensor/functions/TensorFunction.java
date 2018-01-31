@@ -6,6 +6,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.MapEvaluationContext;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.List;
 
@@ -49,7 +50,7 @@ public abstract class TensorFunction {
      *
      * @param context a context which must be passed to all nexted functions when evaluating
      */
-    public abstract TensorType type(EvaluationContext context);
+    public abstract TensorType type(TypeContext context);
 
     /** Evaluate with no context */
     public final Tensor evaluate() { return evaluate(new MapEvaluationContext()); }

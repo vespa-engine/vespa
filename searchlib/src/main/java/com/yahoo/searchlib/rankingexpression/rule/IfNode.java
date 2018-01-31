@@ -3,9 +3,13 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.evaluation.ValueType;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.List;
 
 /**
  * A conditional branch of a ranking expression.
@@ -71,9 +75,9 @@ public final class IfNode extends CompositeNode {
     }
 
     @Override
-    public ValueType type(Context context) {
-        ValueType trueType = trueExpression.type(context);
-        ValueType falseType = falseExpression.type(context);
+    public TensorType type(TypeContext context) {
+        TensorType trueType = trueExpression.type(context);
+        TensorType falseType = falseExpression.type(context);
         if ( ! trueType.equals(falseType))
             throw new IllegalArgumentException("An if expression must produce a value of the same type in both " +
                                                "alternatives, but the 'true' type is " + trueType + " while the " +

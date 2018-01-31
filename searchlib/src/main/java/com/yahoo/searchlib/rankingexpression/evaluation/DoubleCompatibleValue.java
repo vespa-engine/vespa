@@ -4,6 +4,7 @@ package com.yahoo.searchlib.rankingexpression.evaluation;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 
 /**
  * A value which acts as a double in numerical context.
@@ -13,7 +14,7 @@ import com.yahoo.tensor.Tensor;
 public abstract class DoubleCompatibleValue extends Value {
 
     @Override
-    public ValueType type() { return ValueType.doubleType(); }
+    public TensorType type() { return TensorType.empty; }
 
     @Override
     public boolean hasDouble() { return true; }

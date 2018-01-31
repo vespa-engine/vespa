@@ -3,7 +3,8 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.evaluation.ValueType;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.ArrayList;
 import java.util.Deque;
@@ -48,8 +49,8 @@ public class ComparisonNode extends BooleanNode {
     }
 
     @Override
-    public ValueType type(Context context) {
-        return ValueType.doubleType(); // by definition
+    public TensorType type(TypeContext context) {
+        return TensorType.empty; // by definition
     }
 
     @Override

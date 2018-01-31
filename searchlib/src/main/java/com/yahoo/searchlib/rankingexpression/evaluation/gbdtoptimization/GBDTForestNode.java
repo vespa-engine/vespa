@@ -4,10 +4,11 @@ package com.yahoo.searchlib.rankingexpression.evaluation.gbdtoptimization;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.evaluation.ValueType;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Deque;
 
@@ -25,7 +26,7 @@ public class GBDTForestNode extends ExpressionNode {
     }
 
     @Override
-    public final ValueType type(Context context) { return ValueType.doubleType(); }
+    public final TensorType type(TypeContext context) { return TensorType.empty; }
 
     @Override
     public final Value evaluate(Context context) {

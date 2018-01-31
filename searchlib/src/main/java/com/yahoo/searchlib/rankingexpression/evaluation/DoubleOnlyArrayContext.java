@@ -2,6 +2,7 @@
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.tensor.TensorType;
 
 /**
  * A variant of an array context variant which supports faster binding of variables but slower lookup
@@ -67,7 +68,7 @@ public class DoubleOnlyArrayContext extends AbstractArrayContext {
     }
 
     @Override
-    public ValueType getType(String name) { return ValueType.doubleType(); }
+    public TensorType getType(String name) { return TensorType.empty; }
 
     /** Perform a slow lookup by name */
     @Override

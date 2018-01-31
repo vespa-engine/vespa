@@ -5,10 +5,10 @@ import com.google.common.annotations.Beta;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.evaluation.ValueType;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.functions.PrimitiveTensorFunction;
 import com.yahoo.tensor.functions.TensorFunction;
 import com.yahoo.tensor.functions.ToStringContext;
@@ -64,7 +64,7 @@ public class TensorFunctionNode extends CompositeNode {
     }
 
     @Override
-    public ValueType type(Context context) { return ValueType.of(function.type(context)); }
+    public TensorType type(TypeContext context) { return function.type(context); }
 
     @Override
     public Value evaluate(Context context) {
@@ -111,8 +111,8 @@ public class TensorFunctionNode extends CompositeNode {
         public PrimitiveTensorFunction toPrimitive() { return this; }
 
         @Override
-        public TensorType type(EvaluationContext context) {
-            return expression.type((Context)context).tensorType();
+        public TensorType type(TypeContext context) {
+            return expression.type(context);
         }
 
         @Override

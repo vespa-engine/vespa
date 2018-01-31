@@ -7,6 +7,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -71,7 +72,7 @@ public class Rename extends PrimitiveTensorFunction {
     public PrimitiveTensorFunction toPrimitive() { return this; }
 
     @Override
-    public TensorType type(EvaluationContext context) {
+    public TensorType type(TypeContext context) {
         return type(argument.type(context));
     }
 

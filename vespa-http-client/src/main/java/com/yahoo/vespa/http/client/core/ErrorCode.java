@@ -6,12 +6,12 @@ import com.google.common.annotations.Beta;
 /**
  * Return types for the server.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @since 5.1.20
+ * @author Einar M R Rosenvinge
+ * @author Steinar Knutsen
  */
 @Beta
 public enum ErrorCode {
+
     OK(true, true),
     ERROR(false, false),
     TRANSIENT_ERROR(false, true),
@@ -20,7 +20,7 @@ public enum ErrorCode {
     private boolean success;
     private boolean _transient;
 
-    private ErrorCode(boolean success, boolean _transient) {
+    ErrorCode(boolean success, boolean _transient) {
         this.success = success;
         this._transient = _transient;
     }
@@ -32,4 +32,5 @@ public enum ErrorCode {
     public boolean isTransient() {
         return _transient;
     }
+
 }
