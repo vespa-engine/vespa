@@ -16,6 +16,7 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.evaluation.FeatureNames;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TypeMapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -746,11 +747,11 @@ public class RankProfile implements Serializable, Cloneable {
         TypeMapContext context = new TypeMapContext();
 
         // Add constants
-        getConstants().forEach((k, v) -> context.setType(asConstantFeature(k), v.type()));
+        getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));
 
         // Add attributes
         for (SDField field : getSearch().allConcreteFields())
-            field.getAttributes().forEach((k, a) -> context.setType(asAttributeFeature(k), a.tensorType().orElse(TensorType.empty)));
+            field.getAttributes().forEach((k, a) -> context.setType(FeatureNames.asAttributeFeature(k), a.tensorType().orElse(TensorType.empty)));
 
         // Add query features from rank profile types reached from the "default" profile
         QueryProfile profile = queryProfilesOf(getSearch().sourceApplication()).getComponent("default");
@@ -761,7 +762,7 @@ public class RankProfile implements Serializable, Cloneable {
                     if (field.getType() instanceof TensorFieldType)
                         type = ((TensorFieldType)field.getType()).type().get();
 
-                    String feature = asQueryFeature(prefix.append(field.getName()).toString());
+                    String feature = FeatureNames.asQueryFeature(prefix.append(field.getName()).toString());
                     context.setType(feature, type);
                 }
             });
@@ -776,24 +777,12 @@ public class RankProfile implements Serializable, Cloneable {
         try {
             queryProfileFiles = applicationPackage.getQueryProfileFiles();
             queryProfileTypeFiles = applicationPackage.getQueryProfileTypeFiles();
-            return new QueryProfileXMLReader().read(queryProfileFiles, queryProfileTypeFiles);
+            return new QueryProfileXMLReader().read(queryProfileTypeFiles, queryProfileFiles);
         }
         finally {
             NamedReader.closeAll(queryProfileFiles);
             NamedReader.closeAll(queryProfileTypeFiles);
         }
-    }
-
-    private String asConstantFeature(String constantName) {
-        return "constant(\"" + constantName + "\")";
-    }
-
-    private String asAttributeFeature(String constantName) {
-        return "attribute(\"" + constantName + "\")";
-    }
-
-    private String asQueryFeature(String constantName) {
-        return "query(\"" + constantName + "\")";
     }
 
     /**

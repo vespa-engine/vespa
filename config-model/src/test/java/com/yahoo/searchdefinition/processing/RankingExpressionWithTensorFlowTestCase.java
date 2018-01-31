@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;
+import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -22,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,9 +50,26 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testMinimalTensorFlowReference() throws ParseException {
+    public void testTensorFlowReference() throws ParseException {
         RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                                                       "tensorflow('mnist_softmax/saved')");
+        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+        assertConstant("Variable_1", search, Optional.of(10L));
+        assertConstant("Variable", search, Optional.of(7840L));
+    }
+
+    @Test
+    public void testTensorFlowReferenceWithQueryFeature() throws ParseException {
+        String queryProfile = "<query-profile id='default' type='root'/>";
+        String queryProfileType = "<query-profile-type id='root'>" +
+                                  "  <field name='mytensor' type='tensor(d0[3],d1[784])'/>" +
+                                  "</query-profile-type>";
+        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir,
+                                                                              queryProfile,
+                                                                              queryProfileType);
+        RankProfileSearchFixture search = fixtureWith("query(mytensor)",
+                                                      "tensorflow('mnist_softmax/saved')",
+                                                      application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
         assertConstant("Variable_1", search, Optional.of(10L));
         assertConstant("Variable", search, Optional.of(7840L));
@@ -233,14 +252,19 @@ public class RankingExpressionWithTensorFlowTestCase {
 
         private final File root;
 
+        /** The content of the single query profile and type present in this, or null if none */
+        private final String queryProfile, queryProfileType;
+
         StoringApplicationPackage(Path applicationPackageWritableRoot) {
-            this(applicationPackageWritableRoot.toFile());
+            this(applicationPackageWritableRoot, null, null);
         }
 
-        StoringApplicationPackage(File applicationPackageWritableRoot) {
+        StoringApplicationPackage(Path applicationPackageWritableRoot, String queryProfile, String queryProfileType) {
             super(null, null, Collections.emptyList(), null,
                   null, null, false);
-            this.root = applicationPackageWritableRoot;
+            this.root = new File(applicationPackageWritableRoot.toString());
+            this.queryProfile = queryProfile;
+            this.queryProfileType = queryProfileType;
         }
 
         @Override
@@ -251,6 +275,18 @@ public class RankingExpressionWithTensorFlowTestCase {
         @Override
         public ApplicationFile getFile(Path file) {
             return new StoringApplicationPackageFile(file, Path.fromString(root.toString()));
+        }
+
+        @Override
+        public List<NamedReader> getQueryProfileFiles() {
+            if (queryProfile == null) return Collections.emptyList();
+            return Collections.singletonList(new NamedReader("default.xml", new StringReader(queryProfile)));
+        }
+
+        @Override
+        public List<NamedReader> getQueryProfileTypeFiles() {
+            if (queryProfileType == null) return Collections.emptyList();
+            return Collections.singletonList(new NamedReader("root.xml", new StringReader(queryProfileType)));
         }
 
     }
