@@ -23,6 +23,7 @@ import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ErrorCode;
+import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.JRTMethods;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
@@ -41,6 +42,7 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdaterFactory;
 import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReceiver;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 
@@ -60,6 +62,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * An RPC server class that handles the config protocol RPC method "getConfigV3".
@@ -96,6 +100,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     
     private final ThreadPoolExecutor executorService;
     private final boolean useChunkedFileTransfer;
+    private final FileDownloader downloader;
     private volatile boolean allTenantsLoaded = false;
 
     /**
@@ -122,6 +127,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         this.hostedVespa = config.hostedVespa();
         this.fileServer = fileServer;
         this.useChunkedFileTransfer = config.usechunkedtransfer();
+        downloader = fileServer.downloader();
         setUpHandlers();
     }
 
@@ -196,6 +202,11 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                                   .methodDesc("printStatistics")
                                   .returnDesc(0, "statistics", "Statistics for server"));
         getSupervisor().addMethod(new Method("filedistribution.serveFile", "s", "is", this, "serveFile"));
+        getSupervisor().addMethod(new Method("filedistribution.setFileReferencesToDownload", "S", "i",
+                                        this, "setFileReferencesToDownload")
+                                     .methodDesc("set which file references to download")
+                                     .paramDesc(0, "file references", "file reference to download")
+                                     .returnDesc(0, "ret", "0 if success, 1 otherwise"));
     }
 
     /**
@@ -536,5 +547,16 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                                        ? new ChunkedFileReceiver(request.target())
                                        : new WholeFileReceiver(request.target());
         fileServer.serveFile(request, receiver);
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    public final void setFileReferencesToDownload(Request req) {
+        String[] fileReferenceStrings = req.parameters().get(0).asStringArray();
+        List<FileReference> fileReferences = Stream.of(fileReferenceStrings)
+                .map(FileReference::new)
+                .collect(Collectors.toList());
+        downloader.queueForAsyncDownload(fileReferences);
+
+        req.returnValues().add(new Int32Value(0));
     }
 }
