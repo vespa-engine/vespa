@@ -61,7 +61,7 @@ public class IdentityDocumentService {
             SSLConnectionSocketFactory sslSocketFactory =
                     new SSLConnectionSocketFactory(sslContextBuilder.build(),
                                                    SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-            return HttpClientBuilder.create().setSSLSocketFactory(sslSocketFactory).build();
+            return HttpClientBuilder.create().setSSLSocketFactory(sslSocketFactory).setUserAgent("identity-document-client").build();
         } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
             throw new RuntimeException(e);
         }
