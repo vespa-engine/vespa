@@ -7,6 +7,8 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Deque;
 
@@ -22,6 +24,9 @@ public class GBDTForestNode extends ExpressionNode {
     public GBDTForestNode(double[] values) {
         this.values=values;
     }
+
+    @Override
+    public final TensorType type(TypeContext context) { return TensorType.empty; }
 
     @Override
     public final Value evaluate(Context context) {

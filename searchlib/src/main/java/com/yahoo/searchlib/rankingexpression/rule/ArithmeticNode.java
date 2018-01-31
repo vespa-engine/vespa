@@ -4,8 +4,15 @@ package com.yahoo.searchlib.rankingexpression.rule;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.functions.Join;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * A binary mathematical operation
@@ -73,14 +80,26 @@ public final class ArithmeticNode extends CompositeNode {
     }
 
     @Override
+    public TensorType type(TypeContext context) {
+        // Compute type using tensor types as arithmetic operators are supported on tensors
+        // and is correct also in the special case of doubles.
+        // As all our functions are type-commutative, we don't need to take operator precedence into account
+        TensorType type = children.get(0).type(context);
+        for (int i = 1; i < children.size(); i++)
+            type = Join.outputType(type, children.get(i).type(context));
+        return type;
+    }
+
+    @Override
     public Value evaluate(Context context) {
         Iterator<ExpressionNode> child = children.iterator();
 
+        // Apply in precedence order:
         Deque<ValueItem> stack = new ArrayDeque<>();
         stack.push(new ValueItem(ArithmeticOperator.OR, child.next().evaluate(context)));
         for (Iterator<ArithmeticOperator> it = operators.iterator(); it.hasNext() && child.hasNext();) {
             ArithmeticOperator op = it.next();
-            if (!stack.isEmpty()) {
+            if ( ! stack.isEmpty()) {
                 while (stack.peek().op.hasPrecedenceOver(op)) {
                     popStack(stack);
                 }

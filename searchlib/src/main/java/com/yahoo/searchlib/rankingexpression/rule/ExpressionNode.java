@@ -3,6 +3,8 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.io.Serializable;
 import java.util.Deque;
@@ -39,6 +41,14 @@ public abstract class ExpressionNode implements Serializable {
      * @return the main script, referring to script instances.
      */
     public abstract String toString(SerializationContext context, Deque<String> path, CompositeNode parent);
+
+    /**
+     * Returns the type this will return if evaluated with the given context.
+     *
+     * @param context the variable type bindings to use for this evaluation
+     * @throws IllegalArgumentException if there are variables which are not bound in the given map
+     */
+    public abstract TensorType type(TypeContext context);
 
     /**
      * Returns the value of evaluating this expression over the given context.

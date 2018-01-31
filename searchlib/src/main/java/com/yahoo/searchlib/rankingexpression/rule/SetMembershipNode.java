@@ -7,6 +7,8 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.ArrayList;
 import java.util.Deque;
@@ -55,6 +57,11 @@ public class SetMembershipNode extends BooleanNode {
         }
         b.append("]");
         return b.toString();
+    }
+
+    @Override
+    public TensorType type(TypeContext context) {
+        return TensorType.empty;
     }
 
     @Override

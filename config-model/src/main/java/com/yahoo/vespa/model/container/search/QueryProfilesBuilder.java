@@ -5,6 +5,7 @@ import com.yahoo.io.reader.NamedReader;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.config.application.api.ApplicationPackage;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -13,17 +14,16 @@ import java.util.List;
  *
  * @author bratseth
  */
-// TODO: Move into QueryProfiles
 public class QueryProfilesBuilder {
 
     /** Build the set of query profiles for an application package */
     public QueryProfiles build(ApplicationPackage applicationPackage) {
-        List<NamedReader> queryProfileTypeFiles=null;
-        List<NamedReader> queryProfileFiles=null;
+        List<NamedReader> queryProfileTypeFiles = null;
+        List<NamedReader> queryProfileFiles = null;
         try {
-            queryProfileTypeFiles=applicationPackage.getQueryProfileTypeFiles();
-            queryProfileFiles=applicationPackage.getQueryProfileFiles();
-            return new QueryProfiles(new QueryProfileXMLReader().read(queryProfileTypeFiles,queryProfileFiles));
+            queryProfileTypeFiles = applicationPackage.getQueryProfileTypeFiles();
+            queryProfileFiles = applicationPackage.getQueryProfileFiles();
+            return new QueryProfiles(new QueryProfileXMLReader().read(queryProfileTypeFiles, queryProfileFiles));
         }
         finally {
             NamedReader.closeAll(queryProfileTypeFiles);

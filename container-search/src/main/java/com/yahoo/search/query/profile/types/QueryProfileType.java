@@ -102,13 +102,14 @@ public class QueryProfileType extends FreezableSimpleComponent {
      *
      * @throws IllegalStateException if this is frozen
      */
-    public Map<String,FieldDescription> declaredFields() {
+    public Map<String, FieldDescription> declaredFields() {
         ensureNotFrozen();
         return Collections.unmodifiableMap(fields);
     }
 
     /**
      * Returns true if <i>this</i> is declared strict.
+     *
      * @throws IllegalStateException if this is frozen
      */
     public boolean isDeclaredStrict() {
@@ -118,6 +119,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
 
     /**
      * Returns true if <i>this</i> is declared as match as path.
+     *
      * @throws IllegalStateException if this is frozen
      */
     public boolean getDeclaredMatchAsPath() {

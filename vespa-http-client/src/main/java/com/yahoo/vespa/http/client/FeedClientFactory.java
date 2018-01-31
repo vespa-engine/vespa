@@ -15,14 +15,14 @@ import static com.yahoo.vespa.http.client.SessionFactory.createTimeoutExecutor;
 public class FeedClientFactory {
 
     /**
-     * Creates FeedClient.
+     * Creates a FeedClient.
+     *
      * @param sessionParams parameters for connection, hosts, cluster configurations and more.
      * @param resultCallback on each result, this callback is called.
      * @return newly created FeedClient API object.
      */
-    public static FeedClient create(
-            SessionParams sessionParams,
-            FeedClient.ResultCallback resultCallback) {
+    public static FeedClient create(SessionParams sessionParams, FeedClient.ResultCallback resultCallback) {
         return new FeedClientImpl(sessionParams, resultCallback, createTimeoutExecutor());
     }
+
 }

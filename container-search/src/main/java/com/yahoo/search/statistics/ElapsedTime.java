@@ -12,13 +12,11 @@ import java.util.Set;
 import static com.yahoo.search.statistics.TimeTracker.Activity.*;
 
 /**
- * Basically a collection of TimeTracker instances.
+ * A collection of TimeTracker instances.
  *
- * <p>This class may need a lot of restructuring as actual
- * needs are mapped out.
- *
- * @author <a href="steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
+// This class may need a lot of restructuring as actual needs are mapped out.
 public class ElapsedTime {
 
     // An identity set is used to make it safe to do multiple merges. This may happen if
@@ -35,16 +33,11 @@ public class ElapsedTime {
 
     private long fetcher(Activity toFetch, TimeTracker fetchFrom) {
         switch (toFetch) {
-        case SEARCH:
-            return fetchFrom.searchTime();
-        case FILL:
-            return fetchFrom.fillTime();
-        case PING:
-            return fetchFrom.pingTime();
-        default:
-            return 0L;
+            case SEARCH: return fetchFrom.searchTime();
+            case FILL:   return fetchFrom.fillTime();
+            case PING:   return fetchFrom.pingTime();
+            default:     return 0L;
         }
-
     }
 
     /**
@@ -232,4 +225,5 @@ public class ElapsedTime {
         report.append(".");
         return report.toString();
     }
+
 }

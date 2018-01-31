@@ -13,11 +13,14 @@ import com.yahoo.tensor.TensorType;
  * Concrete subclasses of this provides implementations of these methods or throws
  * UnsupportedOperationException if the operation is not supported.
  *
- * @author  bratseth
+ * @author bratseth
  */
 public abstract class Value {
 
     private boolean frozen=false;
+
+    /** Returns the type of this value */
+    public abstract TensorType type();
 
     /** Returns this value as a double, or throws UnsupportedOperationException if it cannot be represented as a double */
     public abstract double asDouble();

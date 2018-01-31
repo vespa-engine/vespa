@@ -16,21 +16,21 @@ public class Softmax extends CompositeTensorFunction {
 
     private final TensorFunction argument;
     private final String dimension;
-    
+
     public Softmax(TensorFunction argument, String dimension) {
         this.argument = argument;
         this.dimension = dimension;
     }
-    
+
     public static TensorType outputType(TensorType inputType, String dimension) {
         return Reduce.outputType(inputType, ImmutableList.of(dimension));
     }
 
     @Override
-    public List<TensorFunction> functionArguments() { return Collections.singletonList(argument); }
+    public List<TensorFunction> arguments() { return Collections.singletonList(argument); }
 
     @Override
-    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+    public TensorFunction withArguments(List<TensorFunction> arguments) {
         if ( arguments.size() != 1)
             throw new IllegalArgumentException("Softmax must have 1 argument, got " + arguments.size());
         return new Softmax(arguments.get(0), dimension);
@@ -45,7 +45,7 @@ public class Softmax extends CompositeTensorFunction {
                                    dimension),
                         ScalarFunctions.divide());
     }
-    
+
     @Override
     public String toString(ToStringContext context) {
         return "softmax(" + argument.toString(context) + ", " + dimension + ")";

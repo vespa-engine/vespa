@@ -1,25 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.statistics;
 
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-
 import com.yahoo.component.chain.Chain;
 import com.yahoo.prelude.Pong;
 import com.yahoo.processing.Processor;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+
 /**
- * A container for storing time stamps throughout the
- * lifetime of an Execution instance.
+ * A container for storing time stamps throughout the lifetime of an Execution instance.
  *
  * <p>Check state both when entering and exiting, to allow for arbitrary
  * new queries anywhere inside a search chain.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class TimeTracker {
 
@@ -214,8 +213,6 @@ public final class TimeTracker {
             }
             concludeState(now);
             initNewState(now, activity);
-        } else {
-            return;
         }
     }
 
@@ -314,7 +311,7 @@ public final class TimeTracker {
         return typedSum(Activity.PING);
     }
 
-    private long returnfromState(int searcherIndex, boolean detailed) {
+    private long returnFromState(int searcherIndex, boolean detailed) {
         if (detailed) {
             return detailedMeasurements(searcherIndex, false);
         } else {
@@ -350,7 +347,7 @@ public final class TimeTracker {
     }
 
     private void sampleReturn(int searcherIndex, boolean detailed, ElapsedTime elapsed) {
-        long now = returnfromState(searcherIndex, detailed);
+        long now = returnFromState(searcherIndex, detailed);
         if (searcherIndex == entryIndex) {
             concludeStateOnExit(now);
             if (elapsed != null) {

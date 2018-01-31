@@ -27,10 +27,10 @@ public class Matmul extends CompositeTensorFunction {
     }
 
     @Override
-    public List<TensorFunction> functionArguments() { return ImmutableList.of(argument1, argument2); }
+    public List<TensorFunction> arguments() { return ImmutableList.of(argument1, argument2); }
 
     @Override
-    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+    public TensorFunction withArguments(List<TensorFunction> arguments) {
         if ( arguments.size() != 2)
             throw new IllegalArgumentException("Matmul must have 2 arguments, got " + arguments.size());
         return new Matmul(arguments.get(0), arguments.get(1), dimension);

@@ -2,15 +2,26 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.io.reader.NamedReader;
+import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.profile.QueryProfile;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
+import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.TensorFieldType;
 import com.yahoo.search.query.ranking.Diversity;
+import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
+import com.yahoo.searchlib.rankingexpression.evaluation.TypeMapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -276,12 +287,10 @@ public class RankProfile implements Serializable, Cloneable {
         addConstant(name, value);
     }
 
-    /**
-     * Returns an unmodifiable view of the constants to use in this.
-     */
+    /** Returns an unmodifiable view of the constants available in this */
     public Map<String, Value> getConstants() {
         if (constants.isEmpty())
-            return getInherited() != null ? getInherited().getConstants() : Collections.<String,Value>emptyMap();
+            return getInherited() != null ? getInherited().getConstants() : Collections.emptyMap();
         if (getInherited() == null || getInherited().getConstants().isEmpty())
             return Collections.unmodifiableMap(constants);
 
@@ -433,8 +442,9 @@ public class RankProfile implements Serializable, Cloneable {
         properties.add(rankProperty);
     }
 
+    @Override
     public String toString() {
-        return "rank profile " + getName();
+        return "rank profile '" + getName() + "'";
     }
 
     public int getRerankCount() {
@@ -508,6 +518,7 @@ public class RankProfile implements Serializable, Cloneable {
 
     /**
      * Returns the string form of the first phase ranking expression.
+     *
      * @return string form of first phase ranking expression
      */
     public String getFirstPhaseRankingString() {
@@ -697,7 +708,8 @@ public class RankProfile implements Serializable, Cloneable {
     private void checkNameCollisions(Map<String, Macro> macros, Map<String, Value> constants) {
         for (Map.Entry<String, Macro> macroEntry : macros.entrySet()) {
             if (constants.get(macroEntry.getKey()) != null)
-                throw new IllegalArgumentException("Cannot have both a constant and macro named '" + macroEntry.getKey() + "'");
+                throw new IllegalArgumentException("Cannot have both a constant and macro named '" +
+                                                   macroEntry.getKey() + "'");
         }
     }
 
@@ -724,6 +736,64 @@ public class RankProfile implements Serializable, Cloneable {
             addRankProperty(rankProperty.getKey(), rankProperty.getValue());
         }
         return expression;
+    }
+
+    /**
+     * Creates a context containing the type information of all constants, attributes and query profiles
+     * referable from this rank profile.
+     */
+    public TypeContext typeContext() {
+        TypeMapContext context = new TypeMapContext();
+
+        // Add constants
+        getConstants().forEach((k, v) -> context.setType(asConstantFeature(k), v.type()));
+
+        // Add attributes
+        for (SDField field : getSearch().allConcreteFields())
+            field.getAttributes().forEach((k, a) -> context.setType(asAttributeFeature(k), a.tensorType().orElse(TensorType.empty)));
+
+        // Add query features from rank profile types reached from the "default" profile
+        QueryProfile profile = queryProfilesOf(getSearch().sourceApplication()).getComponent("default");
+        if (profile != null && profile.getType() != null) {
+            profile.listTypes(CompoundName.empty, Collections.emptyMap()).forEach((prefix, queryProfileType) -> {
+                for (FieldDescription field : queryProfileType.declaredFields().values()) {
+                    TensorType type = TensorType.empty; // assume the empty (aka double) type by default
+                    if (field.getType() instanceof TensorFieldType)
+                        type = ((TensorFieldType)field.getType()).type().get();
+
+                    String feature = asQueryFeature(prefix.append(field.getName()).toString());
+                    context.setType(feature, type);
+                }
+            });
+        }
+
+        return context;
+    }
+
+    private QueryProfileRegistry queryProfilesOf(ApplicationPackage applicationPackage) {
+        List<NamedReader> queryProfileFiles = null;
+        List<NamedReader> queryProfileTypeFiles = null;
+        try {
+            queryProfileFiles = applicationPackage.getQueryProfileFiles();
+            queryProfileTypeFiles = applicationPackage.getQueryProfileTypeFiles();
+            return new QueryProfileXMLReader().read(queryProfileFiles, queryProfileTypeFiles);
+        }
+        finally {
+            NamedReader.closeAll(queryProfileFiles);
+            NamedReader.closeAll(queryProfileTypeFiles);
+        }
+    }
+
+    private String asConstantFeature(String constantName) {
+        return "constant(\"" + constantName + "\")";
+    }
+
+    private String asAttributeFeature(String constantName) {
+        return "attribute(\"" + constantName + "\")";
+    }
+
+    private String asQueryFeature(String constantName) {
+        return "query(\"" + constantName + "\")";
     }
 
     /**

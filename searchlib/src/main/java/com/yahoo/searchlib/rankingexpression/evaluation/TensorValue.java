@@ -6,6 +6,7 @@ import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.TensorType;
 
 /**
  * A Value containing a tensor.
@@ -23,6 +24,9 @@ public class TensorValue extends Value {
     public TensorValue(Tensor value) {
         this.value = value;
     }
+
+    @Override
+    public TensorType type() { return TensorType.empty; }
 
     @Override
     public double asDouble() {

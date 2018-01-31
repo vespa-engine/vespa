@@ -49,14 +49,8 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @Test
     public void testMinimalTensorFlowReference() throws ParseException {
-        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
-        RankProfileSearchFixture search = new RankProfileSearchFixture(
-                application,
-                "  rank-profile my_profile {\n" +
-                "    first-phase {\n" +
-                "      expression: tensorflow('mnist_softmax/saved')" +
-                "    }\n" +
-                "  }");
+        RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
+                                                      "tensorflow('mnist_softmax/saved')");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
         assertConstant("Variable_1", search, Optional.of(10L));
         assertConstant("Variable", search, Optional.of(7840L));
@@ -64,14 +58,8 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @Test
     public void testNestedTensorFlowReference() throws ParseException {
-        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
-        RankProfileSearchFixture search = new RankProfileSearchFixture(
-                application,
-                "  rank-profile my_profile {\n" +
-                "    first-phase {\n" +
-                "      expression: 5 + sum(tensorflow('mnist_softmax/saved'))" +
-                "    }\n" +
-                "  }");
+        RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
+                                                      "5 + sum(tensorflow('mnist_softmax/saved'))");
         search.assertFirstPhaseExpression("5 + reduce(" + vespaExpression + ", sum)", "my_profile");
         assertConstant("Variable_1", search, Optional.of(10L));
         assertConstant("Variable", search, Optional.of(7840L));
@@ -79,41 +67,62 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @Test
     public void testTensorFlowReferenceSpecifyingSignature() throws ParseException {
-        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
-        RankProfileSearchFixture search = new RankProfileSearchFixture(
-                application,
-                "  rank-profile my_profile {\n" +
-                "    first-phase {\n" +
-                "      expression: tensorflow('mnist_softmax/saved', 'serving_default')" +
-                "    }\n" +
-                "  }");
+        RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
+                                                      "tensorflow('mnist_softmax/saved', 'serving_default')");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
     }
 
     @Test
     public void testTensorFlowReferenceSpecifyingSignatureAndOutput() throws ParseException {
-        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
-        RankProfileSearchFixture search = new RankProfileSearchFixture(
-                application,
-                "  rank-profile my_profile {\n" +
-                "    first-phase {\n" +
-                "      expression: tensorflow('mnist_softmax/saved', 'serving_default', 'y')" +
-                "    }\n" +
-                "  }");
+        RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
+                                                      "tensorflow('mnist_softmax/saved', 'serving_default', 'y')");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+    }
+
+    @Test
+    public void testTensorFlowReferenceMissingMacro() throws ParseException {
+        try {
+            RankProfileSearchFixture search = new RankProfileSearchFixture(
+                    new StoringApplicationPackage(applicationDir),
+                    "  rank-profile my_profile {\n" +
+                    "    first-phase {\n" +
+                    "      expression: tensorflow('mnist_softmax/saved')" +
+                    "    }\n" +
+                    "  }");
+            search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+            fail("Expecting exception");
+        }
+        catch (IllegalArgumentException expected) {
+            assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from " +
+                         "tensorflow('mnist_softmax/saved'): " +
+                         "Model refers Placeholder 'Placeholder' of type tensor(d0[],d1[784]) but this macro is " +
+                         "not present in rank profile 'my_profile'",
+                         Exceptions.toMessageString(expected));
+        }
+    }
+
+    @Test
+    public void testTensorFlowReferenceWithWrongMacroType() throws ParseException {
+        try {
+            RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d5[10])(0.0)",
+                                                          "tensorflow('mnist_softmax/saved')");
+            search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+            fail("Expecting exception");
+        }
+        catch (IllegalArgumentException expected) {
+            assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from " +
+                         "tensorflow('mnist_softmax/saved'): " +
+                         "Model refers Placeholder 'Placeholder' of type tensor(d0[],d1[784]) which must be produced " +
+                         "by a macro in the rank profile, but this macro produces type tensor(d0[2],d5[10])",
+                         Exceptions.toMessageString(expected));
+        }
     }
 
     @Test
     public void testTensorFlowReferenceSpecifyingNonExistingSignature() throws ParseException {
         try {
-            StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
-            RankProfileSearchFixture search = new RankProfileSearchFixture(
-                    application,
-                    "  rank-profile my_profile {\n" +
-                    "    first-phase {\n" +
-                    "      expression: tensorflow('mnist_softmax/saved', 'serving_defaultz')" +
-                    "    }\n" +
-                    "  }");
+            RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
+                                                          "tensorflow('mnist_softmax/saved', 'serving_defaultz')");
             search.assertFirstPhaseExpression(vespaExpression, "my_profile");
             fail("Expecting exception");
         }
@@ -128,14 +137,8 @@ public class RankingExpressionWithTensorFlowTestCase {
     @Test
     public void testTensorFlowReferenceSpecifyingNonExistingOutput() throws ParseException {
         try {
-            StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
-            RankProfileSearchFixture search = new RankProfileSearchFixture(
-                    application,
-                    "  rank-profile my_profile {\n" +
-                    "    first-phase {\n" +
-                    "      expression: tensorflow('mnist_softmax/saved', 'serving_default', 'x')" +
-                    "    }\n" +
-                    "  }");
+            RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
+                                                          "tensorflow('mnist_softmax/saved', 'serving_default', 'x')");
             search.assertFirstPhaseExpression(vespaExpression, "my_profile");
             fail("Expecting exception");
         }
@@ -149,14 +152,8 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @Test
     public void testImportingFromStoredExpressions() throws ParseException, IOException {
-        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
-        RankProfileSearchFixture search = new RankProfileSearchFixture(
-                application,
-                "  rank-profile my_profile {\n" +
-                "    first-phase {\n" +
-                "      expression: tensorflow('mnist_softmax/saved', 'serving_default')" +
-                "    }\n" +
-                "  }");
+        RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
+                                                      "tensorflow('mnist_softmax/saved')");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
         assertConstant("Variable_1", search, Optional.of(10L));
         assertConstant("Variable", search, Optional.of(7840L));
@@ -168,13 +165,9 @@ public class RankingExpressionWithTensorFlowTestCase {
             IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                                   storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
-            RankProfileSearchFixture searchFromStored = new RankProfileSearchFixture(
-                    storedApplication,
-                    "  rank-profile my_profile {\n" +
-                    "    first-phase {\n" +
-                    "      expression: tensorflow('mnist_softmax/saved', 'serving_default')" +
-                    "    }\n" +
-                    "  }");
+            RankProfileSearchFixture searchFromStored = fixtureWith("tensor(d0[2],d1[784])(0.0)",
+                                                                    "tensorflow('mnist_softmax/saved')",
+                                                                    storedApplication);
             searchFromStored.assertFirstPhaseExpression(vespaExpression, "my_profile");
             // Verify that the constants exists, but don't verify the content as we are not
             // simulating file distribution in this test
@@ -209,6 +202,30 @@ public class RankingExpressionWithTensorFlowTestCase {
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    private RankProfileSearchFixture fixtureWith(String placeholderExpression, String firstPhaseExpression) {
+        return fixtureWith(placeholderExpression, firstPhaseExpression, new StoringApplicationPackage(applicationDir));
+    }
+
+    private RankProfileSearchFixture fixtureWith(String placeholderExpression,
+                                                 String firstPhaseExpression,
+                                                 StoringApplicationPackage application) {
+        try {
+            return new RankProfileSearchFixture(
+                    application,
+                    "  rank-profile my_profile {\n" +
+                    "    macro Placeholder() {\n" +
+                    "        expression: " + placeholderExpression +
+                    "    }\n" +
+                    "    first-phase {\n" +
+                    "      expression: " + firstPhaseExpression +
+                    "    }\n" +
+                    "  }");
+        }
+        catch (ParseException e) {
+            throw new IllegalArgumentException(e);
         }
     }
 

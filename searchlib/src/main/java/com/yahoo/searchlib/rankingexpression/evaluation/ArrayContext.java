@@ -2,6 +2,7 @@
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
 
@@ -48,12 +49,11 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
      *
      * @throws IllegalArgumentException if the name is not present in the ranking expression this was created with, and
      *         ignoredUnknownValues is false
-     * @since 5.1.5
      */
     @Override
     public final void put(String name, Value value) {
         Integer index = nameToIndex().get(name);
-        if (index==null) {
+        if (index == null) {
             if (ignoreUnknownValues())
                 return;
             else
@@ -70,24 +70,29 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
     /**
      * Puts a value by index.
      * The value will be frozen if it isn't already.
-     *
-     * @since 5.1.5
      */
     public final void put(int index, Value value) {
-        values[index]=value.freeze();
+        values[index] = value.freeze();
         try {
-            doubleValues()[index]=value.asDouble();
+            doubleValues()[index] = value.asDouble();
         }
         catch (UnsupportedOperationException e) {
-            doubleValues()[index]=Double.NaN; // see getDouble below
+            doubleValues()[index] = Double.NaN; // see getDouble below
         }
+    }
+
+    @Override
+    public TensorType getType(String name) {
+        Integer index = nameToIndex().get(name);
+        if (index == null) return null;
+        return values[index].type();
     }
 
     /** Perform a slow lookup by name */
     @Override
     public Value get(String name) {
-        Integer index=nameToIndex().get(name);
-        if (index==null) return DoubleValue.zero;
+        Integer index = nameToIndex().get(name);
+        if (index == null) return DoubleValue.zero;
         return values[index];
     }
 
@@ -100,8 +105,8 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
     /** Perform a fast lookup directly of the value as a double. This is faster than get(index).asDouble() */
     @Override
     public final double getDouble(int index) {
-        double value=doubleValues()[index];
-        if (value==Double.NaN)
+        double value = doubleValues()[index];
+        if (value == Double.NaN)
             throw new UnsupportedOperationException("Value at " + index + " has no double representation");
         return value;
     }
@@ -111,7 +116,7 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
      * in a different thread (i.e, name name to index map, different value set.
      */
     public ArrayContext clone() {
-        ArrayContext clone=(ArrayContext)super.clone();
+        ArrayContext clone = (ArrayContext)super.clone();
         clone.values = new Value[nameToIndex().size()];
         Arrays.fill(values,constantZero);
         return clone;

@@ -14,7 +14,6 @@ import org.tensorflow.framework.TensorInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,10 +108,10 @@ public class TensorFlowImporter {
         }
 
         Optional<TypedTensorFunction> function = OperationMapper.map(params);
-        if (!function.isPresent()) {
+        if ( ! function.isPresent()) {
             return Optional.empty();
         }
-        if (!controlDependenciesArePresent(params)) {
+        if ( ! controlDependenciesArePresent(params)) {
             return Optional.empty();
         }
         params.imported().put(nodeName, function.get());
@@ -185,6 +184,7 @@ public class TensorFlowImporter {
 
     /** Parameter object to hold important data while importing */
     static final class Parameters {
+
         private final TensorFlowImporter owner;
         private final GraphDef graph;
         private final SavedModelBundle model;

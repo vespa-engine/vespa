@@ -10,11 +10,11 @@ import java.util.Iterator;
 /**
  * Serialization/deserialization class for the result of a single document operation against Vespa.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @since 5.1
+ * @author Steinar Knutsen
  */
 @Beta
 public final class OperationStatus {
+
     public static final String IS_CONDITION_NOT_MET = "IS-CONDITION-NOT-MET";
     public final String message;
     public final String operationId;
@@ -81,9 +81,7 @@ public final class OperationStatus {
         return new OperationStatus(message, operationId, errorCode, isConditionNotMet, traceMessage);
     }
 
-    /**
-     * @return a string representing the status.
-     */
+    /** Returns a string representing the status. */
     public String render() {
         StringBuilder s = new StringBuilder();
         Encoder.encode(operationId, s).append(SEPARATOR);
@@ -92,4 +90,5 @@ public final class OperationStatus {
         Encoder.encode(traceMessage, s).append(EOL);
         return s.toString();
     }
+
 }

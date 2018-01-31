@@ -147,14 +147,12 @@ class OperationMapper {
             return operation.get().map(params);
         }
         params.signature().importWarning("TensorFlow operation '" + params.node().getOp() +
-                "' in node '" + params.node().getName() + "' is not supported.");
+                                         "' in node '" + params.node().getName() + "' is not supported.");
         return Optional.empty();
     }
 
 
-    /*
-     * Operations
-     */
+    // Operations ---------------------------------
 
     private static Optional<TypedTensorFunction> constant(TensorFlowImporter.Parameters params) {
         Tensor value = AttrValueConverter.toVespaTensor(params.node(), "value");
@@ -209,10 +207,11 @@ class OperationMapper {
         TensorType type = params.result().arguments().get(name);
         if (type == null) {
             throw new IllegalArgumentException("A 'placeholder' node is referencing placeholder '" + name +
-                    "', but there is no such placeholder");
+                                               "', but there is no such placeholder");
         }
+        params.result().requiredMacro(name, type);
         // Included literally in the expression and so must be produced by a separate macro in the rank profile
-        TypedTensorFunction output = new TypedTensorFunction(type, new VariableTensor(name));
+        TypedTensorFunction output = new TypedTensorFunction(type, new VariableTensor(name, type));
         return Optional.of(output);
     }
 
@@ -227,7 +226,7 @@ class OperationMapper {
     }
 
     private static Optional<TypedTensorFunction> reshape(TensorFlowImporter.Parameters params) {
-        if (!checkInputs(params, 2)) {
+        if ( ! checkInputs(params, 2)) {
             return Optional.empty();
         }
         List<Optional<TypedTensorFunction>> inputs = params.inputs();

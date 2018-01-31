@@ -43,28 +43,28 @@ import java.util.regex.Pattern;
 public class QueryProfile extends FreezableSimpleComponent implements Cloneable {
 
     /** Defines the permissible content of this, or null if any content is permissible */
-    private QueryProfileType type=null;
+    private QueryProfileType type = null;
 
     /** The value at this query profile - allows non-fields to have values, e.g a=value1, a.b=value2 */
-    private Object value=null;
+    private Object value = null;
 
     /** The variants of this, or null if none */
-    private QueryProfileVariants variants=null;
+    private QueryProfileVariants variants = null;
 
     /** The resolved variant dimensions of this, or null if none or not resolved yet (is resolved at freeze) */
-    private List<String> resolvedDimensions=null;
+    private List<String> resolvedDimensions = null;
 
     /** The query profiles inherited by this, or null if none */
-    private List<QueryProfile> inherited=null;
+    private List<QueryProfile> inherited = null;
 
     /** The content of this profile. The values may be primitives, substitutable strings or other query profiles */
-    private CopyOnWriteContent content=new CopyOnWriteContent();
+    private CopyOnWriteContent content = new CopyOnWriteContent();
 
     /**
      * Field override settings: fieldName→OverrideValue. These overrides the override
      * setting in the type (if any) of this field). If there are no query profile level settings, this is null.
      */
-    private Map<String,Boolean> overridable=null;
+    private Map<String,Boolean> overridable = null;
 
     /**
      * Creates a new query profile from an id.
@@ -108,26 +108,26 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
 
     /** Adds a profile to the end of the inherited list of this. Throws an exception if this is frozen. */
     public void addInherited(QueryProfile profile) {
-        addInherited(profile,(DimensionValues)null);
+        addInherited(profile, (DimensionValues)null);
     }
 
     public final void addInherited(QueryProfile profile,String[] dimensionValues) {
-        addInherited(profile,DimensionValues.createFrom(dimensionValues));
+        addInherited(profile, DimensionValues.createFrom(dimensionValues));
     }
 
     /** Adds a profile to the end of the inherited list of this for the given variant. Throws an exception if this is frozen. */
     public void addInherited(QueryProfile profile, DimensionValues dimensionValues) {
         ensureNotFrozen();
 
-        DimensionBinding dimensionBinding=DimensionBinding.createFrom(getDimensions(),dimensionValues);
+        DimensionBinding dimensionBinding=DimensionBinding.createFrom(getDimensions(), dimensionValues);
         if (dimensionBinding.isNull()) {
-            if (inherited==null)
-                inherited=new ArrayList<>();
+            if (inherited == null)
+                inherited = new ArrayList<>();
             inherited.add(profile);
         }
         else {
-            if (variants==null)
-                variants=new QueryProfileVariants(dimensionBinding.getDimensions(), this);
+            if (variants == null)
+                variants = new QueryProfileVariants(dimensionBinding.getDimensions(), this);
             variants.inherit(profile,dimensionBinding.getValues());
         }
     }
@@ -152,13 +152,13 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * @throws IllegalStateException if this is frozen
      */
     public Boolean isDeclaredOverridable(String name, Map<String,String> context) {
-        return isDeclaredOverridable(new CompoundName(name),DimensionBinding.createFrom(getDimensions(),context));
+        return isDeclaredOverridable(new CompoundName(name), DimensionBinding.createFrom(getDimensions(), context));
     }
 
     /** Sets the dimensions over which this may vary. Note: This will erase any currently defined variants */
     public void setDimensions(String[] dimensions) {
         ensureNotFrozen();
-        variants=new QueryProfileVariants(dimensions, this);
+        variants = new QueryProfileVariants(dimensions, this);
     }
 
     /** Returns the value set at this node, to allow non-leafs to have values. Returns null if none. */
@@ -166,17 +166,17 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
 
     public void setValue(Object value) {
         ensureNotFrozen();
-        this.value=value;
+        this.value = value;
     }
 
     /** Returns the variant dimensions to be used in this - an unmodifiable list of dimension names */
     public List<String> getDimensions() {
         if (isFrozen()) return resolvedDimensions;
-        if (variants!=null) return variants.getDimensions();
-        if (inherited==null) return null;
+        if (variants != null) return variants.getDimensions();
+        if (inherited == null) return null;
         for (QueryProfile inheritedProfile : inherited) {
-            List<String> inheritedDimensions=inheritedProfile.getDimensions();
-            if (inheritedDimensions!=null) return inheritedDimensions;
+            List<String> inheritedDimensions = inheritedProfile.getDimensions();
+            if (inheritedDimensions != null) return inheritedDimensions;
         }
         return null;
     }
@@ -187,8 +187,8 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * Sets the overridability of a field in this profile,
      * this overrides the corresponding setting in the type (if any)
      */
-    public final void setOverridable(String fieldName, boolean overridable, Map<String,String> context) {
-        setOverridable(new CompoundName(fieldName), overridable,DimensionBinding.createFrom(getDimensions(), context));
+    public final void setOverridable(String fieldName, boolean overridable, Map<String, String> context) {
+        setOverridable(new CompoundName(fieldName), overridable, DimensionBinding.createFrom(getDimensions(), context));
     }
 
     /**
@@ -241,8 +241,8 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
         Map<String,Object>  values=visitor.getResult();
 
         if (substitution==null) return values;
-        for (Map.Entry<String,Object> entry : values.entrySet()) {
-            if (entry.getValue().getClass()==String.class) continue; // Shortcut
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            if (entry.getValue().getClass() == String.class) continue; // Shortcut
             if (entry.getValue() instanceof SubstituteString)
                 entry.setValue(((SubstituteString)entry.getValue()).substitute(context,substitution));
         }
@@ -253,7 +253,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * Lists types reachable from this, indexed by the prefix having that type.
      * If this is itself typed, this' type will be included with an empty prefix
      */
-    Map<CompoundName, QueryProfileType> listTypes(CompoundName prefix, Map<String, String> context) {
+    public Map<CompoundName, QueryProfileType> listTypes(CompoundName prefix, Map<String, String> context) {
         DimensionBinding dimensionBinding = DimensionBinding.createFrom(getDimensions(), context);
         AllTypesQueryProfileVisitor visitor = new AllTypesQueryProfileVisitor(prefix);
         accept(visitor, dimensionBinding, null);
@@ -264,8 +264,8 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * Lists references reachable from this.
      */
     Set<CompoundName> listReferences(CompoundName prefix, Map<String, String> context) {
-        DimensionBinding dimensionBinding=DimensionBinding.createFrom(getDimensions(),context);
-        AllReferencesQueryProfileVisitor visitor=new AllReferencesQueryProfileVisitor(prefix);
+        DimensionBinding dimensionBinding = DimensionBinding.createFrom(getDimensions(),context);
+        AllReferencesQueryProfileVisitor visitor = new AllReferencesQueryProfileVisitor(prefix);
         accept(visitor,dimensionBinding,null);
         return visitor.getResult();
     }
@@ -292,40 +292,40 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
     public final Object get(String name) { return get(name,(Map<String,String>)null); }
 
     /** Returns a value from this using the given property context for resolution and using this for substitution */
-    public final Object get(String name, Map<String,String> context) {
-        return get(name,context,null);
+    public final Object get(String name, Map<String, String> context) {
+        return get(name, context, null);
     }
 
     /** Returns a value from this using the given dimensions for resolution */
     public final Object get(String name, String[] dimensionValues) {
-        return get(name,dimensionValues,null);
+        return get(name, dimensionValues,null);
     }
 
     public final Object get(String name, String[] dimensionValues, Properties substitution) {
-        return get(name,DimensionValues.createFrom(dimensionValues),substitution);
+        return get(name, DimensionValues.createFrom(dimensionValues), substitution);
     }
 
     /** Returns a value from this using the given dimensions for resolution */
     public final Object get(String name, DimensionValues dimensionValues, Properties substitution) {
-        return get(name,DimensionBinding.createFrom(getDimensions(),dimensionValues),substitution);
+        return get(name, DimensionBinding.createFrom(getDimensions(), dimensionValues), substitution);
     }
 
     public final Object get(String name, Map<String,String> context, Properties substitution) {
-        return get(name,DimensionBinding.createFrom(getDimensions(),context),substitution);
+        return get(name, DimensionBinding.createFrom(getDimensions(), context), substitution);
     }
 
     public final Object get(CompoundName name, Map<String,String> context, Properties substitution) {
-        return get(name,DimensionBinding.createFrom(getDimensions(),context),substitution);
+        return get(name, DimensionBinding.createFrom(getDimensions(), context), substitution);
     }
 
     final Object get(String name, DimensionBinding binding,Properties substitution) {
-        return get(new CompoundName(name),binding,substitution);
+        return get(new CompoundName(name), binding, substitution);
     }
 
     final Object get(CompoundName name, DimensionBinding binding, Properties substitution) {
-        Object node=get(name,binding);
-        if (node!=null && node.getClass()==String.class) return node; // Shortcut
-        if (node instanceof SubstituteString) return ((SubstituteString)node).substitute(binding.getContext(),substitution);
+        Object node = get(name, binding);
+        if (node != null && node.getClass() == String.class) return node; // Shortcut
+        if (node instanceof SubstituteString) return ((SubstituteString)node).substitute(binding.getContext(), substitution);
         return node;
     }
 
@@ -431,14 +431,14 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
     @Override
     public QueryProfile clone() {
         if (isFrozen()) return this;
-        QueryProfile clone=(QueryProfile)super.clone();
-        if (variants !=null)
+        QueryProfile clone = (QueryProfile)super.clone();
+        if (variants != null)
             clone.variants = variants.clone();
-        if (inherited!=null)
-            clone.inherited=new ArrayList<>(inherited);
+        if (inherited != null)
+            clone.inherited = new ArrayList<>(inherited);
 
-        if (this.content!=null)
-            clone.content=content.clone();
+        if (this.content != null)
+            clone.content = content.clone();
 
         return clone;
     }
@@ -454,7 +454,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
 
     /** Throws IllegalArgumentException if the given string is not a valid query profile name */
     public static void validateName(String name) {
-        Matcher nameMatcher=namePattern.matcher(name);
+        Matcher nameMatcher = namePattern.matcher(name);
         if ( ! nameMatcher.matches())
             throw new IllegalArgumentException("Illegal name '" + name + "'");
     }
@@ -467,7 +467,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
             setNode(name, value, null, binding, registry);
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Could not set '" + name + "' to '" + value + "'",e);
+            throw new IllegalArgumentException("Could not set '" + name + "' to '" + value + "'", e);
         }
     }
 
@@ -708,19 +708,19 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
 
     /** Do a variant-aware content lookup in this */
     protected Object localLookup(String name, DimensionBinding dimensionBinding) {
-        Object node=null;
-        if ( variants!=null && !dimensionBinding.isNull())
-            node=variants.get(name,type,true,dimensionBinding);
-        if (node==null)
-            node=content==null ? null : content.get(name);
+        Object node = null;
+        if ( variants != null && !dimensionBinding.isNull())
+            node = variants.get(name,type,true,dimensionBinding);
+        if (node == null)
+            node = content == null ? null : content.get(name);
         return node;
     }
 
     // ----------------- Private  ----------------------------------------------------------------------------------
 
     private Boolean isDeclaredOverridable(CompoundName name,DimensionBinding dimensionBinding) {
-        QueryProfile parent= lookupParentExact(name, true, dimensionBinding);
-        if (parent.overridable==null) return null;
+        QueryProfile parent = lookupParentExact(name, true, dimensionBinding);
+        if (parent.overridable == null) return null;
         return parent.overridable.get(name.last());
     }
 
@@ -729,10 +729,10 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * this overrides the corresponding setting in the type (if any)
      */
     private void setOverridable(CompoundName fieldName,boolean overridable,DimensionBinding dimensionBinding) {
-        QueryProfile parent= lookupParentExact(fieldName, true, dimensionBinding);
-        if (parent.overridable==null)
-            parent.overridable=new HashMap<>();
-        parent.overridable.put(fieldName.last(),overridable);
+        QueryProfile parent = lookupParentExact(fieldName, true, dimensionBinding);
+        if (parent.overridable == null)
+            parent.overridable = new HashMap<>();
+        parent.overridable.put(fieldName.last(), overridable);
     }
 
     /** Sets a value to a (possibly non-local) node. The parent query profile holding the value is returned */
@@ -740,7 +740,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
                          DimensionBinding dimensionBinding, QueryProfileRegistry registry) {
         ensureNotFrozen();
         if (name.isCompound()) {
-            QueryProfile parent= getQueryProfileExact(name.first(), true, dimensionBinding);
+            QueryProfile parent = getQueryProfileExact(name.first(), true, dimensionBinding);
             parent.setNode(name.rest(), value,parentType, dimensionBinding.createFor(parent.getDimensions()), registry);
         }
         else {
@@ -773,8 +773,8 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * @return the created profile, or null if not present, and create is false
      */
     private QueryProfile getQueryProfileExact(String localName, boolean create, DimensionBinding dimensionBinding) {
-        Object node=localExactLookup(localName, dimensionBinding);
-        if (node!=null && node instanceof QueryProfile) {
+        Object node = localExactLookup(localName, dimensionBinding);
+        if (node != null && node instanceof QueryProfile) {
             return (QueryProfile)node;
         }
         if (!create) return null;
@@ -826,7 +826,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
         }
     }
 
-    private static final Pattern namePattern=Pattern.compile("[$a-zA-Z_/][-$a-zA-Z0-9_/()]*");
+    private static final Pattern namePattern = Pattern.compile("[$a-zA-Z_/][-$a-zA-Z0-9_/()]*");
 
     /**
      * Returns a compiled version of this which produces faster lookup times

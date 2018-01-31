@@ -44,8 +44,6 @@ import java.util.zip.GZIPOutputStream;
 
 /**
  * @author Einar M R Rosenvinge
- *
- * @since 5.1.20
  */
 @Beta
 class ApacheGatewayConnection implements GatewayConnection {

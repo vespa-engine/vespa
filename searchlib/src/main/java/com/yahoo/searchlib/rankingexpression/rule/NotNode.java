@@ -3,6 +3,8 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.Deque;
@@ -36,6 +38,11 @@ public class NotNode extends BooleanNode {
     }
 
     @Override
+    public TensorType type(TypeContext context) {
+        return value.type(context);
+    }
+
+    @Override
     public Value evaluate(Context context) {
         return value.evaluate(context).not();
     }
@@ -45,6 +52,6 @@ public class NotNode extends BooleanNode {
         if (children.size() != 1) throw new IllegalArgumentException("Expected 1 children but got " + children.size());
         return new NotNode(children.get(0));
     }
-    
+
 }
 

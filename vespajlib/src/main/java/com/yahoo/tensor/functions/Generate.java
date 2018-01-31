@@ -7,6 +7,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -47,10 +48,10 @@ public class Generate extends PrimitiveTensorFunction {
     }
 
     @Override
-    public List<TensorFunction> functionArguments() { return Collections.emptyList(); }
+    public List<TensorFunction> arguments() { return Collections.emptyList(); }
 
     @Override
-    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+    public TensorFunction withArguments(List<TensorFunction> arguments) {
         if ( arguments.size() != 0)
             throw new IllegalArgumentException("Generate must have 0 arguments, got " + arguments.size());
         return this;
@@ -58,6 +59,9 @@ public class Generate extends PrimitiveTensorFunction {
 
     @Override
     public PrimitiveTensorFunction toPrimitive() { return this; }
+
+    @Override
+    public TensorType type(TypeContext context) { return type; }
 
     @Override
     public Tensor evaluate(EvaluationContext context) {

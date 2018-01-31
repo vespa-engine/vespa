@@ -26,10 +26,10 @@ public class Range extends CompositeTensorFunction {
     }
 
     @Override
-    public List<TensorFunction> functionArguments() { return Collections.emptyList(); }
+    public List<TensorFunction> arguments() { return Collections.emptyList(); }
 
     @Override
-    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+    public TensorFunction withArguments(List<TensorFunction> arguments) {
         if ( arguments.size() != 0)
             throw new IllegalArgumentException("Range must have 0 arguments, got " + arguments.size());
         return this;

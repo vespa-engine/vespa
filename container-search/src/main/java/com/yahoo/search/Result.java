@@ -46,7 +46,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
      * Headers containing "envelope" meta information to be returned with this result.
      * Used for HTTP getHeaders when the return protocol is HTTP.
      */
-    private ListMap<String,String> headers=null;
+    private ListMap<String,String> headers = null;
 
     /**
      * Result rendering infrastructure.

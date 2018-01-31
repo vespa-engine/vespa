@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public abstract class Context implements EvaluationContext {
 
     /**
-     * <p>Returns the value of a simple variable name.</p>
+     * Returns the value of a simple variable name.
      *
      * @param name the name of the variable whose value to return.
      * @return the value of the named variable.

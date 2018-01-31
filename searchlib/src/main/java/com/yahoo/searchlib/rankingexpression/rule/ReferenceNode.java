@@ -5,6 +5,8 @@ import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -44,9 +46,8 @@ public final class ReferenceNode extends CompositeNode {
         return new ReferenceNode(name, arguments, output);
     }
 
-    public String getOutput() {
-        return output;
-    }
+    /** Returns the specific output this references, or null if none specified */
+    public String getOutput() { return output; }
 
     /** Returns a copy of this node with a modified output */
     public ReferenceNode setOutput(String output) {
@@ -105,8 +106,14 @@ public final class ReferenceNode extends CompositeNode {
     }
 
     @Override
+    public TensorType type(TypeContext context) {
+        // Don't support outputs of different type, for simplicity
+        return context.getType(name);
+    }
+
+    @Override
     public Value evaluate(Context context) {
-        if (arguments.expressions().size()==0 && output==null)
+        if (arguments.expressions().isEmpty() && output == null)
             return context.get(name);
         return context.get(name, arguments, output);
     }

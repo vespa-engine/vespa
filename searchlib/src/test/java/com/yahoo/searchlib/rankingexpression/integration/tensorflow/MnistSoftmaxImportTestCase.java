@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
@@ -32,6 +33,15 @@ public class MnistSoftmaxImportTestCase {
         assertEquals(new TensorType.Builder().indexed("d0", 10).build(),
                      constant1.type());
         assertEquals(10, constant1.size());
+
+        // Check (provided) macros
+        assertEquals(0, model.get().macros().size());
+
+        // Check required macros
+        assertEquals(1, model.get().requiredMacros().size());
+        assertTrue(model.get().requiredMacros().containsKey("Placeholder"));
+        assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(),
+                     model.get().requiredMacros().get("Placeholder"));
 
         // Check signatures
         assertEquals(1, model.get().signatures().size());

@@ -3,6 +3,8 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Deque;
 
@@ -45,6 +47,9 @@ public final class ConstantNode extends ExpressionNode {
         if (sourceImage != null) return sourceImage;
         return value.toString();
     }
+
+    @Override
+    public TensorType type(TypeContext context) { return value.type(); }
 
     @Override
     public Value evaluate(Context context) {

@@ -6,7 +6,6 @@ import com.yahoo.vespa.http.client.Result;
 import com.yahoo.vespa.http.client.Session;
 import com.yahoo.vespa.http.client.config.SessionParams;
 import com.yahoo.vespa.http.client.core.ThrottlePolicy;
-import com.yahoo.vespa.http.client.core.api.MultiClusterSessionOutputStream;
 import com.yahoo.vespa.http.client.core.operationProcessor.IncompleteResultsThrottler;
 import com.yahoo.vespa.http.client.core.operationProcessor.OperationProcessor;
 
@@ -65,4 +64,5 @@ public class SessionImpl implements Session {
     public int getIncompleteResultQueueSize() {
         return operationProcessor.getIncompleteResultQueueSize();
     }
+
 }

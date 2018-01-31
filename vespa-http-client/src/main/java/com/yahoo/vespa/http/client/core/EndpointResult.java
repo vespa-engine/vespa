@@ -5,9 +5,11 @@ import com.yahoo.vespa.http.client.Result;
 
 /**
  * Result from a single endpoint.
+ *
  * @author dybis
  */
 public class EndpointResult {
+
     private final String operationId;
     private final Result.Detail detail;
 
@@ -23,4 +25,5 @@ public class EndpointResult {
     public Result.Detail getDetail() {
         return detail;
     }
+
 }

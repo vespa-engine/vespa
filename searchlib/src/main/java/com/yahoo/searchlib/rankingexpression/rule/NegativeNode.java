@@ -3,6 +3,8 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.Deque;
@@ -33,6 +35,11 @@ public class NegativeNode extends CompositeNode {
     @Override
     public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
         return "-" + value.toString(context, path, parent);
+    }
+
+    @Override
+    public TensorType type(TypeContext context) {
+        return value.type(context);
     }
 
     @Override

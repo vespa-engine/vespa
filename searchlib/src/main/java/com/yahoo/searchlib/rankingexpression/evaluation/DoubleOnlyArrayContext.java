@@ -2,6 +2,7 @@
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.tensor.TensorType;
 
 /**
  * A variant of an array context variant which supports faster binding of variables but slower lookup
@@ -38,7 +39,6 @@ public class DoubleOnlyArrayContext extends AbstractArrayContext {
      *
      * @throws IllegalArgumentException if the name is not present in the ranking expression this was created with, and
      *         ignoredUnknownValues is false
-     * @since 5.1.5
      */
     @Override
     public final void put(String name, Value value) {
@@ -57,11 +57,7 @@ public class DoubleOnlyArrayContext extends AbstractArrayContext {
         doubleValues()[index] = value;
     }
 
-    /**
-     * Puts a value by index.
-     *
-     * @since 5.1.5
-     */
+    /** Puts a value by index. */
     public final void put(int index, Value value) {
         try {
             put(index, value.asDouble());
@@ -70,6 +66,9 @@ public class DoubleOnlyArrayContext extends AbstractArrayContext {
             throw new IllegalArgumentException("This context only supports doubles, not " + value);
         }
     }
+
+    @Override
+    public TensorType getType(String name) { return TensorType.empty; }
 
     /** Perform a slow lookup by name */
     @Override

@@ -247,7 +247,7 @@ public class Search implements Serializable, ImmutableSearch {
     /**
      * Returns a list of all the fields of this search definition, that is all fields in all documents, in the documents
      * they inherit, and all extra fields. The caller receives ownership to the list - subsequent changes to it will not
-     * impact this Search
+     * impact this
      *
      * @return the list of fields in this searchdefinition
      */
@@ -546,7 +546,7 @@ public class Search implements Serializable, ImmutableSearch {
     }
 
     /**
-     * Returns the first occurence of an attribute having this name, or null if none
+     * Returns the first occurrence of an attribute having this name, or null if none
      *
      * @param name Name of attribute
      * @return The Attribute with given name.

@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.Deque;
@@ -14,20 +16,20 @@ import java.util.function.DoubleUnaryOperator;
 
 /**
  * A free, parametrized function
- * 
+ *
  * @author bratseth
  */
 public class LambdaFunctionNode extends CompositeNode {
 
     private final ImmutableList<String> arguments;
     private final ExpressionNode functionExpression;
-    
+
     public LambdaFunctionNode(List<String> arguments, ExpressionNode functionExpression) {
         // TODO: Verify that the function only accesses the given arguments
         this.arguments = ImmutableList.copyOf(arguments);
         this.functionExpression = functionExpression;
     }
-    
+
     @Override
     public List<ExpressionNode> children() {
         return Collections.singletonList(functionExpression);
@@ -54,19 +56,24 @@ public class LambdaFunctionNode extends CompositeNode {
         return b.toString();
     }
 
+    @Override
+    public TensorType type(TypeContext context) {
+        return TensorType.empty; // by definition - no nested lambdas
+    }
+
     /** Evaluate this in a context which must have the arguments bound */
     @Override
     public Value evaluate(Context context) {
         return functionExpression.evaluate(context);
     }
-    
-    /** 
+
+    /**
      * Returns this as a double unary operator
-     * 
-     * @throws IllegalStateException if this has more than one argument 
+     *
+     * @throws IllegalStateException if this has more than one argument
      */
     public DoubleUnaryOperator asDoubleUnaryOperator() {
-        if (arguments.size() > 1) 
+        if (arguments.size() > 1)
             throw new IllegalStateException("Cannot apply " + this + " as a DoubleUnaryOperator: " +
                                             "Must have at most one argument " + " but has " + arguments);
         return new DoubleUnaryLambda();
@@ -93,7 +100,7 @@ public class LambdaFunctionNode extends CompositeNode {
                 context.put(arguments.get(0), operand);
             return evaluate(context).asDouble();
         }
-        
+
         @Override
         public String toString() {
             return LambdaFunctionNode.this.toString();

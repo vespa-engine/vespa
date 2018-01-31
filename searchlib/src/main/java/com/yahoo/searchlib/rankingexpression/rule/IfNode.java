@@ -3,13 +3,18 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.List;
 
 /**
  * A conditional branch of a ranking expression.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  * @author bratseth
  */
 public final class IfNode extends CompositeNode {
@@ -67,6 +72,17 @@ public final class IfNode extends CompositeNode {
                trueExpression.toString(context, path, this) + ", " +
                falseExpression.toString(context, path, this) +
                 (trueProbability != null ? ", " + trueProbability : "") + ")";
+    }
+
+    @Override
+    public TensorType type(TypeContext context) {
+        TensorType trueType = trueExpression.type(context);
+        TensorType falseType = falseExpression.type(context);
+        if ( ! trueType.equals(falseType))
+            throw new IllegalArgumentException("An if expression must produce a value of the same type in both " +
+                                               "alternatives, but the 'true' type is " + trueType + " while the " +
+                                               "'false' type is " + falseType);
+        return trueType;
     }
 
     @Override

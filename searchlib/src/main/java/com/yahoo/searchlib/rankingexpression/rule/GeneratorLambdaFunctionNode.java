@@ -5,6 +5,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.Deque;
@@ -45,6 +46,9 @@ public class GeneratorLambdaFunctionNode extends CompositeNode {
     public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
         return generator.toString(context, path, this);
     }
+
+    @Override
+    public TensorType type(TypeContext context) { return type; }
 
     /** Evaluate this in a context which must have the arguments bound */
     @Override

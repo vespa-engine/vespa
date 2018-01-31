@@ -20,6 +20,7 @@ import java.util.List;
  */
 // This should be an interface, but in order to be binary compatible during refactoring we made it abstract.
 public class Result {
+
     public enum ResultType {
         OPERATION_EXECUTED,
         TRANSITIVE_ERROR,
@@ -106,12 +107,10 @@ public class Result {
 
     /**
      * Information in a Result for a single operation sent to a single endpoint.
-     *
-     * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
-     * @since 5.1.20
      */
     @Immutable
     public static final class Detail {
+
         private final ResultType resultType;
         private final Endpoint endpoint;
         private final Exception exception;
@@ -212,4 +211,5 @@ public class Result {
         }
         return b.toString();
     }
+
 }

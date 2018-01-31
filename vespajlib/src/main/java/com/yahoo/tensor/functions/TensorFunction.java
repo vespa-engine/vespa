@@ -3,8 +3,10 @@ package com.yahoo.tensor.functions;
 
 import com.google.common.annotations.Beta;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.MapEvaluationContext;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.List;
 
@@ -19,14 +21,14 @@ import java.util.List;
 public abstract class TensorFunction {
 
     /** Returns the function arguments of this node in the order they are applied */
-    public abstract List<TensorFunction> functionArguments();
+    public abstract List<TensorFunction> arguments();
 
     /**
      * Returns a copy of this tensor function with the arguments replaced by the given list of arguments.
      *
      * @throws IllegalArgumentException if the argument list has the wrong size for this function
      */
-    public abstract TensorFunction replaceArguments(List<TensorFunction> arguments);
+    public abstract TensorFunction withArguments(List<TensorFunction> arguments);
 
     /**
      * Translate this function - and all of its arguments recursively -
@@ -42,6 +44,13 @@ public abstract class TensorFunction {
      * @param context a context which must be passed to all nexted functions when evaluating
      */
     public abstract Tensor evaluate(EvaluationContext context);
+
+    /**
+     * Returns the type of the tensor this produces given the input types in the context
+     *
+     * @param context a context which must be passed to all nexted functions when evaluating
+     */
+    public abstract TensorType type(TypeContext context);
 
     /** Evaluate with no context */
     public final Tensor evaluate() { return evaluate(new MapEvaluationContext()); }

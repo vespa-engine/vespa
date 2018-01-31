@@ -5,12 +5,13 @@ import com.google.common.annotations.Beta;
 
 /**
  * The request was not processed properly on the server.
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.20
+ *
+ * @author Einar M R Rosenvinge
  */
 @SuppressWarnings("serial")
 @Beta
 public class ServerResponseException extends Exception {
+
     private final int responseCode;
     private final String responseString;
 
@@ -33,5 +34,6 @@ public class ServerResponseException extends Exception {
         }
         return responseString;
     }
+
 }
 

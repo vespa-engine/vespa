@@ -27,11 +27,13 @@ public class TensorFlowModel {
     private final Map<String, Tensor> constants = new HashMap<>();
     private final Map<String, RankingExpression> expressions = new HashMap<>();
     private final Map<String, RankingExpression> macros = new HashMap<>();
+    private final Map<String, TensorType> requiredMacros = new HashMap<>();
 
     void argument(String name, TensorType argumentType) { arguments.put(name, argumentType); }
     void constant(String name, Tensor constant) { constants.put(name, constant); }
     void expression(String name, RankingExpression expression) { expressions.put(name, expression); }
     void macro(String name, RankingExpression expression) { macros.put(name, expression); }
+    void requiredMacro(String name, TensorType type) { requiredMacros.put(name, type); }
 
     /** Returns the given signature. If it does not already exist it is added to this. */
     Signature signature(String name) {
@@ -51,10 +53,11 @@ public class TensorFlowModel {
      */
     public Map<String, RankingExpression> expressions() { return Collections.unmodifiableMap(expressions); }
 
-    /**
-     * Returns an immutable map of expressions that can be overridden - such as PlaceholderWithDefault/
-     */
+    /** Returns an immutable map of macros that are part of this model */
     public Map<String, RankingExpression> macros() { return Collections.unmodifiableMap(macros); }
+
+    /** Returns an immutable map of the macros that must be provided by the environment running this model */
+    public Map<String, TensorType> requiredMacros() { return Collections.unmodifiableMap(requiredMacros); }
 
     /** Returns an immutable map of the signatures of this */
     public Map<String, Signature> signatures() { return Collections.unmodifiableMap(signatures); }

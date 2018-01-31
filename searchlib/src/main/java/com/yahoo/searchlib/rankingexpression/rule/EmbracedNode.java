@@ -3,6 +3,8 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.Deque;
@@ -45,6 +47,11 @@ public final class EmbracedNode extends CompositeNode {
     @Override
     public Value evaluate(Context context) {
         return value.evaluate(context);
+    }
+
+    @Override
+    public TensorType type(TypeContext context) {
+        return value.type(context);
     }
 
     @Override
