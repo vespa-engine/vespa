@@ -6,6 +6,7 @@
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.docsummary.docsumcontext");
 
@@ -33,6 +34,10 @@ namespace {
 
 Memory DOCSUMS("docsums");
 Memory DOCSUM("docsum");
+
+void addTimedOut(Inserter & inserter, fastos::TimeStamp left) {
+    inserter.insertObject().setString("error", vespalib::make_string("Timeout at %ldus", left.us()));
+}
 
 }
 
@@ -71,7 +76,7 @@ DocsumContext::createReply()
             Slime slime(Slime::Params(std::move(symbols)));
             vespalib::slime::SlimeInserter inserter(slime);
             if (_request.expired()) {
-                inserter.insertString(Memory("timed out"));
+                addTimedOut(inserter, _request.getTimeLeft());
             } else {
                 _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, slime, inserter);
             }
@@ -112,7 +117,7 @@ DocsumContext::createSlimeReply()
         ObjectSymbolInserter inserter(docSumC, docsumSym);
         if ((docId != search::endDocId) && !rci.mustSkip) {
             if (_request.expired()) {
-                inserter.insertString(Memory("timed out"));
+                addTimedOut(inserter, _request.getTimeLeft());
             } else {
                 _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, *response, inserter);
             }
