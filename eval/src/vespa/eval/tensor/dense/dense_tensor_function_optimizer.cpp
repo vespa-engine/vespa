@@ -46,7 +46,7 @@ bool isDenseXWProduct(const ValueType &res, const ValueType &vec, const ValueTyp
     return false;
 }
 
-const TensorFunction &createDenseXWProduct(const ValueType &res, const Inject &vec, const Inject &mat, Stash &stash) {
+const TensorFunction &createDenseXWProduct(const ValueType &res, const TensorFunction &vec, const TensorFunction &mat, Stash &stash) {
     bool common_is_inner = (mat.result_type().dimension_index(vec.result_type().dimensions()[0].name) == 1);
     return stash.create<DenseXWProductFunction>(res, vec, mat,
                                                 vec.result_type().dimensions()[0].size,
@@ -62,18 +62,16 @@ struct InnerProductFunctionOptimizer
             const ValueType &result_type = reduce->result_type();
             const Join *join = as<Join>(reduce->child());
             if (join && (join->function() == Mul::f)) {
-                const Inject *lhs = as<Inject>(join->lhs());
-                const Inject *rhs = as<Inject>(join->rhs());
-                if (lhs && rhs) {
-                    if (isDenseDotProduct(result_type, lhs->result_type(), rhs->result_type())) {
-                        return stash.create<DenseDotProductFunction>(*lhs, *rhs);
-                    }
-                    if (isDenseXWProduct(result_type, lhs->result_type(), rhs->result_type())) {
-                        return createDenseXWProduct(result_type, *lhs, *rhs, stash);
-                    }
-                    if (isDenseXWProduct(result_type, rhs->result_type(), lhs->result_type())) {
-                        return createDenseXWProduct(result_type, *rhs, *lhs, stash);
-                    }
+                const TensorFunction &lhs = join->lhs();
+                const TensorFunction &rhs = join->rhs();
+                if (isDenseDotProduct(result_type, lhs.result_type(), rhs.result_type())) {
+                    return stash.create<DenseDotProductFunction>(lhs, rhs);
+                }
+                if (isDenseXWProduct(result_type, lhs.result_type(), rhs.result_type())) {
+                    return createDenseXWProduct(result_type, lhs, rhs, stash);
+                }
+                if (isDenseXWProduct(result_type, rhs.result_type(), lhs.result_type())) {
+                    return createDenseXWProduct(result_type, rhs, lhs, stash);
                 }
             }
         }
