@@ -29,10 +29,6 @@ public class FileDBHandler implements FileDistribution {
         manager.setDeployedFiles(hostName, referencesAsString);
     }
 
-    public void startDownload(String hostName, Set<FileReference> fileReferences) {
-        throw new UnsupportedOperationException("Not valid for this Filedistribution implementation");
-    }
-
     @Override
     public void startDownload(String hostName, int port, Set<FileReference> fileReferences) {
         throw new UnsupportedOperationException("Not valid for this Filedistribution implementation");
