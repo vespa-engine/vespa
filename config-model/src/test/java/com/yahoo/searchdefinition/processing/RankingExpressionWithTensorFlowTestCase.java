@@ -105,7 +105,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     public void testTensorFlowReferenceWithFeatureCombination() throws ParseException {
         String queryProfile = "<query-profile id='default' type='root'/>";
         String queryProfileType = "<query-profile-type id='root'>" +
-                                  "  <field name='mytensor' type='tensor(d0[3],d1[784])'/>" +
+                                  "  <field name='mytensor' type='tensor(d0[3],d1[784],d2[10])'/>" +
                                   "</query-profile-type>";
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir,
                                                                               queryProfile,
