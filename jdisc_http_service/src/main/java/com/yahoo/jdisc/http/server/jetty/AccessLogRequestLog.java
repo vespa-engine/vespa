@@ -29,6 +29,7 @@ import java.util.logging.Logger;
  * and our own configurable access logging in different formats provided by {@link AccessLog}.
  *
  * @author bakksjo
+ * @author bjorncs
  */
 public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog {
 
@@ -48,24 +49,29 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
 
     @Override
     public void log(final Request request, final Response response) {
-        final AccessLogEntry accessLogEntryFromServletRequest = (AccessLogEntry) request.getAttribute(
-                JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY);
-        final AccessLogEntry accessLogEntry;
-        if (accessLogEntryFromServletRequest != null) {
-            accessLogEntry = accessLogEntryFromServletRequest;
-        } else {
-            accessLogEntry = new AccessLogEntry();
-            populateAccessLogEntryFromHttpServletRequest(request, accessLogEntry);
+        try {
+            final AccessLogEntry accessLogEntryFromServletRequest = (AccessLogEntry) request.getAttribute(
+                    JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY);
+            final AccessLogEntry accessLogEntry;
+            if (accessLogEntryFromServletRequest != null) {
+                accessLogEntry = accessLogEntryFromServletRequest;
+            } else {
+                accessLogEntry = new AccessLogEntry();
+                populateAccessLogEntryFromHttpServletRequest(request, accessLogEntry);
+            }
+
+            final long startTime = request.getTimeStamp();
+            final long endTime = System.currentTimeMillis();
+            accessLogEntry.setTimeStamp(startTime);
+            accessLogEntry.setDurationBetweenRequestResponse(endTime - startTime);
+            accessLogEntry.setReturnedContentSize(response.getContentCount());
+            accessLogEntry.setStatusCode(response.getStatus());
+
+            accessLog.log(accessLogEntry);
+        } catch (Exception e) {
+            // Catching any exceptions here as it is unclear how Jetty handles exceptions from a RequestLog.
+            logger.log(Level.SEVERE, "Failed to log access log entry: " + e.getMessage(), e);
         }
-
-        final long startTime = request.getTimeStamp();
-        final long endTime = System.currentTimeMillis();
-        accessLogEntry.setTimeStamp(startTime);
-        accessLogEntry.setDurationBetweenRequestResponse(endTime - startTime);
-        accessLogEntry.setReturnedContentSize(response.getContentCount());
-        accessLogEntry.setStatusCode(response.getStatus());
-
-        accessLog.log(accessLogEntry);
     }
 
     /*
