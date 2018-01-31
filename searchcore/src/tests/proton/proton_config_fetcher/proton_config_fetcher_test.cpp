@@ -14,12 +14,12 @@
 #include <vespa/searchcore/proton/server/proton_config_fetcher.h>
 #include <vespa/searchcore/proton/server/proton_config_snapshot.h>
 #include <vespa/searchcore/proton/server/i_proton_configurer.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/config-bucketspaces.h>
-#include <mutex>
 
 using namespace config;
 using namespace proton;
@@ -146,14 +146,15 @@ struct ConfigTestFixture {
                 documenttypesBuilder == bootstrapConfig->getDocumenttypesConfig());
     }
 
-    BootstrapConfig::SP getBootstrapConfig(int64_t generation) const {
+    BootstrapConfig::SP getBootstrapConfig(int64_t generation, const HwInfo & hwInfo) const {
         return BootstrapConfig::SP(new BootstrapConfig(generation,
-                                                       BootstrapConfig::DocumenttypesConfigSP(new DocumenttypesConfig(documenttypesBuilder)),
-                                                       DocumentTypeRepo::SP(new DocumentTypeRepo(documenttypesBuilder)),
-                                                       BootstrapConfig::ProtonConfigSP(new ProtonConfig(protonBuilder)),
+                                                       std::make_shared<DocumenttypesConfig>(documenttypesBuilder),
+                                                       std::make_shared<DocumentTypeRepo>(documenttypesBuilder),
+                                                       std::make_shared<ProtonConfig>(protonBuilder),
                                                        std::make_shared<FiledistributorrpcConfig>(),
                                                        std::make_shared<BucketspacesConfig>(bucketspacesBuilder),
-                                                       std::make_shared<TuneFileDocumentDB>()));
+                                                       std::make_shared<TuneFileDocumentDB>(),
+                                                       hwInfo));
     }
 
     void reload() { context->reload(); }
@@ -232,12 +233,18 @@ TEST_FFF("require that bootstrap config manager updates config", ConfigTestFixtu
 }
 
 DocumentDBConfig::SP
-getDocumentDBConfig(ConfigTestFixture &f, DocumentDBConfigManager &mgr)
+getDocumentDBConfig(ConfigTestFixture &f, DocumentDBConfigManager &mgr, const HwInfo & hwInfo)
 {
     ConfigRetriever retriever(mgr.createConfigKeySet(), f.context);
-    mgr.forwardConfig(f.getBootstrapConfig(1));
+    mgr.forwardConfig(f.getBootstrapConfig(1, hwInfo));
     mgr.update(retriever.getBootstrapConfigs()); // Cheating, but we only need the configs
     return mgr.getConfig();
+}
+
+DocumentDBConfig::SP
+getDocumentDBConfig(ConfigTestFixture &f, DocumentDBConfigManager &mgr)
+{
+    return getDocumentDBConfig(f, mgr, HwInfo());
 }
 
 TEST_FF("require that documentdb config manager subscribes for config",
@@ -349,6 +356,40 @@ TEST_FF("require that prune removed documents interval can be set based on age",
     f1.addDocType("test");
     auto config = getDocumentDBConfig(f1, f2);
     EXPECT_EQUAL(20, config->getMaintenanceConfigSP()->getPruneRemovedDocumentsConfig().getInterval());
+}
+
+TEST_FF("require that docstore config computes cachesize automatically if unset",
+        ConfigTestFixture("test"),
+        DocumentDBConfigManager(f1.configId + "/test", "test"))
+{
+    HwInfo hwInfo(HwInfo::Disk(1, false, false), HwInfo::Memory(1000000), HwInfo::Cpu(1));
+    f1.addDocType("test");
+    f1.protonBuilder.summary.cache.maxbytes = 2000;
+    auto config = getDocumentDBConfig(f1, f2, hwInfo);
+    EXPECT_EQUAL(2000ul, config->getStoreConfig().getMaxCacheBytes());
+
+    f1.protonBuilder.summary.cache.maxbytes = -7;
+    config = getDocumentDBConfig(f1, f2, hwInfo);
+    EXPECT_EQUAL(70000ul, config->getStoreConfig().getMaxCacheBytes());
+
+    f1.protonBuilder.summary.cache.maxbytes = -700;
+    config = getDocumentDBConfig(f1, f2, hwInfo);
+    EXPECT_EQUAL(500000ul, config->getStoreConfig().getMaxCacheBytes());
+}
+
+TEST("test HwInfo equality") {
+    EXPECT_TRUE(HwInfo::Cpu(1) == HwInfo::Cpu(1));
+    EXPECT_FALSE(HwInfo::Cpu(1) == HwInfo::Cpu(2));
+    EXPECT_TRUE(HwInfo::Memory(1) == HwInfo::Memory(1));
+    EXPECT_FALSE(HwInfo::Memory(1) == HwInfo::Memory(2));
+    EXPECT_TRUE(HwInfo::Disk(1, false, false) == HwInfo::Disk(1, false,false));
+    EXPECT_FALSE(HwInfo::Disk(1, false, false) == HwInfo::Disk(1, false,true));
+    EXPECT_FALSE(HwInfo::Disk(1, false, false) == HwInfo::Disk(1, true,false));
+    EXPECT_FALSE(HwInfo::Disk(1, false, false) == HwInfo::Disk(2, false,false));
+    EXPECT_TRUE(HwInfo(HwInfo::Disk(1, false, false), 1ul, 1ul) == HwInfo(HwInfo::Disk(1, false,false), 1ul, 1ul));
+    EXPECT_FALSE(HwInfo(HwInfo::Disk(1, false, false), 1ul, 1ul) == HwInfo(HwInfo::Disk(1, false,false), 1ul, 2ul));
+    EXPECT_FALSE(HwInfo(HwInfo::Disk(1, false, false), 1ul, 1ul) == HwInfo(HwInfo::Disk(1, false,false), 2ul, 1ul));
+    EXPECT_FALSE(HwInfo(HwInfo::Disk(1, false, false), 1ul, 1ul) == HwInfo(HwInfo::Disk(2, false,false), 1ul, 1ul));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

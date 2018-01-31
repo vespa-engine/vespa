@@ -2,6 +2,8 @@
 
 #include "documentdbconfigmanager.h"
 #include "bootstrapconfig.h"
+#include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summarymap.h>
@@ -10,7 +12,6 @@
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/vespalib/time/time_box.h>
 
 #include <vespa/log/log.h>
@@ -157,14 +158,17 @@ deriveCompression(const T & config) {
 }
 
 DocumentStore::Config
-getStoreConfig(const ProtonConfig::Summary::Cache & cache)
+getStoreConfig(const ProtonConfig::Summary::Cache & cache, const HwInfo & hwInfo)
 {
-    return DocumentStore::Config(deriveCompression(cache.compression), cache.maxbytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
+    size_t maxBytes = (cache.maxbytes < 0)
+                      ? (hwInfo.memory().sizeBytes()*std::min(50l, -cache.maxbytes))/100l
+                      : cache.maxbytes;
+    return DocumentStore::Config(deriveCompression(cache.compression), maxBytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
 }
 
 LogDocumentStore::Config
-deriveConfig(const ProtonConfig::Summary & summary, const ProtonConfig::Flush::Memory & flush) {
-    DocumentStore::Config config(getStoreConfig(summary.cache));
+deriveConfig(const ProtonConfig::Summary & summary, const ProtonConfig::Flush::Memory & flush, const HwInfo & hwInfo) {
+    DocumentStore::Config config(getStoreConfig(summary.cache, hwInfo));
     const ProtonConfig::Summary::Log & log(summary.log);
     const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
     WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes);
@@ -177,8 +181,8 @@ deriveConfig(const ProtonConfig::Summary & summary, const ProtonConfig::Flush::M
     return LogDocumentStore::Config(config, logConfig);
 }
 
-search::LogDocumentStore::Config buildStoreConfig(const ProtonConfig & proton) {
-    return deriveConfig(proton.summary, proton.flush.memory);
+search::LogDocumentStore::Config buildStoreConfig(const ProtonConfig & proton, const HwInfo & hwInfo) {
+    return deriveConfig(proton.summary, proton.flush.memory, hwInfo);
 }
 
 using AttributesConfigSP = DocumentDBConfig::AttributesConfigSP;
@@ -255,10 +259,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     }
 
     if (snapshot.isChanged<RankProfilesConfig>(_configId, currentGeneration)) {
-        newRankProfilesConfig =
-            RankProfilesConfigSP(
-                    snapshot.getConfig<RankProfilesConfig>(_configId).
-                    release());
+        newRankProfilesConfig = snapshot.getConfig<RankProfilesConfig>(_configId);
     }
     if (snapshot.isChanged<RankingConstantsConfig>(_configId, currentGeneration)) {
         RankingConstantsConfigSP newRankingConstantsConfig = RankingConstantsConfigSP(
@@ -286,34 +287,34 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         newRankingConstants = std::make_shared<RankingConstants>(constants);
     }
     if (snapshot.isChanged<IndexschemaConfig>(_configId, currentGeneration)) {
-        std::unique_ptr<IndexschemaConfig> indexschemaConfig = snapshot.getConfig<IndexschemaConfig>(_configId);
+        newIndexschemaConfig = snapshot.getConfig<IndexschemaConfig>(_configId);
         search::index::Schema schema;
-        search::index::SchemaBuilder::build(*indexschemaConfig, schema);
+        search::index::SchemaBuilder::build(*newIndexschemaConfig, schema);
         if (!search::index::SchemaUtil::validateSchema(schema)) {
             LOG(error, "Cannot use bad index schema, validation failed");
             abort();
         }
-        newIndexschemaConfig = IndexschemaConfigSP(indexschemaConfig.release());
     }
     if (snapshot.isChanged<AttributesConfig>(_configId, currentGeneration)) {
-        newAttributesConfig = AttributesConfigSP(snapshot.getConfig<AttributesConfig>(_configId).release());
+        newAttributesConfig = snapshot.getConfig<AttributesConfig>(_configId);
     }
     if (snapshot.isChanged<SummaryConfig>(_configId, currentGeneration)) {
-        newSummaryConfig = SummaryConfigSP(snapshot.getConfig<SummaryConfig>(_configId).release());
+        newSummaryConfig = snapshot.getConfig<SummaryConfig>(_configId);
     }
     if (snapshot.isChanged<SummarymapConfig>(_configId, currentGeneration)) {
-        newSummarymapConfig = SummarymapConfigSP(snapshot.getConfig<SummarymapConfig>(_configId).release());
+        newSummarymapConfig = snapshot.getConfig<SummarymapConfig>(_configId);
     }
     if (snapshot.isChanged<JuniperrcConfig>(_configId, currentGeneration)) {
-        newJuniperrcConfig = JuniperrcConfigSP(snapshot.getConfig<JuniperrcConfig>(_configId).release());
+        newJuniperrcConfig = snapshot.getConfig<JuniperrcConfig>(_configId);
     }
     if (snapshot.isChanged<ImportedFieldsConfig>(_configId, currentGeneration)) {
-        newImportedFieldsConfig = ImportedFieldsConfigSP(snapshot.getConfig<ImportedFieldsConfig>(_configId).release());
+        newImportedFieldsConfig = snapshot.getConfig<ImportedFieldsConfig>(_configId);
     }
 
     Schema::SP schema(buildSchema(*newAttributesConfig, *newSummaryConfig, *newIndexschemaConfig));
     newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig, _docTypeName);
-    search::LogDocumentStore::Config storeConfig = buildStoreConfig(_bootstrapConfig->getProtonConfig());
+    search::LogDocumentStore::Config storeConfig = buildStoreConfig(_bootstrapConfig->getProtonConfig(),
+                                                                    _bootstrapConfig->getHwInfo());
     if (newMaintenanceConfig && oldMaintenanceConfig && *newMaintenanceConfig == *oldMaintenanceConfig) {
         newMaintenanceConfig = oldMaintenanceConfig;
     }
