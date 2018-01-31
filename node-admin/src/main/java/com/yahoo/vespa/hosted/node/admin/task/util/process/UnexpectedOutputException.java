@@ -6,7 +6,11 @@ package com.yahoo.vespa.hosted.node.admin.task.util.process;
  */
 @SuppressWarnings("serial")
 public class UnexpectedOutputException extends RuntimeException {
-    UnexpectedOutputException(String message) {
-        super(message);
+    /**
+     * @param problem Problem description, e.g. "Output is not of the form ^NAME=VALUE$"
+     */
+    public UnexpectedOutputException(String problem, ChildProcess childProcess) {
+        super(ErrorMessageFormatter.createSnippetForTerminatedProcess(
+                "output was not of the expected format: " + problem, childProcess));
     }
 }

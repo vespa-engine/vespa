@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.systemd;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.ChildProcess;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Command;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.UnexpectedOutputException;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -140,8 +141,8 @@ public class SystemCtl {
             String output = showProcess.getUtf8Output();
             Matcher matcher = propertyPattern.matcher(output);
             if (!matcher.find()) {
-                throw showProcess.newUnexpectedOutputException(
-                        "Output does not match '" + propertyPattern + "'");
+                throw new UnexpectedOutputException(
+                        "Output does not match '" + propertyPattern + "'", showProcess);
             } else if (matcher.groupCount() != 1) {
                 throw new IllegalArgumentException("Property pattern must have exactly 1 group");
             }

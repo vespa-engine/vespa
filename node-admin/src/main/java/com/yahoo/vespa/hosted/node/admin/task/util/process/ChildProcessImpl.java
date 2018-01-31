@@ -13,11 +13,6 @@ import java.util.logging.Logger;
  * @author hakonhall
  */
 public class ChildProcessImpl implements ChildProcess {
-    public static final int MAX_OUTPUT_PREFIX = 200;
-    public static final int MAX_OUTPUT_SUFFIX = 200;
-    // Omitting a number of chars less than 10 or less than 10% would be ridiculous.
-    public static final int MAX_OUTPUT_SLACK = Math.max(10, (10 * (MAX_OUTPUT_PREFIX + MAX_OUTPUT_SUFFIX)) / 100);
-
     private final TaskContext taskContext;
     private final ProcessApi process;
     private final String commandLine;
@@ -67,41 +62,13 @@ public class ChildProcessImpl implements ChildProcess {
         waitForTermination();
         int exitCode = process.exitCode();
         if (exitCode != 0) {
-            String message = debugDescription("terminated with non-zero exit code " + exitCode);
+            String message = ErrorMessageFormatter.createSnippetForTerminatedProcess(
+                    "terminated with non-zero exit code " + exitCode,
+                    this);
             throw new CommandException(message);
         }
 
         return this;
-    }
-
-    @Override
-    public UnexpectedOutputException newUnexpectedOutputException(String problem) {
-        String message = debugDescription("output was not of the expected format: " + problem);
-        throw new UnexpectedOutputException(message);
-    }
-
-    private String debugDescription(String problem) {
-        StringBuilder stringBuilder = new StringBuilder()
-                .append("Command '")
-                .append(commandLine())
-                .append("' ")
-                .append(problem)
-                .append(": stdout/stderr: '");
-
-        String possiblyHugeOutput = getUtf8Output();
-        if (possiblyHugeOutput.length() <= MAX_OUTPUT_PREFIX + MAX_OUTPUT_SUFFIX + MAX_OUTPUT_SLACK) {
-            stringBuilder.append(possiblyHugeOutput);
-        } else {
-            stringBuilder.append(possiblyHugeOutput.substring(0, MAX_OUTPUT_PREFIX))
-                    .append("... [")
-                    .append(possiblyHugeOutput.length() - MAX_OUTPUT_PREFIX - MAX_OUTPUT_SUFFIX)
-                    .append(" chars omitted] ...")
-                    .append(possiblyHugeOutput.substring(possiblyHugeOutput.length() - MAX_OUTPUT_SUFFIX));
-        }
-
-        stringBuilder.append("'");
-
-        return stringBuilder.toString();
     }
 
     @Override
