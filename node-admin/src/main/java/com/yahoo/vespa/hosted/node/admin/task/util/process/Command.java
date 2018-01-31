@@ -52,7 +52,7 @@ public class Command {
                 ".out"));
 
         ProcessBuilder builder = new ProcessBuilder(arguments)
-                .redirectError(ProcessBuilder.Redirect.appendTo(temporaryFile.toFile()))
+                .redirectErrorStream(true)
                 .redirectOutput(temporaryFile.toFile());
         Process process = IOExceptionUtil.uncheck(builder::start);
 
