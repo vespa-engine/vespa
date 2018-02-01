@@ -22,7 +22,9 @@ public class MockedOperationHandler implements OperationHandler {
         return new VisitResult(Optional.of("token"), "List of json docs, cont token "
                 + options.continuation.orElse("not set") + ", doc selection: '"
                 + documentSelection + "'"
-                + options.wantedDocumentCount.map(n -> String.format(", min docs returned: %d", n)).orElse(""));
+                + options.wantedDocumentCount.map(n -> String.format(", min docs returned: %d", n)).orElse("")
+                + options.fieldSet.map(s -> String.format(", field set: '%s'", s)).orElse("")
+                + options.concurrency.map(n -> String.format(", concurrency: %d", n)).orElse(""));
     }
 
     @Override

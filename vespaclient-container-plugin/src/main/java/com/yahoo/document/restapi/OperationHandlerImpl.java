@@ -385,14 +385,14 @@ public class OperationHandlerImpl implements OperationHandler {
 
         VisitorParameters params = new VisitorParameters(selection.toString());
         // Only return fieldset that is part of the document.
-        params.fieldSet(restUri.getDocumentType() + ":[document]");
+        params.fieldSet(options.fieldSet.orElse(restUri.getDocumentType() + ":[document]"));
         params.setMaxBucketsPerVisitor(1);
         params.setMaxPending(32);
         params.setMaxFirstPassHits(1);
         params.setMaxTotalHits(options.wantedDocumentCount
                 .map(n -> Math.min(Math.max(n, 1), WANTED_DOCUMENT_COUNT_UPPER_BOUND))
                 .orElse(1));
-        params.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(1));
+        params.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(options.concurrency.orElse(1)));
         params.setToTimestamp(0L);
         params.setFromTimestamp(0L);
         params.setSessionTimeoutMs(VISIT_TIMEOUT_MS);

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -54,6 +53,8 @@ public class RestApi extends LoggingRequestHandler {
     private static final String CLUSTER = "cluster";
     private static final String CONTINUATION = "continuation";
     private static final String WANTED_DOCUMENT_COUNT = "wantedDocumentCount";
+    private static final String FIELD_SET = "fieldSet";
+    private static final String CONCURRENCY = "concurrency";
     private static final String APPLICATION_JSON = "application/json";
     private final OperationHandler operationHandler;
     private SingleDocumentParser singleDocumentParser;
@@ -122,9 +123,12 @@ public class RestApi extends LoggingRequestHandler {
         return property.map(RestApi::parseBooleanStrict);
     }
 
-    private static Optional<Integer> parseInteger(String parameter, HttpRequest request) throws NumberFormatException {
-        Optional<String> property = requestProperty(parameter, request);
-        return property.map(Integer::parseInt);
+    private static int parsePositiveInt(String str) throws NumberFormatException {
+        int parsed = Integer.parseInt(str);
+        if (parsed <= 0) {
+            throw new IllegalArgumentException("Parsed number was negative or zero");
+        }
+        return parsed;
     }
 
     @Override
@@ -236,6 +240,43 @@ public class RestApi extends LoggingRequestHandler {
     private static HttpResponse createInvalidParameterResponse(String parameter, String explanation) {
         return Response.createErrorResponse(403, String.format("Invalid '%s' value. %s", parameter, explanation), RestUri.apiErrorCodes.UNSPECIFIED);
     }
+
+    static class BadRequestParameterException extends IllegalArgumentException {
+        private String parameter;
+
+        BadRequestParameterException(String parameter, String message) {
+            super(message);
+            this.parameter = parameter;
+        }
+
+        String getParameter() {
+            return parameter;
+        }
+    }
+
+    private static Optional<Integer> parsePositiveIntegerRequestParameter(String parameter, HttpRequest request) {
+        Optional<String> property = requestProperty(parameter, request);
+        if (!property.isPresent()) {
+            return Optional.empty();
+        }
+        try {
+            return property.map(RestApi::parsePositiveInt);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestParameterException(parameter, "Expected positive integer");
+        }
+    }
+
+    private static OperationHandler.VisitOptions visitOptionsFromRequest(HttpRequest request) {
+        final OperationHandler.VisitOptions.Builder optionsBuilder = OperationHandler.VisitOptions.builder();
+
+        Optional.ofNullable(request.getProperty(CLUSTER)).ifPresent(c -> optionsBuilder.cluster(c));
+        Optional.ofNullable(request.getProperty(CONTINUATION)).ifPresent(c -> optionsBuilder.continuation(c));
+        Optional.ofNullable(request.getProperty(FIELD_SET)).ifPresent(fs -> optionsBuilder.fieldSet(fs));
+        parsePositiveIntegerRequestParameter(WANTED_DOCUMENT_COUNT, request).ifPresent(c -> optionsBuilder.wantedDocumentCount(c));
+        parsePositiveIntegerRequestParameter(CONCURRENCY, request).ifPresent(c -> optionsBuilder.concurrency(c));
+
+        return optionsBuilder.build();
+    }
     
     private HttpResponse handleVisit(RestUri restUri, HttpRequest request) throws RestApiException {
         String documentSelection = Optional.ofNullable(request.getProperty(SELECTION)).orElse("");
@@ -255,16 +296,12 @@ public class RestApi extends LoggingRequestHandler {
                 documentSelection = "id.group='" + group.value + "'";
             }
         }
-        Optional<String> cluster = Optional.ofNullable(request.getProperty(CLUSTER));
-        Optional<String> continuation = Optional.ofNullable(request.getProperty(CONTINUATION));
-        Optional<Integer> wantedDocumentCount;
+        OperationHandler.VisitOptions options;
         try {
-            wantedDocumentCount = parseInteger(WANTED_DOCUMENT_COUNT, request);
-        } catch (IllegalArgumentException e) {
-            return createInvalidParameterResponse(WANTED_DOCUMENT_COUNT, "Expected integer");
+            options = visitOptionsFromRequest(request);
+        } catch (BadRequestParameterException e) {
+            return createInvalidParameterResponse(e.getParameter(), e.getMessage());
         }
-
-        final OperationHandler.VisitOptions options = new OperationHandler.VisitOptions(cluster, continuation, wantedDocumentCount);
         final OperationHandler.VisitResult visit = operationHandler.visit(restUri, documentSelection, options);
         final ObjectNode resultNode = mapper.createObjectNode();
         visit.token.ifPresent(t -> resultNode.put(CONTINUATION, t));

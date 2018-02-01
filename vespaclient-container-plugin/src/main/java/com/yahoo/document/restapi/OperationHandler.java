@@ -27,11 +27,66 @@ public interface OperationHandler {
         public final Optional<String> cluster;
         public final Optional<String> continuation;
         public final Optional<Integer> wantedDocumentCount;
+        public final Optional<String> fieldSet;
+        public final Optional<Integer> concurrency;
 
+        /** @deprecated Use a VisitOptions.Builder instead */
+        @Deprecated
         public VisitOptions(Optional<String> cluster, Optional<String> continuation, Optional<Integer> wantedDocumentCount) {
             this.cluster = cluster;
             this.continuation = continuation;
             this.wantedDocumentCount = wantedDocumentCount;
+            this.fieldSet = Optional.empty();
+            this.concurrency = Optional.empty();
+        }
+
+        private VisitOptions(Builder builder) {
+            this.cluster = Optional.ofNullable(builder.cluster);
+            this.continuation = Optional.ofNullable(builder.continuation);
+            this.wantedDocumentCount = Optional.ofNullable(builder.wantedDocumentCount);
+            this.fieldSet = Optional.ofNullable(builder.fieldSet);
+            this.concurrency = Optional.ofNullable(builder.concurrency);
+        }
+
+        public static class Builder {
+            String cluster;
+            String continuation;
+            Integer wantedDocumentCount;
+            String fieldSet;
+            Integer concurrency;
+
+            public Builder cluster(String cluster) {
+                this.cluster = cluster;
+                return this;
+            }
+
+            public Builder continuation(String continuation) {
+                this.continuation = continuation;
+                return this;
+            }
+
+            public Builder wantedDocumentCount(Integer count) {
+                this.wantedDocumentCount = count;
+                return this;
+            }
+
+            public Builder fieldSet(String fieldSet) {
+                this.fieldSet = fieldSet;
+                return this;
+            }
+
+            public Builder concurrency(Integer concurrency) {
+                this.concurrency = concurrency;
+                return this;
+            }
+
+            public VisitOptions build() {
+                return new VisitOptions(this);
+            }
+        }
+
+        public static Builder builder() {
+            return new Builder();
         }
     }
 
