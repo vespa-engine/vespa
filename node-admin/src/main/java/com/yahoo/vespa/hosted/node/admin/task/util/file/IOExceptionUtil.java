@@ -18,6 +18,21 @@ public class IOExceptionUtil {
         }
     }
 
+    /**
+     * If an IOException is thrown, an UncheckedIOException is made with the given format+args
+     * message. Useful to decorate the exception when the bare IOException leaves out details.
+     */
+    public static <T> T uncheck(SupplierThrowingIOException<T> supplier,
+                                String format,
+                                String... args) {
+        try {
+            return supplier.get();
+        } catch (IOException e) {
+            String message = String.format(format, (Object[]) args);
+            throw new UncheckedIOException(message, e);
+        }
+    }
+
     public static <T> T uncheck(SupplierThrowingIOException<T> supplier) {
         try {
             return supplier.get();
