@@ -90,20 +90,12 @@ DenseXWProductFunction::DenseXWProductFunction(const eval::ValueType &resultType
       _commonDimensionInnermost(matrixHasCommonDimensionInnermost)
 {}
 
-namespace {
-
-} // namespace <unnamed>
-
 eval::InterpretedFunction::Instruction
 DenseXWProductFunction::compile_self(Stash &stash) const
 {
     Self &self = stash.create<Self>(result_type(), _vectorSize, _resultSize, stash);
-    if (_commonDimensionInnermost) {
-        return eval::InterpretedFunction::Instruction(my_op<true>, (uint64_t)(&self));
-    } else {
-        return eval::InterpretedFunction::Instruction(my_op<false>, (uint64_t)(&self));
-    }
+    auto op = _commonDimensionInnermost ? my_op<true> : my_op<false>;
+    return eval::InterpretedFunction::Instruction(op, (uint64_t)(&self));
 }
 
-}
-
+} // namespace vespalib::tensor
