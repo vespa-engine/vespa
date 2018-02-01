@@ -279,14 +279,9 @@ public class FastHit extends Hit {
         reserve(docsumDef.getFieldCount());
         for (DocsumField field : docsumDef.getFields()) {
             String fieldName = field.getName();
-            if (value.type() == Type.STRING &&
-                (field instanceof LongstringField || field instanceof StringField || field instanceof XMLField)) {
-                setDocsumFieldIfNotPresent(fieldName, new LazyString(field, value));
-            } else {
-                Inspector f = value.field(fieldName);
-                if (field.getEmulConfig().forceFillEmptyFields() || f.valid()) {
-                    setDocsumFieldIfNotPresent(fieldName, field.convert(f));
-                }
+            Inspector f = value.field(fieldName);
+            if (field.getEmulConfig().forceFillEmptyFields() || f.valid()) {
+                setDocsumFieldIfNotPresent(fieldName, field.convert(f));
             }
         }
     }
