@@ -24,13 +24,10 @@ public class MapContext extends Context {
 
     /**
      * Creates a map context from a map.
-     * The ownership of the map is transferred to this - it cannot be further modified by the caller.
      * All the Values of the map will be frozen.
      */
     public MapContext(Map<String,Value> bindings) {
-        this.bindings = bindings;
-        for (Value boundValue : bindings.values())
-            boundValue.freeze();
+        bindings.forEach((k, v) -> this.bindings.put(FeatureNames.canonicalize(k), v.freeze()));
     }
 
     /**
@@ -46,7 +43,7 @@ public class MapContext extends Context {
     /** Returns the type of the given value key, or null if it is not bound. */
     @Override
     public TensorType getType(String key) {
-        Value value = bindings.get(key);
+        Value value = bindings.get(FeatureNames.canonicalize(key));
         if (value == null) return null;
         return value.type();
     }
@@ -54,19 +51,19 @@ public class MapContext extends Context {
     /** Returns the value of a key. 0 is returned if the given key is not bound in this. */
     @Override
     public Value get(String key) {
-        return bindings.getOrDefault(key, DoubleValue.zero);
+        return bindings.getOrDefault(FeatureNames.canonicalize(key), DoubleValue.zero);
     }
 
     /**
-     * Sets the value of a key.The value is frozen by this.
+     * Sets the value of a key. The value is frozen by this.
      */
     @Override
     public void put(String key,Value value) {
-        bindings.put(key,value.freeze());
+        bindings.put(FeatureNames.canonicalize(key), value.freeze());
     }
 
     /** Returns an immutable view of the bindings of this. */
-    public Map<String,Value> bindings() {
+    public Map<String, Value> bindings() {
         if (frozen) return bindings;
         return Collections.unmodifiableMap(bindings);
     }

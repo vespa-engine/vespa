@@ -11,7 +11,7 @@ import com.yahoo.tensor.TensorType;
 public interface TypeContext {
 
     /**
-     * Returns tye type of the tensor with this name.
+     * Returns the type of the tensor with this name.
      *
      * @return returns the type of the tensor which will be returned by calling getTensor(name)
      *         or null if getTensor will return null.
