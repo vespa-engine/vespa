@@ -510,17 +510,17 @@ public class ApplicationController {
     }
 
     /** Returns the endpoints of the deployment, or an empty list if the request fails */
-    public List<URI> getDeploymentEndpoints(DeploymentId deploymentId) {
+    public Optional<List<URI>> getDeploymentEndpoints(DeploymentId deploymentId) {
         try {
-            return ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
-                                                .map(RoutingEndpoint::getEndpoint)
-                                                .map(URI::create)
-                                                ::iterator);
+            return Optional.of(ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
+                                                                    .map(RoutingEndpoint::getEndpoint)
+                                                                    .map(URI::create)
+                                                                    .iterator()));
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to get endpoint information for " + deploymentId + ": "
                                    + Exceptions.toMessageString(e));
-            return Collections.emptyList();
+            return Optional.empty();
         }
     }
 
