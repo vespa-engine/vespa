@@ -178,6 +178,7 @@ public class NodePrioritizer {
         for (Node node : allNodes) {
             if (node.type() != NodeType.host) continue;
             if (node.state() != Node.State.active) continue;
+            if (node.status().wantToRetire()) continue;
 
             boolean hostHasCapacityForWantedFlavor = capacity.hasCapacity(node, wantedResourceCapacity);
             boolean conflictingCluster = list.childNodes(node).owner(appId).asList().stream()
