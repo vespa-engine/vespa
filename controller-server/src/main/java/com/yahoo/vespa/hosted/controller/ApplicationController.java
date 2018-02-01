@@ -239,7 +239,9 @@ public class ApplicationController {
         if ( ! (id.instance().value().equals("default") || id.instance().value().matches("\\d+"))) // TODO: Support instances properly
             throw new UnsupportedOperationException("Only the instance names 'default' and names which are just the PR number are supported at the moment");
         try (Lock lock = lock(id)) {
-            com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
+            // Validate only application names which do not already exist.
+            if (asList(id.tenant()).stream().noneMatch(application -> application.id().application().equals(id.application())))
+                com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
 
             Optional<Tenant> tenant = controller.tenants().tenant(new TenantId(id.tenant().value()));
             if ( ! tenant.isPresent())
@@ -250,7 +252,7 @@ public class ApplicationController {
                 throw new IllegalArgumentException("Could not create '" + id + "': Application " + dashToUnderscore(id) + " already exists");
             if (tenant.get().isAthensTenant()) {
                 if ( ! token.isPresent())
-                throw new IllegalArgumentException("Could not create '" + id + "': No NToken provided");
+                    throw new IllegalArgumentException("Could not create '" + id + "': No NToken provided");
 
                 ZmsClient zmsClient = zmsClientFactory.createZmsClientWithAuthorizedServiceToken(token.get());
                 try {
