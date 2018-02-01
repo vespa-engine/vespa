@@ -12,6 +12,7 @@ import static org.junit.Assert.fail;
 
 /**
  * @author geirst
+ * @author bratseth
  */
 public class TensorTypeTestCase {
 
@@ -75,6 +76,18 @@ public class TensorTypeTestCase {
         assertIsAssignableTo("tensor(x{},y[10])", "tensor(x{},y[])");
     }
 
+    @Test
+    public void testConvertibleTo() {
+        assertIsConvertibleTo("tensor(x[])", "tensor(x[])");
+        assertUnconvertibleTo("tensor(x[])", "tensor(y[])");
+        assertIsConvertibleTo("tensor(x[10])", "tensor(x[])");
+        assertUnconvertibleTo("tensor(x[])", "tensor(x[10])");
+        assertUnconvertibleTo("tensor(x[10])", "tensor(x[5])");
+        assertIsConvertibleTo("tensor(x[5])", "tensor(x[10])"); // Different from assignable
+        assertUnconvertibleTo("tensor(x{})", "tensor(x[])");
+        assertIsConvertibleTo("tensor(x{},y[10])", "tensor(x{},y[])");
+    }
+
     private static void assertTensorType(String typeSpec) {
         assertTensorType(typeSpec, typeSpec);
     }
@@ -98,6 +111,14 @@ public class TensorTypeTestCase {
 
     private void assertUnassignableTo(String specificType, String generalType) {
         assertFalse(TensorType.fromSpec(specificType).isAssignableTo(TensorType.fromSpec(generalType)));
+    }
+
+    private void assertIsConvertibleTo(String specificType, String generalType) {
+        assertTrue(TensorType.fromSpec(specificType).isConvertibleTo(TensorType.fromSpec(generalType)));
+    }
+
+    private void assertUnconvertibleTo(String specificType, String generalType) {
+        assertFalse(TensorType.fromSpec(specificType).isConvertibleTo(TensorType.fromSpec(generalType)));
     }
 
 }

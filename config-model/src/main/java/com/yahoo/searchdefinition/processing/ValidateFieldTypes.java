@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This Processor checks to make sure all fields with the same name have the same {@link DataType}. This check
+ * This Processor makes sure all fields with the same name have the same {@link DataType}. This check
  * explicitly disregards whether a field is an index field, an attribute or a summary field. This is a requirement if we
  * hope to move to a model where index fields, attributes and summary fields share a common field class.
  *
@@ -50,7 +50,7 @@ public class ValidateFieldTypes extends Processor {
         if (seenType == null) {
             seenFields.put(fieldName, fieldType);
         } else if ( ! compatibleTypes(seenType, fieldType)) {
-            throw newProcessException(searchName, fieldName, "Incompatible types. Expected " + 
+            throw newProcessException(searchName, fieldName, "Incompatible types. Expected " +
                                                              seenType.getName() + " for " + fieldDesc +
                                                              " '" + fieldName + "', got " + fieldType.getName() + ".");
         }
@@ -69,5 +69,5 @@ public class ValidateFieldTypes extends Processor {
         }
         return seenType.equals(fieldType);
     }
-    
+
 }
