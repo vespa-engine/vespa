@@ -7,6 +7,8 @@ import org.testng.annotations.Test;
 
 import javax.servlet.http.HttpServletRequest;
 
+import java.util.Optional;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -17,6 +19,7 @@ import static org.mockito.Mockito.when;
 /**
  * @author bakksjo
  */
+@SuppressWarnings("deprecation") // AccessLogEntry.setURI/getURI are deprecated
 public class AccessLogRequestLogTest {
     @Test
     public void requireThatQueryWithUnquotedSpecialCharactersIsHandled() {
@@ -69,6 +72,22 @@ public class AccessLogRequestLogTest {
         AccessLogEntry accessLogEntry = new AccessLogEntry();
         AccessLogRequestLog.populateAccessLogEntryFromHttpServletRequest(httpServletRequest, accessLogEntry);
         assertThat(accessLogEntry.getURI().toString(), is("/search/?q=%25%252"));
+    }
+
+    @Test
+    public void raw_path_and_query_are_set_from_request() {
+        HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
+        String rawPath = "//search/";
+        when(httpServletRequest.getRequestURI()).thenReturn(rawPath);
+        String rawQuery = "q=%%2";
+        when(httpServletRequest.getQueryString()).thenReturn(rawQuery);
+
+        AccessLogEntry accessLogEntry = new AccessLogEntry();
+        AccessLogRequestLog.populateAccessLogEntryFromHttpServletRequest(httpServletRequest, accessLogEntry);
+        assertThat(accessLogEntry.getRawPath(), is(rawPath));
+        Optional<String> actualRawQuery = accessLogEntry.getRawQuery();
+        assertThat(actualRawQuery.isPresent(), is(true));
+        assertThat(actualRawQuery.get(), is(rawQuery));
     }
 
 }

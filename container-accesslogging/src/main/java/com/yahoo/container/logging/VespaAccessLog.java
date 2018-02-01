@@ -2,17 +2,15 @@
 package com.yahoo.container.logging;
 
 import com.yahoo.container.core.AccessLogConfig;
-import com.yahoo.net.UriTools;
 
-import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.logging.Level;
 
 /**
- * @author <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
- * @author bakksjo
+ * @author Bjorn Borud
+ * @author Oyvind Bakksjo
  */
 public final class VespaAccessLog implements AccessLogInterface {
 
@@ -35,9 +33,8 @@ public final class VespaAccessLog implements AccessLogInterface {
         return dateFormat.format(date);
     }
 
-    private String getRequest(final String httpMethod, final URI uri, final String httpVersion) {
-        final URI normalizedUri = uri.normalize();
-        return httpMethod + " " + UriTools.rawRequest(normalizedUri) + " " + httpVersion;
+    private String getRequest(final String httpMethod, final String rawPath, final String rawQuery, final String httpVersion) {
+        return httpMethod + " " + (rawQuery != null ? rawPath + "?" + rawQuery : rawPath) + " " + httpVersion;
     }
 
     private String getUser(String user) {
@@ -102,7 +99,8 @@ public final class VespaAccessLog implements AccessLogInterface {
                 accessLogEntry.getUser(),
                 getRequest(
                         accessLogEntry.getHttpMethod(),
-                        accessLogEntry.getURI(),
+                        accessLogEntry.getRawPath(),
+                        accessLogEntry.getRawQuery().orElse(null),
                         accessLogEntry.getHttpVersion()),
                 accessLogEntry.getReferer(),
                 accessLogEntry.getUserAgent(),

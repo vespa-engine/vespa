@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -96,6 +97,8 @@ public class AccessLogEntry {
     private int localPort;
     private Principal principal;
     private X500Principal sslPrincipal;
+    private String rawPath;
+    private String rawQuery;
 
     private ListMap<String,String> keyValues=null;
 
@@ -597,6 +600,10 @@ public class AccessLogEntry {
         }
     }
 
+    /**
+     * @deprecated Use {@link #setRawPath(String)} and {@link #setRawQuery(String)} instead.
+     */
+    @Deprecated
     public void setURI(final URI uri) {
         synchronized (monitor) {
             requireNull(this.uri);
@@ -604,6 +611,10 @@ public class AccessLogEntry {
         }
     }
 
+    /**
+     * @deprecated Use {@link #getRawPath()} and {@link #getRawQuery()} instead. This method may return wrong path.
+     */
+    @Deprecated
     public URI getURI() {
         synchronized (monitor) {
             return uri;
@@ -736,6 +747,32 @@ public class AccessLogEntry {
         synchronized (monitor) {
             requireNull(this.sslPrincipal);
             this.sslPrincipal = sslPrincipal;
+        }
+    }
+
+    public void setRawPath(String rawPath) {
+        synchronized (monitor) {
+            requireNull(this.rawPath);
+            this.rawPath = rawPath;
+        }
+    }
+
+    public String getRawPath() {
+        synchronized (monitor) {
+            return rawPath;
+        }
+    }
+
+    public void setRawQuery(String rawQuery) {
+        synchronized (monitor) {
+            requireNull(this.rawQuery);
+            this.rawQuery = rawQuery;
+        }
+    }
+
+    public Optional<String> getRawQuery() {
+        synchronized (monitor) {
+            return Optional.ofNullable(rawQuery);
         }
     }
 

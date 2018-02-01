@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -304,7 +305,10 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
                 logEntry.setRemoteAddress(remoteAddress);
                 logEntry.setRemotePort(remoteAddress.getPort());
             }
-            logEntry.setURI(AccessLogUtil.getUri(httpRequest));
+            URI uri = AccessLogUtil.getUri(httpRequest);
+            setDeprecatedUri(logEntry, uri);
+            logEntry.setRawPath(uri.getRawPath());
+            logEntry.setRawQuery(uri.getRawQuery());
             logEntry.setUserAgent(AccessLogUtil.getUserAgentHeader(httpRequest));
             logEntry.setReferer(AccessLogUtil.getReferrerHeader(httpRequest));
             logEntry.setHttpMethod(AccessLogUtil.getHttpMethod(httpRequest));
@@ -312,6 +316,11 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Could not populate the access log [" + fullRequest + "]", e);
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static void setDeprecatedUri(AccessLogEntry logEntry, URI uri) {
+        logEntry.setURI(uri);
     }
 
     @Override
