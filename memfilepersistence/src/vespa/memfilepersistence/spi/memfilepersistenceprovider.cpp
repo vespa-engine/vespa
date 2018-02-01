@@ -6,7 +6,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
-#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -80,7 +80,7 @@ MemFilePtr
 MemFilePersistenceProvider::getMemFile(const spi::Bucket& b,
                                        bool keepInCache) const
 {
-    assert(b.getBucketSpace() == spi::FixedBucketSpaces::default_space());
+    assert(b.getBucketSpace() == document::FixedBucketSpaces::default_space());
     MemFilePtr& ptr = getThreadLocalMemFile();
 
     if (ptr.get()) {
@@ -212,7 +212,7 @@ private:
 void
 MemFilePersistenceProvider::handleBucketCorruption(const FileSpecification& file) const
 {
-    spi::Bucket fixBucket(document::Bucket(spi::FixedBucketSpaces::default_space(),
+    spi::Bucket fixBucket(document::Bucket(document::FixedBucketSpaces::default_space(),
                                            file.getBucketId()),
                           spi::PartitionId(file.getDirectory().getIndex()));
 
@@ -416,7 +416,7 @@ spi::BucketIdListResult
 MemFilePersistenceProvider::listBuckets(BucketSpace space, spi::PartitionId partition) const
 {
     spi::BucketIdListResult::List buckets;
-    if (space == spi::FixedBucketSpaces::default_space()) {
+    if (space == document::FixedBucketSpaces::default_space()) {
         _fileScanner->buildBucketList(buckets, partition, 0, 1);
     }
     return spi::BucketIdListResult(buckets);
@@ -426,7 +426,7 @@ spi::BucketIdListResult
 MemFilePersistenceProvider::getModifiedBuckets(BucketSpace space) const
 {
     document::BucketId::List modified;
-    if (space == spi::FixedBucketSpaces::default_space()) {
+    if (space == document::FixedBucketSpaces::default_space()) {
         _env->swapModifiedBuckets(modified); // Atomic op
     }
     return spi::BucketIdListResult(modified);
@@ -435,7 +435,7 @@ MemFilePersistenceProvider::getModifiedBuckets(BucketSpace space) const
 spi::BucketInfoResult
 MemFilePersistenceProvider::getBucketInfo(const spi::Bucket& bucket) const
 {
-    assert(bucket.getBucketSpace() == spi::FixedBucketSpaces::default_space());
+    assert(bucket.getBucketSpace() == document::FixedBucketSpaces::default_space());
     LOG(spam, "getBucketInfo(%s)", bucket.toString().c_str());
     try {
         bool retainMemFile = hasCachedMemFile();
@@ -458,7 +458,7 @@ MemFilePersistenceProvider::put(const spi::Bucket& bucket, spi::Timestamp ts,
                                 const document::Document::SP& doc,
                                 spi::Context& context)
 {
-    assert(bucket.getBucketSpace() == spi::FixedBucketSpaces::default_space());
+    assert(bucket.getBucketSpace() == document::FixedBucketSpaces::default_space());
     TRACEGENERIC(context, "put");
     LOG(spam, "put(%s, %zu, %s)", bucket.toString().c_str(), uint64_t(ts),
         doc->getId().toString().c_str());
@@ -481,7 +481,7 @@ spi::RemoveResult
 MemFilePersistenceProvider::remove(const spi::Bucket& bucket, spi::Timestamp ts,
                                    const DocumentId& id, spi::Context& context)
 {
-    assert(bucket.getBucketSpace() == spi::FixedBucketSpaces::default_space());
+    assert(bucket.getBucketSpace() == document::FixedBucketSpaces::default_space());
     TRACEGENERIC(context, "remove");
     LOG(spam, "remove(%s, %zu, %s)", bucket.toString().c_str(), uint64_t(ts),
         id.toString().c_str());
@@ -507,7 +507,7 @@ MemFilePersistenceProvider::removeIfFound(const spi::Bucket& bucket,
                                           const DocumentId& id,
                                           spi::Context& context)
 {
-    assert(bucket.getBucketSpace() == spi::FixedBucketSpaces::default_space());
+    assert(bucket.getBucketSpace() == document::FixedBucketSpaces::default_space());
     TRACEGENERIC(context, "removeIfFound");
     LOG(spam, "removeIfFound(%s, %zu, %s)", bucket.toString().c_str(),
         uint64_t(ts), id.toString().c_str());
@@ -532,7 +532,7 @@ MemFilePersistenceProvider::MemFilePersistenceProvider::update(
         const spi::Bucket& bucket, spi::Timestamp ts,
         const document::DocumentUpdate::SP& upd, spi::Context& context)
 {
-    assert(bucket.getBucketSpace() == spi::FixedBucketSpaces::default_space());
+    assert(bucket.getBucketSpace() == document::FixedBucketSpaces::default_space());
     TRACEGENERIC(context, "update");
     LOG(spam, "update(%s, %zu, %s)", bucket.toString().c_str(), uint64_t(ts),
         upd->getId().toString().c_str());
@@ -609,7 +609,7 @@ MemFilePersistenceProvider::get(const spi::Bucket& bucket,
                                 const DocumentId& id,
                                 spi::Context& context) const
 {
-    assert(bucket.getBucketSpace() == spi::FixedBucketSpaces::default_space());
+    assert(bucket.getBucketSpace() == document::FixedBucketSpaces::default_space());
     TRACEGENERIC(context, "get");
     LOG(spam, "get(%s, %s)", bucket.toString().c_str(), id.toString().c_str());
     try {
@@ -652,7 +652,7 @@ spi::Result
 MemFilePersistenceProvider::flush(const spi::Bucket& bucket,
                                   spi::Context& context)
 {
-    assert(bucket.getBucketSpace() == spi::FixedBucketSpaces::default_space());
+    assert(bucket.getBucketSpace() == document::FixedBucketSpaces::default_space());
     TRACEGENERIC(context, "flush");
     LOG(spam, "flush(%s)", bucket.toString().c_str());
     try {
@@ -679,7 +679,7 @@ MemFilePersistenceProvider::createIterator(const spi::Bucket& b,
                                            spi::IncludedVersions versions,
                                            spi::Context& context)
 {
-    assert(b.getBucketSpace() == spi::FixedBucketSpaces::default_space());
+    assert(b.getBucketSpace() == document::FixedBucketSpaces::default_space());
     TRACEGENERIC(context, "createIterator");
     LOG(spam, "createIterator(%s)", b.toString().c_str());
     try {
@@ -723,7 +723,7 @@ spi::Result
 MemFilePersistenceProvider::deleteBucket(const spi::Bucket& bucket,
                                          spi::Context& context)
 {
-    assert(bucket.getBucketSpace() == spi::FixedBucketSpaces::default_space());
+    assert(bucket.getBucketSpace() == document::FixedBucketSpaces::default_space());
     TRACEGENERIC(context, "deleteBucket");
     LOG(spam, "deleteBucket(%s)", bucket.toString().c_str());
     try {
@@ -749,9 +749,9 @@ MemFilePersistenceProvider::split(const spi::Bucket& source,
                                   const spi::Bucket& target2,
                                   spi::Context& context)
 {
-    assert(source.getBucketSpace() == spi::FixedBucketSpaces::default_space());
-    assert(target1.getBucketSpace() == spi::FixedBucketSpaces::default_space());
-    assert(target2.getBucketSpace() == spi::FixedBucketSpaces::default_space());
+    assert(source.getBucketSpace() == document::FixedBucketSpaces::default_space());
+    assert(target1.getBucketSpace() == document::FixedBucketSpaces::default_space());
+    assert(target2.getBucketSpace() == document::FixedBucketSpaces::default_space());
     TRACEGENERIC(context, "split");
     LOG(spam, "split(%s -> %s, %s)", source.toString().c_str(),
         target1.toString().c_str(), target2.toString().c_str());
@@ -769,9 +769,9 @@ MemFilePersistenceProvider::join(const spi::Bucket& source1,
                                  const spi::Bucket& target,
                                  spi::Context& context)
 {
-    assert(source1.getBucketSpace() == spi::FixedBucketSpaces::default_space());
-    assert(source2.getBucketSpace() == spi::FixedBucketSpaces::default_space());
-    assert(target.getBucketSpace() == spi::FixedBucketSpaces::default_space());
+    assert(source1.getBucketSpace() == document::FixedBucketSpaces::default_space());
+    assert(source2.getBucketSpace() == document::FixedBucketSpaces::default_space());
+    assert(target.getBucketSpace() == document::FixedBucketSpaces::default_space());
     TRACEGENERIC(context, "join");
     LOG(spam, "join(%s, %s -> %s)", source1.toString().c_str(),
         source2.toString().c_str(), target.toString().c_str());
@@ -788,7 +788,7 @@ MemFilePersistenceProvider::removeEntry(const spi::Bucket& bucket,
                                         spi::Timestamp ts,
                                         spi::Context& context)
 {
-    assert(bucket.getBucketSpace() == spi::FixedBucketSpaces::default_space());
+    assert(bucket.getBucketSpace() == document::FixedBucketSpaces::default_space());
     TRACEGENERIC(context, "removeEntry");
     LOG(spam, "removeEntry(%s, %zu)", bucket.toString().c_str(), uint64_t(ts));
     try {
@@ -813,7 +813,7 @@ spi::Result
 MemFilePersistenceProvider::maintain(const spi::Bucket& bucket,
                                      spi::MaintenanceLevel level)
 {
-    assert(bucket.getBucketSpace() == spi::FixedBucketSpaces::default_space());
+    assert(bucket.getBucketSpace() == document::FixedBucketSpaces::default_space());
     LOG(spam, "maintain(%s)", bucket.toString().c_str());
     try {
         MemFileAccessGuard file(*this, getMemFile(bucket, false), "maintain");

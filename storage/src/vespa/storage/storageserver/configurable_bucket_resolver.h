@@ -14,7 +14,7 @@ namespace storage {
  * mapping from document type to bucket space.
  *
  * If an unknown document type or bucket space is given as an argument,
- * an spi::UnknownBucketSpaceException is thrown.
+ * a document::UnknownBucketSpaceException is thrown.
  */
 class ConfigurableBucketResolver : public BucketResolver {
 public:

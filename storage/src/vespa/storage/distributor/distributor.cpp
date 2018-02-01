@@ -12,7 +12,7 @@
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
-#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor-main");
@@ -534,10 +534,10 @@ void
 Distributor::propagateDefaultDistribution(
         std::shared_ptr<const lib::Distribution> distribution)
 {
-    _bucketSpaceRepo->get(spi::FixedBucketSpaces::default_space()).setDistribution(distribution);
+    _bucketSpaceRepo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
     if (_component.enableMultipleBucketSpaces()) {
         auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
-        _bucketSpaceRepo->get(spi::FixedBucketSpaces::global_space()).setDistribution(std::move(global_distr));
+        _bucketSpaceRepo->get(document::FixedBucketSpaces::global_space()).setDistribution(std::move(global_distr));
     }
 }
 

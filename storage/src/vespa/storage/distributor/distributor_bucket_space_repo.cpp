@@ -3,7 +3,7 @@
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -17,9 +17,9 @@ namespace distributor {
 DistributorBucketSpaceRepo::DistributorBucketSpaceRepo(bool enableGlobalBucketSpace)
     : _map()
 {
-    add(spi::FixedBucketSpaces::default_space(), std::make_unique<DistributorBucketSpace>());
+    add(document::FixedBucketSpaces::default_space(), std::make_unique<DistributorBucketSpace>());
     if (enableGlobalBucketSpace) {
-        add(spi::FixedBucketSpaces::global_space(), std::make_unique<DistributorBucketSpace>());
+        add(document::FixedBucketSpaces::global_space(), std::make_unique<DistributorBucketSpace>());
     }
 }
 

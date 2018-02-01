@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <cppunit/extensions/HelperMacros.h>
 
-namespace storage::spi {
+namespace document {
 
 struct FixedBucketSpacesTest : CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(FixedBucketSpacesTest);
@@ -25,8 +25,6 @@ struct FixedBucketSpacesTest : CppUnit::TestFixture {
 
 CPPUNIT_TEST_SUITE_REGISTRATION(FixedBucketSpacesTest);
 
-using document::BucketSpace;
-
 void FixedBucketSpacesTest::bucket_space_from_name_is_defined_for_default_space() {
     CPPUNIT_ASSERT_EQUAL(FixedBucketSpaces::default_space(), FixedBucketSpaces::from_string("default"));
 }
@@ -39,7 +37,7 @@ void FixedBucketSpacesTest::bucket_space_from_name_throws_exception_for_unknown_
     try {
         FixedBucketSpaces::from_string("banana");
         CPPUNIT_FAIL("Expected exception on unknown bucket space name");
-    } catch (spi::UnknownBucketSpaceException& e) {
+    } catch (document::UnknownBucketSpaceException& e) {
     }
 }
 
@@ -57,7 +55,7 @@ void FixedBucketSpacesTest::name_from_bucket_space_throws_exception_for_unknown_
     try {
         FixedBucketSpaces::to_string(BucketSpace(4567));
         CPPUNIT_FAIL("Expected exception on unknown bucket space value");
-    } catch (spi::UnknownBucketSpaceException& e) {
+    } catch (document::UnknownBucketSpaceException& e) {
     }
 }
 

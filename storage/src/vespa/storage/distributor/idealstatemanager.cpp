@@ -9,7 +9,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storage/common/bucketmessages.h>
-#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
@@ -269,7 +269,7 @@ IdealStateManager::getBucketStatus(
 }
 
 void IdealStateManager::dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const {
-    out << "<h2>" << spi::FixedBucketSpaces::to_string(bucket_space) << " - " << bucket_space << "</h2>\n";
+    out << "<h2>" << document::FixedBucketSpaces::to_string(bucket_space) << " - " << bucket_space << "</h2>\n";
 
     StatusBucketVisitor proc(*this, bucket_space, out);
     auto &distributorBucketSpace(_bucketSpaceRepo.get(bucket_space));

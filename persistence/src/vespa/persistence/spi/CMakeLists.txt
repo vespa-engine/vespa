@@ -8,7 +8,6 @@ vespa_add_library(persistence_spi OBJECT
     context.cpp
     docentry.cpp
     exceptions.cpp
-    fixed_bucket_spaces.cpp
     metricpersistenceprovider.cpp
     partitionstate.cpp
     persistenceprovider.cpp

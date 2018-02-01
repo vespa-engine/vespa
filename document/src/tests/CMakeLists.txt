@@ -28,6 +28,7 @@ vespa_add_executable(document_testrunner_app TEST
     urltypetest.cpp
     fieldsettest.cpp
     gid_filter_test.cpp
+    fixed_bucket_spaces_test.cpp
     DEPENDS
     document
     AFTER
