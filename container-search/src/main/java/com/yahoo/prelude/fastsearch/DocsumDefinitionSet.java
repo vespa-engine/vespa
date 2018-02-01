@@ -26,7 +26,6 @@ public final class DocsumDefinitionSet {
     public static final int SLIME_MAGIC_ID = 0x55555555;
     private final static Logger log = Logger.getLogger(DocsumDefinitionSet.class.getName());
 
-    private final HashMap<Long, DocsumDefinition> definitions = new HashMap<>();
     private final HashMap<String, DocsumDefinition> definitionsByName = new HashMap<>();
     private final LegacyEmulationConfig emulationConfig;
 
@@ -38,14 +37,6 @@ public final class DocsumDefinitionSet {
     public DocsumDefinitionSet(DocumentdbInfoConfig.Documentdb config, LegacyEmulationConfig emulConfig) {
         this.emulationConfig = emulConfig;
         configure(config);
-    }
-
-    /** Returns a docsum definition by id
-     * @param id document summary class id
-     * @return a DocsumDefinition for the id, if found.
-     */
-    public final DocsumDefinition getDocsumDefinition(long id) {
-        return definitions.get(new Long(id));
     }
 
     /**
@@ -95,32 +86,27 @@ public final class DocsumDefinitionSet {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        Set<Map.Entry<Long, DocsumDefinition>> entrySet = definitions.entrySet();
         boolean first = true;
-        for (Iterator<Map.Entry<Long, DocsumDefinition>> itr = entrySet.iterator(); itr.hasNext(); ) {
-            if (!first) {
+        for (Map.Entry<String, DocsumDefinition> e : definitionsByName.entrySet() ) {
+            if (sb.length() != 0) {
                 sb.append(",");
-            } else {
-                first = false;
             }
-            Map.Entry<Long, DocsumDefinition> entry = itr.next();
-            sb.append("[").append(entry.getKey()).append(",").append(entry.getValue().getName()).append("]");
+            sb.append("[").append(e.getKey()).append(",").append(e.getValue().getName()).append("]");
         }
         return sb.toString();
     }
 
     public int size() {
-        return definitions.size();
+        return definitionsByName.size();
     }
 
     private void configure(DocumentdbInfoConfig.Documentdb config) {
         for (int i = 0; i < config.summaryclass().size(); ++i) {
             DocumentdbInfoConfig.Documentdb.Summaryclass sc = config.summaryclass(i);
             DocsumDefinition docSumDef = new DocsumDefinition(sc, emulationConfig);
-            definitions.put((long) sc.id(), docSumDef);
             definitionsByName.put(sc.name(), docSumDef);
         }
-        if (definitions.size() == 0) {
+        if (definitionsByName.size() == 0) {
             log.warning("No summary classes found in DocumentdbInfoConfig.Documentdb");
         }
     }

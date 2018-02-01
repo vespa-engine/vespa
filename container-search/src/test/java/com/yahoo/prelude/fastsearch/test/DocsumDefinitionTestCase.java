@@ -35,16 +35,16 @@ public class DocsumDefinitionTestCase extends junit.framework.TestCase {
         String summary_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/test/documentdb-info.cfg";
         DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
 
-        String[] defs = new String[] { "[0,default]", "[1,version1]",
-                "[237,withranklog]", "[2,version2]", "[3,version3]",
-                "[4,version4]", "[5,version5]" };
+        String[] defs = new String[] { "[default,default]", "[version1,version1]",
+                "[withranklog,withranklog]", "[version2,version2]", "[version3,version3]",
+                "[version4,version4]", "[version5,version5]" };
         String setAsString = set.toString();
         for (String d : defs) {
             assertFalse(setAsString.indexOf(d) == -1);
         }
         assertEquals(7, set.size());
 
-        DocsumDefinition docsum0 = set.getDocsumDefinition(0);
+        DocsumDefinition docsum0 = set.getDocsumDefinition("default");
 
         assertNotNull(docsum0);
         assertEquals("default", docsum0.getName());
