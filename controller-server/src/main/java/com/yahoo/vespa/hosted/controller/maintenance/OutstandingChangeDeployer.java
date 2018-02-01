@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.application.Change;
 
 import java.time.Duration;
 
@@ -22,9 +24,9 @@ public class OutstandingChangeDeployer extends Maintainer {
     protected void maintain() {
         ApplicationList applications = ApplicationList.from(controller().applications().asList()).notPullRequest();
         for (Application application : applications.asList()) {
-            if (!application.change().isPresent() && application.outstandingChange().isPresent())
+            if (application.hasOutstandingChange() &&  ! application.change().isPresent())
                 controller().applications().deploymentTrigger().triggerChange(application.id(),
-                                                                              application.outstandingChange());
+                                                                              Change.of(ApplicationVersion.unknown));
         }
     }
 

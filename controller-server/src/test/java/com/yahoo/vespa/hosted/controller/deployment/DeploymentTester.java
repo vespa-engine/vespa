@@ -253,6 +253,10 @@ public class DeploymentTester {
                                                                         deployCurrentVersion));
     }
 
+    public void deployAndNotify(Application application, boolean success, JobType... job) {
+        deployAndNotify(application, Optional.empty(), success, true, job);
+    }
+
     public void deployAndNotify(Application application, String upgradePolicy, boolean success, JobType... jobs) {
         deployAndNotify(application, applicationPackage(upgradePolicy), success, true, jobs);
     }
@@ -272,10 +276,6 @@ public class DeploymentTester {
         consumeJobs(application, expectOnlyTheseJobs, jobs);
         for (JobType job : jobs) {
             if (success) {
-                // Staging deploys twice, once with current version and once with new version
-                if (job == JobType.stagingTest) {
-                    deploy(job, application, applicationPackage, true);
-                }
                 deploy(job, application, applicationPackage, false);
             }
             notifyJobCompletion(job, application, success);
