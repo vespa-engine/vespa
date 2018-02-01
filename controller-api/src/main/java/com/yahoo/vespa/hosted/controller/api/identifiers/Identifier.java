@@ -13,10 +13,10 @@ import java.util.regex.Pattern;
 public abstract class Identifier {
 
     protected static final String strictPatternExplanation =
-            "New tenant or application names must start with a letter, may contain no more than 30 " +
+            "New tenant or application names must start with a letter, may contain no more than 20 " +
             "characters, and may only contain lowercase letters, digits or dashes, but no double-dashes.";
     // TODO: Use this also for instances, if they ever get proper support.
-    protected static final Pattern strictPattern = Pattern.compile("^(?=.{1,30}$)[a-z](-?[a-z0-9]+)*$");
+    protected static final Pattern strictPattern = Pattern.compile("^(?=.{1,20}$)[a-z](-?[a-z0-9]+)*$");
     private static final Pattern serializedIdentifierPattern = Pattern.compile("[a-zA-Z0-9_-]+");
     private static final Pattern serializedPattern = Pattern.compile("[a-zA-Z0-9_.-]+");
 
