@@ -132,14 +132,6 @@ Distributor::getPendingMessageTracker() const
     return _pendingMessageTracker;
 }
 
-DistributorBucketSpace& Distributor::getDefaultBucketSpace() noexcept {
-    return _bucketSpaceRepo->getDefaultSpace();
-}
-
-const DistributorBucketSpace& Distributor::getDefaultBucketSpace() const noexcept {
-    return _bucketSpaceRepo->getDefaultSpace();
-}
-
 BucketOwnership
 Distributor::checkOwnershipInPendingState(const document::Bucket &b) const
 {

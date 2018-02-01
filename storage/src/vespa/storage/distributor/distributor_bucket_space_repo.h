@@ -29,8 +29,6 @@ public:
     DistributorBucketSpaceRepo(DistributorBucketSpaceRepo&&) = delete;
     DistributorBucketSpaceRepo& operator=(DistributorBucketSpaceRepo&&) = delete;
 
-    DistributorBucketSpace& getDefaultSpace() noexcept;
-    const DistributorBucketSpace& getDefaultSpace() const noexcept;
     DistributorBucketSpace &get(document::BucketSpace bucketSpace);
     const DistributorBucketSpace &get(document::BucketSpace bucketSpace) const;
 

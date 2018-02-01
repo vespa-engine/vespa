@@ -156,8 +156,6 @@ public:
         return *_bucketIdHasher;
     }
 
-    DistributorBucketSpace& getDefaultBucketSpace() noexcept;
-    const DistributorBucketSpace& getDefaultBucketSpace() const noexcept;
     DistributorBucketSpaceRepo &getBucketSpaceRepo() noexcept { return *_bucketSpaceRepo; }
     const DistributorBucketSpaceRepo &getBucketSpaceRepo() const noexcept { return *_bucketSpaceRepo; }
 
