@@ -18,8 +18,10 @@ struct EvalCtx {
     ErrorValue error;
     std::vector<Value::UP> tensors;
     std::vector<Value::CREF> params;
+    InterpretedFunction::UP ifun;
+    std::unique_ptr<InterpretedFunction::Context> ictx;
     EvalCtx(const TensorEngine &engine_in)
-        : engine(engine_in), stash(), error(), tensors() {}
+        : engine(engine_in), stash(), error(), tensors(), params(), ifun(), ictx() {}
     ~EvalCtx() {}
     size_t add_tensor(Value::UP tensor) {
         size_t id = params.size();
@@ -32,7 +34,9 @@ struct EvalCtx {
         tensors[idx] = std::move(tensor);
     }
     const Value &eval(const TensorFunction &fun) {
-        return fun.eval(engine, SimpleObjectParams(params), stash);
+        ifun = std::make_unique<InterpretedFunction>(engine, fun);
+        ictx = std::make_unique<InterpretedFunction::Context>(*ifun);
+        return ifun->eval(*ictx, SimpleObjectParams(params));
     }
     const TensorFunction &compile(const tensor_function::Node &expr) {
         return engine.optimize(expr, stash);

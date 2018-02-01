@@ -56,7 +56,6 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
             verify_result(SimpleTensorEngine::ref(), function, false,    "[untyped simple] "+desc, params, expected_result);
             verify_result(DefaultTensorEngine::ref(), function, false,   "[untyped prod]   "+desc, params, expected_result);
             verify_result(DefaultTensorEngine::ref(), function, true,    "[typed prod]     "+desc, params, expected_result);
-            verify_tensor_function(DefaultTensorEngine::ref(), function, "[tensor function]"+desc, params, expected_result);
         }
     }
 
@@ -87,19 +86,6 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
         ASSERT_EQUAL(ifun.num_params(), params.params.size());
         InterpretedFunction::Context ictx(ifun);
         const Value &result_value = ifun.eval(ictx, params);
-        report_result(result_value.is_double(), result_value.as_double(), expected_result, description);
-    }
-
-    void verify_tensor_function(const TensorEngine &engine,
-                                const Function &function,
-                                const vespalib::string &description,
-                                const SimpleParams &params,
-                                double expected_result)
-    {
-        Stash stash;
-        NodeTypes node_types = NodeTypes(function, std::vector<ValueType>(params.params.size(), ValueType::double_type()));
-        const auto &tfun = make_tensor_function(engine, function.root(), node_types, stash);
-        const Value &result_value = tfun.eval(engine, params, stash);
         report_result(result_value.is_double(), result_value.as_double(), expected_result, description);
     }
 };

@@ -12,6 +12,8 @@ namespace eval {
 
 namespace nodes { class Node; }
 class TensorEngine;
+class TensorFunction;
+class TensorSpec;
 
 /**
  * A Function that has been prepared for execution. This will
@@ -87,6 +89,8 @@ private:
 
 public:
     typedef std::unique_ptr<InterpretedFunction> UP;
+    // for testing; use with care; the tensor function must be kept alive
+    InterpretedFunction(const TensorEngine &engine, const TensorFunction &function);
     InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, size_t num_params_in, const NodeTypes &types);
     InterpretedFunction(const TensorEngine &engine, const Function &function, const NodeTypes &types)
         : InterpretedFunction(engine, function.root(), function.num_params(), types) {}

@@ -49,7 +49,6 @@ public:
     bool matrixHasCommonDimensionInnermost() const { return _self._commonDimensionInnermost; }
 
     eval::InterpretedFunction::Instruction compile_self(Stash &stash) const override;
-    const eval::Value &eval(const eval::TensorEngine &engine, const eval::LazyParams &params, Stash &stash) const override;
 };
 
 }

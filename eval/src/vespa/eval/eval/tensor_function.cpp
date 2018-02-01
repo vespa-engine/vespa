@@ -109,12 +109,6 @@ Op2::push_children(std::vector<Child::CREF> &children) const
 
 //-----------------------------------------------------------------------------
 
-const Value &
-ConstValue::eval(const TensorEngine &, const LazyParams &, Stash &) const
-{
-    return _value;
-}
-
 Instruction
 ConstValue::compile_self(Stash &) const
 {
@@ -122,12 +116,6 @@ ConstValue::compile_self(Stash &) const
 }
 
 //-----------------------------------------------------------------------------
-
-const Value &
-Inject::eval(const TensorEngine &, const LazyParams &params, Stash &stash) const
-{
-    return params.resolve(_param_idx, stash);
-}
 
 Instruction
 Inject::compile_self(Stash &) const
@@ -137,13 +125,6 @@ Inject::compile_self(Stash &) const
 
 //-----------------------------------------------------------------------------
 
-const Value &
-Reduce::eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const
-{
-    const Value &a = child().eval(engine, params, stash);
-    return engine.reduce(a, _aggr, _dimensions, stash);
-}
-
 Instruction
 Reduce::compile_self(Stash &stash) const
 {
@@ -152,13 +133,6 @@ Reduce::compile_self(Stash &stash) const
 }
 
 //-----------------------------------------------------------------------------
-
-const Value &
-Map::eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const
-{
-    const Value &a = child().eval(engine, params, stash);
-    return engine.map(a, _function, stash);
-}
 
 Instruction
 Map::compile_self(Stash &) const
@@ -170,14 +144,6 @@ Map::compile_self(Stash &) const
 }
 
 //-----------------------------------------------------------------------------
-
-const Value &
-Join::eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const
-{
-    const Value &a = lhs().eval(engine, params, stash);
-    const Value &b = rhs().eval(engine, params, stash);
-    return engine.join(a, b, _function, stash);
-}
 
 Instruction
 Join::compile_self(Stash &) const
@@ -196,14 +162,6 @@ Join::compile_self(Stash &) const
 
 //-----------------------------------------------------------------------------
 
-const Value &
-Concat::eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const
-{
-    const Value &a = lhs().eval(engine, params, stash);
-    const Value &b = rhs().eval(engine, params, stash);
-    return engine.concat(a, b, _dimension, stash);
-}
-
 Instruction
 Concat::compile_self(Stash &) const
 {
@@ -211,13 +169,6 @@ Concat::compile_self(Stash &) const
 }
 
 //-----------------------------------------------------------------------------
-
-const Value &
-Rename::eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const
-{
-    const Value &a = child().eval(engine, params, stash);
-    return engine.rename(a, _from, _to, stash);
-}
 
 Instruction
 Rename::compile_self(Stash &stash) const
@@ -234,14 +185,6 @@ If::push_children(std::vector<Child::CREF> &children) const
     children.emplace_back(_cond);
     children.emplace_back(_true_child);
     children.emplace_back(_false_child);
-}
-
-const Value &
-If::eval(const TensorEngine &engine, const LazyParams &params, Stash &stash) const
-{
-    return (cond().eval(engine, params, stash).as_bool()
-            ? true_child().eval(engine, params, stash)
-            : false_child().eval(engine, params, stash));
 }
 
 Instruction

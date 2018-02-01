@@ -56,7 +56,9 @@ void verify_result(const TensorSpec &v, const TensorSpec &m, bool happy) {
                                 prod_vec->type().dimensions()[0].size,
                                 expect.type().dimensions()[0].size,
                                 happy);
-    const Value &actual1 = fun1.eval(prod_engine, wrap({*prod_vec, *prod_mat}), stash);
+    InterpretedFunction ifun1(prod_engine, fun1);
+    InterpretedFunction::Context ictx1(ifun1);
+    const Value &actual1 = ifun1.eval(ictx1, wrap({*prod_vec, *prod_mat}));
     TEST_DO(verify_equal(expect, actual1));
 
     Inject vec_last(prod_vec->type(), 1);
@@ -66,7 +68,9 @@ void verify_result(const TensorSpec &v, const TensorSpec &m, bool happy) {
                                 prod_vec->type().dimensions()[0].size,
                                 expect.type().dimensions()[0].size,
                                 happy);
-    const Value &actual2 = fun2.eval(prod_engine, wrap({*prod_mat, *prod_vec}), stash);
+    InterpretedFunction ifun2(prod_engine, fun2);
+    InterpretedFunction::Context ictx2(ifun2);
+    const Value &actual2 = ifun2.eval(ictx2, wrap({*prod_mat, *prod_vec}));
     TEST_DO(verify_equal(expect, actual2));
 }
 

@@ -98,20 +98,5 @@ DenseXWProductFunction::compile_self(Stash &) const
     return eval::InterpretedFunction::Instruction(my_op, (uint64_t)(&_self));
 }
 
-const eval::Value &
-DenseXWProductFunction::eval(const eval::TensorEngine &engine, const eval::LazyParams &params, Stash &stash) const
-{
-    DenseTensorView::CellsRef vectorCells = getCellsRef(lhs().eval(engine, params, stash));
-    DenseTensorView::CellsRef matrixCells = getCellsRef(rhs().eval(engine, params, stash));
-
-    ArrayRef<double> outputCells = stash.create_array<double>(_self._resultSize);
-    if (_self._commonDimensionInnermost) {
-        multiDotProduct(_self, vectorCells, matrixCells, outputCells);
-    } else {
-        transposedProduct(_self, vectorCells, matrixCells, outputCells);
-    }
-    return stash.create<DenseTensorView>(result_type(), outputCells);
-}
-
 }
 
