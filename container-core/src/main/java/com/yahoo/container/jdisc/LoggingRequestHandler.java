@@ -7,11 +7,9 @@ import com.yahoo.container.http.AccessLogUtil;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
-import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.server.jetty.AccessLoggingRequestHandler;
 import com.yahoo.log.LogLevel;
 import com.yahoo.yolean.Exceptions;
@@ -23,8 +21,6 @@ import java.net.SocketAddress;
 import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A request handler base class extending the features of
@@ -35,8 +31,6 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
 
     private AccessLog accessLog;
-    private final AtomicReference<LoggingHandler> loggingHandler = new AtomicReference<>();
-    private final AtomicBoolean hasLogged = new AtomicBoolean(false);
 
     public LoggingRequestHandler(Executor executor, AccessLog accessLog) {
         this(executor, accessLog, null);
@@ -96,9 +90,7 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
                                                                       HttpResponse response,
                                                                       HttpRequest httpRequest,
                                                                       ContentChannelOutputStream rendererWiring) {
-        LoggingHandler loggingHandler = new LoggingHandler(startTime, renderStartTime, httpRequest, response, rendererWiring);
-        this.loggingHandler.set(loggingHandler);
-        return loggingHandler;
+        return new LoggingHandler(startTime, renderStartTime, httpRequest, response, rendererWiring);
     }
 
     private static String getClientIP(com.yahoo.jdisc.http.HttpRequest httpRequest) {
@@ -241,9 +233,6 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
         }
 
         private void writeToLogs(long endTime) {
-            if (hasLogged.getAndSet(true)) {
-                return;
-            }
             com.yahoo.jdisc.http.HttpRequest jdiscRequest = httpRequest.getJDiscRequest();
 
             logTimes(startTime,
@@ -323,12 +312,4 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
         logEntry.setURI(uri);
     }
 
-    @Override
-    public void handleTimeout(Request request, ResponseHandler responseHandler) {
-        LoggingHandler loggingHandler = this.loggingHandler.get();
-        if (loggingHandler != null) {
-            loggingHandler.writeToLogs(System.currentTimeMillis());
-        }
-        super.handleTimeout(request, responseHandler);
-    }
 }
