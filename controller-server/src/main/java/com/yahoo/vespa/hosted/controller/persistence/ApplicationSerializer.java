@@ -10,6 +10,7 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
@@ -126,8 +127,8 @@ public class ApplicationSerializer {
         root.setString(validationOverridesField, application.validationOverrides().xmlForm());
         deploymentsToSlime(application.deployments().values(), root.setArray(deploymentsField));
         toSlime(application.deploymentJobs(), root.setObject(deploymentJobsField));
-        toSlime(application.change(), root);
-        root.setBool(outstandingChangeField, application.hasOutstandingChange());
+        toSlime(application.change(), root, deployingField);
+        toSlime(application.outstandingChange(), root, outstandingChangeField);
         application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
@@ -243,20 +244,19 @@ public class ApplicationSerializer {
         Cursor object = parent.setObject(jobRunObjectName);
         object.setLong(jobRunIdField, jobRun.get().id());
         object.setString(versionField, jobRun.get().version().toString());
-        if ( ! jobRun.get().applicationVersion().isUnknown())
-            toSlime(jobRun.get().applicationVersion(), object.setObject(revisionField));
+        toSlime(jobRun.get().applicationVersion(), object.setObject(revisionField));
         object.setBool(upgradeField, jobRun.get().upgrade());
         object.setString(reasonField, jobRun.get().reason());
         object.setLong(atField, jobRun.get().at().toEpochMilli());
     }
 
-    private void toSlime(Change deploying, Cursor parentObject) {
+    private void toSlime(Change deploying, Cursor parentObject, String fieldName) {
         if ( ! deploying.isPresent()) return;
 
-        Cursor object = parentObject.setObject(deployingField);
+        Cursor object = parentObject.setObject(fieldName);
         if (deploying.platform().isPresent())
             object.setString(versionField, deploying.platform().get().toString());
-        if (deploying.application().isPresent() && !deploying.application().get().isUnknown())
+        if (deploying.application().isPresent())
             toSlime(deploying.application().get(), object);
     }
 
@@ -271,7 +271,7 @@ public class ApplicationSerializer {
         List<Deployment> deployments = deploymentsFromSlime(root.field(deploymentsField));
         DeploymentJobs deploymentJobs = deploymentJobsFromSlime(root.field(deploymentJobsField));
         Change deploying = changeFromSlime(root.field(deployingField));
-        boolean outstandingChange = root.field(outstandingChangeField).asBool();
+        Change outstandingChange = outstandingChangeFromSlime(root.field(outstandingChangeField));
         Optional<IssueId> ownershipIssueId = optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
@@ -389,6 +389,15 @@ public class ApplicationSerializer {
         if ( ! change.isPresent()) // A deploy object with no fields -> unknown application change
             change = Change.of(ApplicationVersion.unknown);
         return change;
+    }
+
+    // TODO: Remove and inline after 2018-03-01
+    private Change outstandingChangeFromSlime(Inspector object) {
+        if (object.type() == Type.BOOL) {
+            boolean outstandingChange = object.asBool();
+            return outstandingChange ? Change.of(ApplicationVersion.unknown) : Change.empty();
+        }
+        return changeFromSlime(object);
     }
 
     private List<JobStatus> jobStatusListFromSlime(Inspector array) {
