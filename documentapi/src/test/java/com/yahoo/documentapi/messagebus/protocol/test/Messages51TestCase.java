@@ -53,7 +53,7 @@ public class Messages51TestCase extends Messages50TestCase {
     //
     ////////////////////////////////////////////////////////////////////////////////
 
-    private static int BASE_MESSAGE_LENGTH = 5;
+    protected static int BASE_MESSAGE_LENGTH = 5;
 
     public class testCreateVisitorMessage implements RunnableTest {
 
