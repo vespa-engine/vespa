@@ -761,7 +761,7 @@ public class RankProfile implements Serializable, Cloneable {
                 for (FieldDescription field : queryProfileType.declaredFields().values()) {
                     TensorType type = TensorType.empty; // assume the empty (aka double) type by default
                     if (field.getType() instanceof TensorFieldType)
-                        type = ((TensorFieldType)field.getType()).type().get();
+                        type = ((TensorFieldType)field.getType()).type();
 
                     String feature = FeatureNames.asQueryFeature(prefix.append(field.getName()).toString());
                     context.setType(feature, type);
