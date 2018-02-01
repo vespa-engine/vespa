@@ -122,10 +122,11 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         long sessionId = session.getSessionId();
         validateSessionStatus(session);
         ActivateLock activateLock = tenant.getActivateLock();
+        boolean activateLockAcquired = false;
         try {
             log.log(LogLevel.DEBUG, "Trying to acquire lock " + activateLock + " for session " + sessionId);
-            boolean acquired = activateLock.acquire(timeoutBudget, ignoreLockFailure);
-            if ( ! acquired) {
+            activateLockAcquired = activateLock.acquire(timeoutBudget, ignoreLockFailure);
+            if ( ! activateLockAcquired) {
                 throw new ActivationConflictException("Did not get activate lock for session " + sessionId + " within " + timeout);
             }
 
@@ -143,9 +144,11 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         } catch (Exception e) {
             throw new InternalServerException("Error activating application", e);
         } finally {
-            log.log(LogLevel.DEBUG, "Trying to release lock " + activateLock + " for session " + sessionId);
-            activateLock.release();
-            log.log(LogLevel.DEBUG, "Lock released " + activateLock + " for session " + sessionId);
+            if (activateLockAcquired) {
+                log.log(LogLevel.DEBUG, "Trying to release lock " + activateLock + " for session " + sessionId);
+                activateLock.release();
+                log.log(LogLevel.DEBUG, "Lock released " + activateLock + " for session " + sessionId);
+            }
         }
         log.log(LogLevel.INFO, session.logPre() + "Session " + sessionId + 
                                " activated successfully using " +
