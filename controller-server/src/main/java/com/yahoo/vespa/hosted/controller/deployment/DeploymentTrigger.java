@@ -78,8 +78,8 @@ public class DeploymentTrigger {
      */
     public void triggerFromCompletion(JobReport report) {
         applications().lockOrThrow(report.applicationId(), application -> {
-            application = application.withJobCompletion(report, applicationVersionFrom(report), clock.instant(),
-                                                        controller);
+            ApplicationVersion applicationVersion = applicationVersionFrom(report);
+            application = application.withJobCompletion(report, applicationVersion, clock.instant(), controller);
             application = application.withProjectId(report.projectId());
 
             // Handle successful starting and ending
@@ -88,15 +88,11 @@ public class DeploymentTrigger {
                     if (acceptNewApplicationVersionNow(application)) {
                         // Set this as the change we are doing, unless we are already pushing a platform change
                         if ( ! ( application.change().platform().isPresent())) {
-                            ApplicationVersion applicationVersion = ApplicationVersion.unknown;
-                            if (report.sourceRevision().isPresent())
-                                applicationVersion = ApplicationVersion.from(report.sourceRevision().get(),
-                                                                             report.buildNumber());
                             application = application.withChange(Change.of(applicationVersion));
                         }
                     }
                     else { // postpone
-                        applications().store(application.withOutstandingChange(true));
+                        applications().store(application.withOutstandingChange(Change.of(applicationVersion)));
                         return;
                     }
                 }
@@ -264,7 +260,7 @@ public class DeploymentTrigger {
                                                    application.change() + " is already in progress");
             application = application.withChange(change);
             if (change.application().isPresent())
-                application = application.withOutstandingChange(false);
+                application = application.withOutstandingChange(Change.empty());
             application = trigger(JobType.systemTest, application, false, change.toString());
             applications().store(application);
         });

@@ -83,7 +83,7 @@ public class ApplicationSerializerTest {
                                                validationOverrides,
                                                deployments, deploymentJobs,
                                                Change.of(Version.fromString("6.7")),
-                                               true,
+                                               Change.of(ApplicationVersion.from(new SourceRevision("repo", "master", "deadcafe"), 42)),
                                                Optional.of(IssueId.from("1234")),
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
                                                Optional.of(new RotationId("my-rotation")));
@@ -110,7 +110,7 @@ public class ApplicationSerializerTest {
         assertEquals(  original.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.stagingTest),
                      serialized.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.stagingTest));
 
-        assertEquals(original.hasOutstandingChange(), serialized.hasOutstandingChange());
+        assertEquals(original.outstandingChange(), serialized.outstandingChange());
 
         assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
 
@@ -160,6 +160,14 @@ public class ApplicationSerializerTest {
             Application original4 = writable(original).withChange(Change.empty());
             Application serialized4 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original4));
             assertEquals(original4.change(), serialized4.change());
+
+            Application original5 = writable(original).withChange(Change.of(ApplicationVersion.unknown));
+            Application serialized5 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original5));
+            assertEquals(original5.change(), serialized5.change());
+
+            Application original6 = writable(original).withOutstandingChange(Change.of(ApplicationVersion.unknown));
+            Application serialized6 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original6));
+            assertEquals(original6.outstandingChange(), serialized6.outstandingChange());
         }
     }
 
