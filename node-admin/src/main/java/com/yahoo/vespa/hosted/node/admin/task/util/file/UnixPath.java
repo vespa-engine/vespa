@@ -80,7 +80,9 @@ public class UnixPath {
 
     public void setOwner(String owner) {
         UserPrincipalLookupService service = path.getFileSystem().getUserPrincipalLookupService();
-        UserPrincipal principal = uncheck(() -> service.lookupPrincipalByName(owner));
+        UserPrincipal principal = uncheck(
+                () -> service.lookupPrincipalByName(owner),
+                "While looking up user %s", owner);
         uncheck(() -> Files.setOwner(path, principal));
     }
 
@@ -90,7 +92,9 @@ public class UnixPath {
 
     public void setGroup(String group) {
         UserPrincipalLookupService service = path.getFileSystem().getUserPrincipalLookupService();
-        GroupPrincipal principal = uncheck(() -> service.lookupPrincipalByGroupName(group));
+        GroupPrincipal principal = uncheck(
+                () -> service.lookupPrincipalByGroupName(group),
+                "while looking up group %s", group);
         uncheck(() -> Files.getFileAttributeView(path, PosixFileAttributeView.class).setGroup(principal));
     }
 
