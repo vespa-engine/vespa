@@ -173,9 +173,9 @@ public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber
 
     /** Fill a given profile by locating its config */
     private static void fillProfile(QueryProfile inherited,
-                             QueryProfilesConfig queryProfilesConfig,
-                             QueryProfileRegistry registry,
-                             Set<ComponentId> visited) {
+                                    QueryProfilesConfig queryProfilesConfig,
+                                    QueryProfileRegistry registry,
+                                    Set<ComponentId> visited) {
         for (QueryProfilesConfig.Queryprofile inheritedConfig : queryProfilesConfig.queryprofile()) {
             if (inherited.getId().stringValue().equals(inheritedConfig.id())) {
                 fillProfile(inheritedConfig, queryProfilesConfig, registry, visited);
@@ -183,13 +183,13 @@ public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber
         }
     }
 
-    private static void fillProfileType(QueryProfilesConfig.Queryprofiletype config,QueryProfileTypeRegistry registry) {
-        QueryProfileType type=registry.getComponent(new ComponentSpecification(config.id()).toId());
+    private static void fillProfileType(QueryProfilesConfig.Queryprofiletype config, QueryProfileTypeRegistry registry) {
+        QueryProfileType type = registry.getComponent(new ComponentSpecification(config.id()).toId());
         try {
 
             for (String inheritedId : config.inherit()) {
-                QueryProfileType inherited=registry.getComponent(inheritedId);
-                if (inherited==null)
+                QueryProfileType inherited = registry.getComponent(inheritedId);
+                if (inherited == null)
                     throw new IllegalArgumentException("Inherited query profile type '" + inheritedId + "' in " + type + " was not found");
                 else
                     type.inherited().add(inherited);
@@ -205,16 +205,15 @@ public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber
     }
 
     private static void instantiateFieldDescription(QueryProfilesConfig.Queryprofiletype.Field fieldConfig,
-                                             QueryProfileType type,
-                                             QueryProfileTypeRegistry registry) {
+                                                    QueryProfileType type,
+                                                    QueryProfileTypeRegistry registry) {
         try {
-            FieldType fieldType=FieldType.fromString(fieldConfig.type(),registry);
-            FieldDescription field=new FieldDescription(
-                    fieldConfig.name(),
-                    fieldType,
-                    fieldConfig.alias(),
-                    fieldConfig.mandatory(),
-                    fieldConfig.overridable()
+            FieldType fieldType = FieldType.fromString(fieldConfig.type(), registry);
+            FieldDescription field = new FieldDescription(fieldConfig.name(),
+                                                          fieldType,
+                                                          fieldConfig.alias(),
+                                                          fieldConfig.mandatory(),
+                                                          fieldConfig.overridable()
             );
             type.addField(field, registry);
         }

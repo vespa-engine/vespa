@@ -27,7 +27,7 @@ public class TensorFieldType extends FieldType {
     public Class getValueClass() { return Tensor.class; }
 
     @Override
-    public String stringValue() { return "tensor"; }
+    public String stringValue() { return type.toString(); }
 
     @Override
     public String toString() { return "field type " + stringValue(); }
