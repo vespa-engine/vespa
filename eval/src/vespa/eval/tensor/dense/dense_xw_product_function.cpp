@@ -50,19 +50,19 @@ void transposedProduct(const DenseXWProductFunction::Self &self,
     assert(out == result.end());
 }
 
+template <bool commonDimensionInnermost>
 void my_op(eval::InterpretedFunction::State &state, uint64_t param) {
     DenseXWProductFunction::Self *self = (DenseXWProductFunction::Self *)(param);
 
     DenseTensorView::CellsRef vectorCells = getCellsRef(state.peek(1));
     DenseTensorView::CellsRef matrixCells = getCellsRef(state.peek(0));
 
-    ArrayRef<double> outputCells = state.stash.create_array<double>(self->_resultSize);
-    if (self->_commonDimensionInnermost) {
-        multiDotProduct(*self, vectorCells, matrixCells, outputCells);
+    if (commonDimensionInnermost) {
+        multiDotProduct(*self, vectorCells, matrixCells, self->_outputCells);
     } else {
-        transposedProduct(*self, vectorCells, matrixCells, outputCells);
+        transposedProduct(*self, vectorCells, matrixCells, self->_outputCells);
     }
-    state.pop_pop_push(state.stash.create<DenseTensorView>(self->_resultType, outputCells));
+    state.pop_pop_push(self->_outputView);
 }
 
 } // namespace vespalib::tensor::<unnamed>
@@ -70,11 +70,11 @@ void my_op(eval::InterpretedFunction::State &state, uint64_t param) {
 DenseXWProductFunction::Self::Self(const eval::ValueType &resultType,
                                    size_t vectorSize,
                                    size_t resultSize,
-                                   bool matrixHasCommonDimensionInnermost)
-    : _resultType(resultType),
+                                   Stash &stash)
+    : _outputCells(stash.create_array<double>(resultSize)),
+      _outputView(resultType, _outputCells),
       _vectorSize(vectorSize),
       _resultSize(resultSize),
-      _commonDimensionInnermost(matrixHasCommonDimensionInnermost),
       _hwAccelerator(hwaccelrated::IAccelrated::getAccelrator())
 {}
 
@@ -85,18 +85,17 @@ DenseXWProductFunction::DenseXWProductFunction(const eval::ValueType &resultType
                                                size_t resultSize,
                                                bool matrixHasCommonDimensionInnermost)
     : eval::tensor_function::Op2(resultType, vector_in, matrix_in),
-      _self(resultType, vectorSize, resultSize, matrixHasCommonDimensionInnermost)
+      _vectorSize(vectorSize),
+      _resultSize(resultSize),
+      _commonDimensionInnermost(matrixHasCommonDimensionInnermost)
 {}
 
-namespace {
-
-} // namespace <unnamed>
-
 eval::InterpretedFunction::Instruction
-DenseXWProductFunction::compile_self(Stash &) const
+DenseXWProductFunction::compile_self(Stash &stash) const
 {
-    return eval::InterpretedFunction::Instruction(my_op, (uint64_t)(&_self));
+    Self &self = stash.create<Self>(result_type(), _vectorSize, _resultSize, stash);
+    auto op = _commonDimensionInnermost ? my_op<true> : my_op<false>;
+    return eval::InterpretedFunction::Instruction(op, (uint64_t)(&self));
 }
 
-}
-
+} // namespace vespalib::tensor

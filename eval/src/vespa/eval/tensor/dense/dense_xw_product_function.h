@@ -18,20 +18,22 @@ class DenseXWProductFunction : public eval::tensor_function::Op2
 {
 public:
     struct Self {
-        const eval::ValueType _resultType;
+        ArrayRef<double> _outputCells;
+        DenseTensorView _outputView;
         const size_t _vectorSize;
         const size_t _resultSize;
-        bool _commonDimensionInnermost;
         hwaccelrated::IAccelrated::UP _hwAccelerator;
         Self(const eval::ValueType &resultType,
              size_t vectorSize,
              size_t resultSize,
-             bool matrixHasCommonDimensionInnermost);
+             Stash &stash);
         ~Self() {}
     };
 
 private:
-    Self _self;
+    const size_t _vectorSize;
+    const size_t _resultSize;
+    bool _commonDimensionInnermost;
 
 public:
     DenseXWProductFunction(const eval::ValueType &resultType,
@@ -43,10 +45,10 @@ public:
 
     ~DenseXWProductFunction() {}
 
-    size_t vectorSize() const { return _self._vectorSize; }
-    size_t resultSize() const { return _self._resultSize; }
+    size_t vectorSize() const { return _vectorSize; }
+    size_t resultSize() const { return _resultSize; }
 
-    bool matrixHasCommonDimensionInnermost() const { return _self._commonDimensionInnermost; }
+    bool matrixHasCommonDimensionInnermost() const { return _commonDimensionInnermost; }
 
     eval::InterpretedFunction::Instruction compile_self(Stash &stash) const override;
 };
