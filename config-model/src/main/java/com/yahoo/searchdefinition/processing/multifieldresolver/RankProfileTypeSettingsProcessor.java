@@ -88,9 +88,9 @@ public class RankProfileTypeSettingsProcessor extends Processor {
         if (fieldType instanceof TensorFieldType) {
             TensorFieldType tensorFieldType = (TensorFieldType)fieldType;
             Matcher matcher = queryFeaturePattern.matcher(fieldName);
-            if (tensorFieldType.type().isPresent() && matcher.matches()) {
+            if (matcher.matches()) {
                 String queryFeature = matcher.group(1);
-                addQueryFeatureTypeToRankProfiles(queryFeature, tensorFieldType.type().get().toString());
+                addQueryFeatureTypeToRankProfiles(queryFeature, tensorFieldType.type().toString());
             }
         }
     }
