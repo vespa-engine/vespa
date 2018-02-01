@@ -273,8 +273,9 @@ struct PlaceHolderBucketResolver : public BucketResolver {
     virtual document::BucketSpace bucketSpaceFromName(const vespalib::string &) const override {
         return document::BucketSpace::placeHolder();
     }
-    virtual vespalib::string nameFromBucketSpace(const document::BucketSpace &) const override {
-        return "";
+    virtual vespalib::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
+        assert(bucketSpace == spi::FixedBucketSpaces::default_space());
+        return spi::FixedBucketSpaces::to_string(bucketSpace);
     }
 };
 
