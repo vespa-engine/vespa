@@ -53,27 +53,27 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
         registry.getTypeRegistry().register(userStrict);
 
         addTypeFields(type, registry.getTypeRegistry());
-        type.addField(new FieldDescription("myUserQueryProfile",FieldType.fromString("query-profile:user",registry.getTypeRegistry())));
+        type.addField(new FieldDescription("myUserQueryProfile", FieldType.fromString("query-profile:user", registry.getTypeRegistry())));
         addTypeFields(typeStrict, registry.getTypeRegistry());
-        typeStrict.addField(new FieldDescription("myUserQueryProfile",FieldType.fromString("query-profile:userStrict",registry.getTypeRegistry())));
+        typeStrict.addField(new FieldDescription("myUserQueryProfile", FieldType.fromString("query-profile:userStrict", registry.getTypeRegistry())));
         addUserFields(user, registry.getTypeRegistry());
         addUserFields(userStrict, registry.getTypeRegistry());
 
     }
 
     private void addTypeFields(QueryProfileType type, QueryProfileTypeRegistry registry) {
-        type.addField(new FieldDescription("myString", FieldType.fromString("string",registry)), registry);
-        type.addField(new FieldDescription("myInteger",FieldType.fromString("integer",registry),"int"), registry);
-        type.addField(new FieldDescription("myLong",FieldType.fromString("long",registry)), registry);
-        type.addField(new FieldDescription("myFloat",FieldType.fromString("float",registry)), registry);
-        type.addField(new FieldDescription("myDouble",FieldType.fromString("double",registry)), registry);
-        type.addField(new FieldDescription("myBoolean",FieldType.fromString("boolean",registry)), registry);
-        type.addField(new FieldDescription("myBoolean",FieldType.fromString("boolean",registry)), registry);
-        type.addField(new FieldDescription("ranking.features.query(myTensor1)",FieldType.fromString("tensor",registry)), registry);
-        type.addField(new FieldDescription("ranking.features.query(myTensor2)",FieldType.fromString("tensor(x[2],y[2])",registry)), registry);
-        type.addField(new FieldDescription("ranking.features.query(myTensor3)",FieldType.fromString("tensor(x{})",registry)), registry);
-        type.addField(new FieldDescription("myQuery",FieldType.fromString("query",registry)), registry);
-        type.addField(new FieldDescription("myQueryProfile",FieldType.fromString("query-profile",registry),"qp"), registry);
+        type.addField(new FieldDescription("myString", FieldType.fromString("string", registry)), registry);
+        type.addField(new FieldDescription("myInteger", FieldType.fromString("integer", registry),"int"), registry);
+        type.addField(new FieldDescription("myLong", FieldType.fromString("long", registry)), registry);
+        type.addField(new FieldDescription("myFloat", FieldType.fromString("float", registry)), registry);
+        type.addField(new FieldDescription("myDouble", FieldType.fromString("double", registry)), registry);
+        type.addField(new FieldDescription("myBoolean", FieldType.fromString("boolean", registry)), registry);
+        type.addField(new FieldDescription("myBoolean", FieldType.fromString("boolean", registry)), registry);
+        type.addField(new FieldDescription("ranking.features.query(myTensor1)", FieldType.fromString("tensor(a{},b{})", registry)), registry);
+        type.addField(new FieldDescription("ranking.features.query(myTensor2)", FieldType.fromString("tensor(x[2],y[2])", registry)), registry);
+        type.addField(new FieldDescription("ranking.features.query(myTensor3)", FieldType.fromString("tensor(x{})",registry)), registry);
+        type.addField(new FieldDescription("myQuery", FieldType.fromString("query", registry)), registry);
+        type.addField(new FieldDescription("myQueryProfile", FieldType.fromString("query-profile", registry),"qp"), registry);
     }
 
     private void addUserFields(QueryProfileType user, QueryProfileTypeRegistry registry) {
@@ -127,9 +127,9 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
         assertEquals(3.14f, properties.get("myFloat"));
         assertEquals(2.18, properties.get("myDouble"));
         assertEquals(true, properties.get("myBoolean"));
-        assertEquals(Tensor.from(tensorString1),                      properties.get("ranking.features.query(myTensor1)"));
+        assertEquals(Tensor.from(tensorString1), properties.get("ranking.features.query(myTensor1)"));
         assertEquals(Tensor.from("tensor(x[2],y[2])", tensorString2), properties.get("ranking.features.query(myTensor2)"));
-        assertEquals(Tensor.from("tensor(x{})",       tensorString3), properties.get("ranking.features.query(myTensor3)"));
+        assertEquals(Tensor.from("tensor(x{})", tensorString3), properties.get("ranking.features.query(myTensor3)"));
         // TODO: assertEquals(..., cprofile.get("myQuery"));
         assertEquals("value1", properties.get("myQueryProfile.anyString"));
         assertEquals("value1", properties.get("QP.anyString"));

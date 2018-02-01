@@ -5,9 +5,6 @@ import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.yql.YqlQuery;
-import com.yahoo.tensor.Tensor;
-
-import java.util.Optional;
 
 /**
  * Superclass of query type field types.
@@ -24,7 +21,6 @@ public abstract class FieldType {
     public static final PrimitiveFieldType floatType = new PrimitiveFieldType(Float.class);
     public static final PrimitiveFieldType doubleType = new PrimitiveFieldType(Double.class);
     public static final PrimitiveFieldType booleanType = new PrimitiveFieldType(Boolean.class);
-    public static final TensorFieldType genericTensorType = new TensorFieldType(Optional.empty());
     public static final QueryFieldType queryType = new QueryFieldType();
     public static final QueryProfileFieldType genericQueryProfileType = new QueryProfileFieldType();
 
@@ -85,7 +81,6 @@ public abstract class FieldType {
         if (clazz == Float.class) return floatType;
         if (clazz == Double.class) return doubleType;
         if (clazz == Boolean.class) return booleanType;
-        if (clazz == Tensor.class) return genericTensorType;
         if (clazz == YqlQuery.class) return queryType;
         if (clazz == QueryProfile.class) return genericQueryProfileType;
         return null;
