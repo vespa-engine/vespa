@@ -172,36 +172,32 @@ public class NodePrioritizer {
     void addNewDockerNodes() {
         if (!isDocker) return;
         DockerHostCapacity capacity = new DockerHostCapacity(allNodes);
+        ResourceCapacity wantedResourceCapacity = ResourceCapacity.of(getFlavor(requestedNodes));
+        NodeList list = new NodeList(allNodes);
 
         for (Node node : allNodes) {
-            if (node.type() == NodeType.host && node.state() == Node.State.active) {
-                boolean conflictingCluster = false;
-                NodeList list = new NodeList(allNodes);
-                NodeList childrenWithSameApp = list.childNodes(node).owner(appId);
-                for (Node child : childrenWithSameApp.asList()) {
-                    // Look for nodes from the same cluster
-                    if (child.allocation().get().membership().cluster().id().equals(clusterSpec.id())) {
-                        conflictingCluster = true;
-                        break;
-                    }
-                }
+            if (node.type() != NodeType.host) continue;
+            if (node.state() != Node.State.active) continue;
 
-                if (!conflictingCluster && capacity.hasCapacity(node, ResourceCapacity.of(getFlavor(requestedNodes)))) {
-                    Set<String> ipAddresses = DockerHostCapacity.findFreeIps(node, allNodes);
-                    if (ipAddresses.isEmpty()) continue;
-                    String ipAddress = ipAddresses.stream().findFirst().get();
-                    Optional<String> hostname = nameResolver.getHostname(ipAddress);
-                    if (!hostname.isPresent()) continue;
-                    Node newNode = Node.createDockerNode("fake-" + hostname.get(),
-                                                         Collections.singleton(ipAddress),
-                                                         Collections.emptySet(), hostname.get(),
-                                                         Optional.of(node.hostname()), getFlavor(requestedNodes),
-                                                         NodeType.tenant);
-                    PrioritizableNode nodePri = toNodePriority(newNode, false, true);
-                    if (!nodePri.violatesSpares || isAllocatingForReplacement) {
-                        nodes.put(newNode, nodePri);
-                    }
-                }
+            boolean hostHasCapacityForWantedFlavor = capacity.hasCapacity(node, wantedResourceCapacity);
+            boolean conflictingCluster = list.childNodes(node).owner(appId).asList().stream()
+                    .anyMatch(child -> child.allocation().get().membership().cluster().id().equals(clusterSpec.id()));
+
+            if (!hostHasCapacityForWantedFlavor || conflictingCluster) continue;
+
+            Set<String> ipAddresses = DockerHostCapacity.findFreeIps(node, allNodes);
+            if (ipAddresses.isEmpty()) continue;
+            String ipAddress = ipAddresses.stream().findFirst().get();
+            Optional<String> hostname = nameResolver.getHostname(ipAddress);
+            if (!hostname.isPresent()) continue;
+            Node newNode = Node.createDockerNode("fake-" + hostname.get(),
+                                                 Collections.singleton(ipAddress),
+                                                 Collections.emptySet(), hostname.get(),
+                                                 Optional.of(node.hostname()), getFlavor(requestedNodes),
+                                                 NodeType.tenant);
+            PrioritizableNode nodePri = toNodePriority(newNode, false, true);
+            if (!nodePri.violatesSpares || isAllocatingForReplacement) {
+                nodes.put(newNode, nodePri);
             }
         }
     }
