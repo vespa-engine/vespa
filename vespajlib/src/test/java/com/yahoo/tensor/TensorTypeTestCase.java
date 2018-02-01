@@ -5,11 +5,14 @@ import org.junit.Test;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
  * @author geirst
+ * @author bratseth
  */
 public class TensorTypeTestCase {
 
@@ -61,6 +64,30 @@ public class TensorTypeTestCase {
         assertIllegalTensorType("tensor(x{10})", "Failed parsing element 'x{10}' in type spec 'tensor(x{10})'");
     }
 
+    @Test
+    public void testAssignableTo() {
+        assertIsAssignableTo("tensor(x[])", "tensor(x[])");
+        assertUnassignableTo("tensor(x[])", "tensor(y[])");
+        assertIsAssignableTo("tensor(x[10])", "tensor(x[])");
+        assertUnassignableTo("tensor(x[])", "tensor(x[10])");
+        assertUnassignableTo("tensor(x[10])", "tensor(x[5])");
+        assertUnassignableTo("tensor(x[5])", "tensor(x[10])");
+        assertUnassignableTo("tensor(x{})", "tensor(x[])");
+        assertIsAssignableTo("tensor(x{},y[10])", "tensor(x{},y[])");
+    }
+
+    @Test
+    public void testConvertibleTo() {
+        assertIsConvertibleTo("tensor(x[])", "tensor(x[])");
+        assertUnconvertibleTo("tensor(x[])", "tensor(y[])");
+        assertIsConvertibleTo("tensor(x[10])", "tensor(x[])");
+        assertUnconvertibleTo("tensor(x[])", "tensor(x[10])");
+        assertUnconvertibleTo("tensor(x[10])", "tensor(x[5])");
+        assertIsConvertibleTo("tensor(x[5])", "tensor(x[10])"); // Different from assignable
+        assertUnconvertibleTo("tensor(x{})", "tensor(x[])");
+        assertIsConvertibleTo("tensor(x{},y[10])", "tensor(x{},y[])");
+    }
+
     private static void assertTensorType(String typeSpec) {
         assertTensorType(typeSpec, typeSpec);
     }
@@ -76,6 +103,22 @@ public class TensorTypeTestCase {
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), containsString(messageSubstring));
         }
+    }
+
+    private void assertIsAssignableTo(String specificType, String generalType) {
+        assertTrue(TensorType.fromSpec(specificType).isAssignableTo(TensorType.fromSpec(generalType)));
+    }
+
+    private void assertUnassignableTo(String specificType, String generalType) {
+        assertFalse(TensorType.fromSpec(specificType).isAssignableTo(TensorType.fromSpec(generalType)));
+    }
+
+    private void assertIsConvertibleTo(String specificType, String generalType) {
+        assertTrue(TensorType.fromSpec(specificType).isConvertibleTo(TensorType.fromSpec(generalType)));
+    }
+
+    private void assertUnconvertibleTo(String specificType, String generalType) {
+        assertFalse(TensorType.fromSpec(specificType).isConvertibleTo(TensorType.fromSpec(generalType)));
     }
 
 }

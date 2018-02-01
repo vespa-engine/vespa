@@ -82,6 +82,21 @@ public class TensorType {
      * i.e if the given type is a generalization of this type.
      */
     public boolean isAssignableTo(TensorType generalization) {
+        return isConvertibleOrAssignableTo(generalization, false);
+    }
+
+    /**
+     * Returns whether this type can be converted to the given type.
+     * This is true if this type isAssignableTo the given type or
+     * if it is not assignable only because it has a shorter dimension length
+     * than the given type in some shared dimension(s), as it can then be
+     * converted to the given type by zero padding.
+     */
+    public boolean isConvertibleTo(TensorType generalization) {
+        return isConvertibleOrAssignableTo(generalization, true);
+    }
+
+    private boolean isConvertibleOrAssignableTo(TensorType generalization, boolean convertible) {
         if (generalization.dimensions().size() != this.dimensions().size()) return false;
         for (int i = 0; i < generalization.dimensions().size(); i++) {
             Dimension thisDimension = this.dimensions().get(i);
@@ -90,7 +105,12 @@ public class TensorType {
             if ( ! thisDimension.name().equals(generalizationDimension.name())) return false;
             if (generalizationDimension.size().isPresent()) {
                 if ( ! thisDimension.size().isPresent()) return false;
-                if (thisDimension.size().get() > generalizationDimension.size().get() ) return false;
+                if (convertible) {
+                    if (thisDimension.size().get() > generalizationDimension.size().get()) return false;
+                }
+                else { // assignable
+                    if (!thisDimension.size().get().equals(generalizationDimension.size().get())) return false;
+                }
             }
         }
         return true;
