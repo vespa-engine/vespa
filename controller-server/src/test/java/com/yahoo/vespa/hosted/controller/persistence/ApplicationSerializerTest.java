@@ -27,6 +27,9 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,7 +47,7 @@ import static org.junit.Assert.assertFalse;
 public class ApplicationSerializerTest {
 
     private static final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
-
+    private static final Path testData = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/");
     private static final ZoneId zone1 = ZoneId.from("prod", "us-west-1");
     private static final ZoneId zone2 = ZoneId.from("prod", "us-east-3");
 
@@ -59,9 +62,9 @@ public class ApplicationSerializerTest {
                                                                               "</validation-overrides>");
 
         List<Deployment> deployments = new ArrayList<>();
-        ApplicationVersion applicationVersion1 = ApplicationVersion.from("appHash1");
+        ApplicationVersion applicationVersion1 = ApplicationVersion.from(new SourceRevision("repo1", "branch1", "commit1"), 31);
         ApplicationVersion applicationVersion2 = ApplicationVersion
-                .from("appHash2", new SourceRevision("repo1", "branch1", "commit1"));
+                .from(new SourceRevision("repo1", "branch1", "commit1"), 32);
         deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3))); // One deployment without cluster info and utils
         deployments.add(new Deployment(zone2, applicationVersion2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
                 createClusterUtils(3, 0.2), createClusterInfo(3, 4),new DeploymentMetrics(2,3,4,5,6)));
@@ -83,7 +86,7 @@ public class ApplicationSerializerTest {
                                                validationOverrides,
                                                deployments, deploymentJobs,
                                                Change.of(Version.fromString("6.7")),
-                                               true,
+                                               Change.of(ApplicationVersion.from(new SourceRevision("repo", "master", "deadcafe"), 42)),
                                                Optional.of(IssueId.from("1234")),
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
                                                Optional.of(new RotationId("my-rotation")));
@@ -110,7 +113,7 @@ public class ApplicationSerializerTest {
         assertEquals(  original.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.stagingTest),
                      serialized.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.stagingTest));
 
-        assertEquals(original.hasOutstandingChange(), serialized.hasOutstandingChange());
+        assertEquals(original.outstandingChange(), serialized.outstandingChange());
 
         assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
 
@@ -145,22 +148,29 @@ public class ApplicationSerializerTest {
         assertEquals(6, serialized.deployments().get(zone2).metrics().writeLatencyMillis(), Double.MIN_VALUE);
 
         { // test more deployment serialization cases
-            Application original2 = writable(original).withDeploying(Change.of(ApplicationVersion.from("hash1")));
+            Application original2 = writable(original).withChange(Change.of(ApplicationVersion.from("hash1")));
             Application serialized2 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original2));
             assertEquals(original2.change(), serialized2.change());
             assertEquals(serialized2.change().application().get().source(),
                          original2.change().application().get().source());
 
-            Application original3 = writable(original).withDeploying(Change.of(ApplicationVersion.from("hash1",
-                                                                                                       new SourceRevision("a", "b", "c"))));
+            Application original3 = writable(original).withChange(Change.of(ApplicationVersion.from("hash1",
+                                                                                                    new SourceRevision("a", "b", "c"))));
             Application serialized3 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original3));
-            assertEquals(original3.change(), serialized2.change());
+            assertEquals(original3.change(), serialized3.change());
             assertEquals(serialized3.change().application().get().source(),
                          original3.change().application().get().source());
-
-            Application original4 = writable(original).withDeploying(Change.empty());
+            Application original4 = writable(original).withChange(Change.empty());
             Application serialized4 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original4));
             assertEquals(original4.change(), serialized4.change());
+
+            Application original5 = writable(original).withChange(Change.of(ApplicationVersion.unknown));
+            Application serialized5 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original5));
+            assertEquals(original5.change(), serialized5.change());
+
+            Application original6 = writable(original).withOutstandingChange(Change.of(ApplicationVersion.unknown));
+            Application serialized6 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original6));
+            assertEquals(original6.outstandingChange(), serialized6.outstandingChange());
         }
     }
 
@@ -210,8 +220,9 @@ public class ApplicationSerializerTest {
     }
 
     @Test
-    public void testCompleteApplicationDeserialization() {
-        applicationSerializer.fromSlime(SlimeUtils.jsonToSlime(longApplicationJson.getBytes(StandardCharsets.UTF_8)));
+    public void testCompleteApplicationDeserialization() throws Exception {
+        byte[] applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
+        applicationSerializer.fromSlime(SlimeUtils.jsonToSlime(applicationJson));
         // ok if no error
     }
 
@@ -252,5 +263,4 @@ public class ApplicationSerializerTest {
                 "}\n";
     }
 
-    private final String longApplicationJson = "{\"id\":\"tripod:service-aggregation-vespa:default\",\"deploymentSpecField\":\"<deployment version='1.0'>\\n  <test />\\n  <!--<staging />-->\\n  <prod global-service-id=\\\"tripod\\\">\\n    <region active=\\\"true\\\">us-east-3</region>\\n    <region active=\\\"true\\\">us-west-1</region>\\n  </prod>\\n</deployment>\\n\",\"validationOverrides\":\"<validation-overrides>\\n    <allow until=\\\"2016-04-28\\\" comment=\\\"Renaming content cluster\\\">content-cluster-removal</allow>\\n    <allow until=\\\"2016-08-22\\\" comment=\\\"Migrating us-east-3 to C-2E\\\">cluster-size-reduction</allow>\\n    <allow until=\\\"2017-06-30\\\" comment=\\\"Test Vespa upgrade tests\\\">force-automatic-tenant-upgrade-test</allow>\\n</validation-overrides>\\n\",\"deployments\":[{\"zone\":{\"environment\":\"prod\",\"region\":\"us-west-1\"},\"version\":\"6.173.62\",\"deployTime\":1510837817704,\"applicationPackageRevision\":{\"applicationPackageHash\":\"9db423e1021d7b452d37ec6372bc757d9c1bda87\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"49cd7bbb1ed9f4b922083cb042590b0885ffe22b\"}},\"clusterInfo\":{\"tripod\":{\"flavor\":\"d-3-16-100\",\"cost\":9,\"flavorCpu\":0,\"flavorMem\":0,\"flavorDisk\":0,\"clusterType\":\"container\",\"hostnames\":[\"oxy-oxygen-2001-4998-c-2942--10d1.gq1.yahoo.com\",\"oxy-oxygen-2001-4998-c-2942--10e2.gq1.yahoo.com\"]},\"tripodaggregation\":{\"flavor\":\"d-12-64-400\",\"cost\":38,\"flavorCpu\":0,\"flavorMem\":0,\"flavorDisk\":0,\"clusterType\":\"content\",\"hostnames\":[\"oxy-oxygen-2001-4998-c-2941--106a.gq1.yahoo.com\",\"zt74700-v6-23.ostk.bm2.prod.gq1.yahoo.com\",\"zt74714-v6-28.ostk.bm2.prod.gq1.yahoo.com\",\"zt74730-v6-13.ostk.bm2.prod.gq1.yahoo.com\",\"zt74717-v6-7.ostk.bm2.prod.gq1.yahoo.com\",\"2080260-v6-12.ostk.bm2.prod.gq1.yahoo.com\",\"zt74719-v6-23.ostk.bm2.prod.gq1.yahoo.com\",\"zt74722-v6-26.ostk.bm2.prod.gq1.yahoo.com\",\"zt74704-v6-9.ostk.bm2.prod.gq1.yahoo.com\",\"oxy-oxygen-2001-4998-c-2942--107d.gq1.yahoo.com\"]},\"tripodaggregationstream\":{\"flavor\":\"d-12-64-400\",\"cost\":38,\"flavorCpu\":0,\"flavorMem\":0,\"flavorDisk\":0,\"clusterType\":\"content\",\"hostnames\":[\"zt74727-v6-21.ostk.bm2.prod.gq1.yahoo.com\",\"zt74773-v6-8.ostk.bm2.prod.gq1.yahoo.com\",\"zt74699-v6-25.ostk.bm2.prod.gq1.yahoo.com\",\"zt74766-v6-27.ostk.bm2.prod.gq1.yahoo.com\"]}},\"clusterUtils\":{\"tripod\":{\"cpu\":0.1720353499228221,\"mem\":0.4986146831512451,\"disk\":0.0617671330041831,\"diskbusy\":0},\"tripodaggregation\":{\"cpu\":0.07505730001866318,\"mem\":0.7936344432830811,\"disk\":0.2260549694485994,\"diskbusy\":0},\"tripodaggregationstream\":{\"cpu\":0.01712671480989384,\"mem\":0.0225852754983035,\"disk\":0.006084436856721915,\"diskbusy\":0}},\"metrics\":{\"queriesPerSecond\":1.25,\"writesPerSecond\":43.83199977874756,\"documentCount\":525880277.9999999,\"queryLatencyMillis\":5.607503938674927,\"writeLatencyMillis\":20.57866265104621}},{\"zone\":{\"environment\":\"test\",\"region\":\"us-east-1\"},\"version\":\"6.173.62\",\"deployTime\":1511256872316,\"applicationPackageRevision\":{\"applicationPackageHash\":\"ec548fa61cbfab7a270a51d46b1263ec1be5d9a8\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"234f3e4e77049d0b9538c9e1b356d17eb1dedb6a\"}},\"clusterInfo\":{},\"clusterUtils\":{},\"metrics\":{\"queriesPerSecond\":0,\"writesPerSecond\":0,\"documentCount\":0,\"queryLatencyMillis\":0,\"writeLatencyMillis\":0}},{\"zone\":{\"environment\":\"dev\",\"region\":\"us-east-1\"},\"version\":\"6.173.62\",\"deployTime\":1510597489464,\"applicationPackageRevision\":{\"applicationPackageHash\":\"59b883f263c2a3c23dfab249730097d7e0e1ed32\"},\"clusterInfo\":{\"tripod\":{\"flavor\":\"d-2-8-50\",\"cost\":5,\"flavorCpu\":0,\"flavorMem\":0,\"flavorDisk\":0,\"clusterType\":\"container\",\"hostnames\":[\"zt40807-v6-29.ostk.bm2.prod.bf1.yahoo.com\"]},\"tripodaggregation\":{\"flavor\":\"d-2-8-50\",\"cost\":5,\"flavorCpu\":0,\"flavorMem\":0,\"flavorDisk\":0,\"clusterType\":\"content\",\"hostnames\":[\"zt40807-v6-24.ostk.bm2.prod.bf1.yahoo.com\"]},\"tripodaggregationstream\":{\"flavor\":\"d-2-8-50\",\"cost\":5,\"flavorCpu\":0,\"flavorMem\":0,\"flavorDisk\":0,\"clusterType\":\"content\",\"hostnames\":[\"zt40694-v6-21.ostk.bm2.prod.bf1.yahoo.com\"]}},\"clusterUtils\":{\"tripod\":{\"cpu\":0.191833330678661,\"mem\":0.4625738318415235,\"disk\":0.05582004563850269,\"diskbusy\":0},\"tripodaggregation\":{\"cpu\":0.2227037978608054,\"mem\":0.2051752598416401,\"disk\":0.05471533698695047,\"diskbusy\":0},\"tripodaggregationstream\":{\"cpu\":0.1869410834020498,\"mem\":0.1691722576000564,\"disk\":0.04977374774258153,\"diskbusy\":0}},\"metrics\":{\"queriesPerSecond\":0,\"writesPerSecond\":0,\"documentCount\":30916,\"queryLatencyMillis\":0,\"writeLatencyMillis\":0}},{\"zone\":{\"environment\":\"prod\",\"region\":\"us-east-3\"},\"version\":\"6.173.62\",\"deployTime\":1510817190016,\"applicationPackageRevision\":{\"applicationPackageHash\":\"9db423e1021d7b452d37ec6372bc757d9c1bda87\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"49cd7bbb1ed9f4b922083cb042590b0885ffe22b\"}},\"clusterInfo\":{\"tripod\":{\"flavor\":\"d-3-16-100\",\"cost\":9,\"flavorCpu\":0,\"flavorMem\":0,\"flavorDisk\":0,\"clusterType\":\"container\",\"hostnames\":[\"zt40738-v6-13.ostk.bm2.prod.bf1.yahoo.com\",\"zt40783-v6-31.ostk.bm2.prod.bf1.yahoo.com\"]},\"tripodaggregation\":{\"flavor\":\"d-12-64-400\",\"cost\":38,\"flavorCpu\":0,\"flavorMem\":0,\"flavorDisk\":0,\"clusterType\":\"content\",\"hostnames\":[\"zt40819-v6-7.ostk.bm2.prod.bf1.yahoo.com\",\"zt40661-v6-3.ostk.bm2.prod.bf1.yahoo.com\",\"zt40805-v6-30.ostk.bm2.prod.bf1.yahoo.com\",\"zt40702-v6-32.ostk.bm2.prod.bf1.yahoo.com\",\"zt40706-v6-3.ostk.bm2.prod.bf1.yahoo.com\",\"zt40691-v6-27.ostk.bm2.prod.bf1.yahoo.com\",\"zt40676-v6-15.ostk.bm2.prod.bf1.yahoo.com\",\"zt40788-v6-23.ostk.bm2.prod.bf1.yahoo.com\",\"zt40782-v6-30.ostk.bm2.prod.bf1.yahoo.com\",\"zt40802-v6-32.ostk.bm2.prod.bf1.yahoo.com\"]},\"tripodaggregationstream\":{\"flavor\":\"d-12-64-400\",\"cost\":38,\"flavorCpu\":0,\"flavorMem\":0,\"flavorDisk\":0,\"clusterType\":\"content\",\"hostnames\":[\"zt40779-v6-27.ostk.bm2.prod.bf1.yahoo.com\",\"zt40791-v6-15.ostk.bm2.prod.bf1.yahoo.com\",\"zt40733-v6-31.ostk.bm2.prod.bf1.yahoo.com\",\"zt40724-v6-30.ostk.bm2.prod.bf1.yahoo.com\"]}},\"clusterUtils\":{\"tripod\":{\"cpu\":0.2295038983007097,\"mem\":0.4627357390237263,\"disk\":0.05559941525894966,\"diskbusy\":0},\"tripodaggregation\":{\"cpu\":0.05340429087579549,\"mem\":0.8107630891552372,\"disk\":0.226444914138854,\"diskbusy\":0},\"tripodaggregationstream\":{\"cpu\":0.02148227413975218,\"mem\":0.02162174219104161,\"disk\":0.006057760545243265,\"diskbusy\":0}},\"metrics\":{\"queriesPerSecond\":1.734000012278557,\"writesPerSecond\":44.59999895095825,\"documentCount\":525868193.9999999,\"queryLatencyMillis\":5.65284947195106,\"writeLatencyMillis\":17.34593812832452}}],\"deploymentJobs\":{\"projectId\":102889,\"jobStatus\":[{\"jobType\":\"staging-test\",\"lastTriggered\":{\"id\":-1,\"version\":\"6.173.62\",\"revision\":{\"applicationPackageHash\":\"9db423e1021d7b452d37ec6372bc757d9c1bda87\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"49cd7bbb1ed9f4b922083cb042590b0885ffe22b\"}},\"upgrade\":true,\"reason\":\"system-test completed\",\"at\":1510830134259},\"lastCompleted\":{\"id\":1184,\"version\":\"6.173.62\",\"revision\":{\"applicationPackageHash\":\"9db423e1021d7b452d37ec6372bc757d9c1bda87\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"49cd7bbb1ed9f4b922083cb042590b0885ffe22b\"}},\"upgrade\":true,\"reason\":\"system-test completed\",\"at\":1510830684960},\"lastSuccess\":{\"id\":1184,\"version\":\"6.173.62\",\"revision\":{\"applicationPackageHash\":\"9db423e1021d7b452d37ec6372bc757d9c1bda87\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"49cd7bbb1ed9f4b922083cb042590b0885ffe22b\"}},\"upgrade\":true,\"reason\":\"system-test completed\",\"at\":1510830684960}},{\"jobType\":\"component\",\"lastCompleted\":{\"id\":849,\"version\":\"6.174.156\",\"upgrade\":false,\"reason\":\"Application commit\",\"at\":1511217733555},\"lastSuccess\":{\"id\":849,\"version\":\"6.174.156\",\"upgrade\":false,\"reason\":\"Application commit\",\"at\":1511217733555}},{\"jobType\":\"production-us-east-3\",\"lastTriggered\":{\"id\":-1,\"version\":\"6.173.62\",\"revision\":{\"applicationPackageHash\":\"9db423e1021d7b452d37ec6372bc757d9c1bda87\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"49cd7bbb1ed9f4b922083cb042590b0885ffe22b\"}},\"upgrade\":true,\"reason\":\"staging-test completed\",\"at\":1510830685127},\"lastCompleted\":{\"id\":923,\"version\":\"6.173.62\",\"revision\":{\"applicationPackageHash\":\"9db423e1021d7b452d37ec6372bc757d9c1bda87\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"49cd7bbb1ed9f4b922083cb042590b0885ffe22b\"}},\"upgrade\":true,\"reason\":\"staging-test completed\",\"at\":1510837650046},\"lastSuccess\":{\"id\":923,\"version\":\"6.173.62\",\"revision\":{\"applicationPackageHash\":\"9db423e1021d7b452d37ec6372bc757d9c1bda87\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"49cd7bbb1ed9f4b922083cb042590b0885ffe22b\"}},\"upgrade\":true,\"reason\":\"staging-test completed\",\"at\":1510837650046}},{\"jobType\":\"production-us-west-1\",\"lastTriggered\":{\"id\":-1,\"version\":\"6.173.62\",\"revision\":{\"applicationPackageHash\":\"9db423e1021d7b452d37ec6372bc757d9c1bda87\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"49cd7bbb1ed9f4b922083cb042590b0885ffe22b\"}},\"upgrade\":true,\"reason\":\"production-us-east-3 completed\",\"at\":1510837650139},\"lastCompleted\":{\"id\":646,\"version\":\"6.173.62\",\"revision\":{\"applicationPackageHash\":\"9db423e1021d7b452d37ec6372bc757d9c1bda87\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"49cd7bbb1ed9f4b922083cb042590b0885ffe22b\"}},\"upgrade\":true,\"reason\":\"production-us-east-3 completed\",\"at\":1510843559162},\"lastSuccess\":{\"id\":646,\"version\":\"6.173.62\",\"revision\":{\"applicationPackageHash\":\"9db423e1021d7b452d37ec6372bc757d9c1bda87\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"49cd7bbb1ed9f4b922083cb042590b0885ffe22b\"}},\"upgrade\":true,\"reason\":\"production-us-east-3 completed\",\"at\":1510843559162}},{\"jobType\":\"system-test\",\"jobError\":\"unknown\",\"lastTriggered\":{\"id\":-1,\"version\":\"6.173.62\",\"revision\":{\"applicationPackageHash\":\"ec548fa61cbfab7a270a51d46b1263ec1be5d9a8\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"234f3e4e77049d0b9538c9e1b356d17eb1dedb6a\"}},\"upgrade\":false,\"reason\":\"Available change in component\",\"at\":1511256608649},\"lastCompleted\":{\"id\":1686,\"version\":\"6.173.62\",\"revision\":{\"applicationPackageHash\":\"ec548fa61cbfab7a270a51d46b1263ec1be5d9a8\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"234f3e4e77049d0b9538c9e1b356d17eb1dedb6a\"}},\"upgrade\":false,\"reason\":\"Available change in component\",\"at\":1511256603353},\"firstFailing\":{\"id\":1659,\"version\":\"6.173.62\",\"revision\":{\"applicationPackageHash\":\"ec548fa61cbfab7a270a51d46b1263ec1be5d9a8\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"234f3e4e77049d0b9538c9e1b356d17eb1dedb6a\"}},\"upgrade\":false,\"reason\":\"component completed\",\"at\":1511219070725},\"lastSuccess\":{\"id\":1658,\"version\":\"6.173.62\",\"revision\":{\"applicationPackageHash\":\"9db423e1021d7b452d37ec6372bc757d9c1bda87\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"49cd7bbb1ed9f4b922083cb042590b0885ffe22b\"}},\"upgrade\":true,\"reason\":\"Upgrading to 6.173.62\",\"at\":1511175754163}}]},\"deployingField\":{\"applicationPackageHash\":\"ec548fa61cbfab7a270a51d46b1263ec1be5d9a8\",\"sourceRevision\":{\"repositoryField\":\"git@git.ouroath.com:Tripod/service-aggregation-vespa.git\",\"branchField\":\"origin/master\",\"commitField\":\"234f3e4e77049d0b9538c9e1b356d17eb1dedb6a\"}},\"outstandingChangeField\":false,\"queryQuality\":100,\"writeQuality\":99.99894341115082}";
 }

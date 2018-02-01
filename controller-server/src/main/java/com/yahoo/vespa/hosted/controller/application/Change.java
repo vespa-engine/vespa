@@ -31,6 +31,10 @@ public final class Change {
     private Change(Optional<Version> platform, Optional<ApplicationVersion> application) {
         Objects.requireNonNull(platform, "platform cannot be null");
         Objects.requireNonNull(application, "application cannot be null");
+        if (application.isPresent() && application.get().isUnknown()) {
+            // TODO: Require version to be known for application change
+            //throw new IllegalArgumentException("Application version to deploy must be a known version");
+        }
         this.platform = platform;
         this.application = application;
     }
@@ -42,7 +46,7 @@ public final class Change {
         return false;
     }
 
-    /** Returns whether a change shoudl currently be deployed */
+    /** Returns whether a change should currently be deployed */
     public boolean isPresent() {
         return platform.isPresent() || application.isPresent();
     }
