@@ -195,9 +195,11 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         int skippedHits;
         try {
             skippedHits = fillHits(result, 0, summaryPackets, query.getPresentation().getSummary());
+        } catch (TimeoutException e) {
+            result.hits().addError(ErrorMessage.createTimeout(e.getMessage()));
+            return result;
         } catch (IOException e) {
-            return new Result(query, ErrorMessage.createBackendCommunicationError(
-                    "Error filling hits with summary fields"));
+            return new Result(query, ErrorMessage.createBackendCommunicationError("Error filling hits with summary fields"));
         }
 
         if (skippedHits==0) {

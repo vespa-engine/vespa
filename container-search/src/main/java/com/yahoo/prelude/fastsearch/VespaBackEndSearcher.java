@@ -471,11 +471,14 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
     }
 
-    private boolean fillHit(FastHit hit, DocsumPacket packet, String summaryClass) {
+    private boolean fillHit(FastHit hit, DocsumPacket packet, String summaryClass) throws TimeoutException {
         if (packet != null) {
             byte[] docsumdata = packet.getData();
             if (docsumdata.length > 0) {
-                decodeSummary(summaryClass, hit, docsumdata);
+                String error = decodeSummary(summaryClass, hit, docsumdata);
+                if (error != null) {
+                    throw new TimeoutException(error);
+                }
                 return true;
             }
         }
@@ -490,6 +493,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
      */
     protected int fillHits(Result result, int packetIndex, Packet[] packets, String summaryClass) throws IOException {
         int skippedHits=0;
+        TimeoutException lastException = null;
         for (Iterator<Hit> i = hitIterator(result); i.hasNext();) {
             Hit hit = i.next();
 
@@ -500,11 +504,21 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
                 DocsumPacket docsum = (DocsumPacket) packets[packetIndex];
 
                 packetIndex++;
-                if ( ! fillHit(fastHit, docsum, summaryClass))
+                try {
+                    if (!fillHit(fastHit, docsum, summaryClass))
+                        skippedHits++;
+                } catch (TimeoutException e) {
+                    result.hits().addError(ErrorMessage.createTimeout(e.getMessage()));
                     skippedHits++;
+                    lastException = e;
+                }
             }
         }
         result.hits().setSorted(false);
+        if (lastException != null) {
+            throw lastException;
+        }
+
         return skippedHits;
     }
 
@@ -548,7 +562,10 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
                 byte[] docsumdata = docsum.getData();
 
                 if (docsumdata.length > 0) {
-                    decodeSummary(summaryClass, hit, docsumdata);
+                    String error = decodeSummary(summaryClass, hit, docsumdata);
+                    if (error != null) {
+                        filledAllOfEm = false;
+                    }
                 } else {
                     filledAllOfEm = false;
                 }
@@ -595,11 +612,11 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
                     FastHit fastHit = (FastHit) hit;
                     DocsumPacketKey key = new DocsumPacketKey(fastHit.getGlobalId(), fastHit.getPartId(), summaryClass);
 
-                    if (fillHit(fastHit,
-                            (DocsumPacket) packetWrapper.getPacket(key),
-                            summaryClass)) {
-                        fastHit.setCached(true);
-                    }
+                    try {
+                        if (fillHit(fastHit, (DocsumPacket) packetWrapper.getPacket(key), summaryClass)) {
+                            fastHit.setCached(true);
+                        }
+                    } catch (TimeoutException e) { }
 
                 }
             }
@@ -615,15 +632,18 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         return db.getDocsumDefinitionSet();
     }
 
-    private void decodeSummary(String summaryClass, FastHit hit, byte[] docsumdata) {
+    private String decodeSummary(String summaryClass, FastHit hit, byte[] docsumdata) {
         DocumentDatabase db = getDocumentDatabase(hit.getQuery());
         hit.setField(Hit.SDDOCNAME_FIELD, db.getName());
-        decodeSummary(summaryClass, hit, docsumdata, db.getDocsumDefinitionSet());
+        return decodeSummary(summaryClass, hit, docsumdata, db.getDocsumDefinitionSet());
     }
 
-    private void decodeSummary(String summaryClass, FastHit hit, byte[] docsumdata, DocsumDefinitionSet docsumSet) {
-        docsumSet.lazyDecode(summaryClass, docsumdata, hit);
-        hit.setFilled(summaryClass);
+    private String decodeSummary(String summaryClass, FastHit hit, byte[] docsumdata, DocsumDefinitionSet docsumSet) {
+        String error = docsumSet.lazyDecode(summaryClass, docsumdata, hit);
+        if (error == null) {
+            hit.setFilled(summaryClass);
+        }
+        return error;
     }
 
     /**

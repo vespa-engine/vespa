@@ -17,12 +17,14 @@ import com.yahoo.search.Result;
 import com.yahoo.search.query.SessionId;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
-import com.yahoo.slime.BinaryFormat;
-import com.yahoo.slime.Cursor;
-import com.yahoo.slime.Slime;
+import com.yahoo.slime.*;
 import com.yahoo.data.access.Inspector;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -222,12 +224,28 @@ public class Dispatcher extends AbstractComponent {
         }
 
         private void fill(List<FastHit> hits, byte[] slimeBytes) {
-            Inspector summaries = new SlimeAdapter(BinaryFormat.decode(slimeBytes).get().field("docsums"));
+            com.yahoo.slime.Inspector root = BinaryFormat.decode(slimeBytes).get();
+            Inspector summaries = new SlimeAdapter(root.field("docsums"));
             if ( ! summaries.valid())
                 throw new IllegalArgumentException("Expected a Slime root object containing a 'docsums' field");
             for (int i = 0; i < hits.size(); i++) {
                 fill(hits.get(i), summaries.entry(i).field("docsum"));
             }
+            com.yahoo.slime.Inspector errors = root.field("errors");
+            errors.traverse((ArrayTraverser)(int index, com.yahoo.slime.Inspector value) -> {
+                ByteArrayOutputStream os = new ByteArrayOutputStream(1024);
+                try {
+                    new JsonFormat(true).encode(os, value);
+                } catch (IOException e) {
+                    throw new IllegalArgumentException(e);
+                }
+                if ( "timeout".equalsIgnoreCase(value.field("type").asString())) {
+                    result.hits().addError(ErrorMessage.createTimeout(Utf8.toString(os.toByteArray())));
+                } else {
+                    result.hits().addError(ErrorMessage.createUnspecifiedError(Utf8.toString(os.toByteArray())));
+                }
+            });
+
         }
 
         private void fill(FastHit hit, Inspector summary) {
