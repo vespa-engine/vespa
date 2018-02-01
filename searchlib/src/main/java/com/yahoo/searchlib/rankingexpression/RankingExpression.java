@@ -8,6 +8,8 @@ import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParser;
 import com.yahoo.searchlib.rankingexpression.parser.TokenMgrError;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -262,6 +264,16 @@ public class RankingExpression implements Serializable {
      */
     public static String propertyName(String expressionName) {
         return "rankingExpression(" + expressionName + ").rankingScript";
+    }
+
+    /**
+     * Validates the type correctness of the given expression with the given context and
+     * returns the type this expression will produce from the given type context
+     *
+     * @throws IllegalArgumentException if this expression is not type correct in this context
+     */
+    public TensorType type(TypeContext context) {
+        return root.type(context);
     }
 
     /**
