@@ -1,16 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.serialization;
 
-import com.google.common.collect.Sets;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -34,7 +31,6 @@ public class DenseBinaryFormatTestCase {
     @Test
     public void testSerializationToSeparateType() {
         assertSerialization(Tensor.from("tensor(x[1],y[1]):{{x:0,y:0}:2.0}"), TensorType.fromSpec("tensor(x[],y[])"));
-        assertSerialization(Tensor.from("tensor(x[1],y[1]):{{x:0,y:0}:2.0}"), TensorType.fromSpec("tensor(x[2],y[2])"));
         try {
             assertSerialization(Tensor.from("tensor(x[2],y[2]):{{x:0,y:0}:2.0}"), TensorType.fromSpec("tensor(x[1],y[1])"));
             fail("Expected exception");

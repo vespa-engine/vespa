@@ -90,7 +90,7 @@ public class TensorType {
             if ( ! thisDimension.name().equals(generalizationDimension.name())) return false;
             if (generalizationDimension.size().isPresent()) {
                 if ( ! thisDimension.size().isPresent()) return false;
-                if (thisDimension.size().get() > generalizationDimension.size().get() ) return false;
+                if ( ! thisDimension.size().get().equals(generalizationDimension.size().get()) ) return false;
             }
         }
         return true;
