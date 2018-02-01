@@ -12,6 +12,7 @@ public class VisitorParametersTestCase {
     private VisitorParameters createVisitorParameters() {
         VisitorParameters params = new VisitorParameters("");
         params.setDocumentSelection("id.user==5678");
+        params.setBucketSpace("narnia");
         params.setFromTimestamp(9001);
         params.setToTimestamp(10001);
         params.setVisitorLibrary("CoolVisitor");
@@ -89,6 +90,7 @@ public class VisitorParametersTestCase {
         assertEquals(
                 "VisitorParameters(\n" +
                 "  Document selection: id.user==5678\n" +
+                "  Bucket space:       narnia\n" +
                 "  Visitor library:    CoolVisitor\n" +
                 "  Max pending:        111\n" +
                 "  Timeout (ms):       1337\n" +

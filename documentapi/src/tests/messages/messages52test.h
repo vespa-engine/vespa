@@ -15,7 +15,7 @@ public:
     bool testUpdateDocumentMessage();
     bool testRemoveDocumentMessage();
 
-private:
+protected:
     static size_t serializedLength(const string & str) {
         return sizeof(int32_t) + str.size();
     }

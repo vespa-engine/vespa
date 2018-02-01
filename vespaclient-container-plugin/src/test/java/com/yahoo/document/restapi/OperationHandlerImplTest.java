@@ -14,10 +14,7 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -33,27 +30,31 @@ public class OperationHandlerImplTest {
     @Test(expected = IllegalArgumentException.class)
     public void missingClusterDef() throws RestApiException {
         List<ClusterDef> clusterDef = new ArrayList<>();
-        OperationHandlerImpl.resolveClusterRoute(Optional.empty(), clusterDef);
+        OperationHandlerImpl.resolveClusterDef(Optional.empty(), clusterDef);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void missingClusterDefSpecifiedCluster() throws RestApiException {
         List<ClusterDef> clusterDef = new ArrayList<>();
-        OperationHandlerImpl.resolveClusterRoute(Optional.of("cluster"), clusterDef);
+        OperationHandlerImpl.resolveClusterDef(Optional.of("cluster"), clusterDef);
     }
 
     @Test(expected = RestApiException.class)
     public void oneClusterPresentNotMatching() throws RestApiException {
         List<ClusterDef> clusterDef = new ArrayList<>();
         clusterDef.add(new ClusterDef("foo", "configId"));
-        OperationHandlerImpl.resolveClusterRoute(Optional.of("cluster"), clusterDef);
+        OperationHandlerImpl.resolveClusterDef(Optional.of("cluster"), clusterDef);
+    }
+
+    private static String toRoute(ClusterDef clusterDef) {
+        return OperationHandlerImpl.clusterDefToRoute(clusterDef);
     }
 
     @Test()
     public void oneClusterMatching() throws RestApiException {
         List<ClusterDef> clusterDef = new ArrayList<>();
         clusterDef.add(new ClusterDef("foo", "configId"));
-        assertThat(OperationHandlerImpl.resolveClusterRoute(Optional.of("foo"), clusterDef),
+        assertThat(toRoute(OperationHandlerImpl.resolveClusterDef(Optional.of("foo"), clusterDef)),
                 is("[Storage:cluster=foo;clusterconfigid=configId]"));
     }
 
@@ -63,18 +64,18 @@ public class OperationHandlerImplTest {
         clusterDef.add(new ClusterDef("foo2", "configId2"));
         clusterDef.add(new ClusterDef("foo", "configId"));
         clusterDef.add(new ClusterDef("foo3", "configId2"));
-        assertThat(OperationHandlerImpl.resolveClusterRoute(Optional.of("foo"), clusterDef),
+        assertThat(toRoute(OperationHandlerImpl.resolveClusterDef(Optional.of("foo"), clusterDef)),
                 is("[Storage:cluster=foo;clusterconfigid=configId]"));
     }
 
     @Test()
-    public void checkErrorMessage() throws RestApiException, IOException {
+    public void unknown_target_cluster_throws_exception() throws RestApiException, IOException {
         List<ClusterDef> clusterDef = new ArrayList<>();
         clusterDef.add(new ClusterDef("foo2", "configId2"));
         clusterDef.add(new ClusterDef("foo", "configId"));
         clusterDef.add(new ClusterDef("foo3", "configId2"));
         try {
-            OperationHandlerImpl.resolveClusterRoute(Optional.of("wrong"), clusterDef);
+            OperationHandlerImpl.resolveClusterDef(Optional.of("wrong"), clusterDef);
         } catch(RestApiException e) {
             String errorMsg = renderRestApiExceptionAsString(e);
             assertThat(errorMsg, is("{\"errors\":[{\"description\":" +
@@ -96,6 +97,12 @@ public class OperationHandlerImplTest {
         AtomicReference<VisitorParameters> assignedParameters = new AtomicReference<>();
         VisitorControlHandler.CompletionCode completionCode = VisitorControlHandler.CompletionCode.SUCCESS;
         int bucketsVisited = 0;
+        Map<String, String> bucketSpaces = new HashMap<>();
+
+        OperationHandlerImplFixture() {
+            bucketSpaces.put("foo", "global");
+            bucketSpaces.put("document-type", "default");
+        }
 
         OperationHandlerImpl createHandler() throws Exception {
             VisitorSession visitorSession = mock(VisitorSession.class);
@@ -115,7 +122,8 @@ public class OperationHandlerImplTest {
                 return visitorSession;
             });
             OperationHandlerImpl.ClusterEnumerator clusterEnumerator = () -> Arrays.asList(new ClusterDef("foo", "configId"));
-            return new OperationHandlerImpl(documentAccess, clusterEnumerator, MetricReceiver.nullImplementation);
+            OperationHandlerImpl.BucketSpaceResolver bucketSpaceResolver = (configId, docType) -> Optional.ofNullable(bucketSpaces.get(docType));
+            return new OperationHandlerImpl(documentAccess, clusterEnumerator, bucketSpaceResolver, MetricReceiver.nullImplementation);
         }
     }
 
@@ -172,6 +180,33 @@ public class OperationHandlerImplTest {
 
         handler.visit(dummyVisitUri(), "", options);
         return fixture.assignedParameters.get();
+    }
+
+    @Test
+    public void document_type_is_mapped_to_correct_bucket_space() throws Exception {
+        OperationHandlerImplFixture fixture = new OperationHandlerImplFixture();
+        fixture.bucketSpaces.put("document-type", "langbein");
+        OperationHandlerImpl handler = fixture.createHandler();
+        handler.visit(dummyVisitUri(), "", emptyVisitOptions());
+
+        VisitorParameters parameters = fixture.assignedParameters.get();
+        assertEquals("langbein", parameters.getBucketSpace());
+    }
+
+    @Test
+    public void unknown_bucket_space_mapping_throws_exception() throws Exception {
+        OperationHandlerImplFixture fixture = new OperationHandlerImplFixture();
+        fixture.bucketSpaces.remove("document-type");
+        try {
+            OperationHandlerImpl handler = fixture.createHandler();
+            handler.visit(dummyVisitUri(), "", emptyVisitOptions());
+        } catch (RestApiException e) {
+            assertThat(e.getResponse().getStatus(), is(400));
+            String errorMsg = renderRestApiExceptionAsString(e);
+            // FIXME isn't this really more of a case of unknown document type..?
+            assertThat(errorMsg, is("{\"errors\":[{\"description\":" +
+                    "\"UNKNOWN_BUCKET_SPACE Document type 'document-type' in cluster 'foo' is not mapped to a known bucket space\",\"id\":-9}]}"));
+        }
     }
 
     @Test

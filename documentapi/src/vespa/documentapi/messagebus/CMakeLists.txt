@@ -8,6 +8,7 @@ vespa_add_library(documentapi_documentapimessagebus OBJECT
     routablefactories50.cpp
     routablefactories51.cpp
     routablefactories52.cpp
+    routablefactories60.cpp
     routablerepository.cpp
     routingpolicyfactories.cpp
     routingpolicyrepository.cpp

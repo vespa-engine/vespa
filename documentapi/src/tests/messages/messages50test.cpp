@@ -31,7 +31,6 @@ Messages50Test::Messages50Test()
     putTest(DocumentProtocol::MESSAGE_GETBUCKETSTATE, TEST_METHOD(Messages50Test::testGetBucketStateMessage));
     putTest(DocumentProtocol::MESSAGE_GETDOCUMENT, TEST_METHOD(Messages50Test::testGetDocumentMessage));
     putTest(DocumentProtocol::MESSAGE_MAPVISITOR, TEST_METHOD(Messages50Test::testMapVisitorMessage));
-    putTest(DocumentProtocol::MESSAGE_MULTIOPERATION, TEST_METHOD(Messages50Test::testMultiOperationMessage));
     putTest(DocumentProtocol::MESSAGE_PUTDOCUMENT, TEST_METHOD(Messages50Test::testPutDocumentMessage));
     putTest(DocumentProtocol::MESSAGE_QUERYRESULT, TEST_METHOD(Messages50Test::testQueryResultMessage));
     putTest(DocumentProtocol::MESSAGE_REMOVEDOCUMENT, TEST_METHOD(Messages50Test::testRemoveDocumentMessage));
@@ -51,7 +50,6 @@ Messages50Test::Messages50Test()
     putTest(DocumentProtocol::REPLY_GETBUCKETSTATE, TEST_METHOD(Messages50Test::testGetBucketStateReply));
     putTest(DocumentProtocol::REPLY_GETDOCUMENT, TEST_METHOD(Messages50Test::testGetDocumentReply));
     putTest(DocumentProtocol::REPLY_MAPVISITOR, TEST_METHOD(Messages50Test::testMapVisitorReply));
-    putTest(DocumentProtocol::REPLY_MULTIOPERATION, TEST_METHOD(Messages50Test::testMultiOperationReply));
     putTest(DocumentProtocol::REPLY_PUTDOCUMENT, TEST_METHOD(Messages50Test::testPutDocumentReply));
     putTest(DocumentProtocol::REPLY_QUERYRESULT, TEST_METHOD(Messages50Test::testQueryResultReply));
     putTest(DocumentProtocol::REPLY_REMOVEDOCUMENT, TEST_METHOD(Messages50Test::testRemoveDocumentReply));
@@ -321,41 +319,6 @@ Messages50Test::testDocumentSummaryMessage()
     EXPECT_EQUAL(sz, 8u);
     EXPECT_EQUAL(strcmp("doc1", docId), 0);
     EXPECT_EQUAL(memcmp("summary1", summary, sz), 0);
-    return true;
-}
-
-bool
-Messages50Test::testMultiOperationMessage()
-{
-    document::Document::SP doc =
-        createDoc(getTypeRepo(), "testdoc", "doc:scheme:foo");
-    std::vector<char> buffer(1024);
-    document::BucketIdFactory factory;
-
-    vdslib::WritableDocumentList doclist(getTypeRepoSp(),
-                                         &buffer[0], buffer.size());
-    ASSERT_TRUE(doclist.addPut(*doc));
-
-    size_t n = MESSAGE_BASE_LENGTH;
-    n += sizeof(uint32_t); // routable object type
-    n += sizeof(uint64_t); // bucket id
-    n += sizeof(uint32_t); // bytes in docblock
-    n += sizeof(uint32_t); // num operations
-    n += sizeof(vdslib::DocumentList::MetaEntry);
-    n += doc->serialize()->getLength();
-    n += 1; // boolean keepTimeStamps
-
-    MultiOperationMessage msg(document::BucketId(16, factory.getBucketId(doc->getId()).getRawId()), doclist);
-    EXPECT_EQUAL(n, serialize("MultiOperationMessage", msg));
-    for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
-        mbus::Routable::UP obj = deserialize("MultiOperationMessage", DocumentProtocol::MESSAGE_MULTIOPERATION, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
-            MultiOperationMessage &ref = static_cast<MultiOperationMessage&>(*obj);
-            EXPECT_EQUAL((uint32_t)1, ref.getOperations().size());
-            EXPECT_EQUAL(*doc, *dynamic_cast<document::Document*>(ref.getOperations().begin()->getDocument().get()));
-            EXPECT_EQUAL(document::BucketId(16, factory.getBucketId(doc->getId()).getRawId()), ref.getBucketId());
-        }
-    }
     return true;
 }
 
@@ -698,25 +661,6 @@ Messages50Test::testSearchResultMessage()
     EXPECT_EQUAL(memcmp("sortdata3", buf, sz), 0);
     EXPECT_EQUAL(rank, SearchResultMessage::RankType(90));
     EXPECT_EQUAL(strcmp("doc18", docId), 0);
-    return true;
-}
-
-
-bool
-Messages50Test::testMultiOperationReply()
-{
-    WriteDocumentReply reply(DocumentProtocol::REPLY_MULTIOPERATION);
-    reply.setHighestModificationTimestamp(30);
-
-    EXPECT_EQUAL(13u, serialize("MultiOperationReply", reply));
-
-    for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
-        mbus::Routable::UP obj = deserialize("MultiOperationReply", DocumentProtocol::REPLY_MULTIOPERATION, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
-            WriteDocumentReply &ref = static_cast<WriteDocumentReply&>(*obj);
-            EXPECT_EQUAL(30u, ref.getHighestModificationTimestamp());
-        }
-    }
     return true;
 }
 

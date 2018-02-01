@@ -33,8 +33,6 @@ public:
     bool testGetDocumentReply();
     bool testMapVisitorMessage();
     bool testMapVisitorReply();
-    bool testMultiOperationMessage();
-    bool testMultiOperationReply();
     bool testPutDocumentMessage();
     bool testPutDocumentReply();
     bool testQueryResultMessage();
