@@ -74,16 +74,11 @@ public final class DocsumDefinitionSet {
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         long docsumClassId = buffer.getInt();
         if (docsumClassId != SLIME_MAGIC_ID) {
-            log.warning("Only expecting SchemaLess docsums");
-            // TODO: Not used, remove   - bratseth 2017-01-016
-            DocsumDefinition docsumDefinition = lookupDocsum(docsumClassId);
-            Docsum docsum = new Docsum(docsumDefinition, data);
-            hit.addSummary(docsum);
-        } else {
-            DocsumDefinition docsumDefinition = lookupDocsum(summaryClass);
-            Slime value = BinaryFormat.decode(buffer.array(), buffer.arrayOffset()+buffer.position(), buffer.remaining());
-            hit.addSummary(docsumDefinition, new SlimeAdapter(value.get()));
+            throw new IllegalArgumentException("Only expecting SchemaLess docsums - summary class:" + summaryClass + " hit:" + hit);
         }
+        DocsumDefinition docsumDefinition = lookupDocsum(summaryClass);
+        Slime value = BinaryFormat.decode(buffer.array(), buffer.arrayOffset()+buffer.position(), buffer.remaining());
+        hit.addSummary(docsumDefinition, new SlimeAdapter(value.get()));
     }
 
     private DocsumDefinition lookupDocsum(long docsumClassId) {

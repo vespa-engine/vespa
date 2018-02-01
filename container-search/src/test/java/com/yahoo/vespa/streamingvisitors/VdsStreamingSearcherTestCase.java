@@ -89,7 +89,7 @@ public class VdsStreamingSearcherTestCase {
                 if (emptyDocsum) {
                     summary = new byte[] {};
                 } else {
-                    summary = new byte[] { 0, 0, 0, 0 }; // Fake docsum data
+                    summary = new byte[] { 0x55, 0x55, 0x55, 0x55 }; // Fake docsum data
                 }
                 hits.add(new SearchResult.Hit(docId, 1.0));
                 summaryMap.put(docId, new DocumentSummary.Summary(docId, summary));

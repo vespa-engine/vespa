@@ -136,8 +136,7 @@ public class MockFSChannel extends FS4Channel {
                     123, 456, 789, 789, 789, 789, 789, 789, 789,
                     789, 789, 789 };
 
-                buffer = createDocsumPacketData(docids[i],
-                        DocsumDefinitionTestCase.docsum4);
+                buffer = createDocsumPacketData(docids[i], DocsumDefinitionTestCase.makeDocsum());
             }
             buffer.position(0);
             packets.add(PacketDecoder.decode(buffer));
