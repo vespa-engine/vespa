@@ -361,7 +361,7 @@ public class ControllerTest {
 
         // pull-request deployment - uses different instance id
         ApplicationId app1pr = tester.createAndDeploy("tenant1",  "domain1",
-                                                      "application1", "default-pr1",
+                                                      "application1", "1",
                                                       Environment.staging, app1ProjectId, null).id();
 
         assertTrue(applications.get(app1).isPresent());
@@ -838,7 +838,8 @@ public class ControllerTest {
         // Same options as used in our integration tests
         DeployOptions options = new DeployOptions(Optional.empty(), Optional.empty(), false,
                                                   false);
-        tester.controller().applications().deployApplication(app.id(), zone, Optional.of(applicationPackage), options);
+        tester.controller().applications().deployApplication(app.id(), zone, Optional.of(applicationPackage), options,
+                                                             Optional.of(TestIdentities.userNToken));
 
         assertTrue("Application deployed and activated",
                    tester.controllerTester().configServer().activated().getOrDefault(app.id(), false));

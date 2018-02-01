@@ -783,7 +783,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                   .map(ApplicationPackage::new);
         DeployAuthorizer deployAuthorizer = new DeployAuthorizer(controller.zoneRegistry(), athenzClientFactory);
         Tenant tenant = controller.tenants().tenant(new TenantId(tenantName)).orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
-        Principal principal = authorizer.getPrincipal(request);
+        AthenzPrincipal principal = authorizer.getPrincipal(request);
         deployAuthorizer.throwIfUnauthorizedForDeploy(principal, Environment.from(environment), tenant, applicationId, applicationPackage);
 
         // TODO: get rid of the json object
@@ -794,7 +794,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ActivateResult result = controller.applications().deployApplication(applicationId,
                                                                             zone,
                                                                             applicationPackage,
-                                                                            deployOptionsJsonClass);
+                                                                            deployOptionsJsonClass,
+                                                                            principal.getNToken());
         return new SlimeJsonResponse(toSlime(result));
     }
 

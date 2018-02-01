@@ -82,7 +82,8 @@ public class ContainerControllerTester {
         controller().applications().deployApplication(application.id(),
                                                     zone,
                                                     Optional.of(applicationPackage),
-                                                    new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, false));
+                                                    new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, false),
+                                                      Optional.of(TestIdentities.userNToken));
         return application;
     }
 

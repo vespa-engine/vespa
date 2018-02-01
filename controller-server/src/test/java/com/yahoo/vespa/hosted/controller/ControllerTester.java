@@ -224,7 +224,8 @@ public final class ControllerTester {
         controller().applications().deployApplication(application.id(),
                                                       zone,
                                                       applicationPackage,
-                                                      new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, deployCurrentVersion));
+                                                      new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, deployCurrentVersion),
+                                                      Optional.of(TestIdentities.userNToken));
     }
 
     public ApplicationId applicationId(String tenant, String application, String instance) {
