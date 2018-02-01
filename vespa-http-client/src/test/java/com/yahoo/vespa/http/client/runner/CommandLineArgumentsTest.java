@@ -86,6 +86,7 @@ public class CommandLineArgumentsTest {
         assertThat(params.getClusters().get(0).getEndpoints().size(), is(1));
         assertThat(params.getClusters().get(0).getEndpoints().get(0).getHostname(), is("hostValue"));
         assertThat(params.getClusters().get(0).getEndpoints().get(0).getPort(), is(4080));
+        assertThat(params.getClusters().get(0).getEndpoints().get(0).isUseSsl(), is(false));
         assertThat(params.getConnectionParams().getUseCompression(), is(false));
         assertThat(params.getConnectionParams().getNumPersistentConnectionsPerEndpoint(), is(16));
         assertThat(params.getFeedParams().getRoute(), is("default"));
@@ -107,11 +108,13 @@ public class CommandLineArgumentsTest {
         add("maxpending", "3456");
         add("debugport", "7890");
         args.add("--verbose");
+        args.add("--useTls");
         CommandLineArguments arguments = CommandLineArguments.build(asArray());
         SessionParams params = arguments.createSessionParams(true /* use json */);
         assertThat(params.getClientQueueSize(), is(3456));
         assertThat(params.getThrottlerMinSize(), is(10));
         assertThat(params.getClusters().get(0).getEndpoints().get(0).getPort(), is(1234));
+        assertThat(params.getClusters().get(0).getEndpoints().get(0).isUseSsl(), is(true));
         assertThat(params.getConnectionParams().getUseCompression(), is(true));
         assertThat(params.getFeedParams().getRoute(), is("routeValue"));
         assertThat(params.getFeedParams().getDataFormat(), is(FeedParams.DataFormat.JSON_UTF8));

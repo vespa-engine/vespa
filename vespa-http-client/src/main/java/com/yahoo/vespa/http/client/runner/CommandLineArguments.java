@@ -173,6 +173,10 @@ public class CommandLineArguments {
             description = "How often to print verbose message.)")
     private int whenVerboseEnabledPrintMessageForEveryXDocuments = 1000;
 
+    @Option(name = {"--useTls"},
+            description = "Use TLS when connecting to endpoint")
+    private boolean useTls = false;
+
     int getWhenVerboseEnabledPrintMessageForEveryXDocuments() {
         return whenVerboseEnabledPrintMessageForEveryXDocuments;
     }
@@ -220,7 +224,7 @@ public class CommandLineArguments {
         Iterable<String> hosts = Splitter.on(',').trimResults().split(hostArg);
         for (String host : hosts) {
             builder.addCluster(new Cluster.Builder()
-                    .addEndpoint(Endpoint.create(host, portArg, false))
+                    .addEndpoint(Endpoint.create(host, portArg, useTls))
                     .build());
         }
         return builder.build();
