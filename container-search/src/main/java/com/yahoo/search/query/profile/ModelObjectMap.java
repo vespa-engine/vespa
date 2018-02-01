@@ -16,11 +16,14 @@ import com.yahoo.search.query.properties.PropertyMap;
  */
 public class ModelObjectMap extends PropertyMap {
 
-    /** Returns true if the class of the value is not acceptable as a query profile value */
+    /**
+     * Returns true if the class of the value is *not* acceptable as a query profile value,
+     * and therefore should be set in this.
+     */
     @Override
-    protected boolean shouldSet(CompoundName name,Object value) {
-        if (value==null) return true;
-        return FieldType.fromClass(value.getClass())==null;
+    protected boolean shouldSet(CompoundName name, Object value) {
+        if (value == null) return true;
+        return ! FieldType.isLegalFieldValue(value);
     }
 
 }

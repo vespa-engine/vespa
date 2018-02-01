@@ -5,6 +5,7 @@ import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.yql.YqlQuery;
+import com.yahoo.tensor.Tensor;
 
 /**
  * Superclass of query type field types.
@@ -73,17 +74,19 @@ public abstract class FieldType {
         throw new IllegalArgumentException("Unknown type '" + typeString + "'");
     }
 
-    /** Returns the field type from a value class, or null if there is no type for it */
-    public static FieldType fromClass(Class clazz) {
-        if (clazz == String.class) return stringType;
-        if (clazz == Integer.class) return integerType;
-        if (clazz == Long.class) return longType;
-        if (clazz == Float.class) return floatType;
-        if (clazz == Double.class) return doubleType;
-        if (clazz == Boolean.class) return booleanType;
-        if (clazz == YqlQuery.class) return queryType;
-        if (clazz == QueryProfile.class) return genericQueryProfileType;
-        return null;
+    /** Returns true if the given object is a legal field value of some field value type */
+    public static boolean isLegalFieldValue(Object value) {
+        Class clazz = value.getClass();
+        if (clazz == String.class) return true;
+        if (clazz == Integer.class) return true;
+        if (clazz == Long.class) return true;
+        if (clazz == Float.class) return true;
+        if (clazz == Double.class) return true;
+        if (clazz == Boolean.class) return true;
+        if (clazz == YqlQuery.class) return true;
+        if (clazz == QueryProfile.class) return true;
+        if (clazz == Tensor.class) return true;
+        return false;
     }
 
 }
