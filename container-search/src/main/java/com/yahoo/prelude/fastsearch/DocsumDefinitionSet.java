@@ -10,9 +10,7 @@ import com.yahoo.container.search.LegacyEmulationConfig;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -86,7 +84,6 @@ public final class DocsumDefinitionSet {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        boolean first = true;
         for (Map.Entry<String, DocsumDefinition> e : definitionsByName.entrySet() ) {
             if (sb.length() != 0) {
                 sb.append(",");
