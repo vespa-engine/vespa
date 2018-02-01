@@ -4,7 +4,6 @@ package com.yahoo.prelude.fastsearch;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.data.access.slime.SlimeAdapter;
-import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.prelude.ConfigurationException;
 import com.yahoo.container.search.LegacyEmulationConfig;
 
@@ -79,16 +78,6 @@ public final class DocsumDefinitionSet {
         DocsumDefinition docsumDefinition = lookupDocsum(summaryClass);
         Slime value = BinaryFormat.decode(buffer.array(), buffer.arrayOffset()+buffer.position(), buffer.remaining());
         hit.addSummary(docsumDefinition, new SlimeAdapter(value.get()));
-    }
-
-    private DocsumDefinition lookupDocsum(long docsumClassId) {
-        DocsumDefinition docsumDefinition = getDocsumDefinition(docsumClassId);
-        if (docsumDefinition == null) {
-            throw new ConfigurationException("Received hit with summary id " + docsumClassId +
-                    ", but this summary class is not in current summary config (" + toString() + ")" +
-                    " (that is, the system is in an inconsistent state)");
-        }
-        return docsumDefinition;
     }
 
     private DocsumDefinition lookupDocsum(String summaryClass) {
