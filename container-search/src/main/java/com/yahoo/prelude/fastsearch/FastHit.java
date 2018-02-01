@@ -267,14 +267,6 @@ public class FastHit extends Hit {
         this.distributionKey = distributionKey;
     }
 
-    public void addSummary(Docsum docsum) {
-        LazyDocsumValue lazyDocsumValue = new LazyDocsumValue(docsum);
-        reserve(docsum.getDefinition().getFieldCount());
-        for (DocsumField field : docsum.getDefinition().getFields()) {
-            setDocsumFieldIfNotPresent(field.getName(), lazyDocsumValue);
-        }
-    }
-
     void addSummary(DocsumDefinition docsumDef, Inspector value) {
         reserve(docsumDef.getFieldCount());
         for (DocsumField field : docsumDef.getFields()) {
@@ -384,33 +376,6 @@ public class FastHit extends Hit {
     private static abstract class LazyValue {
         abstract Object getValue(String fieldName);
         abstract RawField getFieldAsUtf8(String fieldName);
-    }
-
-    /**
-     * Represents a value that resides in the docsum.
-     */
-    private static class LazyDocsumValue extends LazyValue {
-
-        private final Docsum docsum;
-
-        LazyDocsumValue(Docsum docsum) {
-            this.docsum = docsum;
-        }
-
-        Object getValue(String fieldName) {
-            return docsum.decode(getFieldIndex(fieldName));
-        }
-
-        private int getFieldIndex(String fieldName) {
-            Integer index = docsum.getFieldIndex(fieldName);
-            if (index == null) throw new AssertionError("Invalid fieldName " + fieldName);
-            return index;
-        }
-
-        RawField getFieldAsUtf8(String fieldName) {
-            return docsum.fetchFieldAsUtf8(getFieldIndex(fieldName));
-        }
-
     }
 
     private static class LazyString extends LazyValue {

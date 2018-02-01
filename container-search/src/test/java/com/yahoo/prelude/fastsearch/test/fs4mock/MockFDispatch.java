@@ -48,7 +48,7 @@ public class MockFDispatch {
         25, 0, 0, 0, 111, 0, 0, 0, 97, 0, 0, 0, 3, 0, 0, 0, 23, 0, 0, 0, 7, 0, 0,
         0, 36, 0, 0, 0, 4, 0, 0, 0, 21, 0, 0, 0, 8, 0, 0, 0, 37};
 
-    private static byte[] docsumData = DocsumDefinitionTestCase.docsum4;
+    private static byte[] docsumData = DocsumDefinitionTestCase.makeDocsum();
 
     private static byte[] docsumHeadPacketData = new byte[] {
         0, 0, 3, 39, 0, 0,

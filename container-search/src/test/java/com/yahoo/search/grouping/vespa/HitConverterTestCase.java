@@ -119,7 +119,7 @@ public class HitConverterTestCase {
     public void requireThatVdsHitCanBeConverted() {
         HitConverter converter = new HitConverter(new MySearcher(), new Query());
         GroupingListHit context = new GroupingListHit(null, new DocsumDefinitionSet(sixtynine()));
-        VdsHit lowHit = new VdsHit("doc:scheme:", new byte[] { 0, 0, 0, 0 }, 1);
+        VdsHit lowHit = new VdsHit("doc:scheme:", new byte[] { 0x55, 0x55, 0x55, 0x55 }, 1);
         lowHit.setContext(context);
         Hit hit = converter.toSearchHit("69", lowHit);
         assertNotNull(hit);
