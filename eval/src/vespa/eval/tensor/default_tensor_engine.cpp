@@ -7,7 +7,8 @@
 #include "serialization/typed_binary_format.h"
 #include "dense/dense_tensor.h"
 #include "dense/dense_tensor_builder.h"
-#include "dense/dense_tensor_function_optimizer.h"
+#include "dense/dense_dot_product_function.h"
+#include "dense/dense_xw_product_function.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
@@ -216,7 +217,8 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
     }
     while (!nodes.empty()) {
         const Child &child = nodes.back();
-        child.set(DenseTensorFunctionOptimizer::optimize(child.get(), stash));
+        child.set(DenseDotProductFunction::optimize(child.get(), stash));
+        child.set(DenseXWProductFunction::optimize(child.get(), stash));
         nodes.pop_back();
     }
     return root.get();
