@@ -41,9 +41,6 @@ done
 mkdir -p %buildroot%_prefix/libexec/vespa
 cp node-admin/src/main/sh/node-admin.sh %buildroot%_prefix/libexec/vespa
 
-# For node-admin.json
-mkdir -p /etc/vespa
-
 %clean
 rm -rf %buildroot
 
