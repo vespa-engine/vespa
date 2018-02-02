@@ -228,12 +228,6 @@ public class Dispatcher extends AbstractComponent {
 
         private void addErrors(com.yahoo.slime.Inspector errors) {
             errors.traverse((ArrayTraverser) (int index, com.yahoo.slime.Inspector value) -> {
-                ByteArrayOutputStream os = new ByteArrayOutputStream(1024);
-                try {
-                    new JsonFormat(true).encode(os, value);
-                } catch (IOException e) {
-                    throw new IllegalArgumentException(e);
-                }
                 int errorCode = ("timeout".equalsIgnoreCase(value.field("type").asString()))
                         ? Error.TIMEOUT.code
                         : Error.UNSPECIFIED.code;
