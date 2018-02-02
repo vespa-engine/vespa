@@ -22,9 +22,12 @@ public class TypeResolutionTestCase {
         context.setType("query('x1')", TensorType.fromSpec("tensor(x[])"));
         context.setType("query('x2')", TensorType.fromSpec("tensor(x[10])"));
         context.setType("query('y1')", TensorType.fromSpec("tensor(y[])"));
+        context.setType("query('xy1')", TensorType.fromSpec("tensor(x[10],y[])"));
+        context.setType("query('xy2')", TensorType.fromSpec("tensor(x[],y[10])"));
 
         assertType("tensor(x[])", "query(x1)", context);
         assertType("tensor(x[])", "if (1>0, query(x1), query(x2))", context);
+        assertType("tensor(x[],y[])", "if (1>0, query(xy1), query(xy2))", context);
         assertIncompatibleType("if (1>0, query(x1), query(y1))", context);
     }
 

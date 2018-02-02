@@ -136,6 +136,47 @@ public class TensorType {
         return true;
     }
 
+    /**
+     * Returns the dimensionwise generalization of this and the given type, or empty if no generalization exists.
+     * A dimensionwise generalization exists if the two tensors share the same dimensions, and each dimension
+     * is compatible.
+     * For example, the dimensionwise generalization of tensor(x[],y[5]) and tensor(x[5],y[]) is tensor(x[],y[])
+     */
+    public Optional<TensorType> dimensionwiseGeneralizationWith(TensorType other) {
+        if (this.equals(other)) return Optional.of(this); // shortcut
+        if (this.dimensions.size() != other.dimensions.size()) return Optional.empty();
+
+        Builder b = new Builder();
+        for (int i = 0; i < dimensions.size(); i++) {
+            Dimension thisDim = this.dimensions().get(i);
+            Dimension otherDim = other.dimensions().get(i);
+            if ( ! thisDim.name().equals(otherDim.name())) return Optional.empty();
+            if (thisDim.isIndexed() && otherDim.isIndexed()) {
+                if (thisDim.size().isPresent() && otherDim.size().isPresent()) {
+                    if ( ! thisDim.size().get().equals(otherDim.size().get()))
+                        return Optional.empty();
+                    b.dimension(thisDim); // both are equal and bound
+                }
+                else if (thisDim.size().isPresent()) {
+                    b.dimension(otherDim); // use the unbound
+                }
+                else if (otherDim.size().isPresent()) {
+                    b.dimension(thisDim); // use the unbound
+                }
+                else {
+                    b.dimension(thisDim); // both are equal and unbound
+                }
+            }
+            else if ( ! thisDim.isIndexed() && ! otherDim.isIndexed()) {
+                b.dimension(thisDim); // both are equal and mapped
+            }
+            else {
+                return Optional.empty(); // one indexed and one mapped
+            }
+        }
+        return Optional.of(b.build());
+    }
+
     @Override
     public int hashCode() {
         return dimensions.hashCode();
