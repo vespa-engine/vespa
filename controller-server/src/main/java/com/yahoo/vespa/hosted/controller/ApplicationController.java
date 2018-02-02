@@ -236,7 +236,7 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application already exists
      */
     public Application createApplication(ApplicationId id, Optional<NToken> token) {
-        if ( ! (id.instance().value().equals("default") || id.instance().value().matches("\\d+"))) // TODO: Support instances properly
+        if ( ! (id.instance().isDefault() || id.instance().value().matches("\\d+"))) // TODO: Support instances properly
             throw new UnsupportedOperationException("Only the instance names 'default' and names which are just the PR number are supported at the moment");
         try (Lock lock = lock(id)) {
             // Validate only application names which do not already exist.
@@ -250,16 +250,11 @@ public class ApplicationController {
                 throw new IllegalArgumentException("Could not create '" + id + "': Application already exists");
             if (get(dashToUnderscore(id)).isPresent()) // VESPA-1945
                 throw new IllegalArgumentException("Could not create '" + id + "': Application " + dashToUnderscore(id) + " already exists");
-            if (tenant.get().isAthensTenant()) {
+            if (id.instance().isDefault() && tenant.get().isAthensTenant()) { // Only create the athens application for "default" instances.
                 if ( ! token.isPresent())
                     throw new IllegalArgumentException("Could not create '" + id + "': No NToken provided");
 
                 ZmsClient zmsClient = zmsClientFactory.createZmsClientWithAuthorizedServiceToken(token.get());
-                try {
-                    zmsClient.deleteApplication(tenant.get().getAthensDomain().get(),
-                                                new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
-                }
-                catch (ZmsException ignored) { }
                 zmsClient.addApplication(tenant.get().getAthensDomain().get(),
                                          new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
             }
