@@ -73,7 +73,7 @@ public class ChildProcessImpl implements ChildProcess {
 
     @Override
     public void logAsModifyingSystemAfterAll(Logger logger) {
-        taskContext.logSystemModification(logger, "Executed command: " + commandLine);
+        taskContext.recordSystemModification(logger, "Executed command: " + commandLine);
     }
 
     @Override

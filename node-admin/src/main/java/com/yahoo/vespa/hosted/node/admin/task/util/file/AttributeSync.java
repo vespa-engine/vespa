@@ -111,13 +111,13 @@ public class AttributeSync {
             return false;
         }
 
-        context.logSystemModification(
+        context.recordSystemModification(
                 logger,
-                "Changing %s of %s from %s to %s",
-                attributeName,
-                path.toString(),
-                currentValue,
-                wantedValue.get());
+                String.format("Changing %s of %s from %s to %s",
+                        attributeName,
+                        path.toString(),
+                        currentValue,
+                        wantedValue.get()));
 
         valueSetter.accept(wantedValue.get());
 

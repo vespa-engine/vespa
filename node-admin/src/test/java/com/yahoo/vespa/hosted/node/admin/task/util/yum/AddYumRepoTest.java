@@ -3,8 +3,8 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
-import com.yahoo.vespa.test.file.TestFileSystem;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
 import java.nio.file.FileSystem;
@@ -14,7 +14,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class AddYumRepoTest {
     @Test
@@ -24,16 +23,15 @@ public class AddYumRepoTest {
         String baseurl = "http://foo.com/bar";
         boolean enabled = true;
 
+        FileSystem fileSystem = TestFileSystem.create();
         AddYumRepo addYumRepo = new AddYumRepo(
                 repositoryId,
                 name,
                 baseurl,
-                enabled);
+                enabled,
+                fileSystem);
 
         TaskContext context = mock(TaskContext.class);
-
-        FileSystem fileSystem = TestFileSystem.create();
-        when(context.fileSystem()).thenReturn(fileSystem);
 
         assertTrue(addYumRepo.converge(context));
 

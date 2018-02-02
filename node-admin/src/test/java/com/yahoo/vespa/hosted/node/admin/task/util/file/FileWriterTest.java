@@ -37,7 +37,7 @@ public class FileWriterTest {
                 .onlyIfFileDoesNotAlreadyExist();
         TaskContext context = mock(TaskContext.class);
         assertTrue(writer.converge(context));
-        verify(context, times(1)).logSystemModification(any(), eq("Creating file " + path));
+        verify(context, times(1)).recordSystemModification(any(), eq("Creating file " + path));
 
         UnixPath unixPath = new UnixPath(path);
         assertEquals(content, unixPath.readUtf8File());

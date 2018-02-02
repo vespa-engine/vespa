@@ -42,7 +42,7 @@ public class Command {
 
         String commandLine = commandLine();
         if (commandLogger != null) {
-            context.logSystemModification(commandLogger, "Executing command: " + commandLine);
+            context.recordSystemModification(commandLogger, "Executing command: " + commandLine);
         }
 
         // Why isn't this using TaskContext.fileSystem? Because createTempFile assumes
@@ -94,7 +94,7 @@ public class Command {
      *
      * This method can also be used to spawn a process that MAY have side effects
      * to be determined at some later time. The caller is then responsible for calling
-     * TaskContext::logSystemModification afterwards. The caller is encouraged to
+     * TaskContext::recordSystemModification afterwards. The caller is encouraged to
      * call ChildProcess::logAsModifyingSystemAfterAll to do this.
      */
     public ChildProcess spawnProgramWithoutSideEffects() {

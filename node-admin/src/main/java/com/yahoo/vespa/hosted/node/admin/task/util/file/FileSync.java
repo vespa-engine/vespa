@@ -53,7 +53,7 @@ public class FileSync {
         }
 
         if (!currentAttributes.exists()) {
-            taskContext.logSystemModification(logger, "Creating file " + path);
+            taskContext.recordSystemModification(logger, "Creating file " + path);
             path.createParents();
             path.writeUtf8File(content.get());
             contentCache.updateWith(content.get(), currentAttributes.forceGet().lastModifiedTime());
@@ -63,7 +63,7 @@ public class FileSync {
         if (Objects.equals(content.get(), contentCache.get(currentAttributes.get().lastModifiedTime()))) {
             return false;
         } else {
-            taskContext.logSystemModification(logger, "Patching file " + path);
+            taskContext.recordSystemModification(logger, "Patching file " + path);
             path.writeUtf8File(content.get());
             contentCache.updateWith(content.get(), currentAttributes.forceGet().lastModifiedTime());
             return true;

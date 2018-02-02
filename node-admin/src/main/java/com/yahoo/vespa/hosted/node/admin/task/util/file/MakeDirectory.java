@@ -54,7 +54,7 @@ public class MakeDirectory {
                 path.createParents();
             }
 
-            context.logSystemModification(logger, "Creating directory " + path);
+            context.recordSystemModification(logger, "Creating directory " + path);
             systemModified = true;
 
             Optional<String> permissions = attributeSync.getPermissions();
