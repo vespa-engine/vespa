@@ -6,7 +6,7 @@ package com.yahoo.vespa.hosted.controller.api.identifiers;
  * 
  * @author smorgrav
  */
-public class RevisionId extends SerializedIdentifier {
+public class RevisionId extends Identifier {
 
     public RevisionId(String id) {
         super(id);
