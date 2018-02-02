@@ -18,15 +18,13 @@ class DenseXWProductFunction : public eval::tensor_function::Op2
 {
 public:
     struct Self {
-        ArrayRef<double> _outputCells;
-        DenseTensorView _outputView;
+        const eval::ValueType _resultType;
         const size_t _vectorSize;
         const size_t _resultSize;
         hwaccelrated::IAccelrated::UP _hwAccelerator;
         Self(const eval::ValueType &resultType,
              size_t vectorSize,
-             size_t resultSize,
-             Stash &stash);
+             size_t resultSize);
         ~Self() {}
     };
 
