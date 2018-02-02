@@ -8,6 +8,8 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
 import com.yahoo.container.handler.VipStatus;
+import com.yahoo.container.protect.Error;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.FastHit;
@@ -17,14 +19,15 @@ import com.yahoo.search.Result;
 import com.yahoo.search.query.SessionId;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
-import com.yahoo.slime.*;
 import com.yahoo.data.access.Inspector;
-import com.yahoo.text.Utf8;
+import com.yahoo.slime.BinaryFormat;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.JsonFormat;
+import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -223,28 +226,36 @@ public class Dispatcher extends AbstractComponent {
             }
         }
 
-        private void fill(List<FastHit> hits, byte[] slimeBytes) {
-            com.yahoo.slime.Inspector root = BinaryFormat.decode(slimeBytes).get();
-            Inspector summaries = new SlimeAdapter(root.field("docsums"));
-            if ( ! summaries.valid())
-                throw new IllegalArgumentException("Expected a Slime root object containing a 'docsums' field");
-            for (int i = 0; i < hits.size(); i++) {
-                fill(hits.get(i), summaries.entry(i).field("docsum"));
-            }
-            com.yahoo.slime.Inspector errors = root.field("errors");
-            errors.traverse((ArrayTraverser)(int index, com.yahoo.slime.Inspector value) -> {
+        private void addErrors(com.yahoo.slime.Inspector errors) {
+            errors.traverse((ArrayTraverser) (int index, com.yahoo.slime.Inspector value) -> {
                 ByteArrayOutputStream os = new ByteArrayOutputStream(1024);
                 try {
                     new JsonFormat(true).encode(os, value);
                 } catch (IOException e) {
                     throw new IllegalArgumentException(e);
                 }
-                if ( "timeout".equalsIgnoreCase(value.field("type").asString())) {
-                    result.hits().addError(ErrorMessage.createTimeout(Utf8.toString(os.toByteArray())));
-                } else {
-                    result.hits().addError(ErrorMessage.createUnspecifiedError(Utf8.toString(os.toByteArray())));
-                }
+                int errorCode = ("timeout".equalsIgnoreCase(value.field("type").asString()))
+                        ? Error.TIMEOUT.code
+                        : Error.UNSPECIFIED.code;
+                result.hits().addError(new ErrorMessage(errorCode,
+                        value.field("message").asString(), value.field("details").asString()));
             });
+        }
+
+        private void fill(List<FastHit> hits, byte[] slimeBytes) {
+            com.yahoo.slime.Inspector root = BinaryFormat.decode(slimeBytes).get();
+            com.yahoo.slime.Inspector errors = root.field("errors");
+            boolean hasErrors = errors.valid() && (errors.entries() > 0);
+            if (hasErrors) {
+                addErrors(errors);
+            }
+
+            Inspector summaries = new SlimeAdapter(root.field("docsums"));
+            if ( ! summaries.valid() && !hasErrors)
+                throw new IllegalArgumentException("Expected a Slime root object containing a 'docsums' field");
+            for (int i = 0; i < hits.size(); i++) {
+                fill(hits.get(i), summaries.entry(i).field("docsum"));
+            }
 
         }
 
