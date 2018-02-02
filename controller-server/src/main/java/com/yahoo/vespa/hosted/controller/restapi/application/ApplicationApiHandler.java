@@ -379,6 +379,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor globalRotationsArray = object.setArray("globalRotations");
         application.rotation().ifPresent(rotation -> {
             globalRotationsArray.addString(rotation.url().toString());
+            globalRotationsArray.addString(rotation.secureUrl().toString());
             object.setString("rotationId", rotation.id().asString());
         });
 
