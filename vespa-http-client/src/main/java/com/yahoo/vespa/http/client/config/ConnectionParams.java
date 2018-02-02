@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -340,10 +341,12 @@ public final class ConnectionParams {
         this.printTraceToStdErr = printTraceToStdErr;
     }
 
+    @JsonIgnore
     public SSLContext getSslContext() {
         return sslContext;
     }
 
+    @JsonIgnore
     public HostnameVerifier getHostnameVerifier() {
         return hostnameVerifier;
     }
