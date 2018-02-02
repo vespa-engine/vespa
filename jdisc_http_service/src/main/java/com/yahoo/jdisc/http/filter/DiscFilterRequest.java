@@ -26,11 +26,9 @@ import java.util.regex.Pattern;
 
 /**
  * The Request class on which all filters will operate upon.
- * <p>
- * This class was made abstract from 5.27. Test cases that need a concrete
+ * Test cases that need a concrete
  * instance should create a {@link JdiscFilterRequest}.
  */
-
 public abstract class DiscFilterRequest {
 
     protected static final String HTTPS_PREFIX = "https";
@@ -38,7 +36,6 @@ public abstract class DiscFilterRequest {
     protected static final int DEFAULT_HTTPS_PORT = 443;
 
     private final ServletOrJdiscHttpRequest parent;
-    protected final InetSocketAddress localAddress;
     protected final Map<String, List<String>> untreatedParams;
     private final HeaderFields untreatedHeaders;
     private List<Cookie> untreatedCookies = null;
@@ -49,17 +46,11 @@ public abstract class DiscFilterRequest {
     public DiscFilterRequest(ServletOrJdiscHttpRequest parent) {
         this.parent = parent;
 
-        //save untreated headers from parent
+        // save untreated headers from parent
         untreatedHeaders = new HeaderFields();
         parent.copyHeaders(untreatedHeaders);
 
         untreatedParams = new HashMap<>(parent.parameters());
-
-        int port = parent.getUri().getPort();
-        if(port < 0) {
-            port  = 0;
-        }
-        localAddress = new InetSocketAddress(parent.getUri().getHost(), port);
     }
 
     public abstract String getMethod();
@@ -100,12 +91,17 @@ public abstract class DiscFilterRequest {
      *  on which the request was received.
      */
     public String getLocalAddr() {
-        if (null == localAddress.getAddress()) {
-            return null;
-        }
+        InetSocketAddress localAddress = localAddress();
+        if (localAddress.getAddress() == null) return null;
         return localAddress.getAddress().getHostAddress();
     }
 
+    protected InetSocketAddress localAddress() {
+        int port = parent.getUri().getPort();
+        if (port < 0)
+            port  = 0;
+        return new InetSocketAddress(parent.getUri().getHost(), port);
+    }
 
     public Enumeration<String> getAttributeNames() {
         return Collections.enumeration(parent.context().keySet());
@@ -160,7 +156,7 @@ public abstract class DiscFilterRequest {
      * the interface on which the request was received.
      */
     public int getLocalPort() {
-        return localAddress.getPort();
+        return localAddress().getPort();
     }
 
     /**
@@ -192,7 +188,7 @@ public abstract class DiscFilterRequest {
      * parent request
      */
     public List<Cookie> getUntreatedCookies() {
-        if(untreatedCookies == null) {
+        if (untreatedCookies == null) {
             this.untreatedCookies = parent.decodeCookieHeader();
         }
         return Collections.unmodifiableList(untreatedCookies);
