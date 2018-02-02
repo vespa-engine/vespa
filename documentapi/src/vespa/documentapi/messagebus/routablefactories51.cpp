@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "routablefactories51.h"
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/document/document.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
-#include <vespa/document/document.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
+using document::FixedBucketSpaces;
 using vespalib::nbostream;
 
 namespace documentapi {
@@ -132,11 +134,11 @@ bool RoutableFactories51::CreateVisitorMessageFactory::encodeBucketSpace(
         vespalib::stringref bucketSpace,
         vespalib::GrowableByteBuffer& buf) const {
     (void) buf;
-    return (bucketSpace == "default"); // TODO used fixed repo here
+    return (bucketSpace == FixedBucketSpaces::default_space_name());
 }
 
 string RoutableFactories51::CreateVisitorMessageFactory::decodeBucketSpace(document::ByteBuffer&) const {
-    return "default"; // TODO fixed bucket repo
+    return FixedBucketSpaces::default_space_name();
 }
 
 DocumentMessage::UP

@@ -2,14 +2,17 @@
 
 #include "getbucketlistmessage.h"
 #include "getbucketlistreply.h"
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
+
+using document::FixedBucketSpaces;
 
 namespace documentapi {
 
 GetBucketListMessage::GetBucketListMessage(const document::BucketId &bucketId) :
     DocumentMessage(),
     _bucketId(bucketId),
-    _bucketSpace("default") // TODO repo
+    _bucketSpace(FixedBucketSpaces::default_space_name())
 {
 }
 

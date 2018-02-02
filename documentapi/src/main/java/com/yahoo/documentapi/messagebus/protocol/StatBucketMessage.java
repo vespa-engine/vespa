@@ -2,11 +2,12 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.document.BucketId;
+import com.yahoo.document.FixedBucketSpaces;
 
 public class StatBucketMessage extends DocumentMessage {
 
     private BucketId bucketId;
-    private String bucketSpace = "default";
+    private String bucketSpace = FixedBucketSpaces.defaultSpace();
     private String documentSelection;
 
     StatBucketMessage() {
@@ -14,7 +15,7 @@ public class StatBucketMessage extends DocumentMessage {
     }
 
     public StatBucketMessage(BucketId bucket, String documentSelection) {
-        this(bucket, "default", documentSelection);
+        this(bucket, FixedBucketSpaces.defaultSpace(), documentSelection);
     }
 
     public StatBucketMessage(BucketId bucketId, String bucketSpace, String documentSelection) {

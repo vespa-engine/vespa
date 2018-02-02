@@ -44,11 +44,13 @@ void FixedBucketSpacesTest::bucket_space_from_name_throws_exception_for_unknown_
 void FixedBucketSpacesTest::name_from_bucket_space_is_defined_for_default_space() {
     CPPUNIT_ASSERT_EQUAL(vespalib::stringref("default"),
                          FixedBucketSpaces::to_string(FixedBucketSpaces::default_space()));
+    CPPUNIT_ASSERT_EQUAL(vespalib::stringref("default"), FixedBucketSpaces::default_space_name());
 }
 
 void FixedBucketSpacesTest::name_from_bucket_space_is_defined_for_global_space() {
     CPPUNIT_ASSERT_EQUAL(vespalib::stringref("global"),
                          FixedBucketSpaces::to_string(FixedBucketSpaces::global_space()));
+    CPPUNIT_ASSERT_EQUAL(vespalib::stringref("global"), FixedBucketSpaces::global_space_name());
 }
 
 void FixedBucketSpacesTest::name_from_bucket_space_throws_exception_for_unknown_space() {

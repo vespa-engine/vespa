@@ -2,18 +2,19 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.document.BucketId;
+import com.yahoo.document.FixedBucketSpaces;
 
 public class GetBucketListMessage extends DocumentMessage {
 
     private BucketId bucketId;
-    private String bucketSpace = "default";
+    private String bucketSpace = FixedBucketSpaces.defaultSpace();
 
     GetBucketListMessage() {
         // must be deserialized into
     }
 
     public GetBucketListMessage(BucketId bucketId) {
-        this(bucketId, "default");
+        this(bucketId, FixedBucketSpaces.defaultSpace());
     }
 
     public GetBucketListMessage(BucketId bucketId, String bucketSpace) {

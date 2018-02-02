@@ -2,6 +2,7 @@
 package com.yahoo.documentapi;
 
 import com.yahoo.document.BucketId;
+import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.ThrottlePolicy;
@@ -20,7 +21,7 @@ import java.util.TreeMap;
 public class VisitorParameters extends Parameters {
 
     private String documentSelection;
-    private String bucketSpace = "default";
+    private String bucketSpace = FixedBucketSpaces.defaultSpace();
     private String visitorLibrary = "DumpVisitor";
     private int maxPending = 32;
     private long timeoutMs = -1;
