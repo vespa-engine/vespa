@@ -2,6 +2,9 @@
 
 #include "visitor.h"
 #include <climits>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
+
+using document::FixedBucketSpaces;
 
 namespace documentapi {
 
@@ -11,7 +14,7 @@ CreateVisitorMessage::CreateVisitorMessage() :
     _instanceId(),
     _controlDestination(),
     _dataDestination(),
-    _bucketSpace("default"), // TODO repo
+    _bucketSpace(FixedBucketSpaces::default_space_name()),
     _docSelection(),
     _maxPendingReplyCount(8),
     _buckets(),
@@ -35,7 +38,7 @@ CreateVisitorMessage::CreateVisitorMessage(const string& libraryName,
     _instanceId(instanceId),
     _controlDestination(controlDestination),
     _dataDestination(dataDestination),
-    _bucketSpace("default"), // TODO repo
+    _bucketSpace(FixedBucketSpaces::default_space_name()),
     _docSelection(),
     _maxPendingReplyCount(8),
     _buckets(),
