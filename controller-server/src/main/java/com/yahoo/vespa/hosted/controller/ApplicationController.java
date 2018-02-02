@@ -236,13 +236,12 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application already exists
      */
     public Application createApplication(ApplicationId id, Optional<NToken> token) {
-        // TODO: TLS: PR names change to prXXX.
-        if ( ! (   id.instance().value().equals("default")
-                || id.instance().value().matches("^default-pr\\d+$") // TODO: Remove when these no longer deploy.
-                || id.instance().value().matches("^\\d+$"))) // TODO: Support instances properly
-            throw new UnsupportedOperationException("Only the instance names 'default' and names starting with 'default-pr' or which are just the PR number are supported at the moment");
+        if ( ! (id.instance().isDefault() || id.instance().value().matches("\\d+"))) // TODO: Support instances properly
+            throw new UnsupportedOperationException("Only the instance names 'default' and names which are just the PR number are supported at the moment");
         try (Lock lock = lock(id)) {
-            com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
+            // Validate only application names which do not already exist.
+            if (asList(id.tenant()).stream().noneMatch(application -> application.id().application().equals(id.application())))
+                com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
 
             Optional<Tenant> tenant = controller.tenants().tenant(new TenantId(id.tenant().value()));
             if ( ! tenant.isPresent())
@@ -251,16 +250,11 @@ public class ApplicationController {
                 throw new IllegalArgumentException("Could not create '" + id + "': Application already exists");
             if (get(dashToUnderscore(id)).isPresent()) // VESPA-1945
                 throw new IllegalArgumentException("Could not create '" + id + "': Application " + dashToUnderscore(id) + " already exists");
-            if (tenant.get().isAthensTenant() && ! token.isPresent())
-                throw new IllegalArgumentException("Could not create '" + id + "': No NToken provided");
-            if (tenant.get().isAthensTenant()) {
+            if (id.instance().isDefault() && tenant.get().isAthensTenant()) { // Only create the athens application for "default" instances.
+                if ( ! token.isPresent())
+                    throw new IllegalArgumentException("Could not create '" + id + "': No NToken provided");
+
                 ZmsClient zmsClient = zmsClientFactory.createZmsClientWithAuthorizedServiceToken(token.get());
-                try {
-                    zmsClient.deleteApplication(tenant.get().getAthensDomain().get(),
-                                                new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
-                }
-                catch (ZmsException ignored) {
-                }
                 zmsClient.addApplication(tenant.get().getAthensDomain().get(),
                                          new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
             }
@@ -277,13 +271,9 @@ public class ApplicationController {
                                             Optional<ApplicationPackage> applicationPackageFromDeployer,
                                             DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
-            // TODO: Move application creation outside, to the deploy call in the handler.
             LockedApplication application = get(applicationId)
                     .map(app -> new LockedApplication(app, lock))
-                    .orElseGet(() -> {
-                        com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(applicationId.application().value());
-                        return new LockedApplication(new Application(applicationId), lock);
-                    });
+                    .orElseGet(() -> new LockedApplication(createApplication(applicationId, Optional.empty()), lock));
 
             // Determine Vespa version to use
             Version version;

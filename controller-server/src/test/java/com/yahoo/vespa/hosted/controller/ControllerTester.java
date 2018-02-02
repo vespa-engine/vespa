@@ -2,11 +2,8 @@
 package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.slime.Slime;
@@ -199,7 +196,7 @@ public final class ControllerTester {
     }
 
     public Application createApplication(TenantId tenant, String applicationName, String instanceName, long projectId) {
-        ApplicationId applicationId = applicationId(tenant.id(), applicationName, instanceName);
+        ApplicationId applicationId = ApplicationId.from(tenant.id(), applicationName, instanceName);
         controller().applications().createApplication(applicationId, Optional.of(TestIdentities.userNToken));
         controller().applications().lockOrThrow(applicationId, lockedApplication ->
                 controller().applications().store(lockedApplication.withProjectId(projectId)));
@@ -225,12 +222,6 @@ public final class ControllerTester {
                                                       zone,
                                                       applicationPackage,
                                                       new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, deployCurrentVersion));
-    }
-
-    public ApplicationId applicationId(String tenant, String application, String instance) {
-        return ApplicationId.from(TenantName.from(tenant),
-                                  ApplicationName.from(application),
-                                  InstanceName.from(instance));
     }
 
     // Used by ApplicationSerializerTest to avoid breaking encapsulation. Should not be used by anything else

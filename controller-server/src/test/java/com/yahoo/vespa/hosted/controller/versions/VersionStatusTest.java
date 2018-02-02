@@ -140,9 +140,6 @@ public class VersionStatusTest {
         Application ignored0 = tester.createApplication("ignored0", "tenant1", 1000, 1000L);
 
         // Pull request builds
-         tester.controllerTester().createApplication(new TenantId("tenant1"),
-                                                                           "ignored1",
-                                                                           "default-pr42", 1000);
         tester.controllerTester().createApplication(new TenantId("tenant1"),
                                                     "ignored1",
                                                     "43", 1000);

@@ -16,9 +16,11 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBuildJob;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
@@ -38,6 +40,7 @@ import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
@@ -54,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -361,7 +365,7 @@ public class ControllerTest {
 
         // pull-request deployment - uses different instance id
         ApplicationId app1pr = tester.createAndDeploy("tenant1",  "domain1",
-                                                      "application1", "default-pr1",
+                                                      "application1", "1",
                                                       Environment.staging, app1ProjectId, null).id();
 
         assertTrue(applications.get(app1).isPresent());
@@ -571,7 +575,7 @@ public class ControllerTest {
         // Setup tester and app def
         ControllerTester tester = new ControllerTester();
         ZoneId zone = ZoneId.from(Environment.defaultEnvironment(), RegionName.defaultName());
-        ApplicationId appId = tester.applicationId("tenant", "app1", "default");
+        ApplicationId appId = ApplicationId.from("tenant", "app1", "default");
         DeploymentId deployId = new DeploymentId(appId, zone);
 
         // Check initial rotation status
@@ -857,40 +861,70 @@ public class ControllerTest {
         // Component notifies completion
         tester.notifyJobCompletion(component, app, Optional.empty(), sourceRevision, initialBuildNumber);
         ApplicationVersion change = sourceRevision.map(sr -> ApplicationVersion.from(sr, initialBuildNumber))
-                                                  .orElse(ApplicationVersion.unknown);
+                .orElse(ApplicationVersion.unknown);
         assertEquals(change.id(), tester.controller().applications()
-                                        .require(application)
-                                        .change().application().get().id());
+                .require(application)
+                .change().application().get().id());
 
         // Deploy in test
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
         //assertEquals(4, applications.require(application).deploymentJobs().jobStatus().size());
         assertStatus(JobStatus.initial(stagingTest)
-                              .withTriggering(vespaVersion, expectedVersion, false, "",
-                                              tester.clock().instant().minus(Duration.ofMillis(1)))
-                              .withCompletion(42, Optional.empty(), tester.clock().instant(),
-                                              tester.controller()), application, tester.controller());
+                             .withTriggering(vespaVersion, expectedVersion, false, "",
+                                             tester.clock().instant().minus(Duration.ofMillis(1)))
+                             .withCompletion(42, Optional.empty(), tester.clock().instant(),
+                                             tester.controller()), application, tester.controller());
 
         // Deploy in production
         tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
         assertStatus(JobStatus.initial(productionCorpUsEast1)
-                              .withTriggering(vespaVersion, expectedVersion, false, "",
-                                              tester.clock().instant().minus(Duration.ofMillis(1)))
-                              .withCompletion(42, Optional.empty(), tester.clock().instant(),
-                                              tester.controller()), application, tester.controller());
+                             .withTriggering(vespaVersion, expectedVersion, false, "",
+                                             tester.clock().instant().minus(Duration.ofMillis(1)))
+                             .withCompletion(42, Optional.empty(), tester.clock().instant(),
+                                             tester.controller()), application, tester.controller());
         tester.deployAndNotify(app, applicationPackage, true, true, productionUsEast3);
         assertStatus(JobStatus.initial(productionUsEast3)
-                              .withTriggering(vespaVersion, expectedVersion, false, "",
-                                              tester.clock().instant().minus(Duration.ofMillis(1)))
-                              .withCompletion(42, Optional.empty(), tester.clock().instant(),
-                                              tester.controller()), application, tester.controller());
+                             .withTriggering(vespaVersion, expectedVersion, false, "",
+                                             tester.clock().instant().minus(Duration.ofMillis(1)))
+                             .withCompletion(42, Optional.empty(), tester.clock().instant(),
+                                             tester.controller()), application, tester.controller());
 
         // Verify deployed version
         app = tester.controller().applications().require(app.id());
         for (Deployment deployment : app.productionDeployments().values()) {
             assertEquals(expectedVersion, deployment.applicationVersion());
         }
+    }
+
+    @Test
+    public void testDeploymentOfNewInstanceWithIllegalApplicationName() {
+        ControllerTester tester = new ControllerTester();
+        String application = "this_application_name_is_far_too_long_and_has_underscores";
+        ZoneId zone = ZoneId.from("test", "us-east-1");
+        DeployOptions options = new DeployOptions(Optional.of(new ScrewdriverBuildJob(new ScrewdriverId("123"),
+                                                                                      null)),
+                                                  Optional.empty(),
+                                                  false,
+                                                  false);
+
+        tester.createTenant("tenant", "domain", null);
+
+        // Deploy an application which doesn't yet exist, and which has an illegal application name.
+        try {
+            tester.controller().applications().deployApplication(ApplicationId.from("tenant", application, "123"), zone, Optional.empty(), options);
+            fail("Illegal application name should cause validation exception.");
+        }
+        catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Invalid id"));
+        }
+
+        // Sneak an illegal application in the back door.
+        tester.createApplication(new ApplicationSerializer().toSlime(new Application(ApplicationId.from("tenant", application, "default"))));
+
+        // Deploy a PR instance for the application, with no NToken.
+        tester.controller().applications().deployApplication(ApplicationId.from("tenant", application, "456"), zone, Optional.empty(), options);
+        assertTrue(tester.controller().applications().get(ApplicationId.from("tenant", application, "456")).isPresent());
     }
 
 }
