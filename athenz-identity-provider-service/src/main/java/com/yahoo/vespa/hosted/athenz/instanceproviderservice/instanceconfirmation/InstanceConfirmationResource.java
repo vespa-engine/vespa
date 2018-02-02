@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 /**
  * @author bjorncs
  */
-@Path("/instance")
+@Path("/{path: instance|refresh}")
 public class InstanceConfirmationResource {
 
     private static final Logger log = Logger.getLogger(InstanceConfirmationResource.class.getName());
