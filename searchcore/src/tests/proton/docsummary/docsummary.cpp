@@ -665,10 +665,7 @@ Test::requireThatRewritersAreUsed()
     req.hits.push_back(DocsumRequest::Hit(gid1));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     EXPECT_EQUAL(1u, rep->docsums.size());
-    vespalib::SimpleBuffer buf;
-    vespalib::Slime summary = getSlime(*rep, 0, false);
-    JsonFormat::encode(summary, buf, false);
-    EXPECT_TRUE(vespalib::Regexp("Timed out with -[0-9]+us left.").match(buf.get().make_stringref()));
+    EXPECT_TRUE(assertSlime("{aa:20}", *rep, 0, false));
 }
 
 void
@@ -697,7 +694,10 @@ Test::requireThatSummariesTimeout()
     req.hits.push_back(DocsumRequest::Hit(gid1));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     EXPECT_EQUAL(1u, rep->docsums.size());
-    EXPECT_TRUE(assertSlime("{aa:20}", *rep, 0, false));
+    vespalib::SimpleBuffer buf;
+    vespalib::Slime summary = getSlime(*rep, 0, false);
+    JsonFormat::encode(summary, buf, false);
+    EXPECT_TRUE(vespalib::Regexp("Timed out with -[0-9]+us left.").match(buf.get().make_stringref()));
 }
 
 void
