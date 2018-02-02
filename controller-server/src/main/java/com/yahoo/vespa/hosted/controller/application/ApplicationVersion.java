@@ -11,18 +11,19 @@ import java.util.Optional;
  * @author bratseth
  * @author mpolden
  */
-public class ApplicationVersion {
+public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
-    // TODO: Remove the need for this
+    /**
+     * Used in cases where application version cannot be determined, such as manual deployments (e.g. in dev
+     * environment)
+     */
     public static final ApplicationVersion unknown = new ApplicationVersion();
 
-    // Never changes. Only used to create a valid version number for the bundle
+    // This never changes and is only used to create a valid semantic version number, as required by application bundles
     private static final String majorVersion = "1.0";
 
-    // TODO: Remove after introducing new application version
+    // TODO: Remove after 2018-03-01
     private final Optional<String> applicationPackageHash;
-
-    // TODO: Make mandatory
     private final Optional<SourceRevision> source;
     private final Optional<Long> buildNumber;
 
@@ -37,11 +38,11 @@ public class ApplicationVersion {
         Objects.requireNonNull(applicationPackageHash, "applicationPackageHash cannot be null");
         Objects.requireNonNull(source, "source cannot be null");
         Objects.requireNonNull(buildNumber, "buildNumber cannot be null");
-        if (buildNumber.isPresent() && !source.isPresent()) {
-            throw new IllegalArgumentException("both buildNumber and source must be set if buildNumber is set");
+        if (!applicationPackageHash.isPresent() && source.isPresent() != buildNumber.isPresent()) {
+            throw new IllegalArgumentException("both buildNumber and source must be set together");
         }
-        if ( ! buildNumber.isPresent() && ! applicationPackageHash.isPresent()) {
-            throw new IllegalArgumentException("applicationPackageHash must be given if buildNumber is unset");
+        if (buildNumber.isPresent() && buildNumber.get() <= 0) {
+            throw new IllegalArgumentException("buildNumber must be > 0");
         }
         this.applicationPackageHash = applicationPackageHash;
         this.source = source;
@@ -68,8 +69,13 @@ public class ApplicationVersion {
         if (applicationPackageHash.isPresent()) {
             return applicationPackageHash.get();
         }
-        return String.format("%s.%d-%s", majorVersion, buildNumber.get(), abbreviateCommit(source.get().commit()));
+        return source.map(sourceRevision -> String.format("%s.%d-%s", majorVersion, buildNumber.get(),
+                                                          abbreviateCommit(source.get().commit())))
+                     .orElse("unknown");
     }
+
+    /** Returns the application package hash, if known */
+    public Optional<String> applicationPackageHash() { return applicationPackageHash; }
 
     /**
      * Returns information about the source of this revision, or empty if the source is not know/defined
@@ -80,23 +86,29 @@ public class ApplicationVersion {
     /** Returns the build number that built this version */
     public Optional<Long> buildNumber() { return buildNumber; }
 
-    @Override
-    public int hashCode() { return applicationPackageHash.hashCode(); }
+    /** Returns whether this is unknown */
+    public boolean isUnknown() {
+        return this.equals(unknown);
+    }
 
     @Override
-    public boolean equals(Object other) {
-        if (this == other) return true;
-        if ( ! (other instanceof ApplicationVersion)) return false;
-        return this.applicationPackageHash.equals(((ApplicationVersion)other).applicationPackageHash);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ApplicationVersion that = (ApplicationVersion) o;
+        return Objects.equals(applicationPackageHash, that.applicationPackageHash) &&
+               Objects.equals(source, that.source) &&
+               Objects.equals(buildNumber, that.buildNumber);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(applicationPackageHash, source, buildNumber);
     }
 
     @Override
     public String toString() {
-        if (buildNumber.isPresent()) {
-            return "Application package version: " + abbreviateCommit(source.get().commit()) + "-" + buildNumber.get();
-        }
-        return "Application package revision '" + applicationPackageHash + "'" +
-               (source.isPresent() ? " with " + source.get() : "");
+        return "Application package version: " + id() + source.map(s -> ", " + s.toString()).orElse("");
     }
 
     /** Abbreviate given commit hash to 9 characters */
@@ -104,4 +116,11 @@ public class ApplicationVersion {
         return hash.length() <= 9 ? hash : hash.substring(0, 9);
     }
 
+    @Override
+    public int compareTo(ApplicationVersion o) {
+        if (!buildNumber().isPresent() || !o.buildNumber().isPresent()) {
+            return 0; // No sorting for application package hash
+        }
+        return buildNumber().get().compareTo(o.buildNumber().get());
+    }
 }

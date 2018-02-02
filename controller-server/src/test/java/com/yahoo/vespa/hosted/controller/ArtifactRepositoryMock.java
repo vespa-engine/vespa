@@ -14,11 +14,22 @@ import java.util.Objects;
  */
 public class ArtifactRepositoryMock implements ArtifactRepository {
 
-    private final Map<Integer, byte[]> repository = new HashMap<>();
+    private final Map<Integer, Artifact> repository = new HashMap<>();
 
     public ArtifactRepositoryMock put(ApplicationId applicationId, ApplicationPackage applicationPackage,
                                       String applicationVersion) {
-        repository.put(artifactHash(applicationId, applicationVersion), applicationPackage.zippedContent());
+        repository.put(artifactHash(applicationId, applicationVersion),
+                       new Artifact(applicationPackage.zippedContent()));
+        return this;
+    }
+
+    public int hits(ApplicationId applicationId, String applicationVersion) {
+        Artifact artifact = repository.get(artifactHash(applicationId, applicationVersion));
+        return artifact == null ? 0 : artifact.hits;
+    }
+
+    public ArtifactRepository resetHits() {
+        repository.values().forEach(Artifact::resetHits);
         return this;
     }
 
@@ -29,11 +40,32 @@ public class ArtifactRepositoryMock implements ArtifactRepository {
             throw new IllegalArgumentException("No application package found for " + applicationId + " with version "
                                                + applicationVersion);
         }
-        return repository.get(artifactHash);
+        Artifact artifact = repository.get(artifactHash);
+        artifact.recordHit();
+        return artifact.data;
     }
 
     private static int artifactHash(ApplicationId applicationId, String applicationVersion) {
         return Objects.hash(applicationId, applicationVersion);
+    }
+
+    private class Artifact {
+
+        private final byte[] data;
+        private int hits = 0;
+
+        private Artifact(byte[] data) {
+            this.data = data;
+        }
+
+        private void recordHit() {
+            hits++;
+        }
+
+        private void resetHits() {
+            hits = 0;
+        }
+
     }
 
 }
