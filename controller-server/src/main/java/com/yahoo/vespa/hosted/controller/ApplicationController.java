@@ -287,51 +287,41 @@ public class ApplicationController {
                 version = application.deployVersionIn(zone, controller);
             }
 
-            // Determine application package to use
-            ApplicationVersion applicationVersion;
-            ApplicationPackage applicationPackage;
-            Optional<DeploymentJobs.JobType> job = DeploymentJobs.JobType.from(controller.system(), zone);
-
-            // TODO: Simplify after new application version is always available
-            if (canDownloadReportedApplicationVersion(application) && !canDeployDirectlyTo(zone, options)) {
-                if (!job.isPresent()) {
-                    throw new IllegalArgumentException("Cannot determine job for zone " + zone);
-                }
-                applicationVersion = application.deployApplicationVersion(job.get(), controller,
-                                                                          options.deployCurrentVersion)
-                                                .orElseThrow(() -> new IllegalArgumentException("Cannot determine application version for " + applicationId));
-                if (canDownloadArtifact(applicationVersion)) {
-                    applicationPackage = new ApplicationPackage(
-                            artifactRepository.getApplicationPackage(applicationId, applicationVersion.id())
-                    );
-                } else {
-                    applicationPackage = applicationPackageFromDeployer.orElseThrow(
-                            () -> new IllegalArgumentException("Application package with version " +
-                                                               applicationVersion.id() + " cannot be downloaded, and " +
-                                                               "no package was given by deployer"));
-                }
-            } else { // ..otherwise we use the package sent by the deployer and deduce version from the package
-                // TODO: Only allow this for environments that are allowed to deploy directly
-                applicationPackage = applicationPackageFromDeployer.orElseThrow(
-                        () -> new IllegalArgumentException("Application package must be given as new application " +
-                                                           "version is not known for " + applicationId)
-                );
-                applicationVersion = toApplicationPackageRevision(applicationPackage, options.screwdriverBuildJob);
+            Optional<DeploymentJobs.JobType> jobType = DeploymentJobs.JobType.from(controller.system(), zone);
+            if (!jobType.isPresent() && !applicationPackageFromDeployer.isPresent()) {
+                throw new IllegalArgumentException("Unable to determine job type from zone '" + zone +
+                                                   "' and no application package was given");
             }
+
+            // Determine which application package to use
+            ApplicationPackage applicationPackage;
+            ApplicationVersion applicationVersion;
+            if (applicationPackageFromDeployer.isPresent()) {
+                applicationVersion = toApplicationPackageRevision(applicationPackageFromDeployer.get(),
+                                                                  options.screwdriverBuildJob);
+                applicationPackage = applicationPackageFromDeployer.get();
+            } else {
+                applicationVersion = application.deployApplicationVersion(jobType.get(), controller)
+                                                .orElseThrow(() -> new IllegalArgumentException("Cannot determine application version to use in " + zone));
+                applicationPackage = new ApplicationPackage(artifactRepository.getApplicationPackage(
+                        applicationId, applicationVersion.id())
+                );
+            }
+
             validate(applicationPackage.deploymentSpec());
 
-            // TODO: Remove after introducing new application version
-            if (!options.deployCurrentVersion && !canDownloadReportedApplicationVersion(application)) {
+            // TODO: Remove after introducing new application version number
+            if ( ! options.deployCurrentVersion && applicationPackageFromDeployer.isPresent()) {
                 if (application.change().application().isPresent()) {
-                    application = application.withChange(application.change().with(applicationVersion));
+                    application = application.withDeploying(application.change().with(applicationVersion));
                 }
-                if (!canDeployDirectlyTo(zone, options) && job.isPresent()) {
+                if (!canDeployDirectlyTo(zone, options) && jobType.isPresent()) {
                     // Update with (potentially) missing information about what we triggered:
                     // * When someone else triggered the job, we need to store a stand-in triggering event.
                     // * When this is the system test job, we need to record the new application version,
                     // for future use.
-                    JobStatus.JobRun triggering = getOrCreateTriggering(application, version, job.get());
-                    application = application.withJobTriggering(job.get(),
+                    JobStatus.JobRun triggering = getOrCreateTriggering(application, version, jobType.get());
+                    application = application.withJobTriggering(jobType.get(),
                                                                 application.change(),
                                                                 triggering.at(),
                                                                 version,
@@ -416,8 +406,7 @@ public class ApplicationController {
         Log logEntry = new Log();
         logEntry.level = "WARNING";
         logEntry.time = clock.instant().toEpochMilli();
-        logEntry.message = "Ignoring deployment of " + require(applicationId) + " to " + zone +
-                           " as a deployment is not currently expected";
+        logEntry.message = "Ignoring deployment of " + get(applicationId) + " to " + zone + " as a deployment is not currently expected";
         PrepareResponse prepareResponse = new PrepareResponse();
         prepareResponse.log = Collections.singletonList(logEntry);
         prepareResponse.configChangeActions = new ConfigChangeActions(Collections.emptyList(), Collections.emptyList());
@@ -697,20 +686,6 @@ public class ApplicationController {
         return ! options.screwdriverBuildJob.isPresent() ||
                options.screwdriverBuildJob.get().screwdriverId == null ||
                zone.environment().isManuallyDeployed();
-    }
-
-    /** Returns whether artifact for given version number is available in artifact repository */
-    private static boolean canDownloadArtifact(ApplicationVersion applicationVersion) {
-        return applicationVersion.buildNumber().isPresent() && applicationVersion.source().isPresent();
-    }
-
-    /** Returns whether component has reported a version number that is availabe in artifact repository */
-    private static boolean canDownloadReportedApplicationVersion(Application application) {
-        return Optional.ofNullable(application.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.component))
-                       .flatMap(JobStatus::lastSuccess)
-                       .map(JobStatus.JobRun::applicationVersion)
-                       .filter(ApplicationController::canDownloadArtifact)
-                       .isPresent();
     }
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system. */

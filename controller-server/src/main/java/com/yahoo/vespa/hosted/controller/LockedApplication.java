@@ -60,11 +60,8 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).with(deploymentJobs().with(issueId)));
     }
 
-    public LockedApplication withJobCompletion(DeploymentJobs.JobReport report, ApplicationVersion applicationVersion,
-                                               Instant notificationTime, Controller controller) {
-        return new LockedApplication(new Builder(this).with(deploymentJobs().withCompletion(
-                report, applicationVersion, notificationTime, controller))
-        );
+    public LockedApplication withJobCompletion(DeploymentJobs.JobReport report, Instant notificationTime, Controller controller) {
+        return new LockedApplication(new Builder(this).with(deploymentJobs().withCompletion(report, notificationTime, controller)));
     }
 
     public LockedApplication withJobTriggering(JobType type, Change change, Instant triggerTime,
@@ -122,8 +119,8 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).with(validationOverrides));
     }
 
-    public LockedApplication withChange(Change change) {
-        return new LockedApplication(new Builder(this).withChange(change));
+    public LockedApplication withDeploying(Change deploying) {
+        return new LockedApplication(new Builder(this).withDeploying(deploying));
     }
 
     public LockedApplication withOutstandingChange(boolean outstandingChange) {
@@ -149,17 +146,6 @@ public class LockedApplication extends Application {
     }
 
     public Optional<ApplicationVersion> deployApplicationVersion(DeploymentJobs.JobType jobType, Controller controller) {
-        return deployApplicationVersion(jobType, controller, false);
-    }
-
-    public Optional<ApplicationVersion> deployApplicationVersion(DeploymentJobs.JobType jobType, Controller controller,
-                                                                 boolean currentVersion) {
-        if (currentVersion) {
-            Optional<ApplicationVersion> version = oldestDeployedApplicationVersion();
-            if (version.isPresent()) {
-                return version;
-            }
-        }
         return jobType == JobType.component
                 ? Optional.empty()
                 : deployApplicationVersionIn(jobType.zone(controller.system()).get());
@@ -219,7 +205,7 @@ public class LockedApplication extends Application {
             return this;
         }
 
-        private Builder withChange(Change deploying) {
+        private Builder withDeploying(Change deploying) {
             this.deploying = deploying;
             return this;
         }
