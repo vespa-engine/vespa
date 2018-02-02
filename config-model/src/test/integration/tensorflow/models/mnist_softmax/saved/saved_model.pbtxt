@@ -1146,7 +1146,7 @@ meta_graphs {
     }
     tags: "serve"
     tensorflow_version: "1.4.1"
-    tensorflow_git_version: "v1.4.0-19-ga52c8d9b01"
+    tensorflow_git_version: "v1.4.0-19-ga52c8d9"
   }
   graph_def {
     node {
@@ -1182,400 +1182,6 @@ meta_graphs {
             }
             dim {
               size: 784
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "zeros"
-      op: "Const"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 784
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "value"
-        value {
-          tensor {
-            dtype: DT_FLOAT
-            tensor_shape {
-              dim {
-                size: 784
-              }
-              dim {
-                size: 10
-              }
-            }
-            float_val: 0.0
-          }
-        }
-      }
-    }
-    node {
-      name: "Variable"
-      op: "VariableV2"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 784
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "container"
-        value {
-          s: ""
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "shape"
-        value {
-          shape {
-            dim {
-              size: 784
-            }
-            dim {
-              size: 10
-            }
-          }
-        }
-      }
-      attr {
-        key: "shared_name"
-        value {
-          s: ""
-        }
-      }
-    }
-    node {
-      name: "Variable/Assign"
-      op: "Assign"
-      input: "Variable"
-      input: "zeros"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_class"
-        value {
-          list {
-            s: "loc:@Variable"
-          }
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 784
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "use_locking"
-        value {
-          b: true
-        }
-      }
-      attr {
-        key: "validate_shape"
-        value {
-          b: true
-        }
-      }
-    }
-    node {
-      name: "Variable/read"
-      op: "Identity"
-      input: "Variable"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_class"
-        value {
-          list {
-            s: "loc:@Variable"
-          }
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 784
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "zeros_1"
-      op: "Const"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "value"
-        value {
-          tensor {
-            dtype: DT_FLOAT
-            tensor_shape {
-              dim {
-                size: 10
-              }
-            }
-            float_val: 0.0
-          }
-        }
-      }
-    }
-    node {
-      name: "Variable_1"
-      op: "VariableV2"
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "container"
-        value {
-          s: ""
-        }
-      }
-      attr {
-        key: "dtype"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "shape"
-        value {
-          shape {
-            dim {
-              size: 10
-            }
-          }
-        }
-      }
-      attr {
-        key: "shared_name"
-        value {
-          s: ""
-        }
-      }
-    }
-    node {
-      name: "Variable_1/Assign"
-      op: "Assign"
-      input: "Variable_1"
-      input: "zeros_1"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_class"
-        value {
-          list {
-            s: "loc:@Variable_1"
-          }
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "use_locking"
-        value {
-          b: true
-        }
-      }
-      attr {
-        key: "validate_shape"
-        value {
-          b: true
-        }
-      }
-    }
-    node {
-      name: "Variable_1/read"
-      op: "Identity"
-      input: "Variable_1"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_class"
-        value {
-          list {
-            s: "loc:@Variable_1"
-          }
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-    }
-    node {
-      name: "MatMul"
-      op: "MatMul"
-      input: "Placeholder"
-      input: "Variable/read"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
-            }
-          }
-        }
-      }
-      attr {
-        key: "transpose_a"
-        value {
-          b: false
-        }
-      }
-      attr {
-        key: "transpose_b"
-        value {
-          b: false
-        }
-      }
-    }
-    node {
-      name: "add"
-      op: "Add"
-      input: "MatMul"
-      input: "Variable_1/read"
-      attr {
-        key: "T"
-        value {
-          type: DT_FLOAT
-        }
-      }
-      attr {
-        key: "_output_shapes"
-        value {
-          list {
-            shape {
-              dim {
-                size: -1
-              }
-              dim {
-                size: 10
-              }
             }
           }
         }
@@ -1620,6 +1226,400 @@ meta_graphs {
       }
     }
     node {
+      name: "layer/zeros"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 784
+              }
+              dim {
+                size: 10
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+              dim {
+                size: 784
+              }
+              dim {
+                size: 10
+              }
+            }
+            float_val: 0.0
+          }
+        }
+      }
+    }
+    node {
+      name: "layer/Variable"
+      op: "VariableV2"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 784
+              }
+              dim {
+                size: 10
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "container"
+        value {
+          s: ""
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+            dim {
+              size: 784
+            }
+            dim {
+              size: 10
+            }
+          }
+        }
+      }
+      attr {
+        key: "shared_name"
+        value {
+          s: ""
+        }
+      }
+    }
+    node {
+      name: "layer/Variable/Assign"
+      op: "Assign"
+      input: "layer/Variable"
+      input: "layer/zeros"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@layer/Variable"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 784
+              }
+              dim {
+                size: 10
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "use_locking"
+        value {
+          b: true
+        }
+      }
+      attr {
+        key: "validate_shape"
+        value {
+          b: true
+        }
+      }
+    }
+    node {
+      name: "layer/Variable/read"
+      op: "Identity"
+      input: "layer/Variable"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@layer/Variable"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 784
+              }
+              dim {
+                size: 10
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "layer/zeros_1"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 10
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+              dim {
+                size: 10
+              }
+            }
+            float_val: 0.0
+          }
+        }
+      }
+    }
+    node {
+      name: "layer/Variable_1"
+      op: "VariableV2"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 10
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "container"
+        value {
+          s: ""
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+            dim {
+              size: 10
+            }
+          }
+        }
+      }
+      attr {
+        key: "shared_name"
+        value {
+          s: ""
+        }
+      }
+    }
+    node {
+      name: "layer/Variable_1/Assign"
+      op: "Assign"
+      input: "layer/Variable_1"
+      input: "layer/zeros_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@layer/Variable_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 10
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "use_locking"
+        value {
+          b: true
+        }
+      }
+      attr {
+        key: "validate_shape"
+        value {
+          b: true
+        }
+      }
+    }
+    node {
+      name: "layer/Variable_1/read"
+      op: "Identity"
+      input: "layer/Variable_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@layer/Variable_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 10
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "layer/MatMul"
+      op: "MatMul"
+      input: "Placeholder"
+      input: "layer/Variable/read"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 10
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "transpose_a"
+        value {
+          b: false
+        }
+      }
+      attr {
+        key: "transpose_b"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "layer/add"
+      op: "Add"
+      input: "layer/MatMul"
+      input: "layer/Variable_1/read"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 10
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
       name: "Rank"
       op: "Const"
       attr {
@@ -1652,7 +1652,7 @@ meta_graphs {
     node {
       name: "Shape"
       op: "Shape"
-      input: "add"
+      input: "layer/add"
       attr {
         key: "T"
         value {
@@ -1711,7 +1711,7 @@ meta_graphs {
     node {
       name: "Shape_1"
       op: "Shape"
-      input: "add"
+      input: "layer/add"
       attr {
         key: "T"
         value {
@@ -1996,7 +1996,7 @@ meta_graphs {
     node {
       name: "Reshape"
       op: "Reshape"
-      input: "add"
+      input: "layer/add"
       input: "concat"
       attr {
         key: "T"
@@ -3423,7 +3423,7 @@ meta_graphs {
     node {
       name: "gradients/Reshape_grad/Shape"
       op: "Shape"
-      input: "add"
+      input: "layer/add"
       attr {
         key: "T"
         value {
@@ -3483,9 +3483,9 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/add_grad/Shape"
+      name: "gradients/layer/add_grad/Shape"
       op: "Shape"
-      input: "MatMul"
+      input: "layer/MatMul"
       attr {
         key: "T"
         value {
@@ -3512,7 +3512,7 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/add_grad/Shape_1"
+      name: "gradients/layer/add_grad/Shape_1"
       op: "Const"
       attr {
         key: "_output_shapes"
@@ -3548,10 +3548,10 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/add_grad/BroadcastGradientArgs"
+      name: "gradients/layer/add_grad/BroadcastGradientArgs"
       op: "BroadcastGradientArgs"
-      input: "gradients/add_grad/Shape"
-      input: "gradients/add_grad/Shape_1"
+      input: "gradients/layer/add_grad/Shape"
+      input: "gradients/layer/add_grad/Shape_1"
       attr {
         key: "T"
         value {
@@ -3577,10 +3577,10 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/add_grad/Sum"
+      name: "gradients/layer/add_grad/Sum"
       op: "Sum"
       input: "gradients/Reshape_grad/Reshape"
-      input: "gradients/add_grad/BroadcastGradientArgs"
+      input: "gradients/layer/add_grad/BroadcastGradientArgs"
       attr {
         key: "T"
         value {
@@ -3611,10 +3611,10 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/add_grad/Reshape"
+      name: "gradients/layer/add_grad/Reshape"
       op: "Reshape"
-      input: "gradients/add_grad/Sum"
-      input: "gradients/add_grad/Shape"
+      input: "gradients/layer/add_grad/Sum"
+      input: "gradients/layer/add_grad/Shape"
       attr {
         key: "T"
         value {
@@ -3644,10 +3644,10 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/add_grad/Sum_1"
+      name: "gradients/layer/add_grad/Sum_1"
       op: "Sum"
       input: "gradients/Reshape_grad/Reshape"
-      input: "gradients/add_grad/BroadcastGradientArgs:1"
+      input: "gradients/layer/add_grad/BroadcastGradientArgs:1"
       attr {
         key: "T"
         value {
@@ -3678,10 +3678,10 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/add_grad/Reshape_1"
+      name: "gradients/layer/add_grad/Reshape_1"
       op: "Reshape"
-      input: "gradients/add_grad/Sum_1"
-      input: "gradients/add_grad/Shape_1"
+      input: "gradients/layer/add_grad/Sum_1"
+      input: "gradients/layer/add_grad/Shape_1"
       attr {
         key: "T"
         value {
@@ -3708,16 +3708,16 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/add_grad/tuple/group_deps"
+      name: "gradients/layer/add_grad/tuple/group_deps"
       op: "NoOp"
-      input: "^gradients/add_grad/Reshape"
-      input: "^gradients/add_grad/Reshape_1"
+      input: "^gradients/layer/add_grad/Reshape"
+      input: "^gradients/layer/add_grad/Reshape_1"
     }
     node {
-      name: "gradients/add_grad/tuple/control_dependency"
+      name: "gradients/layer/add_grad/tuple/control_dependency"
       op: "Identity"
-      input: "gradients/add_grad/Reshape"
-      input: "^gradients/add_grad/tuple/group_deps"
+      input: "gradients/layer/add_grad/Reshape"
+      input: "^gradients/layer/add_grad/tuple/group_deps"
       attr {
         key: "T"
         value {
@@ -3728,7 +3728,7 @@ meta_graphs {
         key: "_class"
         value {
           list {
-            s: "loc:@gradients/add_grad/Reshape"
+            s: "loc:@gradients/layer/add_grad/Reshape"
           }
         }
       }
@@ -3749,10 +3749,10 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/add_grad/tuple/control_dependency_1"
+      name: "gradients/layer/add_grad/tuple/control_dependency_1"
       op: "Identity"
-      input: "gradients/add_grad/Reshape_1"
-      input: "^gradients/add_grad/tuple/group_deps"
+      input: "gradients/layer/add_grad/Reshape_1"
+      input: "^gradients/layer/add_grad/tuple/group_deps"
       attr {
         key: "T"
         value {
@@ -3763,7 +3763,7 @@ meta_graphs {
         key: "_class"
         value {
           list {
-            s: "loc:@gradients/add_grad/Reshape_1"
+            s: "loc:@gradients/layer/add_grad/Reshape_1"
           }
         }
       }
@@ -3781,10 +3781,10 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/MatMul_grad/MatMul"
+      name: "gradients/layer/MatMul_grad/MatMul"
       op: "MatMul"
-      input: "gradients/add_grad/tuple/control_dependency"
-      input: "Variable/read"
+      input: "gradients/layer/add_grad/tuple/control_dependency"
+      input: "layer/Variable/read"
       attr {
         key: "T"
         value {
@@ -3820,10 +3820,10 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/MatMul_grad/MatMul_1"
+      name: "gradients/layer/MatMul_grad/MatMul_1"
       op: "MatMul"
       input: "Placeholder"
-      input: "gradients/add_grad/tuple/control_dependency"
+      input: "gradients/layer/add_grad/tuple/control_dependency"
       attr {
         key: "T"
         value {
@@ -3859,16 +3859,16 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/MatMul_grad/tuple/group_deps"
+      name: "gradients/layer/MatMul_grad/tuple/group_deps"
       op: "NoOp"
-      input: "^gradients/MatMul_grad/MatMul"
-      input: "^gradients/MatMul_grad/MatMul_1"
+      input: "^gradients/layer/MatMul_grad/MatMul"
+      input: "^gradients/layer/MatMul_grad/MatMul_1"
     }
     node {
-      name: "gradients/MatMul_grad/tuple/control_dependency"
+      name: "gradients/layer/MatMul_grad/tuple/control_dependency"
       op: "Identity"
-      input: "gradients/MatMul_grad/MatMul"
-      input: "^gradients/MatMul_grad/tuple/group_deps"
+      input: "gradients/layer/MatMul_grad/MatMul"
+      input: "^gradients/layer/MatMul_grad/tuple/group_deps"
       attr {
         key: "T"
         value {
@@ -3879,7 +3879,7 @@ meta_graphs {
         key: "_class"
         value {
           list {
-            s: "loc:@gradients/MatMul_grad/MatMul"
+            s: "loc:@gradients/layer/MatMul_grad/MatMul"
           }
         }
       }
@@ -3900,10 +3900,10 @@ meta_graphs {
       }
     }
     node {
-      name: "gradients/MatMul_grad/tuple/control_dependency_1"
+      name: "gradients/layer/MatMul_grad/tuple/control_dependency_1"
       op: "Identity"
-      input: "gradients/MatMul_grad/MatMul_1"
-      input: "^gradients/MatMul_grad/tuple/group_deps"
+      input: "gradients/layer/MatMul_grad/MatMul_1"
+      input: "^gradients/layer/MatMul_grad/tuple/group_deps"
       attr {
         key: "T"
         value {
@@ -3914,7 +3914,7 @@ meta_graphs {
         key: "_class"
         value {
           list {
-            s: "loc:@gradients/MatMul_grad/MatMul_1"
+            s: "loc:@gradients/layer/MatMul_grad/MatMul_1"
           }
         }
       }
@@ -3965,11 +3965,11 @@ meta_graphs {
       }
     }
     node {
-      name: "GradientDescent/update_Variable/ApplyGradientDescent"
+      name: "GradientDescent/update_layer/Variable/ApplyGradientDescent"
       op: "ApplyGradientDescent"
-      input: "Variable"
+      input: "layer/Variable"
       input: "GradientDescent/learning_rate"
-      input: "gradients/MatMul_grad/tuple/control_dependency_1"
+      input: "gradients/layer/MatMul_grad/tuple/control_dependency_1"
       attr {
         key: "T"
         value {
@@ -3980,7 +3980,7 @@ meta_graphs {
         key: "_class"
         value {
           list {
-            s: "loc:@Variable"
+            s: "loc:@layer/Variable"
           }
         }
       }
@@ -4007,11 +4007,11 @@ meta_graphs {
       }
     }
     node {
-      name: "GradientDescent/update_Variable_1/ApplyGradientDescent"
+      name: "GradientDescent/update_layer/Variable_1/ApplyGradientDescent"
       op: "ApplyGradientDescent"
-      input: "Variable_1"
+      input: "layer/Variable_1"
       input: "GradientDescent/learning_rate"
-      input: "gradients/add_grad/tuple/control_dependency_1"
+      input: "gradients/layer/add_grad/tuple/control_dependency_1"
       attr {
         key: "T"
         value {
@@ -4022,7 +4022,7 @@ meta_graphs {
         key: "_class"
         value {
           list {
-            s: "loc:@Variable_1"
+            s: "loc:@layer/Variable_1"
           }
         }
       }
@@ -4048,14 +4048,14 @@ meta_graphs {
     node {
       name: "GradientDescent"
       op: "NoOp"
-      input: "^GradientDescent/update_Variable/ApplyGradientDescent"
-      input: "^GradientDescent/update_Variable_1/ApplyGradientDescent"
+      input: "^GradientDescent/update_layer/Variable/ApplyGradientDescent"
+      input: "^GradientDescent/update_layer/Variable_1/ApplyGradientDescent"
     }
     node {
       name: "init"
       op: "NoOp"
-      input: "^Variable/Assign"
-      input: "^Variable_1/Assign"
+      input: "^layer/Variable/Assign"
+      input: "^layer/Variable_1/Assign"
     }
     node {
       name: "ArgMax/dimension"
@@ -4090,7 +4090,7 @@ meta_graphs {
     node {
       name: "ArgMax"
       op: "ArgMax"
-      input: "add"
+      input: "layer/add"
       input: "ArgMax/dimension"
       attr {
         key: "T"
@@ -4366,7 +4366,7 @@ meta_graphs {
             dtype: DT_STRING
             tensor_shape {
             }
-            string_val: "_temp_6ca9fa5171ed4237a2fbcc27277e2864/part"
+            string_val: "_temp_65caff16d5244276b9828b0dab21b157/part"
           }
         }
       }
@@ -4505,8 +4505,8 @@ meta_graphs {
                 size: 2
               }
             }
-            string_val: "Variable"
-            string_val: "Variable_1"
+            string_val: "layer/Variable"
+            string_val: "layer/Variable_1"
           }
         }
       }
@@ -4554,8 +4554,8 @@ meta_graphs {
       input: "save/ShardedFilename"
       input: "save/SaveV2/tensor_names"
       input: "save/SaveV2/shape_and_slices"
-      input: "Variable"
-      input: "Variable_1"
+      input: "layer/Variable"
+      input: "layer/Variable_1"
       attr {
         key: "dtypes"
         value {
@@ -4696,7 +4696,7 @@ meta_graphs {
                 size: 1
               }
             }
-            string_val: "Variable"
+            string_val: "layer/Variable"
           }
         }
       }
@@ -4765,7 +4765,7 @@ meta_graphs {
     node {
       name: "save/Assign"
       op: "Assign"
-      input: "Variable"
+      input: "layer/Variable"
       input: "save/RestoreV2"
       attr {
         key: "T"
@@ -4777,7 +4777,7 @@ meta_graphs {
         key: "_class"
         value {
           list {
-            s: "loc:@Variable"
+            s: "loc:@layer/Variable"
           }
         }
       }
@@ -4840,7 +4840,7 @@ meta_graphs {
                 size: 1
               }
             }
-            string_val: "Variable_1"
+            string_val: "layer/Variable_1"
           }
         }
       }
@@ -4909,7 +4909,7 @@ meta_graphs {
     node {
       name: "save/Assign_1"
       op: "Assign"
-      input: "Variable_1"
+      input: "layer/Variable_1"
       input: "save/RestoreV2_1"
       attr {
         key: "T"
@@ -4921,7 +4921,7 @@ meta_graphs {
         key: "_class"
         value {
           list {
-            s: "loc:@Variable_1"
+            s: "loc:@layer/Variable_1"
           }
         }
       }
@@ -4986,8 +4986,8 @@ meta_graphs {
     key: "trainable_variables"
     value {
       bytes_list {
-        value: "\n\nVariable:0\022\017Variable/Assign\032\017Variable/read:02\007zeros:0"
-        value: "\n\014Variable_1:0\022\021Variable_1/Assign\032\021Variable_1/read:02\tzeros_1:0"
+        value: "\n\020layer/Variable:0\022\025layer/Variable/Assign\032\025layer/Variable/read:02\rlayer/zeros:0"
+        value: "\n\022layer/Variable_1:0\022\027layer/Variable_1/Assign\032\027layer/Variable_1/read:02\017layer/zeros_1:0"
       }
     }
   }
@@ -4995,8 +4995,8 @@ meta_graphs {
     key: "variables"
     value {
       bytes_list {
-        value: "\n\nVariable:0\022\017Variable/Assign\032\017Variable/read:02\007zeros:0"
-        value: "\n\014Variable_1:0\022\021Variable_1/Assign\032\021Variable_1/read:02\tzeros_1:0"
+        value: "\n\020layer/Variable:0\022\025layer/Variable/Assign\032\025layer/Variable/read:02\rlayer/zeros:0"
+        value: "\n\022layer/Variable_1:0\022\027layer/Variable_1/Assign\032\027layer/Variable_1/read:02\017layer/zeros_1:0"
       }
     }
   }
@@ -5021,7 +5021,7 @@ meta_graphs {
       outputs {
         key: "y"
         value {
-          name: "add:0"
+          name: "layer/add:0"
           dtype: DT_FLOAT
           tensor_shape {
             dim {

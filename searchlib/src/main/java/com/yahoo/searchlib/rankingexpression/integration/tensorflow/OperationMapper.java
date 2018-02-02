@@ -204,20 +204,21 @@ class OperationMapper {
 
     private static Optional<TypedTensorFunction> placeholder(TensorFlowImporter.Parameters params) {
         String name = params.node().getName();
+        String vespaName = toVespaName(params.node().getName());
         TensorType type = params.result().arguments().get(name);
         if (type == null) {
             throw new IllegalArgumentException("A 'placeholder' node is referencing placeholder '" + name +
                                                "', but there is no such placeholder");
         }
-        params.result().requiredMacro(name, type);
+        params.result().requiredMacro(vespaName, type);
         // Included literally in the expression and so must be produced by a separate macro in the rank profile
-        TypedTensorFunction output = new TypedTensorFunction(type, new VariableTensor(name, type));
+        TypedTensorFunction output = new TypedTensorFunction(type, new VariableTensor(vespaName, type));
         return Optional.of(output);
     }
 
     private static Optional<TypedTensorFunction> placeholderWithDefault(TensorFlowImporter.Parameters params) {
-        String name = params.node().getInput(0);
-        Tensor defaultValue = getConstantTensor(params, name);
+        String name = toVespaName(params.node().getInput(0));
+        Tensor defaultValue = getConstantTensor(params, params.node().getInput(0));
         params.result().constant(name, defaultValue);
         params.result().macro(name, new RankingExpression(name, new ReferenceNode("constant(\"" + name + "\")")));
         // The default value will be provided by the macro. Users can override macro to change value.
@@ -542,16 +543,18 @@ class OperationMapper {
     }
 
     private static Optional<TypedTensorFunction> createConstant(TensorFlowImporter.Parameters params, Tensor constant) {
-        params.result().constant(params.node().getName(), constant);
+        String name = toVespaName(params.node().getName());
+        params.result().constant(name, constant);
         TypedTensorFunction output = new TypedTensorFunction(constant.type(),
                 new TensorFunctionNode.TensorFunctionExpressionNode(
-                        new ReferenceNode("constant(\"" + params.node().getName() + "\")")));
+                        new ReferenceNode("constant(\"" + name + "\")")));
         return Optional.of(output);
     }
 
     private static Tensor getConstantTensor(TensorFlowImporter.Parameters params, String name) {
-        if (params.result().constants().containsKey(name)) {
-            return params.result().constants().get(name);
+        String vespaName = toVespaName(name);
+        if (params.result().constants().containsKey(vespaName)) {
+            return params.result().constants().get(vespaName);
         }
         Session.Runner fetched = params.model().session().runner().fetch(name);
         List<org.tensorflow.Tensor<?>> importedTensors = fetched.run();
@@ -690,6 +693,10 @@ class OperationMapper {
             return false;
         }
         return true;
+    }
+
+    public static String toVespaName(String name) {
+        return name != null ? name.replace('/', '_') : null;
     }
 
 }

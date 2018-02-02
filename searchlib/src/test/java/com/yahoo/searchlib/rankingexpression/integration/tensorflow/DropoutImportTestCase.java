@@ -20,8 +20,8 @@ public class DropoutImportTestCase {
 
         // Check (provided) macros
         assertEquals(1, model.get().macros().size());
-        assertTrue(model.get().macros().containsKey("training/input"));
-        assertEquals("constant(\"training/input\")", model.get().macros().get("training/input").getRoot().toString());
+        assertTrue(model.get().macros().containsKey("training_input"));
+        assertEquals("constant(\"training_input\")", model.get().macros().get("training_input").getRoot().toString());
 
         // Check required macros
         assertEquals(1, model.get().requiredMacros().size());
@@ -37,7 +37,7 @@ public class DropoutImportTestCase {
         RankingExpression output = signature.outputExpression("y");
         assertNotNull(output);
         assertEquals("outputs/BiasAdd", output.getName());
-        assertEquals("join(rename(reduce(join(X, rename(constant(\"outputs/kernel\"), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(\"outputs/bias\"), d0, d1), f(a,b)(a + b))",
+        assertEquals("join(rename(reduce(join(X, rename(constant(\"outputs_kernel\"), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(\"outputs_bias\"), d0, d1), f(a,b)(a + b))",
                 output.getRoot().toString());
         model.assertEqualResult("X", output.getName());
     }

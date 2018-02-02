@@ -37,7 +37,7 @@ public class TensorFlowModel {
 
     /** Returns the given signature. If it does not already exist it is added to this. */
     Signature signature(String name) {
-        return signatures.computeIfAbsent(name, n -> new Signature(n));
+        return signatures.computeIfAbsent(name, Signature::new);
     }
 
     /** Returns an immutable map of the arguments ("Placeholders") of this */
