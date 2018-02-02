@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileWriter;
 
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.regex.Pattern;
 
@@ -17,20 +19,17 @@ public class AddYumRepo {
     private final String name; // e.g. "Platform RPM Latest Repo"
     private final String baseurl;
     private final boolean enabled;
+    private final FileSystem fileSystem;
 
     public AddYumRepo(String repositoryId,
                       String name,
                       String baseurl,
                       boolean enabled) {
-        this.repositoryId = repositoryId;
-        this.name = name;
-        this.baseurl = baseurl;
-        this.enabled = enabled;
-        validateRepositoryId(repositoryId);
+        this(repositoryId, name, baseurl, enabled, FileSystems.getDefault());
     }
 
     public boolean converge(TaskContext context) {
-        Path path = context.fileSystem().getPath("/etc/yum.repos.d",repositoryId + ".repo");
+        Path path = fileSystem.getPath("/etc/yum.repos.d",repositoryId + ".repo");
 
         FileWriter fileWriter = new FileWriter(path, this::getRepoFileContent)
                 .withOwner("root")
@@ -58,5 +57,19 @@ public class AddYumRepo {
         if (!REPOSITORY_ID_PATTERN.matcher(repositoryId).matches()) {
             throw new IllegalArgumentException("Invalid repository ID '" + repositoryId + "'");
         }
+    }
+
+    // For testing
+    AddYumRepo(String repositoryId,
+               String name,
+               String baseurl,
+               boolean enabled,
+               FileSystem fileSystem) {
+        this.repositoryId = repositoryId;
+        this.name = name;
+        this.baseurl = baseurl;
+        this.enabled = enabled;
+        this.fileSystem = fileSystem;
+        validateRepositoryId(repositoryId);
     }
 }

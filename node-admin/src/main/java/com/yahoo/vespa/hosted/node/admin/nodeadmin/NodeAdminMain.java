@@ -5,11 +5,10 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.classlock.ClassLocking;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.component.AdminComponent;
+import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 
 import java.io.File;
@@ -49,8 +48,7 @@ public class NodeAdminMain implements AutoCloseable {
     }
 
     public static NodeAdminConfig getConfig() {
-        String path = Defaults.getDefaults().underVespaHome("conf/node-admin.json");
-        return NodeAdminConfig.fromFile(new File(path));
+        return NodeAdminConfig.fromFile(new File("/etc/vespa/node-admin.json"));
     }
 
     public void start() {

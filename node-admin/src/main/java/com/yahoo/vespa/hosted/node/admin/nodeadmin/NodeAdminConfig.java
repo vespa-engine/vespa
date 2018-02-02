@@ -18,18 +18,6 @@ public class NodeAdminConfig {
     @JsonProperty("main-component")
     public String mainComponent = null;
 
-    public enum Mode {
-        aws_tenant,
-        config_server_host,
-        tenant,
-    }
-
-    @JsonProperty("mode")
-    public Mode mode = Mode.tenant;
-
-    @JsonProperty("docker")
-    public DockerAdminConfig docker = new DockerAdminConfig();
-
     public static NodeAdminConfig fromFile(File file) {
         if (!file.exists()) {
             return new NodeAdminConfig();

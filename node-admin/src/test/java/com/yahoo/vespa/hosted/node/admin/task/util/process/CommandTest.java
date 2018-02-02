@@ -27,7 +27,7 @@ public class CommandTest {
         Path outputFile;
         // Assumes /bin/bash exists on all hosts running this test.
         try (ChildProcess childProcess = command.spawn(logger)) {
-            verify(taskContext).logSystemModification(eq(logger), any());
+            verify(taskContext).recordSystemModification(eq(logger), any());
 
             outputFile = childProcess.getProcessOutputPath();
             int exitValue = childProcess.waitForTermination().exitValue();
