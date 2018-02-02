@@ -58,6 +58,7 @@ public final class DocsumDefinitionSet {
      * @param summaryClass the requested summary class
      * @param data docsum data from backend
      * @param hit the Hit corresponding to this document summary
+     * @return Error message or null on success.
      * @throws ConfigurationException if the summary class of this hit is missing
      */
     public final String lazyDecode(String summaryClass, byte[] data, FastHit hit) {
