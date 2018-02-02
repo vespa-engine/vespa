@@ -78,13 +78,11 @@ public final class IfNode extends CompositeNode {
     public TensorType type(TypeContext context) {
         TensorType trueType = trueExpression.type(context);
         TensorType falseType = falseExpression.type(context);
-
-        // Types of each branch must be compatible; the resulting type is the most general
-        if (trueType.isAssignableTo(falseType)) return falseType;
-        if (falseType.isAssignableTo(trueType)) return trueType;
-        throw new IllegalArgumentException("An if expression must produce compatible types in both " +
-                                           "alternatives, but the 'true' type is " + trueType + " while the " +
-                                           "'false' type is " + falseType);
+        return trueType.dimensionwiseGeneralizationWith(falseType).orElseThrow(() ->
+            new IllegalArgumentException("An if expression must produce compatible types in both " +
+                                         "alternatives, but the 'true' type is " + trueType + " while the " +
+                                         "'false' type is " + falseType)
+        );
     }
 
     @Override
