@@ -2,6 +2,7 @@
 package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.slime.BinaryFormat;
+import com.yahoo.data.access.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.prelude.ConfigurationException;
@@ -12,6 +13,8 @@ import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import static com.yahoo.data.access.Type.OBJECT;
 
 /**
  * A set of docsum definitions
@@ -55,9 +58,10 @@ public final class DocsumDefinitionSet {
      * @param summaryClass the requested summary class
      * @param data docsum data from backend
      * @param hit the Hit corresponding to this document summary
+     * @return Error message or null on success.
      * @throws ConfigurationException if the summary class of this hit is missing
      */
-    public final void lazyDecode(String summaryClass, byte[] data, FastHit hit) {
+    public final String lazyDecode(String summaryClass, byte[] data, FastHit hit) {
         ByteBuffer buffer = ByteBuffer.wrap(data);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         long docsumClassId = buffer.getInt();
@@ -66,7 +70,12 @@ public final class DocsumDefinitionSet {
         }
         DocsumDefinition docsumDefinition = lookupDocsum(summaryClass);
         Slime value = BinaryFormat.decode(buffer.array(), buffer.arrayOffset()+buffer.position(), buffer.remaining());
-        hit.addSummary(docsumDefinition, new SlimeAdapter(value.get()));
+        Inspector docsum = new SlimeAdapter(value.get());
+        if (docsum.type() != OBJECT) {
+            return "Hit " + hit + " failed: " + docsum.asString();
+        }
+        hit.addSummary(docsumDefinition, docsum);
+        return null;
     }
 
     private DocsumDefinition lookupDocsum(String summaryClass) {

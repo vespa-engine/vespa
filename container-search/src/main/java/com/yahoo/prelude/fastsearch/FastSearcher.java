@@ -317,7 +317,12 @@ public class FastSearcher extends VespaBackEndSearcher {
 
             int skippedHits;
             try {
-                skippedHits = fillHits(result, 0, receivedPackets, summaryClass);
+                FillHitsResult fillHitsResult = fillHits(result, 0, receivedPackets, summaryClass);
+                skippedHits = fillHitsResult.skippedHits;
+                if (fillHitsResult.error != null) {
+                    result.hits().addError(ErrorMessage.createTimeout(fillHitsResult.error));
+                    return;
+                }
             } catch (TimeoutException e) {
                 result.hits().addError(ErrorMessage.createTimeout(e.getMessage()));
                 return;

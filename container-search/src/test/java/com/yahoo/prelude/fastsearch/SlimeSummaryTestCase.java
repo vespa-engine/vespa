@@ -33,7 +33,7 @@ public class SlimeSummaryTestCase {
         DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf, emul);
         byte[] docsum = makeEmptyDocsum();
         FastHit hit = new FastHit();
-        set.lazyDecode("default", docsum, hit);
+        assertNull(set.lazyDecode("default", docsum, hit));
         assertThat(hit.getField("integer_field"), equalTo(NanNumber.NaN));
         assertThat(hit.getField("short_field"),   equalTo(NanNumber.NaN));
         assertThat(hit.getField("byte_field"),    equalTo(NanNumber.NaN));
@@ -66,7 +66,7 @@ public class SlimeSummaryTestCase {
         DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf, new LegacyEmulationConfig(new LegacyEmulationConfig.Builder().forceFillEmptyFields(false)));
         byte[] docsum = makeEmptyDocsum();
         FastHit hit = new FastHit();
-        set.lazyDecode("default", docsum, hit);
+        assertNull(set.lazyDecode("default", docsum, hit));
         assertThat(hit.getField("integer_field"), equalTo(null));
         assertThat(hit.getField("short_field"),   equalTo(null));
         assertThat(hit.getField("byte_field"),    equalTo(null));
@@ -89,6 +89,9 @@ public class SlimeSummaryTestCase {
     private byte[] makeEmptyDocsum() {
         Slime slime = new Slime();
         Cursor docsum = slime.setObject();
+        return encode((slime));
+    }
+    private byte [] encode(Slime slime) {
         byte[] tmp = BinaryFormat.encode(slime);
         ByteBuffer buf = ByteBuffer.allocate(tmp.length + 4);
         buf.order(ByteOrder.LITTLE_ENDIAN);
@@ -96,6 +99,15 @@ public class SlimeSummaryTestCase {
         buf.order(ByteOrder.BIG_ENDIAN);
         buf.put(tmp);
         return buf.array();
+    }
+
+    @Test
+    public void testTimeout() {
+        String summary_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/summary.cfg";
+        DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
+        byte[] docsum = makeTimeout();
+        FastHit hit = new FastHit();
+        assertEquals("Hit hit index:0/0/0/000000000000000000000000 (relevance null) [fasthit, globalid: 0 0 0 0 0 0 0 0 0 0 0 0, partId: 0, distributionkey: 0] failed: Timed out....", set.lazyDecode("default", docsum, hit));
     }
 
     @Test
@@ -107,7 +119,7 @@ public class SlimeSummaryTestCase {
         DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
         byte[] docsum = makeDocsum(tensor1, tensor2);
         FastHit hit = new FastHit();
-        set.lazyDecode("default", docsum, hit);
+        assertNull(set.lazyDecode("default", docsum, hit));
         assertThat(hit.getField("integer_field"), equalTo(4));
         assertThat(hit.getField("short_field"),   equalTo((short)2));
         assertThat(hit.getField("byte_field"),    equalTo((byte)1));
@@ -170,13 +182,13 @@ public class SlimeSummaryTestCase {
         }
         docsum.setData("tensor_field1", TypedBinaryFormat.encode(tensor1));
         docsum.setData("tensor_field2", TypedBinaryFormat.encode(tensor2));
-        byte[] tmp = BinaryFormat.encode(slime);
-        ByteBuffer buf = ByteBuffer.allocate(tmp.length + 4);
-        buf.order(ByteOrder.LITTLE_ENDIAN);
-        buf.putInt(DocsumDefinitionSet.SLIME_MAGIC_ID);
-        buf.order(ByteOrder.BIG_ENDIAN);
-        buf.put(tmp);
-        return buf.array();
+        return encode((slime));
+    }
+
+    private byte [] makeTimeout() {
+        Slime slime = new Slime();
+        slime.setString("Timed out....");
+        return encode((slime));
     }
 
 }
