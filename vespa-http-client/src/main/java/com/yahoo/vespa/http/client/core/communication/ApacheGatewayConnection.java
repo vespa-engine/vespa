@@ -391,8 +391,7 @@ class ApacheGatewayConnection implements GatewayConnection {
             if (useSsl && connectionParams.getSslContext() != null) {
                 Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
                         .register("https", new SSLConnectionSocketFactory(
-                                // Alternative: SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER
-                                connectionParams.getSslContext(), SSLConnectionSocketFactory.getDefaultHostnameVerifier()))
+                                connectionParams.getSslContext(), connectionParams.getHostnameVerifier()))
                         .register("http", PlainConnectionSocketFactory.INSTANCE)
                         .build();
                 PoolingHttpClientConnectionManager connMgr = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
