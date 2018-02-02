@@ -48,7 +48,6 @@ public interface ApplicationPackage {
 
     Path SEARCH_DEFINITIONS_DIR = Path.fromString("searchdefinitions");
     String COMPONENT_DIR = "components";
-    String TEMPLATES_DIR = "templates";
     String SEARCHCHAINS_DIR = "search/chains";
     String DOCPROCCHAINS_DIR = "docproc/chains";
     String PROCESSORCHAINS_DIR = "processor/chains";
