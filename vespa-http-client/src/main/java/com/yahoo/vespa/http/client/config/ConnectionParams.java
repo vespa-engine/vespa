@@ -1,11 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import net.jcip.annotations.Immutable;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,6 +35,7 @@ public final class ConnectionParams {
      */
     public static final class Builder {
         private SSLContext sslContext = null;
+        private HostnameVerifier hostnameVerifier = SSLConnectionSocketFactory.getDefaultHostnameVerifier();
         private long connectionTimeout = TimeUnit.SECONDS.toMillis(60);
         private final Multimap<String, String> headers = ArrayListMultimap.create();
         private final Map<String, HeaderProvider> headerProviders = new HashMap<>();
@@ -56,6 +60,18 @@ public final class ConnectionParams {
          */
         public Builder setSslContext(SSLContext sslContext) {
             this.sslContext = sslContext;
+            return this;
+        }
+
+        /**
+         * Sets the {@link HostnameVerifier} for the connection to the gateway when SSL is enabled for Endpoint.
+         * Defaults to instance returned by {@link SSLConnectionSocketFactory#getDefaultHostnameVerifier()}.
+         *
+         * @param hostnameVerifier hostname verifier for connection to gateway.
+         * @return pointer to builder.
+         */
+        public Builder setHostnameVerifier(HostnameVerifier hostnameVerifier) {
+            this.hostnameVerifier = hostnameVerifier;
             return this;
         }
 
@@ -218,6 +234,7 @@ public final class ConnectionParams {
         public ConnectionParams build() {
             return new ConnectionParams(
                     sslContext,
+                    hostnameVerifier,
                     connectionTimeout,
                     headers,
                     headerProviders,
@@ -268,8 +285,12 @@ public final class ConnectionParams {
             return sslContext;
         }
 
+        public HostnameVerifier getHostnameVerifier() {
+            return hostnameVerifier;
+        }
     }
     private final SSLContext sslContext;
+    private final HostnameVerifier hostnameVerifier;
     private final long connectionTimeout;
     private final Multimap<String, String> headers = ArrayListMultimap.create();
     private final Map<String, HeaderProvider> headerProviders = new HashMap<>();
@@ -287,6 +308,7 @@ public final class ConnectionParams {
 
     private ConnectionParams(
             SSLContext sslContext,
+            HostnameVerifier hostnameVerifier,
             long connectionTimeout,
             Multimap<String, String> headers,
             Map<String, HeaderProvider> headerProviders,
@@ -302,6 +324,7 @@ public final class ConnectionParams {
             int traceEveryXOperation,
             boolean printTraceToStdErr) {
         this.sslContext = sslContext;
+        this.hostnameVerifier = hostnameVerifier;
         this.connectionTimeout = connectionTimeout;
         this.headers.putAll(headers);
         this.headerProviders.putAll(headerProviders);
@@ -318,8 +341,14 @@ public final class ConnectionParams {
         this.printTraceToStdErr = printTraceToStdErr;
     }
 
+    @JsonIgnore
     public SSLContext getSslContext() {
         return sslContext;
+    }
+
+    @JsonIgnore
+    public HostnameVerifier getHostnameVerifier() {
+        return hostnameVerifier;
     }
 
     public Collection<Map.Entry<String, String>> getHeaders() {

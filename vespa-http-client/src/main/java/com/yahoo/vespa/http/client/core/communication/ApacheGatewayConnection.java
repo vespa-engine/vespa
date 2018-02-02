@@ -2,6 +2,7 @@
 package com.yahoo.vespa.http.client.core.communication;
 
 import com.google.common.annotations.Beta;
+import com.yahoo.component.Vtag;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.config.FeedParams;
@@ -391,15 +392,14 @@ class ApacheGatewayConnection implements GatewayConnection {
             if (useSsl && connectionParams.getSslContext() != null) {
                 Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
                         .register("https", new SSLConnectionSocketFactory(
-                                // Alternative: SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER
-                                connectionParams.getSslContext(), SSLConnectionSocketFactory.getDefaultHostnameVerifier()))
+                                connectionParams.getSslContext(), connectionParams.getHostnameVerifier()))
                         .register("http", PlainConnectionSocketFactory.INSTANCE)
                         .build();
                 PoolingHttpClientConnectionManager connMgr = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
                 clientBuilder.setConnectionManager(connMgr);
 
             }
-            clientBuilder.setUserAgent("vespa-http-client");
+            clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.currentVersion));
             clientBuilder.setMaxConnPerRoute(1);
             clientBuilder.setMaxConnTotal(1);
             clientBuilder.disableContentCompression();
