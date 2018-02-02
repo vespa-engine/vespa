@@ -14,7 +14,7 @@ import java.util.logging.Level;
  */
 public final class VespaAccessLog implements AccessLogInterface {
 
-    private static final SimpleDateFormat dateFormat = createDateFormat();
+    private static final ThreadLocal<SimpleDateFormat> dateFormat = ThreadLocal.withInitial(VespaAccessLog::createDateFormat);
 
     private final AccessLogHandler logHandler;
 
@@ -28,9 +28,8 @@ public final class VespaAccessLog implements AccessLogInterface {
         return format;
     }
 
-    private String getDate () {
-        Date date = new Date();
-        return dateFormat.format(date);
+    private static String getDate() {
+        return dateFormat.get().format(new Date());
     }
 
     private String getRequest(final String httpMethod, final String rawPath, final String rawQuery, final String httpVersion) {
@@ -41,7 +40,7 @@ public final class VespaAccessLog implements AccessLogInterface {
         return (user == null) ? "-" : user;
     }
 
-    private void writeLog(String ipAddr, String user, String request, String referer, String agent, long startTime,
+    private void writeLog(String ipAddr, String user, String request, String referer, String agent,
                           long durationMillis, long byteCount, HitCounts hitcounts, int returnCode)
     {
         long ms = Math.max(0L, durationMillis);
@@ -104,7 +103,6 @@ public final class VespaAccessLog implements AccessLogInterface {
                         accessLogEntry.getHttpVersion()),
                 accessLogEntry.getReferer(),
                 accessLogEntry.getUserAgent(),
-                accessLogEntry.getTimeStampMillis(),
                 accessLogEntry.getDurationBetweenRequestResponseMillis(),
                 accessLogEntry.getReturnedContentSize(),
                 accessLogEntry.getHitCounts(),
