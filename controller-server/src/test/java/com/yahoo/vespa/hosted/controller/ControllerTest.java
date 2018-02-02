@@ -57,7 +57,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -206,60 +205,129 @@ public class ControllerTest {
         assertNull("Deployment job was removed", applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1));
     }
 
+    // TODO: Replace above test with this one after introducing new application version number
     @Test
-    public void testDeploymentApplicationVersion() {
+    public void testDeploymentWithApplicationVersion() {
+        // Setup system
         DeploymentTester tester = new DeploymentTester();
-        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
+        ApplicationController applications = tester.controller().applications();
+        Version version1 = Version.fromString("6.1"); // Set in config server mock
+        Application app1 = tester.createApplication("app1", "tenant1", 1, 11L);
+
+        // Component runs, uploads artifact and notifies completion
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("corp-us-east-1")
                 .region("us-east-3")
                 .build();
-        SourceRevision source = new SourceRevision("repo", "master", "commit1");
+        SourceRevision source = new SourceRevision("repo", "branch", "deadbeef");
+        String expectedVersionString = "1.0.37-deadbeef";
+        tester.artifactRepository().put(app1.id(), applicationPackage, expectedVersionString);
+        tester.notifyJobCompletion(component, app1, Optional.empty(), Optional.of(source), 37);
+        ApplicationVersion expectedVersion = ApplicationVersion.from(source, 37);
+        assertEquals(expectedVersionString, tester.controller().applications()
+                                                               .require(app1.id())
+                                                               .change().application().get().id());
 
-        ApplicationVersion applicationVersion = ApplicationVersion.from(source, 101);
-        tester.artifactRepository().put(app.id(), applicationPackage, applicationVersion.id());
-        runDeployment(tester, app.id(), applicationVersion, applicationPackage, Optional.of(source), 101);
-        assertEquals("Artifact is downloaded twice in staging and once for other zones", 5,
-                     tester.artifactRepository().hits(app.id(), applicationVersion.id()));
-    }
+        // Deploy without application package
+        tester.deployAndNotify(app1, true, systemTest);
+        tester.deployAndNotify(app1, true, stagingTest);
+        assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
+        assertStatus(JobStatus.initial(stagingTest)
+                              .withTriggering(version1, expectedVersion, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                              .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
 
-    @Test
-    public void testDeploymentApplicationVersionMigration() {
-        DeploymentTester tester = new DeploymentTester();
-        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+        // Causes first deployment job to be triggered
+        assertStatus(JobStatus.initial(productionCorpUsEast1)
+                              .withTriggering(version1, expectedVersion, false, "", tester.clock().instant()), app1.id(), tester.controller());
+        tester.clock().advance(Duration.ofSeconds(1));
+
+        // production job (failing)
+        tester.deployAndNotify(app1, false, productionCorpUsEast1);
+        assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
+
+        JobStatus expectedJobStatus = JobStatus.initial(productionCorpUsEast1)
+                                               .withTriggering(version1, expectedVersion, false, "", tester.clock().instant())
+                                               .withCompletion(42, Optional.of(JobError.unknown), tester.clock().instant(), tester.controller());
+
+        assertStatus(expectedJobStatus, app1.id(), tester.controller());
+
+        // Simulate restart
+        tester.restartController();
+        applications = tester.controller().applications();
+
+        assertNotNull(tester.controller().tenants().tenant(new TenantId("tenant1")));
+        assertNotNull(applications.get(ApplicationId.from(TenantName.from("tenant1"),
+                                                          ApplicationName.from("application1"),
+                                                          InstanceName.from("default"))));
+        assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
+
+
+        tester.clock().advance(Duration.ofHours(1));
+
+        tester.notifyJobCompletion(productionCorpUsEast1, app1, false); // Need to complete the job, or new jobs won't start.
+
+        // Component is triggered again
+        tester.artifactRepository().put(app1.id(), applicationPackage, "1.0.38-deadbeef");
+        tester.notifyJobCompletion(component, app1, Optional.empty(), Optional.of(source), 38);
+        tester.deployAndNotify(app1, Optional.empty(), true, false, systemTest);
+        expectedVersion = ApplicationVersion.from(source, 38);
+        assertStatus(JobStatus.initial(systemTest)
+                              .withTriggering(version1, expectedVersion, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                              .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
+        tester.deployAndNotify(app1, Optional.empty(), true, true, stagingTest);
+
+        // production job succeeding now
+        tester.deployAndNotify(app1, Optional.empty(), true, true, productionCorpUsEast1);
+        expectedJobStatus = expectedJobStatus
+                .withTriggering(version1, expectedVersion, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller());
+        assertStatus(expectedJobStatus, app1.id(), tester.controller());
+
+        // causes triggering of next production job
+        assertStatus(JobStatus.initial(productionUsEast3)
+                              .withTriggering(version1, expectedVersion, false, "", tester.clock().instant()),
+                     app1.id(), tester.controller());
+        tester.deployAndNotify(app1, Optional.empty(), true, true, productionUsEast3);
+
+        assertEquals(5, applications.get(app1.id()).get().deploymentJobs().jobStatus().size());
+
+        // prod zone removal is not allowed
+        applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
-                .region("corp-us-east-1")
                 .region("us-east-3")
                 .build();
-        SourceRevision source = new SourceRevision("repo", "master", "commit1");
+        tester.artifactRepository().put(app1.id(), applicationPackage, "1.0.56-cafed00d");
+        source = new SourceRevision("repo", "branch", "cafed00d");
+        tester.notifyJobCompletion(component, app1, Optional.empty(), Optional.of(source), 56);
+        try {
+            tester.deploy(systemTest, app1, Optional.empty(), false);
+            fail("Expected exception due to unallowed production deployment removal");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("deployment-removal: application 'tenant1.app1' is deployed in corp-us-east-1, but does not include this zone in deployment.xml", e.getMessage());
+        }
+        assertNotNull("Zone was not removed",
+                      applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(SystemName.main).get()));
+        JobStatus jobStatus = applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1);
+        assertNotNull("Deployment job was not removed", jobStatus);
+        assertEquals(42, jobStatus.lastCompleted().get().id());
+        assertEquals("staging-test completed", jobStatus.lastCompleted().get().reason());
 
-        // Scenario 1: Old fashioned deployment. Simulates existing production deployments
-        ApplicationVersion v0 = ApplicationVersion.from(applicationPackage.hash(), source);
-        runDeployment(tester, app.id(), v0, applicationPackage, Optional.empty(), 100);
-        assertEquals("Nothing downloaded from repository", 0,
-                     tester.artifactRepository().hits(app.id(), v0.id()));
-
-        // Scenario 2: New application version number is reported and package is downloaded by controller. In staging,
-        // the application package from the deployer is used as v0 cannot be downloaded from repository.
-        ApplicationVersion v1 = ApplicationVersion.from(source, 101);
-        tester.artifactRepository().put(app.id(), applicationPackage, v1.id());
-        runDeployment(tester, app.id(), v1, applicationPackage, Optional.of(source), 101);
-        assertEquals("Artifact is downloaded once per zone", 4,
-                     tester.artifactRepository().hits(app.id(), v1.id()));
-        assertEquals("v0 is never downloaded", 0,
-                     tester.artifactRepository().hits(app.id(), v0.id()));
-        tester.artifactRepository().resetHits();
-
-        // Scenario 3: Both application versions are available in repository
-        ApplicationVersion v2 = ApplicationVersion.from(source, 102);
-        tester.artifactRepository().put(app.id(), applicationPackage, v2.id());
-        runDeployment(tester, app.id(), v2, applicationPackage, Optional.of(source), 102);
-        assertEquals("Previous artifact is downloaded once", 1,
-                     tester.artifactRepository().hits(app.id(), v1.id()));
-        assertEquals("Artifact is downloaded once per zone", 4,
-                     tester.artifactRepository().hits(app.id(), v2.id()));
+        // prod zone removal is allowed with override
+        applicationPackage = new ApplicationPackageBuilder()
+                .allow(ValidationId.deploymentRemoval)
+                .upgradePolicy("default")
+                .environment(Environment.prod)
+                .region("us-east-3")
+                .build();
+        tester.artifactRepository().put(app1.id(), applicationPackage, "1.0.103-c00ffefe");
+        source = new SourceRevision("repo", "branch", "c00ffefe");
+        tester.notifyJobCompletion(component, app1, Optional.empty(), Optional.of(source), 103);
+        tester.deployAndNotify(app1, Optional.empty(), true, true, systemTest);
+        assertNull("Zone was removed",
+                   applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(SystemName.main).get()));
+        assertNull("Deployment job was removed", applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1));
     }
 
     @Test
@@ -598,20 +666,19 @@ public class ControllerTest {
 
     @Test
     public void testDeployUntestedChangeFails() {
-        DeploymentTester tester = new DeploymentTester();
+        ControllerTester tester = new ControllerTester();
         ApplicationController applications = tester.controller().applications();
-        TenantId tenant = tester.controllerTester().createTenant("tenant1", "domain1", 11L);
-        Application app = tester.controllerTester().createApplication(tenant, "app1", "default", 1);
-        tester.deployCompletely(app, applicationPackage);
+        TenantId tenant = tester.createTenant("tenant1", "domain1", 11L);
+        Application app = tester.createApplication(tenant, "app1", "default", 1);
 
         tester.controller().applications().lockOrThrow(app.id(), application -> {
-            application = application.withChange(Change.of(Version.fromString("6.3")));
+            application = application.withDeploying(Change.of(Version.fromString("6.3")));
             applications.store(application);
             try {
-                tester.controllerTester().deploy(app, ZoneId.from("prod", "corp-us-east-1"), applicationPackage);
+                tester.deploy(app, ZoneId.from("prod", "us-east-3"));
                 fail("Expected exception");
             } catch (IllegalArgumentException e) {
-                assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.corp-us-east-1 as upgrade to 6.3 is not tested", e.getMessage());
+                assertEquals("Rejecting deployment of application 'tenant1.app1' to zone prod.us-east-3 as upgrade to 6.3 is not tested", e.getMessage());
             }
         });
     }
@@ -850,51 +917,6 @@ public class ControllerTest {
         assertTrue("No job status added",
                    tester.applications().require(app.id()).deploymentJobs().jobStatus().isEmpty());
 
-    }
-
-    private void runDeployment(DeploymentTester tester, ApplicationId application, ApplicationVersion expectedVersion,
-                               ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision,
-                               long initialBuildNumber) {
-        Version vespaVersion = Version.fromString("6.1"); // Set in config server mock
-        Application app = tester.applications().require(application);
-
-        // Component notifies completion
-        tester.notifyJobCompletion(component, app, Optional.empty(), sourceRevision, initialBuildNumber);
-        ApplicationVersion change = sourceRevision.map(sr -> ApplicationVersion.from(sr, initialBuildNumber))
-                .orElse(ApplicationVersion.unknown);
-        assertEquals(change.id(), tester.controller().applications()
-                .require(application)
-                .change().application().get().id());
-
-        // Deploy in test
-        tester.deployAndNotify(app, applicationPackage, true, systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-        //assertEquals(4, applications.require(application).deploymentJobs().jobStatus().size());
-        assertStatus(JobStatus.initial(stagingTest)
-                             .withTriggering(vespaVersion, expectedVersion, false, "",
-                                             tester.clock().instant().minus(Duration.ofMillis(1)))
-                             .withCompletion(42, Optional.empty(), tester.clock().instant(),
-                                             tester.controller()), application, tester.controller());
-
-        // Deploy in production
-        tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
-        assertStatus(JobStatus.initial(productionCorpUsEast1)
-                             .withTriggering(vespaVersion, expectedVersion, false, "",
-                                             tester.clock().instant().minus(Duration.ofMillis(1)))
-                             .withCompletion(42, Optional.empty(), tester.clock().instant(),
-                                             tester.controller()), application, tester.controller());
-        tester.deployAndNotify(app, applicationPackage, true, true, productionUsEast3);
-        assertStatus(JobStatus.initial(productionUsEast3)
-                             .withTriggering(vespaVersion, expectedVersion, false, "",
-                                             tester.clock().instant().minus(Duration.ofMillis(1)))
-                             .withCompletion(42, Optional.empty(), tester.clock().instant(),
-                                             tester.controller()), application, tester.controller());
-
-        // Verify deployed version
-        app = tester.controller().applications().require(app.id());
-        for (Deployment deployment : app.productionDeployments().values()) {
-            assertEquals(expectedVersion, deployment.applicationVersion());
-        }
     }
 
     @Test
