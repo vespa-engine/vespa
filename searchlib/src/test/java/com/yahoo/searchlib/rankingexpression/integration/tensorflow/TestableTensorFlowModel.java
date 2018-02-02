@@ -52,7 +52,7 @@ public class TestableTensorFlowModel {
         runner.feed(inputName, placeholder);
         List<org.tensorflow.Tensor<?>> results = runner.fetch(operationName).run();
         assertEquals(1, results.size());
-        return new TensorConverter().toVespaTensor(results.get(0));
+        return TensorConverter.toVespaTensor(results.get(0));
     }
 
     private Context contextFrom(TensorFlowModel result) {

@@ -120,7 +120,7 @@ public class TensorFlowImporter {
             // We add all intermediate nodes imported as separate expressions. Only those referenced in a signature output
             // will be used. We parse the TensorFunction here to convert it to a RankingExpression tree
             params.result().expression(nodeName,
-                    new RankingExpression(params.node().getName(), function.get().function().toString()));
+                    new RankingExpression(nodeName, function.get().function().toString()));
             return function;
         }
         catch (ParseException e) {
