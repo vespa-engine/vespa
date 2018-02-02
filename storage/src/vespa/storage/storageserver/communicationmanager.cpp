@@ -23,6 +23,7 @@
 LOG_SETUP(".communication.manager");
 
 using vespalib::make_string;
+using document::FixedBucketSpaces;
 
 namespace storage {
 
@@ -268,14 +269,14 @@ namespace {
 
 struct PlaceHolderBucketResolver : public BucketResolver {
     virtual document::Bucket bucketFromId(const document::DocumentId &) const override {
-        return document::Bucket(document::BucketSpace::placeHolder(), document::BucketId(0));
+        return document::Bucket(FixedBucketSpaces::default_space(), document::BucketId(0));
     }
     virtual document::BucketSpace bucketSpaceFromName(const vespalib::string &) const override {
-        return document::BucketSpace::placeHolder();
+        return FixedBucketSpaces::default_space();
     }
     virtual vespalib::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
-        assert(bucketSpace == document::FixedBucketSpaces::default_space());
-        return document::FixedBucketSpaces::to_string(bucketSpace);
+        assert(bucketSpace == FixedBucketSpaces::default_space());
+        return FixedBucketSpaces::to_string(bucketSpace);
     }
 };
 
