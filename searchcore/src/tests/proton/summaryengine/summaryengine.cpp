@@ -9,9 +9,6 @@
 #include <vespa/vespalib/util/compressor.h>
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/fnet/frt/rpcrequest.h>
-#include <mutex>
-#include <condition_variable>
-#include <chrono>
 
 #include <vespa/log/log.h>
 LOG_SETUP("summaryengine_test");

@@ -3,14 +3,12 @@
 
 #include "propertiesmap.h"
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 struct TraceReply
 {
     PropertiesMap propertiesMap;
 };
 
-} // namespace engine
-} // namespace search
+}
 

@@ -3,8 +3,7 @@
 #pragma once
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 struct SourceDescription {
     int listenPort;
@@ -12,6 +11,5 @@ struct SourceDescription {
     SourceDescription(int port) : listenPort(port) {}
 };
 
-} // namespace engine
-} // namespace search
+}
 

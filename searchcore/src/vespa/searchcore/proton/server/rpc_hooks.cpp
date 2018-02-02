@@ -4,7 +4,6 @@
 #include "proton.h"
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/fnet/frt/supervisor.h>
-#include <chrono>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.rtchooks");

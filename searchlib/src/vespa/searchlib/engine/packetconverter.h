@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/packets.h>
 #include "searchrequest.h"
 #include "searchreply.h"
 #include "docsumrequest.h"
@@ -10,9 +9,9 @@
 #include "monitorrequest.h"
 #include "monitorreply.h"
 #include "tracereply.h"
+#include <vespa/searchlib/common/packets.h>
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 
 /**
@@ -171,6 +170,5 @@ public:
     static void fromTraceReply(const TraceReply &reply, TRACEREPLY &packet);
 };
 
-} // namespace engine
-} // namespace search
+}
 

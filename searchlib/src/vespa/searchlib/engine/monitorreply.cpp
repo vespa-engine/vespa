@@ -2,8 +2,7 @@
 
 #include "monitorreply.h"
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 MonitorReply::MonitorReply()
     : mld(),
@@ -18,5 +17,5 @@ MonitorReply::MonitorReply()
       flags()
 { }
 
-} // namespace engine
-} // namespace search
+}
+

@@ -5,8 +5,7 @@
 #include "searchrequest.h"
 #include "searchreply.h"
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 /**
  * A search client is the object being notified of the completion of
@@ -61,6 +60,5 @@ public:
     virtual ~SearchServer() {}
 };
 
-} // namespace engine
-} // namespace search
+}
 

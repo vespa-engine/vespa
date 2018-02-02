@@ -2,15 +2,13 @@
 
 #pragma once
 
-#include <vector>
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/hitrank.h>
 #include <vespa/vespalib/util/array.h>
-#include <memory>
 #include <vespa/searchlib/engine/searchrequest.h>
+#include <vector>
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 class SearchReply
 {
@@ -86,6 +84,5 @@ public:
     uint32_t getDistributionKey() const { return _distributionKey; }
 };
 
-} // namespace engine
-} // namespace search
+}
 

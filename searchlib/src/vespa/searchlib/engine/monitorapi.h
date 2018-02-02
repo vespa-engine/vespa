@@ -5,8 +5,7 @@
 #include "monitorrequest.h"
 #include "monitorreply.h"
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 /**
  * A monitor client is the object being notified of the completion of
@@ -61,6 +60,5 @@ public:
     virtual ~MonitorServer() {}
 };
 
-} // namespace engine
-} // namespace search
+}
 

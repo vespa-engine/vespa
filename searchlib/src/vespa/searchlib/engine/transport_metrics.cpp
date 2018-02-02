@@ -2,8 +2,7 @@
 
 #include "transport_metrics.h"
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 TransportMetrics::QueryMetrics::QueryMetrics(metrics::MetricSet *parent)
     : metrics::MetricSet("query", "", "Query metrics", parent),
@@ -12,7 +11,7 @@ TransportMetrics::QueryMetrics::QueryMetrics(metrics::MetricSet *parent)
 {
 }
 
-TransportMetrics::QueryMetrics::~QueryMetrics() { }
+TransportMetrics::QueryMetrics::~QueryMetrics() = default;
 
 TransportMetrics::DocsumMetrics::DocsumMetrics(metrics::MetricSet *parent)
     : metrics::MetricSet("docsum", "", "Docsum metrics", parent),
@@ -22,7 +21,7 @@ TransportMetrics::DocsumMetrics::DocsumMetrics(metrics::MetricSet *parent)
 {
 }
 
-TransportMetrics::DocsumMetrics::~DocsumMetrics() { }
+TransportMetrics::DocsumMetrics::~DocsumMetrics() = default;
 
 TransportMetrics::TransportMetrics()
     : metrics::MetricSet("transport", "", "Transport server metrics", 0),
@@ -32,7 +31,7 @@ TransportMetrics::TransportMetrics()
 {
 }
 
-TransportMetrics::~TransportMetrics() { }
+TransportMetrics::~TransportMetrics() = default;
 
-} // namespace engine
-} // namespace search
+}
+

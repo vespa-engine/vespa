@@ -3,8 +3,7 @@
 #include "searchrequest.h"
 #include "packetconverter.h"
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 SearchRequest::SearchRequest()
     : SearchRequest(fastos::ClockSystem::now()) {}
@@ -36,5 +35,5 @@ SearchRequest::Source::~Source() {
     }
 }
 
-} // namespace engine
-} // namespace search
+}
+
