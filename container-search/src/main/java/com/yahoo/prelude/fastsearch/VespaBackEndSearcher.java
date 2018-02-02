@@ -493,8 +493,8 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     }
 
     static protected class FillHitsResult {
-        public final int skippedHits;
-        public final String error;
+        public final int skippedHits; // Number of hits not producing a summary.
+        public final String error; // Optional error message
         FillHitsResult(int skippedHits, String error) {
             this.skippedHits = skippedHits;
             this.error = error;
@@ -503,7 +503,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     /**
      * Fills the hits.
      *
-     * @return the number of hits that we did not return data for, i.e
+     * @return the number of hits that we did not return data for, and an optional error message.
      *         when things are working normally we return 0.
      */
     protected FillHitsResult fillHits(Result result, int packetIndex, Packet[] packets, String summaryClass) throws IOException {
