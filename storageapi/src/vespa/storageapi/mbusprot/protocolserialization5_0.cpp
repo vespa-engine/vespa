@@ -6,8 +6,10 @@
 #include "storagereply.h"
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/multioperation.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 
 using document::BucketSpace;
+using document::FixedBucketSpaces;
 
 namespace storage {
 namespace mbusprot {
@@ -16,26 +18,26 @@ document::Bucket
 ProtocolSerialization5_0::getBucket(document::ByteBuffer& buf) const
 {
     document::BucketId bucketId(SH::getLong(buf));
-    return document::Bucket(BucketSpace::placeHolder(), bucketId);
+    return document::Bucket(FixedBucketSpaces::default_space(), bucketId);
 }
 
 void
 ProtocolSerialization5_0::putBucket(const document::Bucket& bucket, vespalib::GrowableByteBuffer& buf) const
 {
     buf.putLong(bucket.getBucketId().getRawId());
-    assert(bucket.getBucketSpace() == document::BucketSpace::placeHolder());
+    assert(bucket.getBucketSpace() == FixedBucketSpaces::default_space());
 }
 
 document::BucketSpace
 ProtocolSerialization5_0::getBucketSpace(document::ByteBuffer&) const
 {
-    return BucketSpace::placeHolder();
+    return FixedBucketSpaces::default_space();
 }
 
 void
 ProtocolSerialization5_0::putBucketSpace(document::BucketSpace bucketSpace, vespalib::GrowableByteBuffer&) const
 {
-    assert(bucketSpace == document::BucketSpace::placeHolder());
+    assert(bucketSpace == FixedBucketSpaces::default_space());
 }
 
 api::BucketInfo
