@@ -5,9 +5,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
+/**
+ * @author smorgrav
+ */
 public class IdentifierTest {
 
     @Test(expected = IllegalArgumentException.class)
@@ -125,11 +126,15 @@ public class IdentifierTest {
         new ApplicationId("api");
     }
 
-
     @Test
     public void application_instance_id_dotted_string_is_subindentifers_concatinated_with_dots() {
         DeploymentId id = new DeploymentId(com.yahoo.config.provision.ApplicationId.from("tenant", "application", "instance"),
                                            ZoneId.from("prod", "region"));
         assertEquals("tenant.application.prod.region.instance", id.dottedString());
+    }
+
+    @Test
+    public void revision_id_can_contain_application_version_number() {
+        new RevisionId("1.0.1078-24825d1f6");
     }
 }
