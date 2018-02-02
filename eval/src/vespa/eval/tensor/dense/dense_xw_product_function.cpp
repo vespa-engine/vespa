@@ -57,22 +57,22 @@ void my_op(eval::InterpretedFunction::State &state, uint64_t param) {
     DenseTensorView::CellsRef vectorCells = getCellsRef(state.peek(1));
     DenseTensorView::CellsRef matrixCells = getCellsRef(state.peek(0));
 
+    ArrayRef<double> outputCells = state.stash.create_array<double>(self->_resultSize);
+
     if (commonDimensionInnermost) {
-        multiDotProduct(*self, vectorCells, matrixCells, self->_outputCells);
+        multiDotProduct(*self, vectorCells, matrixCells, outputCells);
     } else {
-        transposedProduct(*self, vectorCells, matrixCells, self->_outputCells);
+        transposedProduct(*self, vectorCells, matrixCells, outputCells);
     }
-    state.pop_pop_push(self->_outputView);
+    state.pop_pop_push(state.stash.create<DenseTensorView>(self->_resultType, outputCells));
 }
 
 } // namespace vespalib::tensor::<unnamed>
 
 DenseXWProductFunction::Self::Self(const eval::ValueType &resultType,
                                    size_t vectorSize,
-                                   size_t resultSize,
-                                   Stash &stash)
-    : _outputCells(stash.create_array<double>(resultSize)),
-      _outputView(resultType, _outputCells),
+                                   size_t resultSize)
+    : _resultType(resultType),
       _vectorSize(vectorSize),
       _resultSize(resultSize),
       _hwAccelerator(hwaccelrated::IAccelrated::getAccelrator())
@@ -93,7 +93,7 @@ DenseXWProductFunction::DenseXWProductFunction(const eval::ValueType &resultType
 eval::InterpretedFunction::Instruction
 DenseXWProductFunction::compile_self(Stash &stash) const
 {
-    Self &self = stash.create<Self>(result_type(), _vectorSize, _resultSize, stash);
+    Self &self = stash.create<Self>(result_type(), _vectorSize, _resultSize);
     auto op = _commonDimensionInnermost ? my_op<true> : my_op<false>;
     return eval::InterpretedFunction::Instruction(op, (uint64_t)(&self));
 }
