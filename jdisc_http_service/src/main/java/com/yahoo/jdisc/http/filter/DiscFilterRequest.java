@@ -96,7 +96,7 @@ public abstract class DiscFilterRequest {
         return localAddress.getAddress().getHostAddress();
     }
 
-    protected InetSocketAddress localAddress() {
+    private InetSocketAddress localAddress() {
         int port = parent.getUri().getPort();
         if (port < 0)
             port  = 0;
