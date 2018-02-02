@@ -842,8 +842,7 @@ public class ControllerTest {
         // Same options as used in our integration tests
         DeployOptions options = new DeployOptions(Optional.empty(), Optional.empty(), false,
                                                   false);
-        tester.controller().applications().deployApplication(app.id(), zone, Optional.of(applicationPackage), options,
-                                                             Optional.of(TestIdentities.userNToken));
+        tester.controller().applications().deployApplication(app.id(), zone, Optional.of(applicationPackage), options);
 
         assertTrue("Application deployed and activated",
                    tester.controllerTester().configServer().activated().getOrDefault(app.id(), false));
@@ -913,7 +912,7 @@ public class ControllerTest {
 
         // Deploy an application which doesn't yet exist, and which has an illegal application name.
         try {
-            tester.controller().applications().deployApplication(ApplicationId.from("tenant", application, "123"), zone, Optional.empty(), options, Optional.of(TestIdentities.userNToken));
+            tester.controller().applications().deployApplication(ApplicationId.from("tenant", application, "123"), zone, Optional.empty(), options);
             fail("Illegal application name should cause validation exception.");
         }
         catch (IllegalArgumentException e) {
@@ -923,17 +922,9 @@ public class ControllerTest {
         // Sneak an illegal application in the back door.
         tester.createApplication(new ApplicationSerializer().toSlime(new Application(ApplicationId.from("tenant", application, "default"))));
 
-        // Deploy a PR instance for the application, with an NToken.
-        tester.controller().applications().deployApplication(ApplicationId.from("tenant", application, "123"), zone, Optional.empty(), options, Optional.of(TestIdentities.userNToken));
-
-        try {
-            // Deploy a different PR instance for the application, with no NToken.
-            tester.controller().applications().deployApplication(ApplicationId.from("tenant", application, "456"), zone, Optional.empty(), options, Optional.empty());
-            fail("Athens tenant should not accept a new application to be created without an NToken.");
-        }
-        catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("No NToken provided"));
-        }
+        // Deploy a PR instance for the application, with no NToken.
+        tester.controller().applications().deployApplication(ApplicationId.from("tenant", application, "456"), zone, Optional.empty(), options);
+        assertTrue(tester.controller().applications().get(ApplicationId.from("tenant", application, "456")).isPresent());
     }
 
 }

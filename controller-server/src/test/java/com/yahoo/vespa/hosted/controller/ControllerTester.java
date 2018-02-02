@@ -221,8 +221,7 @@ public final class ControllerTester {
         controller().applications().deployApplication(application.id(),
                                                       zone,
                                                       applicationPackage,
-                                                      new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, deployCurrentVersion),
-                                                      Optional.of(TestIdentities.userNToken));
+                                                      new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, deployCurrentVersion));
     }
 
     // Used by ApplicationSerializerTest to avoid breaking encapsulation. Should not be used by anything else

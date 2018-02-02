@@ -269,12 +269,11 @@ public class ApplicationController {
     // TODO: Get rid of the options arg
     public ActivateResult deployApplication(ApplicationId applicationId, ZoneId zone,
                                             Optional<ApplicationPackage> applicationPackageFromDeployer,
-                                            DeployOptions options,
-                                            Optional<NToken> token) {
+                                            DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
             LockedApplication application = get(applicationId)
                     .map(app -> new LockedApplication(app, lock))
-                    .orElseGet(() -> new LockedApplication(createApplication(applicationId, token), lock));
+                    .orElseGet(() -> new LockedApplication(createApplication(applicationId, Optional.empty()), lock));
 
             // Determine Vespa version to use
             Version version;
