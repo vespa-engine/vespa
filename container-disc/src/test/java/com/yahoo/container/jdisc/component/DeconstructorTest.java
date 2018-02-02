@@ -27,7 +27,7 @@ public class DeconstructorTest {
         // Done by executor, so it takes some time even with a 0 delay.
         deconstructor.deconstruct(abstractComponent);
         int cnt = 0;
-        while (! abstractComponent.destructed && (cnt++ < 10)) {
+        while (! abstractComponent.destructed && (cnt++ < 12000)) {
             Thread.sleep(10);
         }
         assertTrue(abstractComponent.destructed);
