@@ -3,7 +3,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/tensor/dense/dense_dot_product_function.h>
 #include <vespa/eval/tensor/dense/dense_xw_product_function.h>
-#include <vespa/eval/tensor/dense/dense_tensor_function_optimizer.h>
 #include <vespa/eval/eval/operation.h>
 
 using namespace vespalib::eval;
@@ -23,7 +22,7 @@ optimizeDotProduct(const vespalib::string &lhsType,
                                          inject(ValueType::from_spec(rhsType), 3, stash),
                                          Mul::f, stash),
                                     Aggr::SUM, {}, stash);
-    return DenseTensorFunctionOptimizer::optimize(reduceNode, stash);
+    return DenseDotProductFunction::optimize(reduceNode, stash);
 }
 
 void assertParam(const TensorFunction &node, size_t expect_idx) {
@@ -66,7 +65,7 @@ optimizeXWProduct(const vespalib::string &lhsType,
                                          inject(ValueType::from_spec(rhsType), 3, stash),
                                          Mul::f, stash),
                                     Aggr::SUM, {dim}, stash);
-    return DenseTensorFunctionOptimizer::optimize(reduceNode, stash);
+    return DenseXWProductFunction::optimize(reduceNode, stash);
 }
 
 void

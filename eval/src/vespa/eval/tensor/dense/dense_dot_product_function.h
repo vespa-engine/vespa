@@ -19,7 +19,7 @@ public:
     DenseDotProductFunction(const eval::TensorFunction &lhs_in,
                             const eval::TensorFunction &rhs_in);
     eval::InterpretedFunction::Instruction compile_self(Stash &stash) const override;
+    static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };
 
-}
-
+} // namespace vespalib::tensor
