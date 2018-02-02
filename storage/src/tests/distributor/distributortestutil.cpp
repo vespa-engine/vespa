@@ -5,7 +5,9 @@
 #include <vespa/config-stor-distribution.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/test/make_bucket_space.h>
 
+using document::test::makeBucketSpace;
 using document::test::makeDocumentBucket;
 
 namespace storage::distributor {
@@ -347,16 +349,16 @@ DistributorTestUtil::getConfig() {
 DistributorBucketSpace &
 DistributorTestUtil::getDistributorBucketSpace()
 {
-    return _distributor->getDefaultBucketSpace();
+    return getBucketSpaceRepo().get(makeBucketSpace());
 }
 
 BucketDatabase&
 DistributorTestUtil::getBucketDatabase() {
-    return _distributor->getDefaultBucketSpace().getBucketDatabase();
+    return getDistributorBucketSpace().getBucketDatabase();
 }
 const BucketDatabase&
 DistributorTestUtil::getBucketDatabase() const {
-    return _distributor->getDefaultBucketSpace().getBucketDatabase();
+    return getBucketSpaceRepo().get(makeBucketSpace()).getBucketDatabase();
 }
 
 DistributorBucketSpaceRepo &
@@ -371,7 +373,7 @@ DistributorTestUtil::getBucketSpaceRepo() const {
 
 const lib::Distribution&
 DistributorTestUtil::getDistribution() const {
-    return _distributor->getDefaultBucketSpace().getDistribution();
+    return getBucketSpaceRepo().get(makeBucketSpace()).getDistribution();
 }
 
 }

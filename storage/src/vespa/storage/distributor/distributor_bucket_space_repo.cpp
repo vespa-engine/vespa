@@ -47,17 +47,5 @@ DistributorBucketSpaceRepo::get(BucketSpace bucketSpace) const
     return *itr->second;
 }
 
-DistributorBucketSpace &
-DistributorBucketSpaceRepo::getDefaultSpace() noexcept
-{
-    return get(BucketSpace::placeHolder());
-}
-
-const DistributorBucketSpace &
-DistributorBucketSpaceRepo::getDefaultSpace() const noexcept
-{
-    return get(BucketSpace::placeHolder());
-}
-
 }
 }
