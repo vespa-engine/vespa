@@ -399,6 +399,7 @@ class ApacheGatewayConnection implements GatewayConnection {
                 clientBuilder.setConnectionManager(connMgr);
 
             }
+            clientBuilder.setUserAgent("vespa-http-client");
             clientBuilder.setMaxConnPerRoute(1);
             clientBuilder.setMaxConnTotal(1);
             clientBuilder.disableContentCompression();
