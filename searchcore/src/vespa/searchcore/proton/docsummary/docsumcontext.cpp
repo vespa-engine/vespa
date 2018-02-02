@@ -124,7 +124,7 @@ DocsumContext::createSlimeReply()
         }
     }
     if (i != _docsumState._docsumcnt) {
-        const uint32_t numTimedOut = _docsumState._docsumcnt - 1;
+        const uint32_t numTimedOut = _docsumState._docsumcnt - i;
         Cursor & errors = root.setArray(ERRORS);
         Cursor & timeout = errors.addObject();
         timeout.setString(TYPE, TIMEOUT);
