@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "move.h"
-#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <ostream>
 
 namespace storage {

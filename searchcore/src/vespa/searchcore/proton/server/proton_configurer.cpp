@@ -7,7 +7,7 @@
 #include "i_document_db_config_owner.h"
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
-#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -27,14 +27,14 @@ getBucketSpace(const BootstrapConfig &bootstrapConfig, const DocTypeName &name)
     if (bucketspaces.enableMultipleBucketSpaces) {
         for (const auto &entry : bucketspaces.documenttype) {
             if (entry.name == name.getName()) {
-                return storage::spi::FixedBucketSpaces::from_string(entry.bucketspace);
+                return document::FixedBucketSpaces::from_string(entry.bucketspace);
             }
         }
         vespalib::asciistream ost;
         ost << "Could not map from document type name '" << name.getName() << "' to bucket space name";
         throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
     }
-    return storage::spi::FixedBucketSpaces::default_space();
+    return document::FixedBucketSpaces::default_space();
 }
 
 }

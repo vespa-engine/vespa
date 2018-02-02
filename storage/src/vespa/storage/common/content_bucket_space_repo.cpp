@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "content_bucket_space_repo.h"
-#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 
 using document::BucketSpace;
 
@@ -10,7 +10,7 @@ namespace storage {
 ContentBucketSpaceRepo::ContentBucketSpaceRepo()
     : _map()
 {
-    _map.emplace(spi::FixedBucketSpaces::default_space(), std::make_unique<ContentBucketSpace>(spi::FixedBucketSpaces::default_space()));
+    _map.emplace(document::FixedBucketSpaces::default_space(), std::make_unique<ContentBucketSpace>(document::FixedBucketSpaces::default_space()));
 }
 
 ContentBucketSpace &
@@ -22,7 +22,7 @@ ContentBucketSpaceRepo::get(BucketSpace bucketSpace) const
 }
 
 void ContentBucketSpaceRepo::enableGlobalBucketSpace() {
-    _map.emplace(spi::FixedBucketSpaces::global_space(), std::make_unique<ContentBucketSpace>(spi::FixedBucketSpaces::global_space()));
+    _map.emplace(document::FixedBucketSpaces::global_space(), std::make_unique<ContentBucketSpace>(document::FixedBucketSpaces::global_space()));
 }
 
 ContentBucketSpaceRepo::BucketSpaces

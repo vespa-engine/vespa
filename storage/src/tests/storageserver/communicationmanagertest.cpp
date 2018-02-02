@@ -6,7 +6,7 @@
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
-#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
@@ -303,10 +303,10 @@ void CommunicationManagerTest::bucket_space_config_can_be_updated_live() {
     f.bottom_link->waitForMessages(2, MESSAGE_WAIT_TIME_SEC);
 
     auto cmd1 = f.bottom_link->getCommand(0);
-    CPPUNIT_ASSERT_EQUAL(spi::FixedBucketSpaces::global_space(), cmd1->getBucket().getBucketSpace());
+    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::global_space(), cmd1->getBucket().getBucketSpace());
 
     auto cmd2 = f.bottom_link->getCommand(1);
-    CPPUNIT_ASSERT_EQUAL(spi::FixedBucketSpaces::default_space(), cmd2->getBucket().getBucketSpace());
+    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::default_space(), cmd2->getBucket().getBucketSpace());
 
     config.documenttype[1] = doc_type("bar", "default");
     f.comm_mgr->updateBucketSpacesConfig(config);
@@ -314,7 +314,7 @@ void CommunicationManagerTest::bucket_space_config_can_be_updated_live() {
     f.bottom_link->waitForMessages(3, MESSAGE_WAIT_TIME_SEC);
 
     auto cmd3 = f.bottom_link->getCommand(2);
-    CPPUNIT_ASSERT_EQUAL(spi::FixedBucketSpaces::default_space(), cmd3->getBucket().getBucketSpace());
+    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::default_space(), cmd3->getBucket().getBucketSpace());
 
     CPPUNIT_ASSERT_EQUAL(uint64_t(0), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
 }

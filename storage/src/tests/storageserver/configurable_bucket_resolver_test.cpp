@@ -2,7 +2,7 @@
 
 #include <vespa/storage/storageserver/configurable_bucket_resolver.h>
 #include <vespa/document/base/documentid.h>
-#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <cppunit/extensions/HelperMacros.h>
 
 namespace storage {
@@ -25,9 +25,9 @@ struct ConfigurableBucketResolverTest : CppUnit::TestFixture {
     using BucketSpaceMapping = ConfigurableBucketResolver::BucketSpaceMapping;
 
     BucketSpaceMapping create_simple_mapping() {
-        return {{"foo", spi::FixedBucketSpaces::default_space()},
-                {"bar", spi::FixedBucketSpaces::default_space()},
-                {"baz", spi::FixedBucketSpaces::global_space()}};
+        return {{"foo", document::FixedBucketSpaces::default_space()},
+                {"bar", document::FixedBucketSpaces::default_space()},
+                {"baz", document::FixedBucketSpaces::global_space()}};
     }
 
     ConfigurableBucketResolver create_empty_resolver() {
@@ -54,47 +54,47 @@ CPPUNIT_TEST_SUITE_REGISTRATION(ConfigurableBucketResolverTest);
 // TODO reduce overlap with FixedBucketSpacesTest
 void ConfigurableBucketResolverTest::bucket_space_from_name_is_defined_for_default_space() {
     auto space = create_empty_resolver().bucketSpaceFromName("default");
-    CPPUNIT_ASSERT_EQUAL(spi::FixedBucketSpaces::default_space(), space);
+    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::default_space(), space);
 }
 
 void ConfigurableBucketResolverTest::bucket_space_from_name_is_defined_for_global_space() {
     auto space = create_empty_resolver().bucketSpaceFromName("global");
-    CPPUNIT_ASSERT_EQUAL(spi::FixedBucketSpaces::global_space(), space);
+    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::global_space(), space);
 }
 
 void ConfigurableBucketResolverTest::bucket_space_from_name_throws_exception_for_unknown_space() {
     try {
         create_empty_resolver().bucketSpaceFromName("bjarne");
         CPPUNIT_FAIL("Expected exception on unknown bucket space name");
-    } catch (spi::UnknownBucketSpaceException& e) {
+    } catch (document::UnknownBucketSpaceException& e) {
     }
 }
 
 void ConfigurableBucketResolverTest::name_from_bucket_space_is_defined_for_default_space() {
     CPPUNIT_ASSERT_EQUAL(vespalib::string("default"),
-                         create_empty_resolver().nameFromBucketSpace(spi::FixedBucketSpaces::default_space()));
+                         create_empty_resolver().nameFromBucketSpace(document::FixedBucketSpaces::default_space()));
 }
 
 void ConfigurableBucketResolverTest::name_from_bucket_space_is_defined_for_global_space() {
     CPPUNIT_ASSERT_EQUAL(vespalib::string("global"),
-                         create_empty_resolver().nameFromBucketSpace(spi::FixedBucketSpaces::global_space()));
+                         create_empty_resolver().nameFromBucketSpace(document::FixedBucketSpaces::global_space()));
 }
 
 void ConfigurableBucketResolverTest::name_from_bucket_space_throws_exception_for_unknown_space() {
     try {
         create_empty_resolver().nameFromBucketSpace(document::BucketSpace(1234));
         CPPUNIT_FAIL("Expected exception on unknown bucket space value");
-    } catch (spi::UnknownBucketSpaceException& e) {
+    } catch (document::UnknownBucketSpaceException& e) {
     }
 }
 
 void ConfigurableBucketResolverTest::known_bucket_space_is_resolved_from_document_id() {
     auto resolver = create_simple_resolver();
-    CPPUNIT_ASSERT_EQUAL(spi::FixedBucketSpaces::default_space(),
+    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::default_space(),
                          resolver.bucketFromId(DocumentId("id::foo::xyz")).getBucketSpace());
-    CPPUNIT_ASSERT_EQUAL(spi::FixedBucketSpaces::default_space(),
+    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::default_space(),
                          resolver.bucketFromId(DocumentId("id::bar::xyz")).getBucketSpace());
-    CPPUNIT_ASSERT_EQUAL(spi::FixedBucketSpaces::global_space(),
+    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::global_space(),
                          resolver.bucketFromId(DocumentId("id::baz::xyz")).getBucketSpace());
 }
 
@@ -102,7 +102,7 @@ void ConfigurableBucketResolverTest::unknown_bucket_space_in_id_throws_exception
     try {
         create_simple_resolver().bucketFromId(DocumentId("id::bjarne::xyz"));
         CPPUNIT_FAIL("Expected exception on unknown document type -> bucket space mapping");
-    } catch (spi::UnknownBucketSpaceException& e) {
+    } catch (document::UnknownBucketSpaceException& e) {
     }
 }
 
@@ -125,11 +125,11 @@ void ConfigurableBucketResolverTest::can_create_resolver_from_bucket_space_confi
     builder.documenttype.emplace_back(make_doc_type("bar", "global"));
     builder.documenttype.emplace_back(make_doc_type("baz", "global"));
     auto resolver = ConfigurableBucketResolver::from_config(builder);
-    CPPUNIT_ASSERT_EQUAL(spi::FixedBucketSpaces::default_space(),
+    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::default_space(),
                          resolver->bucketFromId(DocumentId("id::foo::xyz")).getBucketSpace());
-    CPPUNIT_ASSERT_EQUAL(spi::FixedBucketSpaces::global_space(),
+    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::global_space(),
                          resolver->bucketFromId(DocumentId("id::bar::xyz")).getBucketSpace());
-    CPPUNIT_ASSERT_EQUAL(spi::FixedBucketSpaces::global_space(),
+    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::global_space(),
                          resolver->bucketFromId(DocumentId("id::baz::xyz")).getBucketSpace());
 }
 

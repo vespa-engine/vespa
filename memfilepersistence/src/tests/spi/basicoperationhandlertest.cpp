@@ -6,7 +6,7 @@
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/persistence/spi/test.h>
-#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 
 using storage::spi::test::makeSpiBucket;
@@ -728,13 +728,13 @@ void BasicOperationHandlerTest::list_buckets_returns_empty_set_for_non_default_b
     doPut(createRandomDocumentAtLocation(4), bucket, Timestamp(4567), 0);
     flush(bucket);
 
-    auto buckets = getPersistenceProvider().listBuckets(spi::FixedBucketSpaces::global_space(), spi::PartitionId(0));
+    auto buckets = getPersistenceProvider().listBuckets(document::FixedBucketSpaces::global_space(), spi::PartitionId(0));
     CPPUNIT_ASSERT_EQUAL(size_t(0), buckets.getList().size());
 }
 
 void BasicOperationHandlerTest::get_modified_buckets_returns_empty_set_for_non_default_bucketspace() {
     env().addModifiedBucket(document::BucketId(16, 1234));
-    auto buckets = getPersistenceProvider().getModifiedBuckets(spi::FixedBucketSpaces::global_space());
+    auto buckets = getPersistenceProvider().getModifiedBuckets(document::FixedBucketSpaces::global_space());
     CPPUNIT_ASSERT_EQUAL(size_t(0), buckets.getList().size());
 }
 

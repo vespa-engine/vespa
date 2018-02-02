@@ -16,7 +16,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/stat.h>
-#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/config/config.h>
@@ -342,7 +342,7 @@ BucketManager::reportStatus(std::ostream& out,
         xmlReporter << vespalib::xml::XmlTag("buckets");
         for (auto& space : _component.getBucketSpaceRepo()) {
             xmlReporter << XmlTag("bucket-space")
-                        << XmlAttribute("name", spi::FixedBucketSpaces::to_string(space.first));
+                        << XmlAttribute("name", document::FixedBucketSpaces::to_string(space.first));
             BucketDBDumper dumper(xmlReporter.getStream());
             _component.getBucketSpaceRepo().get(space.first).bucketDatabase().chunkedAll(
                     dumper, "BucketManager::reportStatus");

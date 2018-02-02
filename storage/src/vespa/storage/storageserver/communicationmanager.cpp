@@ -18,7 +18,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/bufferedlogger.h>
-#include <vespa/persistence/spi/fixed_bucket_spaces.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 
 LOG_SETUP(".communication.manager");
 
@@ -123,7 +123,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
         std::unique_ptr<api::StorageCommand> cmd;
         try {
             cmd = _docApiConverter.toStorageAPI(static_cast<documentapi::DocumentMessage&>(*docMsgPtr), _component.getTypeRepo());
-        } catch (spi::UnknownBucketSpaceException& e) {
+        } catch (document::UnknownBucketSpaceException& e) {
             fail_with_unresolvable_bucket_space(std::move(docMsgPtr), e.getMessage());
             return;
         }
@@ -274,8 +274,8 @@ struct PlaceHolderBucketResolver : public BucketResolver {
         return document::BucketSpace::placeHolder();
     }
     virtual vespalib::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
-        assert(bucketSpace == spi::FixedBucketSpaces::default_space());
-        return spi::FixedBucketSpaces::to_string(bucketSpace);
+        assert(bucketSpace == document::FixedBucketSpaces::default_space());
+        return document::FixedBucketSpaces::to_string(bucketSpace);
     }
 };
 
