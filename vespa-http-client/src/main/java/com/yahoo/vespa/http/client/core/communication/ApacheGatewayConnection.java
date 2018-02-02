@@ -2,6 +2,7 @@
 package com.yahoo.vespa.http.client.core.communication;
 
 import com.google.common.annotations.Beta;
+import com.yahoo.component.Vtag;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.config.FeedParams;
@@ -398,7 +399,7 @@ class ApacheGatewayConnection implements GatewayConnection {
                 clientBuilder.setConnectionManager(connMgr);
 
             }
-            clientBuilder.setUserAgent("vespa-http-client");
+            clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.currentVersion));
             clientBuilder.setMaxConnPerRoute(1);
             clientBuilder.setMaxConnTotal(1);
             clientBuilder.disableContentCompression();
