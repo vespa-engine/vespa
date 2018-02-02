@@ -38,7 +38,7 @@ Vagrant.configure("2") do |config|
     echo -e "* soft nproc 409600\n* hard nproc 409600" > /etc/security/limits.d/99-nproc.conf
     echo -e "* soft nofile 262144\n* hard nofile 262144" > /etc/security/limits.d/99-nofile.conf
     echo -e "fs.inotify.max_user_watches = 524288" > /etc/sysctl.d/clion.conf
-    wget -q -O - https://download.jetbrains.com/cpp/CLion-2017.3.1.tar.gz | tar -C /opt -zx
-    ln -sf /opt/clion-2017.3.1/bin/clion.sh /usr/bin/clion
+    wget -q -O - https://download.jetbrains.com/cpp/CLion-2017.3.3.tar.gz | tar -C /opt -zx
+    ln -sf /opt/clion-2017.3.3/bin/clion.sh /usr/bin/clion
   SHELL
 end
