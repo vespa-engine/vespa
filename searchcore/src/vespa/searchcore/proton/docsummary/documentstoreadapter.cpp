@@ -7,6 +7,7 @@
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.docsummary.documentstoreadapter");
 

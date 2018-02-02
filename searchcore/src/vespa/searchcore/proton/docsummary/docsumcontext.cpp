@@ -7,6 +7,7 @@
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.docsummary.docsumcontext");
 
@@ -21,6 +22,7 @@ using vespalib::slime::Symbol;
 using vespalib::slime::Inserter;
 using vespalib::slime::ObjectSymbolInserter;
 using vespalib::Slime;
+using vespalib::make_string;
 using namespace search;
 using namespace search::attribute;
 using namespace search::engine;
@@ -34,10 +36,11 @@ namespace {
 
 Memory DOCSUMS("docsums");
 Memory DOCSUM("docsum");
-
-void addTimedOut(Inserter & inserter, fastos::TimeStamp left) {
-    inserter.insertObject().setString("error", vespalib::make_string("Timed out with %ldus left.", left.us()));
-}
+Memory ERRORS("errors");
+Memory TYPE("type");
+Memory MESSAGE("message");
+Memory DETAILS("details");
+Memory TIMEOUT("timeout");
 
 }
 
@@ -49,11 +52,10 @@ DocsumContext::initState()
     _docsumState._args.SetQueryFlags(req.queryFlags & ~search::fs4transport::QFLAG_DROP_SORTDATA);
     _docsumState._docsumcnt = req.hits.size();
 
-    if (_docsumState._docsumcnt > 0) {
-        _docsumState._docsumbuf = (uint32_t*)malloc(sizeof(uint32_t) * _docsumState._docsumcnt);
-    } else {
-        _docsumState._docsumbuf = NULL;
-    }
+    _docsumState._docsumbuf = (_docsumState._docsumcnt > 0)
+                              ? (uint32_t*)malloc(sizeof(uint32_t) * _docsumState._docsumcnt)
+                              : nullptr;
+
     for (uint32_t i = 0; i < _docsumState._docsumcnt; i++) {
         _docsumState._docsumbuf[i] = req.hits[i].docid;
     }
@@ -76,7 +78,7 @@ DocsumContext::createReply()
             Slime slime(Slime::Params(std::move(symbols)));
             vespalib::slime::SlimeInserter inserter(slime);
             if (_request.expired()) {
-                addTimedOut(inserter, _request.getTimeLeft());
+                inserter.insertString(make_string("Timed out with %ldus left.", _request.getTimeLeft().us()));
             } else {
                 _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, slime, inserter);
             }
@@ -110,30 +112,32 @@ DocsumContext::createSlimeReply()
     Cursor & root = response->setObject();
     Cursor & array = root.setArray(DOCSUMS);
     const Symbol docsumSym = response->insert(DOCSUM);
-    IDocsumWriter::ResolveClassInfo rci = _docsumWriter.resolveClassInfo(_docsumState._args.getResultClassName(), _docsumStore.getSummaryClassId());
-    for (uint32_t i = 0; (i < _docsumState._docsumcnt); ++i) {
+    IDocsumWriter::ResolveClassInfo rci = _docsumWriter.resolveClassInfo(_docsumState._args.getResultClassName(),
+                                                                         _docsumStore.getSummaryClassId());
+    uint32_t i(0);
+    for (i = 0; (i < _docsumState._docsumcnt) && !_request.expired(); ++i) {
         uint32_t docId = _docsumState._docsumbuf[i];
         Cursor & docSumC = array.addObject();
         ObjectSymbolInserter inserter(docSumC, docsumSym);
         if ((docId != search::endDocId) && !rci.mustSkip) {
-            if (_request.expired()) {
-                addTimedOut(inserter, _request.getTimeLeft());
-            } else {
-                _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, *response, inserter);
-            }
+            _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, *response, inserter);
         }
+    }
+    if (i != _docsumState._docsumcnt) {
+        const uint32_t numTimedOut = _docsumState._docsumcnt - 1;
+        Cursor & errors = root.setArray(ERRORS);
+        Cursor & timeout = errors.addObject();
+        timeout.setString(TYPE, TIMEOUT);
+        timeout.setString(MESSAGE, make_string("Timed out %d summaries with %ldus left.",
+                                               numTimedOut, _request.getTimeLeft().us()));
     }
     return response;
 }
 
-DocsumContext::DocsumContext(const DocsumRequest & request,
-                             IDocsumWriter & docsumWriter,
-                             IDocsumStore & docsumStore,
-                             const Matcher::SP & matcher,
-                             ISearchContext & searchCtx,
-                             IAttributeContext & attrCtx,
-                             search::IAttributeManager & attrMgr,
-                             SessionManager & sessionMgr) :
+DocsumContext::DocsumContext(const DocsumRequest & request, IDocsumWriter & docsumWriter,
+                             IDocsumStore & docsumStore, const Matcher::SP & matcher,
+                             ISearchContext & searchCtx, IAttributeContext & attrCtx,
+                             search::IAttributeManager & attrMgr, SessionManager & sessionMgr) :
     _request(request),
     _docsumWriter(docsumWriter),
     _docsumStore(docsumStore),
@@ -195,8 +199,7 @@ Location *getLocation(const string &loc_str, search::IAttributeManager &attrMgr)
         loc->setVecGuard(std::move(vec));
         location = loc_str.substr(pos + 1);
     } else {
-        LOG(warning, "Location string lacks attribute vector specification. "
-            "loc='%s'", loc_str.c_str());
+        LOG(warning, "Location string lacks attribute vector specification. loc='%s'", loc_str.c_str());
         location = loc_str;
     }
     loc->parse(location);

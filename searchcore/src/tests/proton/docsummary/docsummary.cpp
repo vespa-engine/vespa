@@ -57,6 +57,7 @@ using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorCells;
 using vespalib::tensor::TensorDimensions;
 using vespalib::tensor::TensorFactory;
+using namespace vespalib::slime;
 
 typedef std::unique_ptr<GeneralResult> GeneralResultPtr;
 
@@ -143,18 +144,18 @@ Tensor::UP createTensor(const TensorCells &cells,
 vespalib::string asVstring(vespalib::Memory str) {
     return vespalib::string(str.data, str.size);
 }
-vespalib::string asVstring(const vespalib::slime::Inspector &value) {
+vespalib::string asVstring(const Inspector &value) {
     return asVstring(value.asString());
 }
 
 void decode(const ResEntry *entry, vespalib::Slime &slime) {
     vespalib::Memory mem(entry->_dataval,
                          entry->_datalen);
-    size_t decodeRes = vespalib::slime::BinaryFormat::decode(mem, slime);
+    size_t decodeRes = BinaryFormat::decode(mem, slime);
     ASSERT_EQUAL(decodeRes, mem.size);
 }
 
-std::string b64encode(const vespalib::slime::Inspector &value) {
+std::string b64encode(const Inspector &value) {
     vespalib::Memory mem = value.asData();
     std::string str(mem.data, mem.size);
     return vespalib::Base64::encode(str);
@@ -274,12 +275,6 @@ private:
     ResultConfig          _resultCfg;
     std::set<vespalib::string> _markupFields;
 
-    const vespa::config::search::SummaryConfig &
-    getSummaryConfig() const
-    {
-        return *_summaryCfg;
-    }
-
     const ResultConfig &getResultConfig() const
     {
         return _resultCfg;
@@ -335,6 +330,7 @@ private:
     void requireThatPositionsAreUsed();
     void requireThatRawFieldsWorks();
     void requireThatFieldCacheRepoCanReturnDefaultFieldCache();
+    void requireThatSummariesTimeout();
 
 public:
     Test();
@@ -409,7 +405,7 @@ Test::assertTensor(const Tensor::UP & exp, const std::string & fieldName,
     vespalib::Slime slime;
     vespalib::Memory serialized(docsum.data.c_str() + sizeof(classId),
                                 docsum.data.size() - sizeof(classId));
-    size_t decodeRes = vespalib::slime::BinaryFormat::decode(serialized,
+    size_t decodeRes = BinaryFormat::decode(serialized,
                                                              slime);
     ASSERT_EQUAL(decodeRes, serialized.size);
 
@@ -424,9 +420,8 @@ Test::assertTensor(const Tensor::UP & exp, const std::string & fieldName,
     }
 }
 
-
-bool
-Test::assertSlime(const std::string &exp, const DocsumReply &reply, uint32_t id, bool relaxed)
+vespalib::Slime
+getSlime(const DocsumReply &reply, uint32_t id, bool relaxed)
 {
     const DocsumReply::Docsum & docsum = reply.docsums[id];
     uint32_t classId;
@@ -435,20 +430,26 @@ Test::assertSlime(const std::string &exp, const DocsumReply &reply, uint32_t id,
     ASSERT_EQUAL(::search::fs4transport::SLIME_MAGIC_ID, classId);
     vespalib::Slime slime;
     vespalib::Memory serialized(docsum.data.c_str() + sizeof(classId),
-                                       docsum.data.size() - sizeof(classId));
-    size_t decodeRes = vespalib::slime::BinaryFormat::decode(serialized,
-                                                             slime);
+                                docsum.data.size() - sizeof(classId));
+    size_t decodeRes = BinaryFormat::decode(serialized, slime);
     ASSERT_EQUAL(decodeRes, serialized.size);
     if (relaxed) {
         vespalib::SimpleBuffer buf;
-        vespalib::slime::JsonFormat::encode(slime, buf, false);
+        JsonFormat::encode(slime, buf, false);
         vespalib::Slime tmpSlime;
-        size_t used = vespalib::slime::JsonFormat::decode(buf.get(), tmpSlime);
+        size_t used = JsonFormat::decode(buf.get(), tmpSlime);
         EXPECT_TRUE(used > 0);
         slime = std::move(tmpSlime);
     }
+    return slime;
+}
+
+bool
+Test::assertSlime(const std::string &exp, const DocsumReply &reply, uint32_t id, bool relaxed)
+{
+    vespalib::Slime slime = getSlime(reply, id, relaxed);
     vespalib::Slime expSlime;
-    size_t used = vespalib::slime::JsonFormat::decode(exp, expSlime);
+    size_t used = JsonFormat::decode(exp, expSlime);
     EXPECT_TRUE(used > 0);
     return EXPECT_EQUAL(expSlime, slime);
 }
@@ -664,9 +665,40 @@ Test::requireThatRewritersAreUsed()
     req.hits.push_back(DocsumRequest::Hit(gid1));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     EXPECT_EQUAL(1u, rep->docsums.size());
-    EXPECT_TRUE(assertSlime("{aa:20}", *rep, 0, false));
+    vespalib::SimpleBuffer buf;
+    vespalib::Slime summary = getSlime(*rep, 0, false);
+    JsonFormat::encode(summary, buf, false);
+    EXPECT_TRUE(vespalib::Regexp("Timed out with -[0-9]+us left.").match(buf.get().make_stringref()));
 }
 
+void
+Test::requireThatSummariesTimeout()
+{
+    Schema s;
+    s.addSummaryField(Schema::SummaryField("aa", schema::DataType::INT32));
+    s.addSummaryField(Schema::SummaryField("ab", schema::DataType::INT32));
+
+    BuildContext bc(s);
+    DBContext dc(bc._repo, getDocTypeName());
+    dc.put(*bc._bld.startDocument("doc::1").
+                   startSummaryField("aa").
+                   addInt(10).
+                   endField().
+                   startSummaryField("ab").
+                   addInt(20).
+                   endField().
+                   endDocument(),
+           1);
+
+    DocsumRequest req;
+    req.setTimeout(0);
+    EXPECT_TRUE(req.expired());
+    req.resultClassName = "class2";
+    req.hits.push_back(DocsumRequest::Hit(gid1));
+    DocsumReply::UP rep = dc._ddb->getDocsums(req);
+    EXPECT_EQUAL(1u, rep->docsums.size());
+    EXPECT_TRUE(assertSlime("{aa:20}", *rep, 0, false));
+}
 
 void
 addField(Schema & s,
@@ -1288,6 +1320,7 @@ Test::Main()
     TEST_DO(requireThatPositionsAreUsed());
     TEST_DO(requireThatRawFieldsWorks());
     TEST_DO(requireThatFieldCacheRepoCanReturnDefaultFieldCache());
+    TEST_DO(requireThatSummariesTimeout());
 
     TEST_DONE();
 }

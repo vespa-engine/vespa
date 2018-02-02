@@ -3,12 +3,8 @@
 #include <vespa/searchsummary/docsummary/docsumwriter.h>
 #include <vespa/searchsummary/docsummary/resultpacker.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
-#include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/data/simple_buffer.h>
-#include <vespa/vespalib/data/slime/json_format.h>
-#include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 
 using namespace vespalib::slime::convenience;
