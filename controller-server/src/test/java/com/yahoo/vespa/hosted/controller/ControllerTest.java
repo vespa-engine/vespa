@@ -852,8 +852,7 @@ public class ControllerTest {
 
     }
 
-    private void runDeployment(DeploymentTester tester, ApplicationId application,
-                               ApplicationVersion expectedVersion,
+    private void runDeployment(DeploymentTester tester, ApplicationId application, ApplicationVersion expectedVersion,
                                ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision,
                                long initialBuildNumber) {
         Version vespaVersion = Version.fromString("6.1"); // Set in config server mock
@@ -862,10 +861,10 @@ public class ControllerTest {
         // Component notifies completion
         tester.notifyJobCompletion(component, app, Optional.empty(), sourceRevision, initialBuildNumber);
         ApplicationVersion change = sourceRevision.map(sr -> ApplicationVersion.from(sr, initialBuildNumber))
-                                                  .orElse(ApplicationVersion.unknown);
+                .orElse(ApplicationVersion.unknown);
         assertEquals(change.id(), tester.controller().applications()
-                                        .require(application)
-                                        .change().application().get().id());
+                .require(application)
+                .change().application().get().id());
 
         // Deploy in test
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
