@@ -32,6 +32,12 @@ public class FeatureNamesTestCase {
     }
 
     @Test
+    public void testArgument() {
+        assertEquals("bar", FeatureNames.argumentOf("foo(bar)"));
+        assertEquals("bar.baz", FeatureNames.argumentOf("foo(bar.baz)"));
+    }
+
+    @Test
     public void testConstantFeature() {
         assertEquals("constant(\"foo/bar\")", FeatureNames.asConstantFeature("foo/bar"));
     }

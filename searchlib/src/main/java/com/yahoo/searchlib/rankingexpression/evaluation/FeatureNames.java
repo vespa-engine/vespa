@@ -3,11 +3,12 @@ package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Utility methods for working with rank feature names
+ * Utility methods for query, document and constant rank feature names
  *
  * @author bratseth
  */
@@ -16,30 +17,52 @@ public class FeatureNames {
     private static final Pattern identifierRegexp = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9_-]*");
 
     /**
-     * Returns the given feature in canonical form.
-     * A feature name consists of a feature shortname, followed by zero or more arguments enclosed in quotes
-     * and an optional output prefixed by a dot: shortname[(argument-ist)][.output]
-     * Arguments may be identifiers or any strings single or double quoted.
+     * <p>Returns the given query, document or constant feature in canonical form.
+     * A feature name consists of a feature type name (query, attribute or constant),
+     * followed by one argument enclosed in quotes.
+     * The argument may be an identifier or any string single or double quoted.</p>
      *
-     * Argument string values may not contain comma, single quote nor double quote characters.
+     * <p>Argument string values may not contain comma, single quote nor double quote characters.</p>
      *
-     * <i>The canonical form use no quotes for arguments which are identifiers, and double quotes otherwise.</i>
+     * <p><i>The canonical form use no quotes for arguments which are identifiers, and double quotes otherwise.</i></p>
+     *
+     * <p>Note that the above definition is not true for features in general, which accept any ranking expression
+     * as argument.</p>
+     *
+     * @throws IllegalArgumentException if the feature name is not valid
      */
+    // Note that this implementation is more general than what is described above:
+    // It accepts any number of arguments and an optional output
     public static String canonicalize(String feature) {
+        return canonicalizeIfValid(feature).orElseThrow(() ->
+            new IllegalArgumentException("A feature name must be on the form query(name), attribute(name) or " +
+                                         "constant(name), but was '" + feature + "'"
+        ));
+    }
+
+    /**
+     * Canonicalizes the given argument as in canonicalize, but returns empty instead of throwing an exception if
+     * the argument is not a valid feature
+     */
+    public static Optional<String> canonicalizeIfValid(String feature) {
         int startParenthesis = feature.indexOf('(');
+        if (startParenthesis < 0)
+            return Optional.empty();
         int endParenthesis = feature.lastIndexOf(')');
-        if (startParenthesis < 1) return feature; // No arguments
+        String featureType = feature.substring(0, startParenthesis);
+        if ( ! ( featureType.equals("query") || featureType.equals("attribute") || featureType.equals("constant")))
+            return Optional.empty();
+        if (startParenthesis < 1) return Optional.of(feature); // No arguments
         if (endParenthesis < startParenthesis)
-            throw new IllegalArgumentException("A feature name must be on the form shortname[(argument-ist)][.output], " +
-                                               "but was '" + feature + "'");
+            return Optional.empty();
         String argumentString = feature.substring(startParenthesis + 1, endParenthesis);
         List<String> canonicalizedArguments =
                 Arrays.stream(argumentString.split(","))
-                      .map(FeatureNames::canonicalizeArgument)
-                      .collect(Collectors.toList());
-        return feature.substring(0, startParenthesis + 1) +
-               canonicalizedArguments.stream().collect(Collectors.joining(",")) +
-               feature.substring(endParenthesis);
+                        .map(FeatureNames::canonicalizeArgument)
+                        .collect(Collectors.toList());
+        return Optional.of(featureType + "(" +
+                           canonicalizedArguments.stream().collect(Collectors.joining(",")) +
+                           feature.substring(endParenthesis));
     }
 
     /** Canomicalizes a single argument */
@@ -72,6 +95,22 @@ public class FeatureNames {
 
     public static String asQueryFeature(String propertyName) {
         return canonicalize("query(\"" + propertyName + "\")");
+    }
+
+    /**
+     * Returns the single argument of the given feature name, without any quotes,
+     * or empty if it is not a valid query, attribute or constant feature name
+     */
+    public static Optional<String> argumentOf(String feature) {
+        return canonicalizeIfValid(feature).map(f -> {
+            int startParenthesis = f.indexOf("(");
+            int endParenthesis = f.indexOf(")");
+            String possiblyQuotedArgument = f.substring(startParenthesis + 1, endParenthesis);
+            if (possiblyQuotedArgument.startsWith("\""))
+                return possiblyQuotedArgument.substring(1, possiblyQuotedArgument.length() - 1);
+            else
+                return possiblyQuotedArgument;
+        });
     }
 
 }

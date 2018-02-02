@@ -309,7 +309,7 @@ public class SearchBuilder {
         builder.build();
         return builder;
     }
-    
+
     /**
      * Convenience factory method to import and build a {@link Search} object from a file. Only for testing.
      *
@@ -353,7 +353,7 @@ public class SearchBuilder {
     }
 
     // TODO: The build methods below just call the create methods above - remove
-    
+
     /**
      * Convenience factory method to import and build a {@link Search} object from a file. Only for testing.
      *
@@ -394,7 +394,7 @@ public class SearchBuilder {
             throws IOException, ParseException {
         return createFromFile(fileName, deployLogger, rankProfileRegistry).getSearch();
     }
-    
+
     /**
      * Convenience factory method to import and build a {@link Search} object from a raw object.
      *
@@ -423,4 +423,5 @@ public class SearchBuilder {
     public RankProfileRegistry getRankProfileRegistry() {
         return rankProfileRegistry;
     }
+
 }

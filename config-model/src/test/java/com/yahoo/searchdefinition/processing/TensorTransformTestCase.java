@@ -91,7 +91,7 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
 
 
     private void assertContainsExpression(String expr, String transformedExpression) throws ParseException {
-        assertTrue("Expected expression '" + transformedExpression + "' not found",
+        assertTrue("Expected expression '" + transformedExpression + "' found",
                    containsExpression(expr, transformedExpression));
     }
 
@@ -100,6 +100,7 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
             String rankProperty = rankPropertyExpression.getFirst();
             if (rankProperty.equals("rankingExpression(firstphase).rankingScript")) {
                 String rankExpression = censorBindingHash(rankPropertyExpression.getSecond().replace(" ",""));
+                System.out.println("--> " + rankExpression);
                 return rankExpression.equals(transformedExpression);
             }
         }
