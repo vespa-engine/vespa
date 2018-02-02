@@ -3,10 +3,9 @@
 #include "propertiesmap.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
-search::fef::Properties PropertiesMap::_emptyProperties;
+fef::Properties PropertiesMap::_emptyProperties;
 
 PropertiesMap::PropertiesMap()
     : _propertiesMap()
@@ -14,13 +13,13 @@ PropertiesMap::PropertiesMap()
 
 PropertiesMap::~PropertiesMap() { }
 
-search::fef::Properties &
+fef::Properties &
 PropertiesMap::lookupCreate(const vespalib::stringref &name)
 {
     return _propertiesMap[name];
 }
 
-const search::fef::Properties &
+const fef::Properties &
 PropertiesMap::lookup(const vespalib::stringref &name) const
 {
     PropsMap::const_iterator pos = _propertiesMap.find(name);
@@ -30,7 +29,7 @@ PropertiesMap::lookup(const vespalib::stringref &name) const
     return pos->second;
 }
 
-} // namespace engine
-} // namespace search
+}
 
 VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, search::fef::Properties);
+

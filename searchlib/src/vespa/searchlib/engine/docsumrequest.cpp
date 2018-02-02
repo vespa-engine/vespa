@@ -3,8 +3,7 @@
 #include "docsumrequest.h"
 #include "packetconverter.h"
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 DocsumRequest::DocsumRequest()
     : DocsumRequest(false) {}
@@ -25,7 +24,7 @@ DocsumRequest::DocsumRequest(const fastos::TimeStamp &start_time, bool useRootSl
 {
 }
 
-DocsumRequest::~DocsumRequest() {}
+DocsumRequest::~DocsumRequest() = default;
 
 void DocsumRequest::Source::lazyDecode() const
 {
@@ -43,5 +42,4 @@ DocsumRequest::Source::~Source() {
     }
 }
 
-} // namespace engine
-} // namespace search
+}

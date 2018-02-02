@@ -36,7 +36,7 @@ Memory DOCSUMS("docsums");
 Memory DOCSUM("docsum");
 
 void addTimedOut(Inserter & inserter, fastos::TimeStamp left) {
-    inserter.insertObject().setString("error", vespalib::make_string("Timeout at %ldus", left.us()));
+    inserter.insertObject().setString("error", vespalib::make_string("Timed out with %ldus left.", left.us()));
 }
 
 }

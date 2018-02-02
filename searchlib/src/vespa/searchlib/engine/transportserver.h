@@ -4,21 +4,20 @@
 
 #include "transport_metrics.h"
 #include "source_description.h"
+#include "searchapi.h"
+#include "docsumapi.h"
+#include "monitorapi.h"
+#include <vespa/searchlib/common/packets.h>
 #include <vespa/fnet/iserveradapter.h>
 #include <vespa/fnet/ipackethandler.h>
 #include <vespa/fnet/task.h>
 #include <vespa/fnet/transport.h>
-#include <set>
-#include <queue>
-#include <vespa/searchlib/engine/searchapi.h>
-#include <vespa/searchlib/engine/docsumapi.h>
-#include <vespa/searchlib/engine/monitorapi.h>
-#include <vespa/searchlib/common/packets.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/fastos/thread.h>
+#include <set>
+#include <queue>
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 /**
  * Common transport server implementation interacting with the
@@ -331,6 +330,5 @@ public:
     ~TransportServer();
 };
 
-} // namespace engine
-} // namespace search
+}
 

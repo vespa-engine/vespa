@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <vespa/document/base/globalid.h>
-#include <vespa/searchlib/common/hitrank.h>
 #include "propertiesmap.h"
 #include "request.h"
 #include "source_description.h"
+#include <vespa/document/base/globalid.h>
+#include <vespa/searchlib/common/hitrank.h>
 
 namespace search::fs4transport { class FS4Packet_GETDOCSUMSX; }
 

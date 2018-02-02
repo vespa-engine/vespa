@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include "propertiesmap.h"
 #include "request.h"
 #include "source_description.h"
 
-namespace search {
-namespace fs4transport { class FS4Packet_QUERYX; }
-namespace engine {
+namespace search::fs4transport { class FS4Packet_QUERYX; }
+
+namespace search::engine {
 
 class SearchRequest : public Request
 {
@@ -80,6 +79,5 @@ public:
     ~SearchRequest();
 };
 
-} // namespace engine
-} // namespace search
+}
 

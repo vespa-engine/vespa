@@ -4,8 +4,7 @@
 
 #include <memory>
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 struct MonitorRequest
 {
@@ -18,5 +17,5 @@ struct MonitorRequest
     MonitorRequest();
 };
 
-} // namespace engine
-} // namespace search
+}
+

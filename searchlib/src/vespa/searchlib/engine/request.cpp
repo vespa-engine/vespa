@@ -2,8 +2,7 @@
 
 #include "request.h"
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 Request::Request(const fastos::TimeStamp &start_time)
     : _startTime(start_time),
@@ -32,9 +31,6 @@ fastos::TimeStamp Request::getTimeLeft() const
     return _timeOfDoom - fastos::TimeStamp(fastos::ClockSystem::now());
 }
 
-Request::~Request()
-{
-}
+Request::~Request() = default;
 
-} // namespace engine
-} // namespace search
+}

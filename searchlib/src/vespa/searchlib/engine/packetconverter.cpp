@@ -27,8 +27,7 @@ struct FS4PropertiesBuilder : public search::fef::IPropertiesVisitor {
 
 } // namespace <unnamed>
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 using namespace search::fs4transport;
 
@@ -259,5 +258,5 @@ PacketConverter::fromTraceReply(const TraceReply &reply, TRACEREPLY &packet)
     fillPacketProperties(reply.propertiesMap, packet._propsVector);
 }
 
-} // namespace engine
-} // namespace search
+}
+

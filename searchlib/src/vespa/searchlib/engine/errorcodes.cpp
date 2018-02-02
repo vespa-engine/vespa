@@ -2,8 +2,7 @@
 
 #include "errorcodes.h"
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 const char *
 getStringFromErrorCode(ErrorCode ecode)
@@ -31,5 +30,5 @@ getStringFromErrorCode(ErrorCode ecode)
     return "Unknown error";
 }
 
-} // namespace engine
-} // namespace search
+}
+

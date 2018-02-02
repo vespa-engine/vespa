@@ -11,8 +11,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".engine.transportserver");
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 //-----------------------------------------------------------------------------
 
@@ -424,5 +423,5 @@ TransportServer::~TransportServer()
     }
 }
 
-} // namespace engine
-} // namespace search
+}
+

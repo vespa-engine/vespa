@@ -5,8 +5,7 @@
 #include <vespa/metrics/metrics.h>
 #include <vespa/vespalib/util/sync.h>
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 struct TransportMetrics : metrics::MetricSet
 {
@@ -32,9 +31,8 @@ struct TransportMetrics : metrics::MetricSet
     DocsumMetrics  docsum;
 
     TransportMetrics();
-    ~TransportMetrics();
+    ~TransportMetrics() override;
 };
 
-} // namespace engine
-} // namespace search
+}
 

@@ -9,8 +9,7 @@
 #include <vespa/searchlib/engine/docsumrequest.h>
 
 namespace vespalib { class Slime; }
-namespace search {
-namespace engine {
+namespace search::engine {
 
 struct DocsumReply
 {
@@ -44,5 +43,5 @@ struct DocsumReply
     ~DocsumReply();
 };
 
-} // namespace engine
-} // namespace search
+}
+

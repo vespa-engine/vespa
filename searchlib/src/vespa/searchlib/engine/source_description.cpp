@@ -2,10 +2,9 @@
 
 #include "source_description.h"
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 const vespalib::string SourceDescription::protocol("FS4");
 
-} // namespace engine
-} // namespace search
+}
+

@@ -2,8 +2,7 @@
 
 #include "searchreply.h"
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 SearchReply::SearchReply()
     : valid(true),
@@ -22,7 +21,7 @@ SearchReply::SearchReply()
       request()
 { }
 
-SearchReply::~SearchReply() {}
+SearchReply::~SearchReply() = default;
 
 SearchReply::SearchReply(const SearchReply &rhs) :
     valid        (rhs.valid),
@@ -41,5 +40,5 @@ SearchReply::SearchReply(const SearchReply &rhs) :
     request() // NB not copied
 { }
 
-} // namespace engine
-} // namespace search
+}
+

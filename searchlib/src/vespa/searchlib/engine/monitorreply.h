@@ -2,12 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include <memory>
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 struct MonitorReply
 {
@@ -27,5 +24,5 @@ struct MonitorReply
     MonitorReply();
 };
 
-} // namespace engine
-} // namespace search
+}
+

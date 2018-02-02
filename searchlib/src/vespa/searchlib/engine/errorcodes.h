@@ -2,8 +2,7 @@
 
 #pragma once
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 /**
  * Enum defining global error codes.
@@ -31,6 +30,5 @@ enum ErrorCode {
  **/
 const char* getStringFromErrorCode(ErrorCode error);
 
-} // namespace engine
-} // namespace search
+}
 

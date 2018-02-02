@@ -2,13 +2,12 @@
 
 #include "monitorrequest.h"
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 MonitorRequest::MonitorRequest()
     : reportActiveDocs(false), flags(0)
 {
 }
 
-} // namespace engine
-} // namespace search
+}
+
