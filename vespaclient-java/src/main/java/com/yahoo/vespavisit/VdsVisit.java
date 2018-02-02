@@ -342,8 +342,8 @@ public class VdsVisit {
                 .longOpt("bucketspace")
                 .hasArg(true)
                 .argName("space")
-                .desc("Bucket space to visit ('" + FixedBucketSpaces.defaultSpace() + "' or '" + FixedBucketSpaces.globalSpace() + "'). " +
-                      "If not specified, '" + FixedBucketSpaces.defaultSpace() + "' is used.")
+                .desc(String.format("Bucket space to visit ('%s' or '%s'). If not specified, '%s' is used.",
+                        FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace(), FixedBucketSpaces.defaultSpace()))
                 .build());
 
         return options;
