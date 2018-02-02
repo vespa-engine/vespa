@@ -1,12 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
-import com.yahoo.document.BucketId;
-import com.yahoo.document.Document;
-import com.yahoo.document.DocumentId;
-import com.yahoo.document.DocumentPut;
-import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.*;
 import com.yahoo.document.serialization.DocumentDeserializer;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
@@ -393,7 +388,7 @@ public abstract class RoutableFactories50 {
     public static class GetBucketListMessageFactory extends DocumentMessageFactory {
 
         protected String decodeBucketSpace(Deserializer deserializer) {
-            return "default"; // TODO fixed space repo
+            return FixedBucketSpaces.defaultSpace();
         }
 
         @Override
@@ -405,8 +400,7 @@ public abstract class RoutableFactories50 {
         }
 
         protected boolean encodeBucketSpace(String bucketSpace, DocumentSerializer buf) {
-            // TODO fixed space repo
-            return "default".equals(bucketSpace);
+            return FixedBucketSpaces.defaultSpace().equals(bucketSpace);
         }
 
         @Override
@@ -842,7 +836,7 @@ public abstract class RoutableFactories50 {
     public static class StatBucketMessageFactory extends DocumentMessageFactory {
 
         protected String decodeBucketSpace(Deserializer deserializer) {
-            return "default"; // TODO fixed space repo
+            return FixedBucketSpaces.defaultSpace();
         }
 
         @Override
@@ -855,8 +849,7 @@ public abstract class RoutableFactories50 {
         }
 
         protected boolean encodeBucketSpace(String bucketSpace, DocumentSerializer buf) {
-            // TODO fixed space repo
-            return "default".equals(bucketSpace);
+            return FixedBucketSpaces.defaultSpace().equals(bucketSpace);
         }
 
         @Override

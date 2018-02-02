@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespastat;
 
+import com.yahoo.document.FixedBucketSpaces;
+
 /**
  * This class contains the program parameters.
  *
@@ -25,7 +27,7 @@ public class ClientParameters {
             String route,
             SelectionType selectionType,
             String id) {
-        this(help, dumpData, route, selectionType, id, "default");
+        this(help, dumpData, route, selectionType, id, FixedBucketSpaces.defaultSpace());
     }
 
     public ClientParameters(
@@ -51,7 +53,7 @@ public class ClientParameters {
         private String route;
         private SelectionType selectionType;
         private String id;
-        private String bucketSpace = "default"; // TODO repo etc etc
+        private String bucketSpace = FixedBucketSpaces.defaultSpace();
 
         public Builder setHelp(boolean help) {
             this.help = help;

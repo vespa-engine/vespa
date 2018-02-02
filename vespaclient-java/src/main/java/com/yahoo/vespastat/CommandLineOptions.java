@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespastat;
 
+import com.yahoo.document.FixedBucketSpaces;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -54,7 +55,7 @@ public class CommandLineOptions {
 
         options.addOption(Option.builder("s")
                 .hasArg(true)
-                .desc("Stat buckets within the given bucket space. If not provided, 'default' is used.")
+                .desc("Stat buckets within the given bucket space. If not provided, '" + FixedBucketSpaces.defaultSpace() + "' is used.")
                 .argName("space")
                 .longOpt(BUCKET_SPACE_OPTION)
                 .build());
@@ -117,7 +118,7 @@ public class CommandLineOptions {
             builder.setHelp(cl.hasOption(HELP_OPTION));
             builder.setDumpData(cl.hasOption(DUMP_OPTION));
             builder.setRoute(cl.getOptionValue(ROUTE_OPTION, "default"));
-            builder.setBucketSpace(cl.getOptionValue(BUCKET_SPACE_OPTION, "default"));
+            builder.setBucketSpace(cl.getOptionValue(BUCKET_SPACE_OPTION, FixedBucketSpaces.defaultSpace()));
 
             if (cl.hasOption(USER_OPTION)) {
                 builder.setSelectionType(ClientParameters.SelectionType.USER);

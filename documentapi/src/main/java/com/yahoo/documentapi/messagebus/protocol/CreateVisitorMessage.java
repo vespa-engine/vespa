@@ -2,6 +2,7 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.document.BucketId;
+import com.yahoo.document.FixedBucketSpaces;
 
 import java.util.*;
 
@@ -12,7 +13,7 @@ public class CreateVisitorMessage extends DocumentMessage {
     private String controlDestination = "";
     private String dataDestination = "";
     private String docSelection = "";
-    private String bucketSpace = "default";
+    private String bucketSpace = FixedBucketSpaces.defaultSpace();
     private int maxPendingReplyCount = 8;
     private List<BucketId> buckets = new ArrayList<>();
     private long fromTime = 0;

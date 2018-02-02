@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespavisit;
 
+import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.VisitorControlHandler;
@@ -341,7 +342,8 @@ public class VdsVisit {
                 .longOpt("bucketspace")
                 .hasArg(true)
                 .argName("space")
-                .desc("Bucket space to visit ('default' or 'global). If not specified, 'default' is used.")
+                .desc("Bucket space to visit ('" + FixedBucketSpaces.defaultSpace() + "' or '" + FixedBucketSpaces.globalSpace() + "'). " +
+                      "If not specified, '" + FixedBucketSpaces.defaultSpace() + "' is used.")
                 .build());
 
         return options;

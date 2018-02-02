@@ -70,7 +70,6 @@ public class CommandLineOptionsTest {
         }
     }
 
-    // TODO fixed bucket space repo
     @Test
     public void bucket_space_is_default_unless_specified() {
         assertEquals("default", getParsedOptions("--user", "id").bucketSpace);
