@@ -471,29 +471,44 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
     }
 
-    private boolean fillHit(FastHit hit, DocsumPacket packet, String summaryClass) throws TimeoutException {
+    static private class FillHitResult {
+        final boolean ok;
+        final String error;
+        FillHitResult(boolean ok) {
+            this(ok, null);
+        }
+        FillHitResult(boolean ok, String error) {
+            this.ok = ok;
+            this.error = error;
+        }
+    }
+    private FillHitResult fillHit(FastHit hit, DocsumPacket packet, String summaryClass) {
         if (packet != null) {
             byte[] docsumdata = packet.getData();
             if (docsumdata.length > 0) {
-                String error = decodeSummary(summaryClass, hit, docsumdata);
-                if (error != null) {
-                    throw new TimeoutException(error);
-                }
-                return true;
+                return new FillHitResult(true, decodeSummary(summaryClass, hit, docsumdata));
             }
         }
-        return false;
+        return new FillHitResult(false);
     }
 
+    static protected class FillHitsResult {
+        public final int skippedHits;
+        public final String error;
+        FillHitsResult(int skippedHits, String error) {
+            this.skippedHits = skippedHits;
+            this.error = error;
+        }
+    }
     /**
      * Fills the hits.
      *
      * @return the number of hits that we did not return data for, i.e
      *         when things are working normally we return 0.
      */
-    protected int fillHits(Result result, int packetIndex, Packet[] packets, String summaryClass) throws IOException {
+    protected FillHitsResult fillHits(Result result, int packetIndex, Packet[] packets, String summaryClass) throws IOException {
         int skippedHits=0;
-        TimeoutException lastException = null;
+        String lastError = null;
         for (Iterator<Hit> i = hitIterator(result); i.hasNext();) {
             Hit hit = i.next();
 
@@ -504,22 +519,19 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
                 DocsumPacket docsum = (DocsumPacket) packets[packetIndex];
 
                 packetIndex++;
-                try {
-                    if (!fillHit(fastHit, docsum, summaryClass))
-                        skippedHits++;
-                } catch (TimeoutException e) {
-                    result.hits().addError(ErrorMessage.createTimeout(e.getMessage()));
+                FillHitResult fr = fillHit(fastHit, docsum, summaryClass);
+                if ( ! fr.ok ) {
                     skippedHits++;
-                    lastException = e;
+                }
+                if (fr.error != null) {
+                    result.hits().addError(ErrorMessage.createTimeout(fr.error));
+                    skippedHits++;
+                    lastError = fr.error;
                 }
             }
         }
         result.hits().setSorted(false);
-        if (lastException != null) {
-            throw lastException;
-        }
-
-        return skippedHits;
+        return new FillHitsResult(skippedHits, lastError);
     }
 
     /**
@@ -612,11 +624,9 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
                     FastHit fastHit = (FastHit) hit;
                     DocsumPacketKey key = new DocsumPacketKey(fastHit.getGlobalId(), fastHit.getPartId(), summaryClass);
 
-                    try {
-                        if (fillHit(fastHit, (DocsumPacket) packetWrapper.getPacket(key), summaryClass)) {
-                            fastHit.setCached(true);
-                        }
-                    } catch (TimeoutException e) { }
+                    if (fillHit(fastHit, (DocsumPacket) packetWrapper.getPacket(key), summaryClass).ok) {
+                        fastHit.setCached(true);
+                    }
 
                 }
             }

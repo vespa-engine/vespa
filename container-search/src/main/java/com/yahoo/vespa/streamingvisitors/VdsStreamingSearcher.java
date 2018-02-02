@@ -194,7 +194,12 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
         int skippedHits;
         try {
-            skippedHits = fillHits(result, 0, summaryPackets, query.getPresentation().getSummary());
+            FillHitsResult fillHitsResult = fillHits(result, 0, summaryPackets, query.getPresentation().getSummary());
+            skippedHits = fillHitsResult.skippedHits;
+            if (fillHitsResult.error != null) {
+                result.hits().addError(ErrorMessage.createTimeout(fillHitsResult.error));
+                return result;
+            }
         } catch (TimeoutException e) {
             result.hits().addError(ErrorMessage.createTimeout(e.getMessage()));
             return result;
