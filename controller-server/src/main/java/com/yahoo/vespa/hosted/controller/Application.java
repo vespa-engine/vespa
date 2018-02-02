@@ -42,7 +42,7 @@ public class Application {
     private final Map<ZoneId, Deployment> deployments;
     private final DeploymentJobs deploymentJobs;
     private final Change change;
-    private final Change outstandingChange;
+    private final boolean outstandingChange;
     private final Optional<IssueId> ownershipIssueId;
     private final ApplicationMetrics metrics;
     private final Optional<RotationId> rotation;
@@ -51,14 +51,14 @@ public class Application {
     public Application(ApplicationId id) {
         this(id, DeploymentSpec.empty, ValidationOverrides.empty, Collections.emptyMap(),
              new DeploymentJobs(Optional.empty(), Collections.emptyList(), Optional.empty()),
-             Change.empty(), Change.empty(), Optional.empty(), new ApplicationMetrics(0, 0),
+             Change.empty(), false, Optional.empty(), new ApplicationMetrics(0, 0),
              Optional.empty());
     }
 
     /** Used from persistence layer: Do not use */
     public Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                        List<Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
-                       Change outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
+                       boolean outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
                        Optional<RotationId> rotation) {
         this(id, deploymentSpec, validationOverrides,
              deployments.stream().collect(Collectors.toMap(Deployment::zone, d -> d)),
@@ -67,7 +67,7 @@ public class Application {
 
     Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                 Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
-                Change outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
+                boolean outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
                 Optional<RotationId> rotation) {
         Objects.requireNonNull(id, "id cannot be null");
         Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
@@ -129,7 +129,7 @@ public class Application {
      * Returns whether this has an outstanding change (in the source repository), which
      * has currently not started deploying (because a deployment is (or was) already in progress
      */
-    public Change outstandingChange() { return outstandingChange; }
+    public boolean hasOutstandingChange() { return outstandingChange; }
 
     public Optional<IssueId> ownershipIssueId() {
         return ownershipIssueId;
@@ -173,7 +173,11 @@ public class Application {
     /** Returns the application version a deployment to this zone should use, or empty if we don't know */
     public Optional<ApplicationVersion> deployApplicationVersionIn(ZoneId zone) {
         if (change().application().isPresent()) {
-            return Optional.of(change().application().get());
+            ApplicationVersion version = change().application().get();
+            if (version.isUnknown())
+                return Optional.empty();
+            else
+                return Optional.of(version);
         }
         return applicationVersionIn(zone);
     }

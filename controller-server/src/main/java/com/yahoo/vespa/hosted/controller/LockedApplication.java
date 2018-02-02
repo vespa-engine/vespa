@@ -49,7 +49,7 @@ public class LockedApplication extends Application {
     private LockedApplication(Builder builder) {
         super(builder.applicationId, builder.deploymentSpec, builder.validationOverrides,
               builder.deployments, builder.deploymentJobs, builder.deploying,
-              builder.outstandingChange, builder.ownershipIssueId, builder.metrics, builder.rotation);
+              builder.hasOutstandingChange, builder.ownershipIssueId, builder.metrics, builder.rotation);
     }
 
     public LockedApplication withProjectId(long projectId) {
@@ -126,8 +126,8 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).withChange(change));
     }
 
-    public LockedApplication withOutstandingChange(Change outstandingChange) {
-        return new LockedApplication(new Builder(this).withOutstandingChange(outstandingChange));
+    public LockedApplication withOutstandingChange(boolean outstandingChange) {
+        return new LockedApplication(new Builder(this).with(outstandingChange));
     }
 
     public LockedApplication withOwnershipIssueId(IssueId issueId) {
@@ -181,7 +181,7 @@ public class LockedApplication extends Application {
         private Map<ZoneId, Deployment> deployments;
         private DeploymentJobs deploymentJobs;
         private Change deploying;
-        private Change outstandingChange;
+        private boolean hasOutstandingChange;
         private Optional<IssueId> ownershipIssueId;
         private ApplicationMetrics metrics;
         private Optional<RotationId> rotation;
@@ -193,7 +193,7 @@ public class LockedApplication extends Application {
             this.deployments = application.deployments();
             this.deploymentJobs = application.deploymentJobs();
             this.deploying = application.change();
-            this.outstandingChange = application.outstandingChange();
+            this.hasOutstandingChange = application.hasOutstandingChange();
             this.ownershipIssueId = application.ownershipIssueId();
             this.metrics = application.metrics();
             this.rotation = application.rotation().map(ApplicationRotation::id);
@@ -224,8 +224,8 @@ public class LockedApplication extends Application {
             return this;
         }
 
-        private Builder withOutstandingChange(Change outstandingChange) {
-            this.outstandingChange = outstandingChange;
+        private Builder with(boolean hasOutstandingChange) {
+            this.hasOutstandingChange = hasOutstandingChange;
             return this;
         }
 
