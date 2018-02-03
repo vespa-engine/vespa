@@ -21,6 +21,20 @@ using search::ConstQueryTermList;
 
 namespace vsm {
 
+void setMatchType(FieldSearcherContainer & searcher, vespalib::stringref arg1) {
+    if (arg1 == "prefix") {
+        searcher->setMatchType(FieldSearcher::PREFIX);
+    } else if (arg1 == "substring") {
+        searcher->setMatchType(FieldSearcher::SUBSTRING);
+    } else if (arg1 == "suffix") {
+        searcher->setMatchType(FieldSearcher::SUFFIX);
+    } else if (arg1 == "exact") {
+        searcher->setMatchType(FieldSearcher::EXACT);
+    } else if (arg1 == "word") {
+        searcher->setMatchType(FieldSearcher::EXACT);
+    }
+}
+
 FieldSearchSpec::FieldSearchSpec() :
     _id(0),
     _name(),
@@ -31,10 +45,11 @@ FieldSearchSpec::FieldSearchSpec() :
     _reconfigured(false)
 {
 }
-FieldSearchSpec::~FieldSearchSpec() {}
+FieldSearchSpec::~FieldSearchSpec() = default;
 
 FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & fname,
-                                 VsmfieldsConfig::Fieldspec::Searchmethod searchDef, const vespalib::string & arg1, size_t maxLength_) :
+                                 VsmfieldsConfig::Fieldspec::Searchmethod searchDef,
+                                 const vespalib::string & arg1, size_t maxLength_) :
     _id(fid),
     _name(fname),
     _maxLength(maxLength_),
@@ -79,17 +94,7 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & 
         break;
     }
     if (_searcher.valid()) {
-        if (arg1 == "prefix") {
-            _searcher->setMatchType(FieldSearcher::PREFIX);
-        } else if (arg1 == "substring") {
-            _searcher->setMatchType(FieldSearcher::SUBSTRING);
-        } else if (arg1 == "suffix") {
-            _searcher->setMatchType(FieldSearcher::SUFFIX);
-        } else if (arg1 == "exact") {
-            _searcher->setMatchType(FieldSearcher::EXACT);
-        } else if (arg1 == "word") {
-            _searcher->setMatchType(FieldSearcher::EXACT);
-        }
+        setMatchType(_searcher, arg1);
         _searcher->maxFieldLength(maxLength());
     }
 }
@@ -112,17 +117,7 @@ FieldSearchSpec::reconfig(const search::QueryTerm & term)
         {
             _searcher = UTF8FlexibleStringFieldSearcher(id());
             // preserve the basic match property of the searcher
-            if (_arg1 == "prefix") {
-                _searcher->setMatchType(FieldSearcher::PREFIX);
-            } else if (_arg1 == "substring") {
-                _searcher->setMatchType(FieldSearcher::SUBSTRING);
-            } else if (_arg1 == "suffix") {
-                _searcher->setMatchType(FieldSearcher::SUFFIX);
-            } else if (_arg1 == "exact") {
-                _searcher->setMatchType(FieldSearcher::EXACT);
-            } else if (_arg1 == "word") {
-                _searcher->setMatchType(FieldSearcher::EXACT);
-            }
+            setMatchType(_searcher, _arg1);
             LOG(debug, "Reconfigured to use UTF8FlexibleStringFieldSearcher (%s) for field '%s' with id '%d'",
                 _searcher->prefix() ? "prefix" : "regular", name().c_str(), id());
             _reconfigured = true;
@@ -136,8 +131,7 @@ FieldSearchSpec::reconfig(const search::QueryTerm & term)
 vespalib::asciistream & operator <<(vespalib::asciistream & os, const FieldSearchSpec & f)
 {
     os << f._id << ' ' << f._name << ' ';
-    if (f._searcher.valid()) {
-    } else {
+    if ( ! f._searcher.valid()) {
         os << " No searcher defined.\n";
     }
     return os;
@@ -176,15 +170,15 @@ bool FieldSearchSpecMap::buildFieldsInQuery(const Query & query, StringFieldIdTM
     ConstQueryTermList qtl;
     query.getLeafs(qtl);
 
-    for (ConstQueryTermList::const_iterator it = qtl.begin(), mt = qtl.end(); it != mt; it++) {
-        for (DocumentTypeIndexFieldMapT::const_iterator dt(documentTypeMap().begin()), dmt(documentTypeMap().end()); dt != dmt; dt++) {
-            const IndexFieldMapT & fim = dt->second;
-            vespalib::string rawIndex((*it)->index());
+    for (const auto & term : qtl) {
+        for (const auto & dtm : documentTypeMap()) {
+            const IndexFieldMapT & fim = dtm.second;
+            vespalib::string rawIndex(term->index());
             vespalib::string index(stripNonFields(rawIndex));
             IndexFieldMapT::const_iterator fIt = fim.find(index);
             if (fIt != fim.end()) {
-                for(FieldIdTList::const_iterator ifIt = fIt->second.begin(), ifMt = fIt->second.end(); ifIt != ifMt; ifIt++) {
-                    const FieldSearchSpec & spec = specMap().find(*ifIt)->second;
+                for(FieldIdT fid : fIt->second) {
+                    const FieldSearchSpec & spec = specMap().find(fid)->second;
                     LOG(debug, "buildFieldsInQuery = rawIndex='%s', index='%s'", rawIndex.c_str(), index.c_str());
                     if ((rawIndex != index) && (spec.name().find(index) == 0)) {
                         vespalib::string modIndex(rawIndex);
@@ -195,21 +189,13 @@ bool FieldSearchSpecMap::buildFieldsInQuery(const Query & query, StringFieldIdTM
                     }
                 }
             } else {
-                LOG(warning, "No valid indexes registered for index %s", (*it)->index().c_str());
+                LOG(warning, "No valid indexes registered for index %s", term->index().c_str());
                 retval = false;
             }
         }
     }
     return retval;
 }
-
-void FieldSearchSpecMap::buildFieldsInQuery(const std::vector<vespalib::string> & otherFieldsNeeded, StringFieldIdTMap & fieldsInQuery) const
-{
-    for (size_t i(0), m(otherFieldsNeeded.size()); i < m; i++) {
-        fieldsInQuery.add(otherFieldsNeeded[i], _nameIdMap.fieldNo(otherFieldsNeeded[i]));
-    }
-}
-
 
 void FieldSearchSpecMap::buildFromConfig(const std::vector<vespalib::string> & otherFieldsNeeded)
 {
@@ -223,8 +209,7 @@ bool FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle & conf)
 {
     bool retval(true);
     LOG(spam, "Parsing %zd fields", conf->fieldspec.size());
-    for(size_t i=0, m = conf->fieldspec.size(); i < m; i++) {
-        const VsmfieldsConfig::Fieldspec & cfs = conf->fieldspec[i];
+    for(const VsmfieldsConfig::Fieldspec & cfs : conf->fieldspec) {
         LOG(spam, "Parsing %s", cfs.name.c_str());
         FieldIdT fieldId = specMap().size();
         FieldSearchSpec fss(fieldId, cfs.name, cfs.searchmethod, cfs.arg1.c_str(), cfs.maxlength);
@@ -234,16 +219,13 @@ bool FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle & conf)
     }
 
     LOG(spam, "Parsing %zd document types", conf->documenttype.size());
-    for(size_t d=0, dm = conf->documenttype.size(); d < dm; d++) {
-        const VsmfieldsConfig::Documenttype & di = conf->documenttype[d];
+    for(const VsmfieldsConfig::Documenttype & di : conf->documenttype) {
         IndexFieldMapT indexMapp;
         LOG(spam, "Parsing document type %s with %zd indexes", di.name.c_str(), di.index.size());
-        for(size_t i=0, m = di.index.size(); i < m; i++) {
-            const VsmfieldsConfig::Documenttype::Index & ci = di.index[i];
+        for(const VsmfieldsConfig::Documenttype::Index & ci : di.index) {
             LOG(spam, "Index %s with %zd fields", ci.name.c_str(), ci.field.size());
             FieldIdTList ifm;
-            for (size_t j=0, n=ci.field.size(); j < n; j++) {
-                const VsmfieldsConfig::Documenttype::Index::Field & cf = ci.field[j];
+            for (const VsmfieldsConfig::Documenttype::Index::Field & cf : ci.field) {
                 LOG(spam, "Parsing field %s", cf.name.c_str());
                 FieldSearchSpecMapT::const_iterator fIt, mIt;
                 for (fIt=specMap().begin(), mIt=specMap().end(); (fIt != mIt) && (fIt->second.name() != cf.name); fIt++);
@@ -266,16 +248,13 @@ FieldSearchSpecMap::reconfigFromQuery(const search::Query & query)
     ConstQueryTermList qtl;
     query.getLeafs(qtl);
 
-    for (ConstQueryTermList::const_iterator ita = qtl.begin(); ita != qtl.end(); ++ita) {
-        for (DocumentTypeIndexFieldMapT::const_iterator itb = documentTypeMap().begin();
-             itb != documentTypeMap().end(); ++itb)
-        {
-            const IndexFieldMapT & ifm = itb->second;
-            IndexFieldMapT::const_iterator itc = ifm.find((*ita)->index());
-            if (itc != ifm.end()) {
-                for (FieldIdTList::const_iterator itd = itc->second.begin(); itd != itc->second.end(); ++itd) {
-                    FieldSearchSpec & spec = _specMap.find(*itd)->second;
-                    spec.reconfig(**ita);
+    for (const auto & termA : qtl) {
+        for (const auto & ifm : documentTypeMap()) {
+            IndexFieldMapT::const_iterator itc = ifm.second.find(termA->index());
+            if (itc != ifm.second.end()) {
+                for (FieldIdT fid : itc->second) {
+                    FieldSearchSpec & spec = _specMap.find(fid)->second;
+                    spec.reconfig(*termA);
                 }
             }
         }
@@ -290,8 +269,8 @@ bool lesserField(const FieldSearcherContainer & a, const FieldSearcherContainer 
 void FieldSearchSpecMap::buildSearcherMap(const StringFieldIdTMapT & fieldsInQuery, FieldIdTSearcherMap & fieldSearcherMap)
 {
     fieldSearcherMap.clear();
-    for (StringFieldIdTMapT::const_iterator it = fieldsInQuery.begin(), mt = fieldsInQuery.end(); it != mt; it++) {
-        FieldIdT fId = it->second;
+    for (const auto & entry : fieldsInQuery) {
+        FieldIdT fId = entry.second;
         const FieldSearchSpec & spec = specMap().find(fId)->second;
         fieldSearcherMap.push_back(spec.searcher());
     }
@@ -302,19 +281,21 @@ void FieldSearchSpecMap::buildSearcherMap(const StringFieldIdTMapT & fieldsInQue
 vespalib::asciistream & operator <<(vespalib::asciistream & os, const FieldSearchSpecMap & df)
 {
     os << "DocumentTypeMap = \n";
-    for (DocumentTypeIndexFieldMapT::const_iterator difIt=df.documentTypeMap().begin(), difMt=df.documentTypeMap().end(); difIt != difMt; difIt++) {
-        os << "DocType = " << difIt->first << "\n";
+    for (const auto & dtm : df.documentTypeMap()) {
+        os << "DocType = " << dtm.first << "\n";
         os << "IndexMap = \n";
-        for (IndexFieldMapT::const_iterator ifIt=difIt->second.begin(), ifMt=difIt->second.end(); ifIt != ifMt; ifIt++) {
-            os << ifIt->first << ": ";
-            for (FieldIdTList::const_iterator it=ifIt->second.begin(), mt=ifIt->second.end(); it != mt; it++)
-                os << *it << ' ';
+        for (const auto &index : dtm.second) {
+            os << index.first << ": ";
+            for (FieldIdT fid : index.second) {
+                os << fid << ' ';
+            }
             os << '\n';
         }
     }
     os << "SpecMap = \n";
-    for (FieldSearchSpecMapT::const_iterator it=df.specMap().begin(), mt=df.specMap().end(); it != mt; it++)
-        os << it->first << " = " << it->second << '\n';
+    for (const auto & entry : df.specMap()) {
+        os << entry.first << " = " << entry.second << '\n';
+    }
     os << "NameIdMap = \n" << df.nameIdMap();
     return os;
 }
