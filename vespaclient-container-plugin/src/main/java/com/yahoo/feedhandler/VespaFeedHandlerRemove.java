@@ -10,7 +10,6 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.protect.Error;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.feedapi.FeedContext;
 import com.yahoo.feedapi.MessagePropertyProcessor;
 import com.yahoo.feedapi.SingleSender;

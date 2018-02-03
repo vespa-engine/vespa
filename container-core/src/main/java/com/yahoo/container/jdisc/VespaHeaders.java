@@ -14,7 +14,6 @@ import static com.yahoo.container.protect.Error.NO_BACKENDS_IN_SERVICE;
 import static com.yahoo.container.protect.Error.TIMEOUT;
 import static com.yahoo.container.protect.Error.UNAUTHORIZED;
 
-import java.net.URLDecoder;
 import java.util.Iterator;
 
 import com.yahoo.collections.Tuple2;

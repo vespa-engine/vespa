@@ -4,11 +4,12 @@ package com.yahoo.feedapi;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.EmptyReply;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.clientmetrics.RouteMetricSet;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Logger;
 
 /**
