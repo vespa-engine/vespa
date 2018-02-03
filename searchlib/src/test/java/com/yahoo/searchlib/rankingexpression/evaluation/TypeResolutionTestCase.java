@@ -19,11 +19,11 @@ public class TypeResolutionTestCase {
     @Test
     public void testTypeResolution() {
         TypeMapContext context = new TypeMapContext();
-        context.setType("query('x1')", TensorType.fromSpec("tensor(x[])"));
-        context.setType("query('x2')", TensorType.fromSpec("tensor(x[10])"));
-        context.setType("query('y1')", TensorType.fromSpec("tensor(y[])"));
-        context.setType("query('xy1')", TensorType.fromSpec("tensor(x[10],y[])"));
-        context.setType("query('xy2')", TensorType.fromSpec("tensor(x[],y[10])"));
+        context.setType("query(x1)", TensorType.fromSpec("tensor(x[])"));
+        context.setType("query(x2)", TensorType.fromSpec("tensor(x[10])"));
+        context.setType("query(y1)", TensorType.fromSpec("tensor(y[])"));
+        context.setType("query(xy1)", TensorType.fromSpec("tensor(x[10],y[])"));
+        context.setType("query(xy2)", TensorType.fromSpec("tensor(x[],y[10])"));
 
         assertType("tensor(x[])", "query(x1)", context);
         assertType("tensor(x[])", "if (1>0, query(x1), query(x2))", context);
@@ -46,7 +46,8 @@ public class TypeResolutionTestCase {
             fail("Expected type incompatibility exception");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("An if expression must produce compatible types in both alternatives, but the 'true' type is tensor(x[]) while the 'false' type is tensor(y[])",
+            assertEquals("An if expression must produce compatible types in both alternatives, " +
+                         "but the 'true' type is tensor(x[]) while the 'false' type is tensor(y[])",
                          expected.getMessage());
         }
         catch (ParseException e) {

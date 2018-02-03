@@ -100,7 +100,7 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
             String rankProperty = rankPropertyExpression.getFirst();
             if (rankProperty.equals("rankingExpression(firstphase).rankingScript")) {
                 String rankExpression = censorBindingHash(rankPropertyExpression.getSecond().replace(" ",""));
-                System.out.println("--> " + rankExpression);
+                System.out.println("expression is --> " + rankExpression);
                 return rankExpression.equals(transformedExpression);
             }
         }
