@@ -221,7 +221,7 @@ buildFieldSet(const VsmfieldsConfig::Documenttype::Index & ci, const FieldSearch
         LOG(spam, "Parsing field %s", cf.name.c_str());
         auto foundIndex = std::find_if(indexes.begin(), indexes.end(),
                                        [&cf](const auto & v) { return v.name == cf.name;});
-        if (foundIndex != indexes.end()) {
+        if ((foundIndex != indexes.end()) && (cf.name != ci.name)) {
             FieldIdTList sub = buildFieldSet(*foundIndex, specMap, indexes);
             ifm.insert(ifm.end(), sub.begin(), sub.end());
         } else {
