@@ -21,6 +21,8 @@ using search::ConstQueryTermList;
 
 namespace vsm {
 
+namespace {
+
 void setMatchType(FieldSearcherContainer & searcher, vespalib::stringref arg1) {
     if (arg1 == "prefix") {
         searcher->setMatchType(FieldSearcher::PREFIX);
@@ -33,6 +35,8 @@ void setMatchType(FieldSearcherContainer & searcher, vespalib::stringref arg1) {
     } else if (arg1 == "word") {
         searcher->setMatchType(FieldSearcher::EXACT);
     }
+}
+
 }
 
 FieldSearchSpec::FieldSearchSpec() :
@@ -205,6 +209,36 @@ void FieldSearchSpecMap::buildFromConfig(const std::vector<vespalib::string> & o
     }
 }
 
+namespace {
+
+FieldIdTList
+buildFieldSet(const VsmfieldsConfig::Documenttype::Index & ci, const FieldSearchSpecMapT & specMap,
+              const VsmfieldsConfig::Documenttype::IndexVector & indexes)
+{
+    LOG(spam, "Index %s with %zd fields", ci.name.c_str(), ci.field.size());
+    FieldIdTList ifm;
+    for (const VsmfieldsConfig::Documenttype::Index::Field & cf : ci.field) {
+        LOG(spam, "Parsing field %s", cf.name.c_str());
+        auto foundIndex = std::find_if(indexes.begin(), indexes.end(),
+                                       [&cf](const auto & v) { return v.name == cf.name;});
+        if (foundIndex != indexes.end()) {
+            FieldIdTList sub = buildFieldSet(*foundIndex, specMap, indexes);
+            ifm.insert(ifm.end(), sub.begin(), sub.end());
+        } else {
+            auto foundField = std::find_if(specMap.begin(), specMap.end(),
+                                           [&cf](const auto & v) { return v.second.name() == cf.name;} );
+            if (foundField != specMap.end()) {
+                ifm.push_back(foundField->second.id());
+            } else {
+                LOG(warning, "Field %s not defined. Ignoring....", cf.name.c_str());
+            }
+        }
+    }
+    return ifm;
+}
+
+}
+
 bool FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle & conf)
 {
     bool retval(true);
@@ -223,19 +257,7 @@ bool FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle & conf)
         IndexFieldMapT indexMapp;
         LOG(spam, "Parsing document type %s with %zd indexes", di.name.c_str(), di.index.size());
         for(const VsmfieldsConfig::Documenttype::Index & ci : di.index) {
-            LOG(spam, "Index %s with %zd fields", ci.name.c_str(), ci.field.size());
-            FieldIdTList ifm;
-            for (const VsmfieldsConfig::Documenttype::Index::Field & cf : ci.field) {
-                LOG(spam, "Parsing field %s", cf.name.c_str());
-                FieldSearchSpecMapT::const_iterator fIt, mIt;
-                for (fIt=specMap().begin(), mIt=specMap().end(); (fIt != mIt) && (fIt->second.name() != cf.name); fIt++);
-                if (fIt != mIt) {
-                    ifm.push_back(fIt->second.id());
-                } else {
-                    LOG(warning, "Field %s not defined. Ignoring....", cf.name.c_str());
-                }
-            }
-            indexMapp[ci.name] = ifm;
+            indexMapp[ci.name] = buildFieldSet(ci, specMap(), di.index);
         }
         _documentTypeMap[di.name] = indexMapp;
     }
