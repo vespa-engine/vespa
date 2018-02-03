@@ -207,7 +207,7 @@ public class DocumentProtocol implements Protocol {
      * NORMAL categories. Traffic in the HIGH end will be usually be prioritized over important maintenance operations.
      * Traffic in the LOW end will be prioritized after these operations.</p>
      */
-    public static enum Priority {
+    public enum Priority {
         HIGHEST(0),
         VERY_HIGH(1),
         HIGH_1(2),
