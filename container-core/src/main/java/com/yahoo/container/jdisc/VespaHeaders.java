@@ -6,6 +6,7 @@ import static com.yahoo.container.protect.Error.BACKEND_COMMUNICATION_ERROR;
 import static com.yahoo.container.protect.Error.BAD_REQUEST;
 import static com.yahoo.container.protect.Error.FORBIDDEN;
 import static com.yahoo.container.protect.Error.ILLEGAL_QUERY;
+import static com.yahoo.container.protect.Error.INSUFFICIENT_STORAGE;
 import static com.yahoo.container.protect.Error.INTERNAL_SERVER_ERROR;
 import static com.yahoo.container.protect.Error.INVALID_QUERY_PARAMETER;
 import static com.yahoo.container.protect.Error.NOT_FOUND;
@@ -159,6 +160,8 @@ public final class VespaHeaders {
             return new Tuple2<>(true, Response.Status.BAD_REQUEST);
         if (error.getCode() == INTERNAL_SERVER_ERROR.code)
             return new Tuple2<>(true, Response.Status.INTERNAL_SERVER_ERROR);
+        if (error.getCode() == INSUFFICIENT_STORAGE.code)
+            return new Tuple2<>(true, Response.Status.INSUFFICIENT_STORAGE);
         return NO_MATCH;
     }
 

@@ -8,6 +8,7 @@ import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.protect.Error;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.feedapi.DocprocMessageProcessor;
 import com.yahoo.feedapi.FeedContext;
@@ -106,7 +107,7 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
             long millis = getTimeoutMillis(request);
             boolean completed = sender.waitForPending(millis);
             if (!completed) {
-                response.addError("Timed out after " + millis + " ms waiting for responses");
+                response.addError(Error.TIMEOUT, "Timed out after " + millis + " ms waiting for responses");
             }
             response.done();
             return response;

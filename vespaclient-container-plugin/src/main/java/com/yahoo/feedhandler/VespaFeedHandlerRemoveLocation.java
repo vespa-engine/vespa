@@ -7,6 +7,7 @@ import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.protect.Error;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.protocol.RemoveLocationMessage;
 import com.yahoo.feedapi.FeedContext;
@@ -78,7 +79,7 @@ public class VespaFeedHandlerRemoveLocation extends VespaFeedHandlerBase {
         long millis = getTimeoutMillis(request);
         boolean completed = sender.waitForPending(millis);
         if ( ! completed)
-            response.addError("Timed out after "+millis+" ms waiting for responses");
+            response.addError(Error.TIMEOUT, "Timed out after "+millis+" ms waiting for responses");
         return response;
     }
 
