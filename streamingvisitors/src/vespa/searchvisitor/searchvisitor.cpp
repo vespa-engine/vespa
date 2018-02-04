@@ -105,7 +105,7 @@ SearchVisitor::SummaryGenerator::SummaryGenerator() :
     _callback(),
     _docsumState(_callback),
     _docsumFilter(),
-    _docsumWriter(NULL),
+    _docsumWriter(nullptr),
     _rawBuf(4096)
 {
 }
@@ -116,7 +116,7 @@ SearchVisitor::SummaryGenerator::~SummaryGenerator() { }
 vespalib::ConstBufferRef
 SearchVisitor::SummaryGenerator::fillSummary(AttributeVector::DocId lid, const HitsAggregationResult::SummaryClassType & summaryClass)
 {
-    if (_docsumWriter != NULL) {
+    if (_docsumWriter != nullptr) {
         _rawBuf.reset();
         _docsumState._args.setResultClassName(summaryClass);
         uint32_t docsumLen = _docsumWriter->WriteDocsum(lid, &_docsumState, _docsumFilter.get(), &_rawBuf);
@@ -168,7 +168,7 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
     Visitor(component),
     _env(static_cast<SearchEnvironment &>(vEnv)),
     _params(params),
-    _vsmAdapter(NULL),
+    _vsmAdapter(nullptr),
     _docSearchedCount(0),
     _hitCount(0),
     _hitsRejectedCount(0),
@@ -185,7 +185,7 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
     _groupingList(),
     _attributeFields(),
     _sortList(),
-    _docsumWriter(NULL),
+    _docsumWriter(nullptr),
     _searchBuffer(new vsm::SearcherBuf()),
     _tmpSortBuffer(256),
     _documentIdAttributeBacking(new search::SingleStringExtAttribute("[docid]") ),
@@ -213,7 +213,7 @@ void SearchVisitor::init(const Parameters & params)
     size_t wantedSummaryCount(10);
     if (params.get("summarycount", valueRef) ) {
         vespalib::string tmp(valueRef.data(), valueRef.size());
-        wantedSummaryCount = strtoul(tmp.c_str(), NULL, 0);
+        wantedSummaryCount = strtoul(tmp.c_str(), nullptr, 0);
         LOG(debug, "Received summary count: %ld", wantedSummaryCount);
     }
     _queryResult->getSearchResult().setWantedHitCount(wantedSummaryCount);
@@ -226,8 +226,8 @@ void SearchVisitor::init(const Parameters & params)
 
     if (params.get("queryflags", valueRef) ) {
         vespalib::string tmp(valueRef.data(), valueRef.size());
-        LOG(debug, "Received query flags: 0x%lx", strtoul(tmp.c_str(), NULL, 0));
-        uint32_t queryFlags = strtoul(tmp.c_str(), NULL, 0);
+        LOG(debug, "Received query flags: 0x%lx", strtoul(tmp.c_str(), nullptr, 0));
+        uint32_t queryFlags = strtoul(tmp.c_str(), nullptr, 0);
         _rankController.setDumpFeatures((queryFlags & search::fs4transport::QFLAG_DUMP_FEATURES) != 0);
         LOG(debug, "QFLAG_DUMP_FEATURES: %s", _rankController.getDumpFeatures() ? "true" : "false");
     }
@@ -432,7 +432,7 @@ SearchVisitor::RankController::processHintedAttributes(const IndexEnvironment & 
     for (const vespalib::string & name : attributes) {
         LOG(debug, "Process attribute access hint (%s): '%s'", rank ? "rank" : "dump", name.c_str());
         const search::fef::FieldInfo * fieldInfo = indexEnv.getFieldByName(name);
-        if (fieldInfo != NULL) {
+        if (fieldInfo != nullptr) {
             bool found = false;
             uint32_t fid = fieldInfo->id();
             for (size_t j = 0; !found && (j < attributeFields.size()); ++j) {
@@ -457,8 +457,8 @@ SearchVisitor::RankController::processHintedAttributes(const IndexEnvironment & 
 
 SearchVisitor::RankController::RankController() :
     _rankProfile("default"),
-    _rankManagerSnapshot(NULL),
-    _rankSetup(NULL),
+    _rankManagerSnapshot(nullptr),
+    _rankSetup(nullptr),
     _queryProperties(),
     _hasRanking(false),
     _rankProcessor(),
@@ -694,7 +694,7 @@ SearchVisitor::setupDocsumObjects()
         _vsmAdapter->getDocsumTools()->getDocsumWriter()->InitState(_attrMan, ds);
        _summaryGenerator.setDocsumWriter(*_vsmAdapter->getDocsumTools()->getDocsumWriter());
        for (const IAttributeVector * v : ds->_attributes) {
-           if (v != NULL) {
+           if (v != nullptr) {
                vespalib::string name(v->getName());
                vsm::FieldIdT fid = _fieldSearchSpecMap.nameIdMap().fieldNo(name);
                if ( fid != StringFieldIdTMap::npos ) {
@@ -872,7 +872,7 @@ SearchVisitor::handleDocuments(const document::BucketId&,
                                HitCounter& hitCounter)
 {
     (void) hitCounter;
-    if (_vsmAdapter == NULL) {
+    if (_vsmAdapter == nullptr) {
         init(_params);
     }
     if ( ! _rankController.valid() ) {
@@ -889,7 +889,7 @@ SearchVisitor::handleDocuments(const document::BucketId&,
         StorageDocument::UP document(new StorageDocument(entry->releaseDocument(), _fieldPathMap, highestFieldNo));
 
         try {
-            if (defaultDocType != NULL
+            if (defaultDocType != nullptr
                 && !compatibleDocumentTypes(*defaultDocType, document->docDoc().getType()))
             {
                 LOG(debug, "Skipping document of type '%s' when handling only documents of type '%s'",
@@ -1001,7 +1001,7 @@ SearchVisitor::fillAttributeVectors(const vespalib::string & documentId, const S
         AttributeVector & attrV = const_cast<AttributeVector & >(*finfoGuard);
         AttributeVector::DocId docId(0);
         attrV.addDoc(docId);
-        if (subDoc.getFieldValue() != NULL) {
+        if (subDoc.getFieldValue() != nullptr) {
             LOG(debug, "value = '%s'", subDoc.getFieldValue()->toString().c_str());
             if (isPosition) {
                 LOG(spam, "Position");
@@ -1053,7 +1053,7 @@ void SearchVisitor::completedBucket(const document::BucketId&, HitCounter&)
 
 void SearchVisitor::completedVisitingInternal(HitCounter& hitCounter)
 {
-    if (_vsmAdapter == NULL) {
+    if (_vsmAdapter == nullptr) {
         init(_params);
     }
     LOG(debug, "Completed visiting");
@@ -1120,7 +1120,7 @@ SearchVisitor::generateDocumentSummaries()
     vdslib::SearchResult & searchResult(_queryResult->getSearchResult());
     vdslib::DocumentSummary & documentSummary(_queryResult->getDocumentSummary());
     for (size_t i(0), m(searchResult.getHitCount()); (i < m) && (i < searchResult.getWantedHitCount()); i++ ) {
-        const char * docId(NULL);
+        const char * docId(nullptr);
         vdslib::SearchResult::RankType rank(0);
         uint32_t lid = searchResult.getHit(i, docId, rank);
         vespalib::ConstBufferRef docsum = _summaryGenerator.fillSummary(lid, _summaryClass);

@@ -68,7 +68,7 @@ RankProcessor::initQueryEnvironment()
 
             vespalib::string expandedIndexName = vsm::FieldSearchSpecMap::stripNonFields(terms[i].getTerm()->index());
             const RankManager::View *view = _rankManagerSnapshot->getView(expandedIndexName);
-            if (view != NULL) {
+            if (view != nullptr) {
                 RankManager::View::const_iterator iter = view->begin();
                 RankManager::View::const_iterator endp = view->end();
                 for (; iter != endp; ++iter) {

@@ -30,8 +30,8 @@ public:
 
     public:
         Term() :
-            _term(NULL),
-            _parent(NULL),
+            _term(nullptr),
+            _parent(nullptr),
             _index(0)
         {
         }
@@ -44,9 +44,9 @@ public:
         search::QueryTerm * getTerm() { return _term; }
         search::PhraseQueryNode * getParent() { return _parent; }
         size_t getIndex() const { return _index; }
-        bool isPhraseTerm() const { return _parent != NULL; }
+        bool isPhraseTerm() const { return _parent != nullptr; }
         bool isFirstPhraseTerm() const { return isPhraseTerm() && getIndex() == 0; }
-        size_t getPosAdjust() const { return _parent != NULL ? _parent->width() - 1 : 0; }
+        size_t getPosAdjust() const { return _parent != nullptr ? _parent->width() - 1 : 0; }
     };
 
     typedef std::vector<Term> TermList;

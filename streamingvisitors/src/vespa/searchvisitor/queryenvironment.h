@@ -31,7 +31,7 @@ public:
     QueryEnvironment(const vespalib::string & location,
                      const IndexEnvironment & indexEnv,
                      const search::fef::Properties & properties,
-                     const search::IAttributeManager * attrMgr = NULL);
+                     const search::IAttributeManager * attrMgr = nullptr);
     ~QueryEnvironment();
 
     // inherit documentation
@@ -43,7 +43,7 @@ public:
     // inherit documentation
     virtual const search::fef::ITermData *getTerm(uint32_t idx) const override {
         if (idx >= _queryTerms.size()) {
-            return NULL;
+            return nullptr;
         }
         return _queryTerms[idx];
     }
