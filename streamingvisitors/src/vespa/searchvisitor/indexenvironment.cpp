@@ -17,19 +17,32 @@ IndexEnvironment::IndexEnvironment(const ITableManager & tableManager) :
 {
 }
 
-IndexEnvironment::~IndexEnvironment() {}
+IndexEnvironment::~IndexEnvironment() = default;
 
 bool
 IndexEnvironment::addField(const vespalib::string & name, bool isAttribute)
 {
-    if (getFieldByName(name) != NULL) {
+    if (getFieldByName(name) != nullptr) {
         return false;
     }
-    FieldInfo info(isAttribute ? FieldType::ATTRIBUTE : FieldType::INDEX, FieldInfo::CollectionType::SINGLE, name, _fields.size());
+    FieldInfo info(isAttribute ? FieldType::ATTRIBUTE : FieldType::INDEX,
+                   FieldInfo::CollectionType::SINGLE, name, _fields.size());
     info.addAttribute(); // we are able to produce needed attributes at query time
     _fields.push_back(info);
     _fieldNames[info.name()] = info.id();
     return true;
+}
+
+void
+IndexEnvironment::hintAttributeAccess(const string & name) const {
+    if (name.empty()) {
+        return;
+    }
+    if (_motivation == RANK) {
+        _rankAttributes.insert(name);
+    } else {
+        _dumpAttributes.insert(name);
+    }
 }
 
 } // namespace storage

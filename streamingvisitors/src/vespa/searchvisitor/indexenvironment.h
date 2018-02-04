@@ -34,57 +34,42 @@ public:
     IndexEnvironment(const search::fef::ITableManager & tableManager);
     ~IndexEnvironment();
 
-    // inherit documentation
-    virtual const search::fef::Properties & getProperties() const override { return _properties; }
+    const search::fef::Properties & getProperties() const override { return _properties; }
 
-    // inherit documentation
-    virtual uint32_t getNumFields() const override { return _fields.size(); }
+    uint32_t getNumFields() const override { return _fields.size(); }
 
-    // inherit documentation
-    virtual const search::fef::FieldInfo * getField(uint32_t id) const override {
+    const search::fef::FieldInfo * getField(uint32_t id) const override {
         if (id >= _fields.size()) {
-            return NULL;
+            return nullptr;
         }
         return &_fields[id];
     }
 
-    // inherit documentation
-    virtual const search::fef::FieldInfo * getFieldByName(const string & name) const override {
-        StringInt32Map::const_iterator itr = _fieldNames.find(name);
+    const search::fef::FieldInfo * getFieldByName(const string & name) const override {
+        auto itr = _fieldNames.find(name);
         if (itr == _fieldNames.end()) {
-            return NULL;
+            return nullptr;
         }
         return getField(itr->second);
     }
 
-    // inherit documentation
-    virtual const search::fef::ITableManager & getTableManager() const override { return *_tableManager; }
+    const search::fef::ITableManager & getTableManager() const override {
+        return *_tableManager;
+    }
 
-    virtual FeatureMotivation getFeatureMotivation() const override {
+    FeatureMotivation getFeatureMotivation() const override {
         return _motivation;
     }
 
-    // inherit documentation
-    virtual void hintFeatureMotivation(FeatureMotivation motivation) const override {
+    void hintFeatureMotivation(FeatureMotivation motivation) const override {
         _motivation = motivation;
     }
 
-    // inherit documentation
-    virtual void hintFieldAccess(uint32_t) const override {}
+    void hintFieldAccess(uint32_t) const override {}
 
-    // inherit documentation
-    virtual void hintAttributeAccess(const string & name) const override {
-        if (name.empty()) {
-            return;
-        }
-        if (_motivation == RANK) {
-            _rankAttributes.insert(name);
-        } else {
-            _dumpAttributes.insert(name);
-        }
-    }
+    void hintAttributeAccess(const string & name) const override;
 
-    virtual vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &) const override {
+    vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &) const override {
         return vespalib::eval::ConstantValue::UP();
     }
 

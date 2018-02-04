@@ -2,12 +2,12 @@
 
 #pragma once
 
+#include "indexenvironment.h"
 #include <vespa/config-rank-profiles.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/fef/ranksetup.h>
 #include <vespa/searchlib/fef/tablemanager.h>
 #include <vespa/vsm/vsm/vsm-adapter.h>
-#include "indexenvironment.h"
 
 namespace storage {
 
@@ -50,6 +50,7 @@ public:
     public:
         typedef std::shared_ptr<Snapshot> SP;
         Snapshot();
+        ~Snapshot();
         const std::vector<NamedPropertySet> & getProperties() const { return _properties; }
         bool setup(const RankManager & manager, const vespa::config::search::RankProfilesConfig & cfg);
         bool setup(const RankManager & manager, const std::vector<NamedPropertySet> & properties);
@@ -64,7 +65,7 @@ public:
             if (itr != _views.end()) {
                 return &itr->second;
             }
-            return NULL;
+            return nullptr;
         }
     };
 
