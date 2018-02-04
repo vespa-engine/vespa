@@ -3,6 +3,7 @@ package com.yahoo.search.grouping.vespa;
 
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.GroupingRequest;
+import com.yahoo.search.grouping.request.AllOperation;
 import com.yahoo.search.grouping.request.EachOperation;
 import com.yahoo.search.grouping.request.GroupingExpression;
 import com.yahoo.search.grouping.request.GroupingOperation;
@@ -228,12 +229,14 @@ class RequestBuilder {
         }
     }
 
+    private long computeNewTopN(long oldMax, long newMax) {
+        return (oldMax < 0) ? newMax : Math.min(oldMax, newMax);
+    }
     private void resolveMax(BuildFrame frame) {
-
         if (frame.astNode.hasMax()) {
             int max = frame.astNode.getMax();
-            if (isRootOperation(frame)) {
-                frame.grouping.setTopN(max);
+            if (isTopNAllowed(frame)) {
+                frame.grouping.setTopN(computeNewTopN(frame.grouping.getTopN(), max));
             } else {
                 frame.state.max = max;
             }
@@ -323,6 +326,10 @@ class RequestBuilder {
 
     private boolean isRootOperation(BuildFrame frame) {
         return frame.astNode == root && frame.state.groupBy == null;
+    }
+
+    private boolean isTopNAllowed(BuildFrame frame) {
+        return (frame.astNode instanceof AllOperation) && (frame.state.groupBy == null);
     }
 
     private GroupingLevel getLeafGroupingLevel(BuildFrame frame) {

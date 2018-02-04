@@ -40,6 +40,57 @@ public class RequestBuilderTestCase {
         assertEquals(new AttributeNode("foo"), aggr.getExpression());
     }
 
+    private List<Grouping> getRequestList(String selection) {
+        RequestBuilder builder = new RequestBuilder(0);
+        builder.setRootOperation(GroupingOperation.fromString(selection));
+        builder.build();
+        return builder.getRequestList();
+    }
+
+    @Test
+    public void requireThatTopNIsHonoured() {
+        List<Grouping> gl = getRequestList("all(max(3) all(group(product_id) max(5) each(output(sum(price)))))");
+        assertEquals(1, gl.size());
+        assertEquals(3, gl.get(0).getTopN());
+    }
+
+    @Test
+    public void requireThatTopNIsHonouredWhenNested() {
+        List<Grouping> gl = getRequestList("all( all(max(3) all(group(product_id) max(5) each(output(sum(price))))))");
+        assertEquals(1, gl.size());
+        assertEquals(3, gl.get(0).getTopN());
+    }
+
+    @Test
+    public void requireThatTopNIsInherited() {
+        List<Grouping> gl = getRequestList("all(max(7) all( all(group(product_id) max(5) each(output(sum(price))))))");
+        assertEquals(1, gl.size());
+        assertEquals(7, gl.get(0).getTopN());
+    }
+
+    @Test
+    public void requireThatTopNIsMinimum() {
+        List<Grouping> gl = getRequestList("all(max(7) all(max(3) all(group(product_id) max(5) each(output(sum(price))))))");
+        assertEquals(1, gl.size());
+        assertEquals(3, gl.get(0).getTopN());
+        gl = getRequestList("all(max(3) all(max(7) all(group(product_id) max(5) each(output(sum(price))))))");
+        assertEquals(1, gl.size());
+        assertEquals(3, gl.get(0).getTopN());
+    }
+
+    @Test
+    public void requireThatTopNIsIndividual() {
+        List<Grouping> gl = getRequestList("all( all(max(3) all(group(product_id) max(5) each(output(sum(price))))) all(group(filter_cluster3) order(count()) each(output(count()))))");
+        assertEquals(2, gl.size());
+        assertEquals(3, gl.get(0).getTopN());
+        assertEquals(-1, gl.get(1).getTopN());
+
+        gl = getRequestList("all( max(7) all(max(3) all(group(product_id) max(5) each(output(sum(price))))) all(group(filter_cluster3) order(count()) each(output(count()))))");
+        assertEquals(2, gl.size());
+        assertEquals(3, gl.get(0).getTopN());
+        assertEquals(7, gl.get(1).getTopN());
+    }
+
     @Test
     public void requireThatAllExpressionNodesAreSupported() {
         assertLayout("all(group(add(a,b)) each(output(count())))", "[[{ Add, result = [Count] }]]");
