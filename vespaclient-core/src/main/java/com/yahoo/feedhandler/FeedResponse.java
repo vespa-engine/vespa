@@ -172,20 +172,12 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
         // Like busy, no space etc.
         if (error == DocumentProtocol.ERROR_NO_SPACE) {
             return com.yahoo.container.protect.Error.INSUFFICIENT_STORAGE;
-        } else if (isTransientError(error)) {
+        } else if (error >= ErrorCode.TRANSIENT_ERROR && (error < ErrorCode.FATAL_ERROR)) {
             return com.yahoo.container.protect.Error.INTERNAL_SERVER_ERROR;
-        } if (isFatalError(error)) {
+        } if (error >= ErrorCode.FATAL_ERROR && (error < ErrorCode.ERROR_LIMIT)) {
             return com.yahoo.container.protect.Error.INTERNAL_SERVER_ERROR;
         }
         return com.yahoo.container.protect.Error.INTERNAL_SERVER_ERROR;
-    }
-
-    private static boolean isFatalError(int error) {
-        return (error >= ErrorCode.FATAL_ERROR) && (error < ErrorCode.ERROR_LIMIT);
-    }
-
-    private static boolean isTransientError(int error) {
-        return (error >= ErrorCode.TRANSIENT_ERROR) && (error < ErrorCode.FATAL_ERROR);
     }
 
     public boolean isSuccess() {
