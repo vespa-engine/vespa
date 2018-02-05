@@ -102,7 +102,7 @@ public class GetDocSumsPacket extends Packet {
         buffer.putInt((int)features);
         buffer.putInt(0);     //Unused, was docstamp
         long timeLeft = query.getTimeLeft();
-        buffer.putInt((int)timeLeft);
+        buffer.putInt(Math.max(1, (int)timeLeft)); // Safety to avoid sending down 0 or negative number
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, "Timeout from query(" + query.getTimeout() + "), sent to backend: " + timeLeft);
         }

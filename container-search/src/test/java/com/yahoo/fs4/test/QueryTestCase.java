@@ -35,7 +35,7 @@ public class QueryTestCase extends junit.framework.TestCase {
                                          0,0,0,6, // Features
                                          2,
                                          8,
-                                         0,0,0,50, // querytimeout
+                                         0,0,0,1, // querytimeout
                                          0,0,0x40,0x01,  // qflags
                                          7,
                                          'd', 'e', 'f', 'a', 'u', 'l', 't',
@@ -57,7 +57,7 @@ public class QueryTestCase extends junit.framework.TestCase {
                                          0,0,0,6, // Features
                                          2,
                                          8,
-                                         0,0,0,50, // querytimeout
+                                         0,0,0,1, // querytimeout
                                          0,0,0x40,0x01,  // QFlags
                                          3,
                                          't','w','o', // Ranking
@@ -162,7 +162,7 @@ public class QueryTestCase extends junit.framework.TestCase {
                                          0,0,0,-122, // Features
                                          2,   // offset
                                          8,   // maxhits
-                                         0,0,0,50, // querytimeout
+                                         0,0,0,1, // querytimeout
                                          0,0,0x40,0x01,  // qflags
                                          7,
                                          'd', 'e', 'f', 'a', 'u', 'l', 't',
@@ -233,7 +233,7 @@ public class QueryTestCase extends junit.framework.TestCase {
                                          0,0,0,6, // Features
                                          2,
                                          8,
-                                         0,0,0,50, // querytimeout
+                                         0,0,0,1, // querytimeout
                                          0,0,0x40,0x01,  // qflags
                                          7,
                                          'd', 'e', 'f', 'a', 'u', 'l', 't',
@@ -252,7 +252,7 @@ public class QueryTestCase extends junit.framework.TestCase {
                                   0,0,0,6, // Features
                                   2,
                                   8,
-                                  0,0,0,50, // querytimeout
+                                  0,0,0,1, // querytimeout
                                   0,0,0x40,0x01,  // qflags
                                   7,
                                   'd', 'e', 'f', 'a', 'u', 'l', 't',

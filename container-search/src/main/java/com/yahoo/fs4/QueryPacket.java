@@ -123,7 +123,7 @@ public class QueryPacket extends Packet {
         ignoreableOffset = buffer.position() - relativeZero;
         IntegerCompressor.putCompressedPositiveNumber(getOffset(), buffer);
         IntegerCompressor.putCompressedPositiveNumber(getHits(), buffer);
-        buffer.putInt((int)query.getTimeLeft());
+        buffer.putInt(Math.max(1, (int)query.getTimeLeft())); // Safety to avoid sending down 0 or negative number
         ignoreableSize = buffer.position() - relativeZero - ignoreableOffset;
         buffer.putInt(getFlagInt());
         int startOfFieldToSave = buffer.position();
