@@ -10,6 +10,7 @@ class nbostream;
 namespace tensor {
 
 class DenseTensor;
+class DenseTensorView;
 
 /**
  * Class for serializing a dense tensor.
@@ -17,7 +18,7 @@ class DenseTensor;
 class DenseBinaryFormat
 {
 public:
-    static void serialize(nbostream &stream, const DenseTensor &tensor);
+    static void serialize(nbostream &stream, const DenseTensorView &tensor);
     static std::unique_ptr<DenseTensor> deserialize(nbostream &stream);
 };
 

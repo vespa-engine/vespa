@@ -19,7 +19,7 @@ namespace tensor {
 void
 TypedBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
 {
-    if (auto denseTensor = dynamic_cast<const DenseTensor *>(&tensor)) {
+    if (auto denseTensor = dynamic_cast<const DenseTensorView *>(&tensor)) {
         stream.putInt1_4Bytes(DENSE_BINARY_FORMAT_TYPE);
         DenseBinaryFormat::serialize(stream, *denseTensor);
     } else if (auto wrapped = dynamic_cast<const WrappedSimpleTensor *>(&tensor)) {

@@ -22,7 +22,7 @@ makeValueType(std::vector<eval::ValueType::Dimension> &&dimensions) {
 }
 
 void
-DenseBinaryFormat::serialize(nbostream &stream, const DenseTensor &tensor)
+DenseBinaryFormat::serialize(nbostream &stream, const DenseTensorView &tensor)
 {
     stream.putInt1_4Bytes(tensor.fast_type().dimensions().size());
     size_t cellsSize = 1;
@@ -31,7 +31,7 @@ DenseBinaryFormat::serialize(nbostream &stream, const DenseTensor &tensor)
         stream.putInt1_4Bytes(dimension.size);
         cellsSize *= dimension.size;
     }
-    const DenseTensor::Cells &cells = tensor.cells();
+    DenseTensorView::CellsRef cells = tensor.cellsRef();
     assert(cells.size() == cellsSize);
     for (const auto &value : cells) {
         stream << value;

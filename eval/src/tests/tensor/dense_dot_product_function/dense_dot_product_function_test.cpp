@@ -31,10 +31,10 @@ makeTensor(size_t numCells, double cellBias)
 double
 calcDotProduct(const DenseTensor &lhs, const DenseTensor &rhs)
 {
-    size_t numCells = std::min(lhs.cells().size(), rhs.cells().size());
+    size_t numCells = std::min(lhs.cellsRef().size(), rhs.cellsRef().size());
     double result = 0;
     for (size_t i = 0; i < numCells; ++i) {
-        result += (lhs.cells()[i] * rhs.cells()[i]);
+        result += (lhs.cellsRef()[i] * rhs.cellsRef()[i]);
     }
     return result;
 }
