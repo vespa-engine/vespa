@@ -25,7 +25,6 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
-import com.yahoo.vespa.hosted.controller.api.InstanceEndpoints;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.ApplicationResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
@@ -380,6 +379,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor globalRotationsArray = object.setArray("globalRotations");
         application.rotation().ifPresent(rotation -> {
             globalRotationsArray.addString(rotation.url().toString());
+            globalRotationsArray.addString(rotation.secureUrl().toString());
             object.setString("rotationId", rotation.id().asString());
         });
 
@@ -439,12 +439,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private void toSlime(Cursor response, DeploymentId deploymentId, Deployment deployment, HttpRequest request) {
 
-        Optional<InstanceEndpoints> deploymentEndpoints = controller.applications().getDeploymentEndpoints(deploymentId);
         Cursor serviceUrlArray = response.setArray("serviceUrls");
-        if (deploymentEndpoints.isPresent()) {
-            for (URI uri : deploymentEndpoints.get().getContainerEndpoints())
-                serviceUrlArray.addString(uri.toString());
-        }
+        controller.applications().getDeploymentEndpoints(deploymentId)
+                  .ifPresent(endpoints -> endpoints.forEach(endpoint -> serviceUrlArray.addString(endpoint.toString())));
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
 

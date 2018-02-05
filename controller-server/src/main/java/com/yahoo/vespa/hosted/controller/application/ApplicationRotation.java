@@ -28,7 +28,7 @@ public class ApplicationRotation {
                                             sanitize(application.tenant().value()),
                                             DNS_SUFFIX,
                                             port));
-        this.secureUrl = URI.create(String.format("https://%s--%s.%s:%d",
+        this.secureUrl = URI.create(String.format("https://%s--%s.%s:%d/",
                                                   sanitize(application.application().value()),
                                                   sanitize(application.tenant().value()),
                                                   DNS_SUFFIX,

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
@@ -10,7 +11,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
-import com.yahoo.vespa.hosted.controller.api.InstanceEndpoints;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
@@ -509,19 +509,13 @@ public class ApplicationController {
         }
     }
 
-    /** Returns the endpoints of the deployment, or empty if obtaining them failed */
-    public Optional<InstanceEndpoints> getDeploymentEndpoints(DeploymentId deploymentId) {
+    /** Returns the endpoints of the deployment, or an empty list if the request fails */
+    public Optional<List<URI>> getDeploymentEndpoints(DeploymentId deploymentId) {
         try {
-            List<RoutingEndpoint> endpoints = routingGenerator.endpoints(deploymentId);
-            List<URI> endPointUrls = new ArrayList<>();
-            for (RoutingEndpoint endpoint : endpoints) {
-                try {
-                    endPointUrls.add(new URI(endpoint.getEndpoint()));
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException("Routing generator returned illegal url's", e);
-                }
-            }
-            return Optional.of(new InstanceEndpoints(endPointUrls));
+            return Optional.of(ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
+                                                                    .map(RoutingEndpoint::getEndpoint)
+                                                                    .map(URI::create)
+                                                                    .iterator()));
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to get endpoint information for " + deploymentId + ": "
