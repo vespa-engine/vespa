@@ -165,7 +165,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       _configUri(configUri),
       _mutex(),
       _metricsHook(*this),
-      _metricsEngine(),
+      _metricsEngine(std::make_unique<MetricsEngine>()),
       _fileHeaderContext(*this, progName),
       _tls(),
       _diskMemUsageSampler(),
@@ -235,7 +235,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                            (protonConfig.basedir,
                             diskMemUsageSamplerConfig(protonConfig, hwInfo));
 
-    _metricsEngine.reset(new MetricsEngine());
     _metricsEngine->addMetricsHook(_metricsHook);
     _fileHeaderContext.setClusterName(protonConfig.clustername, protonConfig.basedir);
     _tls.reset(new TLS(_configUri.createWithNewId(protonConfig.tlsconfigid), _fileHeaderContext));
