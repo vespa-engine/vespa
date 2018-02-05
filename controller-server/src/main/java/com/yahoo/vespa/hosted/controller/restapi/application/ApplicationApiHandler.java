@@ -237,7 +237,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse authenticatedUser(HttpRequest request) {
         String userIdString = request.getProperty("userOverride");
         if (userIdString == null)
-            userIdString = userFrom(request)
+            userIdString = authorizer.getUserId(request)
                     .map(UserId::id)
                     .orElseThrow(() -> new ForbiddenException("You must be authenticated or specify userOverride"));
         UserId userId = new UserId(userIdString);
@@ -593,8 +593,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse createUser(HttpRequest request) {
-        Optional<UserId> user = userFrom(request);
-        if ( ! user.isPresent() ) throw new ForbiddenException("Not authenticated.");
+        Optional<UserId> user = authorizer.getUserId(request);
+        if ( ! user.isPresent() ) throw new ForbiddenException("Not authenticated or not an user.");
 
         try {
             controller.tenants().createUserTenant(user.get().id());
@@ -863,15 +863,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             log.log(LogLevel.ERROR, String.format("Error during Chef copy environment. (%s.%s %s.%s)", tenantName, applicationName, environmentName, regionName), e);
             return ErrorResponse.internalServerError("Unable to promote Chef environments for application");
         }
-    }
-
-    private Optional<UserId> userFrom(HttpRequest request) {
-        return Optional.of(authorizer.getPrincipal(request))
-                .map(AthenzPrincipal::getIdentity)
-                .filter(AthenzUser.class::isInstance)
-                .map(AthenzUser.class::cast)
-                .map(AthenzUser::getName)
-                .map(UserId::new);
     }
 
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request, boolean listApplications) {

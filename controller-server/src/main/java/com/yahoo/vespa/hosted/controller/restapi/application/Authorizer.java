@@ -76,6 +76,15 @@ public class Authorizer {
         return getPrincipal(request).getNToken();
     }
 
+    public Optional<UserId> getUserId(HttpRequest request) {
+        return Optional.of(getPrincipal(request))
+                .map(AthenzPrincipal::getIdentity)
+                .filter(AthenzUser.class::isInstance)
+                .map(AthenzUser.class::cast)
+                .map(AthenzUser::getName)
+                .map(UserId::new);
+    }
+
     public boolean isSuperUser(HttpRequest request) {
         // TODO Replace check with membership of a dedicated 'hosted Vespa super-user' role in Vespa's Athenz domain
         return isMemberOfVespaBouncerGroup(request);
