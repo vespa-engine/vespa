@@ -399,6 +399,17 @@ public class RankingExpressionWithTensorFlowTestCase {
         }
 
         @Override
+        public ApplicationFile appendFile(String value) {
+            try {
+                IOUtils.writeFile(file, value, true);
+                return this;
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
         public List<ApplicationFile> listFiles(PathFilter filter) {
             if ( ! isDirectory()) return Collections.emptyList();
             return Arrays.stream(file.listFiles()).filter(f -> filter.accept(Path.fromString(f.toString())))

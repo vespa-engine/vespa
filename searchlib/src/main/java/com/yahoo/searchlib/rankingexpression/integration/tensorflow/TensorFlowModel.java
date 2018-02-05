@@ -24,13 +24,15 @@ public class TensorFlowModel {
 
     private final Map<String, Signature> signatures = new HashMap<>();
     private final Map<String, TensorType> arguments = new HashMap<>();
-    private final Map<String, Tensor> constants = new HashMap<>();
+    private final Map<String, Tensor> smallConstants = new HashMap<>();
+    private final Map<String, Tensor> largeConstants = new HashMap<>();
     private final Map<String, RankingExpression> expressions = new HashMap<>();
     private final Map<String, RankingExpression> macros = new HashMap<>();
     private final Map<String, TensorType> requiredMacros = new HashMap<>();
 
     void argument(String name, TensorType argumentType) { arguments.put(name, argumentType); }
-    void constant(String name, Tensor constant) { constants.put(name, constant); }
+    void smallConstant(String name, Tensor constant) { smallConstants.put(name, constant); }
+    void largeConstant(String name, Tensor constant) { largeConstants.put(name, constant); }
     void expression(String name, RankingExpression expression) { expressions.put(name, expression); }
     void macro(String name, RankingExpression expression) { macros.put(name, expression); }
     void requiredMacro(String name, TensorType type) { requiredMacros.put(name, type); }
@@ -43,8 +45,19 @@ public class TensorFlowModel {
     /** Returns an immutable map of the arguments ("Placeholders") of this */
     public Map<String, TensorType> arguments() { return Collections.unmodifiableMap(arguments); }
 
-    /** Returns an immutable map of the constants of this */
-    public Map<String, Tensor> constants() { return Collections.unmodifiableMap(constants); }
+    /**
+     * Returns an immutable map of the small constants of this.
+     * These should have sizes up to a few kb at most, and correspond to constant
+     * values given in the TensorFlow source.
+     */
+    public Map<String, Tensor> smallConstants() { return Collections.unmodifiableMap(smallConstants); }
+
+    /**
+     * Returns an immutable map of the large constants of this.
+     * These can have sizes in gigabytes and must be distributed to nodes separately from configuration,
+     * and correspond to Variable files stored separately in TensorFlow.
+     */
+    public Map<String, Tensor> largeConstants() { return Collections.unmodifiableMap(largeConstants); }
 
     /**
      * Returns an immutable map of the expressions of this - corresponding to TensorFlow nodes

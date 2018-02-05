@@ -57,7 +57,8 @@ public class TestableTensorFlowModel {
 
     private Context contextFrom(TensorFlowModel result) {
         MapContext context = new MapContext();
-        result.constants().forEach((name, tensor) -> context.put("constant(\"" + name + "\")", new TensorValue(tensor)));
+        result.largeConstants().forEach((name, tensor) -> context.put("constant(\"" + name + "\")", new TensorValue(tensor)));
+        result.smallConstants().forEach((name, tensor) -> context.put("constant(\"" + name + "\")", new TensorValue(tensor)));
         return context;
     }
 

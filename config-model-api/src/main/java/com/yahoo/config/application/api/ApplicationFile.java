@@ -75,6 +75,13 @@ public abstract class ApplicationFile implements Comparable<ApplicationFile> {
     public abstract ApplicationFile writeFile(Reader input);
 
     /**
+     * Appends the given string to this text file.
+     *
+     * @return this
+     */
+    public abstract ApplicationFile appendFile(String value);
+
+    /**
      * List the files under this directory. If this is file, an empty list is returned.
      * Only immediate files/subdirectories are returned.
      *

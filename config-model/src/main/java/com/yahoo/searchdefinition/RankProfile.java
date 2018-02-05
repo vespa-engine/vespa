@@ -750,7 +750,9 @@ public class RankProfile implements Serializable, Cloneable {
     public TypeContext typeContext(QueryProfileRegistry queryProfiles) {
         TypeMapContext context = new TypeMapContext();
 
-        // Add constants
+        // Add small constants
+        getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));
+        // Add large constants
         getSearch().getRankingConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.getTensorType()));
 
         // Add attributes
