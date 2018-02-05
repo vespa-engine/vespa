@@ -55,11 +55,13 @@ public class DeploymentJobs {
     }
 
     /** Return a new instance with the given completion */
-    public DeploymentJobs withCompletion(JobReport report, Instant notificationTime, Controller controller) {
+    public DeploymentJobs withCompletion(JobReport report, ApplicationVersion applicationVersion,
+                                         Instant notificationTime, Controller controller) {
         Map<JobType, JobStatus> status = new LinkedHashMap<>(this.status);
         status.compute(report.jobType(), (type, job) -> {
             if (job == null) job = JobStatus.initial(report.jobType());
-            return job.withCompletion(report.buildNumber(), report.jobError(), notificationTime, controller);
+            return job.withCompletion(report.buildNumber(), applicationVersion, report.jobError(), notificationTime,
+                                      controller);
         });
         return new DeploymentJobs(Optional.of(report.projectId()), status, issueId);
     }
@@ -129,12 +131,11 @@ public class DeploymentJobs {
         return true; // other environments do not have any preconditions
     }
 
-    /** Returns whether the job of the given type has completed successfully for the given change */
-    public boolean isSuccessful(Change change, JobType jobType) {
+    /** Returns the last successful application version for the given job */
+    public Optional<ApplicationVersion> lastSuccessfulApplicationVersionFor(JobType jobType) {
         return Optional.ofNullable(jobStatus().get(jobType))
-                .flatMap(JobStatus::lastSuccess)
-                .filter(status -> status.lastCompletedWas(change))
-                .isPresent();
+                       .flatMap(JobStatus::lastSuccess)
+                       .map(JobStatus.JobRun::applicationVersion);
     }
 
     /**
@@ -145,6 +146,14 @@ public class DeploymentJobs {
     public Optional<Long> projectId() { return projectId; }
 
     public Optional<IssueId> issueId() { return issueId; }
+
+    /** Returns whether the job of the given type has completed successfully for the given change */
+    private boolean isSuccessful(Change change, JobType jobType) {
+        return Optional.ofNullable(jobStatus().get(jobType))
+                       .flatMap(JobStatus::lastSuccess)
+                       .filter(status -> status.lastCompletedWas(change))
+                       .isPresent();
+    }
 
     private static Optional<Long> requireId(Optional<Long> id, String message) {
         Objects.requireNonNull(id, message);
@@ -254,11 +263,16 @@ public class DeploymentJobs {
             Objects.requireNonNull(sourceRevision, "sourceRevision cannot be null");
             Objects.requireNonNull(jobError, "jobError cannot be null");
 
+            if (jobType == JobType.component && !sourceRevision.isPresent()) {
+                // TODO: Throw after 2018-03-01
+                //throw new IllegalArgumentException("sourceRevision is required for job " + jobType);
+            }
+
             this.applicationId = applicationId;
             this.projectId = projectId;
             this.buildNumber = buildNumber;
             this.jobType = jobType;
-            this.sourceRevision = sourceRevision; // TODO: Require non-empty source revision if jobType == component
+            this.sourceRevision = sourceRevision;
             this.jobError = jobError;
         }
 

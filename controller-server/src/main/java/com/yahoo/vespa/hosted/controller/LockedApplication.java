@@ -6,11 +6,11 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -49,7 +49,7 @@ public class LockedApplication extends Application {
     private LockedApplication(Builder builder) {
         super(builder.applicationId, builder.deploymentSpec, builder.validationOverrides,
               builder.deployments, builder.deploymentJobs, builder.deploying,
-              builder.hasOutstandingChange, builder.ownershipIssueId, builder.metrics, builder.rotation);
+              builder.outstandingChange, builder.ownershipIssueId, builder.metrics, builder.rotation);
     }
 
     public LockedApplication withProjectId(long projectId) {
@@ -60,8 +60,11 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).with(deploymentJobs().with(issueId)));
     }
 
-    public LockedApplication withJobCompletion(DeploymentJobs.JobReport report, Instant notificationTime, Controller controller) {
-        return new LockedApplication(new Builder(this).with(deploymentJobs().withCompletion(report, notificationTime, controller)));
+    public LockedApplication withJobCompletion(DeploymentJobs.JobReport report, ApplicationVersion applicationVersion,
+                                               Instant notificationTime, Controller controller) {
+        return new LockedApplication(new Builder(this).with(deploymentJobs().withCompletion(
+                report, applicationVersion, notificationTime, controller))
+        );
     }
 
     public LockedApplication withJobTriggering(JobType type, Change change, Instant triggerTime,
@@ -119,12 +122,12 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).with(validationOverrides));
     }
 
-    public LockedApplication withDeploying(Change deploying) {
-        return new LockedApplication(new Builder(this).withDeploying(deploying));
+    public LockedApplication withChange(Change change) {
+        return new LockedApplication(new Builder(this).withChange(change));
     }
 
-    public LockedApplication withOutstandingChange(boolean outstandingChange) {
-        return new LockedApplication(new Builder(this).with(outstandingChange));
+    public LockedApplication withOutstandingChange(Change outstandingChange) {
+        return new LockedApplication(new Builder(this).withOutstandingChange(outstandingChange));
     }
 
     public LockedApplication withOwnershipIssueId(IssueId issueId) {
@@ -139,25 +142,12 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).with(rotation));
     }
 
-    public Version deployVersionFor(DeploymentJobs.JobType jobType, Controller controller) {
-        return jobType == JobType.component
-               ? controller.systemVersion()
-               : deployVersionIn(jobType.zone(controller.system()).get(), controller);
-    }
-
-    public Optional<ApplicationVersion> deployApplicationVersion(DeploymentJobs.JobType jobType, Controller controller) {
-        return jobType == JobType.component
-                ? Optional.empty()
-                : deployApplicationVersionIn(jobType.zone(controller.system()).get());
-    }
-
     /** Don't expose non-leaf sub-objects. */
     private LockedApplication with(Deployment deployment) {
         Map<ZoneId, Deployment> deployments = new LinkedHashMap<>(deployments());
         deployments.put(deployment.zone(), deployment);
         return new LockedApplication(new Builder(this).with(deployments));
     }
-
 
     private static class Builder {
 
@@ -167,7 +157,7 @@ public class LockedApplication extends Application {
         private Map<ZoneId, Deployment> deployments;
         private DeploymentJobs deploymentJobs;
         private Change deploying;
-        private boolean hasOutstandingChange;
+        private Change outstandingChange;
         private Optional<IssueId> ownershipIssueId;
         private ApplicationMetrics metrics;
         private Optional<RotationId> rotation;
@@ -179,7 +169,7 @@ public class LockedApplication extends Application {
             this.deployments = application.deployments();
             this.deploymentJobs = application.deploymentJobs();
             this.deploying = application.change();
-            this.hasOutstandingChange = application.hasOutstandingChange();
+            this.outstandingChange = application.outstandingChange();
             this.ownershipIssueId = application.ownershipIssueId();
             this.metrics = application.metrics();
             this.rotation = application.rotation().map(ApplicationRotation::id);
@@ -205,13 +195,13 @@ public class LockedApplication extends Application {
             return this;
         }
 
-        private Builder withDeploying(Change deploying) {
+        private Builder withChange(Change deploying) {
             this.deploying = deploying;
             return this;
         }
 
-        private Builder with(boolean hasOutstandingChange) {
-            this.hasOutstandingChange = hasOutstandingChange;
+        private Builder withOutstandingChange(Change outstandingChange) {
+            this.outstandingChange = outstandingChange;
             return this;
         }
 
