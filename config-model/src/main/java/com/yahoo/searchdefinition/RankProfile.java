@@ -2,15 +2,9 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.io.reader.NamedReader;
-import com.yahoo.processing.request.CompoundName;
-import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
-import com.yahoo.search.query.profile.types.TensorFieldType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
@@ -19,7 +13,6 @@ import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
-import com.yahoo.searchlib.rankingexpression.evaluation.TypeMapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
@@ -908,7 +901,7 @@ public class RankProfile implements Serializable, Cloneable {
      */
     public static class Macro implements Serializable, Cloneable {
 
-        private String name=null;
+        private final String name;
         private String textualExpression=null;
         private RankingExpression expression=null;
         private List<String> formalParams = new ArrayList<>();

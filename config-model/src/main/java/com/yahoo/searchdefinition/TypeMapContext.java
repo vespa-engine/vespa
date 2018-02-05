@@ -10,6 +10,9 @@ import java.util.Map;
 
 /**
  * A context which only contains type information.
+ * This returns empty tensor types (double) for unknown features which are not
+ * query, attribute or constant features, as we do not have information about which such
+ * features exist (but we know those that exist are doubles).
  *
  * @author bratseth
  */
@@ -23,10 +26,12 @@ public class TypeMapContext implements TypeContext {
 
     @Override
     public TensorType getType(String name) {
-        return featureTypes.get(FeatureNames.canonicalize(name));
+        if (FeatureNames.isConstantFeature(name) ||
+            FeatureNames.isAttributeFeature(name) ||
+            FeatureNames.isQueryFeature(name))
+            return featureTypes.get(FeatureNames.canonicalize(name));
+        else
+            return TensorType.empty; // we do not have type information for these. Correct would be either empty or null
     }
-
-    /** Returns an unmodifiable map of the bindings in this */
-    public Map<String, TensorType> bindings() { return Collections.unmodifiableMap(featureTypes); }
 
 }

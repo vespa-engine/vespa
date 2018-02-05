@@ -34,7 +34,6 @@ import java.util.List;
  * expressions, using the setRankXXX() methods, 3) invoke the {@link #build()} method, and 4) retrieve the built
  * search objects using the {@link #getSearch(String)} method.
  */
-// TODO: This should be cleaned up and more or maybe completely taken over by MockApplicationPackage
 public class SearchBuilder {
 
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
@@ -212,9 +211,8 @@ public class SearchBuilder {
      * @param queryProfiles The query profiles contained in the application this search is part of.
      */
     public void build(DeployLogger deployLogger, QueryProfiles queryProfiles) {
-        if (isBuilt) {
-            throw new IllegalStateException("Searches already built.");
-        }
+        if (isBuilt) throw new IllegalStateException("Model already built");
+
         List<Search> built = new ArrayList<>();
         List<SDDocumentType> sdocs = new ArrayList<>();
         sdocs.add(SDDocumentType.VESPA_DOCUMENT);
@@ -254,8 +252,6 @@ public class SearchBuilder {
     /**
      * Processes and returns the given {@link Search} object. This method has been factored out of the {@link
      * #build()} method so that subclasses can choose not to build anything.
-     *
-     * @param search The object to build.
      */
     protected void process(Search search, DeployLogger deployLogger, QueryProfiles queryProfiles) {
         Processing.process(search, deployLogger, rankProfileRegistry, queryProfiles);

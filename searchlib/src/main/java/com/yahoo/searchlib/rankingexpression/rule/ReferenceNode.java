@@ -108,7 +108,10 @@ public final class ReferenceNode extends CompositeNode {
     @Override
     public TensorType type(TypeContext context) {
         // Don't support outputs of different type, for simplicity
-        return context.getType(toString());
+        TensorType type = context.getType(toString());
+        if (type == null)
+            throw new IllegalArgumentException("Could not determine type of feature " + toString());
+        return type;
     }
 
     @Override

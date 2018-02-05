@@ -77,7 +77,8 @@ public class Processing {
                 FastAccessValidator::new,
                 ReservedMacroNames::new,
 
-                // These two should be last.
+                // These should be last.
+                RankingExpressionTypeValidator::new,
                 IndexingValidation::new,
                 IndexingValues::new);
     }
