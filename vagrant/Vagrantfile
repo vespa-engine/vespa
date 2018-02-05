@@ -4,8 +4,8 @@
 # For a complete reference, please see the online documentation at https://docs.vagrantup.com.
 Vagrant.configure("2") do |config|
 
-  config.vm.box = "TODO"
-  config.vm.box_url = "TODO"
+  config.vm.box = "centos7-desktop"
+  config.vm.box_url = "/Users/balder/vagrant/centos7-desktop-17.0915.1.box"
 
   config.ssh.forward_agent = true
 
@@ -16,8 +16,8 @@ Vagrant.configure("2") do |config|
     vb.gui = true
     vb.name = "vespa-dev"
 
-    vb.memory = "8192"
-    vb.cpus = 4
+    vb.memory = "10240"
+    vb.cpus = 8
   end
   
   # Install required and nice-to-have packages
