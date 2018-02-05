@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * Replaces instances of the tensorflow(model-path, signature, output)
@@ -44,6 +45,8 @@ import java.util.Optional;
  */
 // TODO: Avoid name conflicts across models for constants
 public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
+
+    private static final Logger log = Logger.getLogger(TensorFlowFeatureConverter.class.getName());
 
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
 
@@ -158,9 +161,11 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
     private void transformConstant(ModelStore store, RankProfile profile, String constantName, Tensor constantValue) {
         Path constantPath = store.writeConstant(constantName, constantValue);
 
-        if ( ! profile.getSearch().getRankingConstants().containsKey(constantName))
+        if ( ! profile.getSearch().getRankingConstants().containsKey(constantName)) {
+            log.info("Adding constant '" + constantName + "' of type " + constantValue.type());
             profile.getSearch().addRankingConstant(new RankingConstant(constantName, constantValue.type(),
                                                                        constantPath.toString()));
+        }
     }
 
     private String skippedOutputsDescription(TensorFlowModel.Signature signature) {

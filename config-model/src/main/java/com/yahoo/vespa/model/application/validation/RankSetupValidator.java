@@ -36,9 +36,9 @@ import java.util.logging.Logger;
  * by running through the binary 'vespa-verify-ranksetup'
  *
  * @author vegardh
- *
  */
 public class RankSetupValidator extends Validator {
+
     private static final Logger log = Logger.getLogger(RankSetupValidator.class.getName());
     private final boolean force;
 
@@ -60,7 +60,7 @@ public class RankSetupValidator extends Validator {
                         final String name = docDb.getDerivedConfiguration().getSearch().getName();
                         String searchDir = clusterDir + name + "/";
                         writeConfigs(searchDir, docDb);
-                        if (!validate("dir:" + searchDir, sc, name, deployState.getDeployLogger(), cfgDir)) {
+                        if ( ! validate("dir:" + searchDir, sc, name, deployState.getDeployLogger(), cfgDir)) {
                             return;
                         }
                     }
