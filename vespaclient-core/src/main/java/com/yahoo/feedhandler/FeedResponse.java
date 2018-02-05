@@ -9,8 +9,8 @@ import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.feedapi.SharedSender;
-import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.search.result.ErrorMessage;
@@ -122,7 +122,7 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
 
                 String str = out.toString();
                 log.finest(str);
-                addError(str);
+                addError(convertErrorCode(err.getCode()), str);
             }
             if (abortOnError) {
                 isAborted = true;
@@ -149,6 +149,11 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
         errors.add(error);
         return this;
     }
+    public FeedResponse addError(com.yahoo.container.protect.Error code, String error) {
+        errorMessages.add(new ErrorMessage(code.code, error));
+        errors.add(error);
+        return this;
+    }
 
     public List<String> getErrorList() {
         return errors;
@@ -160,6 +165,19 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
 
     private static boolean containsFatalErrors(Stream<Error> errors) {
         return errors.anyMatch(e -> e.getCode() != DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED);
+    }
+
+    private static com.yahoo.container.protect.Error convertErrorCode(int error) {
+        // We should try to enumerate these error a bit finer.
+        // Like busy, no space etc.
+        if (error == DocumentProtocol.ERROR_NO_SPACE) {
+            return com.yahoo.container.protect.Error.INSUFFICIENT_STORAGE;
+        } else if (error >= ErrorCode.TRANSIENT_ERROR && (error < ErrorCode.FATAL_ERROR)) {
+            return com.yahoo.container.protect.Error.INTERNAL_SERVER_ERROR;
+        } if (error >= ErrorCode.FATAL_ERROR && (error < ErrorCode.ERROR_LIMIT)) {
+            return com.yahoo.container.protect.Error.INTERNAL_SERVER_ERROR;
+        }
+        return com.yahoo.container.protect.Error.INTERNAL_SERVER_ERROR;
     }
 
     public boolean isSuccess() {

@@ -26,7 +26,8 @@ public enum Error {
     FORBIDDEN(15),
     NOT_FOUND(16),
     BAD_REQUEST(17),
-    INTERNAL_SERVER_ERROR(18);
+    INTERNAL_SERVER_ERROR(18),
+    INSUFFICIENT_STORAGE(19);
 
     public final int code;
 

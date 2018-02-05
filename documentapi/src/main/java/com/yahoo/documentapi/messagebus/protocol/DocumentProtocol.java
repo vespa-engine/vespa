@@ -9,14 +9,22 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.metrics.DocumentProtocolMetricSet;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.Protocol;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.Routable;
 import com.yahoo.messagebus.metrics.MetricSet;
 import com.yahoo.messagebus.routing.RoutingContext;
 import com.yahoo.messagebus.routing.RoutingNodeIterator;
 import com.yahoo.messagebus.routing.RoutingPolicy;
 import com.yahoo.text.Utf8String;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -207,7 +215,7 @@ public class DocumentProtocol implements Protocol {
      * NORMAL categories. Traffic in the HIGH end will be usually be prioritized over important maintenance operations.
      * Traffic in the LOW end will be prioritized after these operations.</p>
      */
-    public static enum Priority {
+    public enum Priority {
         HIGHEST(0),
         VERY_HIGH(1),
         HIGH_1(2),

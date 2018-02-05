@@ -4,11 +4,12 @@ package com.yahoo.feedapi;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.EmptyReply;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.clientmetrics.RouteMetricSet;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -157,14 +158,14 @@ public class SharedSender implements ReplyHandler {
                 log.log(LogLevel.SPAM, "Received reply for file " + owner.toString() + " count was " + owner.getPending().val());
             }
             if (owner.isAborted()) {
-                log.log(LogLevel.WARNING, "Received reply for file " + owner.toString() + " which is aborted");
+                log.log(LogLevel.DEBUG, "Received reply for file " + owner.toString() + " which is aborted");
                 owner.getPending().clear();
                 return;
             }
             if (owner.handleReply(r)) {
                 owner.getPending().dec();
             } else {
-                log.log(LogLevel.WARNING, "Received reply for file " + owner.toString() + " which wants to abort");
+                log.log(LogLevel.DEBUG, "Received reply for file " + owner.toString() + " which wants to abort");
                 owner.getPending().clear();
             }
         } else {
