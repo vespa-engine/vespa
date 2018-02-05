@@ -323,7 +323,7 @@ public class OperationHandlerImpl implements OperationHandler {
         if (!targetBucketSpace.isPresent()) {
             throw new RestApiException(Response.createErrorResponse(400, String.format(
                     "Document type '%s' in cluster '%s' is not mapped to a known bucket space", docType, clusterDef.getName()),
-                    RestUri.apiErrorCodes.UNKNOWN_BUCKET_SPACE)); // TODO own code
+                    RestUri.apiErrorCodes.UNKNOWN_BUCKET_SPACE));
         }
         return new BucketSpaceRoute(clusterDefToRoute(clusterDef), targetBucketSpace.get());
     }
