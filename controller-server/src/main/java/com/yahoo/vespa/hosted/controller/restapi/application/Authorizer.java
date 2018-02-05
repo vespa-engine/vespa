@@ -66,8 +66,7 @@ public class Authorizer {
 
     /** Returns the principal or throws forbidden */ // TODO: Avoid REST exceptions
     public AthenzPrincipal getPrincipal(HttpRequest request) {
-        return securityContextOf(request)
-                .map(SecurityContext::getUserPrincipal)
+        return Optional.ofNullable(request.getJDiscRequest().getUserPrincipal())
                 .map(AthenzPrincipal.class::cast)
                 .orElseThrow(() -> loggedForbiddenException("User is not authenticated"));
     }
@@ -152,6 +151,8 @@ public class Authorizer {
         return securityContext.get().isUserInRole(Authorizer.VESPA_HOSTED_ADMIN_ROLE);
     }
 
+    @Deprecated
+    // TODO: Remove once Bouncer filter is no longer needed
     protected Optional<SecurityContext> securityContextOf(HttpRequest request) {
         return Optional.ofNullable((SecurityContext)request.getJDiscRequest().context().get(ContextAttributes.SECURITY_CONTEXT_ATTRIBUTE));
     }

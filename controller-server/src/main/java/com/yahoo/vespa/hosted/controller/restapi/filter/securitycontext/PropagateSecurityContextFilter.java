@@ -18,6 +18,8 @@ import java.io.IOException;
  */
 @PreMatching
 @Provider
+// TODO Remove once Bouncer filter is gone
+@Deprecated
 public class PropagateSecurityContextFilter implements ContainerRequestFilter {
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
