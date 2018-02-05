@@ -183,7 +183,7 @@ public class TensorTransformer extends ExpressionTransformer<RankProfileTransfor
     }
 
     private void addIfConstant(ReferenceNode node, Context context, RankProfile profile) {
-        if (!node.getName().equals(ConstantTensorTransformer.CONSTANT)) {
+        if ( ! node.getName().equals(ConstantTensorTransformer.CONSTANT)) {
             return;
         }
         if (node.children().size() != 1) {
