@@ -8,6 +8,7 @@ import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.tensor.Tensor;
@@ -148,6 +149,7 @@ public class RankingExpressionWithTensorFlowTestCase {
         try {
             RankProfileSearchFixture search = new RankProfileSearchFixture(
                     new StoringApplicationPackage(applicationDir),
+                    new QueryProfileRegistry(),
                     "  rank-profile my_profile {\n" +
                     "    first-phase {\n" +
                     "      expression: tensorflow('mnist_softmax/saved')" +
@@ -290,6 +292,7 @@ public class RankingExpressionWithTensorFlowTestCase {
         try {
             return new RankProfileSearchFixture(
                     application,
+                    application.getQueryProfiles(),
                     "  rank-profile my_profile {\n" +
                     "    macro Placeholder() {\n" +
                     "      expression: " + placeholderExpression +
@@ -319,7 +322,7 @@ public class RankingExpressionWithTensorFlowTestCase {
 
         StoringApplicationPackage(Path applicationPackageWritableRoot, String queryProfile, String queryProfileType) {
             super(null, null, Collections.emptyList(), null,
-                  null, null, false);
+                  null, null, false, queryProfile, queryProfileType);
             this.root = new File(applicationPackageWritableRoot.toString());
             this.queryProfile = queryProfile;
             this.queryProfileType = queryProfileType;

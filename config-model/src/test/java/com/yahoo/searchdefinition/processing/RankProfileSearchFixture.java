@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
@@ -22,20 +23,22 @@ import static org.junit.Assert.assertEquals;
 class RankProfileSearchFixture {
 
     private RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+    private final QueryProfileRegistry queryProfileRegistry;
     private Search search;
 
     RankProfileSearchFixture(String rankProfiles) throws ParseException {
-        this(MockApplicationPackage.createEmpty(), rankProfiles);
+        this(MockApplicationPackage.createEmpty(), new QueryProfileRegistry(), rankProfiles);
     }
 
-    RankProfileSearchFixture(ApplicationPackage applicationpackage, String rankProfiles) throws ParseException {
-        this(applicationpackage, rankProfiles, null, null);
+    RankProfileSearchFixture(ApplicationPackage applicationpackage, QueryProfileRegistry queryProfileRegistry,
+                             String rankProfiles) throws ParseException {
+        this(applicationpackage, queryProfileRegistry, rankProfiles, null, null);
     }
 
-    RankProfileSearchFixture(ApplicationPackage applicationpackage,
+    RankProfileSearchFixture(ApplicationPackage applicationpackage, QueryProfileRegistry queryProfileRegistry,
                              String rankProfiles, String constant, String field)
             throws ParseException {
-        SearchBuilder builder = new SearchBuilder(applicationpackage, rankProfileRegistry);
+        SearchBuilder builder = new SearchBuilder(applicationpackage, rankProfileRegistry, new QueryProfileRegistry());
         String sdContent = "search test {\n" +
                            "  " + (constant != null ? constant : "") + "\n" +
                            "  document test {\n" +
@@ -47,6 +50,7 @@ class RankProfileSearchFixture {
         builder.importString(sdContent);
         builder.build();
         search = builder.getSearch();
+        this.queryProfileRegistry = queryProfileRegistry;
     }
 
     public void assertFirstPhaseExpression(String expExpression, String rankProfile) {
@@ -68,7 +72,7 @@ class RankProfileSearchFixture {
     }
 
     public RankProfile rankProfile(String rankProfile) {
-        return rankProfileRegistry.getRankProfile(search, rankProfile).compile();
+        return rankProfileRegistry.getRankProfile(search, rankProfile).compile(queryProfileRegistry);
     }
 
     public Search search() { return search; }

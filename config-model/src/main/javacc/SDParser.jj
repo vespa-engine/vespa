@@ -65,24 +65,29 @@ import org.apache.commons.lang.StringUtils;
 /**
  * A search definition parser
  *
- * @author  <a href="mailto:bratseth@yahoo-inc.com">Jon S Bratseth</a> et.al.
+ * @author bratseth
  */
 public class SDParser {
-    private DocumentTypeManager docMan = null;
-    private ApplicationPackage app = MockApplicationPackage.createEmpty();
-    private DeployLogger deployLogger = new BaseDeployLogger();
-    private RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
 
+    private DocumentTypeManager docMan = null;
+    private ApplicationPackage app;
+    private DeployLogger deployLogger;
+    private RankProfileRegistry rankProfileRegistry;
+
+    /** For testing only */
     public SDParser(String input, DeployLogger deployLogger) {
         this(new SimpleCharStream(input), deployLogger);
     }
 
+    /** For testing only */
     public SDParser(SimpleCharStream stream, DeployLogger deployLogger) {
-        this(stream);
-        this.deployLogger = deployLogger;
+        this(stream, deployLogger, MockApplicationPackage.createEmpty(), new RankProfileRegistry());
     }
 
-    public SDParser(SimpleCharStream stream, DeployLogger deployLogger, ApplicationPackage applicationPackage, RankProfileRegistry rankProfileRegistry) {
+    public SDParser(SimpleCharStream stream,
+                    DeployLogger deployLogger,
+                    ApplicationPackage applicationPackage,
+                    RankProfileRegistry rankProfileRegistry) {
         this(stream);
         this.deployLogger = deployLogger;
         this.app = applicationPackage;

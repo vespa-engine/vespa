@@ -78,12 +78,16 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
     }
 
     protected DerivedConfiguration derive(String dirName, String searchDefinitionName, SearchBuilder builder) throws IOException {
-        DerivedConfiguration config = new DerivedConfiguration(builder.getSearch(searchDefinitionName), builder.getRankProfileRegistry());
+        DerivedConfiguration config = new DerivedConfiguration(builder.getSearch(searchDefinitionName),
+                                                               builder.getRankProfileRegistry(),
+                                                               builder.getQueryProfileRegistry());
         return export(dirName, builder, config);
     }
 
     protected DerivedConfiguration derive(String dirName, SearchBuilder builder, Search search) throws IOException {
-        DerivedConfiguration config = new DerivedConfiguration(search, builder.getRankProfileRegistry());
+        DerivedConfiguration config = new DerivedConfiguration(search,
+                                                               builder.getRankProfileRegistry(),
+                                                               builder.getQueryProfileRegistry());
         return export(dirName, builder, config);
     }
 

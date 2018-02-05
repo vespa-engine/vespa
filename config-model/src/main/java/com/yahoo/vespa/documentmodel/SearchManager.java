@@ -5,9 +5,9 @@ import java.util.TreeMap;
 
 /**
  * @author    baldersheim
- * @since     2010-02-19
  */
 public class SearchManager {
+
     /// This is the list of all known search definitions
     private TreeMap<String, SearchDef> defs = new TreeMap<>();
 
@@ -24,4 +24,5 @@ public class SearchManager {
         defs.put(def.getName(), def);
         return this;
     }
+
 }

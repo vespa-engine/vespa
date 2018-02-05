@@ -100,7 +100,6 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
             String rankProperty = rankPropertyExpression.getFirst();
             if (rankProperty.equals("rankingExpression(firstphase).rankingScript")) {
                 String rankExpression = censorBindingHash(rankPropertyExpression.getSecond().replace(" ",""));
-                System.out.println("expression is --> " + rankExpression);
                 return rankExpression.equals(transformedExpression);
             }
         }
@@ -170,10 +169,10 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
                 "}\n");
         builder.build(new BaseDeployLogger(), setupQueryProfileTypes());
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile();
-        List<Pair<String, String>> testRankProperties = new RawRankProfile(test, new AttributeFields(s)).configProperties();
-        for (Object o : testRankProperties)
-            System.out.println(o);
+        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry());
+        List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
+                                                                           new QueryProfileRegistry(),
+                                                                           new AttributeFields(s)).configProperties();
         return testRankProperties;
     }
 

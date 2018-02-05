@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile.RankProperty;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
@@ -16,10 +17,14 @@ import java.util.List;
 import static org.junit.Assert.fail;
 
 public class RankPropertyVariablesTestCase extends SearchDefinitionTestCase {
+
     @Test
     public void testRankPropVariables() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        Search search = SearchBuilder.buildFromFile("src/test/examples/rankpropvars.sd", new BaseDeployLogger(), rankProfileRegistry);
+        Search search = SearchBuilder.buildFromFile("src/test/examples/rankpropvars.sd",
+                                                    new BaseDeployLogger(),
+                                                    rankProfileRegistry,
+                                                    new QueryProfileRegistry());
         assertRankPropEquals(rankProfileRegistry.getRankProfile(search, "other").getRankProperties(), "$testvar1", "foo");
         assertRankPropEquals(rankProfileRegistry.getRankProfile(search, "other").getRankProperties(), "$testvar_2", "bar");
         assertRankPropEquals(rankProfileRegistry.getRankProfile(search, "other").getRankProperties(), "$testvarOne23", "baz");

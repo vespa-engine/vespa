@@ -308,10 +308,12 @@ public class DeployState implements ConfigDefinitionStore {
                                    zone, queryProfiles, semanticRules, now, wantedNodeVespaVersion, disableFiledistributor);
         }
 
-        private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry, DeployLogger logger, QueryProfiles queryProfiles) {
+        private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
+                                                              DeployLogger logger,
+                                                              QueryProfiles queryProfiles) {
             Collection<NamedReader> readers = applicationPackage.getSearchDefinitions();
             Map<String, String> names = new LinkedHashMap<>();
-            SearchBuilder builder = new SearchBuilder(applicationPackage, rankProfileRegistry);
+            SearchBuilder builder = new SearchBuilder(applicationPackage, rankProfileRegistry, queryProfiles.getRegistry());
             for (NamedReader reader : readers) {
                 try {
                     String readerName = reader.getName();

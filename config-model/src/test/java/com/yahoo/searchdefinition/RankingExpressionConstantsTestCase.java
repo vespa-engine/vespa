@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
@@ -24,6 +25,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
     @Test
     public void testConstants() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        QueryProfileRegistry queryProfileRegistry = new QueryProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(
                 "search test {\n" +
@@ -67,17 +69,19 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile parent = rankProfileRegistry.getRankProfile(s, "parent").compile();
+        RankProfile parent = rankProfileRegistry.getRankProfile(s, "parent").compile(queryProfileRegistry);
         assertEquals("0.0", parent.getFirstPhaseRanking().getRoot().toString());
 
-        RankProfile child1 = rankProfileRegistry.getRankProfile(s, "child1").compile();
+        RankProfile child1 = rankProfileRegistry.getRankProfile(s, "child1").compile(queryProfileRegistry);
         assertEquals("6.5", child1.getFirstPhaseRanking().getRoot().toString());
         assertEquals("11.5", child1.getSecondPhaseRanking().getRoot().toString());
 
-        RankProfile child2 = rankProfileRegistry.getRankProfile(s, "child2").compile();
+        RankProfile child2 = rankProfileRegistry.getRankProfile(s, "child2").compile(queryProfileRegistry);
         assertEquals("16.6", child2.getFirstPhaseRanking().getRoot().toString());
         assertEquals("foo: 14.0", child2.getMacros().get("foo").getRankingExpression().toString());
-        List<Pair<String, String>> rankProperties = new RawRankProfile(child2, new AttributeFields(s)).configProperties();
+        List<Pair<String, String>> rankProperties = new RawRankProfile(child2,
+                                                                       queryProfileRegistry,
+                                                                       new AttributeFields(s)).configProperties();
         assertEquals("(rankingExpression(foo).rankingScript,14.0)", rankProperties.get(0).toString());
         assertEquals("(rankingExpression(firstphase).rankingScript,16.6)", rankProperties.get(2).toString());
     }
@@ -107,7 +111,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         builder.build();
         Search s = builder.getSearch();
         try {
-            rankProfileRegistry.getRankProfile(s, "test").compile();
+            rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry());
             fail("Should have caused an exception");
         }
         catch (IllegalArgumentException e) {
@@ -169,7 +173,8 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         RankProfile profile = rankProfileRegistry.getRankProfile(s, "test");
         profile.parseExpressions(); // TODO: Do differently
         assertEquals("safeLog(popShareSlowDecaySignal,myValue)", profile.getMacros().get("POP_SLOW_SCORE").getRankingExpression().getRoot().toString());
-        assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)", profile.compile().getMacros().get("POP_SLOW_SCORE").getRankingExpression().getRoot().toString());
+        assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)",
+                     profile.compile(new QueryProfileRegistry()).getMacros().get("POP_SLOW_SCORE").getRankingExpression().getRoot().toString());
     }
 
     @Test
@@ -191,7 +196,8 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         builder.build();
         Search s = builder.getSearch();
         RankProfile profile = rankProfileRegistry.getRankProfile(s, "test");
-        assertEquals("k1 + (k2 + k3) / 100000000.0", profile.compile().getMacros().get("rank_default").getRankingExpression().getRoot().toString());
+        assertEquals("k1 + (k2 + k3) / 100000000.0",
+                     profile.compile(new QueryProfileRegistry()).getMacros().get("rank_default").getRankingExpression().getRoot().toString());
     }
 
     @Test
@@ -213,7 +219,8 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         builder.build();
         Search s = builder.getSearch();
         RankProfile profile = rankProfileRegistry.getRankProfile(s, "test");
-        assertEquals("0.5 + 50 * (attribute(rating_yelp) - 3)", profile.compile().getMacros().get("rank_default").getRankingExpression().getRoot().toString());
+        assertEquals("0.5 + 50 * (attribute(rating_yelp) - 3)",
+                     profile.compile(new QueryProfileRegistry()).getMacros().get("rank_default").getRankingExpression().getRoot().toString());
     }
 
 }
