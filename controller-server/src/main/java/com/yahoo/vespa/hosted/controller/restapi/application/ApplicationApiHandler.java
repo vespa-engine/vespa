@@ -10,7 +10,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -19,6 +18,11 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
+import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -36,7 +40,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBui
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitBranch;
 import com.yahoo.vespa.hosted.controller.api.identifiers.GitCommit;
@@ -48,10 +51,13 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -62,12 +68,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzPrincipal;
-import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.api.NToken;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
@@ -85,7 +85,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.Principal;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -780,7 +779,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                   .map(ApplicationPackage::new);
         ApplicationInstanceAuthorizer applicationInstanceAuthorizer = new ApplicationInstanceAuthorizer(controller.zoneRegistry(), athenzClientFactory);
         Tenant tenant = controller.tenants().tenant(new TenantId(tenantName)).orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
-        Principal principal = authorizer.getPrincipal(request);
+        AthenzPrincipal principal = authorizer.getPrincipal(request);
         applicationInstanceAuthorizer.throwIfUnauthorizedForDeploy(principal, Environment.from(environment), tenant, applicationId, applicationPackage);
 
         // TODO: get rid of the json object
@@ -867,7 +866,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private Optional<UserId> userFrom(HttpRequest request) {
-        return authorizer.getPrincipalIfAny(request)
+        return Optional.of(authorizer.getPrincipal(request))
                 .map(AthenzPrincipal::getIdentity)
                 .filter(AthenzUser.class::isInstance)
                 .map(AthenzUser.class::cast)

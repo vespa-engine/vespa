@@ -30,8 +30,7 @@ public class MockAuthorizer extends Authorizer {
     }
 
     /** Returns a principal given by the request parameters 'domain' and 'user' */
-    @Override
-    public Optional<AthenzPrincipal> getPrincipalIfAny(HttpRequest request) {
+    private static Optional<AthenzPrincipal> getPrincipalIfAny(HttpRequest request) {
         String domain = request.getHeader("Athenz-Identity-Domain");
         String name = request.getHeader("Athenz-Identity-Name");
         if (domain == null || name == null) return Optional.empty();

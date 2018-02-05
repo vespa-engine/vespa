@@ -66,18 +66,14 @@ public class Authorizer {
 
     /** Returns the principal or throws forbidden */ // TODO: Avoid REST exceptions
     public AthenzPrincipal getPrincipal(HttpRequest request) {
-        return getPrincipalIfAny(request).orElseThrow(() -> Authorizer.loggedForbiddenException("User is not authenticated"));
-    }
-
-    /** Returns the principal if there is any */
-    public Optional<AthenzPrincipal> getPrincipalIfAny(HttpRequest request) {
         return securityContextOf(request)
                 .map(SecurityContext::getUserPrincipal)
-                .map(AthenzPrincipal.class::cast);
+                .map(AthenzPrincipal.class::cast)
+                .orElseThrow(() -> loggedForbiddenException("User is not authenticated"));
     }
 
     public Optional<NToken> getNToken(HttpRequest request) {
-        return getPrincipalIfAny(request).flatMap(AthenzPrincipal::getNToken);
+        return getPrincipal(request).getNToken();
     }
 
     public boolean isSuperUser(HttpRequest request) {

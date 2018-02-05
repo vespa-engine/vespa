@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotAuthorizedException;
-import java.security.Principal;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -42,7 +41,7 @@ public class ApplicationInstanceAuthorizer {
         this.athenzClientFactory = athenzClientFactory;
     }
 
-    public void throwIfUnauthorizedForDeploy(Principal principal,
+    public void throwIfUnauthorizedForDeploy(AthenzPrincipal principal,
                                              Environment environment,
                                              Tenant tenant,
                                              ApplicationId applicationId,
@@ -65,18 +64,7 @@ public class ApplicationInstanceAuthorizer {
             return;
         }
 
-        if (principal == null) {
-            throw loggedUnauthorizedException("Principal not authenticated!");
-        }
-
-        if (!(principal instanceof AthenzPrincipal)) {
-            throw loggedUnauthorizedException(
-                    "Principal '%s' of type '%s' is not an Athenz principal, which is required for production deployments.",
-                    principal.getName(), principal.getClass().getSimpleName());
-        }
-
-        AthenzPrincipal athenzPrincipal = (AthenzPrincipal) principal;
-        AthenzDomain principalDomain = athenzPrincipal.getDomain();
+        AthenzDomain principalDomain = principal.getDomain();
 
         if (!principalDomain.equals(SCREWDRIVER_DOMAIN)) {
             throw loggedForbiddenException(
@@ -91,12 +79,12 @@ public class ApplicationInstanceAuthorizer {
         // NOTE: no fine-grained deploy authorization for non-Athenz tenants
         if (tenant.isAthensTenant()) {
             AthenzDomain tenantDomain = tenant.getAthensDomain().get();
-            if (!hasDeployAccessToAthenzApplication(athenzPrincipal, tenantDomain, applicationId)) {
+            if (!hasDeployAccessToAthenzApplication(principal, tenantDomain, applicationId)) {
                 throw loggedForbiddenException(
                         "Screwdriver principal '%1$s' does not have deploy access to '%2$s'. " +
                         "Either the application has not been created at " + zoneRegistry.getDashboardUri() + " or " +
                         "'%1$s' is not added to the application's deployer role in Athenz domain '%3$s'.",
-                        athenzPrincipal.getIdentity().getFullName(), applicationId, tenantDomain.getName());
+                        principal.getIdentity().getFullName(), applicationId, tenantDomain.getName());
             }
         }
     }
