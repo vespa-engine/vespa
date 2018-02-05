@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplications;
@@ -61,7 +60,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     private TenantApplications applicationRepo;
 
     static {
-        postHeaders.put(SessionCreateHandler.contentTypeHeader, SessionCreateHandler.APPLICATION_X_GZIP);
+        postHeaders.put(ApplicationApiHandler.contentTypeHeader, ApplicationApiHandler.APPLICATION_X_GZIP);
     }
 
     @Before
