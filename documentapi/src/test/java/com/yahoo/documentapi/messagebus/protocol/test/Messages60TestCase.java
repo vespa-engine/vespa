@@ -122,6 +122,4 @@ public class Messages60TestCase extends Messages52TestCase {
         }
     }
 
-    // TODO want to test that non-default bucket space fails to encode with old version
-
 }
