@@ -313,9 +313,6 @@ public class RankingExpressionWithTensorFlowTestCase {
 
         private final File root;
 
-        /** The content of the single query profile and type present in this, or null if none */
-        private final String queryProfile, queryProfileType;
-
         StoringApplicationPackage(Path applicationPackageWritableRoot) {
             this(applicationPackageWritableRoot, null, null);
         }
@@ -324,8 +321,6 @@ public class RankingExpressionWithTensorFlowTestCase {
             super(null, null, Collections.emptyList(), null,
                   null, null, false, queryProfile, queryProfileType);
             this.root = new File(applicationPackageWritableRoot.toString());
-            this.queryProfile = queryProfile;
-            this.queryProfileType = queryProfileType;
         }
 
         @Override
@@ -336,18 +331,6 @@ public class RankingExpressionWithTensorFlowTestCase {
         @Override
         public ApplicationFile getFile(Path file) {
             return new StoringApplicationPackageFile(file, Path.fromString(root.toString()));
-        }
-
-        @Override
-        public List<NamedReader> getQueryProfileFiles() {
-            if (queryProfile == null) return Collections.emptyList();
-            return Collections.singletonList(new NamedReader("default.xml", new StringReader(queryProfile)));
-        }
-
-        @Override
-        public List<NamedReader> getQueryProfileTypeFiles() {
-            if (queryProfileType == null) return Collections.emptyList();
-            return Collections.singletonList(new NamedReader("root.xml", new StringReader(queryProfileType)));
         }
 
     }
