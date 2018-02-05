@@ -4,6 +4,7 @@ package com.yahoo.search.query.profile.types;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.profile.QueryProfile;
+import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
 import java.util.Collections;

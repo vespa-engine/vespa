@@ -84,7 +84,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
         if (fieldType instanceof TensorFieldType) {
             TensorFieldType tensorFieldType = (TensorFieldType)fieldType;
             FeatureNames.argumentOf(fieldName).ifPresent(argument ->
-                addQueryFeatureTypeToRankProfiles(argument, tensorFieldType.type().toString()));
+                addQueryFeatureTypeToRankProfiles(argument, tensorFieldType.asTensorType().toString()));
         }
     }
 

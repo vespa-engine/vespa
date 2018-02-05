@@ -9,6 +9,7 @@ import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.TensorFieldType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.searchdefinition.document.SDField;
@@ -758,18 +759,19 @@ public class RankProfile implements Serializable, Cloneable {
         }
 
         // Add query features from rank profile types reached from the "default" profile
-        QueryProfile profile = queryProfiles.getComponent("default");
-        if (profile != null && profile.getType() != null) {
-            profile.listTypes(CompoundName.empty, Collections.emptyMap()).forEach((prefix, queryProfileType) -> {
-                for (FieldDescription field : queryProfileType.declaredFields().values()) {
-                    TensorType type = TensorType.empty; // assume the empty (aka double) type by default
-                    if (field.getType() instanceof TensorFieldType)
-                        type = ((TensorFieldType)field.getType()).type();
-
-                    String feature = FeatureNames.asQueryFeature(prefix.append(field.getName()).toString());
-                    context.setType(feature, type);
-                }
-            });
+        for (QueryProfileType queryProfileType : queryProfiles.getTypeRegistry().allComponents()) {
+            for (FieldDescription field : queryProfileType.declaredFields().values()) {
+                TensorType type = field.getType().asTensorType();
+                String feature = FeatureNames.asQueryFeature(field.getName());
+                TensorType existingType = context.getType(feature);
+                if (existingType != null)
+                    type = existingType.dimensionwiseGeneralizationWith(type).orElseThrow( () ->
+                        new IllegalArgumentException(queryProfileType + " contains query feature " + feature +
+                                                     " with type " + field.getType().asTensorType() +
+                                                     ", but this is already defined " +
+                                                     "in another query profile with type " + context.getType(feature)));
+                context.setType(feature, type);
+            }
         }
 
         return context;
