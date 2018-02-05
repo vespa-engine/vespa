@@ -205,7 +205,8 @@
   ],
   "compileVersion": "(ignore)",
   "globalRotations": [
-    "http://application1.tenant1.global.vespa.yahooapis.com:4080/"
+    "http://application1.tenant1.global.vespa.yahooapis.com:4080/",
+    "https://application1--tenant1.global.vespa.yahooapis.com:4443/"
   ],
   "rotationId": "rotation-id-1",
   "instances": [
