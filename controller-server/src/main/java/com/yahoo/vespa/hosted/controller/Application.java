@@ -149,16 +149,6 @@ public class Application {
                 .min(Comparator.naturalOrder());
     }
 
-    /**
-     * Returns the oldest application version this has deployed in a permanent zone (not test or staging),
-     * or empty version if it is not deployed anywhere
-     */
-    public Optional<ApplicationVersion> oldestDeployedApplicationVersion() {
-        return productionDeployments().values().stream()
-                .map(Deployment::applicationVersion)
-                .min(Comparator.naturalOrder());
-    }
-
     /** Returns the version a new deployment to this zone should use for this application */
     public Version deployVersionIn(ZoneId zone, Controller controller) {
         return change.platform().orElse(versionIn(zone, controller));
@@ -170,17 +160,28 @@ public class Application {
                        .orElse(oldestDeployedVersion().orElse(controller.systemVersion()));
     }
 
-    /** Returns the application version a deployment to this zone should use, or empty if we don't know */
-    public Optional<ApplicationVersion> deployApplicationVersionIn(ZoneId zone) {
-        if (change().application().isPresent()) {
-            return Optional.of(change().application().get());
-        }
-        return applicationVersionIn(zone);
+    /** Returns the Vespa version to use for the given job */
+    public Version deployVersionFor(DeploymentJobs.JobType jobType, Controller controller) {
+        return jobType == DeploymentJobs.JobType.component
+                ? controller.systemVersion()
+                : deployVersionIn(jobType.zone(controller.system()).get(), controller);
     }
 
-    /** Returns the application version that is or should be deployed with in the given zone, or empty if unknown. */
-    public Optional<ApplicationVersion> applicationVersionIn(ZoneId zone) {
-        return Optional.ofNullable(deployments().get(zone)).map(Deployment::applicationVersion);
+    /** Returns the application version to use for the given job */
+    public Optional<ApplicationVersion> deployApplicationVersionFor(DeploymentJobs.JobType jobType,
+                                                                    Controller controller,
+                                                                    boolean currentVersion) {
+        // Use last successful version if currentVersion is requested (staging deployment) or when we're not deploying
+        // a new application version
+        if (currentVersion || !change().application().isPresent()) {
+            Optional<ApplicationVersion> version = deploymentJobs().lastSuccessfulApplicationVersionFor(jobType);
+            if (version.isPresent()) {
+                return version;
+            }
+        }
+        return jobType == DeploymentJobs.JobType.component
+                ? Optional.empty()
+                : deployApplicationVersionIn(jobType.zone(controller.system()).get());
     }
 
     /** Returns the global rotation of this, if present */
@@ -208,8 +209,22 @@ public class Application {
         return "application '" + id + "'";
     }
 
+    /** Returns whether changes to this are blocked in the given instant */
     public boolean isBlocked(Instant instant) {
          return ! deploymentSpec().canUpgradeAt(instant) || ! deploymentSpec().canChangeRevisionAt(instant);
+    }
+
+    /** Returns the application version a deployment to this zone should use, or empty if we don't know */
+    private Optional<ApplicationVersion> deployApplicationVersionIn(ZoneId zone) {
+        if (change().application().isPresent()) {
+            return Optional.of(change().application().get());
+        }
+        return applicationVersionIn(zone);
+    }
+
+    /** Returns the application version that is or should be deployed with in the given zone, or empty if unknown. */
+    private Optional<ApplicationVersion> applicationVersionIn(ZoneId zone) {
+        return Optional.ofNullable(deployments().get(zone)).map(Deployment::applicationVersion);
     }
 
 }

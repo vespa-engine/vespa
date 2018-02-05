@@ -57,7 +57,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -103,7 +102,7 @@ public class ControllerTest {
                 .build();
 
         // staging job - succeeding
-        Version version1 = Version.fromString("6.1"); // Set in config server mock
+        Version version1 = tester.defaultVespaVersion();
         Application app1 = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.notifyJobCompletion(component, app1, true);
         assertEquals("Application version is currently not known",
@@ -219,9 +218,13 @@ public class ControllerTest {
 
         ApplicationVersion applicationVersion = ApplicationVersion.from(source, 101);
         tester.artifactRepository().put(app.id(), applicationPackage, applicationVersion.id());
-        runDeployment(tester, app.id(), applicationVersion, applicationPackage, Optional.of(source), 101);
+        runDeployment(tester, app.id(), applicationVersion, Optional.empty(), Optional.of(source), 101);
         assertEquals("Artifact is downloaded twice in staging and once for other zones", 5,
                      tester.artifactRepository().hits(app.id(), applicationVersion.id()));
+
+        // Application is upgraded. This makes deployment orchestration pick the last successful application version in
+        // zones which do not have permanent deployments, e.g. test and staging
+        runUpgrade(tester, app.id(), applicationVersion);
     }
 
     @Test
@@ -237,7 +240,7 @@ public class ControllerTest {
 
         // Scenario 1: Old fashioned deployment. Simulates existing production deployments
         ApplicationVersion v0 = ApplicationVersion.from(applicationPackage.hash(), source);
-        runDeployment(tester, app.id(), v0, applicationPackage, Optional.empty(), 100);
+        runDeployment(tester, app.id(), v0, Optional.of(applicationPackage), Optional.empty(), 100);
         assertEquals("Nothing downloaded from repository", 0,
                      tester.artifactRepository().hits(app.id(), v0.id()));
 
@@ -245,7 +248,7 @@ public class ControllerTest {
         // the application package from the deployer is used as v0 cannot be downloaded from repository.
         ApplicationVersion v1 = ApplicationVersion.from(source, 101);
         tester.artifactRepository().put(app.id(), applicationPackage, v1.id());
-        runDeployment(tester, app.id(), v1, applicationPackage, Optional.of(source), 101);
+        runDeployment(tester, app.id(), v1, Optional.of(applicationPackage), Optional.of(source), 101);
         assertEquals("Artifact is downloaded once per zone", 4,
                      tester.artifactRepository().hits(app.id(), v1.id()));
         assertEquals("v0 is never downloaded", 0,
@@ -255,7 +258,7 @@ public class ControllerTest {
         // Scenario 3: Both application versions are available in repository
         ApplicationVersion v2 = ApplicationVersion.from(source, 102);
         tester.artifactRepository().put(app.id(), applicationPackage, v2.id());
-        runDeployment(tester, app.id(), v2, applicationPackage, Optional.of(source), 102);
+        runDeployment(tester, app.id(), v2, Optional.empty(), Optional.of(source), 102);
         assertEquals("Previous artifact is downloaded once", 1,
                      tester.artifactRepository().hits(app.id(), v1.id()));
         assertEquals("Artifact is downloaded once per zone", 4,
@@ -852,48 +855,57 @@ public class ControllerTest {
 
     }
 
-    private void runDeployment(DeploymentTester tester, ApplicationId application, ApplicationVersion expectedVersion,
-                               ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision,
-                               long initialBuildNumber) {
-        Version vespaVersion = Version.fromString("6.1"); // Set in config server mock
-        Application app = tester.applications().require(application);
+    private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {
+        Version next = Version.fromString("6.2");
+        tester.upgradeSystem(next);
+        runDeployment(tester, tester.applications().require(application), version, Optional.of(next), Optional.empty());
+    }
 
-        // Component notifies completion
+    private void runDeployment(DeploymentTester tester, ApplicationId application, ApplicationVersion version,
+                               Optional<ApplicationPackage> applicationPackage, Optional<SourceRevision> sourceRevision,
+                               long initialBuildNumber) {
+        Application app = tester.applications().require(application);
         tester.notifyJobCompletion(component, app, Optional.empty(), sourceRevision, initialBuildNumber);
         ApplicationVersion change = sourceRevision.map(sr -> ApplicationVersion.from(sr, initialBuildNumber))
-                .orElse(ApplicationVersion.unknown);
+                                                  .orElse(ApplicationVersion.unknown);
         assertEquals(change.id(), tester.controller().applications()
-                .require(application)
-                .change().application().get().id());
+                                        .require(application)
+                                        .change().application().get().id());
+        runDeployment(tester, app, version, Optional.empty(), applicationPackage);
+    }
+
+    private void runDeployment(DeploymentTester tester, Application app, ApplicationVersion version,
+                               Optional<Version> upgrade, Optional<ApplicationPackage> applicationPackage) {
+        Version vespaVersion = upgrade.orElseGet(tester::defaultVespaVersion);
 
         // Deploy in test
-        tester.deployAndNotify(app, applicationPackage, true, systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-        //assertEquals(4, applications.require(application).deploymentJobs().jobStatus().size());
+        tester.deployAndNotify(app, applicationPackage, true, true, systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, true, stagingTest);
         assertStatus(JobStatus.initial(stagingTest)
-                             .withTriggering(vespaVersion, expectedVersion, false, "",
+                             .withTriggering(vespaVersion, version, upgrade.isPresent(), "",
                                              tester.clock().instant().minus(Duration.ofMillis(1)))
                              .withCompletion(42, Optional.empty(), tester.clock().instant(),
-                                             tester.controller()), application, tester.controller());
+                                             tester.controller()), app.id(), tester.controller());
 
         // Deploy in production
-        tester.deployAndNotify(app, applicationPackage, true, productionCorpUsEast1);
+        tester.deployAndNotify(app, applicationPackage, true, true, productionCorpUsEast1);
         assertStatus(JobStatus.initial(productionCorpUsEast1)
-                             .withTriggering(vespaVersion, expectedVersion, false, "",
+                             .withTriggering(vespaVersion, version, upgrade.isPresent(), "",
                                              tester.clock().instant().minus(Duration.ofMillis(1)))
                              .withCompletion(42, Optional.empty(), tester.clock().instant(),
-                                             tester.controller()), application, tester.controller());
+                                             tester.controller()), app.id(), tester.controller());
         tester.deployAndNotify(app, applicationPackage, true, true, productionUsEast3);
         assertStatus(JobStatus.initial(productionUsEast3)
-                             .withTriggering(vespaVersion, expectedVersion, false, "",
+                             .withTriggering(vespaVersion, version, upgrade.isPresent(), "",
                                              tester.clock().instant().minus(Duration.ofMillis(1)))
                              .withCompletion(42, Optional.empty(), tester.clock().instant(),
-                                             tester.controller()), application, tester.controller());
+                                             tester.controller()), app.id(), tester.controller());
 
         // Verify deployed version
         app = tester.controller().applications().require(app.id());
         for (Deployment deployment : app.productionDeployments().values()) {
-            assertEquals(expectedVersion, deployment.applicationVersion());
+            assertEquals(version, deployment.applicationVersion());
+            upgrade.ifPresent(v -> assertEquals(v, deployment.version()));
         }
     }
 

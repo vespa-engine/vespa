@@ -104,9 +104,13 @@ public class DeploymentTester {
     }
 
     public void upgradeSystem(Version version) {
-        controllerTester().configServer().setDefaultVersion(version);
+        configServer().setDefaultVersion(version);
         updateVersionStatus(version);
         upgrader().maintain();
+    }
+
+    public Version defaultVespaVersion() {
+        return configServer().getDefaultVersion();
     }
 
     public Application createApplication(String applicationName, String tenantName, long projectId, Long propertyId) {
@@ -279,6 +283,10 @@ public class DeploymentTester {
                 deploy(job, application, applicationPackage, false);
             }
             notifyJobCompletion(job, application, success);
+            // Deactivate test deployments after deploy. This replicates the behaviour of the tenant pipeline
+            if (job.isTest()) {
+                controller().applications().deactivate(application, job.zone(controller().system()).get());
+            }
         }
     }
 

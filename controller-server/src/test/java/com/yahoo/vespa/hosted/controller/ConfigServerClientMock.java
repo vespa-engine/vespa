@@ -42,8 +42,8 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
     private final Map<URI, Version> versions = new HashMap<>();
 
     private Version defaultVersion = new Version(6, 1, 0);
-    private RuntimeException prepareException = null;
     private Version lastPrepareVersion = null;
+    private RuntimeException prepareException = null;
 
     /** The version given in the previous prepare call, or empty if no call has been made */
     public Optional<Version> lastPrepareVersion() {
@@ -72,7 +72,11 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
     public void setDefaultVersion(Version version) {
         this.defaultVersion = version;
     }
-    
+
+    public Version getDefaultVersion() {
+        return defaultVersion;
+    }
+
     @Override
     public PreparedApplication prepare(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames,
                                        Set<String> rotationNames, byte[] content) {

@@ -131,12 +131,11 @@ public class DeploymentJobs {
         return true; // other environments do not have any preconditions
     }
 
-    /** Returns whether the job of the given type has completed successfully for the given change */
-    public boolean isSuccessful(Change change, JobType jobType) {
+    /** Returns the last successful application version for the given job */
+    public Optional<ApplicationVersion> lastSuccessfulApplicationVersionFor(JobType jobType) {
         return Optional.ofNullable(jobStatus().get(jobType))
-                .flatMap(JobStatus::lastSuccess)
-                .filter(status -> status.lastCompletedWas(change))
-                .isPresent();
+                       .flatMap(JobStatus::lastSuccess)
+                       .map(JobStatus.JobRun::applicationVersion);
     }
 
     /**
@@ -147,6 +146,14 @@ public class DeploymentJobs {
     public Optional<Long> projectId() { return projectId; }
 
     public Optional<IssueId> issueId() { return issueId; }
+
+    /** Returns whether the job of the given type has completed successfully for the given change */
+    private boolean isSuccessful(Change change, JobType jobType) {
+        return Optional.ofNullable(jobStatus().get(jobType))
+                       .flatMap(JobStatus::lastSuccess)
+                       .filter(status -> status.lastCompletedWas(change))
+                       .isPresent();
+    }
 
     private static Optional<Long> requireId(Optional<Long> id, String message) {
         Objects.requireNonNull(id, message);

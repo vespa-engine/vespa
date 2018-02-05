@@ -353,7 +353,7 @@ public class DeploymentTrigger {
                                              application.change(),
                                              clock.instant(),
                                              application.deployVersionFor(jobType, controller),
-                                             application.deployApplicationVersion(jobType, controller)
+                                             application.deployApplicationVersionFor(jobType, controller, false)
                                                         .orElse(ApplicationVersion.unknown),
                                              reason);
     }

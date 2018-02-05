@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
@@ -297,9 +296,9 @@ public class ApplicationController {
                 if (!job.isPresent()) {
                     throw new IllegalArgumentException("Cannot determine job for zone " + zone);
                 }
-                applicationVersion = application.deployApplicationVersion(job.get(), controller,
-                                                                          options.deployCurrentVersion)
-                                                .orElseThrow(() -> new IllegalArgumentException("Cannot determine application version for " + applicationId));
+                applicationVersion = application.deployApplicationVersionFor(job.get(), controller,
+                                                                             options.deployCurrentVersion)
+                                                .orElseThrow(() -> new IllegalArgumentException("Cannot determine application version for " + applicationId + " in " + job.get()));
                 if (canDownloadArtifact(applicationVersion)) {
                     applicationPackage = new ApplicationPackage(
                             artifactRepository.getApplicationPackage(applicationId, applicationVersion.id())
@@ -706,11 +705,9 @@ public class ApplicationController {
 
     /** Returns whether component has reported a version number that is availabe in artifact repository */
     private static boolean canDownloadReportedApplicationVersion(Application application) {
-        return Optional.ofNullable(application.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.component))
-                       .flatMap(JobStatus::lastSuccess)
-                       .map(JobStatus.JobRun::applicationVersion)
-                       .filter(ApplicationController::canDownloadArtifact)
-                       .isPresent();
+        return application.deploymentJobs().lastSuccessfulApplicationVersionFor(DeploymentJobs.JobType.component)
+                          .filter(ApplicationController::canDownloadArtifact)
+                          .isPresent();
     }
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system. */

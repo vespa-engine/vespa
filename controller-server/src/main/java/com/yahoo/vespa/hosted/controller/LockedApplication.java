@@ -6,11 +6,11 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -142,36 +142,12 @@ public class LockedApplication extends Application {
         return new LockedApplication(new Builder(this).with(rotation));
     }
 
-    public Version deployVersionFor(DeploymentJobs.JobType jobType, Controller controller) {
-        return jobType == JobType.component
-               ? controller.systemVersion()
-               : deployVersionIn(jobType.zone(controller.system()).get(), controller);
-    }
-
-    public Optional<ApplicationVersion> deployApplicationVersion(DeploymentJobs.JobType jobType, Controller controller) {
-        return deployApplicationVersion(jobType, controller, false);
-    }
-
-    public Optional<ApplicationVersion> deployApplicationVersion(DeploymentJobs.JobType jobType, Controller controller,
-                                                                 boolean currentVersion) {
-        if (currentVersion) {
-            Optional<ApplicationVersion> version = oldestDeployedApplicationVersion();
-            if (version.isPresent()) {
-                return version;
-            }
-        }
-        return jobType == JobType.component
-                ? Optional.empty()
-                : deployApplicationVersionIn(jobType.zone(controller.system()).get());
-    }
-
     /** Don't expose non-leaf sub-objects. */
     private LockedApplication with(Deployment deployment) {
         Map<ZoneId, Deployment> deployments = new LinkedHashMap<>(deployments());
         deployments.put(deployment.zone(), deployment);
         return new LockedApplication(new Builder(this).with(deployments));
     }
-
 
     private static class Builder {
 
