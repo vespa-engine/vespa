@@ -34,7 +34,7 @@ public class ConstantTensorTransformer extends ExpressionTransformer<RankProfile
     }
 
     private ExpressionNode transformFeature(ReferenceNode node, RankProfileTransformContext context) {
-        if (!node.getArguments().isEmpty()) {
+        if ( ! node.getArguments().isEmpty()) {
             return transformArguments(node, context);
         } else {
             return transformConstantReference(node, context);
