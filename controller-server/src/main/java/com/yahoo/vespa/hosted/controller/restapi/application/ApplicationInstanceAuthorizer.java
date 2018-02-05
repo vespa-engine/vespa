@@ -25,17 +25,19 @@ import static com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAth
 import static com.yahoo.vespa.hosted.controller.restapi.application.Authorizer.environmentRequiresAuthorization;
 
 /**
+ * Validates that principal is allowed to perform a mutating operation on an application instance.
+ *
  * @author bjorncs
  * @author gjoranv
  */
-public class DeployAuthorizer {
+public class ApplicationInstanceAuthorizer {
 
-    private static final Logger log = Logger.getLogger(DeployAuthorizer.class.getName());
+    private static final Logger log = Logger.getLogger(ApplicationInstanceAuthorizer.class.getName());
 
     private final ZoneRegistry zoneRegistry;
     private final AthenzClientFactory athenzClientFactory;
 
-    public DeployAuthorizer(ZoneRegistry zoneRegistry, AthenzClientFactory athenzClientFactory) {
+    public ApplicationInstanceAuthorizer(ZoneRegistry zoneRegistry, AthenzClientFactory athenzClientFactory) {
         this.zoneRegistry = zoneRegistry;
         this.athenzClientFactory = athenzClientFactory;
     }
