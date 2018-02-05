@@ -18,11 +18,6 @@ public class DropoutImportTestCase {
     public void testDropoutImport() {
         TestableTensorFlowModel model = new TestableTensorFlowModel("src/test/files/integration/tensorflow/dropout/saved");
 
-        // Check (provided) macros
-        assertEquals(1, model.get().macros().size());
-        assertTrue(model.get().macros().containsKey("training_input"));
-        assertEquals("constant(\"training_input\")", model.get().macros().get("training_input").getRoot().toString());
-
         // Check required macros
         assertEquals(1, model.get().requiredMacros().size());
         assertTrue(model.get().requiredMacros().containsKey("X"));
@@ -37,7 +32,7 @@ public class DropoutImportTestCase {
         RankingExpression output = signature.outputExpression("y");
         assertNotNull(output);
         assertEquals("outputs/BiasAdd", output.getName());
-        assertEquals("join(rename(reduce(join(X, rename(constant(\"outputs_kernel\"), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(\"outputs_bias\"), d0, d1), f(a,b)(a + b))",
+        assertEquals("join(reduce(join(rename(X, (d0, d1), (d0, d2)), constant(\"outputs_kernel_read\"), f(a,b)(a * b)), sum, d2), constant(\"outputs_bias_read\"), f(a,b)(a + b))",
                 output.getRoot().toString());
         model.assertEqualResult("X", output.getName());
     }
