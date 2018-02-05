@@ -34,7 +34,8 @@ public class CompressedFileReference {
     private static final int recurseDepth = 100;
 
     public static File compress(File baseDir, List<File> inputFiles, File outputFile) throws IOException {
-        ArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(new FileOutputStream(outputFile)));
+        TarArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(new FileOutputStream(outputFile)));
+        archiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
         createArchiveFile(archiveOutputStream, baseDir, inputFiles);
         return outputFile;
     }
@@ -55,7 +56,8 @@ public class CompressedFileReference {
 
     public static byte[] compress(File baseDir, List<File> inputFiles) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(out));
+        TarArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(out));
+        archiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
         createArchiveFile(archiveOutputStream, baseDir, inputFiles);
         return out.toByteArray();
     }
