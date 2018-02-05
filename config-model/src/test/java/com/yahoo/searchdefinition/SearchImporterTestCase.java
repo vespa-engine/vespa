@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.document.*;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchdefinition.processing.MakeAliases;
@@ -26,7 +27,7 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
     @Test
     public void testSimpleImporting() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder sb = new UnprocessingSearchBuilder(rankProfileRegistry);
+        SearchBuilder sb = new UnprocessingSearchBuilder(rankProfileRegistry, new QueryProfileRegistry());
         sb.importFile("src/test/examples/simple.sd");
         sb.build();
         Search search = sb.getSearch();

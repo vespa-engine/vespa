@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.*;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.derived.AttributeFields;
@@ -16,13 +17,14 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-// TODO: WHO?
 public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testMacros() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressionfunction", rankProfileRegistry).getSearch();
+        Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressionfunction",
+                                                          rankProfileRegistry,
+                                                          new QueryProfileRegistry()).getSearch();
         final RankProfile macrosRankProfile = rankProfileRegistry.getRankProfile(search, "macros");
         macrosRankProfile.parseExpressions();
         final Map<String, RankProfile.Macro> macros = macrosRankProfile.getMacros();
@@ -35,7 +37,9 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
         assertEquals("78 + closeness(distance)", macros.get("artistmatch").getTextualExpression().trim());
         assertEquals(0, macros.get("artistmatch").getFormalParams().size());
 
-        List<Pair<String, String>> rankProperties = new RawRankProfile(macrosRankProfile, new AttributeFields(search)).configProperties();
+        List<Pair<String, String>> rankProperties = new RawRankProfile(macrosRankProfile,
+                                                                       new QueryProfileRegistry(),
+                                                                       new AttributeFields(search)).configProperties();
         assertEquals(6, rankProperties.size());
 
         assertEquals("rankingExpression(titlematch$).rankingScript", rankProperties.get(0).getFirst());
@@ -57,8 +61,10 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
     @Test(expected = IllegalArgumentException.class)
     public void testThatIncludingFileInSubdirFails() throws IOException, ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressioninfile", registry).getSearch();
-        new DerivedConfiguration(search, registry); // rank profile parsing happens during deriving
+        Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressioninfile",
+                                                          registry,
+                                                          new QueryProfileRegistry()).getSearch();
+        new DerivedConfiguration(search, registry, new QueryProfileRegistry()); // rank profile parsing happens during deriving
     }
 
 }

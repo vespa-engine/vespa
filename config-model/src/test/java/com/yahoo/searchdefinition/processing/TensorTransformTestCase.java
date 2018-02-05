@@ -91,7 +91,7 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
 
 
     private void assertContainsExpression(String expr, String transformedExpression) throws ParseException {
-        assertTrue("Expected expression '" + transformedExpression + "' not found",
+        assertTrue("Expected expression '" + transformedExpression + "' found",
                    containsExpression(expr, transformedExpression));
     }
 
@@ -169,10 +169,10 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
                 "}\n");
         builder.build(new BaseDeployLogger(), setupQueryProfileTypes());
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile();
-        List<Pair<String, String>> testRankProperties = new RawRankProfile(test, new AttributeFields(s)).configProperties();
-        for (Object o : testRankProperties)
-            System.out.println(o);
+        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry());
+        List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
+                                                                           new QueryProfileRegistry(),
+                                                                           new AttributeFields(s)).configProperties();
         return testRankProperties;
     }
 

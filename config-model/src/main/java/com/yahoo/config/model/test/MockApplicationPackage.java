@@ -8,6 +8,8 @@ import com.yahoo.config.provision.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.io.reader.NamedReader;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.searchdefinition.*;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -36,9 +38,11 @@ public class MockApplicationPackage implements ApplicationPackage {
     private final Optional<String> deploymentSpec;
     private final Optional<String> validationOverrides;
     private final boolean failOnValidateXml;
+    private final QueryProfileRegistry queryProfileRegistry;
 
     protected MockApplicationPackage(String hosts, String services, List<String> searchDefinitions, String searchDefinitionDir,
-                                     String deploymentSpec, String validationOverrides, boolean failOnValidateXml) {
+                                     String deploymentSpec, String validationOverrides, boolean failOnValidateXml,
+                                     String queryProfile, String queryProfileType) {
         this.hostsS = hosts;
         this.servicesS = services;
         this.searchDefinitions = searchDefinitions;
@@ -46,6 +50,8 @@ public class MockApplicationPackage implements ApplicationPackage {
         this.deploymentSpec = Optional.ofNullable(deploymentSpec);
         this.validationOverrides = Optional.ofNullable(validationOverrides);
         this.failOnValidateXml = failOnValidateXml;
+        queryProfileRegistry = new QueryProfileXMLReader().read(asNamedReaderList(queryProfileType),
+                                                                asNamedReaderList(queryProfile));
     }
 
     @Override
@@ -67,7 +73,9 @@ public class MockApplicationPackage implements ApplicationPackage {
     @Override
     public List<NamedReader> getSearchDefinitions() {
         ArrayList<NamedReader> readers = new ArrayList<>();
-        SearchBuilder searchBuilder = new SearchBuilder(this, new RankProfileRegistry());
+        SearchBuilder searchBuilder = new SearchBuilder(this,
+                                                        new RankProfileRegistry(),
+                                                        queryProfileRegistry);
         for (String sd : searchDefinitions) {
             try  {
                 String name = searchBuilder.importString(sd);
@@ -123,6 +131,8 @@ public class MockApplicationPackage implements ApplicationPackage {
         return Collections.emptyList();
     }
 
+    public QueryProfileRegistry getQueryProfiles() { return queryProfileRegistry; }
+
     @Override
     public Reader getRankingExpression(String name) {
         File expressionFile = new File(searchDefinitionDir, name);
@@ -147,6 +157,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     }
 
     public static class Builder {
+
         private String hosts = null;
         private String services = null;
         private List<String> searchDefinitions = Collections.emptyList();
@@ -154,6 +165,8 @@ public class MockApplicationPackage implements ApplicationPackage {
         private String deploymentSpec = null;
         private String validationOverrides = null;
         private boolean failOnValidateXml = false;
+        private String queryProfile = null;
+        private String queryProfileType = null;
 
         public Builder() {
         }
@@ -206,9 +219,20 @@ public class MockApplicationPackage implements ApplicationPackage {
             return this;
         }
 
+        public Builder queryProfile(String queryProfile) {
+            this.queryProfile = queryProfile;
+            return this;
+        }
+
+        public Builder queryProfileType(String queryProfileType) {
+            this.queryProfileType = queryProfileType;
+            return this;
+        }
+
         public ApplicationPackage build() {
                 return new MockApplicationPackage(hosts, services, searchDefinitions, searchDefinitionDir,
-                                                  deploymentSpec, validationOverrides, failOnValidateXml);
+                                                  deploymentSpec, validationOverrides, failOnValidateXml,
+                                                  queryProfile, queryProfileType);
         }
     }
 
@@ -240,6 +264,18 @@ public class MockApplicationPackage implements ApplicationPackage {
         } else {
             throw new UnsupportedOperationException("This application package cannot validate XML");
         }
+    }
+
+    private List<NamedReader> asNamedReaderList(String value) {
+        if (value == null) return Collections.emptyList();
+        return Collections.singletonList(new NamedReader(extractId(value) + ".xml", new StringReader(value)));
+    }
+
+    private String extractId(String xmlStringWithIdAttribute) {
+        int idStart = xmlStringWithIdAttribute.indexOf("id=");
+        int idEnd = Math.min(xmlStringWithIdAttribute.indexOf(" ", idStart),
+                             xmlStringWithIdAttribute.indexOf(">", idStart));
+        return xmlStringWithIdAttribute.substring(idStart + 4, idEnd - 1);
     }
 
 }

@@ -8,6 +8,7 @@ import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.protect.Validator;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.derived.validation.Validation;
@@ -45,8 +46,8 @@ public class DerivedConfiguration {
      *               modified.
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
      */
-    public DerivedConfiguration(Search search, RankProfileRegistry rankProfileRegistry) {
-        this(search, null, new BaseDeployLogger(), rankProfileRegistry);
+    public DerivedConfiguration(Search search, RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfiles) {
+        this(search, null, new BaseDeployLogger(), rankProfileRegistry, queryProfiles);
     }
 
     /**
@@ -60,8 +61,12 @@ public class DerivedConfiguration {
      * @param deployLogger       a {@link DeployLogger} for logging when
      *                           doing operations on this
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
+     * @param queryProfiles      the query profiles of this application
      */
-    public DerivedConfiguration(Search search, List<Search> abstractSearchList, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry) {
+    public DerivedConfiguration(Search search, List<Search> abstractSearchList,
+                                DeployLogger deployLogger,
+                                RankProfileRegistry rankProfileRegistry,
+                                QueryProfileRegistry queryProfiles) {
         Validator.ensureNotNull("Search definition", search);
         if ( ! search.isProcessed()) {
             throw new IllegalArgumentException("Search '" + search.getName() + "' not processed.");
@@ -83,7 +88,7 @@ public class DerivedConfiguration {
             summaries = new Summaries(search, deployLogger);
             summaryMap = new SummaryMap(search, summaries);
             juniperrc = new Juniperrc(search);
-            rankProfileList = new RankProfileList(search, attributeFields, rankProfileRegistry);
+            rankProfileList = new RankProfileList(search, attributeFields, rankProfileRegistry, queryProfiles);
             indexingScript = new IndexingScript(search);
             indexInfo = new IndexInfo(search);
             indexSchema = new IndexSchema(search);

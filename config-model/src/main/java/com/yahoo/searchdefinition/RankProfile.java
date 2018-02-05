@@ -2,12 +2,14 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.TensorFieldType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.searchdefinition.document.SDField;
@@ -16,7 +18,6 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.evaluation.FeatureNames;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TypeMapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -677,10 +678,10 @@ public class RankProfile implements Serializable, Cloneable {
      * Returns a copy of this where the content is optimized for execution.
      * Compiled profiles should never be modified.
      */
-    public RankProfile compile() {
+    public RankProfile compile(QueryProfileRegistry queryProfiles) {
         try {
             RankProfile compiled = this.clone();
-            compiled.compileThis();
+            compiled.compileThis(queryProfiles);
             return compiled;
         }
         catch (IllegalArgumentException e) {
@@ -688,7 +689,7 @@ public class RankProfile implements Serializable, Cloneable {
         }
     }
 
-    private void compileThis() {
+    private void compileThis(QueryProfileRegistry queryProfiles) {
         parseExpressions();
 
         checkNameCollisions(getMacros(), getConstants());
@@ -697,13 +698,14 @@ public class RankProfile implements Serializable, Cloneable {
         for (Map.Entry<String, Macro> macroEntry : getMacros().entrySet()) {
             Macro compiledMacro = macroEntry.getValue().clone();
             compiledMacro.setRankingExpression(compile(macroEntry.getValue().getRankingExpression(),
-                                               getConstants(), Collections.<String, Macro>emptyMap()));
+                                                       queryProfiles,
+                                                       getConstants(), Collections.<String, Macro>emptyMap()));
             compiledMacros.put(macroEntry.getKey(), compiledMacro);
         }
         macros = compiledMacros;
         Map<String, Macro> inlineMacros = keepInline(compiledMacros);
-        firstPhaseRanking = compile(this.getFirstPhaseRanking(), getConstants(), inlineMacros);
-        secondPhaseRanking = compile(this.getSecondPhaseRanking(), getConstants(), inlineMacros);
+        firstPhaseRanking = compile(this.getFirstPhaseRanking(), queryProfiles, getConstants(), inlineMacros);
+        secondPhaseRanking = compile(this.getSecondPhaseRanking(), queryProfiles, getConstants(), inlineMacros);
     }
 
     private void checkNameCollisions(Map<String, Macro> macros, Map<String, Value> constants) {
@@ -723,12 +725,14 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     private RankingExpression compile(RankingExpression expression,
+                                      QueryProfileRegistry queryProfiles,
                                       Map<String, Value> constants,
                                       Map<String, Macro> inlineMacros) {
         if (expression == null) return null;
         Map<String, String> rankPropertiesOutput = new HashMap<>();
 
         RankProfileTransformContext context = new RankProfileTransformContext(this,
+                                                                              queryProfiles,
                                                                               constants,
                                                                               inlineMacros,
                                                                               rankPropertiesOutput);
@@ -743,7 +747,7 @@ public class RankProfile implements Serializable, Cloneable {
      * Creates a context containing the type information of all constants, attributes and query profiles
      * referable from this rank profile.
      */
-    public TypeContext typeContext() {
+    public TypeContext typeContext(QueryProfileRegistry queryProfiles) {
         TypeMapContext context = new TypeMapContext();
 
         // Add constants
@@ -755,35 +759,22 @@ public class RankProfile implements Serializable, Cloneable {
         }
 
         // Add query features from rank profile types reached from the "default" profile
-        QueryProfile profile = queryProfilesOf(getSearch().sourceApplication()).getComponent("default");
-        if (profile != null && profile.getType() != null) {
-            profile.listTypes(CompoundName.empty, Collections.emptyMap()).forEach((prefix, queryProfileType) -> {
-                for (FieldDescription field : queryProfileType.declaredFields().values()) {
-                    TensorType type = TensorType.empty; // assume the empty (aka double) type by default
-                    if (field.getType() instanceof TensorFieldType)
-                        type = ((TensorFieldType)field.getType()).type();
-
-                    String feature = FeatureNames.asQueryFeature(prefix.append(field.getName()).toString());
-                    context.setType(feature, type);
-                }
-            });
+        for (QueryProfileType queryProfileType : queryProfiles.getTypeRegistry().allComponents()) {
+            for (FieldDescription field : queryProfileType.declaredFields().values()) {
+                TensorType type = field.getType().asTensorType();
+                String feature = FeatureNames.asQueryFeature(field.getName());
+                TensorType existingType = context.getType(feature);
+                if (existingType != null)
+                    type = existingType.dimensionwiseGeneralizationWith(type).orElseThrow( () ->
+                        new IllegalArgumentException(queryProfileType + " contains query feature " + feature +
+                                                     " with type " + field.getType().asTensorType() +
+                                                     ", but this is already defined " +
+                                                     "in another query profile with type " + context.getType(feature)));
+                context.setType(feature, type);
+            }
         }
 
         return context;
-    }
-
-    private QueryProfileRegistry queryProfilesOf(ApplicationPackage applicationPackage) {
-        List<NamedReader> queryProfileFiles = null;
-        List<NamedReader> queryProfileTypeFiles = null;
-        try {
-            queryProfileFiles = applicationPackage.getQueryProfileFiles();
-            queryProfileTypeFiles = applicationPackage.getQueryProfileTypeFiles();
-            return new QueryProfileXMLReader().read(queryProfileTypeFiles, queryProfileFiles);
-        }
-        finally {
-            NamedReader.closeAll(queryProfileFiles);
-            NamedReader.closeAll(queryProfileTypeFiles);
-        }
     }
 
     /**

@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
@@ -68,14 +69,16 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             if (store.hasStoredModel())
                 return transformFromStoredModel(store, context.rankProfile());
             else // not converted yet - access TensorFlow model files
-                return transformFromTensorFlowModel(store, context.rankProfile());
+                return transformFromTensorFlowModel(store, context.rankProfile(), context.queryProfiles());
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use tensorflow model from " + feature, e);
         }
     }
 
-    private ExpressionNode transformFromTensorFlowModel(ModelStore store, RankProfile profile) {
+    private ExpressionNode transformFromTensorFlowModel(ModelStore store,
+                                                        RankProfile profile,
+                                                        QueryProfileRegistry queryProfiles) {
         TensorFlowModel model = importedModels.computeIfAbsent(store.arguments().modelPath(),
                                                                k -> tensorFlowImporter.importModel(store.tensorFlowModelDir()));
 
@@ -83,7 +86,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         Signature signature = chooseSignature(model, store.arguments().signature());
         String output = chooseOutput(signature, store.arguments().output());
         RankingExpression expression = model.expressions().get(output);
-        verifyRequiredMacros(expression, model.requiredMacros(), profile);
+        verifyRequiredMacros(expression, model.requiredMacros(), profile, queryProfiles);
         store.writeConverted(expression);
 
         model.constants().forEach((k, v) -> transformConstant(store, profile, k, v));
@@ -172,7 +175,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
      * and return tensors of the types specified in requiredMacros.
      */
     private void verifyRequiredMacros(RankingExpression expression, Map<String, TensorType> requiredMacros,
-                                      RankProfile profile) {
+                                      RankProfile profile, QueryProfileRegistry queryProfiles) {
         List<String> macroNames = new ArrayList<>();
         addMacroNamesIn(expression.getRoot(), macroNames);
         for (String macroName : macroNames) {
@@ -184,7 +187,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
                 throw new IllegalArgumentException("Model refers Placeholder '" + macroName +
                                                    "' of type " + requiredType + " but this macro is not present in " +
                                                    profile);
-            TensorType actualType = macro.getRankingExpression().getRoot().type(profile.typeContext());
+            TensorType actualType = macro.getRankingExpression().getRoot().type(profile.typeContext(queryProfiles));
             if ( actualType == null)
                 throw new IllegalArgumentException("Model refers Placeholder '" + macroName +
                                                    "' of type " + requiredType +

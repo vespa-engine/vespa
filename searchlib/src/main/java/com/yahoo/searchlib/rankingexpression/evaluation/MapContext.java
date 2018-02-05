@@ -27,7 +27,7 @@ public class MapContext extends Context {
      * All the Values of the map will be frozen.
      */
     public MapContext(Map<String,Value> bindings) {
-        bindings.forEach((k, v) -> this.bindings.put(FeatureNames.canonicalize(k), v.freeze()));
+        bindings.forEach((k, v) -> this.bindings.put(k, v.freeze()));
     }
 
     /**
@@ -43,7 +43,7 @@ public class MapContext extends Context {
     /** Returns the type of the given value key, or null if it is not bound. */
     @Override
     public TensorType getType(String key) {
-        Value value = bindings.get(FeatureNames.canonicalize(key));
+        Value value = bindings.get(key);
         if (value == null) return null;
         return value.type();
     }
@@ -51,7 +51,7 @@ public class MapContext extends Context {
     /** Returns the value of a key. 0 is returned if the given key is not bound in this. */
     @Override
     public Value get(String key) {
-        return bindings.getOrDefault(FeatureNames.canonicalize(key), DoubleValue.zero);
+        return bindings.getOrDefault(key, DoubleValue.zero);
     }
 
     /**
@@ -59,7 +59,7 @@ public class MapContext extends Context {
      */
     @Override
     public void put(String key,Value value) {
-        bindings.put(FeatureNames.canonicalize(key), value.freeze());
+        bindings.put(key, value.freeze());
     }
 
     /** Returns an immutable view of the bindings of this. */

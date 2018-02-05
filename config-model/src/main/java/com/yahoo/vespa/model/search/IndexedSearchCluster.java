@@ -281,11 +281,15 @@ public abstract class IndexedSearchCluster extends SearchCluster
         }
     }
     protected void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches,
-                                            List<com.yahoo.searchdefinition.Search> globalSearches) {
+                                              List<com.yahoo.searchdefinition.Search> globalSearches) {
         for (SearchDefinitionSpec spec : localSearches) {
             com.yahoo.searchdefinition.Search search = spec.getSearchDefinition().getSearch();
-            if (!(search instanceof UnproperSearch)) {
-                DocumentDatabase db = new DocumentDatabase(this, search.getName(), new DerivedConfiguration(search, globalSearches, deployLogger(), getRoot().getDeployState().rankProfileRegistry()));
+            if ( ! (search instanceof UnproperSearch)) {
+                DocumentDatabase db = new DocumentDatabase(this,
+                                                           search.getName(),
+                                                           new DerivedConfiguration(search, globalSearches, deployLogger(),
+                                                                                    getRoot().getDeployState().rankProfileRegistry(),
+                                                                                    getRoot().getDeployState().getQueryProfiles().getRegistry()));
                 // TODO: remove explicit adding of user configs when the complete content model is built using builders.
                 db.mergeUserConfigs(spec.getUserConfigs());
                 documentDbs.add(db);

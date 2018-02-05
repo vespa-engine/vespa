@@ -8,6 +8,7 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.SearchOrderer;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -32,8 +33,6 @@ import java.util.List;
  * all available search definitions, using the importXXX() methods, 2) provide the available rank types and rank
  * expressions, using the setRankXXX() methods, 3) invoke the {@link #build()} method, and 4) retrieve the built
  * search objects using the {@link #getSearch(String)} method.
- *
- * @author TODO: Who created this?
  */
 // TODO: This should be cleaned up and more or maybe completely taken over by MockApplicationPackage
 public class SearchBuilder {
@@ -43,23 +42,35 @@ public class SearchBuilder {
     private ApplicationPackage app = null;
     private boolean isBuilt = false;
     private DocumentModel model = new DocumentModel();
-    private RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+    private final RankProfileRegistry rankProfileRegistry;
+    private final QueryProfileRegistry queryProfileRegistry;
 
+    /** For testing only */
     public SearchBuilder() {
-        this.app = MockApplicationPackage.createEmpty();
+        this(MockApplicationPackage.createEmpty(), new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
+    /** For testing only */
     public SearchBuilder(ApplicationPackage app) {
-        this.app = app;
+        this(app, new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
-    public SearchBuilder(ApplicationPackage app, RankProfileRegistry rankProfileRegistry) {
+    /** For testing only */
+    public SearchBuilder(RankProfileRegistry rankProfileRegistry) {
+        this(MockApplicationPackage.createEmpty(), rankProfileRegistry, new QueryProfileRegistry());
+    }
+
+    /** For testing only */
+    public SearchBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry) {
+        this(MockApplicationPackage.createEmpty(), rankProfileRegistry, queryProfileRegistry);
+    }
+
+    public SearchBuilder(ApplicationPackage app,
+                         RankProfileRegistry rankProfileRegistry,
+                         QueryProfileRegistry queryProfileRegistry) {
         this.app = app;
         this.rankProfileRegistry = rankProfileRegistry;
-    }
-
-    public SearchBuilder(RankProfileRegistry rankProfileRegistry) {
-        this(MockApplicationPackage.createEmpty(), rankProfileRegistry);
+        this.queryProfileRegistry = queryProfileRegistry;
     }
 
     /**
@@ -164,12 +175,12 @@ public class SearchBuilder {
         String rawName = rawSearch.getName();
         if (rawSearch.isProcessed()) {
             throw new IllegalArgumentException("A search definition with a search section called '" + rawName +
-                    "' has already been processed.");
+                                               "' has already been processed.");
         }
         for (Search search : searchList) {
             if (rawName.equals(search.getName())) {
                 throw new IllegalArgumentException("A search definition with a search section called '" + rawName +
-                        "' has already been added.");
+                                                   "' has already been added.");
             }
         }
         searchList.add(rawSearch);
@@ -309,7 +320,7 @@ public class SearchBuilder {
         builder.build();
         return builder;
     }
-    
+
     /**
      * Convenience factory method to import and build a {@link Search} object from a file. Only for testing.
      *
@@ -319,7 +330,7 @@ public class SearchBuilder {
      * @throws ParseException if there was a problem parsing the file content.
      */
     public static SearchBuilder createFromFile(String fileName) throws IOException, ParseException {
-        return createFromFile(fileName, new BaseDeployLogger(), new RankProfileRegistry());
+        return createFromFile(fileName, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
     /**
@@ -332,19 +343,28 @@ public class SearchBuilder {
      * @throws IOException    if there was a problem reading the file.
      * @throws ParseException if there was a problem parsing the file content.
      */
-    public static SearchBuilder createFromFile(String fileName, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry)
+    public static SearchBuilder createFromFile(String fileName,
+                                               DeployLogger deployLogger,
+                                               RankProfileRegistry rankProfileRegistry,
+                                               QueryProfileRegistry queryprofileRegistry)
             throws IOException, ParseException {
-        SearchBuilder builder = new SearchBuilder(MockApplicationPackage.createEmpty(), rankProfileRegistry);
+        SearchBuilder builder = new SearchBuilder(MockApplicationPackage.createEmpty(),
+                                                  rankProfileRegistry,
+                                                  queryprofileRegistry);
         builder.importFile(fileName);
         builder.build(deployLogger, new QueryProfiles());
         return builder;
     }
 
     public static SearchBuilder createFromDirectory(String dir) throws IOException, ParseException {
-        return createFromDirectory(dir, new RankProfileRegistry());
+        return createFromDirectory(dir, new RankProfileRegistry(), new QueryProfileRegistry());
     }
-    public static SearchBuilder createFromDirectory(String dir, RankProfileRegistry rankProfileRegistry) throws IOException, ParseException {
-        SearchBuilder builder = new SearchBuilder(MockApplicationPackage.fromSearchDefinitionDirectory(dir), rankProfileRegistry);
+    public static SearchBuilder createFromDirectory(String dir,
+                                                    RankProfileRegistry rankProfileRegistry,
+                                                    QueryProfileRegistry queryProfileRegistry) throws IOException, ParseException {
+        SearchBuilder builder = new SearchBuilder(MockApplicationPackage.fromSearchDefinitionDirectory(dir),
+                                                  rankProfileRegistry,
+                                                  queryProfileRegistry);
         for (Iterator<Path> i = Files.list(new File(dir).toPath()).filter(p -> p.getFileName().toString().endsWith(".sd")).iterator(); i.hasNext(); ) {
             builder.importFile(i.next());
         }
@@ -353,7 +373,7 @@ public class SearchBuilder {
     }
 
     // TODO: The build methods below just call the create methods above - remove
-    
+
     /**
      * Convenience factory method to import and build a {@link Search} object from a file. Only for testing.
      *
@@ -363,7 +383,7 @@ public class SearchBuilder {
      * @throws ParseException Thrown if there was a problem parsing the file content.
      */
     public static Search buildFromFile(String fileName) throws IOException, ParseException {
-        return buildFromFile(fileName, new BaseDeployLogger(), new RankProfileRegistry());
+        return buildFromFile(fileName, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
     /**
@@ -375,9 +395,11 @@ public class SearchBuilder {
      * @throws IOException    Thrown if there was a problem reading the file.
      * @throws ParseException Thrown if there was a problem parsing the file content.
      */
-    public static Search buildFromFile(String fileName, RankProfileRegistry rankProfileRegistry)
+    public static Search buildFromFile(String fileName,
+                                       RankProfileRegistry rankProfileRegistry,
+                                       QueryProfileRegistry queryProfileRegistry)
             throws IOException, ParseException {
-        return buildFromFile(fileName, new BaseDeployLogger(), rankProfileRegistry);
+        return buildFromFile(fileName, new BaseDeployLogger(), rankProfileRegistry, queryProfileRegistry);
     }
 
     /**
@@ -390,20 +412,25 @@ public class SearchBuilder {
      * @throws IOException    Thrown if there was a problem reading the file.
      * @throws ParseException Thrown if there was a problem parsing the file content.
      */
-    public static Search buildFromFile(String fileName, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry)
+    public static Search buildFromFile(String fileName,
+                                       DeployLogger deployLogger,
+                                       RankProfileRegistry rankProfileRegistry,
+                                       QueryProfileRegistry queryProfileRegistry)
             throws IOException, ParseException {
-        return createFromFile(fileName, deployLogger, rankProfileRegistry).getSearch();
+        return createFromFile(fileName, deployLogger, rankProfileRegistry, queryProfileRegistry).getSearch();
     }
-    
+
     /**
      * Convenience factory method to import and build a {@link Search} object from a raw object.
      *
-     * @param rawSearch The raw object to build from.
-     * @return The built {@link SearchBuilder} object.
+     * @param rawSearch the raw object to build from.
+     * @return the built {@link SearchBuilder} object.
      * @see #importRawSearch(Search)
      */
-    public static SearchBuilder createFromRawSearch(Search rawSearch, RankProfileRegistry rankProfileRegistry) {
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+    public static SearchBuilder createFromRawSearch(Search rawSearch,
+                                                    RankProfileRegistry rankProfileRegistry,
+                                                    QueryProfileRegistry queryProfileRegistry) {
+        SearchBuilder builder = new SearchBuilder(rankProfileRegistry, queryProfileRegistry);
         builder.importRawSearch(rawSearch);
         builder.build();
         return builder;
@@ -416,11 +443,18 @@ public class SearchBuilder {
      * @return The built {@link Search} object.
      * @see #importRawSearch(Search)
      */
-    public static Search buildFromRawSearch(Search rawSearch, RankProfileRegistry rankProfileRegistry) {
-        return createFromRawSearch(rawSearch, rankProfileRegistry).getSearch();
+    public static Search buildFromRawSearch(Search rawSearch,
+                                            RankProfileRegistry rankProfileRegistry,
+                                            QueryProfileRegistry queryProfileRegistry) {
+        return createFromRawSearch(rawSearch, rankProfileRegistry, queryProfileRegistry).getSearch();
     }
 
     public RankProfileRegistry getRankProfileRegistry() {
         return rankProfileRegistry;
     }
+
+    public QueryProfileRegistry getQueryProfileRegistry() {
+        return queryProfileRegistry;
+    }
+
 }

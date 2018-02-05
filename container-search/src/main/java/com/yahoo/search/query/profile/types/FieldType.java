@@ -6,6 +6,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.yql.YqlQuery;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 
 /**
  * Superclass of query type field types.
@@ -41,6 +42,12 @@ public abstract class FieldType {
 
     /** Converts the given type to an instance of this type, if possible. Returns null if not possible. */
     public abstract Object convertFrom(Object o, CompiledQueryProfileRegistry registry);
+
+    /**
+     * Returns this type as a tensor type: The true tensor type is this is a tensor field an an empty type -
+     * interpreted as a double in numerical contexts - otherwise
+     */
+    public TensorType asTensorType() { return TensorType.empty; }
 
     /**
      * Returns the field type for a given string name.

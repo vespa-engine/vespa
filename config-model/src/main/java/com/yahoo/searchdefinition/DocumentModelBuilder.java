@@ -43,20 +43,18 @@ import static java.util.stream.Collectors.toSet;
  */
 public class DocumentModelBuilder {
 
-    public static class RetryLaterException extends IllegalArgumentException {
-        public RetryLaterException(String message) {
-            super(message);
-        }
-    }
     private DocumentModel model;
     private final Map<NewDocumentType, List<SDDocumentType>> scratchInheritsMap = new HashMap<>();
+
     public DocumentModelBuilder(DocumentModel model) {
         this.model = model;
         model.getDocumentManager().add(VespaDocumentType.INSTANCE);
     }
+
     public boolean valid() {
         return scratchInheritsMap.isEmpty();
     }
+
     public void addToModel(Collection<Search> searchList) {
         List<SDDocumentType> docList = new LinkedList<>();
         for (Search search : searchList) {
@@ -65,7 +63,8 @@ public class DocumentModelBuilder {
         docList = sortDocumentTypes(docList);
         addDocumentTypes(docList);
         for (Collection<Search> toAdd = tryAdd(searchList);
-             !toAdd.isEmpty() && (toAdd.size() < searchList.size()); toAdd = tryAdd(searchList)) {
+             ! toAdd.isEmpty() && (toAdd.size() < searchList.size());
+             toAdd = tryAdd(searchList)) {
             searchList = toAdd;
         }
     }
@@ -126,6 +125,7 @@ public class DocumentModelBuilder {
         }
         return left;
     }
+
     public void addToModel(Search search) {
         // Then we add the search specific stuff
         SearchDef searchDef = new SearchDef(search.getName());
@@ -133,9 +133,9 @@ public class DocumentModelBuilder {
         for (Field f : search.getDocument().fieldSet()) {
             addSearchField((SDField) f, searchDef);
         }
-        for(SDField field : search.allConcreteFields()) {
-            for(Attribute attribute : field.getAttributes().values()) {
-                if (!searchDef.getFields().containsKey(attribute.getName())) {
+        for (SDField field : search.allConcreteFields()) {
+            for (Attribute attribute : field.getAttributes().values()) {
+                if ( ! searchDef.getFields().containsKey(attribute.getName())) {
                     searchDef.add(new SearchField(new Field(attribute.getName(), field), !field.getIndices().isEmpty(), true));
                 }
             }
@@ -146,14 +146,15 @@ public class DocumentModelBuilder {
         }
         model.getSearchManager().add(searchDef);
     }
+
     private static void addSearchFields(Collection<SDField> fields, SearchDef searchDef) {
         for (SDField field : fields) {
             addSearchField(field, searchDef);
         }
     }
-    private static void addSearchField(SDField field, SearchDef searchDef) {
 
-        SearchField searchField = 
+    private static void addSearchField(SDField field, SearchDef searchDef) {
+        SearchField searchField =
                 new SearchField(field,
                                 field.getIndices().containsKey(field.getName()) && field.getIndices().get(field.getName()).getType().equals(Index.Type.VESPA), 
                                 field.getAttributes().containsKey(field.getName()));
@@ -453,4 +454,11 @@ public class DocumentModelBuilder {
         }
         return false;
     }
+
+    public static class RetryLaterException extends IllegalArgumentException {
+        public RetryLaterException(String message) {
+            super(message);
+        }
+    }
+
 }

@@ -47,8 +47,7 @@ import java.util.Set;
 /**
  * Contains various state during deploy that should be available in all builders of a {@link com.yahoo.config.model.ConfigModel}
  *
- * @author lulf
- * @since 5.8
+ * @author Ulf Lilleengen
  */
 public class DeployState implements ConfigDefinitionStore {
 
@@ -211,9 +210,9 @@ public class DeployState implements ConfigDefinitionStore {
     public QueryProfiles getQueryProfiles() { return queryProfiles; }
 
     public SemanticRules getSemanticRules() { return semanticRules; }
-    
+
     public Version getWantedNodeVespaVersion() { return wantedNodeVespaVersion; }
-    
+
     public Instant now() { return now; }
 
     public boolean disableFiledistributor() { return disableFiledistributor; }
@@ -288,7 +287,7 @@ public class DeployState implements ConfigDefinitionStore {
             this.now = now;
             return this;
         }
-        
+
         public Builder wantedNodeVespaVersion(Version version) {
             this.wantedNodeVespaVersion = version;
             return this;
@@ -309,10 +308,12 @@ public class DeployState implements ConfigDefinitionStore {
                                    zone, queryProfiles, semanticRules, now, wantedNodeVespaVersion, disableFiledistributor);
         }
 
-        private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry, DeployLogger logger, QueryProfiles queryProfiles) {
+        private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
+                                                              DeployLogger logger,
+                                                              QueryProfiles queryProfiles) {
             Collection<NamedReader> readers = applicationPackage.getSearchDefinitions();
             Map<String, String> names = new LinkedHashMap<>();
-            SearchBuilder builder = new SearchBuilder(applicationPackage, rankProfileRegistry);
+            SearchBuilder builder = new SearchBuilder(applicationPackage, rankProfileRegistry, queryProfiles.getRegistry());
             for (NamedReader reader : readers) {
                 try {
                     String readerName = reader.getName();
@@ -321,7 +322,8 @@ public class DeployState implements ConfigDefinitionStore {
                     names.put(searchName, sdName);
                     if (!sdName.equals(searchName)) {
                         throw new IllegalArgumentException("Search definition file name ('" + sdName + "') and name of " +
-                                "search element ('" + searchName + "') are not equal for file '" + readerName + "'");
+                                                           "search element ('" + searchName +
+                                                           "') are not equal for file '" + readerName + "'");
                     }
                 } catch (ParseException e) {
                     throw new IllegalArgumentException("Could not parse search definition file '" + getSearchDefinitionRelativePath(reader.getName()) + "': " + e.getMessage(), e);

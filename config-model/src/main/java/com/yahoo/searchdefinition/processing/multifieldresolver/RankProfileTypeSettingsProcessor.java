@@ -6,6 +6,7 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.TensorFieldType;
+import com.yahoo.searchdefinition.FeatureNames;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
@@ -17,8 +18,6 @@ import com.yahoo.searchdefinition.processing.Processor;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.Optional;
 
 /**
@@ -30,8 +29,6 @@ import java.util.Optional;
  */
 public class RankProfileTypeSettingsProcessor extends Processor {
 
-    private static final Pattern queryFeaturePattern = Pattern.compile("query\\((\\w+)\\)$");
-
     public RankProfileTypeSettingsProcessor(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
     }
@@ -41,7 +38,6 @@ public class RankProfileTypeSettingsProcessor extends Processor {
         processAttributeFields();
         processImportedFields();
         processQueryProfileTypes();
-
     }
 
     private void processAttributeFields() {
@@ -54,18 +50,18 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void processImportedFields() {
-	Optional<ImportedFields> importedFields = search.importedFields();
-	if (importedFields.isPresent()) {
-	    importedFields.get().fields().forEach((fieldName, field) -> processImportedField(field));
-	}
+        Optional<ImportedFields> importedFields = search.importedFields();
+        if (importedFields.isPresent()) {
+            importedFields.get().fields().forEach((fieldName, field) -> processImportedField(field));
+        }
     }
 
     private void processImportedField(ImportedField field) {
-	SDField targetField = field.targetField();
-	Attribute attribute = targetField.getAttributes().get(targetField.getName());
-	if (attribute != null && attribute.tensorType().isPresent()) {
-	    addAttributeTypeToRankProfiles(field.fieldName(), attribute.tensorType().get().toString());
-	}
+        SDField targetField = field.targetField();
+        Attribute attribute = targetField.getAttributes().get(targetField.getName());
+        if (attribute != null && attribute.tensorType().isPresent()) {
+            addAttributeTypeToRankProfiles(field.fieldName(), attribute.tensorType().get().toString());
+        }
     }
 
     private void addAttributeTypeToRankProfiles(String attributeName, String attributeType) {
@@ -87,11 +83,8 @@ public class RankProfileTypeSettingsProcessor extends Processor {
         FieldType fieldType = fieldDescription.getType();
         if (fieldType instanceof TensorFieldType) {
             TensorFieldType tensorFieldType = (TensorFieldType)fieldType;
-            Matcher matcher = queryFeaturePattern.matcher(fieldName);
-            if (matcher.matches()) {
-                String queryFeature = matcher.group(1);
-                addQueryFeatureTypeToRankProfiles(queryFeature, tensorFieldType.type().toString());
-            }
+            FeatureNames.argumentOf(fieldName).ifPresent(argument ->
+                addQueryFeatureTypeToRankProfiles(argument, tensorFieldType.asTensorType().toString()));
         }
     }
 
