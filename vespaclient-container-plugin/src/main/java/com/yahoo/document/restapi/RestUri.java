@@ -34,14 +34,15 @@ public class RestUri {
         URL_PARSING(-6),
         INVALID_CREATE_VALUE(-7),
         TOO_MANY_PARALLEL_REQUESTS(-8),
-        MISSING_CLUSTER(-9), UNKNOWN_BUCKET_SPACE(-9), INTERNAL_EXCEPTION(-9),
+        MISSING_CLUSTER(-9), INTERNAL_EXCEPTION(-9),
         DOCUMENT_CONDITION_NOT_MET(-10),
         DOCUMENT_EXCPETION(-11),
         PARSER_ERROR(-11),
         GROUP_AND_EXPRESSION_ERROR(-12),
         TIME_OUT(-13),
         INTERRUPTED(-14),
-        UNSPECIFIED(-15);
+        UNSPECIFIED(-15),
+        UNKNOWN_BUCKET_SPACE(-16);
 
         public final long value;
         apiErrorCodes(long value) {

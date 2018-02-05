@@ -212,7 +212,7 @@ public class OperationHandlerImplTest {
             String errorMsg = renderRestApiExceptionAsString(e);
             // FIXME isn't this really more of a case of unknown document type..?
             assertThat(errorMsg, is("{\"errors\":[{\"description\":" +
-                    "\"UNKNOWN_BUCKET_SPACE Document type 'document-type' in cluster 'foo' is not mapped to a known bucket space\",\"id\":-9}]}"));
+                    "\"UNKNOWN_BUCKET_SPACE Document type 'document-type' in cluster 'foo' is not mapped to a known bucket space\",\"id\":-16}]}"));
         }
     }
 
