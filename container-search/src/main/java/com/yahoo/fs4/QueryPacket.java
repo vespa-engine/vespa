@@ -123,7 +123,8 @@ public class QueryPacket extends Packet {
         ignoreableOffset = buffer.position() - relativeZero;
         IntegerCompressor.putCompressedPositiveNumber(getOffset(), buffer);
         IntegerCompressor.putCompressedPositiveNumber(getHits(), buffer);
-        buffer.putInt((int)query.getTimeLeft());
+        // store the cutoff time in the tag object, and then do a similar Math.max there
+        buffer.putInt(Math.max(50, (int)query.getTimeLeft()));
         ignoreableSize = buffer.position() - relativeZero - ignoreableOffset;
         buffer.putInt(getFlagInt());
         int startOfFieldToSave = buffer.position();
