@@ -128,7 +128,8 @@ public class FileDownloaderTest {
             File subdir = new File(tempPath.toFile(), "subdir");
             File fooFile = new File(subdir, "foo");
             IOUtils.writeFile(fooFile, "foo", false);
-            File barFile = new File(subdir, "bar");
+            // Check that long file names work. (need to do TarArchiveOutPutStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX)) for it to work);
+            File barFile = new File(subdir, "really-long-filename-over-100-bytes-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
             IOUtils.writeFile(barFile, "bar", false);
 
             File tarFile = CompressedFileReference.compress(tempPath.toFile(), Arrays.asList(fooFile, barFile), new File(tempPath.toFile(), filename));
