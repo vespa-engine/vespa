@@ -27,7 +27,7 @@ QueryWrapper::PhraseList::findPhrase(QueryTerm * term, size_t & index)
             }
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 QueryWrapper::QueryWrapper(Query & query) :

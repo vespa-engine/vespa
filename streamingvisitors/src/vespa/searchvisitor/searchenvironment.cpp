@@ -65,7 +65,7 @@ SearchEnvironment::Env &
 SearchEnvironment::getEnv(const vespalib::string & searchCluster)
 {
     config::ConfigUri searchClusterUri(_configUri.createWithNewId(searchCluster));
-    if (_localEnvMap == NULL) {
+    if (_localEnvMap == nullptr) {
         EnvMapUP envMap = std::make_unique<EnvMap>();
         _localEnvMap = envMap.get();
         vespalib::LockGuard guard(_lock);

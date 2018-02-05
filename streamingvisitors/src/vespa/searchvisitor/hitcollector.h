@@ -92,7 +92,7 @@ public:
     /**
      * Adds a hit to this hit collector.
      * Make sure that the hits are added in increasing local docId order.
-     * If you add a NULL document you should not use getDocSum() or fillSearchResult(),
+     * If you add a nullptr document you should not use getDocSum() or fillSearchResult(),
      * as these functions expect valid documents.
      *
      * @param doc   The document that is a hit. Must be kept alive on the outside.
@@ -104,7 +104,7 @@ public:
     /**
      * Adds a hit to this hit collector.
      * Make sure that the hits are added in increasing local docId order.
-     * If you add a NULL document you should not use getDocSum() or fillSearchResult(),
+     * If you add a nullptr document you should not use getDocSum() or fillSearchResult(),
      * as these functions expect valid documents.
      *
      * @param doc   The document that is a hit. Must be kept alive on the outside.

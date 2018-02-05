@@ -5,6 +5,7 @@
 #include <vespa/searchlib/fef/functiontablefactory.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exception.h>
+#include <vespa/vsm/common/document.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.rankmanager");
@@ -18,6 +19,7 @@ using search::fef::Properties;
 using search::fef::RankSetup;
 using vsm::VsmfieldsHandle;
 using vsm::VSMAdapter;
+using vsm::FieldIdTList;
 
 namespace storage {
 
@@ -49,33 +51,50 @@ RankManager::Snapshot::detectFields(const VsmfieldsHandle & fields)
     }
 }
 
+namespace {
+
+FieldIdTList
+buildFieldSet(const VsmfieldsConfig::Documenttype::Index & ci, const search::fef::IIndexEnvironment & indexEnv,
+              const VsmfieldsConfig::Documenttype::IndexVector & indexes)
+{
+    LOG(spam, "Index %s with %zd fields", ci.name.c_str(), ci.field.size());
+    FieldIdTList ifm;
+    for (const VsmfieldsConfig::Documenttype::Index::Field & cf : ci.field) {
+        LOG(spam, "Parsing field %s", cf.name.c_str());
+        auto foundIndex = std::find_if(indexes.begin(), indexes.end(),
+                                       [&cf](const auto & v) { return v.name == cf.name;});
+        if ((foundIndex != indexes.end()) && (cf.name != ci.name)) {
+            FieldIdTList sub = buildFieldSet(*foundIndex, indexEnv, indexes);
+            ifm.insert(ifm.end(), sub.begin(), sub.end());
+        } else {
+            const FieldInfo * info = indexEnv.getFieldByName(cf.name);
+            if (info != nullptr) {
+                LOG(debug, "Adding field '%s' to view in index '%s' (field id '%u')",
+                    cf.name.c_str(), ci.name.c_str(), info->id());
+                ifm.push_back(info->id());
+            } else {
+                LOG(warning, "Field '%s' is not registred in the index environment. "
+                        "Cannot add to index view.", cf.name.c_str());
+            }
+        }
+    }
+    return ifm;
+}
+
+}
+    
 void
 RankManager::Snapshot::buildFieldMappings(const VsmfieldsHandle & fields)
 {
-    for (uint32_t i = 0; i < fields->documenttype.size(); ++i) {
-        const char * dname = fields->documenttype[i].name.c_str();
-        LOG(debug, "Looking through indexes for documenttype '%s'", dname);
-        for (uint32_t j = 0; j < fields->documenttype[i].index.size(); ++j) {
-            const char * iname = fields->documenttype[i].index[j].name.c_str();
-            LOG(debug, "Looking through fields for index '%s'", iname);
-            View view;
-            for (uint32_t k = 0; k < fields->documenttype[i].index[j].field.size(); ++k) {
-                const char * fname = fields->documenttype[i].index[j].field[k].name.c_str();
-                const FieldInfo * info = _protoEnv.getFieldByName(vespalib::string(fname));
-                if (info != NULL) {
-                    LOG(debug, "Adding field '%s' to view in index '%s' (field id '%u')",
-                        fname, iname, info->id());
-                    view.push_back(info->id());
-                } else {
-                    LOG(warning, "Field '%s' is not registred in the index environment. "
-                        "Cannot add to index view.", fname);
-                }
-            }
-            if (_views.find(iname) == _views.end()) {
+    for(const VsmfieldsConfig::Documenttype & di : fields->documenttype) {
+        LOG(debug, "Looking through indexes for documenttype '%s'", di.name.c_str());
+        for(const VsmfieldsConfig::Documenttype::Index & ci : di.index) {
+            FieldIdTList view = buildFieldSet(ci, _protoEnv, di.index);
+            if (_views.find(ci.name) == _views.end()) {
                 std::sort(view.begin(), view.end()); // lowest field id first
-                _views[iname] = view;
+                _views[ci.name] = view;
             } else {
-                LOG(warning, "We already have a view for index '%s'. Drop the new view.", iname);
+                LOG(warning, "We already have a view for index '%s'. Drop the new view.", ci.name.c_str());
             }
         }
     }
@@ -129,6 +148,8 @@ RankManager::Snapshot::Snapshot() :
     _tableManager.addFactory(search::fef::ITableFactory::SP(new search::fef::FunctionTableFactory(256)));
 }
 
+RankManager::Snapshot::~Snapshot() = default;
+    
 bool
 RankManager::Snapshot::setup(const RankManager & rm, const std::vector<NamedPropertySet> & properties)
 {
@@ -186,16 +207,12 @@ RankManager::RankManager(VSMAdapter * const vsmAdapter) :
     search::features::setup_search_features(_blueprintFactory);
 }
 
-RankManager::~RankManager()
-{
-}
+RankManager::~RankManager() = default;
 
 void
 RankManager::configure(const vsm::VSMConfigSnapshot & snap)
 {
     notify(snap);
 }
-
-
-} // namespace storage
-
+    
+}

@@ -60,7 +60,7 @@ private:
         AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr) :
             _field(fid),
             _ascending(true),
-            _converter(NULL),
+            _converter(nullptr),
             _attr(std::move(attr))
         { }
         /**
@@ -135,7 +135,7 @@ private:
     public:
         RankController();
         ~RankController();
-        bool valid() const { return _rankProcessor.get() != NULL; }
+        bool valid() const { return _rankProcessor.get() != nullptr; }
         void setRankProfile(const vespalib::string &rankProfile) { _rankProfile = rankProfile; }
         const vespalib::string &getRankProfile() const { return _rankProfile; }
         void setRankManagerSnapshot(const RankManager::Snapshot::SP & snapshot) { _rankManagerSnapshot = snapshot; }
