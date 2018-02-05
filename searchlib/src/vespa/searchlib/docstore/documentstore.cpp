@@ -88,6 +88,8 @@ public:
      * value along with compression config.
      */
     void set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &compression);
+    // Keep buffer uncompressed
+    void set(vespalib::DataBuffer &&buf, ssize_t len);
 
     /**
      * Decompress value into temporary buffer and deserialize document from
@@ -124,6 +126,12 @@ private:
     IDataStore &_backingStore;
     CompressionConfig _compression;
 };
+
+
+void
+Value::set(vespalib::DataBuffer &&buf, ssize_t len) {
+    set(std::move(buf), len, CompressionConfig());
+}
 
 void
 Value::set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &compression) {
@@ -436,7 +444,7 @@ DocumentStore::WrapVisitor<Visitor>::visit(uint32_t lid,
     buf.writeBytes(buffer, sz);
     ssize_t len = sz;
     if (len > 0) {
-        value.set(std::move(buf), len, _compression);
+        value.set(std::move(buf), len);
     }
     if (! value.empty()) {
         document::Document::UP doc(value.deserializeDocument(_repo)); 
