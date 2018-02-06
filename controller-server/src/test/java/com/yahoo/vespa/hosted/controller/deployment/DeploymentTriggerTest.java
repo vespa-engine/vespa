@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import org.junit.Test;
@@ -20,6 +21,9 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,7 +49,7 @@ public class DeploymentTriggerTest {
         tester.upgrader().maintain();
 
         // Deploy completely once
-        tester.notifyJobCompletion(DeploymentJobs.JobType.component, app, true);
+        tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
         tester.deployAndNotify(app, applicationPackage, true, JobType.productionUsWest1);
@@ -89,7 +93,7 @@ public class DeploymentTriggerTest {
                 .build();
 
         // Component job finishes
-        tester.notifyJobCompletion(JobType.component, application, true);
+        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
 
         // Application is deployed to all test environments and declared zones
         tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
@@ -117,7 +121,7 @@ public class DeploymentTriggerTest {
                 .build();
 
         // Component job finishes
-        tester.notifyJobCompletion(JobType.component, application, true);
+        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
 
         // Test jobs pass
         tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
@@ -141,7 +145,7 @@ public class DeploymentTriggerTest {
 
         // us-west-1 completes
         tester.deploy(JobType.productionUsWest1, application, applicationPackage);
-        tester.notifyJobCompletion(JobType.productionUsWest1, application, true);
+        tester.jobCompletion(JobType.productionUsWest1).application(application).submit();
 
         // Delayed trigger does nothing as not enough time has passed after us-west-1 completion
         tester.deploymentTrigger().triggerReadyJobs();
@@ -172,7 +176,7 @@ public class DeploymentTriggerTest {
                 .build();
 
         // Component job finishes
-        tester.notifyJobCompletion(JobType.component, application, true);
+        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
 
         // Test jobs pass
         tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
@@ -189,11 +193,11 @@ public class DeploymentTriggerTest {
         tester.buildSystem().takeJobsToRun();
 
         tester.deploy(JobType.productionUsWest1, application, applicationPackage, false);
-        tester.notifyJobCompletion(JobType.productionUsWest1, application, true);
+        tester.jobCompletion(JobType.productionUsWest1).application(application).submit();
         assertTrue("No more jobs triggered at this time", tester.buildSystem().jobs().isEmpty());
 
         tester.deploy(JobType.productionUsEast3, application, applicationPackage, false);
-        tester.notifyJobCompletion(JobType.productionUsEast3, application, true);
+        tester.jobCompletion(JobType.productionUsEast3).application(application).submit();
 
         // Last region completes
         assertEquals(1, tester.buildSystem().jobs().size());
@@ -210,7 +214,7 @@ public class DeploymentTriggerTest {
                 .build();
 
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.component, app, true);
+        tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
 
         // Test environments pass
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
@@ -218,13 +222,13 @@ public class DeploymentTriggerTest {
 
         // Last declared job completes first
         tester.deploy(DeploymentJobs.JobType.productionUsWest1, app, applicationPackage);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.productionUsWest1, app, true);
+        tester.jobCompletion(DeploymentJobs.JobType.productionUsWest1).application(app).submit();
         assertTrue("Change is present as not all jobs are complete",
                    tester.applications().require(app.id()).change().isPresent());
 
         // All jobs complete
         tester.deploy(DeploymentJobs.JobType.productionUsEast3, app, applicationPackage);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.productionUsEast3, app, true);
+        tester.jobCompletion(JobType.productionUsEast3).application(app).submit();
         assertFalse("Change has been deployed",
                     tester.applications().require(app.id()).change().isPresent());
     }
@@ -250,7 +254,7 @@ public class DeploymentTriggerTest {
                 .build();
 
         // Component job finishes
-        tester.notifyJobCompletion(JobType.component, application, true);
+        tester.jobCompletion(component).application(application).uploadArtifact(newApplicationPackage).submit();
 
         // Application is deployed to all test environments and declared zones
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.systemTest);
@@ -299,8 +303,15 @@ public class DeploymentTriggerTest {
                 "  }\n" +
                 "}\n";
         ApplicationPackage changedApplication = applicationPackageBuilder.searchDefinition(searchDefinition).build();
-
-        tester.deployTestOnly(app, changedApplication);
+        tester.jobCompletion(component)
+              .application(app)
+              .buildNumber(43)
+              .sourceRevision(new SourceRevision("repository1", "master", "cafed00d"))
+              .uploadArtifact(changedApplication)
+              .submit();
+        assertTrue(tester.applications().require(app.id()).change().isPresent());
+        tester.deployAndNotify(app, changedApplication, true, systemTest);
+        tester.deployAndNotify(app, changedApplication, true, stagingTest);
 
         readyJobsTrigger.run();
         assertEquals(0, tester.buildSystem().jobs().size());
@@ -339,7 +350,7 @@ public class DeploymentTriggerTest {
                 .build();
 
         // Component job finishes
-        tester.notifyJobCompletion(JobType.component, application, true);
+        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
 
         // Application is deployed to all test environments and declared zones
         tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
@@ -347,7 +358,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionCorpUsEast1);
 
         // Extra notification for last job
-        tester.notifyJobCompletion(JobType.productionCorpUsEast1, application, true);
+        tester.jobCompletion(JobType.productionCorpUsEast1).application(application).submit();
         assertFalse("Change has been deployed",
                     tester.applications().require(application.id()).change().isPresent());
         assertTrue("All jobs consumed", buildSystem.jobs().isEmpty());

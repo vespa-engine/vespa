@@ -19,6 +19,10 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -105,11 +109,10 @@ public class UpgraderTest {
         assertEquals("Version broken, but Canaries should keep trying", 2, tester.buildSystem().jobs().size());
 
         // Exhaust canary retries.
-        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, canary1, false);
+        tester.jobCompletion(systemTest).application(canary1).unsuccessful().submit();
         tester.clock().advance(Duration.ofHours(1));
         tester.deployAndNotify(canary0, DeploymentTester.applicationPackage("canary"), false, DeploymentJobs.JobType.stagingTest);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, canary1, false);
-        //tester.deployAndNotify(canary1, DeploymentTester.applicationPackage("canary"), false, DeploymentJobs.JobType.stagingTest);
+        tester.jobCompletion(systemTest).application(canary1).unsuccessful().submit();
 
         // --- A new version is released - which repairs the Canary app and fails a default
         version = Version.fromString("5.3");
@@ -145,7 +148,7 @@ public class UpgraderTest {
 
         // Finish previous run, with exhausted retry.
         tester.clock().advance(Duration.ofHours(1));
-        tester.notifyJobCompletion(DeploymentJobs.JobType.stagingTest, default0, false);
+        tester.jobCompletion(stagingTest).application(default0).unsuccessful().submit();
 
         // --- Failing application is repaired by changing the application, causing confidence to move above 'high' threshold
         // Deploy application change
@@ -196,7 +199,12 @@ public class UpgraderTest {
         assertEquals(version54, tester.application(default4.id()).change().platform().get());
         tester.completeUpgrade(default1, version54, "default");
         tester.completeUpgrade(default2, version54, "default");
+
         tester.completeUpgradeWithError(default3, version54, "default", DeploymentJobs.JobType.stagingTest);
+        // Exhaust immediate retries for upgrade
+        tester.clock().advance(Duration.ofHours(1));
+        tester.jobCompletion(stagingTest).application(default3).unsuccessful().submit();
+
         tester.completeUpgradeWithError(default4, version54, "default", DeploymentJobs.JobType.productionUsWest1);
         // State: Default applications started upgrading to 5.5
         tester.upgrader().maintain();
@@ -209,7 +217,7 @@ public class UpgraderTest {
 
         // Finish running job, without retry.
         tester.clock().advance(Duration.ofHours(1));
-        tester.notifyJobCompletion(DeploymentJobs.JobType.productionUsWest1, default3, false);
+        tester.jobCompletion(DeploymentJobs.JobType.productionUsWest1).application(default3).unsuccessful().submit();
 
         tester.upgrader().maintain();
         assertEquals("Upgrade of defaults are scheduled on 5.4 instead, since 5.5 broken: " +
@@ -270,10 +278,10 @@ public class UpgraderTest {
         assertEquals("Canaries done: Should upgrade defaults", 10, tester.buildSystem().jobs().size());
 
         tester.completeUpgrade(default0, version, "default");
-        tester.completeUpgradeWithError(default1, version, "default", DeploymentJobs.JobType.systemTest);
-        tester.completeUpgradeWithError(default2, version, "default", DeploymentJobs.JobType.systemTest);
-        tester.completeUpgradeWithError(default3, version, "default", DeploymentJobs.JobType.systemTest);
-        tester.completeUpgradeWithError(default4, version, "default", DeploymentJobs.JobType.systemTest);
+        tester.completeUpgradeWithError(default1, version, "default", systemTest);
+        tester.completeUpgradeWithError(default2, version, "default", systemTest);
+        tester.completeUpgradeWithError(default3, version, "default", systemTest);
+        tester.completeUpgradeWithError(default4, version, "default", systemTest);
 
         // > 40% and at least 4 failed - version is broken
         tester.updateVersionStatus(version);
@@ -294,8 +302,8 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
 
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.component, app, true);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
 
@@ -310,13 +318,13 @@ public class UpgraderTest {
         tester.upgrader().maintain();
 
         // system-test completes successfully
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
 
         // staging-test fails multiple times, exhausts retries and failure is recorded
         tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.stagingTest);
         tester.buildSystem().takeJobsToRun();
         tester.clock().advance(Duration.ofMinutes(10));
-        tester.notifyJobCompletion(DeploymentJobs.JobType.stagingTest, app, false);
+        tester.jobCompletion(stagingTest).application(app).unsuccessful().submit();
         assertTrue("Retries exhausted", tester.buildSystem().jobs().isEmpty());
         assertTrue("Failure is recorded", tester.application(app.id()).deploymentJobs().hasFailures());
         assertTrue("Application has pending change", tester.application(app.id()).change().isPresent());
@@ -369,17 +377,17 @@ public class UpgraderTest {
         assertEquals("Upgrade scheduled for remaining apps", 5, tester.buildSystem().jobs().size());
 
         // 4/5 applications fail and lowers confidence
-        tester.completeUpgradeWithError(default0, version, "default", DeploymentJobs.JobType.systemTest);
-        tester.completeUpgradeWithError(default1, version, "default", DeploymentJobs.JobType.systemTest);
-        tester.completeUpgradeWithError(default2, version, "default", DeploymentJobs.JobType.systemTest);
-        tester.completeUpgradeWithError(default3, version, "default", DeploymentJobs.JobType.systemTest);
+        tester.completeUpgradeWithError(default0, version, "default", systemTest);
+        tester.completeUpgradeWithError(default1, version, "default", systemTest);
+        tester.completeUpgradeWithError(default2, version, "default", systemTest);
+        tester.completeUpgradeWithError(default3, version, "default", systemTest);
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
 
         // 5th app passes system-test, but does not trigger next job as upgrade is cancelled
         assertFalse("No change present", tester.applications().require(default4.id()).change().isPresent());
-        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default4, true);
+        tester.jobCompletion(systemTest).application(default4).submit();
         assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
     }
 
@@ -457,14 +465,14 @@ public class UpgraderTest {
 
         tester.deploymentTrigger().triggerReadyJobs();
         assertEquals("Testing of 5.1 for 5 applications is triggered", 5, tester.buildSystem().jobs().size());
-        assertEquals(DeploymentJobs.JobType.systemTest.jobName(), tester.buildSystem().jobs().get(0).jobName());
-        assertEquals(DeploymentJobs.JobType.systemTest.jobName(), tester.buildSystem().jobs().get(1).jobName());
-        assertEquals(DeploymentJobs.JobType.systemTest.jobName(), tester.buildSystem().jobs().get(2).jobName());
-        assertEquals(DeploymentJobs.JobType.systemTest.jobName(), tester.buildSystem().jobs().get(3).jobName());
-        assertEquals(DeploymentJobs.JobType.systemTest.jobName(), tester.buildSystem().jobs().get(4).jobName());
+        assertEquals(systemTest.jobName(), tester.buildSystem().jobs().get(0).jobName());
+        assertEquals(systemTest.jobName(), tester.buildSystem().jobs().get(1).jobName());
+        assertEquals(systemTest.jobName(), tester.buildSystem().jobs().get(2).jobName());
+        assertEquals(systemTest.jobName(), tester.buildSystem().jobs().get(3).jobName());
+        assertEquals(systemTest.jobName(), tester.buildSystem().jobs().get(4).jobName());
 
         // The tester code for completing upgrades does not handle this scenario, so we trigger each step manually (for one app)
-        tester.deployAndNotify(tester.application("default0"), "default", true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(tester.application("default0"), "default", true, systemTest);
         tester.deployAndNotify(tester.application("default0"), "default", true, DeploymentJobs.JobType.stagingTest);
         // prod zone on 5.2 (usWest1) is skipped, but we still trigger the next zone from triggerReadyJobs:
         tester.clock().advance(Duration.ofHours(13)); // Currently we don't cancel running jobs, so this is necessary to allow a new triggering below
@@ -484,14 +492,17 @@ public class UpgraderTest {
         Version version = Version.fromString("5.0");
         tester.updateVersionStatus(version);
 
+        ApplicationPackage canaryPolicy = DeploymentTester.applicationPackage("canary");
+        ApplicationPackage defaultPolicy = DeploymentTester.applicationPackage("default");
+
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
-        Application default0 = tester.createAndDeploy("default0", 3, "default");
-        Application default1 = tester.createAndDeploy("default1", 4, "default");
-        Application default2 = tester.createAndDeploy("default2", 5, "default");
-        Application default3 = tester.createAndDeploy("default3", 6, "default");
-        Application default4 = tester.createAndDeploy("default4", 7, "default");
+        Application canary0 = tester.createAndDeploy("canary0", 1, canaryPolicy);
+        Application canary1 = tester.createAndDeploy("canary1", 2, canaryPolicy);
+        Application default0 = tester.createAndDeploy("default0", 3, defaultPolicy);
+        Application default1 = tester.createAndDeploy("default1", 4, defaultPolicy);
+        Application default2 = tester.createAndDeploy("default2", 5, defaultPolicy);
+        Application default3 = tester.createAndDeploy("default3", 6, defaultPolicy);
+        Application default4 = tester.createAndDeploy("default4", 7, defaultPolicy);
 
         // New version is released
         version = Version.fromString("5.1");
@@ -517,12 +528,12 @@ public class UpgraderTest {
 
         // Multiple application changes are triggered and fail, but does not affect version confidence as upgrade has
         // completed successfully
-        tester.notifyJobCompletion(DeploymentJobs.JobType.component, default0, false);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.component, default1, false);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.component, default2, true);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.component, default3, true);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default2, false);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default3, false);
+        tester.jobCompletion(component).application(default0).buildNumber(43).uploadArtifact(canaryPolicy).unsuccessful().submit();
+        tester.jobCompletion(component).application(default1).buildNumber(43).uploadArtifact(canaryPolicy).unsuccessful().submit();
+        tester.jobCompletion(component).application(default2).buildNumber(43).uploadArtifact(defaultPolicy).submit();
+        tester.jobCompletion(component).application(default3).buildNumber(43).uploadArtifact(defaultPolicy).submit();
+        tester.jobCompletion(component).application(default2).buildNumber(44).uploadArtifact(canaryPolicy).unsuccessful().submit();
+        tester.jobCompletion(component).application(default3).buildNumber(44).uploadArtifact(canaryPolicy).unsuccessful().submit();
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
     }
@@ -560,7 +571,7 @@ public class UpgraderTest {
         tester.clock().advance(Duration.ofHours(1));
         tester.upgrader().maintain();
         assertFalse("Job is scheduled", tester.buildSystem().jobs().isEmpty());
-        tester.completeUpgrade(app, version, "canary");
+        tester.completeUpgrade(app, version, applicationPackage);
         assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
     }
 
@@ -592,10 +603,10 @@ public class UpgraderTest {
 
         // Application upgrade starts
         tester.upgrader().maintain();
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
         clock.advance(Duration.ofHours(1)); // Entering block window after prod job is triggered
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsWest1);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
         assertTrue(tester.buildSystem().jobs().isEmpty()); // Next job not triggered due to being in the block window
 
         // One hour passes, time is 19:00, still no upgrade
@@ -647,9 +658,9 @@ public class UpgraderTest {
 
         // Application upgrade starts
         tester.upgrader().maintain();
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsWest1);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
         clock.advance(Duration.ofHours(1)); // Entering block window after prod job is triggered
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsCentral1);
         assertTrue(tester.buildSystem().jobs().isEmpty()); // Next job not triggered due to being in the block window
@@ -669,9 +680,9 @@ public class UpgraderTest {
         readyJobsTrigger.maintain();
         // We proceed with the new version in the expected order, not starting with the previously blocked version:
         // Test jobs are run with the new version, but not production as we are in the block window
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsWest1);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsCentral1);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
         assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
@@ -727,10 +738,10 @@ public class UpgraderTest {
         assertEquals("Upgrade scheduled for remaining apps", 5, tester.buildSystem().jobs().size());
 
         // 4/5 applications fail, confidence is lowered and upgrade is cancelled
-        tester.completeUpgradeWithError(default0, version, defaultApplicationPackage, DeploymentJobs.JobType.systemTest);
-        tester.completeUpgradeWithError(default1, version, defaultApplicationPackage, DeploymentJobs.JobType.systemTest);
-        tester.completeUpgradeWithError(default2, version, defaultApplicationPackage, DeploymentJobs.JobType.systemTest);
-        tester.completeUpgradeWithError(default3, version, defaultApplicationPackage, DeploymentJobs.JobType.systemTest);
+        tester.completeUpgradeWithError(default0, version, defaultApplicationPackage, systemTest);
+        tester.completeUpgradeWithError(default1, version, defaultApplicationPackage, systemTest);
+        tester.completeUpgradeWithError(default2, version, defaultApplicationPackage, systemTest);
+        tester.completeUpgradeWithError(default3, version, defaultApplicationPackage, systemTest);
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
 
@@ -738,10 +749,10 @@ public class UpgraderTest {
 
         // Exhaust retries and finish runs
         tester.clock().advance(Duration.ofHours(1));
-        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default0, false);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default1, false);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default2, false);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, default3, false);
+        tester.jobCompletion(systemTest).application(default0).unsuccessful().submit();
+        tester.jobCompletion(systemTest).application(default1).unsuccessful().submit();
+        tester.jobCompletion(systemTest).application(default2).unsuccessful().submit();
+        tester.jobCompletion(systemTest).application(default3).unsuccessful().submit();
 
         // 5th app never reports back and has a dead job, but no ongoing change
         Application deadLocked = tester.applications().require(default4.id());
@@ -755,10 +766,10 @@ public class UpgraderTest {
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
-        tester.deployCompletely(default0, defaultApplicationPackageV2);
-        tester.deployCompletely(default1, defaultApplicationPackageV2);
-        tester.deployCompletely(default2, defaultApplicationPackageV2);
-        tester.deployCompletely(default3, defaultApplicationPackageV2);
+        tester.deployCompletely(default0, defaultApplicationPackageV2, 43);
+        tester.deployCompletely(default1, defaultApplicationPackageV2, 43);
+        tester.deployCompletely(default2, defaultApplicationPackageV2, 43);
+        tester.deployCompletely(default3, defaultApplicationPackageV2, 43);
 
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());

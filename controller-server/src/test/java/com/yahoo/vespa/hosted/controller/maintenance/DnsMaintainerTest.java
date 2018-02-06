@@ -4,11 +4,11 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -74,7 +74,8 @@ public class DnsMaintainerTest {
                 .environment(Environment.prod)
                 .allow(ValidationId.deploymentRemoval)
                 .build();
-        tester.notifyJobCompletion(component, application, true);
+        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
+
         tester.deployAndNotify(application, applicationPackage, true, systemTest);
         tester.applications().deactivate(application, ZoneId.from(Environment.test, RegionName.from("us-east-1")));
         tester.applications().deactivate(application, ZoneId.from(Environment.staging, RegionName.from("us-east-3")));

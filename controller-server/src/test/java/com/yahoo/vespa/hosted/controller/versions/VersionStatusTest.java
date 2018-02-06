@@ -6,7 +6,6 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
@@ -21,7 +20,6 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.List;
 
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
@@ -283,30 +281,6 @@ public class VersionStatusTest {
         assertEquals("Canaries have upgraded, 1 of 4 default apps failing, but confidence ignored: Low",
                      Confidence.normal, confidence(tester.controller(), version1));
         tester.controllerTester().curator().writeIgnoreConfidence(false);
-    }
-
-    @Test
-    public void testComputeIgnoresVersionWithUnknownGitMetadata() {
-        ControllerTester tester = new ControllerTester();
-        ApplicationController applications = tester.controller().applications();
-
-        tester.gitHub()
-                .mockAny(false)
-                .knownTag(Vtag.currentVersion.toFullString(), "foo") // controller
-                .knownTag("6.1.0", "bar"); // config server
-
-        Version versionWithUnknownTag = new Version("6.1.2");
-
-        Application app = tester.createAndDeploy("tenant1", "domain1","application1", Environment.test, 11);
-        tester.clock().advance(Duration.ofMillis(1));
-        applications.notifyJobCompletion(DeploymentTester.jobReport(app, component, true));
-        applications.notifyJobCompletion(DeploymentTester.jobReport(app, systemTest, true));
-
-        List<VespaVersion> vespaVersions = VersionStatus.compute(tester.controller()).versions();
-
-        assertEquals(2, vespaVersions.size()); // controller and config server
-        assertTrue("Version referencing unknown tag is skipped", 
-                   vespaVersions.stream().noneMatch(v -> v.versionNumber().equals(versionWithUnknownTag)));
     }
 
     private Confidence confidence(Controller controller, Version version) {

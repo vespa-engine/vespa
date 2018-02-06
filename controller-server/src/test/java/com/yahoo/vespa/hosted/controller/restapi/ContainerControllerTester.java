@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TestIdentities;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
@@ -27,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -56,6 +58,11 @@ public class ContainerControllerTester {
 
     public Controller controller() { return containerTester.controller(); }
 
+    public ArtifactRepositoryMock artifactRepository() {
+        return (ArtifactRepositoryMock) containerTester.container().components()
+                                                       .getComponent(ArtifactRepositoryMock.class.getName());
+    }
+
     public Upgrader upgrader() { return upgrader; }
 
     /** Returns the wrapped generic container tester */
@@ -79,36 +86,14 @@ public class ContainerControllerTester {
     public Application deploy(Application application, ApplicationPackage applicationPackage, ZoneId zone, long projectId) {
         ScrewdriverId app1ScrewdriverId = new ScrewdriverId(String.valueOf(projectId));
         GitRevision app1RevisionId = new GitRevision(new GitRepository("repo"), new GitBranch("master"), new GitCommit("commit1"));
-        controller().applications().deployApplication(application.id(),
-                                                    zone,
-                                                    Optional.of(applicationPackage),
+        controller().applications().deployApplication(application.id(), zone, Optional.of(applicationPackage),
                                                     new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), Optional.empty(), false, false));
         return application;
     }
 
-    public void notifyJobCompletion(ApplicationId applicationId, long projectId, boolean success, DeploymentJobs.JobType job) {
-        try {
-            Thread.sleep(1);
-        }
-        catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        controller().applications().notifyJobCompletion(new DeploymentJobs.JobReport(applicationId, job, projectId,
-                                                                                     42,
-                                                                                     Optional.empty(),
-                                                                                     success ? Optional.empty() : Optional.of(DeploymentJobs.JobError.unknown)
-        ));
-    }
-
-    public AthenzDomain addTenantAthenzDomain(String domainName, String userName) {
-        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) containerTester.container().components()
-                .getComponent(AthenzClientFactoryMock.class.getName());
-        AthenzDomain athensDomain = new AthenzDomain(domainName);
-        AthenzDbMock.Domain domain = new AthenzDbMock.Domain(athensDomain);
-        domain.markAsVespaTenant();
-        domain.admin(AthenzIdentities.from(new AthenzDomain("domain"), userName));
-        mock.getSetup().addDomain(domain);
-        return athensDomain;
+    /** Notify the controller about a job completing */
+    public BuildJob jobCompletion(DeploymentJobs.JobType job) {
+        return new BuildJob(this::notifyJobCompletion, artifactRepository()).type(job);
     }
 
     // ---- Delegators:
@@ -132,6 +117,26 @@ public class ContainerControllerTester {
                 .domains.get(tenantDomain)
                 .applications.get(new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(application.id().application().value()))
                 .addRoleMember(action, HostedAthenzIdentities.from(screwdriverId));
+    }
+
+    private void notifyJobCompletion(DeploymentJobs.JobReport jobReport) {
+        try {
+            Thread.sleep(1);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        controller().applications().notifyJobCompletion(jobReport);
+    }
+
+    private AthenzDomain addTenantAthenzDomain(String domainName, String userName) {
+        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) containerTester.container().components()
+                                                                                .getComponent(AthenzClientFactoryMock.class.getName());
+        AthenzDomain athensDomain = new AthenzDomain(domainName);
+        AthenzDbMock.Domain domain = new AthenzDbMock.Domain(athensDomain);
+        domain.markAsVespaTenant();
+        domain.admin(AthenzIdentities.from(new AthenzDomain("domain"), userName));
+        mock.getSetup().addDomain(domain);
+        return athensDomain;
     }
 
 }

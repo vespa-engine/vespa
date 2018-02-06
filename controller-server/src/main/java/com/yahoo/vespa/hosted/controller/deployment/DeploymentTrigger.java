@@ -136,8 +136,6 @@ public class DeploymentTrigger {
                 if (change.platform().get().isAfter(deployment.version())) return false; // later is ok
             }
             if (change.application().isPresent()) {
-                // If we don't yet know the application version we are deploying, then we are not complete
-                if (change.application().get().isUnknown()) return false;
                 if ( ! change.application().get().equals(deployment.applicationVersion())) return false;
             }
         }

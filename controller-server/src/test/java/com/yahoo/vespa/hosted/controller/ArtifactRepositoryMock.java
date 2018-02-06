@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -12,7 +13,7 @@ import java.util.Objects;
 /**
  * @author mpolden
  */
-public class ArtifactRepositoryMock implements ArtifactRepository {
+public class ArtifactRepositoryMock extends AbstractComponent implements ArtifactRepository {
 
     private final Map<Integer, Artifact> repository = new HashMap<>();
 
@@ -28,19 +29,17 @@ public class ArtifactRepositoryMock implements ArtifactRepository {
         return artifact == null ? 0 : artifact.hits;
     }
 
-    public ArtifactRepository resetHits() {
-        repository.values().forEach(Artifact::resetHits);
-        return this;
+    public boolean contains(ApplicationId applicationId, String applicationVersion) {
+        return repository.containsKey(artifactHash(applicationId, applicationVersion));
     }
 
     @Override
     public byte[] getApplicationPackage(ApplicationId applicationId, String applicationVersion) {
-        int artifactHash = artifactHash(applicationId, applicationVersion);
-        if (!repository.containsKey(artifactHash)) {
+        Artifact artifact = repository.get(artifactHash(applicationId, applicationVersion));
+        if (artifact == null) {
             throw new IllegalArgumentException("No application package found for " + applicationId + " with version "
                                                + applicationVersion);
         }
-        Artifact artifact = repository.get(artifactHash);
         artifact.recordHit();
         return artifact.data;
     }
@@ -60,10 +59,6 @@ public class ArtifactRepositoryMock implements ArtifactRepository {
 
         private void recordHit() {
             hits++;
-        }
-
-        private void resetHits() {
-            hits = 0;
         }
 
     }
