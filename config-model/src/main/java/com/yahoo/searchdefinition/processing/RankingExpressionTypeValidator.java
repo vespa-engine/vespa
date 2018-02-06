@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.searchdefinition.MapTypeContext;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
@@ -30,30 +31,45 @@ public class RankingExpressionTypeValidator extends Processor {
                 validate(profile);
             }
             catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException(search + ", " + profile + " is invalid", e);
+                throw new IllegalArgumentException("In " + search + ", " + profile, e);
             }
         }
     }
 
     /** Throws an IllegalArgumentException if the given rank profile does not produce valid type */
     private void validate(RankProfile profile) {
+        profile.parseExpressions();
+        System.out.println("Type checking " + profile + ":");
+        System.out.println("  First-phase: " + profile.getFirstPhaseRanking());
         TypeContext context = profile.typeContext(queryProfiles);
         for (RankProfile.Macro macro : profile.getMacros().values())
-            if (macro.getRankingExpression() != null)
-                macro.getRankingExpression().type(context); // type infer to throw on type conflicts
-        ensureProducesDouble(profile.getFirstPhaseRanking(), "first-phase", context);
-        ensureProducesDouble(profile.getSecondPhaseRanking(), "second-phase", context);
+            ensureValid(macro.getRankingExpression(), "macro '" + macro.getName() + "'", context);
+        ensureValidDouble(profile.getFirstPhaseRanking(), "first-phase expression", context);
+        ensureValidDouble(profile.getSecondPhaseRanking(), "second-phase expression", context);
     }
 
-    private void ensureProducesDouble(RankingExpression expression, String expressionDescription, TypeContext context) {
-        if (expression == null) return;
+    private TensorType ensureValid(RankingExpression expression, String expressionDescription, TypeContext context) {
+        if (expression == null) return null;
 
-        TensorType type = expression.type(context);
+        TensorType type;
+        try {
+            type = expression.type(context);
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("The " + expressionDescription + " is invalid", e);
+        }
+        System.out.println("    Type of " + expressionDescription + " " + expression.getRoot() + ": " + type);
         if (type == null) // Not expected to happen
             throw new IllegalStateException("Could not determine the type produced by " + expressionDescription);
+        return type;
+    }
+
+    private void ensureValidDouble(RankingExpression expression, String expressionDescription, TypeContext context) {
+        if (expression == null) return;
+        TensorType type = ensureValid(expression, expressionDescription, context);
         if ( ! type.equals(TensorType.empty))
-            throw new IllegalArgumentException(expressionDescription + " ranking expression must produce a double " +
-                                               "but produces " + type);
+            throw new IllegalArgumentException("The " + expressionDescription + " must produce a double " +
+                                               "(a tensor with no dimensions), but produces " + type);
     }
 
 }

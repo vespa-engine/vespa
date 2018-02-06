@@ -578,8 +578,11 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     /**
-     * Will take the parser-set textual ranking expressions and turn into objects
+     * Will take the parser-set textual ranking expressions and turn into ranking expression objects,
+     * if not already done
      */
+    // TODO: There doesn't appear to be any good reason to defer parsing of ranking expressions
+    //       until this is called. Simplify by parsing them right away.
     public void parseExpressions() {
         try {
             parseRankingExpressions();
@@ -597,20 +600,23 @@ public class RankProfile implements Serializable, Cloneable {
         for (Map.Entry<String, Macro> e : getMacros().entrySet()) {
             String macroName = e.getKey();
             Macro macro = e.getValue();
-            RankingExpression expr = parseRankingExpression(macroName, macro.getTextualExpression());
-            macro.setRankingExpression(expr);
-            macro.setTextualExpression(expr.getRoot().toString());
+            if (macro.getRankingExpression() == null) {
+                RankingExpression expr = parseRankingExpression(macroName, macro.getTextualExpression());
+                macro.setRankingExpression(expr);
+                macro.setTextualExpression(expr.getRoot().toString());
+            }
         }
     }
 
     /**
      * Passes ranking expressions on to parser
+     *
      * @throws ParseException if either of the ranking expressions could not be parsed
      */
     private void parseRankingExpressions() throws ParseException {
-        if (getFirstPhaseRankingString() != null)
+        if (getFirstPhaseRankingString() != null && firstPhaseRanking == null)
             setFirstPhaseRanking(parseRankingExpression("firstphase", getFirstPhaseRankingString()));
-        if (getSecondPhaseRankingString() != null)
+        if (getSecondPhaseRankingString() != null && secondPhaseRanking == null)
             setSecondPhaseRanking(parseRankingExpression("secondphase", getSecondPhaseRankingString()));
     }
 
@@ -741,7 +747,7 @@ public class RankProfile implements Serializable, Cloneable {
      * referable from this rank profile.
      */
     public TypeContext typeContext(QueryProfileRegistry queryProfiles) {
-        TypeMapContext context = new TypeMapContext();
+        MapTypeContext context = new MapTypeContext();
 
         // Add constants
         getSearch().getRankingConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.getTensorType()));
@@ -755,7 +761,8 @@ public class RankProfile implements Serializable, Cloneable {
         for (QueryProfileType queryProfileType : queryProfiles.getTypeRegistry().allComponents()) {
             for (FieldDescription field : queryProfileType.declaredFields().values()) {
                 TensorType type = field.getType().asTensorType();
-                String feature = FeatureNames.asQueryFeature(field.getName());
+                if ( ! FeatureNames.isQueryFeature(field.getName())) continue;
+                String feature = FeatureNames.canonicalize(field.getName());
                 TensorType existingType = context.getType(feature);
                 if (existingType != null)
                     type = existingType.dimensionwiseGeneralizationWith(type).orElseThrow( () ->

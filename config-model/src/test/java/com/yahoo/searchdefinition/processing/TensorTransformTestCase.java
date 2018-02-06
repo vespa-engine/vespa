@@ -108,7 +108,8 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
 
     private List<Pair<String, String>> buildSearch(String expression) throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        QueryProfileRegistry queryProfiles = setupQueryProfileTypes();
+        SearchBuilder builder = new SearchBuilder(rankProfileRegistry, queryProfiles);
         builder.importString(
                 "search test {\n" +
                 "    document test { \n" +
@@ -167,16 +168,16 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
                 "        }\n" +
                 "    }\n" +
                 "}\n");
-        builder.build(new BaseDeployLogger(), setupQueryProfileTypes());
+        builder.build(new BaseDeployLogger());
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry());
+        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(queryProfiles);
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
-                                                                           new QueryProfileRegistry(),
+                                                                           queryProfiles,
                                                                            new AttributeFields(s)).configProperties();
         return testRankProperties;
     }
 
-    private static QueryProfiles setupQueryProfileTypes() {
+    private static QueryProfileRegistry setupQueryProfileTypes() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfileTypeRegistry typeRegistry = registry.getTypeRegistry();
         QueryProfileType type = new QueryProfileType(new ComponentId("testtype"));
@@ -185,7 +186,7 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
         type.addField(new FieldDescription("ranking.features.query(n)",
                 FieldType.fromString("integer", typeRegistry)), typeRegistry);
         typeRegistry.register(type);
-        return new QueryProfiles(registry);
+        return registry;
     }
 
     private String censorBindingHash(String s) {

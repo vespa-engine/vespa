@@ -110,7 +110,7 @@ public final class ReferenceNode extends CompositeNode {
         // Don't support outputs of different type, for simplicity
         TensorType type = context.getType(toString());
         if (type == null)
-            throw new IllegalArgumentException("Could not determine type of feature " + toString());
+            throw new IllegalArgumentException("Unknown feature '" + toString() + "'");
         return type;
     }
 

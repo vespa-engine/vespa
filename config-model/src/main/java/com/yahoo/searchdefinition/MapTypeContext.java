@@ -16,7 +16,7 @@ import java.util.Map;
  *
  * @author bratseth
  */
-public class TypeMapContext implements TypeContext {
+public class MapTypeContext implements TypeContext {
 
     private final Map<String, TensorType> featureTypes = new HashMap<>();
 
@@ -33,5 +33,7 @@ public class TypeMapContext implements TypeContext {
         else
             return TensorType.empty; // we do not have type information for these. Correct would be either empty or null
     }
+
+    public Map<String, TensorType> bindings() { return Collections.unmodifiableMap(featureTypes); }
 
 }

@@ -195,11 +195,7 @@ public class SearchBuilder {
      * @throws IllegalStateException Thrown if this method has already been called.
      */
     public void build() {
-        build(new BaseDeployLogger(), new QueryProfiles());
-    }
-
-    public void build(DeployLogger logger) {
-        build(logger, new QueryProfiles());
+        build(new BaseDeployLogger());
     }
 
     /**
@@ -208,9 +204,8 @@ public class SearchBuilder {
      *
      * @throws IllegalStateException Thrown if this method has already been called.
      * @param deployLogger The logger to use during build
-     * @param queryProfiles The query profiles contained in the application this search is part of.
      */
-    public void build(DeployLogger deployLogger, QueryProfiles queryProfiles) {
+    public void build(DeployLogger deployLogger) {
         if (isBuilt) throw new IllegalStateException("Model already built");
 
         List<Search> built = new ArrayList<>();
@@ -238,7 +233,7 @@ public class SearchBuilder {
         for (Search search : new SearchOrderer().order(searchList)) {
             new FieldOperationApplierForSearch().process(search);
             // These two needed for a couple of old unit tests, ideally these are just read from app
-            process(search, deployLogger, queryProfiles);
+            process(search, deployLogger, new QueryProfiles(queryProfileRegistry));
             built.add(search);
         }
         builder.addToModel(searchList);
@@ -348,7 +343,7 @@ public class SearchBuilder {
                                                   rankProfileRegistry,
                                                   queryprofileRegistry);
         builder.importFile(fileName);
-        builder.build(deployLogger, new QueryProfiles());
+        builder.build(deployLogger);
         return builder;
     }
 
@@ -364,7 +359,7 @@ public class SearchBuilder {
         for (Iterator<Path> i = Files.list(new File(dir).toPath()).filter(p -> p.getFileName().toString().endsWith(".sd")).iterator(); i.hasNext(); ) {
             builder.importFile(i.next());
         }
-        builder.build(new BaseDeployLogger(), new QueryProfiles());
+        builder.build(new BaseDeployLogger());
         return builder;
     }
 
