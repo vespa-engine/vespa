@@ -20,8 +20,6 @@ public class CommandResult {
     private final int exitCode;
     private final String output;
 
-    private boolean inMapFunction = false;
-
     CommandResult(CommandLine commandLine, int exitCode, String output) {
         this.commandLine = commandLine;
         this.exitCode = exitCode;
@@ -62,17 +60,10 @@ public class CommandResult {
      * This method is intended to be used as part of the verification of the output.
      */
     public <R> R map(Function<CommandResult, R> mapper) {
-        if (inMapFunction) {
-            throw new IllegalStateException("map() cannot be called recursively");
-        }
-        inMapFunction = true;
-
         try {
             return mapper.apply(this);
         } catch (RuntimeException e) {
             throw new UnexpectedOutputException2(e, "Failed to map output", commandLine.toString(), output);
-        } finally {
-            inMapFunction = false;
         }
     }
 
