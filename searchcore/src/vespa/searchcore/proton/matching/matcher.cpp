@@ -281,15 +281,7 @@ Matcher::match(const SearchRequest &request,
             sessionMgr.insert(std::move(session));
         }
         reply = std::move(result->_reply);
-        SearchReply::Coverage & coverage = reply->coverage;
-        if (wasLimited) {
-            LOG(debug, "was limited, degraded from match phase");
-            coverage.degradeMatchPhase();
-        }
-        if (my_stats.softDoomed()) {
-            LOG(debug, "soft doomed, degraded from timeout");
-            coverage.degradeTimeout();
-        }
+
         uint32_t numActiveLids = metaStore.getNumActiveLids();
         // note: this is actually totalSpace+1, since 0 is reserved
         uint32_t totalSpace = metaStore.getCommittedDocIdLimit();
@@ -305,10 +297,21 @@ Matcher::match(const SearchRequest &request,
         }
         size_t covered = (spaceEstimate *  numActiveLids) / totalSpace;
         LOG(debug, "covered = %zd", covered);
+
+        SearchReply::Coverage & coverage = reply->coverage;
         coverage.setActive(numActiveLids);
         //TODO this should be calculated with ClusterState calculator.
         coverage.setSoonActive(numActiveLids);
         coverage.setCovered(covered);
+        if (wasLimited) {
+            LOG(debug, "was limited, degraded from match phase");
+            coverage.degradeMatchPhase();
+        }
+        if (my_stats.softDoomed()) {
+            LOG(debug, "soft doomed, degraded from timeout");
+            coverage.degradeTimeout();
+            coverage.setCovered(my_stats.docsCovered());
+        }
         LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%ld",
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), estHits, reply->totalHitCount);
     }
