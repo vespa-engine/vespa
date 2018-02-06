@@ -28,13 +28,12 @@ public class QueryResultTestCase extends junit.framework.TestCase {
                  0,0,0,100,
                  0,0,0,217-256,
                  0,0,0,1,
-                 0,0,0,3,
+                 0,0,0,1,
                  0,0,0,0,
                  0,0,0,2,
                  0,0,0,0,0,0,0,5,
                  0x40,0x39,0,0,0,0,0,0,
                  0,0,0,111,
-                 0,0,0,97,
                  0,0,0,0,0,0,0,89,
                  0,0,0,0,0,0,0,90,
                  0,0,0,0,0,0,0,91,
@@ -50,12 +49,10 @@ public class QueryResultTestCase extends junit.framework.TestCase {
         QueryResultPacket result=(QueryResultPacket)packet;
 
         assertTrue(result.getMldFeature());
-        assertTrue(result.getDatasetFeature());
 
         assertEquals(5,result.getTotalDocumentCount());
         assertEquals(25,result.getMaxRank());
         assertEquals(111,result.getDocstamp());
-        assertEquals(97,result.getDataset());
         assertEquals(89, result.getCoverageDocs());
         assertEquals(90, result.getActiveDocs());
         assertEquals(91, result.getSoonActiveDocs());
@@ -79,19 +76,17 @@ public class QueryResultTestCase extends junit.framework.TestCase {
                  0,0,0,100,
                  0,0,0,217-256,
                  0,0,0,1,
-                 0,0,0,7,
+                 0,0,0,3,
                  0,0,0,0,
                  0,0,0,2,
                  0,0,0,0,0,0,0,5,
                  0x40,0x39,0,0,0,0,0,0,
                  0,0,0,111,
-                 0,0,0,97,
+                 0,6,0,5,
                  0,0,0,0,0,0,0,89,
                  0,0,0,0,0,0,0,90,
                  0,0,0,0,0,0,0,91,
                  0,0,0,1,
-                 0,6,
-                 0,5,
                  1,1,1,1,1,1,1,1,1,1,1,1, 0x40,0x37,0,0,0,0,0,0, 0,0,0,7, 0,0,0,36,
                  2,2,2,2,2,2,2,2,2,2,2,2, 0x40,0x35,0,0,0,0,0,0, 0,0,0,8, 0,0,0,37
          };

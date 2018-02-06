@@ -23,9 +23,6 @@ public class QueryResultPacket extends Packet {
     /** Whether mld stuff, whatever that is, is included in this result */
     private boolean mldFeature=false;
 
-    /** A feature of no apparent utility */
-    private boolean datasetFeature=false;
-
     /** Whether coverage information is included in this result */
     private boolean coverageNodes = false;
     private long  coverageDocs = 0;
@@ -47,8 +44,6 @@ public class QueryResultPacket extends Packet {
 
     private int docstamp;
 
-    private int dataset=-1;
-
     private byte[] groupData = null;
 
     private List<DocumentInfo> documents=new ArrayList<>(10);
@@ -69,9 +64,6 @@ public class QueryResultPacket extends Packet {
 
     /** Returns whether this has the mysterious mld feature */
     public boolean getMldFeature() { return mldFeature; }
-
-    /** Returns whether this result has the dataset feature */
-    public boolean getDatasetFeature() { return datasetFeature; }
 
     public boolean getCoverageFeature() { return true; }
 
@@ -108,8 +100,11 @@ public class QueryResultPacket extends Packet {
         maxRank = decodeMaxRank(buffer);
         ints = buffer.asIntBuffer();
         docstamp=ints.get();
-        if (datasetFeature) dataset=ints.get();
         buffer.position(buffer.position() + ints.position()*4);
+        if (coverageNodes) {
+            nodesQueried = buffer.getShort();
+            nodesReplied = buffer.getShort();
+        }
         if (groupDataFeature) {
             int len = buffer.getInt();
             groupData = new byte[len];
@@ -120,10 +115,6 @@ public class QueryResultPacket extends Packet {
         activeDocs = buffer.getLong();
         soonActiveDocs = buffer.getLong();
         degradedReason = buffer.getInt();
-        if (coverageNodes) {
-            nodesQueried = buffer.getShort();
-            nodesReplied = buffer.getShort();
-        }
 
         decodeDocuments(buffer,documentCount);
         if (propsFeature) {
@@ -144,8 +135,7 @@ public class QueryResultPacket extends Packet {
      * feature bits
      */
     public static final int QRF_MLD             = 0x00000001;
-    public static final int QRF_DATASETS        = 0x00000002;
-    public static final int QRF_COVERAGE_NODES  = 0x00000004;
+    public static final int QRF_COVERAGE_NODES  = 0x00000002;
     public static final int QRF_SORTDATA        = 0x00000010;
     public static final int QRF_UNUSED_1        = 0x00000020;
     public static final int QRF_UNUSED_2        = 0x00000040;
@@ -162,7 +152,6 @@ public class QueryResultPacket extends Packet {
         case 217:
                 int features=buffer.get();
                 mldFeature       = (QRF_MLD & features) != 0;
-                datasetFeature   = (QRF_DATASETS & features) != 0;
                 // Data given by sortFeature not currently used by QRS:
                 // sortFeature   = (QRF_SORTDATA & features) != 0;
                 coverageNodes    = (QRF_COVERAGE_NODES & features) != 0;
@@ -213,8 +202,6 @@ public class QueryResultPacket extends Packet {
 
     // TODO: Handle new maxRank intelligently
     public int getMaxRank() { return maxRank.intValue(); }
-
-    public int getDataset() { return dataset; }
 
     public short getNodesQueried() { return nodesQueried; }
     public short getNodesReplied() { return nodesReplied; }
