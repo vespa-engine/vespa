@@ -36,13 +36,13 @@ public class GetDocSumsPacketTestCase {
         FastHit hit = new FastHit();
         hit.setIgnoreRowBits(true);
         assertPacket(true, hit, new byte[] { 0, 0, 0, 57, 0, 0, 0, -37, 0, 0, 40, 21, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
-                IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x01, 0, 0, 0, 7,
+                IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x03, 0, 0, 0, 7,
                 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 1, 0, 0, 0, 6, 4, 0, 3, 102, 111, 111, 0, 0, 0, 3 });
 
         hit = new FastHit();
         hit.setIgnoreRowBits(false);
         assertPacket(true, hit, new byte[] {0, 0, 0, 57, 0, 0, 0, -37, 0, 0, 40, 21, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
-                IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x01, 0, 0, 0, 7,
+                IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x03, 0, 0, 0, 7,
                 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 1, 0, 0, 0, 6, 4, 0, 3, 102, 111, 111, 0, 0, 0, 2});
     }
 
@@ -51,14 +51,14 @@ public class GetDocSumsPacketTestCase {
         FastHit hit = new FastHit();
         hit.setIgnoreRowBits(true);
         assertPacket(false, hit, new byte[] { 0, 0, 0, 43, 0, 0, 0, -37, 0, 0, 40, 17, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
-                     IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x01, 0, 0, 0, 7,
+                     IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x03, 0, 0, 0, 7,
                      100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 3
         });
 
         hit = new FastHit();
         hit.setIgnoreRowBits(false);
         assertPacket(false, hit, new byte[] { 0, 0, 0, 43, 0, 0, 0, -37, 0, 0, 40, 17, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
-                IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x01, 0, 0, 0, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 2
+                IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x03, 0, 0, 0, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 2
         });
     }
 
@@ -75,7 +75,7 @@ public class GetDocSumsPacketTestCase {
                 // query timeout
                 IGNORE, IGNORE, IGNORE, IGNORE,
                 // "default" - rank profile
-                7, 'd', 'e', 'f', 'a', 'u', 'l', 't', 0, 0, 0, 0x01,
+                7, 'd', 'e', 'f', 'a', 'u', 'l', 't', 0, 0, 0, 0x03,
                 // "default" - summaryclass
                 0, 0, 0, 7, 'd', 'e', 'f', 'a', 'u', 'l', 't',
                 // 2 property entries

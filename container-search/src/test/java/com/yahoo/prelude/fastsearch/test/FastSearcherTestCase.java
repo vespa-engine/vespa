@@ -159,7 +159,7 @@ public class FastSearcherTestCase {
         byte[] correct = new byte[] {
             0, 0, 0, 100, 0, 0, 0, -38, 0, 0, 0, 0, 0, 16, 0, 6, 0, 10,
             QueryTestCase.ignored, QueryTestCase.ignored, QueryTestCase.ignored, QueryTestCase.ignored, // time left
-            0, 0, 0x40, 0x01, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 1, 0, 0, 0, 5, 109, 97, 116, 99, 104, 0, 0, 0, 1, 0, 0, 0, 24, 100, 111, 99, 117, 109, 101, 110, 116, 100, 98, 46, 115, 101, 97, 114, 99, 104, 100, 111, 99, 116, 121, 112, 101, 0, 0, 0, 6, 116, 101, 115, 116, 68, 98, 0, 0, 0, 1, 0, 0, 0, 7, 68, 1, 0, 3, 102, 111, 111
+            0, 0, 0x40, 0x03, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 1, 0, 0, 0, 5, 109, 97, 116, 99, 104, 0, 0, 0, 1, 0, 0, 0, 24, 100, 111, 99, 117, 109, 101, 110, 116, 100, 98, 46, 115, 101, 97, 114, 99, 104, 100, 111, 99, 116, 121, 112, 101, 0, 0, 0, 6, 116, 101, 115, 116, 68, 98, 0, 0, 0, 1, 0, 0, 0, 7, 68, 1, 0, 3, 102, 111, 111
         };
         QueryTestCase.assertEqualArrays(correct, encoded);
     }
@@ -303,7 +303,7 @@ public class FastSearcherTestCase {
                 // query timeout
                 IGNORE, IGNORE, IGNORE, IGNORE,
                 // "default" - rank profile
-                7, 'd', 'e', 'f', 'a', 'u', 'l', 't', 0, 0, 0, 0x01,
+                7, 'd', 'e', 'f', 'a', 'u', 'l', 't', 0, 0, 0, 0x03,
                 // 3 property entries (rank, match, caches)
                 0, 0, 0, 3,
                 // rank: sessionId => qrserver.0.XXXXXXXXXXXXX.0
