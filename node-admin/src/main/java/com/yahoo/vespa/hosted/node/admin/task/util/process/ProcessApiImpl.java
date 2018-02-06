@@ -41,7 +41,6 @@ public class ProcessApiImpl implements ProcessApi {
 
     @Override
     public void close() {
-        // TODO: Should kill process if still alive?
         processOutputPath.toFile().delete();
     }
 
