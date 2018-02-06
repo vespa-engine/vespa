@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -84,11 +85,17 @@ public class RetiredExpirer extends Maintainer {
     }
 
     /**
-     * Checks if the node can be removed, this is allowed if either of these are true:
+     * Checks if the node can be removed:
+     * if the node is {@link NodeType#host}, it will only be removed if it has no children
+     * Otherwise, a removal is allowed if either of these are true:
      * - The node has been in state {@link History.Event.Type#retired} for longer than {@link #retiredDuration}
      * - Orchestrator allows it
      */
     private boolean canRemove(Node node) {
+        if (node.type() == NodeType.host) {
+            return nodeRepository().getChildNodes(node.hostname()).isEmpty();
+        }
+
         Optional<Instant> timeOfRetiredEvent = node.history().event(History.Event.Type.retired).map(History.Event::at);
         Optional<Instant> retireAfter = timeOfRetiredEvent.map(retiredEvent -> retiredEvent.plus(retiredDuration));
         boolean shouldRetireNowBecauseExpried = retireAfter.map(time -> time.isBefore(clock.instant())).orElse(false);

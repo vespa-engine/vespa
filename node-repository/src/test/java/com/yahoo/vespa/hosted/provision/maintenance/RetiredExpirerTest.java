@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -41,6 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -61,6 +63,12 @@ public class RetiredExpirerTest {
     private final Orchestrator orchestrator = mock(Orchestrator.class);
 
     private static final Duration RETIRED_EXPIRATION = Duration.ofHours(12);
+
+    @Before
+    public void setup() throws OrchestrationException {
+        // By default, orchestrator should deny all request for suspension so we can test expiration
+        doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
+    }
 
     @Test
     public void ensure_retired_nodes_time_out() {
