@@ -26,13 +26,26 @@ public abstract class ChildProcessException extends RuntimeException {
      * @param possiblyHugeOutput The output of the command
      */
     protected ChildProcessException(String problem, String commandLine, String possiblyHugeOutput) {
-        super(makeSnippet(
+        super(makeSnippet(problem, commandLine, possiblyHugeOutput));
+    }
+
+    protected ChildProcessException(RuntimeException cause,
+                                    String problem,
+                                    String commandLine,
+                                    String possiblyHugeOutput) {
+        super(makeSnippet(problem, commandLine, possiblyHugeOutput), cause);
+    }
+
+    private static String makeSnippet(String problem,
+                               String commandLine,
+                               String possiblyHugeOutput) {
+        return makeSnippet(
                 problem,
                 commandLine,
                 possiblyHugeOutput,
                 MAX_OUTPUT_PREFIX,
                 MAX_OUTPUT_SUFFIX,
-                MAX_OUTPUT_SLACK));
+                MAX_OUTPUT_SLACK);
     }
 
     // Package-private instead of private for testing.

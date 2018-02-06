@@ -19,6 +19,7 @@ public class TerminalImpl implements Terminal {
         this.processFactory = processFactory;
     }
 
+    @Override
     public CommandLine newCommandLine(TaskContext taskContext) {
         return new CommandLine(taskContext, processFactory);
     }
