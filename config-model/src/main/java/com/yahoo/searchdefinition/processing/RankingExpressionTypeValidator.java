@@ -39,8 +39,6 @@ public class RankingExpressionTypeValidator extends Processor {
     /** Throws an IllegalArgumentException if the given rank profile does not produce valid type */
     private void validate(RankProfile profile) {
         profile.parseExpressions();
-        System.out.println("Type checking " + profile + ":");
-        System.out.println("  First-phase: " + profile.getFirstPhaseRanking());
         TypeContext context = profile.typeContext(queryProfiles);
         for (RankProfile.Macro macro : profile.getMacros().values())
             ensureValid(macro.getRankingExpression(), "macro '" + macro.getName() + "'", context);
@@ -58,7 +56,6 @@ public class RankingExpressionTypeValidator extends Processor {
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("The " + expressionDescription + " is invalid", e);
         }
-        System.out.println("    Type of " + expressionDescription + " " + expression.getRoot() + ": " + type);
         if (type == null) // Not expected to happen
             throw new IllegalStateException("Could not determine the type produced by " + expressionDescription);
         return type;
