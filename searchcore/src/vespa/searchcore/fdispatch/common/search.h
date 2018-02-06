@@ -100,6 +100,8 @@ public:
     uint64_t  _activeDocs;
     uint64_t  _soonActiveDocs;
     uint32_t  _degradeReason;
+    uint16_t  _nodesQueried;
+    uint16_t  _nodesReplied;
 
     FastS_SearchInfo()
         : _searchOffset(0),
@@ -107,9 +109,10 @@ public:
           _coverageDocs(0),
           _activeDocs(0),
           _soonActiveDocs(0),
-          _degradeReason(0)
-    {
-    }
+          _degradeReason(0),
+          _nodesQueried(0),
+          _nodesReplied(0)
+    { }
 };
 
 //----------------------------------------------------------------

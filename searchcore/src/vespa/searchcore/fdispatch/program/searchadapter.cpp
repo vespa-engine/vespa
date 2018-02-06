@@ -56,6 +56,8 @@ SearchAdapter::createReply()
     r.coverage = SearchReply::Coverage(_searchInfo->_activeDocs, _searchInfo->_coverageDocs);
     r.coverage.setSoonActive(_searchInfo->_soonActiveDocs);
     r.coverage.setDegradeReason(_searchInfo->_degradeReason);
+    r.coverage.setNodesQueried(_searchInfo->_nodesQueried);
+    r.coverage.setNodesReplied(_searchInfo->_nodesReplied);
 
     FastS_hitresult *hitbuf = _queryResult->_hitbuf;
     r.hits.resize(hitcnt);

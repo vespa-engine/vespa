@@ -25,6 +25,7 @@ namespace search::fs4transport {
  **/
 enum queryflags {
     QFLAG_EXTENDED_COVERAGE    = 0x00000001,
+    QFLAG_COVERAGE_NODES       = 0x00000002,
     QFLAG_ESTIMATE             = 0x00000080,
     QFLAG_DROP_SORTDATA        = 0x00004000,
     QFLAG_NO_RESULTCACHE       = 0x00010000,
@@ -46,6 +47,7 @@ enum queryflags {
  **/
 enum queryresult_features {
     QRF_MLD                   = 0x00000001,
+    QRF_COVERAGE_NODES        = 0x00000002,
     QRF_SORTDATA              = 0x00000010,
     QRF_EXTENDED_COVERAGE     = 0x00000020,
     QRF_COVERAGE              = 0x00000040,

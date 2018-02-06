@@ -122,6 +122,11 @@ PacketConverter::fromSearchReply(const SearchReply &reply, QUERYRESULTX &packet)
     packet._activeDocs = reply.coverage.getActive();
     packet._soonActiveDocs = reply.coverage.getSoonActive();
     packet._coverageDegradeReason = reply.coverage.getDegradeReason();
+    packet.setNodesQueried(reply.coverage.getNodesQueried());
+    packet.setNodesReplied(reply.coverage.getNodesReplied());
+    if (reply.request && (reply.request->queryFlags & QFLAG_COVERAGE_NODES)) {
+        packet._features |= QRF_COVERAGE_NODES;
+    }
     if (reply.useWideHits) {
         packet._features |= QRF_MLD;
     }
