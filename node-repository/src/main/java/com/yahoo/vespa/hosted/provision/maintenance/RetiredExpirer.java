@@ -31,7 +31,7 @@ public class RetiredExpirer extends Maintainer {
 
     private final Deployer deployer;
     private final Orchestrator orchestrator;
-    private final Duration retiredDuration;
+    private final Duration retiredExpiry;
     private final Clock clock;
 
     public RetiredExpirer(NodeRepository nodeRepository,
@@ -39,12 +39,12 @@ public class RetiredExpirer extends Maintainer {
                           Deployer deployer,
                           Clock clock,
                           Duration maintenanceInterval,
-                          Duration retiredDuration,
+                          Duration retiredExpiry,
                           JobControl jobControl) {
         super(nodeRepository, maintenanceInterval, jobControl);
         this.deployer = deployer;
         this.orchestrator = orchestrator;
-        this.retiredDuration = retiredDuration;
+        this.retiredExpiry = retiredExpiry;
         this.clock = clock;
     }
 
@@ -88,7 +88,7 @@ public class RetiredExpirer extends Maintainer {
      * Checks if the node can be removed:
      * if the node is {@link NodeType#host}, it will only be removed if it has no children
      * Otherwise, a removal is allowed if either of these are true:
-     * - The node has been in state {@link History.Event.Type#retired} for longer than {@link #retiredDuration}
+     * - The node has been in state {@link History.Event.Type#retired} for longer than {@link #retiredExpiry}
      * - Orchestrator allows it
      */
     private boolean canRemove(Node node) {
@@ -97,7 +97,7 @@ public class RetiredExpirer extends Maintainer {
         }
 
         Optional<Instant> timeOfRetiredEvent = node.history().event(History.Event.Type.retired).map(History.Event::at);
-        Optional<Instant> retireAfter = timeOfRetiredEvent.map(retiredEvent -> retiredEvent.plus(retiredDuration));
+        Optional<Instant> retireAfter = timeOfRetiredEvent.map(retiredEvent -> retiredEvent.plus(retiredExpiry));
         boolean shouldRetireNowBecauseExpried = retireAfter.map(time -> time.isBefore(clock.instant())).orElse(false);
         if (shouldRetireNowBecauseExpried) {
             return true;
