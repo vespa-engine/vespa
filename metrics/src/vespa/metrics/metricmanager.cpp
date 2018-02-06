@@ -150,11 +150,16 @@ MetricManager::removeMetricUpdateHook(UpdateHook& hook)
     LOG(warning, "Update hook not registered");
 }
 
+bool
+MetricManager::isInitialized() const {
+    return static_cast<bool>(_configHandle);
+}
+
 void
 MetricManager::init(const config::ConfigUri & uri, FastOS_ThreadPool& pool,
                     bool startThread)
 {
-    if (_configHandle.get()) {
+    if (isInitialized()) {
         throw vespalib::IllegalStateException(
                 "The metric manager have already been initialized. "
                 "It can only be initialized once.", VESPA_STRLOC);
@@ -164,12 +169,11 @@ MetricManager::init(const config::ConfigUri & uri, FastOS_ThreadPool& pool,
     _configHandle = _configSubscriber->subscribe<Config>(uri.getConfigId());
     _configSubscriber->nextConfig();
     configure(getMetricLock(), _configHandle->getConfig());
-    LOG(debug, "Starting worker thread, waiting for first "
-               "iteration to complete.");
+    LOG(debug, "Starting worker thread, waiting for first iteration to complete.");
     if (startThread) {
         Runnable::start(pool);
-            // Wait for first iteration to have completed, such that it is safe
-            // to access snapshots afterwards.
+        // Wait for first iteration to have completed, such that it is safe
+        // to access snapshots afterwards.
         vespalib::MonitorGuard sync(_waiter);
         while (_lastProcessedTime == 0) {
             sync.wait(1);

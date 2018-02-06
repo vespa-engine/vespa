@@ -215,7 +215,9 @@ StorageNode::initialize()
     // and the like. Note that at this time, all metrics should hopefully
     // have been created, such that we don't need to pay the extra cost of
     // reinitializing metric manager often.
-    _context.getComponentRegister().getMetricManager().init(_configUri, _context.getThreadPool());
+    if ( ! _context.getComponentRegister().getMetricManager().isInitialized() ) {
+        _context.getComponentRegister().getMetricManager().init(_configUri, _context.getThreadPool());
+    }
 
     if (_chain) {
         LOG(debug, "Storage chain configured. Calling open()");

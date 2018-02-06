@@ -273,6 +273,8 @@ public:
 
     MemoryConsumption::UP getMemoryConsumption(const MetricLockGuard & guard) const;
 
+    bool isInitialized() const;
+
 private:
     void takeSnapshots(const MetricLockGuard &, time_t timeToProcess);
 
