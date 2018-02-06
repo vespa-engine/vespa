@@ -10,5 +10,6 @@ vespa_add_library(eval_tensor_dense OBJECT
     dense_tensor_cells_iterator.cpp
     dense_tensor_view.cpp
     dense_tensor_reduce.cpp
+    vector_from_doubles_function.cpp
     mutable_dense_tensor_view.cpp
 )
