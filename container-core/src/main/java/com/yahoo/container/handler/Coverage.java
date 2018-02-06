@@ -45,7 +45,7 @@ public class Coverage {
         this(docs, nodes, full, 1);
     }
 
-    public Coverage(long docs, int nodes, boolean full, int resultSets) {
+    protected Coverage(long docs, int nodes, boolean full, int resultSets) {
         this(docs, docs, nodes, resultSets, full ? FullCoverageDefinition.EXPLICITLY_FULL
                 : FullCoverageDefinition.EXPLICITLY_INCOMPLETE);
     }

@@ -15,10 +15,12 @@ public class Coverage extends com.yahoo.container.handler.Coverage {
         super(docs, active, 0, 1);
     }
 
+    @Deprecated
     public Coverage(long docs, int nodes, boolean full) {
         this(docs, nodes, full, 1);
     }
 
+    @Deprecated
     public Coverage(long docs, int nodes, boolean full, int resultSets) {
         super(docs, nodes, full, resultSets);
     }
