@@ -31,9 +31,6 @@
       "name":"ProvisionedExpirer"
     },
     {
-      "name":"RetiredEarlyExpirer"
-    },
-    {
       "name":"MetricsReporter"
     },
     {

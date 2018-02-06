@@ -17,6 +17,8 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
+import com.yahoo.vespa.orchestrator.OrchestrationException;
+import com.yahoo.vespa.orchestrator.Orchestrator;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -29,6 +31,9 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author bratseth
@@ -109,7 +114,7 @@ public class InactiveAndFailedExpirerTest {
     }
 
     @Test
-    public void node_that_wants_to_retire_is_moved_to_parked() {
+    public void node_that_wants_to_retire_is_moved_to_parked() throws OrchestrationException {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), 
                                                   Version.fromString("6.42"));
@@ -142,7 +147,10 @@ public class InactiveAndFailedExpirerTest {
                                                             1)
                 )
         );
-        new RetiredExpirer(tester.nodeRepository(), deployer, tester.clock(), Duration.ofMinutes(10), new JobControl(tester.nodeRepository().database())).run();
+        Orchestrator orchestrator = mock(Orchestrator.class);
+        doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
+        new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, tester.clock(), Duration.ofDays(30),
+                Duration.ofMinutes(10), new JobControl(tester.nodeRepository().database())).run();
         assertEquals(1, tester.nodeRepository().getNodes(Node.State.inactive).size());
 
         // Inactive times out and one node is moved to parked

@@ -23,6 +23,8 @@ import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import com.yahoo.vespa.orchestrator.OrchestrationException;
+import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -38,7 +40,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -59,6 +63,7 @@ public class NodeRetirerTester {
     // Use LinkedHashMap to keep order in which applications were deployed
     private final Map<ApplicationId, MockDeployer.ApplicationContext> apps = new LinkedHashMap<>();
 
+    private final Orchestrator orchestrator = mock(Orchestrator.class);
     private RetiredExpirer retiredExpirer;
     private InactiveExpirer inactiveExpirer;
     private int nextNodeId = 0;
@@ -71,6 +76,12 @@ public class NodeRetirerTester {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
         deployer = new MockDeployer(provisioner, apps);
         flavors = nodeFlavors.getFlavors().stream().sorted(Comparator.comparing(Flavor::name)).collect(Collectors.toList());
+
+        try {
+            doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
+        } catch (OrchestrationException e) {
+            e.printStackTrace();
+        }
     }
 
     NodeRetirer makeNodeRetirer(RetirementPolicy policy) {
@@ -112,7 +123,7 @@ public class NodeRetirerTester {
 
     void iterateMaintainers() {
         if (retiredExpirer == null) {
-            retiredExpirer = new RetiredExpirer(nodeRepository, deployer, clock, Duration.ofMinutes(10), jobControl);
+            retiredExpirer = new RetiredExpirer(nodeRepository, orchestrator, deployer, clock, Duration.ofDays(30), Duration.ofMinutes(10), jobControl);
             inactiveExpirer = new InactiveExpirer(nodeRepository, clock, Duration.ofMinutes(10), jobControl);
         }
 

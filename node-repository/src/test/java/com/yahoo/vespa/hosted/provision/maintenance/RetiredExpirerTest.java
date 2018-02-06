@@ -154,7 +154,7 @@ public class RetiredExpirerTest {
                 .doThrow(new OrchestrationException("Permission not granted 2"))
                 .when(orchestrator).acquirePermissionToRemove(any());
 
-        RetiredEarlyExpirer retiredExpirer = createRetiredExpirer(deployer);
+        RetiredExpirer retiredExpirer = createRetiredExpirer(deployer);
         retiredExpirer.run();
         assertEquals(5, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(2, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
@@ -205,14 +205,14 @@ public class RetiredExpirerTest {
         nodeRepository.setReady(nodes);
     }
 
-    private RetiredEarlyExpirer createRetiredExpirer(Deployer deployer) {
-        return new RetiredEarlyExpirer(
+    private RetiredExpirer createRetiredExpirer(Deployer deployer) {
+        return new RetiredExpirer(
                 nodeRepository,
+                orchestrator,
+                deployer,
+                clock,
                 Duration.ofDays(30), /* Maintenance interval, use large value so it never runs by itself */
                 RETIRED_EXPIRATION,
-                clock,
-                new JobControl(nodeRepository.database()),
-                deployer,
-                orchestrator);
+                new JobControl(nodeRepository.database()));
     }
 }

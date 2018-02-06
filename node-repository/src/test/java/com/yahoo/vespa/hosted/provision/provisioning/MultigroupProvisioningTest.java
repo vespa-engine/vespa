@@ -11,8 +11,8 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
-import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.maintenance.RetiredExpirer;
+import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -136,7 +136,8 @@ public class MultigroupProvisioningTest {
                              Collections.singletonMap(application1, 
                                                       new MockDeployer.ApplicationContext(application1, cluster(), 
                                                                                           Capacity.fromNodeCount(8, Optional.of("large")), 1)));
-        new RetiredExpirer(tester.nodeRepository(), deployer, tester.clock(), Duration.ofHours(12), new JobControl(tester.nodeRepository().database())).run();
+        new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, tester.clock(), Duration.ofDays(30),
+                Duration.ofHours(12), new JobControl(tester.nodeRepository().database())).run();
 
         assertEquals(8, tester.getNodes(application1, Node.State.inactive).flavor("small").size());
         deploy(application1, 8, 8, "large", tester);
