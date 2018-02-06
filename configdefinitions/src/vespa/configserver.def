@@ -50,5 +50,5 @@ dockerVespaBaseImage string default=""
 loadBalancerAddress string default=""
 
 # File distribution
-disableFiledistributor bool default=false
+disableFiledistributor bool default=true
 usechunkedtransfer bool default=true
