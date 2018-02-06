@@ -20,15 +20,15 @@ public class MnistSoftmaxImportTestCase {
         TestableTensorFlowModel model = new TestableTensorFlowModel("src/test/files/integration/tensorflow/mnist_softmax/saved");
 
         // Check constants
-        assertEquals(2, model.get().constants().size());
+        assertEquals(2, model.get().largeConstants().size());
 
-        Tensor constant0 = model.get().constants().get("Variable");
+        Tensor constant0 = model.get().largeConstants().get("Variable");
         assertNotNull(constant0);
         assertEquals(new TensorType.Builder().indexed("d0", 784).indexed("d1", 10).build(),
                      constant0.type());
         assertEquals(7840, constant0.size());
 
-        Tensor constant1 = model.get().constants().get("Variable_1");
+        Tensor constant1 = model.get().largeConstants().get("Variable_1");
         assertNotNull(constant1);
         assertEquals(new TensorType.Builder().indexed("d0", 10).build(),
                      constant1.type());

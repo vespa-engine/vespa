@@ -208,6 +208,11 @@ App::Main()
             }
             sigBusHandler.reset(new search::SigBusHandler(stateFile.get()));
             ioErrorHandler.reset(new search::IOErrorHandler(stateFile.get()));
+            if ( ! params.serviceidentity.empty()) {
+                proton.getMetricManager().init(params.serviceidentity, proton.getThreadPool());
+            } else {
+                proton.getMetricManager().init(params.identity, proton.getThreadPool());
+            }
             if (!downPersistence) {
                 proton.init(configSnapshot);
             }
@@ -218,8 +223,6 @@ App::Main()
                 spiProton->setupConfig(params.subscribeTimeout);
                 spiProton->createNode();
                 EV_STARTED("servicelayer");
-            } else {
-                proton.getMetricManager().init(params.identity, proton.getThreadPool());
             }
             EV_STARTED("proton");
             while (!(SIG::INT.check() || SIG::TERM.check() || (spiProton && spiProton->getNode().attemptedStopped()))) {

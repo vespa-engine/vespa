@@ -24,4 +24,5 @@ public class FileAttributes {
     public String permissions() { return PosixFilePermissions.toString(attributes.permissions()); }
     public boolean isRegularFile() { return attributes.isRegularFile(); }
     public boolean isDirectory() { return attributes.isDirectory(); }
+    public long size() { return attributes.size(); }
 }

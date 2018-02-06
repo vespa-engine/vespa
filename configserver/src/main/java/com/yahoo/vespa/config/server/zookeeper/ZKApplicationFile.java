@@ -95,7 +95,6 @@ class ZKApplicationFile extends ApplicationFile {
 
     @Override
     public ApplicationFile writeFile(Reader input) {
-        // foo/bar/baz.txt
         String zkPath = getZKPath(path);
         try {
             String data = IOUtils.readAll(input);
@@ -108,6 +107,21 @@ class ZKApplicationFile extends ApplicationFile {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return this;
+    }
+
+    @Override
+    public ApplicationFile appendFile(String value) {
+        String zkPath = getZKPath(path);
+        String status = ContentStatusNew;
+        if (zkApp.exists(zkPath)) {
+            status = ContentStatusChanged;
+        }
+        String existingData = zkApp.getData(zkPath);
+        if (existingData == null)
+            existingData = "";
+        zkApp.putData(zkPath, existingData + value);
+        writeMetaFile(value, status);
         return this;
     }
 

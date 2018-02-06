@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.Provider;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -39,6 +40,7 @@ import java.util.logging.Logger;
 public class AthenzSslTrustStoreConfigurator implements SslTrustStoreConfigurator {
 
     private static final Logger log = Logger.getLogger(AthenzSslTrustStoreConfigurator.class.getName());
+    private static final String CERTIFICATE_ALIAS = "cfgselfsigned";
 
     private static final Provider provider = new BouncyCastleProvider();
     private final KeyStore trustStore;
@@ -56,6 +58,11 @@ public class AthenzSslTrustStoreConfigurator implements SslTrustStoreConfigurato
         log.log(LogLevel.INFO, "Configured JDisc trust store with self-signed certificate");
     }
 
+    Instant getTrustStoreExpiry() throws KeyStoreException {
+        X509Certificate certificate = (X509Certificate) trustStore.getCertificate(CERTIFICATE_ALIAS);
+        return certificate.getNotAfter().toInstant();
+    }
+
     private static KeyStore createTrustStore(KeyProvider keyProvider,
                                              ConfigserverConfig configserverConfig,
                                              AthenzProviderServiceConfig athenzProviderServiceConfig) {
@@ -67,7 +74,7 @@ public class AthenzSslTrustStoreConfigurator implements SslTrustStoreConfigurato
             try (FileInputStream in = new FileInputStream(athenzProviderServiceConfig.athenzCaTrustStore())) {
                 trustStore.load(in, "changeit".toCharArray());
             }
-            trustStore.setCertificateEntry("cfgselfsigned", selfSignedCertificate);
+            trustStore.setCertificateEntry(CERTIFICATE_ALIAS, selfSignedCertificate);
             return trustStore;
         } catch (Exception e) {
             throw new RuntimeException(e);
