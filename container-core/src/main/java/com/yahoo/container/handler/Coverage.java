@@ -17,6 +17,7 @@ public class Coverage {
     protected long soonActive;
     protected int degradedReason;
     protected int nodes;
+    private   int nodesTried;
     protected int resultSets;
     protected int fullResultSets;
 
@@ -34,8 +35,7 @@ public class Coverage {
     /**
      * Build an invalid instance to initiate manually.
      */
-    protected Coverage() {
-    }
+    protected Coverage() { }
 
     protected Coverage(long docs, long active, int nodes, int resultSets) {
         this(docs, active, nodes, resultSets, FullCoverageDefinition.DOCUMENT_COUNT);
@@ -53,6 +53,7 @@ public class Coverage {
     private Coverage(long docs, long active, int nodes, int resultSets, FullCoverageDefinition fullReason) {
         this.docs = docs;
         this.nodes = nodes;
+        this.nodesTried = nodes;
         this.active = active;
         this.soonActive = active;
         this.degradedReason = 0;
@@ -67,6 +68,7 @@ public class Coverage {
         }
         docs += other.getDocs();
         nodes += other.getNodes();
+        nodesTried += other.nodesTried;
         active += other.getActive();
         soonActive += other.getSoonActive();
         degradedReason |= other.degradedReason;
@@ -137,11 +139,20 @@ public class Coverage {
     }
 
     /**
-     * @return the number of search instances which participated in the search.
+     * @return the number of search instances which participated successfully in the search.
      */
     public int getNodes() {
         return nodes;
     }
+
+    /**
+     * @return the number of search instances which tried to participate in the search.
+     */
+    public int getNodesTried() {
+        return nodesTried;
+    }
+
+    public Coverage setNodesTried(int nodesTried) { this.nodesTried = nodesTried; return this; }
 
     /**
      * A Coverage instance contains coverage information for potentially more
