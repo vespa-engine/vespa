@@ -171,11 +171,12 @@ Matcher::create_match_tools_factory(const search::engine::Request &request,
 {
     const Properties & rankProperties = request.propertiesMap.rankProperties();
     bool softTimeoutEnabled = Enabled::lookup(rankProperties, _rankSetup->getSoftTimeoutEnabled());
-    double factor = 0.95;
-    uint64_t safeLeft = request.getTimeLeft() * factor;
+    double factor = softTimeoutEnabled
+                    ? Factor::lookup(rankProperties, _stats.softDoomFactor())
+                    : 0.95;
+    int64_t safeLeft = request.getTimeLeft() * factor;
     fastos::TimeStamp safeDoom(fastos::ClockSystem::now() + safeLeft);
     if (softTimeoutEnabled) {
-        factor = Factor::lookup(rankProperties, _stats.softDoomFactor());
         LOG(debug, "Soft-timeout computed factor=%1.3f, used factor=%1.3f, softTimeout=%lu softDoom=%ld hardDoom=%ld",
                    _stats.softDoomFactor(), factor, safeLeft, safeDoom.ns(), request.getTimeOfDoom().ns());
     }
