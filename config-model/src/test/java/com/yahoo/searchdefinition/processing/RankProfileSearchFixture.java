@@ -38,8 +38,7 @@ class RankProfileSearchFixture {
     RankProfileSearchFixture(ApplicationPackage applicationpackage, QueryProfileRegistry queryProfileRegistry,
                              String rankProfiles, String constant, String field)
             throws ParseException {
-        this.queryProfileRegistry = queryProfileRegistry;
-        SearchBuilder builder = new SearchBuilder(applicationpackage, rankProfileRegistry, queryProfileRegistry);
+        SearchBuilder builder = new SearchBuilder(applicationpackage, rankProfileRegistry, new QueryProfileRegistry());
         String sdContent = "search test {\n" +
                            "  " + (constant != null ? constant : "") + "\n" +
                            "  document test {\n" +
@@ -51,6 +50,7 @@ class RankProfileSearchFixture {
         builder.importString(sdContent);
         builder.build();
         search = builder.getSearch();
+        this.queryProfileRegistry = queryProfileRegistry;
     }
 
     public void assertFirstPhaseExpression(String expExpression, String rankProfile) {
