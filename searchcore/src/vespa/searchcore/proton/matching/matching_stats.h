@@ -37,6 +37,7 @@ public:
      * thread.
      **/
     class Partition {
+        size_t _docsCovered;
         size_t _docsMatched;
         size_t _docsRanked;
         size_t _docsReRanked;
@@ -45,13 +46,16 @@ public:
         Avg    _wait_time;
     public:
         Partition()
-            : _docsMatched(0),
+            : _docsCovered(0),
+              _docsMatched(0),
               _docsRanked(0),
               _docsReRanked(0),
               _softDoomed(0),
               _active_time(),
               _wait_time() { }
 
+        Partition &docsCovered(size_t value) { _docsCovered = value; return *this; }
+        size_t docsCovered() const { return _docsCovered; }
         Partition &docsMatched(size_t value) { _docsMatched = value; return *this; }
         size_t docsMatched() const { return _docsMatched; }
         Partition &docsRanked(size_t value) { _docsRanked = value; return *this; }
@@ -69,6 +73,7 @@ public:
         size_t wait_time_count() const { return _wait_time.count(); }
 
         Partition &add(const Partition &rhs) {
+            _docsCovered += rhs.docsCovered();
             _docsMatched += rhs._docsMatched;
             _docsRanked += rhs._docsRanked;
             _docsReRanked += rhs._docsReRanked;
@@ -83,6 +88,7 @@ public:
 private:
     size_t                 _queries;
     size_t                 _limited_queries;
+    size_t                 _docsCovered;
     size_t                 _docsMatched;
     size_t                 _docsRanked;
     size_t                 _docsReRanked;
@@ -108,6 +114,9 @@ public:
 
     MatchingStats &limited_queries(size_t value) { _limited_queries = value; return *this; }
     size_t limited_queries() const { return _limited_queries; }
+
+    MatchingStats &docsCovered(size_t value) { _docsCovered = value; return *this; }
+    size_t docsCovered() const { return _docsCovered; }
 
     MatchingStats &docsMatched(size_t value) { _docsMatched = value; return *this; }
     size_t docsMatched() const { return _docsMatched; }
