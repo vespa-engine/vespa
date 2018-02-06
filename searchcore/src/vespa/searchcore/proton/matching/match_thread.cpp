@@ -172,7 +172,7 @@ void
 MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
 {
     bool softDoomed = false;
-    uint32_t covered = 0;
+    uint32_t docsCovered = 0;
     Context context(matchParams.rankDropLimit, tools, hits, num_threads);
     for (DocidRange docid_range = scheduler.first_range(thread_id);
          !docid_range.empty() && ! softDoomed;
@@ -180,7 +180,7 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
     {
         uint32_t lastCovered = inner_match_loop<Strategy, do_rank, do_limit, do_share_work>(context, tools, docid_range);
         softDoomed = (lastCovered < docid_range.end);
-        covered += lastCovered - docid_range.begin;
+        docsCovered += lastCovered - docid_range.begin;
     }
     uint32_t matches = context.matches;
     if (do_limit && context.isBelowLimit()) {
@@ -190,6 +190,7 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
         estimate_match_frequency(matches, searchedSoFar);
         tools.match_limiter().updateDocIdSpaceEstimate(searchedSoFar, 0);
     }
+    thread_stats.docsCovered(docsCovered);
     thread_stats.docsMatched(matches);
     thread_stats.softDoomed(softDoomed);
     if (do_rank) {
