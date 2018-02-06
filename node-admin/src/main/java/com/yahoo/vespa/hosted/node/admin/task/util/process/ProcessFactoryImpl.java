@@ -74,19 +74,15 @@ public class ProcessFactoryImpl implements ProcessFactory {
         try {
             processBuilder.redirectOutput(temporaryFile.toFile());
             ProcessApi2 process = processStarter.start(processBuilder);
-            ChildProcess2Impl child = new ChildProcess2Impl(commandLine, process, temporaryFile, timer);
-            // child is now responsible for deleting temporaryFile (it's AutoClosable)
-            temporaryFile = null;
-            return child;
-        } finally {
-            if (temporaryFile != null) {
-                try {
-                    Files.delete(temporaryFile);
-                } catch (IOException e) {
-                    logger.log(LogLevel.WARNING, "Failed to delete temporary file at " +
-                            temporaryFile, e);
-                }
+            return new ChildProcess2Impl(commandLine, process, temporaryFile, timer);
+        } catch (RuntimeException | Error throwable) {
+            try {
+                Files.delete(temporaryFile);
+            } catch (IOException ioException) {
+                logger.log(LogLevel.WARNING, "Failed to delete temporary file at " +
+                        temporaryFile, ioException);
             }
+            throw throwable;
         }
 
     }
