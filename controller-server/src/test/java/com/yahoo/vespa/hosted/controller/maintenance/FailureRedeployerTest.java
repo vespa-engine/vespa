@@ -196,6 +196,7 @@ public class FailureRedeployerTest {
                 .upgradePolicy("canary")
                 .region("cd-us-central-1")
                 .build();
+        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
 
         // New version is released
         version = Version.fromString("6.142.1");

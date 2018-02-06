@@ -187,10 +187,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                        ATHENZ_TENANT_DOMAIN,
                                        new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value())); // (Necessary but not provided in this API)
 
-        // Trigger deployment
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", POST)
-                                      .data("6.1.0"),
-                              new File("application-deployment.json"));
+        // Trigger deployment from completion of component job
+        controllerTester.jobCompletion(DeploymentJobs.JobType.component)
+                        .application(id)
+                        .projectId(screwdriverProjectId)
+                        .uploadArtifact(applicationPackage)
+                        .submit();
 
         // ... systemtest
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
@@ -247,7 +249,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID)
                                       .recursive("deployment"),
                               new File("recursive-root.json"));
-        // GET at root, with "&recursive=tenant", returns info about all tenants, with limmited info about their applications.
+        // GET at root, with "&recursive=tenant", returns info about all tenants, with limited info about their applications.
         tester.assertResponse(request("/application/v4/", GET)
                                       .userIdentity(USER_ID)
                                       .recursive("tenant"),

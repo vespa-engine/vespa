@@ -609,6 +609,7 @@ public class ControllerTest {
                 .upgradePolicy("canary")
                 .region("cd-us-central-1")
                 .build();
+        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
 
         long cdJobsCount = statuses.get().keySet().stream()
                         .filter(type -> type.zone(SystemName.cd).isPresent())
