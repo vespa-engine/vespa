@@ -92,11 +92,8 @@ bool willNotNeedRanking(const SearchRequest & request, const GroupingContext & g
 }  // namespace proton::matching::<unnamed>
 
 FeatureSet::SP
-Matcher::getFeatureSet(const DocsumRequest & req,
-                       ISearchContext & searchCtx,
-                       IAttributeContext & attrCtx,
-                       SessionManager & sessionMgr,
-                       bool summaryFeatures)
+Matcher::getFeatureSet(const DocsumRequest & req, ISearchContext & searchCtx, IAttributeContext & attrCtx,
+                       SessionManager & sessionMgr, bool summaryFeatures)
 {
     SessionId sessionId(&req.sessionId[0], req.sessionId.size());
     if (!sessionId.empty()) {
@@ -114,22 +111,18 @@ Matcher::getFeatureSet(const DocsumRequest & req,
     }
 
     StupidMetaStore metaStore;
-    MatchToolsFactory::UP mtf = create_match_tools_factory(req, searchCtx, attrCtx, metaStore, req.propertiesMap.featureOverrides());
+    MatchToolsFactory::UP mtf = create_match_tools_factory(req, searchCtx, attrCtx, metaStore,
+                                                           req.propertiesMap.featureOverrides());
     if (!mtf->valid()) {
-        LOG(warning, "getFeatureSet(%s): query execution failed "
-            "(invalid query). Returning empty feature set",
-            (summaryFeatures ? "summary features" : "rank features"));
+        LOG(warning, "getFeatureSet(%s): query execution failed (invalid query). Returning empty feature set",
+                     (summaryFeatures ? "summary features" : "rank features"));
         return FeatureSet::SP(new FeatureSet());
     }
     return findFeatureSet(req, *mtf, summaryFeatures);
 }
 
-Matcher::Matcher(const search::index::Schema &schema,
-                 const Properties &props,
-                 const vespalib::Clock &clock,
-                 QueryLimiter &queryLimiter,
-                 const IConstantValueRepo &constantValueRepo,
-                 uint32_t distributionKey)
+Matcher::Matcher(const search::index::Schema &schema, const Properties &props, const vespalib::Clock &clock,
+                 QueryLimiter &queryLimiter, const IConstantValueRepo &constantValueRepo, uint32_t distributionKey)
     : _indexEnv(schema, props, constantValueRepo),
       _blueprintFactory(),
       _rankSetup(),
@@ -163,10 +156,8 @@ using search::fef::indexproperties::softtimeout::Enabled;
 using search::fef::indexproperties::softtimeout::Factor;
 
 std::unique_ptr<MatchToolsFactory>
-Matcher::create_match_tools_factory(const search::engine::Request &request,
-                                    ISearchContext &searchContext,
-                                    IAttributeContext &attrContext,
-                                    const search::IDocumentMetaStore &metaStore,
+Matcher::create_match_tools_factory(const search::engine::Request &request, ISearchContext &searchContext,
+                                    IAttributeContext &attrContext, const search::IDocumentMetaStore &metaStore,
                                     const Properties &feature_overrides) const
 {
     const Properties & rankProperties = request.propertiesMap.rankProperties();
@@ -187,8 +178,7 @@ Matcher::create_match_tools_factory(const search::engine::Request &request,
 }
 
 SearchReply::UP
-Matcher::handleGroupingSession(SessionManager &sessionMgr,
-                               GroupingContext & groupingContext,
+Matcher::handleGroupingSession(SessionManager &sessionMgr, GroupingContext & groupingContext,
                                GroupingSession::UP groupingSession)
 {
     SearchReply::UP reply = std::make_unique<SearchReply>();
@@ -211,12 +201,9 @@ Matcher::computeNumThreadsPerSearch(Blueprint::HitEstimate hits, const Propertie
 }
 
 SearchReply::UP
-Matcher::match(const SearchRequest &request,
-               vespalib::ThreadBundle &threadBundle,
-               ISearchContext &searchContext,
-               IAttributeContext &attrContext,
-               SessionManager &sessionMgr,
-               const search::IDocumentMetaStore &metaStore,
+Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundle,
+               ISearchContext &searchContext, IAttributeContext &attrContext,
+               SessionManager &sessionMgr, const search::IDocumentMetaStore &metaStore,
                SearchSession::OwnershipBundle &&owned_objects)
 {
     fastos::StopWatch total_matching_time;
@@ -304,14 +291,13 @@ Matcher::match(const SearchRequest &request,
         coverage.setSoonActive(numActiveLids);
         coverage.setCovered(covered);
         if (wasLimited) {
-            LOG(debug, "was limited, degraded from match phase");
             coverage.degradeMatchPhase();
+            LOG(debug, "was limited, degraded from match phase");
         }
         if (my_stats.softDoomed()) {
-            LOG(debug, "soft doomed, degraded from timeout");
             coverage.degradeTimeout();
             coverage.setCovered(my_stats.docsCovered());
-        }
+            LOG(debug, "soft doomed, degraded from timeout covered = %lu", coverage.getCovered()); }
         LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%ld",
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), estHits, reply->totalHitCount);
     }
@@ -331,19 +317,15 @@ Matcher::match(const SearchRequest &request,
 }
 
 FeatureSet::SP
-Matcher::getSummaryFeatures(const DocsumRequest & req,
-                            ISearchContext & searchCtx,
-                            IAttributeContext & attrCtx,
-                            SessionManager &sessionMgr)
+Matcher::getSummaryFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
+                            IAttributeContext & attrCtx, SessionManager &sessionMgr)
 {
     return getFeatureSet(req, searchCtx, attrCtx, sessionMgr, true);
 }
 
 FeatureSet::SP
-Matcher::getRankFeatures(const DocsumRequest & req,
-                         ISearchContext & searchCtx,
-                         IAttributeContext & attrCtx,
-                         SessionManager &sessionMgr)
+Matcher::getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
+                         IAttributeContext & attrCtx, SessionManager &sessionMgr)
 {
     return getFeatureSet(req, searchCtx, attrCtx, sessionMgr, false);
 }
