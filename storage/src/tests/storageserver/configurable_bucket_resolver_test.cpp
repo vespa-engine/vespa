@@ -20,6 +20,7 @@ struct ConfigurableBucketResolverTest : CppUnit::TestFixture {
     CPPUNIT_TEST(known_bucket_space_is_resolved_from_document_id);
     CPPUNIT_TEST(unknown_bucket_space_in_id_throws_exception);
     CPPUNIT_TEST(can_create_resolver_from_bucket_space_config);
+    CPPUNIT_TEST(legacy_document_id_without_document_type_maps_to_default_space);
     CPPUNIT_TEST_SUITE_END();
 
     using BucketSpaceMapping = ConfigurableBucketResolver::BucketSpaceMapping;
@@ -47,6 +48,7 @@ struct ConfigurableBucketResolverTest : CppUnit::TestFixture {
     void known_bucket_space_is_resolved_from_document_id();
     void unknown_bucket_space_in_id_throws_exception();
     void can_create_resolver_from_bucket_space_config();
+    void legacy_document_id_without_document_type_maps_to_default_space();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(ConfigurableBucketResolverTest);
@@ -131,6 +133,12 @@ void ConfigurableBucketResolverTest::can_create_resolver_from_bucket_space_confi
                          resolver->bucketFromId(DocumentId("id::bar::xyz")).getBucketSpace());
     CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::global_space(),
                          resolver->bucketFromId(DocumentId("id::baz::xyz")).getBucketSpace());
+}
+
+void ConfigurableBucketResolverTest::legacy_document_id_without_document_type_maps_to_default_space() {
+    auto resolver = create_simple_resolver();
+    CPPUNIT_ASSERT_EQUAL(document::FixedBucketSpaces::default_space(),
+                         resolver.bucketFromId(DocumentId("userdoc:baz:1234:baz")).getBucketSpace());
 }
 
 }
