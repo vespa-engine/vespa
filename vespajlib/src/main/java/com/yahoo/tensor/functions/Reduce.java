@@ -106,7 +106,6 @@ public class Reduce extends PrimitiveTensorFunction {
     }
 
     private TensorType type(TensorType argumentType) {
-        if (dimensions.isEmpty()) return TensorType.empty; // means reduce all
         TensorType.Builder builder = new TensorType.Builder();
         for (TensorType.Dimension dimension : argumentType.dimensions())
             if ( ! dimensions.contains(dimension.name())) // keep

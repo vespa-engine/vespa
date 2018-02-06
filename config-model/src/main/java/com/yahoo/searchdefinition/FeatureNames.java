@@ -101,18 +101,6 @@ public class FeatureNames {
         return canonicalize("query(\"" + propertyName + "\")");
     }
 
-    public static boolean isConstantFeature(String feature) {
-        return feature.startsWith("constant(");
-    }
-
-    public static boolean isAttributeFeature(String feature) {
-        return feature.startsWith("attribute(");
-    }
-
-    public static boolean isQueryFeature(String feature) {
-        return feature.startsWith("query(");
-    }
-
     /**
      * Returns the single argument of the given feature name, without any quotes,
      * or empty if it is not a valid query, attribute or constant feature name

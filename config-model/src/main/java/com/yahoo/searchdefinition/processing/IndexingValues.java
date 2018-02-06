@@ -13,7 +13,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
- * @author Simon Thoresen Hult
+ * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
  */
 public class IndexingValues extends Processor {
 

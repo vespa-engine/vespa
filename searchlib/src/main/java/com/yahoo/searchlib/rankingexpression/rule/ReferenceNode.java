@@ -60,10 +60,6 @@ public final class ReferenceNode extends CompositeNode {
 
     @Override
     public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return toString(context, path, true);
-    }
-
-    private String toString(SerializationContext context, Deque<String> path, boolean includeOutput) {
         if (path == null)
             path = new ArrayDeque<>();
         String myName = this.name;
@@ -105,21 +101,14 @@ public final class ReferenceNode extends CompositeNode {
             }
             ret.append(")");
         }
-        if (includeOutput)
-            ret.append(myOutput != null ? "." + myOutput : "");
+        ret.append(myOutput != null ? "." + myOutput : "");
         return ret.toString();
     }
 
     @Override
     public TensorType type(TypeContext context) {
-        // Ensure base name (excluding output exists,
-        // but don't support outputs of different tensor types (not used, so no need)
-        String name = toString(new SerializationContext(), null, false);
-        TensorType type = context.getType(name);
-
-        if (type == null)
-            throw new IllegalArgumentException("Unknown feature '" + toString() + "'");
-        return type;
+        // Don't support outputs of different type, for simplicity
+        return context.getType(toString());
     }
 
     @Override
