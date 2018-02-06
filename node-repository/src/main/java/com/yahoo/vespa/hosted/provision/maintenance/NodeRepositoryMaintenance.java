@@ -70,7 +70,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         zooKeeperAccessMaintainer = new ZooKeeperAccessMaintainer(nodeRepository, curator, durationFromEnv("zookeeper_access_maintenance_interval").orElse(defaults.zooKeeperAccessMaintenanceInterval), jobControl);
         reservationExpirer = new ReservationExpirer(nodeRepository, clock, durationFromEnv("reservation_expiry").orElse(defaults.reservationExpiry), jobControl);
         retiredExpirer = new RetiredExpirer(nodeRepository, deployer, clock, durationFromEnv("retired_expiry").orElse(defaults.retiredExpiry), jobControl);
-        retiredEarlyExpirer = new RetiredEarlyExpirer(nodeRepository, durationFromEnv("retired_early_interval").orElse(defaults.retiredEarlyInterval), jobControl, deployer, orchestrator);
+        retiredEarlyExpirer = new RetiredEarlyExpirer(nodeRepository, durationFromEnv("retired_early_interval").orElse(defaults.retiredEarlyInterval), durationFromEnv("retired_expiry").orElse(defaults.retiredExpiry), clock, jobControl, deployer, orchestrator);
         inactiveExpirer = new InactiveExpirer(nodeRepository, clock, durationFromEnv("inactive_expiry").orElse(defaults.inactiveExpiry), jobControl);
         failedExpirer = new FailedExpirer(nodeRepository, zone, clock, durationFromEnv("failed_expirer_interval").orElse(defaults.failedExpirerInterval), jobControl);
         dirtyExpirer = new DirtyExpirer(nodeRepository, clock, durationFromEnv("dirty_expiry").orElse(defaults.dirtyExpiry), jobControl);
