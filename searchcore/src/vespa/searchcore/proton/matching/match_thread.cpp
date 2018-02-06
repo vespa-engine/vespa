@@ -180,7 +180,7 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
     {
         uint32_t lastCovered = inner_match_loop<Strategy, do_rank, do_limit, do_share_work>(context, tools, docid_range);
         softDoomed = (lastCovered < docid_range.end);
-        docsCovered += lastCovered - docid_range.begin;
+        docsCovered += std::min(lastCovered, docid_range.end) - docid_range.begin;
     }
     uint32_t matches = context.matches;
     if (do_limit && context.isBelowLimit()) {
