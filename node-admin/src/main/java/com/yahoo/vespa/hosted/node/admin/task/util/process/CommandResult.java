@@ -3,6 +3,7 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -18,6 +19,8 @@ public class CommandResult {
     private final CommandLine commandLine;
     private final int exitCode;
     private final String output;
+
+    private boolean inMapFunction = false;
 
     CommandResult(CommandLine commandLine, int exitCode, String output) {
         this.commandLine = commandLine;
@@ -39,6 +42,7 @@ public class CommandResult {
         return getOutputLinesStream().collect(Collectors.toList());
     }
 
+    /** Returns the output lines as a stream, omitting trailing empty lines. */
     public Stream<String> getOutputLinesStream() {
         if (output.isEmpty()) {
             // For some reason an empty string => one-element list.
@@ -47,6 +51,43 @@ public class CommandResult {
 
         // For some reason this removes trailing empty elements, but that's OK with us.
         return NEWLINE.splitAsStream(output);
+    }
+
+    /**
+     * Map this CommandResult to an instance of type R.
+     *
+     * If a RuntimeException is thrown by the mapper, it is wrapped in an
+     * UnexpectedOutputException2 that includes a snippet of the output in the message.
+     *
+     * This method is intended to be used as part of the verification of the output.
+     */
+    public <R> R map(Function<CommandResult, R> mapper) {
+        if (inMapFunction) {
+            throw new IllegalStateException("map() cannot be called recursively");
+        }
+        inMapFunction = true;
+
+        try {
+            return mapper.apply(this);
+        } catch (RuntimeException e) {
+            throw new UnexpectedOutputException2(e, "Failed to map output", commandLine.toString(), output);
+        } finally {
+            inMapFunction = false;
+        }
+    }
+
+    /**
+     * Map the output to an instance of type R according to mapper, wrapping any
+     * RuntimeException in UnexpectedOutputException2 w/output snippet. See map() for details.
+     */
+    public <R> R mapOutput(Function<String, R> mapper) { return map(result -> mapper.apply(result.getOutput())); }
+
+    /**
+     * Map each output line to an instance of type R according to mapper, wrapping any
+     * RuntimeException in UnexpectedOutputException2 w/output snippet. See map() for details.
+     */
+    public <R> List<R> mapEachLine(Function<String, R> mapper) {
+        return map(result -> result.getOutputLinesStream().map(mapper).collect(Collectors.toList()));
     }
 
     /**

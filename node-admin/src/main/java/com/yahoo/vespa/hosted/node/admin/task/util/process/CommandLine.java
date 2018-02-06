@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
@@ -66,9 +67,14 @@ public class CommandLine {
     public CommandLine add(String... arguments) { return add(Arrays.asList(arguments)); }
 
     /** Add arguments to the command. The first argument in the first call to add() is the program. */
-    public CommandLine add(List<String> arguments) {
+    public CommandLine add(Collection<String> arguments) {
         this.arguments.addAll(arguments);
         return this;
+    }
+
+    /** Add arguments by splitting arguments by space. */
+    public CommandLine addTokens(String arguments) {
+        return add(arguments.split(" "));
     }
 
     /**

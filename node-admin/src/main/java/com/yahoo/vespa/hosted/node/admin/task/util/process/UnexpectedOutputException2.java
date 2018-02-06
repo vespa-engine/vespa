@@ -13,4 +13,14 @@ public class UnexpectedOutputException2 extends ChildProcessException {
     public UnexpectedOutputException2(String problem, String commandLine, String possiblyHugeOutput) {
         super("output was not of the expected format: " + problem, commandLine, possiblyHugeOutput);
     }
+
+    /**
+     * @param problem Problem description, e.g. "Output is not of the form ^NAME=VALUE$"
+     */
+    public UnexpectedOutputException2(RuntimeException cause,
+                                      String problem,
+                                      String commandLine,
+                                      String possiblyHugeOutput) {
+        super(cause, "output was not of the expected format: " + problem, commandLine, possiblyHugeOutput);
+    }
 }
