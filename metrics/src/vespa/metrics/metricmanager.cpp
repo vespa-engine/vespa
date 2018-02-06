@@ -152,7 +152,7 @@ MetricManager::removeMetricUpdateHook(UpdateHook& hook)
 
 bool
 MetricManager::isInitialized() const {
-    return (bool)_configHandle;
+    return static_cast<bool>(_configHandle);
 }
 
 void
