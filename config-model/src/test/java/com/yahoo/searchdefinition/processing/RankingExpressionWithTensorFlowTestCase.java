@@ -51,7 +51,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testTensorFlowReference() throws ParseException {
+    public void testTensorFlowReference() {
         RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                                                       "tensorflow('mnist_softmax/saved')");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
@@ -60,7 +60,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testTensorFlowReferenceWithConstantFeature() throws ParseException {
+    public void testTensorFlowReferenceWithConstantFeature() {
         RankProfileSearchFixture search = fixtureWith("constant(mytensor)",
                                                       "tensorflow('mnist_softmax/saved')",
                                                       "constant mytensor { file: ignored\ntype: tensor(d0[7],d1[784]) }",
@@ -71,10 +71,10 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testTensorFlowReferenceWithQueryFeature() throws ParseException {
+    public void testTensorFlowReferenceWithQueryFeature() {
         String queryProfile = "<query-profile id='default' type='root'/>";
         String queryProfileType = "<query-profile-type id='root'>" +
-                                  "  <field name='mytensor' type='tensor(d0[3],d1[784])'/>" +
+                                  "  <field name='query(mytensor)' type='tensor(d0[3],d1[784])'/>" +
                                   "</query-profile-type>";
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir,
                                                                               queryProfile,
@@ -90,7 +90,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testTensorFlowReferenceWithDocumentFeature() throws ParseException {
+    public void testTensorFlowReferenceWithDocumentFeature() {
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
         RankProfileSearchFixture search = fixtureWith("attribute(mytensor)",
                                                       "tensorflow('mnist_softmax/saved')",
@@ -103,10 +103,10 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testTensorFlowReferenceWithFeatureCombination() throws ParseException {
+    public void testTensorFlowReferenceWithFeatureCombination() {
         String queryProfile = "<query-profile id='default' type='root'/>";
         String queryProfileType = "<query-profile-type id='root'>" +
-                                  "  <field name='mytensor' type='tensor(d0[3],d1[784],d2[10])'/>" +
+                                  "  <field name='query(mytensor)' type='tensor(d0[3],d1[784],d2[10])'/>" +
                                   "</query-profile-type>";
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir,
                                                                               queryProfile,
@@ -122,7 +122,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testNestedTensorFlowReference() throws ParseException {
+    public void testNestedTensorFlowReference() {
         RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                                                       "5 + sum(tensorflow('mnist_softmax/saved'))");
         search.assertFirstPhaseExpression("5 + reduce(" + vespaExpression + ", sum)", "my_profile");
@@ -131,7 +131,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testTensorFlowReferenceSpecifyingSignature() throws ParseException {
+    public void testTensorFlowReferenceSpecifyingSignature() {
         RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                                                       "tensorflow('mnist_softmax/saved', 'serving_default')");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");

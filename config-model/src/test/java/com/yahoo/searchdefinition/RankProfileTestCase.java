@@ -135,13 +135,13 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
     @Test
     public void requireThatConfigIsDerivedForQueryFeatureTypeSettings() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(registry);
+        SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes());
         builder.importString("search test {\n" +
                 "  document test { } \n" +
                 "  rank-profile p1 {}\n" +
                 "  rank-profile p2 {}\n" +
                 "}");
-        builder.build(new BaseDeployLogger(), setupQueryProfileTypes());
+        builder.build(new BaseDeployLogger());
         Search search = builder.getSearch();
 
         assertEquals(4, registry.allRankProfiles().size());
@@ -151,7 +151,7 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
         assertQueryFeatureTypeSettings(registry.getRankProfile(search, "p2"), search);
     }
 
-    private static QueryProfiles setupQueryProfileTypes() {
+    private static QueryProfileRegistry setupQueryProfileTypes() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfileTypeRegistry typeRegistry = registry.getTypeRegistry();
         QueryProfileType type = new QueryProfileType(new ComponentId("testtype"));
@@ -164,7 +164,7 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
         type.addField(new FieldDescription("ranking.features.query(numeric)",
                 FieldType.fromString("integer", typeRegistry)), typeRegistry);
         typeRegistry.register(type);
-        return new QueryProfiles(registry);
+        return registry;
     }
 
     private static void assertQueryFeatureTypeSettings(RankProfile profile, Search search) {

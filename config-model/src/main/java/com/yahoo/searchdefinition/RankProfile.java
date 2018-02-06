@@ -2,15 +2,9 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.io.reader.NamedReader;
-import com.yahoo.processing.request.CompoundName;
-import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
-import com.yahoo.search.query.profile.types.TensorFieldType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
@@ -19,7 +13,6 @@ import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
-import com.yahoo.searchlib.rankingexpression.evaluation.TypeMapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
@@ -585,8 +578,11 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     /**
-     * Will take the parser-set textual ranking expressions and turn into objects
+     * Will take the parser-set textual ranking expressions and turn into ranking expression objects,
+     * if not already done
      */
+    // TODO: There doesn't appear to be any good reason to defer parsing of ranking expressions
+    //       until this is called. Simplify by parsing them right away.
     public void parseExpressions() {
         try {
             parseRankingExpressions();
@@ -604,20 +600,23 @@ public class RankProfile implements Serializable, Cloneable {
         for (Map.Entry<String, Macro> e : getMacros().entrySet()) {
             String macroName = e.getKey();
             Macro macro = e.getValue();
-            RankingExpression expr = parseRankingExpression(macroName, macro.getTextualExpression());
-            macro.setRankingExpression(expr);
-            macro.setTextualExpression(expr.getRoot().toString());
+            if (macro.getRankingExpression() == null) {
+                RankingExpression expr = parseRankingExpression(macroName, macro.getTextualExpression());
+                macro.setRankingExpression(expr);
+                macro.setTextualExpression(expr.getRoot().toString());
+            }
         }
     }
 
     /**
      * Passes ranking expressions on to parser
+     *
      * @throws ParseException if either of the ranking expressions could not be parsed
      */
     private void parseRankingExpressions() throws ParseException {
-        if (getFirstPhaseRankingString() != null)
+        if (getFirstPhaseRankingString() != null && firstPhaseRanking == null)
             setFirstPhaseRanking(parseRankingExpression("firstphase", getFirstPhaseRankingString()));
-        if (getSecondPhaseRankingString() != null)
+        if (getSecondPhaseRankingString() != null && secondPhaseRanking == null)
             setSecondPhaseRanking(parseRankingExpression("secondphase", getSecondPhaseRankingString()));
     }
 
@@ -748,7 +747,7 @@ public class RankProfile implements Serializable, Cloneable {
      * referable from this rank profile.
      */
     public TypeContext typeContext(QueryProfileRegistry queryProfiles) {
-        TypeMapContext context = new TypeMapContext();
+        MapTypeContext context = new MapTypeContext();
 
         // Add small constants
         getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));
@@ -764,7 +763,8 @@ public class RankProfile implements Serializable, Cloneable {
         for (QueryProfileType queryProfileType : queryProfiles.getTypeRegistry().allComponents()) {
             for (FieldDescription field : queryProfileType.declaredFields().values()) {
                 TensorType type = field.getType().asTensorType();
-                String feature = FeatureNames.asQueryFeature(field.getName());
+                if ( ! FeatureNames.isQueryFeature(field.getName())) continue;
+                String feature = FeatureNames.canonicalize(field.getName());
                 TensorType existingType = context.getType(feature);
                 if (existingType != null)
                     type = existingType.dimensionwiseGeneralizationWith(type).orElseThrow( () ->
@@ -910,7 +910,7 @@ public class RankProfile implements Serializable, Cloneable {
      */
     public static class Macro implements Serializable, Cloneable {
 
-        private String name=null;
+        private final String name;
         private String textualExpression=null;
         private RankingExpression expression=null;
         private List<String> formalParams = new ArrayList<>();
