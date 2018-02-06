@@ -88,21 +88,6 @@ public class Yum {
         }
 
         public boolean converge() {
-//            Terminal terminal;
-//            CommandLine commandLine = terminal.newCommandLine(taskContext);
-//            commandLine.add("yum", yumCommand, "--assumeyes");
-//            enabledRepo.ifPresent(repo -> commandLine.add("--enablerepo=" + repo));
-//            commandLine.add(packages);
-//            CommandResult result = commandLine.executeSilently();
-//
-//            String output = result.getUntrimmedOutput();
-//            if (commandOutputNoopPattern.matcher(output).find()) {
-//                return false;
-//            } else {
-//                commandLine.recordSilentExecutionAsSystemModification();
-//                return true;
-//            }
-
             Command command = commandSupplier.get();
             command.add("yum", yumCommand, "--assumeyes");
             enabledRepo.ifPresent(repo -> command.add("--enablerepo=" + repo));
