@@ -780,7 +780,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationInstanceAuthorizer applicationInstanceAuthorizer = new ApplicationInstanceAuthorizer(controller.zoneRegistry(), athenzClientFactory);
         Tenant tenant = controller.tenants().tenant(new TenantId(tenantName)).orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
         AthenzPrincipal principal = authorizer.getPrincipal(request);
-        applicationInstanceAuthorizer.throwIfUnauthorizedForDeploy(principal, Environment.from(environment), tenant, applicationId, applicationPackage);
+        applicationInstanceAuthorizer.throwIfUnauthorizedForDeploy(principal, Environment.from(environment), tenant, ApplicationName.from(applicationName), applicationPackage);
 
         // TODO: get rid of the json object
         DeployOptions deployOptionsJsonClass = new DeployOptions(screwdriverBuildJobFromSlime(deployOptions.field("screwdriverBuildJob")),

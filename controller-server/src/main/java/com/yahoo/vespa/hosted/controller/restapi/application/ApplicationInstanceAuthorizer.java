@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.config.application.api.DeploymentSpec;
-import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -44,7 +44,7 @@ public class ApplicationInstanceAuthorizer {
     public void throwIfUnauthorizedForDeploy(AthenzPrincipal principal,
                                              Environment environment,
                                              Tenant tenant,
-                                             ApplicationId applicationId,
+                                             ApplicationName application,
                                              Optional<ApplicationPackage> applicationPackage) {
         // Validate that domain in identity configuration (deployment.xml) is same as tenant domain
         applicationPackage.map(ApplicationPackage::deploymentSpec).flatMap(DeploymentSpec::athenzDomain)
@@ -79,12 +79,12 @@ public class ApplicationInstanceAuthorizer {
         // NOTE: no fine-grained deploy authorization for non-Athenz tenants
         if (tenant.isAthensTenant()) {
             AthenzDomain tenantDomain = tenant.getAthensDomain().get();
-            if (!hasDeployAccessToAthenzApplication(principal, tenantDomain, applicationId)) {
+            if (!hasDeployAccessToAthenzApplication(principal, tenantDomain, application)) {
                 throw loggedForbiddenException(
                         "Screwdriver principal '%1$s' does not have deploy access to '%2$s'. " +
                         "Either the application has not been created at " + zoneRegistry.getDashboardUri() + " or " +
                         "'%1$s' is not added to the application's deployer role in Athenz domain '%3$s'.",
-                        principal.getIdentity().getFullName(), applicationId, tenantDomain.getName());
+                        principal.getIdentity().getFullName(), application.value(), tenantDomain.getName());
             }
         }
     }
@@ -101,14 +101,14 @@ public class ApplicationInstanceAuthorizer {
         return new NotAuthorizedException(formattedMessage);
     }
 
-    private boolean hasDeployAccessToAthenzApplication(AthenzPrincipal principal, AthenzDomain domain, ApplicationId applicationId) {
+    private boolean hasDeployAccessToAthenzApplication(AthenzPrincipal principal, AthenzDomain domain, ApplicationName application) {
         try {
             return athenzClientFactory.createZmsClientWithServicePrincipal()
                     .hasApplicationAccess(
                             principal.getIdentity(),
                             ApplicationAction.deploy,
                             domain,
-                            new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(applicationId.application().value()));
+                            new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(application.value()));
         } catch (ZmsException e) {
             throw loggedForbiddenException(
                     "Failed to authorize deployment through Athenz. If this problem persists, " +
