@@ -129,12 +129,6 @@ public class FileReceiver {
             } catch (IOException e) {
                 log.log(LogLevel.ERROR, "Failed writing file: " + e.getMessage(), e);
                 throw new RuntimeException("Failed writing file: ", e);
-            } finally {
-                try {
-                    Files.delete(inprogressFile.toPath());
-                } catch (IOException e) {
-                    log.log(LogLevel.ERROR, "Failed deleting " + inprogressFile.getAbsolutePath() + ": " + e.getMessage(), e);
-                }
             }
             return file;
         }
