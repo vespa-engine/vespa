@@ -5,6 +5,7 @@ import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl.RunnableWithTag;
 import com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl.Scheduler;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
@@ -13,14 +14,19 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl.INITIAL_BACKOFF_DELAY;
 import static com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl.INITIAL_WAIT_NTOKEN;
 import static com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl.MAX_REGISTER_BACKOFF_DELAY;
+import static com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl.METRICS_UPDATER_TAG;
 import static com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl.REDUCED_UPDATE_PERIOD;
 import static com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl.REGISTER_INSTANCE_TAG;
 import static com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl.TIMEOUT_INITIAL_WAIT_TAG;
@@ -38,9 +44,21 @@ import static org.mockito.Mockito.when;
  */
 public class AthenzIdentityProviderImplTest {
 
+    private static final Metric DUMMY_METRIC = new Metric() {
+        @Override
+        public void set(String s, Number number, Context context) {}
+        @Override
+        public void add(String s, Number number, Context context) {}
+        @Override
+        public Context createContext(Map<String, ?> stringMap) { return null; }
+    };
+
     private static final IdentityConfig IDENTITY_CONFIG =
             new IdentityConfig(new IdentityConfig.Builder()
                                        .service("tenantService").domain("tenantDomain").loadBalancerAddress("cfg"));
+
+    private final Set<String> IGNORED_TASKS = Stream.of(UPDATE_CREDENTIALS_TAG, METRICS_UPDATER_TAG)
+            .collect(Collectors.toSet());
 
     @Test
     public void athenz_credentials_are_retrieved_after_component_contruction_completed() {
@@ -56,7 +74,7 @@ public class AthenzIdentityProviderImplTest {
                 new AthenzCredentialsService(IDENTITY_CONFIG, identityDocumentService, athenzService, clock);
 
         AthenzIdentityProvider identityProvider =
-                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, credentialService, scheduler, clock);
+                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, DUMMY_METRIC, credentialService, scheduler, clock);
 
         List<MockScheduler.CompletedTask> expectedTasks =
                 Arrays.asList(
@@ -64,7 +82,7 @@ public class AthenzIdentityProviderImplTest {
                         new MockScheduler.CompletedTask(TIMEOUT_INITIAL_WAIT_TAG, INITIAL_WAIT_NTOKEN));
         // Don't run update credential tasks, otherwise infinite loop
         List<MockScheduler.CompletedTask> completedTasks =
-                scheduler.runAllTasks(task -> !task.tag().equals(UPDATE_CREDENTIALS_TAG));
+                scheduler.runAllTasks(task -> !IGNORED_TASKS.contains(task.tag()));
         assertEquals(expectedTasks, completedTasks);
         assertEquals("TOKEN", identityProvider.getNToken());
     }
@@ -83,7 +101,7 @@ public class AthenzIdentityProviderImplTest {
         ManualClock clock = new ManualClock(Instant.EPOCH);
         MockScheduler scheduler = new MockScheduler(clock);
         AthenzIdentityProvider identityProvider =
-                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, credentialService, scheduler, clock);
+                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, DUMMY_METRIC, credentialService, scheduler, clock);
 
         List<MockScheduler.CompletedTask> expectedTasks =
                 Arrays.asList(
@@ -96,7 +114,7 @@ public class AthenzIdentityProviderImplTest {
                         new MockScheduler.CompletedTask(REGISTER_INSTANCE_TAG, MAX_REGISTER_BACKOFF_DELAY));
         // Don't run update credential tasks, otherwise infinite loop
         List<MockScheduler.CompletedTask> completedTasks =
-                scheduler.runAllTasks(task -> !task.tag().equals(UPDATE_CREDENTIALS_TAG));
+                scheduler.runAllTasks(task -> !IGNORED_TASKS.contains(task.tag()));
         assertEquals(expectedTasks, completedTasks);
         assertEquals("TOKEN", identityProvider.getNToken());
     }
@@ -121,7 +139,7 @@ public class AthenzIdentityProviderImplTest {
                 new AthenzCredentialsService(IDENTITY_CONFIG, identityDocumentService, athenzService, clock);
 
         AthenzIdentityProvider identityProvider =
-                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, credentialService, scheduler, clock);
+                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, DUMMY_METRIC, credentialService, scheduler, clock);
 
         List<MockScheduler.CompletedTask> expectedTasks =
                 Arrays.asList(
@@ -134,7 +152,8 @@ public class AthenzIdentityProviderImplTest {
                         new MockScheduler.CompletedTask(UPDATE_CREDENTIALS_TAG, UPDATE_PERIOD));
         AtomicInteger counter = new AtomicInteger(0);
         List<MockScheduler.CompletedTask> completedTasks =
-                scheduler.runAllTasks(task -> counter.getAndIncrement() < 7); // 1 registration + 1 timeout + 5 update tasks
+                scheduler.runAllTasks(task -> !task.tag().equals(METRICS_UPDATER_TAG) &&
+                        counter.getAndIncrement() < expectedTasks.size());
         assertEquals(expectedTasks, completedTasks);
         assertEquals("TOKEN", identityProvider.getNToken());
     }
