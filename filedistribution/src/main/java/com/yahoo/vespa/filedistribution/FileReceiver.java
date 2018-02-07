@@ -115,6 +115,7 @@ public class FileReceiver {
                     File decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
                     log.log(LogLevel.DEBUG, "Archived file, unpacking " + inprogressFile + " to " + decompressedDir);
                     CompressedFileReference.decompress(inprogressFile, decompressedDir);
+                    Files.delete(inprogressFile.toPath());
                     moveFileToDestination(decompressedDir, fileReferenceDir);
                 } else {
                     try {
