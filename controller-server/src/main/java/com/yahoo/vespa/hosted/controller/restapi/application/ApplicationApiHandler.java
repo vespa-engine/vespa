@@ -441,7 +441,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Cursor serviceUrlArray = response.setArray("serviceUrls");
         controller.applications().getDeploymentEndpoints(deploymentId)
-                  .ifPresent(endpoints -> endpoints.forEach(endpoint -> serviceUrlArray.addString(endpoint.toString())));
+                .forEach(endpoint -> serviceUrlArray.addString(endpoint.toString()));
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
 
