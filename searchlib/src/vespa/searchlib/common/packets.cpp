@@ -908,7 +908,7 @@ FS4Packet_QUERYRESULTX::FS4Packet_QUERYRESULTX()
       _distributionKey(0),
       _nodesQueried(0),
       _nodesReplied(0),
-      _features(0),
+      _features(QRF_COVERAGE | QRF_EXTENDED_COVERAGE),
       _offset(0),
       _numDocs(0),
       _totNumDocs(0),
