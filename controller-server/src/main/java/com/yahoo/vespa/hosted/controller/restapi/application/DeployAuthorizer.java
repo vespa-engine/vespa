@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantType;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
@@ -79,6 +80,10 @@ public class DeployAuthorizer {
             throw loggedForbiddenException(
                     "Principal '%s' is not a Screwdriver principal. Excepted principal with Athenz domain '%s', got '%s'.",
                     principal.getName(), SCREWDRIVER_DOMAIN.getName(), principalDomain.getName());
+        }
+
+        if (tenant.tenantType() == TenantType.USER) {
+            throw loggedForbiddenException("User tenants are only allowed to deploy to 'dev' and 'perf' environment");
         }
 
         // NOTE: no fine-grained deploy authorization for non-Athenz tenants
