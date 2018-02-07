@@ -115,7 +115,6 @@ public class FileReceiver {
                     File decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
                     log.log(LogLevel.DEBUG, "Archived file, unpacking " + inprogressFile + " to " + decompressedDir);
                     CompressedFileReference.decompress(inprogressFile, decompressedDir);
-                    Files.delete(inprogressFile.toPath());
                     moveFileToDestination(decompressedDir, fileReferenceDir);
                 } else {
                     try {
@@ -130,6 +129,12 @@ public class FileReceiver {
             } catch (IOException e) {
                 log.log(LogLevel.ERROR, "Failed writing file: " + e.getMessage(), e);
                 throw new RuntimeException("Failed writing file: ", e);
+            } finally {
+                try {
+                    Files.delete(inprogressFile.toPath());
+                } catch (IOException e) {
+                    log.log(LogLevel.ERROR, "Failed deleting " + inprogressFile.getAbsolutePath() + ": " + e.getMessage(), e);
+                }
             }
             return file;
         }
