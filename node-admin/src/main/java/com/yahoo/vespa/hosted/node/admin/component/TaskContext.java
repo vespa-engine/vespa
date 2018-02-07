@@ -31,7 +31,7 @@ public interface TaskContext {
      *
      * Do not log a message that is also recorded with recordSystemModification.
      */
-    void log(Logger logger, String message);
+    default void log(Logger logger, String message) {}
     default void log(Logger logger, String messageFormat, String... args) {
         log(logger, String.format(messageFormat, (Object[]) args));
     }
