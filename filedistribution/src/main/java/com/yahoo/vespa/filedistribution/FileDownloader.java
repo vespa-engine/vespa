@@ -36,7 +36,7 @@ public class FileDownloader {
     public FileDownloader(ConnectionPool connectionPool) {
         this(connectionPool,
              new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution")),
-             new File(Defaults.getDefaults().underVespaHome("tmp")),
+             new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution")),
              Duration.ofMinutes(15));
     }
 
