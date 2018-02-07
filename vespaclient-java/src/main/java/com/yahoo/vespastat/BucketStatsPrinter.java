@@ -23,19 +23,19 @@ public class BucketStatsPrinter {
         this.out = out;
     }
 
-    public void retrieveAndPrintBucketStats(ClientParameters.SelectionType type, String id, boolean dumpData) throws BucketStatsException {
+    public void retrieveAndPrintBucketStats(ClientParameters.SelectionType type, String id, boolean dumpData, String bucketSpace) throws BucketStatsException {
         BucketId bucketId = retriever.getBucketIdForType(type, id);
         if (type == ClientParameters.SelectionType.GROUP || type == ClientParameters.SelectionType.USER) {
             out.printf("Generated 32-bit bucket id: %s\n", bucketId);
         }
 
-        List<GetBucketListReply.BucketInfo> bucketList = retriever.retrieveBucketList(bucketId);
+        List<GetBucketListReply.BucketInfo> bucketList = retriever.retrieveBucketList(bucketId, bucketSpace);
         printBucketList(bucketList);
 
         if (dumpData) {
             for (GetBucketListReply.BucketInfo bucketInfo : bucketList) {
                 BucketId bucket = bucketInfo.getBucketId();
-                String bucketStats = retriever.retrieveBucketStats(type, id, bucket);
+                String bucketStats = retriever.retrieveBucketStats(type, id, bucket, bucketSpace);
                 printBucketStats(bucket, bucketStats);
             }
         }

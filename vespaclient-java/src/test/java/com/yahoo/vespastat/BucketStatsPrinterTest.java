@@ -22,13 +22,14 @@ public class BucketStatsPrinterTest {
 
     private BucketStatsRetriever retriever;
     private final ByteArrayOutputStream out = new ByteArrayOutputStream();
+    private final String bucketSpace = "default";
 
     @Before
     public void mockBucketStatsRetriever() throws BucketStatsException {
         retriever = mock(BucketStatsRetriever.class);
         when(retriever.getBucketIdForType(any(), any())).thenReturn(new BucketId(0x42));
-        when(retriever.retrieveBucketList(any())).thenReturn(Collections.emptyList());
-        when(retriever.retrieveBucketStats(any(), any(), any())).thenReturn("");
+        when(retriever.retrieveBucketList(any(), any())).thenReturn(Collections.emptyList());
+        when(retriever.retrieveBucketStats(any(), any(), any(), any())).thenReturn("");
     }
 
     @After
@@ -44,7 +45,7 @@ public class BucketStatsPrinterTest {
 
     private String retreiveAndPrintBucketStats(ClientParameters.SelectionType type, String id, boolean dumpData) throws BucketStatsException {
         BucketStatsPrinter printer = new BucketStatsPrinter(retriever, new PrintStream(out));
-        printer.retrieveAndPrintBucketStats(type, id, dumpData);
+        printer.retrieveAndPrintBucketStats(type, id, dumpData, bucketSpace);
         return getOutputString();
     }
 
@@ -68,7 +69,7 @@ public class BucketStatsPrinterTest {
         List<GetBucketListReply.BucketInfo> bucketList = new ArrayList<>();
         String dummyInfoString = "dummyinformation";
         bucketList.add(new GetBucketListReply.BucketInfo(new BucketId(0), dummyInfoString));
-        when(retriever.retrieveBucketList(any())).thenReturn(bucketList);
+        when(retriever.retrieveBucketList(any(), any())).thenReturn(bucketList);
 
         String output = retreiveAndPrintBucketStats(ClientParameters.SelectionType.USER, "1234", false);
         assertTrue(output.contains(dummyInfoString));
@@ -78,8 +79,8 @@ public class BucketStatsPrinterTest {
     public void testShouldPrintBucketStats() throws BucketStatsException {
         String dummyBucketStats = "dummystats";
         GetBucketListReply.BucketInfo bucketInfo = new GetBucketListReply.BucketInfo(new BucketId(0), "dummy");
-        when(retriever.retrieveBucketList(any())).thenReturn(Collections.singletonList(bucketInfo));
-        when(retriever.retrieveBucketStats(any(), any(), any())).thenReturn(dummyBucketStats);
+        when(retriever.retrieveBucketList(any(), any())).thenReturn(Collections.singletonList(bucketInfo));
+        when(retriever.retrieveBucketStats(any(), any(), any(), any())).thenReturn(dummyBucketStats);
 
         String output = retreiveAndPrintBucketStats(ClientParameters.SelectionType.USER, "1234", true);
         assertTrue(output.contains(dummyBucketStats));

@@ -24,7 +24,7 @@ public class Main {
                     params.route,
                     createShutdownHookRegistrar());
             BucketStatsPrinter printer = new BucketStatsPrinter(retriever, System.out);
-            printer.retrieveAndPrintBucketStats(params.selectionType, params.id, params.dumpData);
+            printer.retrieveAndPrintBucketStats(params.selectionType, params.id, params.dumpData, params.bucketSpace);
         } catch (IllegalArgumentException e) {
             System.err.printf("Failed to parse command line arguments: %s.\n", e.getMessage());
         } catch (BucketStatsException e) {
