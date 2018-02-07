@@ -45,8 +45,8 @@ public class ConstantDereferencer extends ExpressionTransformer<TransformContext
 
     private ExpressionNode transformConstantReference(ReferenceNode node, TransformContext context) {
         Value value = context.constants().get(node.getName());
-        if (value == null || (value instanceof TensorValue)) {
-            return node; // not a value constant reference
+        if (value == null || value.type().rank() > 0) {
+            return node; // not a number constant reference
         }
         return new ConstantNode(value.freeze());
     }

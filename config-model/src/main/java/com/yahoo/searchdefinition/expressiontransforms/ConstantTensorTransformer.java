@@ -52,7 +52,7 @@ public class ConstantTensorTransformer extends ExpressionTransformer<RankProfile
 
     private ExpressionNode transformConstantReference(ReferenceNode node, RankProfileTransformContext context) {
         Value value = context.constants().get(node.getName());
-        if (value == null || !(value instanceof TensorValue)) {
+        if (value == null || value.type().rank() == 0) {
             return node;
         }
         TensorValue tensorValue = (TensorValue)value;
