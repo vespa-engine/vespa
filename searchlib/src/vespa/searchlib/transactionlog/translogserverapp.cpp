@@ -42,9 +42,10 @@ void
 TransLogServerApp::start()
 {
     std::shared_ptr<searchlib::TranslogserverConfig> c = _tlsConfig.get();
-    std::lock_guard<std::mutex> guard(_lock);
-    _tls = std::make_shared<TransLogServer>(c->servername, c->listenport, c->basedir, _fileHeaderContext,
+    auto tls = std::make_shared<TransLogServer>(c->servername, c->listenport, c->basedir, _fileHeaderContext,
                                             c->filesizemax, c->maxthreads, getCrc(c->crcmethod));
+    std::lock_guard<std::mutex> guard(_lock);
+    _tls = std::move(tls);
 }
 
 TransLogServerApp::~TransLogServerApp()
