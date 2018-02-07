@@ -4,29 +4,22 @@ package com.yahoo.vespa.hosted.node.admin.component;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 public class TestTaskContext implements TaskContext {
-    private final List<String> systemModifications = new ArrayList<>();
+    private final List<String> logs = new ArrayList<>();
 
     @Override
     public void recordSystemModification(Logger logger, String description) {
-        systemModifications.add(description);
+        logs.add(description);
     }
 
-    @Override
-    public void log(Logger logger, String message) { }
-
-    @Override
-    public void logOnFailure(Logger logger, Supplier<String> messageSupplier) { }
-
     public List<String> getSystemModificationLog() {
-        return systemModifications;
+        return logs;
     }
 
     public void clearSystemModificationLog() {
-        systemModifications.clear();
+        logs.clear();
     }
 
     @Override
