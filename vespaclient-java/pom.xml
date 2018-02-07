@@ -40,6 +40,12 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <!-- Added explicitly to get commons-collections, which is excluded from container-dev -->
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>document</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>documentapi</artifactId>
             <version>${project.version}</version>
