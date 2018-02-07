@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.io.IOException;
 import java.time.temporal.TemporalAmount;
@@ -45,6 +46,9 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 
 /**
  * A test utility for provisioning tests.
@@ -57,6 +61,7 @@ public class ProvisioningTester implements AutoCloseable {
     private final NodeFlavors nodeFlavors;
     private final ManualClock clock;
     private final NodeRepository nodeRepository;
+    private final Orchestrator orchestrator;
     private final NodeRepositoryProvisioner provisioner;
     private final CapacityPolicies capacityPolicies;
     private final ProvisionLogger provisionLogger;
@@ -80,6 +85,8 @@ public class ProvisioningTester implements AutoCloseable {
             this.curator = curator;
             this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, nameResolver,
                                                      new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
+            this.orchestrator = mock(Orchestrator.class);
+            doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
             this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock,
                     (x,y) -> allocationSnapshots.add(new AllocationSnapshot(new NodeList(x), "Provision tester", y)));
             this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
@@ -124,6 +131,7 @@ public class ProvisioningTester implements AutoCloseable {
 
     public void advanceTime(TemporalAmount duration) { clock.advance(duration); }
     public NodeRepository nodeRepository() { return nodeRepository; }
+    public Orchestrator orchestrator() { return orchestrator; }
     public ManualClock clock() { return clock; }
     public NodeRepositoryProvisioner provisioner() { return provisioner; }
     public CapacityPolicies capacityPolicies() { return capacityPolicies; }

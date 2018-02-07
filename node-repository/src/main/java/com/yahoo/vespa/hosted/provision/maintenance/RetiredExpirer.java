@@ -1,68 +1,114 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.collections.ListMap;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.orchestrator.OrchestrationException;
+import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
- * Maintenance job which deactivates nodes which has been retired.
- * This should take place after the system has been given sufficient time to migrate data to other nodes.
- * <p>
- * As these nodes are active, and therefore part of the configuration the impacted applications must be
- * reconfigured after inactivation.
+ * Maintenance job which deactivates retired nodes, if given permission by orchestrator, or
+ * after giving the system has been given sufficient time to migrate data to other nodes.
  *
- * @author bratseth
+ * @author hakon
  */
-public class RetiredExpirer extends Expirer {
+public class RetiredExpirer extends Maintainer {
 
-    private final NodeRepository nodeRepository;
     private final Deployer deployer;
+    private final Orchestrator orchestrator;
+    private final Duration retiredExpiry;
+    private final Clock clock;
 
-    public RetiredExpirer(NodeRepository nodeRepository, Deployer deployer, Clock clock, 
-                          Duration retiredDuration, JobControl jobControl) {
-        super(Node.State.active, History.Event.Type.retired, nodeRepository, clock, retiredDuration, jobControl);
-        this.nodeRepository = nodeRepository;
+    public RetiredExpirer(NodeRepository nodeRepository,
+                          Orchestrator orchestrator,
+                          Deployer deployer,
+                          Clock clock,
+                          Duration maintenanceInterval,
+                          Duration retiredExpiry,
+                          JobControl jobControl) {
+        super(nodeRepository, maintenanceInterval, jobControl);
         this.deployer = deployer;
+        this.orchestrator = orchestrator;
+        this.retiredExpiry = retiredExpiry;
+        this.clock = clock;
     }
 
     @Override
-    protected void expire(List<Node> expired) {
-        // Only expire nodes which are retired. Do one application at the time.
-        ListMap<ApplicationId, Node> applicationNodes = new ListMap<>();
-        for (Node node : expired) {
-            if (node.allocation().isPresent() && node.allocation().get().membership().retired())
-                applicationNodes.put(node.allocation().get().owner(), node);
-        }
+    protected void maintain() {
+        List<Node> activeNodes = nodeRepository().getNodes(Node.State.active);
 
-        for (Map.Entry<ApplicationId, List<Node>> entry : applicationNodes.entrySet()) {
+        Map<ApplicationId, List<Node>> retiredNodesByApplication = activeNodes.stream()
+                .filter(node -> node.allocation().isPresent())
+                .filter(node -> node.allocation().get().membership().retired())
+                .collect(Collectors.groupingBy(node -> node.allocation().get().owner()));
+
+        for (Map.Entry<ApplicationId, List<Node>> entry : retiredNodesByApplication.entrySet()) {
             ApplicationId application = entry.getKey();
-            List<Node> nodesToRemove = entry.getValue();
+            List<Node> retiredNodes = entry.getValue();
+
             try {
                 Optional<Deployment> deployment = deployer.deployFromLocalActive(application);
                 if ( ! deployment.isPresent()) continue; // this will be done at another config server
 
-                nodeRepository.setRemovable(application, nodesToRemove);
+                List<Node> nodesToRemove = retiredNodes.stream().filter(this::canRemove).collect(Collectors.toList());
+                if (nodesToRemove.isEmpty()) {
+                    continue;
+                }
+
+                nodeRepository().setRemovable(application, nodesToRemove);
 
                 deployment.get().activate();
 
-                log.info("Redeployed " + application + " to deactivate " + nodesToRemove.size() + " retired nodes");
+                String nodeList = nodesToRemove.stream().map(Node::hostname).collect(Collectors.joining(", "));
+                log.info("Redeployed " + application + " to deactivate retired nodes: " +  nodeList);
+            } catch (RuntimeException e) {
+                String nodeList = retiredNodes.stream().map(Node::hostname).collect(Collectors.joining(", "));
+                log.log(Level.WARNING, "Exception trying to deactivate retired nodes from " + application
+                        + ": " + nodeList, e);
             }
-            catch (RuntimeException e) {
-                log.log(Level.WARNING, "Exception trying to remove previously retired nodes " + nodesToRemove +
-                        "from " + application, e);
-            }
+        }
+    }
+
+    /**
+     * Checks if the node can be removed:
+     * if the node is {@link NodeType#host}, it will only be removed if it has no children
+     * Otherwise, a removal is allowed if either of these are true:
+     * - The node has been in state {@link History.Event.Type#retired} for longer than {@link #retiredExpiry}
+     * - Orchestrator allows it
+     */
+    private boolean canRemove(Node node) {
+        if (node.type() == NodeType.host) {
+            return nodeRepository().getChildNodes(node.hostname()).isEmpty();
+        }
+
+        Optional<Instant> timeOfRetiredEvent = node.history().event(History.Event.Type.retired).map(History.Event::at);
+        Optional<Instant> retireAfter = timeOfRetiredEvent.map(retiredEvent -> retiredEvent.plus(retiredExpiry));
+        boolean shouldRetireNowBecauseExpried = retireAfter.map(time -> time.isBefore(clock.instant())).orElse(false);
+        if (shouldRetireNowBecauseExpried) {
+            return true;
+        }
+
+        try {
+            orchestrator.acquirePermissionToRemove(new HostName(node.hostname()));
+            return true;
+        } catch (OrchestrationException e) {
+            log.info("Did not get permission to remove retired " + node + ": " + e.getMessage());
+            return false;
         }
     }
 
