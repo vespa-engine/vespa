@@ -234,8 +234,7 @@ public:
     }
 };
 
-InitDoneTask::~InitDoneTask() {
-}
+InitDoneTask::~InitDoneTask() = default;
 
 void
 DocumentDB::initManagers()
@@ -1219,6 +1218,10 @@ updateLidSpaceMetrics(MetricSetType &metrics, const search::IDocumentMetaStore &
 void
 DocumentDB::updateMetrics(DocumentDBMetricsCollection &metrics)
 {
+    if (_state.getState() < DDBState::State::REPLAY_TRANSACTION_LOG) {
+        return;
+    }
+    
     updateLegacyMetrics(metrics.getLegacyMetrics());
     updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats());
     updateAttributeMetrics(metrics, _subDBs);
