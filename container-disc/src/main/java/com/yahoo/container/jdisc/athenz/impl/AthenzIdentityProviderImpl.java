@@ -6,6 +6,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 
 import javax.net.ssl.KeyManager;
@@ -52,10 +53,13 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     static final int BACKOFF_DELAY_MULTIPLIER = 2;
     static final Duration AWAIT_TERMINTATION_TIMEOUT = Duration.ofSeconds(90);
 
+    private static final Duration CERTIFICATE_EXPIRY_METRIC_UPDATE_PERIOD = Duration.ofMinutes(5);
+    private static final String CERTIFICATE_EXPIRY_METRIC_NAME = "athenz-tenant-cert.expiry.seconds";
 
     static final String REGISTER_INSTANCE_TAG = "register-instance";
     static final String UPDATE_CREDENTIALS_TAG = "update-credentials";
     static final String TIMEOUT_INITIAL_WAIT_TAG = "timeout-initial-wait";
+    static final String METRICS_UPDATER_TAG = "metrics-updater";
 
 
     private final AtomicReference<AthenzCredentials> credentials = new AtomicReference<>();
@@ -67,9 +71,12 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final String domain;
     private final String service;
 
+    private final CertificateExpiryMetricUpdater metricUpdater;
+
     @Inject
-    public AthenzIdentityProviderImpl(IdentityConfig config) {
+    public AthenzIdentityProviderImpl(IdentityConfig config, Metric metric) {
         this(config,
+             metric,
              new AthenzCredentialsService(config,
                                           new IdentityDocumentService(config.loadBalancerAddress()),
                                           new AthenzService(),
@@ -80,6 +87,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     // Test only
     AthenzIdentityProviderImpl(IdentityConfig config,
+                               Metric metric,
                                AthenzCredentialsService athenzCredentialsService,
                                Scheduler scheduler,
                                Clock clock) {
@@ -90,6 +98,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.service = config.service();
         scheduler.submit(new RegisterInstanceTask());
         scheduler.schedule(new TimeoutInitialWaitTask(), INITIAL_WAIT_NTOKEN);
+
+        metricUpdater = new CertificateExpiryMetricUpdater(metric);
     }
 
     @Override
@@ -196,6 +206,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
                 credentials.set(athenzCredentialsService.registerInstance());
                 credentialsRetrievedSignal.countDown();
                 scheduler.schedule(new UpdateCredentialsTask(), UPDATE_PERIOD);
+                scheduler.submit(metricUpdater);
             } catch (Throwable t) {
                 log.log(LogLevel.ERROR, "Failed to register instance: " + t.getMessage(), t);
                 lastThrowable.set(t);
@@ -237,6 +248,27 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         @Override
         public String tag() {
             return UPDATE_CREDENTIALS_TAG;
+        }
+    }
+
+    private class CertificateExpiryMetricUpdater implements RunnableWithTag {
+        private final Metric metric;
+
+        private CertificateExpiryMetricUpdater(Metric metric) {
+            this.metric = metric;
+        }
+
+        @Override
+        public void run() {
+            Instant expirationTime = getExpirationTime(credentials.get());
+            Duration remainingLifetime = Duration.between(clock.instant(), expirationTime);
+            metric.set(CERTIFICATE_EXPIRY_METRIC_NAME, remainingLifetime.getSeconds(), null);
+            scheduler.schedule(this, CERTIFICATE_EXPIRY_METRIC_UPDATE_PERIOD);
+        }
+
+        @Override
+        public String tag() {
+            return METRICS_UPDATER_TAG;
         }
     }
 
