@@ -29,12 +29,13 @@ import static java.util.stream.Collectors.toList;
  *
  * @author bjorncs
  */
+// TODO Rewrite to use cleaners instead of phantom references after Java 9 migration
 class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, AutoCloseable {
     static final Duration WATCHDOG_FREQUENCY = Duration.ofMinutes(20);
     static final Duration ACTIVE_CONTAINER_GRACE_PERIOD = Duration.ofHours(4);
     static final Duration GC_TRIGGER_FREQUENCY = Duration.ofHours(1); // Must be a fraction of ACTIVE_CONTAINER_GRACE_PERIOD
     static final Duration ENFORCE_DESTRUCTION_GCED_CONTAINERS_FREQUENCY = Duration.ofMinutes(5);
-
+    static final int DEFAULT_DEACTIVATED_CONTAINERS_BEFORE_GC_THRESHOLD = 4;
     private static final Logger log = Logger.getLogger(ActiveContainerDeactivationWatchdog.class.getName());
 
     private final Object monitor = new Object();
@@ -45,6 +46,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     private final Set<ActiveContainerPhantomReference> destructorReferences = new HashSet<>();
     private final ScheduledExecutorService scheduler;
     private final Clock clock;
+    private final int deactivatedContainersBeforeGcThreshold;
 
     private ActiveContainer currentContainer;
     private Instant currentContainerActivationTime;
@@ -57,10 +59,13 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
                     Thread thread = new Thread(runnable, "active-container-deactivation-watchdog");
                     thread.setDaemon(true);
                     return thread;
-                }));
+                }),
+                DEFAULT_DEACTIVATED_CONTAINERS_BEFORE_GC_THRESHOLD);
     }
 
-    ActiveContainerDeactivationWatchdog(Clock clock, ScheduledExecutorService scheduler) {
+    ActiveContainerDeactivationWatchdog(Clock clock,
+                                        ScheduledExecutorService scheduler,
+                                        int deactivatedContainersBeforeGcThreshold) {
         this.clock = clock;
         this.scheduler = scheduler;
         // NOTE: Make sure to update the unit test if the order commands are registered is changed.
@@ -68,7 +73,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
                                            WATCHDOG_FREQUENCY.getSeconds(),
                                            WATCHDOG_FREQUENCY.getSeconds(),
                                            TimeUnit.SECONDS);
-        this.scheduler.scheduleAtFixedRate(ActiveContainerDeactivationWatchdog::triggerGc,
+        this.scheduler.scheduleAtFixedRate(this::triggerGc,
                                            GC_TRIGGER_FREQUENCY.getSeconds(),
                                            GC_TRIGGER_FREQUENCY.getSeconds(),
                                            TimeUnit.SECONDS);
@@ -76,6 +81,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
                                            ENFORCE_DESTRUCTION_GCED_CONTAINERS_FREQUENCY.getSeconds(),
                                            ENFORCE_DESTRUCTION_GCED_CONTAINERS_FREQUENCY.getSeconds(),
                                            TimeUnit.SECONDS);
+        this.deactivatedContainersBeforeGcThreshold = deactivatedContainersBeforeGcThreshold;
     }
 
     void onContainerActivation(ActiveContainer nextContainer) {
@@ -123,8 +129,11 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
         }
     }
 
-    private static void triggerGc() {
-        log.log(Level.FINE, "Triggering GC");
+    private void triggerGc() {
+        int deactivatedContainers = getDeactivatedContainersSnapshot().size();
+        boolean shouldGc = deactivatedContainers > deactivatedContainersBeforeGcThreshold;
+        if (!shouldGc) return;
+        log.log(Level.FINE, String.format("Triggering GC (currently %d deactivated containers still alive)", deactivatedContainers));
         System.gc();
         System.runFinalization();
     }
