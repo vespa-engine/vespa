@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -30,12 +31,16 @@ import java.util.stream.Collectors;
  */
 public class NodePatcher {
 
-    public static final String HARDWARE_FAILURE_DESCRIPTION = "hardwareFailureDescription";
+    private static final String HARDWARE_FAILURE_DESCRIPTION = "hardwareFailureDescription";
+    private static final String WANT_TO_RETIRE = "wantToRetire";
+
     private final NodeFlavors nodeFlavors;
     private final Inspector inspector;
     private final NodeRepository nodeRepository;
 
     private Node node;
+    private List<Node> children;
+    private boolean childrenModified = false;
 
     public NodePatcher(NodeFlavors nodeFlavors, InputStream json, Node node, NodeRepository nodeRepository) {
         try {
@@ -43,6 +48,9 @@ public class NodePatcher {
             inspector = SlimeUtils.jsonToSlime(IOUtils.readBytes(json, 1000 * 1000)).get();
             this.node = node;
             this.nodeRepository = nodeRepository;
+            this.children = node.type() == NodeType.host ?
+                    nodeRepository.getChildNodes(node.hostname()) :
+                    Collections.emptyList();
         }
         catch (IOException e) {
             throw new RuntimeException("Error reading request body", e);
@@ -58,35 +66,37 @@ public class NodePatcher {
         inspector.traverse((String name, Inspector value) -> {
             try {
                 node = applyField(name, value);
-            }
-            catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Could not set field '" + name + "'", e);
+            }
+
+            try {
+                children = applyFieldRecursive(children, name, value);
+                childrenModified = true;
+            } catch (IllegalArgumentException e) {
+                // Non recursive field, ignore
             }
         } );
 
-
-        List<Node> nodes = new ArrayList<>();
-        if (node.type() == NodeType.host) {
-            nodes.addAll(modifiedDockerChildNodes());
-        }
+        List<Node> nodes = childrenModified ? new ArrayList<>(children) : new ArrayList<>();
         nodes.add(node);
 
         return nodes;
     }
 
-    private List<Node> modifiedDockerChildNodes() {
-        List<Node> children = nodeRepository.getChildNodes(node.hostname());
-        boolean modified = false;
-
-        if (inspector.field(HARDWARE_FAILURE_DESCRIPTION).valid()) {
-            Optional<String> hardwareFailure = asOptionalString(inspector.field(HARDWARE_FAILURE_DESCRIPTION));
-            modified = true;
-            children = children.stream()
-                    .map(node -> node.with(node.status().withHardwareFailureDescription(hardwareFailure)))
-                    .collect(Collectors.toList());
+    private List<Node> applyFieldRecursive(List<Node> childNodes, String name, Inspector value) {
+        switch (name) {
+            case HARDWARE_FAILURE_DESCRIPTION:
+                return childNodes.stream()
+                        .map(child -> child.with(child.status().withHardwareFailureDescription(asOptionalString(value))))
+                        .collect(Collectors.toList());
+            case WANT_TO_RETIRE:
+                return childNodes.stream()
+                        .map(child -> child.with(child.status().withWantToRetire(asBoolean(value))))
+                        .collect(Collectors.toList());
+            default :
+                throw new IllegalArgumentException("Field " + name + " is not recursive");
         }
-
-        return modified ? children : new ArrayList<>();
     }
 
     private Node applyField(String name, Inspector value) {
@@ -120,7 +130,7 @@ public class NodePatcher {
                 return node.withIpAddresses(asStringSet(value));
             case "additionalIpAddresses" :
                 return node.withAdditionalIpAddresses(asStringSet(value));
-            case "wantToRetire" :
+            case WANT_TO_RETIRE :
                 return node.with(node.status().withWantToRetire(asBoolean(value)));
             case "wantToDeprovision" :
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
