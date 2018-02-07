@@ -12,7 +12,8 @@ namespace search::transactionlog {
 
 TransLogServerApp::TransLogServerApp(const config::ConfigUri & tlsConfigUri,
                                      const FileHeaderContext & fileHeaderContext)
-    : _tls(),
+    : _lock(),
+      _tls(),
       _tlsConfig(),
       _tlsConfigFetcher(tlsConfigUri.getContext()),
       _fileHeaderContext(fileHeaderContext)
@@ -23,7 +24,8 @@ TransLogServerApp::TransLogServerApp(const config::ConfigUri & tlsConfigUri,
 
 namespace {
 
-DomainPart::Crc getCrc(searchlib::TranslogserverConfig::Crcmethod crcType)
+DomainPart::Crc
+getCrc(searchlib::TranslogserverConfig::Crcmethod crcType)
 {
     switch (crcType) {
         case searchlib::TranslogserverConfig::ccitt_crc32:
@@ -36,11 +38,13 @@ DomainPart::Crc getCrc(searchlib::TranslogserverConfig::Crcmethod crcType)
 
 }
 
-void TransLogServerApp::start()
+void
+TransLogServerApp::start()
 {
     std::shared_ptr<searchlib::TranslogserverConfig> c = _tlsConfig.get();
-    _tls.reset(new TransLogServer(c->servername, c->listenport, c->basedir, _fileHeaderContext,
-                                  c->filesizemax, c->maxthreads, getCrc(c->crcmethod)));
+    std::lock_guard<std::mutex> guard(_lock);
+    _tls = std::make_shared<TransLogServer>(c->servername, c->listenport, c->basedir, _fileHeaderContext,
+                                            c->filesizemax, c->maxthreads, getCrc(c->crcmethod));
 }
 
 TransLogServerApp::~TransLogServerApp()
@@ -48,11 +52,18 @@ TransLogServerApp::~TransLogServerApp()
     _tlsConfigFetcher.close();
 }
 
-void TransLogServerApp::configure(std::unique_ptr<searchlib::TranslogserverConfig> cfg)
+void
+TransLogServerApp::configure(std::unique_ptr<searchlib::TranslogserverConfig> cfg)
 {
     LOG(config, "configure Transaction Log Server %s at port %d", cfg->servername.c_str(), cfg->listenport);
     _tlsConfig.set(cfg.release());
     _tlsConfig.latch();
+}
+
+TransLogServer::SP
+TransLogServerApp::getTransLogServer() const {
+    std::lock_guard<std::mutex> guard(_lock);
+    return _tls;
 }
 
 }
