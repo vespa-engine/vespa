@@ -296,7 +296,8 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         if (my_stats.softDoomed()) {
             coverage.degradeTimeout();
             coverage.setCovered(my_stats.docsCovered());
-            LOG(debug, "soft doomed, degraded from timeout covered = %lu", coverage.getCovered()); }
+            LOG(debug, "soft doomed, degraded from timeout covered = %lu", coverage.getCovered());
+        }
         LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%ld",
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), estHits, reply->totalHitCount);
     }
