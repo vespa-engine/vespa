@@ -131,7 +131,9 @@ public class FileReceiver {
                 throw new RuntimeException("Failed writing file: ", e);
             } finally {
                 try {
-                    Files.delete(inprogressFile.toPath());
+                    if (inprogressFile.exists()) {
+                        Files.delete(inprogressFile.toPath());
+                    }
                 } catch (IOException e) {
                     log.log(LogLevel.ERROR, "Failed deleting " + inprogressFile.getAbsolutePath() + ": " + e.getMessage(), e);
                 }
