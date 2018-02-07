@@ -16,6 +16,7 @@ public class MockRoutingGenerator implements RoutingGenerator {
     @Override
     public List<RoutingEndpoint> endpoints(DeploymentId deployment) {
         List<RoutingEndpoint> endpoints = new ArrayList<>();
+        // TODO: TLS: Update to HTTPS when ready.
         endpoints.add(new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", false));
         endpoints.add(new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false));
         endpoints.add(new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false));
