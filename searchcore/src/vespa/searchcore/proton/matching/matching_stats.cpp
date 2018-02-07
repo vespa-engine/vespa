@@ -18,6 +18,7 @@ MatchingStats::Partition &get_writable_partition(std::vector<MatchingStats::Part
 MatchingStats::MatchingStats()
     : _queries(0),
       _limited_queries(0),
+      _docsCovered(0),
       _docsMatched(0),
       _docsRanked(0),
       _docsReRanked(0),
@@ -31,13 +32,14 @@ MatchingStats::MatchingStats()
       _partitions()
 { }
 
-MatchingStats::~MatchingStats() { }
+MatchingStats::~MatchingStats() = default;
 
 MatchingStats &
 MatchingStats::merge_partition(const Partition &partition, size_t id)
 {
     get_writable_partition(_partitions, id) = partition;
 
+    _docsCovered += partition.docsCovered();
     _docsMatched += partition.docsMatched();
     _docsRanked += partition.docsRanked();
     _docsReRanked += partition.docsReRanked();
@@ -51,10 +53,10 @@ MatchingStats::merge_partition(const Partition &partition, size_t id)
 MatchingStats &
 MatchingStats::add(const MatchingStats &rhs)
 {
-
     _queries += rhs._queries;
     _limited_queries += rhs._limited_queries;
 
+    _docsCovered += rhs._docsCovered;
     _docsMatched += rhs._docsMatched;
     _docsRanked += rhs._docsRanked;
     _docsReRanked += rhs._docsReRanked;

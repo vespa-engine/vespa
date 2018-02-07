@@ -35,7 +35,7 @@ private:
     void writeLog();
     void cleanup();
 
-    virtual void Run(FastOS_ThreadInterface *, void *) override;
+    void Run(FastOS_ThreadInterface *, void *) override;
 
 public:
     SearchAdapter(FastS_AppContext *appCtx,

@@ -21,6 +21,7 @@ using vespalib::string;
 enum fnet_feature_masks {
     FNET_QRF_SUPPORTED_MASK = (QRF_MLD |
                                QRF_SORTDATA |
+                               QRF_COVERAGE_NODES |
                                QRF_EXTENDED_COVERAGE |
                                QRF_COVERAGE |
                                QRF_GROUPDATA |
@@ -65,8 +66,7 @@ private:
     uint32_t      _used;
 
 public:
-    PacketArray(FNET_Packet **arr = NULL,
-                      uint32_t size = 0)
+    PacketArray(FNET_Packet **arr = nullptr, uint32_t size = 0)
         : _extArray(arr),
           _array(arr),
           _size(size),
@@ -374,6 +374,8 @@ private:
     FS4Packet_QUERYRESULTX& operator=(const FS4Packet_QUERYRESULTX &);
 
     uint32_t _distributionKey;
+    uint16_t _nodesQueried;
+    uint16_t _nodesReplied;
 
 public:
     uint32_t _features;      // see queryresult_features
@@ -425,8 +427,11 @@ public:
     vespalib::string toString(uint32_t indent) const override ;
     uint32_t getDistributionKey() const { return _distributionKey; }
     void setDistributionKey(uint32_t key) { _distributionKey = key; }
+    uint16_t getNodesQueried() const { return _nodesQueried; }
+    void setNodesQueried(uint16_t key) { _nodesQueried = key; }
+    uint16_t getNodesReplied() const { return _nodesReplied; }
+    void setNodesReplied(uint16_t key) { _nodesReplied = key; }
 };
-
 //==========================================================================
 
 class FS4Packet_QUERYX : public FS4Packet

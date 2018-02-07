@@ -906,6 +906,8 @@ FS4Packet_QUERYRESULTX::AllocateHits(uint32_t cnt)
 FS4Packet_QUERYRESULTX::FS4Packet_QUERYRESULTX()
     : FS4Packet(),
       _distributionKey(0),
+      _nodesQueried(0),
+      _nodesReplied(0),
       _features(0),
       _offset(0),
       _numDocs(0),
@@ -942,21 +944,13 @@ FS4Packet_QUERYRESULTX::GetLength()
                     _numDocs * (sizeof(document::GlobalId) + sizeof(search::HitRank));
 
     plen += sizeof(uint32_t);
-
-    if ((_features & QRF_MLD) != 0)
-        plen += _numDocs * 2 * sizeof(uint32_t);
+    plen += (_features & QRF_COVERAGE_NODES) ? 2 * sizeof(uint16_t) : 0;
+    plen += (_features & QRF_MLD) ? _numDocs * 2 * sizeof(uint32_t) : 0;
+    plen += (_features & QRF_GROUPDATA) ? sizeof(uint32_t) + _groupDataLen : 0;
+    plen += 3 * sizeof(uint64_t) + sizeof(uint32_t);
 
     if (((_features & QRF_SORTDATA) != 0) && (_numDocs > 0)) 
         plen += _numDocs * sizeof(uint32_t) + (_sortIndex[_numDocs] - _sortIndex[0]);
-
-    if ((_features & QRF_GROUPDATA) != 0)
-        plen += sizeof(uint32_t) + _groupDataLen;
-
-    if ((_features & QRF_COVERAGE) != 0)
-        plen += 2 * sizeof(uint64_t);
-
-    if ((_features & QRF_EXTENDED_COVERAGE) != 0)
-        plen += sizeof(uint64_t) + sizeof(uint32_t);
 
     if ((_features & QRF_PROPERTIES) != 0) {
         plen += sizeof(uint32_t);
@@ -981,6 +975,11 @@ FS4Packet_QUERYRESULTX::Encode(FNET_DataBuffer *dst)
     dst->WriteInt64Fast(mrval.INT64);
     dst->WriteInt32Fast(_distributionKey);
 
+    if (_features & QRF_COVERAGE_NODES) {
+        dst->WriteInt16Fast(_nodesQueried);
+        dst->WriteInt16Fast(_nodesReplied);
+    }
+
     if (((_features & QRF_SORTDATA) != 0) &&
         (_numDocs > 0))
     {
@@ -998,14 +997,11 @@ FS4Packet_QUERYRESULTX::Encode(FNET_DataBuffer *dst)
         dst->WriteBytesFast(_groupData, _groupDataLen);
     }
 
-    if ((_features & QRF_COVERAGE) != 0) {
-        dst->WriteInt64Fast(_coverageDocs);
-        dst->WriteInt64Fast(_activeDocs);
-    }
-    if ((_features & QRF_EXTENDED_COVERAGE) != 0) {
-        dst->WriteInt64Fast(_soonActiveDocs);
-        dst->WriteInt32Fast(_coverageDegradeReason);
-    }
+    dst->WriteInt64Fast(_coverageDocs);
+    dst->WriteInt64Fast(_activeDocs);
+    dst->WriteInt64Fast(_soonActiveDocs);
+    dst->WriteInt32Fast(_coverageDegradeReason);
+
 
     for (uint32_t i = 0; i < _numDocs; i++) {
         dst->WriteBytesFast(_hits[i]._gid.get(), document::GlobalId::LENGTH);
@@ -1051,8 +1047,13 @@ FS4Packet_QUERYRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
     _distributionKey   = src->ReadInt32();
     len -= 3 * sizeof(uint32_t) + sizeof(uint64_t) + sizeof(search::HitRank);
 
-    if (((_features & QRF_SORTDATA) != 0) &&
-        (_numDocs > 0)) {
+    if (_features & QRF_COVERAGE_NODES) {
+        if (len < 2* sizeof(uint16_t)) goto error;
+        _nodesQueried = src->ReadInt16();
+        _nodesReplied = src->ReadInt16();
+        len -= 2*sizeof(uint16_t);
+    }
+    if (((_features & QRF_SORTDATA) != 0) && (_numDocs > 0)) {
         if (len < _numDocs * sizeof(uint32_t)) goto error;
         AllocateSortIndex(_numDocs);
         _sortIndex[0] = 0; // implicit
@@ -1079,19 +1080,13 @@ FS4Packet_QUERYRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
         len -= _groupDataLen;
     }
 
-    if ((_features & QRF_COVERAGE) != 0) {
-        if (len < 2 * sizeof(uint64_t)) goto error;
-        _coverageDocs  = src->ReadInt64();
-        _activeDocs = src->ReadInt64();
-        len -= 2 * sizeof(uint64_t);
-    }
-    if ((_features & QRF_EXTENDED_COVERAGE) != 0) {
-        if (len < sizeof(uint64_t) + sizeof(uint32_t)) goto error;
-        _soonActiveDocs  = src->ReadInt64();
-        _coverageDegradeReason = src->ReadInt32();
+    if (len < 3 * sizeof(uint64_t) + sizeof(uint32_t)) goto error;
+    _coverageDocs  = src->ReadInt64();
+    _activeDocs = src->ReadInt64();
+    _soonActiveDocs  = src->ReadInt64();
+    _coverageDegradeReason = src->ReadInt32();
 
-        len -= sizeof(uint64_t) + sizeof(uint32_t);
-    }
+    len -= 3*sizeof(uint64_t) + sizeof(uint32_t);
 
     if ((_features & QRF_MLD) != 0) {
         hitSize += 2 * sizeof(uint32_t);
