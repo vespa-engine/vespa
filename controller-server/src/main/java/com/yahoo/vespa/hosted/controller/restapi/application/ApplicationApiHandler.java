@@ -20,7 +20,6 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.config.SlimeUtils;
@@ -106,6 +105,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private final Controller controller;
     private final Authorizer authorizer;
     private final AthenzClientFactory athenzClientFactory;
+    private final ApplicationInstanceAuthorizer applicationInstanceAuthorizer;
 
     @Inject
     public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
@@ -115,6 +115,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         this.controller = controller;
         this.authorizer = authorizer;
         this.athenzClientFactory = athenzClientFactory;
+        this.applicationInstanceAuthorizer = new ApplicationInstanceAuthorizer(controller.zoneRegistry(), athenzClientFactory);
     }
 
     @Override
@@ -191,13 +192,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Path path = new Path(request.getUri().getPath());
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/promote")) return promoteApplication(path.get("tenant"), path.get("application"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/promote")) return promoteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploy(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/log")) return log(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/promote")) return promoteApplicationDeployment(path.get("tenant"), path.get("application"), path.get("environment"), path.get("region"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/log")) return log(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/promote")) return promoteApplicationDeployment(path.get("tenant"), path.get("application"), path.get("environment"), path.get("region"), path.get("instance"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -206,7 +207,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"));
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deactivate(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deactivate(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override"))
             return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true, request);
         return ErrorResponse.notFoundError("Nothing at " + path);
@@ -699,6 +700,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     /** Trigger deployment of the last built application package, on a given version */
+    // TODO Add authorization
+    // TODO Consider move to API for maintenance related operations
     private HttpResponse deploy(String tenantName, String applicationName, HttpRequest request) {
         Version version = decideDeployVersion(request);
         if ( ! systemHasVersion(version))
@@ -718,6 +721,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     /** Cancel any ongoing change for given application */
+    // TODO Add authorization
+    // TODO Consider move to API for maintenance related operations
     private HttpResponse cancelDeploy(String tenantName, String applicationName) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         Application application = controller.applications().require(id);
@@ -735,8 +740,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse restart(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
                                                      ZoneId.from(environment, region));
+
         // TODO: Propagate all filters
         Optional<Hostname> hostname = Optional.ofNullable(request.getProperty("hostname")).map(Hostname::new);
+
+        applicationInstanceAuthorizer.throwIfUnauthorized(authorizer.getPrincipal(request),
+                                                          Environment.from(environment),
+                                                          getTenantOrThrow(tenantName),
+                                                          deploymentId.applicationId().application());
         controller.applications().restart(deploymentId, hostname);
 
         // TODO: Change to return JSON
@@ -752,10 +763,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
      * the application is working. It is called for all production zones, also those in which the application is not present,
      * and possibly before it is present, so failures are normal and expected.
      */
-    private HttpResponse log(String tenantName, String applicationName, String instanceName, String environment, String region) {
+    private HttpResponse log(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         try {
             DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
                                                          ZoneId.from(environment, region));
+
+            applicationInstanceAuthorizer.throwIfUnauthorized(authorizer.getPrincipal(request),
+                                                              Environment.from(environment),
+                                                              getTenantOrThrow(tenantName),
+                                                              deploymentId.applicationId().application());
             return new JacksonJsonResponse(controller.grabLog(deploymentId));
         }
         catch (RuntimeException e) {
@@ -777,10 +793,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Optional<ApplicationPackage> applicationPackage = Optional.ofNullable(dataParts.get("applicationZip"))
                                                                   .map(ApplicationPackage::new);
-        ApplicationInstanceAuthorizer applicationInstanceAuthorizer = new ApplicationInstanceAuthorizer(controller.zoneRegistry(), athenzClientFactory);
-        Tenant tenant = controller.tenants().tenant(new TenantId(tenantName)).orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
-        AthenzPrincipal principal = authorizer.getPrincipal(request);
-        applicationInstanceAuthorizer.throwIfUnauthorizedForDeploy(principal, Environment.from(environment), tenant, ApplicationName.from(applicationName), applicationPackage);
+        applicationInstanceAuthorizer.throwIfUnauthorizedForDeploy(authorizer.getPrincipal(request),
+                                                                   Environment.from(environment),
+                                                                   getTenantOrThrow(tenantName),
+                                                                   ApplicationName.from(applicationName),
+                                                                   applicationPackage);
 
         // TODO: get rid of the json object
         DeployOptions deployOptionsJsonClass = new DeployOptions(screwdriverBuildJobFromSlime(deployOptions.field("screwdriverBuildJob")),
@@ -813,11 +830,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new EmptyJsonResponse(); // TODO: Replicates current behavior but should return a message response instead
     }
 
-    private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region) {
+    private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         Application application = controller.applications().require(ApplicationId.from(tenantName, applicationName, instanceName));
 
         ZoneId zone = ZoneId.from(environment, region);
         Deployment deployment = application.deployments().get(zone);
+
+        applicationInstanceAuthorizer.throwIfUnauthorized(authorizer.getPrincipal(request),
+                                                          Environment.from(environment),
+                                                          getTenantOrThrow(tenantName),
+                                                          ApplicationName.from(applicationName));
+
         if (deployment == null) {
             // Attempt to deactivate application even if the deployment is not known by the controller
             controller.applications().deactivate(application, zone);
@@ -836,8 +859,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     /**
      * Promote application Chef environments. To be used by component jobs only
      */
-    private HttpResponse promoteApplication(String tenantName, String applicationName) {
+    private HttpResponse promoteApplication(String tenantName, String applicationName, HttpRequest request) {
         try{
+            applicationInstanceAuthorizer.throwIfUnauthorized(authorizer.getPrincipal(request),
+                                                              getTenantOrThrow(tenantName),
+                                                              ApplicationName.from(applicationName));
+
             ApplicationChefEnvironment chefEnvironment = new ApplicationChefEnvironment(controller.system());
             String sourceEnvironment = chefEnvironment.systemChefEnvironment();
             String targetEnvironment = chefEnvironment.applicationSourceEnvironment(TenantName.from(tenantName), ApplicationName.from(applicationName));
@@ -852,8 +879,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     /**
      * Promote application Chef environments for jobs that deploy applications
      */
-    private HttpResponse promoteApplicationDeployment(String tenantName, String applicationName, String environmentName, String regionName) {
+    private HttpResponse promoteApplicationDeployment(String tenantName, String applicationName, String environmentName, String regionName, String instanceName, HttpRequest request) {
         try {
+            applicationInstanceAuthorizer.throwIfUnauthorized(authorizer.getPrincipal(request),
+                                                              Environment.from(environmentName),
+                                                              getTenantOrThrow(tenantName),
+                                                              ApplicationName.from(applicationName));
+
             ApplicationChefEnvironment chefEnvironment = new ApplicationChefEnvironment(controller.system());
             String sourceEnvironment = chefEnvironment.applicationSourceEnvironment(TenantName.from(tenantName), ApplicationName.from(applicationName));
             String targetEnvironment = chefEnvironment.applicationTargetEnvironment(TenantName.from(tenantName), ApplicationName.from(applicationName), Environment.from(environmentName), RegionName.from(regionName));
@@ -863,6 +895,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             log.log(LogLevel.ERROR, String.format("Error during Chef copy environment. (%s.%s %s.%s)", tenantName, applicationName, environmentName, regionName), e);
             return ErrorResponse.internalServerError("Unable to promote Chef environments for application");
         }
+    }
+
+    private Tenant getTenantOrThrow(String tenantName) {
+        return controller.tenants().tenant(new TenantId(tenantName))
+                .orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
     }
 
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request, boolean listApplications) {

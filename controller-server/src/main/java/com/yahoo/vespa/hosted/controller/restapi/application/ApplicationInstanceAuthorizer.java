@@ -41,29 +41,9 @@ public class ApplicationInstanceAuthorizer {
         this.athenzClientFactory = athenzClientFactory;
     }
 
-    public void throwIfUnauthorizedForDeploy(AthenzPrincipal principal,
-                                             Environment environment,
-                                             Tenant tenant,
-                                             ApplicationName application,
-                                             Optional<ApplicationPackage> applicationPackage) {
-        // Validate that domain in identity configuration (deployment.xml) is same as tenant domain
-        applicationPackage.map(ApplicationPackage::deploymentSpec).flatMap(DeploymentSpec::athenzDomain)
-                          .ifPresent(identityDomain -> {
-            AthenzDomain tenantDomain = tenant.getAthensDomain().orElseThrow(() -> new IllegalArgumentException("Identity provider only available to Athenz onboarded tenants"));
-            if (! Objects.equals(tenantDomain.getName(), identityDomain.value())) {
-                throw new ForbiddenException(
-                        String.format(
-                                "Athenz domain in deployment.xml: [%s] must match tenant domain: [%s]",
-                                identityDomain.value(),
-                                tenantDomain.getName()
-                        ));
-            }
-        });
-
-        if (!environmentRequiresAuthorization(environment)) {
-            return;
-        }
-
+    public void throwIfUnauthorized(AthenzPrincipal principal,
+                                    Tenant tenant,
+                                    ApplicationName application) {
         AthenzDomain principalDomain = principal.getDomain();
 
         if (!principalDomain.equals(SCREWDRIVER_DOMAIN)) {
@@ -82,11 +62,42 @@ public class ApplicationInstanceAuthorizer {
             if (!hasDeployAccessToAthenzApplication(principal, tenantDomain, application)) {
                 throw loggedForbiddenException(
                         "Screwdriver principal '%1$s' does not have deploy access to '%2$s'. " +
-                        "Either the application has not been created at " + zoneRegistry.getDashboardUri() + " or " +
-                        "'%1$s' is not added to the application's deployer role in Athenz domain '%3$s'.",
+                                "Either the application has not been created at " + zoneRegistry.getDashboardUri() + " or " +
+                                "'%1$s' is not added to the application's deployer role in Athenz domain '%3$s'.",
                         principal.getIdentity().getFullName(), application.value(), tenantDomain.getName());
             }
         }
+    }
+
+    public void throwIfUnauthorized(AthenzPrincipal principal,
+                                    Environment environment,
+                                    Tenant tenant,
+                                    ApplicationName application) {
+        if (!environmentRequiresAuthorization(environment)) {
+            return;
+        }
+        throwIfUnauthorized(principal, tenant, application);
+    }
+
+    public void throwIfUnauthorizedForDeploy(AthenzPrincipal principal,
+                                             Environment environment,
+                                             Tenant tenant,
+                                             ApplicationName application,
+                                             Optional<ApplicationPackage> applicationPackage) {
+        // Validate that domain in identity configuration (deployment.xml) is same as tenant domain
+        applicationPackage.map(ApplicationPackage::deploymentSpec).flatMap(DeploymentSpec::athenzDomain)
+                          .ifPresent(identityDomain -> {
+            AthenzDomain tenantDomain = tenant.getAthensDomain().orElseThrow(() -> new IllegalArgumentException("Identity provider only available to Athenz onboarded tenants"));
+            if (! Objects.equals(tenantDomain.getName(), identityDomain.value())) {
+                throw new ForbiddenException(
+                        String.format(
+                                "Athenz domain in deployment.xml: [%s] must match tenant domain: [%s]",
+                                identityDomain.value(),
+                                tenantDomain.getName()
+                        ));
+            }
+        });
+        throwIfUnauthorized(principal, environment, tenant, application);
     }
 
     private static ForbiddenException loggedForbiddenException(String message, Object... args) {
