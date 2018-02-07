@@ -23,7 +23,6 @@ import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ErrorCode;
-import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.JRTMethods;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
@@ -99,7 +98,6 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private final FileServer fileServer;
     
     private final ThreadPoolExecutor executorService;
-    private final boolean useChunkedFileTransfer;
     private final FileDownloader downloader;
     private volatile boolean allTenantsLoaded = false;
 
@@ -126,7 +124,6 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         this.useRequestVersion = config.useVespaVersionInRequest();
         this.hostedVespa = config.hostedVespa();
         this.fileServer = fileServer;
-        this.useChunkedFileTransfer = config.usechunkedtransfer();
         downloader = fileServer.downloader();
         setUpHandlers();
     }
@@ -428,35 +425,6 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         return useRequestVersion;
     }
 
-    class WholeFileReceiver implements FileServer.Receiver {
-        Target target;
-        WholeFileReceiver(Target target) {
-            this.target = target;
-        }
-
-        @Override
-        public String toString() {
-            return target.toString();
-        }
-
-        @Override
-        public void receive(FileReferenceData fileData, FileServer.ReplayStatus status) {
-            Request fileBlob = new Request(FileReceiver.RECEIVE_METHOD);
-            fileBlob.parameters().add(new StringValue(fileData.fileReference().value()));
-            fileBlob.parameters().add(new StringValue(fileData.filename()));
-            fileBlob.parameters().add(new StringValue(fileData.type().name()));
-            fileBlob.parameters().add(new DataValue(fileData.content().array()));
-            fileBlob.parameters().add(new Int64Value(fileData.xxhash()));
-            fileBlob.parameters().add(new Int32Value(status.getCode()));
-            fileBlob.parameters().add(new StringValue(status.getDescription()));
-            target.invokeSync(fileBlob, 600);
-            if (fileBlob.isError()) {
-                log.warning("Failed delivering reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
-                            target.toString() + " with error: '" + fileBlob.errorMessage() + "'.");
-            }
-        }
-    }
-
     class ChunkedFileReceiver implements FileServer.Receiver {
         Target target;
         ChunkedFileReceiver(Target target) {
@@ -543,9 +511,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     @SuppressWarnings("UnusedDeclaration")
     public final void serveFile(Request request) {
         request.detach();
-        FileServer.Receiver receiver = useChunkedFileTransfer
-                                       ? new ChunkedFileReceiver(request.target())
-                                       : new WholeFileReceiver(request.target());
+        FileServer.Receiver receiver = new ChunkedFileReceiver(request.target());
         fileServer.serveFile(request, receiver);
     }
 
