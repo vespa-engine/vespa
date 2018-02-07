@@ -49,7 +49,7 @@ public interface TaskContext {
      * @param messageSupplier Supplier to be called possibly immediately (if DEBUG is enabled),
      *                        or later if the task failed. Either way, it will only be called once.
      */
-    void logOnFailure(Logger logger, Supplier<String> messageSupplier);
+    default void logOnFailure(Logger logger, Supplier<String> messageSupplier) {}
 
     /**
      * Execute a task as a child of this task, and with its own sub-TaskContext. Please  avoid
