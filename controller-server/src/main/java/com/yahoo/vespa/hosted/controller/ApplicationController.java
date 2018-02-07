@@ -208,6 +208,7 @@ public class ApplicationController {
                 // RoutingEndpoints that lacks hostname is gone
                 if (hostname != null) {
 
+                    // Book-keeping
                     if (endpoint.isGlobal()) {
                         hostToGlobalEndpoint.put(hostname, endpoint);
                     } else {
@@ -518,12 +519,19 @@ public class ApplicationController {
         }
     }
 
-    /** Returns the endpoints of the deployment, or throws an exception if this fails. */
-    public List<URI> getDeploymentEndpoints(DeploymentId deploymentId) {
-        return ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
-                                            .map(RoutingEndpoint::getEndpoint)
-                                            .map(URI::create)
-                                            .iterator());
+    /** Returns the endpoints of the deployment, or an empty list if the request fails */
+    public Optional<List<URI>> getDeploymentEndpoints(DeploymentId deploymentId) {
+        try {
+            return Optional.of(ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
+                                                                    .map(RoutingEndpoint::getEndpoint)
+                                                                    .map(URI::create)
+                                                                    .iterator()));
+        }
+        catch (RuntimeException e) {
+            log.log(Level.WARNING, "Failed to get endpoint information for " + deploymentId + ": "
+                                   + Exceptions.toMessageString(e));
+            return Optional.empty();
+        }
     }
 
     /**
