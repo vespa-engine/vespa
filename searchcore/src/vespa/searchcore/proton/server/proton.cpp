@@ -236,6 +236,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                             diskMemUsageSamplerConfig(protonConfig, hwInfo));
 
     _tls = std::make_unique<TLS>(_configUri.createWithNewId(protonConfig.tlsconfigid), _fileHeaderContext);
+    _tls->start();
     _metricsEngine->addMetricsHook(_metricsHook);
     _fileHeaderContext.setClusterName(protonConfig.clustername, protonConfig.basedir);
     _matchEngine.reset(new MatchEngine(protonConfig.numsearcherthreads,
@@ -262,7 +263,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     }
     vespalib::mkdir(protonConfig.basedir + "/documents", true);
     vespalib::chdir(protonConfig.basedir);
-    _tls->start();
     _flushEngine.reset(new FlushEngine(std::make_shared<flushengine::TlsStatsFactory>(_tls->getTransLogServer()),
                                        strategy, flush.maxconcurrent, flush.idleinterval*1000));
     _fs4Server.reset(new TransportServer(*_matchEngine, *_summaryEngine, *this, protonConfig.ptport, TransportServer::DEBUG_ALL));
