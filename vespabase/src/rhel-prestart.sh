@@ -94,6 +94,7 @@ fixdir ${VESPA_USER} wheel  755  var/db/vespa/tmp
 fixdir ${VESPA_USER} wheel  755  var/db/vespa/config_server
 fixdir ${VESPA_USER} wheel  755  var/db/vespa/config_server/serverdb
 fixdir ${VESPA_USER} wheel  755  var/db/vespa/config_server/serverdb/tenants
+fixdir ${VESPA_USER} wheel  755  var/db/vespa/filedistribution
 fixdir ${VESPA_USER} wheel  755  var/db/vespa/index
 fixdir ${VESPA_USER} wheel  755  var/db/vespa/logcontrol
 fixdir ${VESPA_USER} wheel  755  var/db/vespa/search
