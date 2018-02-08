@@ -356,12 +356,6 @@ public class PolicyTestCase {
                 "route[1].feed \"myfeed\"\n]";
     }
 
-    private void assertDistribution(PolicyTestFrame frame, String id, String expected) {
-        frame.setMessage(new PutDocumentMessage(new DocumentPut(new Document(manager.getDocumentType("testdoc"),
-                                                             new DocumentId(id)))));
-        frame.assertSelect(Arrays.asList(expected));
-    }
-
     @Test
     public void testSubsetService() {
         PolicyTestFrame frame = new PolicyTestFrame("docproc/cluster.default", manager);
