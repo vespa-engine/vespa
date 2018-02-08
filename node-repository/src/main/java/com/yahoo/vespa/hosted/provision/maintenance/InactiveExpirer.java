@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -39,7 +40,10 @@ public class InactiveExpirer extends Expirer {
     @Override
     protected void expire(List<Node> expired) {
         expired.forEach(node -> {
-            if (node.status().wantToRetire()) {
+            // If the expired inactive node has the wantToRetire flag set, we want to stop using this node
+            // so we move it to parked. However, if the node is a docker container, we move it to dirty
+            // so that the host can clean up after it and then remove it from node-repo entirely
+            if (node.status().wantToRetire() && node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER) {
                 nodeRepository.park(node.hostname(), Agent.system, "Parked by InactiveExpirer");
             } else {
                 nodeRepository.setDirty(node);

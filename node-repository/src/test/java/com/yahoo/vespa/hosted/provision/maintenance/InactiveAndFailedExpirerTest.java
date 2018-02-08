@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -43,6 +44,13 @@ public class InactiveAndFailedExpirerTest {
 
     private final ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"),
             InstanceName.from("fuz"));
+    private final Orchestrator orchestrator = mock(Orchestrator.class);
+
+    @Before
+    public void setup() throws OrchestrationException {
+        // By default, orchestrator should deny all request for suspension so we can test expiration
+        doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
+    }
 
     @Test
     public void inactive_and_failed_times_out() {
@@ -89,7 +97,7 @@ public class InactiveAndFailedExpirerTest {
 
         // Allocate and deallocate a single node
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
-                                                  ClusterSpec.Id.from("test"), 
+                                                  ClusterSpec.Id.from("test"),
                                                   Version.fromString("6.42"));
         tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
         tester.activate(applicationId, ProvisioningTester.toHostSpecs(nodes));
@@ -114,9 +122,9 @@ public class InactiveAndFailedExpirerTest {
     }
 
     @Test
-    public void node_that_wants_to_retire_is_moved_to_parked() throws OrchestrationException {
+    public void node_that_wants_to_retire_is_moved_to_parked() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), 
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
                                                   Version.fromString("6.42"));
         tester.makeReadyNodes(5, "default");
 
@@ -147,8 +155,6 @@ public class InactiveAndFailedExpirerTest {
                                                             1)
                 )
         );
-        Orchestrator orchestrator = mock(Orchestrator.class);
-        doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
         new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, tester.clock(), Duration.ofDays(30),
                 Duration.ofMinutes(10), new JobControl(tester.nodeRepository().database())).run();
         assertEquals(1, tester.nodeRepository().getNodes(Node.State.inactive).size());
@@ -157,5 +163,46 @@ public class InactiveAndFailedExpirerTest {
         tester.advanceTime(Duration.ofMinutes(11)); // Trigger InactiveExpirer
         new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10), new JobControl(tester.nodeRepository().database())).run();
         assertEquals(1, tester.nodeRepository().getNodes(Node.State.parked).size());
+    }
+
+    @Test
+    public void docker_container_is_moved_to_dirty_if_wantToRetire() {
+        final String flavor = "dockerSmall";
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        Capacity capacity = Capacity.fromNodeCount(2, flavor);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"),
+                Version.fromString("6.42"));
+
+        {
+            tester.makeReadyNodes(5, flavor);
+            List<HostSpec> hostSpecs = tester.prepare(applicationId, cluster, capacity, 1);
+            tester.activate(applicationId, new HashSet<>(hostSpecs));
+        }
+
+        List<Node> activeNodes = tester.getNodes(applicationId, Node.State.active).asList();
+        assertEquals(2, activeNodes.size());
+
+        Node nodeToRetire = activeNodes.get(0);
+        tester.patchNode(nodeToRetire.with(nodeToRetire.status().withWantToRetire(true)));
+
+        {
+            List<HostSpec> hostSpecs = tester.prepare(applicationId, cluster, capacity, 1);
+            tester.activate(applicationId, new HashSet<>(hostSpecs));
+        }
+
+        // Retire times out and one node is moved to inactive
+        tester.advanceTime(Duration.ofMinutes(11)); // Trigger RetiredExpirer
+        MockDeployer deployer = new MockDeployer(
+                tester.provisioner(),
+                Collections.singletonMap(
+                        applicationId,
+                        new MockDeployer.ApplicationContext(applicationId, cluster, capacity, 1)));
+        new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, tester.clock(), Duration.ofDays(30),
+                Duration.ofMinutes(10), new JobControl(tester.nodeRepository().database())).run();
+        assertEquals(1, tester.nodeRepository().getNodes(Node.State.inactive).size());
+
+        tester.advanceTime(Duration.ofMinutes(11)); // Trigger InactiveExpirer
+        new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10), new JobControl(tester.nodeRepository().database())).run();
+        assertEquals(1, tester.nodeRepository().getNodes(Node.State.dirty).size());
     }
 }
