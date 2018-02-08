@@ -47,10 +47,12 @@ def neuron_layer(X, n_neurons, name, activation=None):
 def leaky_relu(z, name=None):
     return tf.maximum(0.01 * z, z, name=name)
 
+def leaky_relu_with_small_constant(z, name=None):
+    return tf.maximum(tf.constant(0.01, shape=[1]) * z, z, name=name)
 
 with tf.name_scope("dnn"):
     hidden1 = neuron_layer(input, n_hidden1, name="hidden1", activation=leaky_relu)
-    hidden2 = neuron_layer(hidden1, n_hidden2, name="hidden2", activation=tf.nn.selu)
+    hidden2 = neuron_layer(hidden1, n_hidden2, name="hidden2", activation=leaky_relu_with_small_constant)
     logits = neuron_layer(hidden2, n_outputs, name="outputs") #, activation=tf.nn.sigmoid)
 
 with tf.name_scope("loss"):
