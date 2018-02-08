@@ -2,8 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
-import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandException;
-import com.yahoo.vespa.hosted.node.admin.task.util.process.TestCommandSupplier;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.ChildProcessFailureException;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -14,21 +14,21 @@ import static org.mockito.Mockito.mock;
 
 public class YumTest {
     TaskContext taskContext = mock(TaskContext.class);
-    TestCommandSupplier commandSupplier = new TestCommandSupplier(taskContext);
+    TestTerminal terminal = new TestTerminal();
 
     @Before
     public void tearDown() {
-        commandSupplier.verifyInvocations();
+        terminal.verifyAllCommandsExecuted();
     }
 
     @Test
     public void testAlreadyInstalled() {
-        commandSupplier.expectCommand(
-                "yum install --assumeyes --enablerepo=repo-name package-1 package-2",
+        terminal.expectCommand(
+                "yum install --assumeyes --enablerepo=repo-name package-1 package-2 2>&1",
                 0,
                 "foobar\nNothing to do\n");
 
-        Yum yum = new Yum(taskContext, commandSupplier);
+        Yum yum = new Yum(taskContext, terminal);
         assertFalse(yum
                 .install("package-1", "package-2")
                 .enableRepo("repo-name")
@@ -37,36 +37,36 @@ public class YumTest {
 
     @Test
     public void testAlreadyUpgraded() {
-        commandSupplier.expectCommand(
-                "yum upgrade --assumeyes package-1 package-2",
+        terminal.expectCommand(
+                "yum upgrade --assumeyes package-1 package-2 2>&1",
                 0,
                 "foobar\nNo packages marked for update\n");
 
-        assertFalse(new Yum(taskContext, commandSupplier)
+        assertFalse(new Yum(taskContext, terminal)
                 .upgrade("package-1", "package-2")
                 .converge());
     }
 
     @Test
     public void testAlreadyRemoved() {
-        commandSupplier.expectCommand(
-                "yum remove --assumeyes package-1 package-2",
+        terminal.expectCommand(
+                "yum remove --assumeyes package-1 package-2 2>&1",
                 0,
                 "foobar\nNo Packages marked for removal\n");
 
-        assertFalse(new Yum(taskContext, commandSupplier)
+        assertFalse(new Yum(taskContext, terminal)
                 .remove("package-1", "package-2")
                 .converge());
     }
 
     @Test
     public void testInstall() {
-        commandSupplier.expectCommand(
-                "yum install --assumeyes package-1 package-2",
+        terminal.expectCommand(
+                "yum install --assumeyes package-1 package-2 2>&1",
                 0,
                 "installing, installing");
 
-        Yum yum = new Yum(taskContext, commandSupplier);
+        Yum yum = new Yum(taskContext, terminal);
         assertTrue(yum
                 .install("package-1", "package-2")
                 .converge());
@@ -74,26 +74,26 @@ public class YumTest {
 
     @Test
     public void testInstallWithEnablerepo() {
-        commandSupplier.expectCommand(
-                "yum install --assumeyes --enablerepo=repo-name package-1 package-2",
+        terminal.expectCommand(
+                "yum install --assumeyes --enablerepo=repo-name package-1 package-2 2>&1",
                 0,
                 "installing, installing");
 
-        Yum yum = new Yum(taskContext, commandSupplier);
+        Yum yum = new Yum(taskContext, terminal);
         assertTrue(yum
                 .install("package-1", "package-2")
                 .enableRepo("repo-name")
                 .converge());
     }
 
-    @Test(expected = CommandException.class)
+    @Test(expected = ChildProcessFailureException.class)
     public void testFailedInstall() {
-        commandSupplier.expectCommand(
-                "yum install --assumeyes --enablerepo=repo-name package-1 package-2",
+        terminal.expectCommand(
+                "yum install --assumeyes --enablerepo=repo-name package-1 package-2 2>&1",
                 1,
                 "error");
 
-        Yum yum = new Yum(taskContext, commandSupplier);
+        Yum yum = new Yum(taskContext, terminal);
         yum.install("package-1", "package-2")
                 .enableRepo("repo-name")
                 .converge();

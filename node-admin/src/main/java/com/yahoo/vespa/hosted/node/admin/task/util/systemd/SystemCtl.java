@@ -2,12 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.systemd;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
-import com.yahoo.vespa.hosted.node.admin.task.util.process.ChildProcess;
-import com.yahoo.vespa.hosted.node.admin.task.util.process.Command;
-import com.yahoo.vespa.hosted.node.admin.task.util.process.UnexpectedOutputException;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,7 +24,7 @@ public class SystemCtl {
     private static final Pattern UNIT_FILE_STATE_PROPERTY_PATTERN = createPropertyPattern("UnitFileState");
     private static final Pattern ACTIVE_STATE_PROPERTY_PATTERN = createPropertyPattern("ActiveState");
 
-    private final Function<TaskContext, Command> commandSupplier;
+    private final Terminal terminal;
 
     private static Pattern createPropertyPattern(String propertyName) {
         if (!PROPERTY_NAME_PATTERN.matcher(propertyName).matches()) {
@@ -40,8 +37,8 @@ public class SystemCtl {
         return Pattern.compile(regex);
     }
 
-    public SystemCtl() {
-        this(Command::new);
+    public SystemCtl(Terminal terminal) {
+        this.terminal = terminal;
     }
 
     public SystemCtlEnable enable(String unit) { return new SystemCtlEnable(unit); }
@@ -56,8 +53,7 @@ public class SystemCtl {
         }
 
         protected boolean isAlreadyConverged(TaskContext context) {
-            ChildProcess showProcess = systemCtlShow(context);
-            String unitFileState = extractProperty(showProcess, UNIT_FILE_STATE_PROPERTY_PATTERN);
+            String unitFileState = getSystemCtlProperty(context, UNIT_FILE_STATE_PROPERTY_PATTERN);
             return Objects.equals(unitFileState, "enabled");
         }
     }
@@ -68,8 +64,7 @@ public class SystemCtl {
         }
 
         protected boolean isAlreadyConverged(TaskContext context) {
-            ChildProcess showProcess = systemCtlShow(context);
-            String unitFileState = extractProperty(showProcess, UNIT_FILE_STATE_PROPERTY_PATTERN);
+            String unitFileState = getSystemCtlProperty(context, UNIT_FILE_STATE_PROPERTY_PATTERN);
             return Objects.equals(unitFileState, "disabled");
         }
     }
@@ -80,8 +75,7 @@ public class SystemCtl {
         }
 
         protected boolean isAlreadyConverged(TaskContext context) {
-            ChildProcess showProcess = systemCtlShow(context);
-            String activeState = extractProperty(showProcess, ACTIVE_STATE_PROPERTY_PATTERN);
+            String activeState = getSystemCtlProperty(context, ACTIVE_STATE_PROPERTY_PATTERN);
             return Objects.equals(activeState, "active");
         }
     }
@@ -92,8 +86,7 @@ public class SystemCtl {
         }
 
         protected boolean isAlreadyConverged(TaskContext context) {
-            ChildProcess showProcess = systemCtlShow(context);
-            String activeState = extractProperty(showProcess, ACTIVE_STATE_PROPERTY_PATTERN);
+            String activeState = getSystemCtlProperty(context, ACTIVE_STATE_PROPERTY_PATTERN);
             return Objects.equals(activeState, "inactive");
         }
     }
@@ -124,48 +117,40 @@ public class SystemCtl {
                 return false;
             }
 
-            commandSupplier.apply(context)
+            terminal.newCommandLine(context)
                     .add("systemctl", command, unit)
-                    .spawn(logger)
-                    .waitForTermination()
-                    .throwIfFailed();
+                    .execute();
 
             return true;
         }
 
         /**
-         * Find the systemd property value of the property (given by propertyPattern)
-         * matching the 'systemctl show' output (given by showProcess).
+         * @param propertyPattern Pattern to match the output of systemctl show command with
+         *                        exactly 1 group. The matchng group must exist.
+         * @return The matched group from the 'systemctl show' output.
          */
-        protected String extractProperty(ChildProcess showProcess, Pattern propertyPattern) {
-            String output = showProcess.getUtf8Output();
-            Matcher matcher = propertyPattern.matcher(output);
-            if (!matcher.find()) {
-                throw new UnexpectedOutputException(
-                        "Output does not match '" + propertyPattern + "'", showProcess);
-            } else if (matcher.groupCount() != 1) {
-                throw new IllegalArgumentException("Property pattern must have exactly 1 group");
-            }
-
-            return matcher.group(1);
-        }
-
-        protected ChildProcess systemCtlShow(TaskContext context) {
-            ChildProcess process = commandSupplier.apply(context)
+        protected String getSystemCtlProperty(TaskContext context, Pattern propertyPattern) {
+            return terminal.newCommandLine(context)
                     .add("systemctl", "show", unit)
-                    .spawnProgramWithoutSideEffects()
-                    .waitForTermination()
-                    .throwIfFailed();
-
-            // Make sure we're able to parse UTF-8 output.
-            process.getUtf8Output();
-
-            return process;
+                    .executeSilently()
+                    .mapOutput(output -> extractProperty(output, propertyPattern));
         }
     }
 
-    // For testing
-    SystemCtl(Function<TaskContext, Command> commandSupplier) {
-        this.commandSupplier = commandSupplier;
+
+    /**
+     * Find the systemd property value of the property (given by propertyPattern)
+     * matching the 'systemctl show' output (given by showProcess).
+     */
+    private static String extractProperty(String showOutput, Pattern propertyPattern) {
+        Matcher matcher = propertyPattern.matcher(showOutput);
+        if (!matcher.find()) {
+            throw new IllegalArgumentException("Pattern '" + propertyPattern +
+                    "' didn't match output");
+        } else if (matcher.groupCount() != 1) {
+            throw new IllegalArgumentException("Property pattern must have exactly 1 group");
+        }
+
+        return matcher.group(1);
     }
 }
