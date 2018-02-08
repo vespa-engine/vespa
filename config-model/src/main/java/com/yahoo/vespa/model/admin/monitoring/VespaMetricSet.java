@@ -113,6 +113,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.deactivated_containers.total.last"));
         metrics.add(new Metric("jdisc.deactivated_containers.with_retained_refs.last"));
 
+        metrics.add(new Metric("athenz-tenant-cert.expiry.seconds.last", "athenz-tenant-cert.expiry.seconds"));
+
         return metrics;
     }
 
