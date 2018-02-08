@@ -60,22 +60,15 @@ findroot
 
 ROOT=${VESPA_HOME%/}
 
-if [ "$cloudconfig_server__disable_filedistributor" = "" ] || [ "$cloudconfig_server__disable_filedistributor" != "true" ]; then
-    ZKSTRING=$($ROOT/libexec/vespa/vespa-config.pl -zkstring)
-    test -z "$VESPA_LOG_LEVEL" && VESPA_LOG_LEVEL=warning
-    export VESPA_LOG_LEVEL
-    exec $ROOT/bin/vespa-status-filedistribution-bin --zkstring "$ZKSTRING" $@
-else
-    if [ "$cloudconfig_server__environment" != "" ]; then
-        environment="--environment $cloudconfig_server__environment"
-    fi
-    if [ "$cloudconfig_server__region" != "" ]; then
-        region="--region $cloudconfig_server__region"
-    fi
-
-    defaults="--tenant default --application default --instance default"
-    jvmoptions="-XX:MaxJavaStackTraceDepth=-1 $(getJavaOptionsIPV46) -Xms48m -Xmx48m"
-    jar="-cp $VESPA_HOME/lib/jars/filedistribution-jar-with-dependencies.jar"
-
-    exec java $jvmoptions $jar com.yahoo.vespa.filedistribution.status.FileDistributionStatusClient $defaults $environment $region "$@"
+if [ "$cloudconfig_server__environment" != "" ]; then
+    environment="--environment $cloudconfig_server__environment"
 fi
+if [ "$cloudconfig_server__region" != "" ]; then
+    region="--region $cloudconfig_server__region"
+fi
+
+defaults="--tenant default --application default --instance default"
+jvmoptions="-XX:MaxJavaStackTraceDepth=-1 $(getJavaOptionsIPV46) -Xms48m -Xmx48m"
+jar="-cp $VESPA_HOME/lib/jars/filedistribution-jar-with-dependencies.jar"
+
+exec java $jvmoptions $jar com.yahoo.vespa.filedistribution.status.FileDistributionStatusClient $defaults $environment $region "$@"
