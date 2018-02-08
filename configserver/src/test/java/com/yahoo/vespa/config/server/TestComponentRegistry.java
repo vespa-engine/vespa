@@ -147,7 +147,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
             final PermanentApplicationPackage permApp = this.permanentApplicationPackage
                     .orElse(new PermanentApplicationPackage(configserverConfig));
             FileDistributionFactory fileDistributionFactory = this.fileDistributionFactory
-                    .orElse(new MockFileDistributionFactory(curator));
+                    .orElse(new MockFileDistributionFactory());
             HostProvisionerProvider hostProvisionerProvider = hostProvisioner.isPresent() ?
                     HostProvisionerProvider.withProvisioner(hostProvisioner.get()) :
                     HostProvisionerProvider.empty();
