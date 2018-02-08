@@ -237,57 +237,6 @@ sub printConfigHttpSources {
     print $out . "\n";
 }
 
-sub makeFiledistributorZKConfig {
-    my $cfgFile = $VESPA_HOME . "/conf/filedistributor/zookeepers.cfg";
-    open(CFG, "> ${cfgFile}.new") or die "Cannot write to '${cfgFile}.new'";
-    my $zkservers = getZKString();
-    print CFG "zookeeperserverlist \"$zkservers\"\n";
-    close(CFG);
-    rename("${cfgFile}.new", ${cfgFile})
-        or die "Cannot rename '${cfgFile}.new' -> '${cfgFile}': $!\n";
-    print STDERR "wrote '${cfgFile}' \n";
-}
-
-sub makeFiledistributorDistributorConfig {
-    my $cfgFile = $VESPA_HOME . "/conf/filedistributor/filedistributor.cfg";
-    open(CFG, "> ${cfgFile}.new") or die "Cannot write to '${cfgFile}.new'";
-    print CFG "torrentport 19093\n";
-    print CFG "hostname \"$myHostname\"\n";
-    print CFG "filedbpath \"$VESPA_HOME" . "/var/db/vespa/filedistribution\"\n";
-    print CFG "maxdownloadspeed 0\n";
-    print CFG "maxuploadspeed 0\n";
-    close(CFG);
-    rename("${cfgFile}.new", ${cfgFile})
-        or die "Cannot rename '${cfgFile}.new' -> '${cfgFile}': $!\n";
-    print STDERR "wrote '${cfgFile}' \n";
-}
-
-sub makeFiledistributorRpcConfig {
-    my $cfgFile = $VESPA_HOME . "/conf/filedistributor/filedistributorrpc.cfg";
-    open(CFG, "> ${cfgFile}.new") or die "Cannot write to '${cfgFile}.new'";
-    print CFG "connectionspec \"tcp/$myHostname:19092\"\n";
-    close(CFG);
-    rename("${cfgFile}.new", ${cfgFile})
-        or die "Cannot rename '${cfgFile}.new' -> '${cfgFile}': $!\n";
-    print STDERR "wrote '${cfgFile}' \n";
-}
-
-sub makeFiledistributorReferencesConfig {
-    my $cfgFile = $VESPA_HOME . "/conf/filedistributor/filereferences.cfg";
-    open(CFG, "> ${cfgFile}.new") or die "Cannot write to '${cfgFile}.new'";
-    close(CFG);
-    rename("${cfgFile}.new", ${cfgFile})
-        or die "Cannot rename '${cfgFile}.new' -> '${cfgFile}': $!\n";
-    print STDERR "wrote '${cfgFile}' \n";
-}
-
-sub makeFiledistributorConfig {
-    makeFiledistributorZKConfig();
-    makeFiledistributorDistributorConfig();
-    makeFiledistributorRpcConfig();
-    makeFiledistributorReferencesConfig();
-}
-
 sub isThisAConfigServer {
     my $addr;
     foreach $addr (getConfigServers()) {
@@ -321,7 +270,7 @@ sub getLastLine {
 
 sub usage {
     print "usage: ";
-    print "vespa-config [-configsources | -confighttpsources | -zkstring | -mkfiledistributorconfig | -configserverport | -zkclientport | -isthisaconfigserver]\n";
+    print "vespa-config [-configsources | -confighttpsources | -zkstring | -configserverport | -zkclientport | -isthisaconfigserver]\n";
 }
 
 if ( @ARGV == 0 ) {
@@ -354,11 +303,6 @@ if ( $ARGV[0] eq "-configserverport" ) {
     $lookupInConfig = 1;
     vespa_base_env();
     printConfigServerPort();
-    exit 0;
-}
-if ( $ARGV[0] eq "-mkfiledistributorconfig" ) {
-    vespa_base_env();
-    makeFiledistributorConfig();
     exit 0;
 }
 if ( $ARGV[0] eq "-zkclientport" ) {
