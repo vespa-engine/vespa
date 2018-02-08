@@ -101,7 +101,7 @@ public:
                 combinedCellIdx -= _combinedAddress.wholeDimStep(cdim);
                 curDimension--;
             } else {
-                if (cindex < _rightAddress.dimSize(rdim)) {
+                if ((cindex + 1) < _rightAddress.dimSize(rdim)) {
                     cindex++;
                     rightCellIdx += _rightAddress._accumulatedSize[rdim];
                     combinedCellIdx += _combinedAddress._accumulatedSize[cdim];
