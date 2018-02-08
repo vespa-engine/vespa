@@ -156,6 +156,12 @@ class OperationMapper {
 
     private static Optional<TypedTensorFunction> constant(TensorFlowImporter.Parameters params) {
         Tensor value = AttrValueConverter.toVespaTensor(params.node(), "value");
+        if (value.type().rank() == 0) {
+            TypedTensorFunction output = new TypedTensorFunction(value.type(),
+                    new TensorFunctionNode.TensorFunctionExpressionNode(
+                            new ConstantNode(new DoubleValue(value.asDouble()))));
+            return Optional.of(output);
+        }
         return createConstant(params, value);
     }
 

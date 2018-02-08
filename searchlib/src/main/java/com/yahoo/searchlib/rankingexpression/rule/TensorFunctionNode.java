@@ -117,11 +117,12 @@ public class TensorFunctionNode extends CompositeNode {
 
         @Override
         public Tensor evaluate(EvaluationContext context) {
-            Value result = expression.evaluate((Context)context);
-            if ( ! ( result instanceof TensorValue))
-                throw new IllegalArgumentException("Attempted to evaluate tensor function '" + expression + "', " +
-                                                   "but this returns " + result + ", not a tensor");
-            return result.asTensor();
+//            Value result = expression.evaluate((Context)context);
+//            if ( ! ( result instanceof TensorValue))
+//                throw new IllegalArgumentException("Attempted to evaluate tensor function '" + expression + "', " +
+//                    "but this returns " + result + ", not a tensor");
+//            return result.asTensor();
+            return expression.evaluate((Context)context).asTensor();
         }
 
         @Override

@@ -294,6 +294,7 @@ public class EvaluationTestCase {
                                "tensor0 != tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:7 }");
         tester.assertEvaluates("{ {x:0}:1, {x:1}:0 }",
                                "tensor0 in [1,2,3]", "{ {x:0}:3, {x:1}:7 }");
+        tester.assertEvaluates("{ {x:0}:0.1 }", "join(tensor0, 0.1, f(x,y) (x*y))", "{ {x:0}:1 }");
 
         // TODO
         // argmax

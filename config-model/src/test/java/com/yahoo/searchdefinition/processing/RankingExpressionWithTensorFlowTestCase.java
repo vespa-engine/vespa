@@ -250,46 +250,6 @@ public class RankingExpressionWithTensorFlowTestCase {
         }
     }
 
-    @Test
-    public void testImportingFromStoredExpressionsWithSmallConstants() throws IOException {
-        final String expression = "join(rename(reduce(join(map(join(rename(reduce(join(join(join(constant(\"dnn_hidden1_mul_x\"), join(rename(reduce(join(input, rename(constant(\"dnn_hidden1_weights\"), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(\"dnn_hidden1_bias\"), d0, d1), f(a,b)(a + b)), f(a,b)(a * b)), join(rename(reduce(join(input, rename(constant(\"dnn_hidden1_weights\"), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(\"dnn_hidden1_bias\"), d0, d1), f(a,b)(a + b)), f(a,b)(max(a,b))), rename(constant(\"dnn_hidden2_weights\"), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(\"dnn_hidden2_bias\"), d0, d1), f(a,b)(a + b)), f(a)(1.050701 * if (a >= 0, a, 1.673263 * (exp(a) - 1)))), rename(constant(\"dnn_outputs_weights\"), (d0, d1), (d1, d3)), f(a,b)(a * b)), sum, d1), d3, d1), rename(constant(\"dnn_outputs_bias\"), d0, d1), f(a,b)(a + b))";
-        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
-        RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
-                                                      "tensorflow('mnist/saved')",
-                                                      null,
-                                                      null,
-                                                      "input",
-                                                      application);
-        search.assertFirstPhaseExpression(expression, "my_profile");
-        assertSmallConstant("dnn_hidden1_mul_x", TensorType.empty, search);
-
-        // At this point the expression is stored - copy application to another location which do not have a models dir
-        Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
-        try {
-            storedApplicationDirectory.toFile().mkdirs();
-            IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
-                                  storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-            StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
-            RankProfileSearchFixture searchFromStored = fixtureWith("tensor(d0[2],d1[784])(0.0)",
-                                                                    "tensorflow('mnist/saved')",
-                                                                    null,
-                                                                    null,
-                                                                    "input",
-                                                                    storedApplication);
-            searchFromStored.assertFirstPhaseExpression(expression, "my_profile");
-            assertSmallConstant("dnn_hidden1_mul_x", TensorType.empty, search);
-        }
-        finally {
-            IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
-        }
-    }
-
-    private void assertSmallConstant(String name, TensorType type, RankProfileSearchFixture search) {
-        Value value = search.rankProfile("my_profile").getConstants().get(name);
-        assertNotNull(value);
-        assertEquals(type, value.type());
-    }
-
     /**
      * Verifies that the constant with the given name exists, and - only if an expected size is given -
      * that the content of the constant is available and has the expected size.

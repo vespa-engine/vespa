@@ -33,7 +33,7 @@ public abstract class Value {
     /** Returns this as a tensor value */
     public abstract Tensor asTensor();
 
-    /** A utility method for wrapping a sdouble in a rank 0 tensor */
+    /** A utility method for wrapping a double in a rank 0 tensor */
     protected Tensor doubleAsTensor(double value) {
         return Tensor.Builder.of(TensorType.empty).cell(TensorAddress.of(), value).build();
     }
