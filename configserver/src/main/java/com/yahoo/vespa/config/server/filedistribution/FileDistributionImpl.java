@@ -18,38 +18,33 @@ import java.util.logging.Logger;
 /**
  * @author baldersheim
  */
-public class CombinedLegacyDistribution implements FileDistribution {
-    private final static Logger log = Logger.getLogger(CombinedLegacyDistribution.class.getName());
+public class FileDistributionImpl implements FileDistribution {
+    private final static Logger log = Logger.getLogger(FileDistributionImpl.class.getName());
 
     private final Supervisor supervisor;
-    private final FileDistribution legacy;
-    private final boolean disableFileDistributor;
 
-    CombinedLegacyDistribution(Supervisor supervisor, FileDBHandler legacy, boolean disableFileDistributor) {
+    FileDistributionImpl(Supervisor supervisor) {
         this.supervisor = supervisor;
-        this.legacy = legacy;
-        this.disableFileDistributor = disableFileDistributor;
     }
 
     @Override
     public void sendDeployedFiles(String hostName, Set<FileReference> fileReferences) {
-        legacy.sendDeployedFiles(hostName, fileReferences);
+        // Nothing do do, legacy handler not in use anymore
     }
 
     @Override
     public void startDownload(String hostName, int port, Set<FileReference> fileReferences) {
-        if (disableFileDistributor)
-            startDownloadingFileReferences(hostName, port, fileReferences);
+         startDownloadingFileReferences(hostName, port, fileReferences);
     }
 
     @Override
     public void reloadDeployFileDistributor() {
-        legacy.reloadDeployFileDistributor();
+        // Nothing do do, legacy handler not in use anymore
     }
 
     @Override
     public void removeDeploymentsThatHaveDifferentApplicationId(Collection<String> targetHostnames) {
-        legacy.removeDeploymentsThatHaveDifferentApplicationId(targetHostnames);
+        // Nothing do do, legacy handler not in use anymore
     }
 
     // Notifies config proxy which file references it should start downloading. It's OK if the call does not succeed,
