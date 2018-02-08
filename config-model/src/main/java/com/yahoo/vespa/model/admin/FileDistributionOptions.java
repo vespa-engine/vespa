@@ -12,6 +12,10 @@ import com.yahoo.cloud.config.filedistribution.FiledistributorConfig;
  */
 public class FileDistributionOptions implements FiledistributorConfig.Producer {
 
+    public static FileDistributionOptions defaultOptions() {
+        return new FileDistributionOptions();
+    }
+
     private FileDistributionOptions() {
     }
 

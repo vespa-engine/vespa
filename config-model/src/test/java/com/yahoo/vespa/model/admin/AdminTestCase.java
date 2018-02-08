@@ -92,11 +92,12 @@ public class AdminTestCase {
         SentinelConfig.Builder b = new SentinelConfig.Builder();
         vespaModel.getConfig(b, localhostConfigId);
         SentinelConfig sentinelConfig = new SentinelConfig(b);
-        assertThat(sentinelConfig.service().size(), is(4));
+        assertThat(sentinelConfig.service().size(), is(5));
         assertThat(sentinelConfig.service(0).name(), is("logserver"));
         assertThat(sentinelConfig.service(1).name(), is("slobrok"));
         assertThat(sentinelConfig.service(2).name(), is("slobrok2"));
         assertThat(sentinelConfig.service(3).name(), is("logd"));
+        assertThat(sentinelConfig.service(4).name(), is("filedistributorservice"));
     }
 
     /**
@@ -127,10 +128,11 @@ public class AdminTestCase {
         SentinelConfig.Builder b = new SentinelConfig.Builder();
         vespaModel.getConfig(b, localhostConfigId);
         SentinelConfig sentinelConfig = new SentinelConfig(b);
-        assertThat(sentinelConfig.service().size(), is(3));
+        assertThat(sentinelConfig.service().size(), is(4));
         assertThat(sentinelConfig.service(0).name(), is("logserver"));
         assertThat(sentinelConfig.service(1).name(), is("slobrok"));
         assertThat(sentinelConfig.service(2).name(), is("logd"));
+        assertThat(sentinelConfig.service(3).name(), is("filedistributorservice"));
         assertThat(sentinelConfig.service(0).affinity().cpuSocket(), is(-1));
         assertTrue(sentinelConfig.service(0).preShutdownCommand().isEmpty());
 
