@@ -107,7 +107,6 @@ export LD_LIBRARY_PATH=${VESPA_HOME}/lib64
 #Does not need fast allocation
 export MALLOC_ARENA_MAX=1
 
-vespa-run-as-vespa-user ${VESPA_HOME}/libexec/vespa/start-filedistribution
 vespa-run-as-vespa-user ${VESPA_HOME}/libexec/vespa/start-logd
 
 # stuff for the configserver process:
