@@ -22,6 +22,7 @@ import com.yahoo.vespa.model.filedistribution.DummyFileDistributionConfigProduce
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProvider;
 import com.yahoo.vespa.model.filedistribution.FileDistributor;
+import com.yahoo.vespa.model.filedistribution.FileDistributorService;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -228,13 +229,23 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
         FileDistributionConfigProvider configProvider =
                 new FileDistributionConfigProvider(fileDistributor,
+                                                   fileDistribution.getOptions(),
                                                    host == deployHost,
                                                    host.getHost());
-        DummyFileDistributionConfigProducer dummyFileDistributionConfigProducer =
-                new DummyFileDistributionConfigProducer(fileDistribution,
-                                                        host.getHost().getHostname(),
-                                                        configProvider);
-        fileDistribution.addFileDistributionConfigProducer(host.getHost(), dummyFileDistributionConfigProducer);
+        if (fileDistribution.getOptions().disableFiledistributor()) {
+            DummyFileDistributionConfigProducer dummyFileDistributionConfigProducer =
+                    new DummyFileDistributionConfigProducer(fileDistribution,
+                                                            host.getHost().getHostname(),
+                                                            configProvider);
+            fileDistribution.addFileDistributionConfigProducer(host.getHost(), dummyFileDistributionConfigProducer);
+        } else {
+            FileDistributorService fds = new FileDistributorService(fileDistribution,
+                                                                    host.getHost().getHostname(),
+                                                                    configProvider);
+            fds.setHostResource(host);
+            fds.initService();
+            fileDistribution.addFileDistributionConfigProducer(host.getHost(), fds);
+        }
     }
 
     private boolean deployHostIsMissing(HostResource deployHost) {

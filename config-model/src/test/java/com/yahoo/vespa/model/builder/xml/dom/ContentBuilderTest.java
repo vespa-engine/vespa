@@ -360,7 +360,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "logd", "configproxy",
                 "config-sentinel", "configserver", "logserver",
                 "slobrok", "container-clustercontroller",
-                "storagenode", "distributor"
+                "filedistributorservice", "storagenode", "distributor"
         };
         assertServices(h, expectedServices);
 

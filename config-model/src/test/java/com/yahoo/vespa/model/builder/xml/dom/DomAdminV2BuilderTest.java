@@ -31,7 +31,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     private static MockRoot root;
 
     @Before
-    public void prepareTest() {
+    public void prepareTest() throws Exception {
         root = new MockRoot("root");
     }
 
@@ -210,7 +210,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
         final DomAdminV2Builder domAdminBuilder =
                 new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT,
                                       root.getDeployState().getFileRegistry(), multitenant,
-                                      configServerSpecs);
+                                      configServerSpecs, root.getDeployState().disableFiledistributor());
         Admin admin = domAdminBuilder.build(root, xml);
         admin.addPerHostServices(root.getHostSystem().getHosts(), new DeployProperties.Builder().build());
         return admin;
