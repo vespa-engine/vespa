@@ -37,16 +37,14 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     private final ApplicationType applicationType;
     private final List<ConfigServerSpec> configServerSpecs;
     private final FileRegistry fileRegistry;
-    private final boolean disableFiledistributor;
     protected final boolean multitenant;
 
     DomAdminBuilderBase(ApplicationType applicationType, FileRegistry fileRegistry, boolean multitenant,
-                        List<ConfigServerSpec> configServerSpecs, boolean disableFiledistributor) {
+                        List<ConfigServerSpec> configServerSpecs) {
         this.applicationType = applicationType;
         this.fileRegistry = fileRegistry;
         this.multitenant = multitenant;
         this.configServerSpecs = configServerSpecs;
-        this.disableFiledistributor = disableFiledistributor;
     }
 
     List<Configserver> getConfigServersFromSpec(AbstractConfigProducer parent) {
@@ -71,7 +69,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
                 .buildMetrics(XML.getChild(adminElement, "metrics"));
         Map<String, MetricsConsumer> legacyMetricsConsumers = DomMetricBuilderHelper
                 .buildMetricsConsumers(XML.getChild(adminElement, "metric-consumers"));
-        FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent, adminElement);
+        FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent);
 
         Admin admin = new Admin(parent, monitoring, metrics, legacyMetricsConsumers, multitenant, fileDistributionConfigProducer);
         doBuildAdmin(admin, adminElement);
@@ -80,11 +78,8 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         return admin;
     }
 
-    private FileDistributionConfigProducer getFileDistributionConfigProducer(AbstractConfigProducer parent, Element adminElement) {
-        FileDistributionOptions fileDistributionOptions = FileDistributionOptions.defaultOptions();
-        fileDistributionOptions.disableFiledistributor(disableFiledistributor);
-        fileDistributionOptions = new DomFileDistributionOptionsBuilder(fileDistributionOptions).build(XML.getChild(adminElement, "filedistribution"));
-        return new FileDistributionConfigProducer.Builder(fileDistributionOptions).build(parent, fileRegistry, configServerSpecs);
+    private FileDistributionConfigProducer getFileDistributionConfigProducer(AbstractConfigProducer parent) {
+        return new FileDistributionConfigProducer.Builder().build(parent, fileRegistry, configServerSpecs);
     }
 
     private Element getChildWithFallback(Element parent, String childName, String alternativeChildName) {

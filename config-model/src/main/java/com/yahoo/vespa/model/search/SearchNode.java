@@ -21,7 +21,6 @@ import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.ContentNode;
 import com.yahoo.vespa.model.filedistribution.DummyFileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
-import com.yahoo.vespa.model.filedistribution.FileDistributorService;
 import org.w3c.dom.Element;
 
 import java.util.HashMap;
@@ -230,11 +229,7 @@ public class SearchNode extends AbstractService implements
         FileDistributionConfigProducer fileDistribution = getRoot().getFileDistributionConfigProducer();
         if (fileDistribution != null) {
             AbstractConfigProducer configProducer = fileDistribution.getConfigProducer(getHost());
-            // TODO: Hack, will be fixed when FileDistributorService is gone
-            if (configProducer instanceof DummyFileDistributionConfigProducer)
-                ((DummyFileDistributionConfigProducer) configProducer).getConfig(builder);
-            else
-                ((FileDistributorService) configProducer).getConfig(builder);
+            ((DummyFileDistributionConfigProducer) configProducer).getConfig(builder);
         }
     }
 

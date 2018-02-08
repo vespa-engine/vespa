@@ -17,7 +17,6 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -72,12 +71,9 @@ public class DedicatedAdminV4Test {
         VespaModel model = createModel(hosts, services);
         assertEquals(3, model.getHosts().size());
 
-        assertHostContainsServices(model, "hosts/myhost0",
-                                   "slobrok", "logd", "filedistributorservice");
-        assertHostContainsServices(model, "hosts/myhost1",
-                                   "slobrok", "logd", "filedistributorservice");
-        assertHostContainsServices(model, "hosts/myhost2",
-                                   "logserver", "logd", "filedistributorservice");
+        assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd");
+        assertHostContainsServices(model, "hosts/myhost1", "slobrok", "logd");
+        assertHostContainsServices(model, "hosts/myhost2", "logserver", "logd");
 
         Monitoring monitoring = model.getAdmin().getMonitoring();
         assertEquals("vespa.routing", monitoring.getClustername());
@@ -136,14 +132,10 @@ public class DedicatedAdminV4Test {
         assertEquals(4, model.getHosts().size());
 
         // 4 slobroks, 2 per cluster where possible
-        assertHostContainsServices(model, "hosts/myhost0",
-                                   "slobrok", "logd", "filedistributorservice", "logserver", "qrserver");
-        assertHostContainsServices(model, "hosts/myhost1",
-                                   "slobrok", "logd", "filedistributorservice", "qrserver");
-        assertHostContainsServices(model, "hosts/myhost2",
-                                   "slobrok", "logd", "filedistributorservice", "qrserver");
-        assertHostContainsServices(model, "hosts/myhost3",
-                                   "slobrok", "logd", "filedistributorservice", "qrserver");
+        assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver", "qrserver");
+        assertHostContainsServices(model, "hosts/myhost1", "slobrok", "logd", "qrserver");
+        assertHostContainsServices(model, "hosts/myhost2", "slobrok", "logd", "qrserver");
+        assertHostContainsServices(model, "hosts/myhost3", "slobrok", "logd",  "qrserver");
     }
 
     @Test
@@ -161,12 +153,9 @@ public class DedicatedAdminV4Test {
         VespaModel model = createModel(hosts, services);
         assertEquals(3, model.getHosts().size());
 
-        assertHostContainsServices(model, "hosts/myhost0",
-                                   "filedistributorservice", "logd", "logforwarder", "slobrok");
-        assertHostContainsServices(model, "hosts/myhost1",
-                                   "filedistributorservice", "logd", "logforwarder", "slobrok");
-        assertHostContainsServices(model, "hosts/myhost2",
-                                   "filedistributorservice", "logd", "logforwarder", "logserver");
+        assertHostContainsServices(model, "hosts/myhost0", "logd", "logforwarder", "slobrok");
+        assertHostContainsServices(model, "hosts/myhost1", "logd", "logforwarder", "slobrok");
+        assertHostContainsServices(model, "hosts/myhost2", "logd", "logforwarder", "logserver");
 
         Set<String> configIds = model.getConfigIds();
         // 1 logforwarder on each host

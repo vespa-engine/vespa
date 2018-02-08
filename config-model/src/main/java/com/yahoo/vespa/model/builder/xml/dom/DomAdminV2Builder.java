@@ -37,9 +37,8 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
     public DomAdminV2Builder(ConfigModelContext.ApplicationType applicationType,
                              FileRegistry fileRegistry,
                              boolean multitenant,
-                             List<ConfigServerSpec> configServerSpecs,
-                             boolean disableFiledistributor) {
-        super(applicationType, fileRegistry, multitenant, configServerSpecs, disableFiledistributor);
+                             List<ConfigServerSpec> configServerSpecs) {
+        super(applicationType, fileRegistry, multitenant, configServerSpecs);
     }
 
     @Override
