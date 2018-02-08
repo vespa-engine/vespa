@@ -86,7 +86,8 @@ public class RetiredExpirer extends Maintainer {
 
     /**
      * Checks if the node can be removed:
-     * if the node is {@link NodeType#host}, it will only be removed if it has no children, or all its children are parked
+     * if the node is {@link NodeType#host}, it will only be removed if it has no children,
+     * or all its children are parked or failed
      * Otherwise, a removal is allowed if either of these are true:
      * - The node has been in state {@link History.Event.Type#retired} for longer than {@link #retiredExpiry}
      * - Orchestrator allows it
@@ -95,7 +96,7 @@ public class RetiredExpirer extends Maintainer {
         if (node.type() == NodeType.host) {
             return nodeRepository()
                     .getChildNodes(node.hostname()).stream()
-                    .allMatch(child -> child.state() == Node.State.parked);
+                    .allMatch(child -> child.state() == Node.State.parked || child.state() == Node.State.failed);
         }
 
         Optional<Instant> timeOfRetiredEvent = node.history().event(History.Event.Type.retired).map(History.Event::at);
