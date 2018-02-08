@@ -197,7 +197,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)))
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default", DELETE),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default", DELETE)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               "Deactivated tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default");
         controllerTester.notifyJobCompletion(id, screwdriverProjectId, true, DeploymentJobs.JobType.systemTest); // Called through the separate screwdriver/v1 API
 
@@ -206,7 +207,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(createApplicationDeployData(applicationPackage, Optional.of(screwdriverProjectId)))
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default", DELETE),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default", DELETE)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               "Deactivated tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/default");
         controllerTester.notifyJobCompletion(id, screwdriverProjectId, true, DeploymentJobs.JobType.stagingTest);
 
@@ -252,10 +254,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
 
         // POST a 'restart application' command
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/restart", POST),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/restart", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               "Requested restart of tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default");
         // POST a 'restart application' command with a host filter (other filters not supported yet)
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/restart?hostname=host1", POST),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/restart?hostname=host1", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               "Requested restart of tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default");
         // POST a 'log' command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/log", POST),
@@ -275,14 +279,17 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("delete-with-active-deployments.json"), 400);
 
         // DELETE (deactivate) a deployment - dev
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default", DELETE),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default", DELETE)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               "Deactivated tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default");
         // DELETE (deactivate) a deployment - prod
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", DELETE),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", DELETE)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               "Deactivated tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default");
 
         // DELETE (deactivate) a deployment is idempotent
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", DELETE),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", DELETE)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               "Deactivated tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default");
 
         // PUT (create) the authenticated user
@@ -315,9 +322,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data("{\"reason\":\"because i can\"}"),
                               new File("global-rotation-delete.json"));
 
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/promote", POST),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/promote", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               "{\"message\":\"Successfully copied environment hosted-verified-prod to hosted-instance_tenant1_application1_placeholder_component_default\"}");
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/promote", POST),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/promote", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                               "{\"message\":\"Successfully copied environment hosted-instance_tenant1_application1_placeholder_component_default to hosted-instance_tenant1_application1_us-west-1_prod_default\"}");
 
         // DELETE an application
@@ -816,7 +825,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(deployData)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
-        tester.assertResponse(request(testPath, DELETE),
+        tester.assertResponse(request(testPath, DELETE)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                 "Deactivated " + testPath.replaceFirst("/application/v4/", ""));
         controllerTester.notifyJobCompletion(application, projectId, true, DeploymentJobs.JobType.systemTest);
 
@@ -827,7 +837,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(deployData)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               new File("deploy-result.json"));
-        tester.assertResponse(request(stagingPath, DELETE),
+        tester.assertResponse(request(stagingPath, DELETE)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
                 "Deactivated " + stagingPath.replaceFirst("/application/v4/", ""));
         controllerTester.notifyJobCompletion(application, projectId, true, DeploymentJobs.JobType.stagingTest);
     }

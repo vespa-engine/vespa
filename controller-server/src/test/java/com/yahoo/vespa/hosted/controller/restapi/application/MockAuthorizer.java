@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.TestIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.util.Optional;
@@ -31,14 +32,15 @@ public class MockAuthorizer extends Authorizer {
 
     /** Returns a principal given by the request parameters 'domain' and 'user' */
     @Override
-    public Optional<AthenzPrincipal> getPrincipalIfAny(HttpRequest request) {
+    public AthenzPrincipal getPrincipal(HttpRequest request) {
         String domain = request.getHeader("Athenz-Identity-Domain");
         String name = request.getHeader("Athenz-Identity-Name");
-        if (domain == null || name == null) return Optional.empty();
-        return Optional.of(
-                new AthenzPrincipal(
-                        AthenzIdentities.from(new AthenzDomain(domain), name),
-                        new NToken("dummy")));
+        if (domain == null || name == null) {
+            throw new ForbiddenException("User is not authenticated");
+        }
+        return new AthenzPrincipal(
+                AthenzIdentities.from(new AthenzDomain(domain), name),
+                new NToken("dummy"));
     }
 
     /** Returns the hardcoded NToken of {@link TestIdentities#userId} */
@@ -50,9 +52,9 @@ public class MockAuthorizer extends Authorizer {
 
     @Override
     protected Optional<SecurityContext> securityContextOf(HttpRequest request) {
-        return getPrincipalIfAny(request).map(MockSecurityContext::new);
+        return Optional.of(new MockSecurityContext(getPrincipal(request)));
     }
-    
+
     private static final class MockSecurityContext implements SecurityContext {
         
         private final Principal principal;

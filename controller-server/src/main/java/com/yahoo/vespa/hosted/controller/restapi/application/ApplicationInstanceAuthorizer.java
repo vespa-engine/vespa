@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.config.application.api.DeploymentSpec;
-import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotAuthorizedException;
-import java.security.Principal;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -25,56 +24,27 @@ import static com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAth
 import static com.yahoo.vespa.hosted.controller.restapi.application.Authorizer.environmentRequiresAuthorization;
 
 /**
+ * Validates that principal is allowed to perform a mutating operation on an application instance.
+ *
  * @author bjorncs
  * @author gjoranv
  */
-public class DeployAuthorizer {
+public class ApplicationInstanceAuthorizer {
 
-    private static final Logger log = Logger.getLogger(DeployAuthorizer.class.getName());
+    private static final Logger log = Logger.getLogger(ApplicationInstanceAuthorizer.class.getName());
 
     private final ZoneRegistry zoneRegistry;
     private final AthenzClientFactory athenzClientFactory;
 
-    public DeployAuthorizer(ZoneRegistry zoneRegistry, AthenzClientFactory athenzClientFactory) {
+    public ApplicationInstanceAuthorizer(ZoneRegistry zoneRegistry, AthenzClientFactory athenzClientFactory) {
         this.zoneRegistry = zoneRegistry;
         this.athenzClientFactory = athenzClientFactory;
     }
 
-    public void throwIfUnauthorizedForDeploy(Principal principal,
-                                             Environment environment,
-                                             Tenant tenant,
-                                             ApplicationId applicationId,
-                                             Optional<ApplicationPackage> applicationPackage) {
-        // Validate that domain in identity configuration (deployment.xml) is same as tenant domain
-        applicationPackage.map(ApplicationPackage::deploymentSpec).flatMap(DeploymentSpec::athenzDomain)
-                          .ifPresent(identityDomain -> {
-            AthenzDomain tenantDomain = tenant.getAthensDomain().orElseThrow(() -> new IllegalArgumentException("Identity provider only available to Athenz onboarded tenants"));
-            if (! Objects.equals(tenantDomain.getName(), identityDomain.value())) {
-                throw new ForbiddenException(
-                        String.format(
-                                "Athenz domain in deployment.xml: [%s] must match tenant domain: [%s]",
-                                identityDomain.value(),
-                                tenantDomain.getName()
-                        ));
-            }
-        });
-
-        if (!environmentRequiresAuthorization(environment)) {
-            return;
-        }
-
-        if (principal == null) {
-            throw loggedUnauthorizedException("Principal not authenticated!");
-        }
-
-        if (!(principal instanceof AthenzPrincipal)) {
-            throw loggedUnauthorizedException(
-                    "Principal '%s' of type '%s' is not an Athenz principal, which is required for production deployments.",
-                    principal.getName(), principal.getClass().getSimpleName());
-        }
-
-        AthenzPrincipal athenzPrincipal = (AthenzPrincipal) principal;
-        AthenzDomain principalDomain = athenzPrincipal.getDomain();
+    public void throwIfUnauthorized(AthenzPrincipal principal,
+                                    Tenant tenant,
+                                    ApplicationName application) {
+        AthenzDomain principalDomain = principal.getDomain();
 
         if (!principalDomain.equals(SCREWDRIVER_DOMAIN)) {
             throw loggedForbiddenException(
@@ -89,14 +59,45 @@ public class DeployAuthorizer {
         // NOTE: no fine-grained deploy authorization for non-Athenz tenants
         if (tenant.isAthensTenant()) {
             AthenzDomain tenantDomain = tenant.getAthensDomain().get();
-            if (!hasDeployAccessToAthenzApplication(athenzPrincipal, tenantDomain, applicationId)) {
+            if (!hasDeployAccessToAthenzApplication(principal, tenantDomain, application)) {
                 throw loggedForbiddenException(
                         "Screwdriver principal '%1$s' does not have deploy access to '%2$s'. " +
-                        "Either the application has not been created at " + zoneRegistry.getDashboardUri() + " or " +
-                        "'%1$s' is not added to the application's deployer role in Athenz domain '%3$s'.",
-                        athenzPrincipal.getIdentity().getFullName(), applicationId, tenantDomain.getName());
+                                "Either the application has not been created at " + zoneRegistry.getDashboardUri() + " or " +
+                                "'%1$s' is not added to the application's deployer role in Athenz domain '%3$s'.",
+                        principal.getIdentity().getFullName(), application.value(), tenantDomain.getName());
             }
         }
+    }
+
+    public void throwIfUnauthorized(AthenzPrincipal principal,
+                                    Environment environment,
+                                    Tenant tenant,
+                                    ApplicationName application) {
+        if (!environmentRequiresAuthorization(environment)) {
+            return;
+        }
+        throwIfUnauthorized(principal, tenant, application);
+    }
+
+    public void throwIfUnauthorizedForDeploy(AthenzPrincipal principal,
+                                             Environment environment,
+                                             Tenant tenant,
+                                             ApplicationName application,
+                                             Optional<ApplicationPackage> applicationPackage) {
+        // Validate that domain in identity configuration (deployment.xml) is same as tenant domain
+        applicationPackage.map(ApplicationPackage::deploymentSpec).flatMap(DeploymentSpec::athenzDomain)
+                          .ifPresent(identityDomain -> {
+            AthenzDomain tenantDomain = tenant.getAthensDomain().orElseThrow(() -> new IllegalArgumentException("Identity provider only available to Athenz onboarded tenants"));
+            if (! Objects.equals(tenantDomain.getName(), identityDomain.value())) {
+                throw new ForbiddenException(
+                        String.format(
+                                "Athenz domain in deployment.xml: [%s] must match tenant domain: [%s]",
+                                identityDomain.value(),
+                                tenantDomain.getName()
+                        ));
+            }
+        });
+        throwIfUnauthorized(principal, environment, tenant, application);
     }
 
     private static ForbiddenException loggedForbiddenException(String message, Object... args) {
@@ -111,14 +112,14 @@ public class DeployAuthorizer {
         return new NotAuthorizedException(formattedMessage);
     }
 
-    private boolean hasDeployAccessToAthenzApplication(AthenzPrincipal principal, AthenzDomain domain, ApplicationId applicationId) {
+    private boolean hasDeployAccessToAthenzApplication(AthenzPrincipal principal, AthenzDomain domain, ApplicationName application) {
         try {
             return athenzClientFactory.createZmsClientWithServicePrincipal()
                     .hasApplicationAccess(
                             principal.getIdentity(),
                             ApplicationAction.deploy,
                             domain,
-                            new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(applicationId.application().value()));
+                            new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(application.value()));
         } catch (ZmsException e) {
             throw loggedForbiddenException(
                     "Failed to authorize deployment through Athenz. If this problem persists, " +

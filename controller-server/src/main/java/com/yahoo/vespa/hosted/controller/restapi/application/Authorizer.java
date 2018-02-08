@@ -66,18 +66,22 @@ public class Authorizer {
 
     /** Returns the principal or throws forbidden */ // TODO: Avoid REST exceptions
     public AthenzPrincipal getPrincipal(HttpRequest request) {
-        return getPrincipalIfAny(request).orElseThrow(() -> Authorizer.loggedForbiddenException("User is not authenticated"));
-    }
-
-    /** Returns the principal if there is any */
-    public Optional<AthenzPrincipal> getPrincipalIfAny(HttpRequest request) {
-        return securityContextOf(request)
-                .map(SecurityContext::getUserPrincipal)
-                .map(AthenzPrincipal.class::cast);
+        return Optional.ofNullable(request.getJDiscRequest().getUserPrincipal())
+                .map(AthenzPrincipal.class::cast)
+                .orElseThrow(() -> loggedForbiddenException("User is not authenticated"));
     }
 
     public Optional<NToken> getNToken(HttpRequest request) {
-        return getPrincipalIfAny(request).flatMap(AthenzPrincipal::getNToken);
+        return getPrincipal(request).getNToken();
+    }
+
+    public Optional<UserId> getUserId(HttpRequest request) {
+        return Optional.of(getPrincipal(request))
+                .map(AthenzPrincipal::getIdentity)
+                .filter(AthenzUser.class::isInstance)
+                .map(AthenzUser.class::cast)
+                .map(AthenzUser::getName)
+                .map(UserId::new);
     }
 
     public boolean isSuperUser(HttpRequest request) {
@@ -147,6 +151,8 @@ public class Authorizer {
         return securityContext.get().isUserInRole(Authorizer.VESPA_HOSTED_ADMIN_ROLE);
     }
 
+    @Deprecated
+    // TODO: Remove once Bouncer filter is no longer needed
     protected Optional<SecurityContext> securityContextOf(HttpRequest request) {
         return Optional.ofNullable((SecurityContext)request.getJDiscRequest().context().get(ContextAttributes.SECURITY_CONTEXT_ATTRIBUTE));
     }
