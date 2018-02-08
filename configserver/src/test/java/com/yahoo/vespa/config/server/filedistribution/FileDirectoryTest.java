@@ -12,6 +12,8 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class FileDirectoryTest {
@@ -32,7 +34,9 @@ public class FileDirectoryTest {
         FileReference bar = createFile("bar");
 
         assertTrue(fileDirectory.getFile(foo).exists());
+        assertEquals("ea315b7acac56246", foo.value());
         assertTrue(fileDirectory.getFile(bar).exists());
+        assertEquals("2b8e97f15c854e1d", bar.value());
     }
 
 
@@ -40,11 +44,24 @@ public class FileDirectoryTest {
     public void requireThatFileReferenceWithSubDirectoriesWorks() throws IOException {
         FileDirectory fileDirectory = new FileDirectory(temporaryFolder.getRoot());
 
-        FileReference foo = createFileInSubDir("subdir", "foo");
-        FileReference bar = createFileInSubDir("subdir", "bar");
+        String subdirName = "subdir";
+        File subDirectory = new File(temporaryFolder.getRoot(), subdirName);
+        createFileInSubDir(subDirectory, "foo");
+        FileReference fileReference = fileDirectory.addFile(subDirectory);
+        File dir = fileDirectory.getFile(fileReference);
+        assertTrue(dir.exists());
+        assertTrue(new File(dir, "foo").exists());
+        assertFalse(new File(dir, "doesnotexist").exists());
+        assertEquals("1315a322fc323608", fileReference.value());
 
-        assertTrue(fileDirectory.getFile(foo).exists());
-        assertTrue(fileDirectory.getFile(bar).exists());
+
+        // Add a file, should be available and file reference should have another value
+        createFileInSubDir(subDirectory, "bar");
+        fileReference = fileDirectory.addFile(subDirectory);
+        dir = fileDirectory.getFile(fileReference);
+        assertTrue(new File(dir, "foo").exists());
+        assertTrue(new File(dir, "bar").exists());
+        assertEquals("9ca074b47a4b510c", fileReference.value());
     }
 
     // Content in created file is equal to the filename string
@@ -54,15 +71,12 @@ public class FileDirectoryTest {
         return fileDirectory.addFile(file);
     }
 
-    private FileReference createFileInSubDir(String subdirName, String filename) throws IOException {
-        File subDirectory = new File(temporaryFolder.getRoot(), subdirName);
+    private void createFileInSubDir(File subDirectory, String filename) throws IOException {
         if (!subDirectory.exists())
             subDirectory.mkdirs();
         File file = new File(subDirectory, filename);
         IOUtils.writeFile(file, filename, false);
-        return fileDirectory.addFile(file);
     }
-
 
 }
 

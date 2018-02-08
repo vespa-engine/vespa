@@ -77,8 +77,24 @@ public class FileDirectory  {
     }
 
     private Long computeReference(File file) throws IOException {
-        byte [] wholeFile = IOUtils.readFileBytes(file);
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
+        if (file.isDirectory()) {
+            return Files.walk(file.toPath(), 100).map(path -> {
+                try {
+                    log.log(LogLevel.DEBUG, "Calculating hash for '" + path + "'");
+                    return hash(file, hasher);
+                } catch (IOException e) {
+                    log.log(LogLevel.WARNING, "Failed getting hash from '" + path + "'");
+                    return 0;
+                }
+            }).mapToLong(Number::longValue).sum();
+        } else {
+            return hash(file, hasher);
+        }
+    }
+
+    private long hash(File file, XXHash64 hasher) throws IOException {
+        byte[] wholeFile = file.isDirectory() ?  new byte[0] : IOUtils.readFileBytes(file);
         return hasher.hash(ByteBuffer.wrap(wholeFile), hasher.hash(ByteBuffer.wrap(Utf8.toBytes(file.getName())), 0));
     }
 
