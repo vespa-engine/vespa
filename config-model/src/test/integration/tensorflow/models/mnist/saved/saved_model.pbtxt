@@ -883,54 +883,6 @@ meta_graphs {
         }
       }
       op {
-        name: "Selu"
-        input_arg {
-          name: "features"
-          type_attr: "T"
-        }
-        output_arg {
-          name: "activations"
-          type_attr: "T"
-        }
-        attr {
-          name: "T"
-          type: "type"
-          allowed_values {
-            list {
-              type: DT_HALF
-              type: DT_FLOAT
-              type: DT_DOUBLE
-            }
-          }
-        }
-      }
-      op {
-        name: "SeluGrad"
-        input_arg {
-          name: "gradients"
-          type_attr: "T"
-        }
-        input_arg {
-          name: "outputs"
-          type_attr: "T"
-        }
-        output_arg {
-          name: "backprops"
-          type_attr: "T"
-        }
-        attr {
-          name: "T"
-          type: "type"
-          allowed_values {
-            list {
-              type: DT_HALF
-              type: DT_FLOAT
-              type: DT_DOUBLE
-            }
-          }
-        }
-      }
-      op {
         name: "Shape"
         input_arg {
           name: "input"
@@ -2476,8 +2428,72 @@ meta_graphs {
       }
     }
     node {
-      name: "dnn/hidden2/Selu"
-      op: "Selu"
+      name: "dnn/hidden2/Const"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            float_val: 0.009999999776482582
+          }
+        }
+      }
+    }
+    node {
+      name: "dnn/hidden2/mul"
+      op: "Mul"
+      input: "dnn/hidden2/Const"
+      input: "dnn/hidden2/add"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 100
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dnn/hidden2/Maximum"
+      op: "Maximum"
+      input: "dnn/hidden2/mul"
       input: "dnn/hidden2/add"
       attr {
         key: "T"
@@ -2984,7 +3000,7 @@ meta_graphs {
     node {
       name: "dnn/outputs/MatMul"
       op: "MatMul"
-      input: "dnn/hidden2/Selu"
+      input: "dnn/hidden2/Maximum"
       input: "dnn/outputs/weights/read"
       attr {
         key: "T"
@@ -4258,7 +4274,7 @@ meta_graphs {
     node {
       name: "train/gradients/dnn/outputs/MatMul_grad/MatMul_1"
       op: "MatMul"
-      input: "dnn/hidden2/Selu"
+      input: "dnn/hidden2/Maximum"
       input: "train/gradients/dnn/outputs/add_grad/tuple/control_dependency"
       attr {
         key: "T"
@@ -4371,14 +4387,846 @@ meta_graphs {
       }
     }
     node {
-      name: "train/gradients/dnn/hidden2/Selu_grad/SeluGrad"
-      op: "SeluGrad"
-      input: "train/gradients/dnn/outputs/MatMul_grad/tuple/control_dependency"
-      input: "dnn/hidden2/Selu"
+      name: "train/gradients/dnn/hidden2/Maximum_grad/Shape"
+      op: "Shape"
+      input: "dnn/hidden2/mul"
       attr {
         key: "T"
         value {
           type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 2
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/Shape_1"
+      op: "Shape"
+      input: "dnn/hidden2/add"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 2
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/Shape_2"
+      op: "Shape"
+      input: "train/gradients/dnn/outputs/MatMul_grad/tuple/control_dependency"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 2
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/zeros/Const"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 0.0
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/zeros"
+      op: "Fill"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/Shape_2"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/zeros/Const"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 100
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/GreaterEqual"
+      op: "GreaterEqual"
+      input: "dnn/hidden2/mul"
+      input: "dnn/hidden2/add"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 100
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/BroadcastGradientArgs"
+      op: "BroadcastGradientArgs"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/Shape"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/Shape_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/Select"
+      op: "Select"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/GreaterEqual"
+      input: "train/gradients/dnn/outputs/MatMul_grad/tuple/control_dependency"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/zeros"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 100
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/Select_1"
+      op: "Select"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/GreaterEqual"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/zeros"
+      input: "train/gradients/dnn/outputs/MatMul_grad/tuple/control_dependency"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 100
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/Sum"
+      op: "Sum"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/Select"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/BroadcastGradientArgs"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              unknown_rank: true
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/Reshape"
+      op: "Reshape"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/Sum"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/Shape"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tshape"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 100
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/Sum_1"
+      op: "Sum"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/Select_1"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/BroadcastGradientArgs:1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              unknown_rank: true
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/Reshape_1"
+      op: "Reshape"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/Sum_1"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/Shape_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tshape"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 100
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/tuple/group_deps"
+      op: "NoOp"
+      input: "^train/gradients/dnn/hidden2/Maximum_grad/Reshape"
+      input: "^train/gradients/dnn/hidden2/Maximum_grad/Reshape_1"
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/tuple/control_dependency"
+      op: "Identity"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/Reshape"
+      input: "^train/gradients/dnn/hidden2/Maximum_grad/tuple/group_deps"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@train/gradients/dnn/hidden2/Maximum_grad/Reshape"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 100
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/Maximum_grad/tuple/control_dependency_1"
+      op: "Identity"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/Reshape_1"
+      input: "^train/gradients/dnn/hidden2/Maximum_grad/tuple/group_deps"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@train/gradients/dnn/hidden2/Maximum_grad/Reshape_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 100
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/mul_grad/Shape"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/mul_grad/Shape_1"
+      op: "Shape"
+      input: "dnn/hidden2/add"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 2
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/mul_grad/BroadcastGradientArgs"
+      op: "BroadcastGradientArgs"
+      input: "train/gradients/dnn/hidden2/mul_grad/Shape"
+      input: "train/gradients/dnn/hidden2/mul_grad/Shape_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/mul_grad/mul"
+      op: "Mul"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/tuple/control_dependency"
+      input: "dnn/hidden2/add"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 100
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/mul_grad/Sum"
+      op: "Sum"
+      input: "train/gradients/dnn/hidden2/mul_grad/mul"
+      input: "train/gradients/dnn/hidden2/mul_grad/BroadcastGradientArgs"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              unknown_rank: true
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/mul_grad/Reshape"
+      op: "Reshape"
+      input: "train/gradients/dnn/hidden2/mul_grad/Sum"
+      input: "train/gradients/dnn/hidden2/mul_grad/Shape"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tshape"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/mul_grad/mul_1"
+      op: "Mul"
+      input: "dnn/hidden2/Const"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/tuple/control_dependency"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 100
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/mul_grad/Sum_1"
+      op: "Sum"
+      input: "train/gradients/dnn/hidden2/mul_grad/mul_1"
+      input: "train/gradients/dnn/hidden2/mul_grad/BroadcastGradientArgs:1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              unknown_rank: true
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/mul_grad/Reshape_1"
+      op: "Reshape"
+      input: "train/gradients/dnn/hidden2/mul_grad/Sum_1"
+      input: "train/gradients/dnn/hidden2/mul_grad/Shape_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tshape"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 100
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/mul_grad/tuple/group_deps"
+      op: "NoOp"
+      input: "^train/gradients/dnn/hidden2/mul_grad/Reshape"
+      input: "^train/gradients/dnn/hidden2/mul_grad/Reshape_1"
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/mul_grad/tuple/control_dependency"
+      op: "Identity"
+      input: "train/gradients/dnn/hidden2/mul_grad/Reshape"
+      input: "^train/gradients/dnn/hidden2/mul_grad/tuple/group_deps"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@train/gradients/dnn/hidden2/mul_grad/Reshape"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/dnn/hidden2/mul_grad/tuple/control_dependency_1"
+      op: "Identity"
+      input: "train/gradients/dnn/hidden2/mul_grad/Reshape_1"
+      input: "^train/gradients/dnn/hidden2/mul_grad/tuple/group_deps"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@train/gradients/dnn/hidden2/mul_grad/Reshape_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 100
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "train/gradients/AddN"
+      op: "AddN"
+      input: "train/gradients/dnn/hidden2/Maximum_grad/tuple/control_dependency_1"
+      input: "train/gradients/dnn/hidden2/mul_grad/tuple/control_dependency_1"
+      attr {
+        key: "N"
+        value {
+          i: 2
+        }
+      }
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@train/gradients/dnn/hidden2/Maximum_grad/Reshape_1"
+          }
         }
       }
       attr {
@@ -4494,7 +5342,7 @@ meta_graphs {
     node {
       name: "train/gradients/dnn/hidden2/add_grad/Sum"
       op: "Sum"
-      input: "train/gradients/dnn/hidden2/Selu_grad/SeluGrad"
+      input: "train/gradients/AddN"
       input: "train/gradients/dnn/hidden2/add_grad/BroadcastGradientArgs"
       attr {
         key: "T"
@@ -4561,7 +5409,7 @@ meta_graphs {
     node {
       name: "train/gradients/dnn/hidden2/add_grad/Sum_1"
       op: "Sum"
-      input: "train/gradients/dnn/hidden2/Selu_grad/SeluGrad"
+      input: "train/gradients/AddN"
       input: "train/gradients/dnn/hidden2/add_grad/BroadcastGradientArgs:1"
       attr {
         key: "T"
@@ -5659,7 +6507,7 @@ meta_graphs {
       }
     }
     node {
-      name: "train/gradients/AddN"
+      name: "train/gradients/AddN_1"
       op: "AddN"
       input: "train/gradients/dnn/hidden1/Maximum_grad/tuple/control_dependency_1"
       input: "train/gradients/dnn/hidden1/mul_grad/tuple/control_dependency_1"
@@ -5796,7 +6644,7 @@ meta_graphs {
     node {
       name: "train/gradients/dnn/hidden1/add_grad/Sum"
       op: "Sum"
-      input: "train/gradients/AddN"
+      input: "train/gradients/AddN_1"
       input: "train/gradients/dnn/hidden1/add_grad/BroadcastGradientArgs"
       attr {
         key: "T"
@@ -5863,7 +6711,7 @@ meta_graphs {
     node {
       name: "train/gradients/dnn/hidden1/add_grad/Sum_1"
       op: "Sum"
-      input: "train/gradients/AddN"
+      input: "train/gradients/AddN_1"
       input: "train/gradients/dnn/hidden1/add_grad/BroadcastGradientArgs:1"
       attr {
         key: "T"
@@ -6703,7 +7551,7 @@ meta_graphs {
             dtype: DT_STRING
             tensor_shape {
             }
-            string_val: "_temp_de3cfc5e8e7e4734ae221577e8fd36a2/part"
+            string_val: "_temp_af8f34e037d9459f96200d29e33a7078/part"
           }
         }
       }
