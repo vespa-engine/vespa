@@ -103,23 +103,6 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     @Override
-    public String getNToken() {
-        try {
-            credentialsRetrievedSignal.await();
-            AthenzCredentials credentialsSnapshot = credentials.get();
-            if (credentialsSnapshot == null) {
-                throw new AthenzIdentityProviderException("Could not retrieve Athenz credentials", lastThrowable.get());
-            }
-            if (isExpired(credentialsSnapshot)) {
-                throw new AthenzIdentityProviderException("Athenz credentials are expired", lastThrowable.get());
-            }
-            return credentialsSnapshot.getNToken();
-        } catch (InterruptedException e) {
-            throw new AthenzIdentityProviderException("Failed to register instance credentials", lastThrowable.get());
-        }
-    }
-
-    @Override
     public String getDomain() {
         return domain;
     }
@@ -130,12 +113,12 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     @Override
-    public SSLContext getSslContext() {
+    public SSLContext getIdentitySslContext() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
             sslContext.init(createKeyManagersWithServiceCertificate(),
-                        createTrustManagersWithAthenzCa(),
-                        null);
+                            createTrustManagersWithAthenzCa(),
+                            null);
             return sslContext;
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             throw new RuntimeException(e);
