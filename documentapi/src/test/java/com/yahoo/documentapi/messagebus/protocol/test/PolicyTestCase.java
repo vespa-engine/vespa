@@ -357,6 +357,50 @@ public class PolicyTestCase {
     }
 
     @Test
+    public void remove_document_messages_are_sent_to_the_route_handling_the_given_document_type() {
+        PolicyTestFrame frame = createFrameWithTwoRoutes();
+
+        frame.setMessage(createRemove("id:ns:testdoc::1"));
+        frame.assertSelect(Arrays.asList("testdoc-route"));
+
+        frame.setMessage(createRemove("id:ns:other::1"));
+        frame.assertSelect(Arrays.asList("other-route"));
+    }
+
+    @Test
+    public void remove_document_messages_with_legacy_document_ids_are_sent_to_all_routes() {
+        PolicyTestFrame frame = createFrameWithTwoRoutes();
+
+        frame.setMessage(createRemove("userdoc:testdoc:1234:1"));
+        frame.assertSelect(Arrays.asList("testdoc-route", "other-route"));
+
+        frame.setMessage(createRemove("userdoc:other:1234:1"));
+        frame.assertSelect(Arrays.asList("testdoc-route", "other-route"));
+    }
+
+    private PolicyTestFrame createFrameWithTwoRoutes() {
+        PolicyTestFrame result = new PolicyTestFrame(manager);
+        result.setHop(new HopSpec("test", createDocumentRouteSelectorConfigWithTwoRoutes())
+                .addRecipient("testdoc-route").addRecipient("other-route"));
+        return result;
+    }
+
+    private String createDocumentRouteSelectorConfigWithTwoRoutes() {
+        return "[DocumentRouteSelector:raw:" +
+                "route[2]\n" +
+                "route[0].name \"testdoc-route\"\n" +
+                "route[0].selector \"testdoc and testdoc.stringfield != '0'\"\n" +
+                "route[0].feed \"\"\n" +
+                "route[1].name \"other-route\"\n" +
+                "route[1].selector \"other and other.intfield != '0'\"\n" +
+                "route[1].feed \"\"\n]";
+    }
+
+    private RemoveDocumentMessage createRemove(String docId) {
+        return new RemoveDocumentMessage(new DocumentId(docId));
+    }
+
+    @Test
     public void testSubsetService() {
         PolicyTestFrame frame = new PolicyTestFrame("docproc/cluster.default", manager);
         frame.setMessage(new PutDocumentMessage(new DocumentPut(new DocumentPut(new Document(manager.getDocumentType("testdoc"),

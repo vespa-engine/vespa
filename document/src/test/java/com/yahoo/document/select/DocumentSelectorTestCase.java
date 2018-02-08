@@ -250,6 +250,21 @@ public class DocumentSelectorTestCase extends junit.framework.TestCase {
         // TODO Fails: assertEquals(Result.TRUE, evaluate("test.hint + 1 > 13", upd));
     }
 
+    public void testDocumentRemove() throws ParseException {
+        assertEquals(Result.TRUE, evaluate("test", createRemove("id:ns:test::1")));
+        assertEquals(Result.FALSE, evaluate("test", createRemove("id:ns:null::1")));
+        assertEquals(Result.FALSE, evaluate("test", createRemove("userdoc:test:1234:1")));
+        assertEquals(Result.INVALID, evaluate("test.hint", createRemove("id:ns:test::1")));
+        assertEquals(Result.FALSE, evaluate("test.hint", createRemove("id:ns:null::1")));
+        assertEquals(Result.INVALID, evaluate("test.hint == 0", createRemove("id:ns:test::1")));
+        assertEquals(Result.INVALID, evaluate("test.anything", createRemove("id:ns:test::1")));
+        assertEquals(Result.INVALID, evaluate("test and test.hint == 0", createRemove("id:ns:test::1")));
+    }
+
+    private DocumentRemove createRemove(String docId) {
+        return new DocumentRemove(new DocumentId(docId));
+    }
+
     public void testInvalidLogic() throws ParseException {
         DocumentPut put = new DocumentPut(manager.getDocumentType("test"), new DocumentId("doc:scheme:"));
         DocumentUpdate upd = new DocumentUpdate(manager.getDocumentType("test"), new DocumentId("doc:scheme:"));
