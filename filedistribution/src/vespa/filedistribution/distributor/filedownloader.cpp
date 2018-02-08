@@ -31,7 +31,6 @@ const std::string resumeDataSuffix = ".resume";
 const std::string resumeDataSuffixTemp = ".resumetemp";
 const std::string newFileSuffix = ".new";
 
-//TODO: temporarily duplicated from filedistributionmanager
 std::string
 fileReferenceToString(const libtorrent::sha1_hash& fileReference) {
     std::ostringstream fileReferenceString;

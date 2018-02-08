@@ -3,7 +3,6 @@ vespa_add_library(filedistribution_filedistributionmanager
     SOURCES
     createtorrent.cpp
     filedb.cpp
-    filedistributionmanager.cpp
     stderr_logfwd.cpp
     $<TARGET_OBJECTS:filedistribution_filedbmodel>
     $<TARGET_OBJECTS:filedistribution_exceptionrethrower>
