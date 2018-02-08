@@ -55,10 +55,22 @@ public class NodeRepositoryImplTest {
      */
     @Before
     public void startContainer() throws Exception {
-        final int port = findRandomOpenPort();
-        requestExecutor = ConfigServerHttpRequestExecutor.create(
-                Collections.singleton(URI.create("http://127.0.0.1:" + port)), Optional.empty(), Optional.empty(), Optional.empty());
-        container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(port), Networking.enable);
+        Exception lastException = null;
+
+        // This tries to bind a random open port for the node-repo mock, which is a race condition, so try
+        // a few times before giving up
+        for (int i = 0; i < 3; i++) {
+            try {
+                final int port = findRandomOpenPort();
+                container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(port), Networking.enable);
+                requestExecutor = ConfigServerHttpRequestExecutor.create(
+                        Collections.singleton(URI.create("http://127.0.0.1:" + port)), Optional.empty(), Optional.empty(), Optional.empty());
+                return;
+            } catch (RuntimeException e) {
+                lastException = e;
+            }
+        }
+        throw new RuntimeException("Failed to bind a port in three attempts, giving up", lastException);
     }
 
     private void waitForJdiscContainerToServe() throws InterruptedException {
