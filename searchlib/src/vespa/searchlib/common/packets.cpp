@@ -908,7 +908,7 @@ FS4Packet_QUERYRESULTX::FS4Packet_QUERYRESULTX()
       _distributionKey(0),
       _nodesQueried(0),
       _nodesReplied(0),
-      _features(0),
+      _features(QRF_COVERAGE | QRF_EXTENDED_COVERAGE),
       _offset(0),
       _numDocs(0),
       _totNumDocs(0),
@@ -944,9 +944,9 @@ FS4Packet_QUERYRESULTX::GetLength()
                     _numDocs * (sizeof(document::GlobalId) + sizeof(search::HitRank));
 
     plen += sizeof(uint32_t);
-    plen += (_features & QRF_COVERAGE_NODES) ? 2 * sizeof(uint16_t) : 0;
-    plen += (_features & QRF_MLD) ? _numDocs * 2 * sizeof(uint32_t) : 0;
-    plen += (_features & QRF_GROUPDATA) ? sizeof(uint32_t) + _groupDataLen : 0;
+    plen += (_features & QRF_COVERAGE_NODES) ? (2 * sizeof(uint16_t)) : 0;
+    plen += (_features & QRF_MLD) ? (_numDocs * 2 * sizeof(uint32_t)) : 0;
+    plen += (_features & QRF_GROUPDATA) ? (sizeof(uint32_t) + _groupDataLen) : 0;
     plen += 3 * sizeof(uint64_t) + sizeof(uint32_t);
 
     if (((_features & QRF_SORTDATA) != 0) && (_numDocs > 0)) 
@@ -988,8 +988,7 @@ FS4Packet_QUERYRESULTX::Encode(FNET_DataBuffer *dst)
         for (uint32_t i = 1; i <= _numDocs; i++) {
             dst->WriteInt32Fast(_sortIndex[i] - idx0);
         }
-        dst->WriteBytesFast(_sortData + idx0,
-                            _sortIndex[_numDocs] - idx0);
+        dst->WriteBytesFast(_sortData + idx0, _sortIndex[_numDocs] - idx0);
     }
 
     if ((_features & QRF_GROUPDATA) != 0) {

@@ -88,7 +88,7 @@ public:
 private:
     size_t                 _queries;
     size_t                 _limited_queries;
-    size_t                 _docsCovered;
+    size_t                 _docidSpaceCovered;
     size_t                 _docsMatched;
     size_t                 _docsRanked;
     size_t                 _docsReRanked;
@@ -115,8 +115,8 @@ public:
     MatchingStats &limited_queries(size_t value) { _limited_queries = value; return *this; }
     size_t limited_queries() const { return _limited_queries; }
 
-    MatchingStats &docsCovered(size_t value) { _docsCovered = value; return *this; }
-    size_t docsCovered() const { return _docsCovered; }
+    MatchingStats &docidSpaceCovered(size_t value) { _docidSpaceCovered = value; return *this; }
+    size_t docidSpaceCovered() const { return _docidSpaceCovered; }
 
     MatchingStats &docsMatched(size_t value) { _docsMatched = value; return *this; }
     size_t docsMatched() const { return _docsMatched; }

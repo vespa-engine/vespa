@@ -258,7 +258,9 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         my_stats = MatchMaster::getStats(std::move(master));
 
         bool wasLimited = mtf->match_limiter().was_limited();
-        size_t spaceEstimate = mtf->match_limiter().getDocIdSpaceEstimate();
+        size_t spaceEstimate = (my_stats.softDoomed())
+                               ? my_stats.docidSpaceCovered()
+                               : mtf->match_limiter().getDocIdSpaceEstimate();
         uint32_t estHits = mtf->estimate().estHits;
         if (shouldCacheSearchSession && ((result->_numFs4Hits != 0) || shouldCacheGroupingSession)) {
             SearchSession::SP session = std::make_shared<SearchSession>(sessionId, request.getTimeOfDoom(),
@@ -295,8 +297,8 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         }
         if (my_stats.softDoomed()) {
             coverage.degradeTimeout();
-            coverage.setCovered(my_stats.docsCovered());
-            LOG(debug, "soft doomed, degraded from timeout covered = %lu", coverage.getCovered()); }
+            LOG(debug, "soft doomed, degraded from timeout covered = %lu", coverage.getCovered());
+        }
         LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%ld",
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), estHits, reply->totalHitCount);
     }
