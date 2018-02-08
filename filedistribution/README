@@ -1,1 +1,1 @@
-Component for distributing binary files from config servers to cluster nodes, using BitTorrent.
+Code used by config proxy and config server for distributing files from config servers to nodes, using RPC.
