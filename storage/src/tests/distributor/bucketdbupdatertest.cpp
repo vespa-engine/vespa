@@ -34,6 +34,7 @@ class BucketDBUpdaterTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(testDistributorChangeWithGrouping);
     CPPUNIT_TEST(testNormalUsageInitializing); // Check that we send request bucket info when storage node is initializing, and send another when it's up.
     CPPUNIT_TEST(testFailedRequestBucketInfo);
+    CPPUNIT_TEST(testEncodeErrorHandling);
     CPPUNIT_TEST(testBitChange); // Check what happens when distribution bits change
     CPPUNIT_TEST(testNodeDown);
     CPPUNIT_TEST(testStorageNodeInMaintenanceClearsBucketsForNode);
@@ -92,6 +93,7 @@ protected:
     void testDistributorChangeWithGrouping();
     void testNormalUsageInitializing();
     void testFailedRequestBucketInfo();
+    void testEncodeErrorHandling();
     void testNoResponses();
     void testBitChange();
     void testInconsistentChecksum();
@@ -780,6 +782,29 @@ BucketDBUpdaterTest::testFailedRequestBucketInfo()
     }
 
     // Set system state should now be passed on
+    CPPUNIT_ASSERT_EQUAL(std::string("Set system state"),
+                         _senderDown.getCommands());
+}
+
+void
+BucketDBUpdaterTest::testEncodeErrorHandling()
+{
+    setSystemState(lib::ClusterState("distributor:1 .0.s:i storage:1"));
+
+    CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.commands.size());
+
+    // Not yet passing on system state.
+    CPPUNIT_ASSERT_EQUAL(size_t(0), _senderDown.commands.size());
+    {
+        std::shared_ptr<api::RequestBucketInfoReply> reply =
+            getFakeBucketReply(lib::ClusterState("distributor:1 .0.s:i storage:1"),
+                               *((RequestBucketInfoCommand*)_sender.commands[0].get()),
+                               0,
+                               10);
+
+        reply->setResult(api::ReturnCode::ENCODE_ERROR);
+        getBucketDBUpdater().onRequestBucketInfoReply(reply);
+    }
     CPPUNIT_ASSERT_EQUAL(std::string("Set system state"),
                          _senderDown.getCommands());
 }
