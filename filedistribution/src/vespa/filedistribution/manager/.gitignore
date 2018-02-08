@@ -1,5 +1,0 @@
-.depend
-Makefile
-com_yahoo_vespa_filedistribution_*.h
-*.So
-/libfiledistributionmanager.so.5.1
