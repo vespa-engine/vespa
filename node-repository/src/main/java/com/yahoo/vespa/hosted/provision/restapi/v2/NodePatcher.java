@@ -33,6 +33,7 @@ public class NodePatcher {
 
     private static final String HARDWARE_FAILURE_DESCRIPTION = "hardwareFailureDescription";
     private static final String WANT_TO_RETIRE = "wantToRetire";
+    private static final String WANT_TO_DEPROVISION = "wantToDeprovision";
 
     private final NodeFlavors nodeFlavors;
     private final Inspector inspector;
@@ -94,6 +95,12 @@ public class NodePatcher {
                 return childNodes.stream()
                         .map(child -> child.with(child.status().withWantToRetire(asBoolean(value))))
                         .collect(Collectors.toList());
+
+            case WANT_TO_DEPROVISION:
+                return childNodes.stream()
+                        .map(child -> child.with(child.status().withWantToDeprovision(asBoolean(value))))
+                        .collect(Collectors.toList());
+
             default :
                 throw new IllegalArgumentException("Field " + name + " is not recursive");
         }
@@ -132,7 +139,7 @@ public class NodePatcher {
                 return node.withAdditionalIpAddresses(asStringSet(value));
             case WANT_TO_RETIRE :
                 return node.with(node.status().withWantToRetire(asBoolean(value)));
-            case "wantToDeprovision" :
+            case WANT_TO_DEPROVISION :
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
             case "hardwareDivergence" :
                 return node.with(node.status().withHardwareDivergence(removeQuotedNulls(asOptionalString(value))));
