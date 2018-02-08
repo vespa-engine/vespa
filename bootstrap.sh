@@ -67,10 +67,9 @@ case "$MODE" in
         ;;
     full)
 	echo "Building full set of dependencies."
-        mvn_install -am -pl filedistributionmanager,jrt,linguistics,messagebus
+        mvn_install -am -pl jrt,linguistics,messagebus
         ;;
     default)
 	echo "Building default set of dependencies."
-        mvn_install -am -pl filedistributionmanager
         ;;
 esac

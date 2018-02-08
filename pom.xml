@@ -73,9 +73,7 @@
         <module>document</module>
         <module>documentgen-test</module>
         <module>fileacquirer</module>
-        <module>filedistributionmanager</module>
         <module>filedistribution</module>
-        <module>filedistribution_test</module>
         <module>fsa</module>
         <module>indexinglanguage</module>
         <module>jaxrs_client_utils</module>

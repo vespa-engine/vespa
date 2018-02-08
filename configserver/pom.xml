@@ -132,11 +132,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>filedistributionmanager</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>statistics</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>

@@ -250,11 +250,6 @@
       <artifactId>indexinglanguage</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>filedistributionmanager</artifactId>
-      <version>${project.version}</version>
-    </dependency>
      <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>searchsummary</artifactId>
