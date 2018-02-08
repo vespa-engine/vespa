@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.filedistribution;
 
-import com.yahoo.cloud.config.filedistribution.FiledistributorConfig;
 import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
 import com.yahoo.cloud.config.filedistribution.FilereferencesConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -12,7 +11,6 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
  * Dummy file distribution config producer, needed for serving file distribution config when there is no FiledistributorService.
  */
 public class DummyFileDistributionConfigProducer extends AbstractConfigProducer implements
-        FiledistributorConfig.Producer,
         FiledistributorrpcConfig.Producer,
         FilereferencesConfig.Producer {
 
@@ -23,11 +21,6 @@ public class DummyFileDistributionConfigProducer extends AbstractConfigProducer 
                                                FileDistributionConfigProvider configProvider) {
         super(parent, hostname);
         this.configProvider = configProvider;
-    }
-
-    @Override
-    public void getConfig(FiledistributorConfig.Builder builder) {
-        configProvider.getConfig(builder);
     }
 
     @Override

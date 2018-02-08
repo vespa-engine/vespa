@@ -61,7 +61,7 @@ public class ContentClusterUtils {
     public static ContentCluster createCluster(String clusterXml, MockRoot root) {
         Document doc = XML.getDocument(clusterXml);
         Admin admin = new Admin(root, new DefaultMonitoring("vespa", 60), new Metrics(), Collections.emptyMap(), false,
-                                new FileDistributionConfigProducer.Builder(FileDistributionOptions.defaultOptions())
+                                new FileDistributionConfigProducer.Builder()
                                         .build(root, new MockFileRegistry(), null));
         ConfigModelContext context = ConfigModelContext.create(null, root.getDeployState(), null, root, null);
         

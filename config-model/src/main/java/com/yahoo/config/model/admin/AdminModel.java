@@ -78,8 +78,7 @@ public class AdminModel extends ConfigModel {
             DomAdminV2Builder domBuilder = new DomAdminV2Builder(modelContext.getApplicationType(),
                                                                  modelContext.getDeployState().getFileRegistry(),
                                                                  properties.multitenant(),
-                                                                 properties.configServerSpecs(),
-                                                                 modelContext.getDeployState().disableFiledistributor());
+                                                                 properties.configServerSpecs());
             model.admin = domBuilder.build(parent, adminElement);
             // TODO: Is required since other models depend on admin.
             if (parent instanceof ApplicationConfigProducerRoot) {
@@ -108,8 +107,7 @@ public class AdminModel extends ConfigModel {
             DomAdminV4Builder domBuilder = new DomAdminV4Builder(modelContext,
                                                                  properties.multitenant(),
                                                                  properties.configServerSpecs(),
-                                                                 model.getContainerModels(),
-                                                                 modelContext.getDeployState().disableFiledistributor());
+                                                                 model.getContainerModels());
             model.admin = domBuilder.build(parent, adminElement);
             // TODO: Is required since other models depend on admin.
             if (parent instanceof ApplicationConfigProducerRoot) {
