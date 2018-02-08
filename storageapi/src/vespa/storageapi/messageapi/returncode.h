@@ -30,6 +30,7 @@ public:
     /** Return status codes */
     enum Result {
         OK                            = mbus::ErrorCode::NONE,
+        ENCODE_ERROR                  = mbus::ErrorCode::ENCODE_ERROR,
 
         EXISTS                        = Protocol::ERROR_EXISTS,
 

@@ -7,6 +7,7 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <sstream>
 
 using document::BucketSpace;
 using document::FixedBucketSpaces;
@@ -25,7 +26,11 @@ void
 ProtocolSerialization5_0::putBucket(const document::Bucket& bucket, vespalib::GrowableByteBuffer& buf) const
 {
     buf.putLong(bucket.getBucketId().getRawId());
-    assert(bucket.getBucketSpace() == FixedBucketSpaces::default_space());
+    if (bucket.getBucketSpace() != FixedBucketSpaces::default_space()) {
+        std::ostringstream ost;
+        ost << "Bucket with bucket space " << bucket.getBucketSpace() << " cannot be serialized on old storageapi protocol.";
+        throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
+    }
 }
 
 document::BucketSpace
@@ -37,7 +42,11 @@ ProtocolSerialization5_0::getBucketSpace(document::ByteBuffer&) const
 void
 ProtocolSerialization5_0::putBucketSpace(document::BucketSpace bucketSpace, vespalib::GrowableByteBuffer&) const
 {
-    assert(bucketSpace == FixedBucketSpaces::default_space());
+    if (bucketSpace != FixedBucketSpaces::default_space()) {
+        std::ostringstream ost;
+        ost << "Bucket space " << bucketSpace << " cannot be serialized on old storageapi protocol.";
+        throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
+    }
 }
 
 api::BucketInfo
