@@ -34,7 +34,6 @@ BuildRequires: Judy-devel
 BuildRequires: cmake3
 BuildRequires: llvm3.9-devel
 BuildRequires: vespa-boost-devel >= 1.59.0-6
-BuildRequires: vespa-zookeeper-c-client-devel >= 3.4.9-6
 %endif
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
@@ -102,7 +101,6 @@ Requires: net-tools
 Requires: llvm3.9
 Requires: devtoolset-7-gdb
 Requires: vespa-boost >= 1.59.0-6
-Requires: vespa-zookeeper-c-client >= 3.4.9-6
 %define _extra_link_directory /usr/lib64/llvm3.9/lib;/opt/vespa-boost/lib;/opt/vespa-cppunit/lib
 %define _extra_include_directory /usr/include/llvm3.9;/opt/vespa-boost/include;/opt/vespa-cppunit/include
 %endif
