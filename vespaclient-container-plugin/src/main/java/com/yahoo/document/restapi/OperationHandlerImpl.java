@@ -295,12 +295,12 @@ public class OperationHandlerImpl implements OperationHandler {
     }
 
     @Override
-    public Optional<String> get(RestUri restUri) throws RestApiException {
+    public Optional<String> get(RestUri restUri, Optional<String> fieldSet) throws RestApiException {
         SyncSession syncSession = syncSessions.alloc();
         setRoute(syncSession, Optional.empty());
         try {
             DocumentId id = new DocumentId(restUri.generateFullId());
-            final Document document = syncSession.get(id, restUri.getDocumentType() + ":[document]", DocumentProtocol.Priority.NORMAL_1);
+            final Document document = syncSession.get(id, fieldSet.orElse(restUri.getDocumentType() + ":[document]"), DocumentProtocol.Priority.NORMAL_1);
             if (document == null) {
                 return Optional.empty();
             }
@@ -314,6 +314,11 @@ public class OperationHandlerImpl implements OperationHandler {
         } finally {
             syncSessions.free(syncSession);
         }
+    }
+
+    @Override
+    public Optional<String> get(RestUri restUri) throws RestApiException {
+        return get(restUri, Optional.empty());
     }
 
     protected BucketSpaceRoute resolveBucketSpaceRoute(Optional<String> wantedCluster, String docType) throws RestApiException {

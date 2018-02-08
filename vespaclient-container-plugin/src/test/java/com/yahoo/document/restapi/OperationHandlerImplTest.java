@@ -6,6 +6,9 @@ import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
+import com.yahoo.documentapi.SyncParameters;
+import com.yahoo.documentapi.SyncSession;
+import com.yahoo.documentapi.messagebus.MessageBusSyncSession;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vdslib.VisitorStatistics;
@@ -24,7 +27,9 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
@@ -101,6 +106,7 @@ public class OperationHandlerImplTest {
         VisitorControlHandler.CompletionCode completionCode = VisitorControlHandler.CompletionCode.SUCCESS;
         int bucketsVisited = 0;
         Map<String, String> bucketSpaces = new HashMap<>();
+        SyncSession mockSyncSession = mock(MessageBusSyncSession.class); // MBus session needed to avoid setRoute throwing.
 
         OperationHandlerImplFixture() {
             bucketSpaces.put("foo", "global");
@@ -124,6 +130,7 @@ public class OperationHandlerImplTest {
                 params.getControlHandler().onDone(completionCode, "bork bork");
                 return visitorSession;
             });
+            when(documentAccess.createSyncSession(any(SyncParameters.class))).thenReturn(mockSyncSession);
             OperationHandlerImpl.ClusterEnumerator clusterEnumerator = () -> Arrays.asList(new ClusterDef("foo", "configId"));
             OperationHandlerImpl.BucketSpaceResolver bucketSpaceResolver = (configId, docType) -> Optional.ofNullable(bucketSpaces.get(docType));
             return new OperationHandlerImpl(documentAccess, clusterEnumerator, bucketSpaceResolver, MetricReceiver.nullImplementation);
@@ -136,6 +143,10 @@ public class OperationHandlerImplTest {
 
     private static RestUri dummyVisitUri() throws Exception {
         return new RestUri(new URI("http://localhost/document/v1/namespace/document-type/docid/"));
+    }
+
+    private static RestUri dummyGetUri() throws Exception {
+        return new RestUri(new URI("http://localhost/document/v1/namespace/document-type/docid/foo"));
     }
 
     private static OperationHandler.VisitOptions visitOptionsWithWantedDocumentCount(int wantedDocumentCount) {
@@ -250,29 +261,47 @@ public class OperationHandlerImplTest {
     }
 
     @Test
-    public void field_set_covers_all_fields_by_default() throws Exception {
+    public void visit_field_set_covers_all_fields_by_default() throws Exception {
         VisitorParameters params = generatedParametersFromVisitOptions(emptyVisitOptions());
         assertThat(params.fieldSet(), equalTo("document-type:[document]"));
     }
 
     @Test
-    public void provided_fieldset_is_propagated_to_visitor_parameters() throws Exception {
+    public void provided_visit_fieldset_is_propagated_to_visitor_parameters() throws Exception {
         VisitorParameters params = generatedParametersFromVisitOptions(optionsBuilder().fieldSet("document-type:bjarne").build());
         assertThat(params.fieldSet(), equalTo("document-type:bjarne"));
     }
 
     @Test
-    public void concurrency_is_1_by_default() throws Exception {
+    public void visit_concurrency_is_1_by_default() throws Exception {
         VisitorParameters params = generatedParametersFromVisitOptions(emptyVisitOptions());
         assertThat(params.getThrottlePolicy(), instanceOf(StaticThrottlePolicy.class));
         assertThat(((StaticThrottlePolicy)params.getThrottlePolicy()).getMaxPendingCount(), is((int)1));
     }
 
     @Test
-    public void concurrency_is_propagated_to_visitor_parameters() throws Exception {
+    public void visit_concurrency_is_propagated_to_visitor_parameters() throws Exception {
         VisitorParameters params = generatedParametersFromVisitOptions(optionsBuilder().concurrency(3).build());
         assertThat(params.getThrottlePolicy(), instanceOf(StaticThrottlePolicy.class));
         assertThat(((StaticThrottlePolicy)params.getThrottlePolicy()).getMaxPendingCount(), is((int)3));
+    }
+
+    @Test
+    public void get_field_covers_all_fields_by_default() throws Exception {
+        OperationHandlerImplFixture fixture = new OperationHandlerImplFixture();
+        OperationHandlerImpl handler = fixture.createHandler();
+        handler.get(dummyGetUri(), Optional.empty());
+
+        verify(fixture.mockSyncSession).get(any(), eq("document-type:[document]"), any());
+    }
+
+    @Test
+    public void provided_get_fieldset_is_propagated_to_sync_session() throws Exception {
+        OperationHandlerImplFixture fixture = new OperationHandlerImplFixture();
+        OperationHandlerImpl handler = fixture.createHandler();
+        handler.get(dummyGetUri(), Optional.of("donald,duck"));
+
+        verify(fixture.mockSyncSession).get(any(), eq("donald,duck"), any());
     }
 
 }
