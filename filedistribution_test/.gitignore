@@ -1,8 +1,0 @@
-/boost
-/filedistribution
-/libtorrent
-/zookeeper_c_client_dev
-pom.xml.build
-/target
-/appdir
-/dbdir
