@@ -254,11 +254,18 @@ public class RestApiTest {
         assertThat(rest, containsString(get_enc_response_part2));
     }
 
+    @Test
+    public void get_fieldset_parameter_is_propagated() throws IOException {
+        Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/bar?fieldSet=foo,baz", getFirstListenPort()));
+        HttpGet get = new HttpGet(request.getUri());
+        String rest = doRest(get);
+        assertThat(rest, containsString("\"fieldset\":\"foo,baz\""));
+    }
+
     String visit_test_uri = "/document/v1/namespace/document-type/docid/?continuation=abc";
     String visit_response_part1 = "\"documents\":[List of json docs, cont token abc, doc selection: '']";
     String visit_response_part2 = "\"continuation\":\"token\"";
     String visit_response_part3 = "\"pathId\":\"/document/v1/namespace/document-type/docid/\"";
-
 
     @Test
     public void testbasicVisit() throws Exception {
@@ -320,7 +327,7 @@ public class RestApiTest {
     }
 
     @Test
-    public void fieldset_parameter_is_propagated() throws IOException {
+    public void visit_fieldset_parameter_is_propagated() throws IOException {
         Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?fieldSet=foo,baz", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
         String rest = doRest(get);
@@ -328,7 +335,7 @@ public class RestApiTest {
     }
 
     @Test
-    public void concurrency_parameter_is_propagated() throws IOException {
+    public void visit_concurrency_parameter_is_propagated() throws IOException {
         Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?concurrency=42", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
         String rest = doRest(get);
@@ -336,7 +343,7 @@ public class RestApiTest {
     }
 
     @Test
-    public void invalid_concurrency_parameter_returns_error_response() throws IOException {
+    public void invalid_visit_concurrency_parameter_returns_error_response() throws IOException {
         Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/?concurrency=badgers", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
         String rest = doRest(get);

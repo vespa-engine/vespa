@@ -170,7 +170,7 @@ public class RestApi extends LoggingRequestHandler {
         try {
             switch (request.getMethod()) {
                 case GET:    // Vespa Visit/Get
-                    return restUri.getDocId().isEmpty() ? handleVisit(restUri, request) : handleGet(restUri);
+                    return restUri.getDocId().isEmpty() ? handleVisit(restUri, request) : handleGet(restUri, request);
                 case POST:   // Vespa Put
                     operationHandler.put(restUri, createPutOperation(request, restUri.generateFullId(), condition), route);
                     break;
@@ -212,8 +212,9 @@ public class RestApi extends LoggingRequestHandler {
         return operationUpdate;
     }
 
-    private HttpResponse handleGet(RestUri restUri) throws RestApiException {
-        final Optional<String> getDocument = operationHandler.get(restUri);
+    private HttpResponse handleGet(RestUri restUri, HttpRequest request) throws RestApiException {
+        final Optional<String> fieldSet = requestProperty("fieldSet", request);
+        final Optional<String> getDocument = operationHandler.get(restUri, fieldSet);
         final ObjectNode resultNode = mapper.createObjectNode();
         if (getDocument.isPresent()) {
             final JsonNode parseNode;

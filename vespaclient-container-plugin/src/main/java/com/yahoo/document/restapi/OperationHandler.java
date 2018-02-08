@@ -99,6 +99,10 @@ public interface OperationHandler {
     void delete(RestUri restUri, String condition, Optional<String> route) throws RestApiException;
 
     Optional<String> get(RestUri restUri) throws RestApiException;
+
+    default Optional<String> get(RestUri restUri, Optional<String> fieldSet) throws RestApiException {
+        return get(restUri);
+    }
     
     /** Called just before this is disposed of */
     default void shutdown() {}
