@@ -66,7 +66,6 @@ BuildRequires: openssl-devel
 BuildRequires: rpm-build
 BuildRequires: make
 BuildRequires: vespa-cppunit-devel >= 1.12.1-6
-BuildRequires: vespa-libtorrent-devel >= 1.0.11-6
 BuildRequires: systemd
 BuildRequires: flex >= 2.5.0
 BuildRequires: bison >= 3.0.0
@@ -104,8 +103,8 @@ Requires: llvm3.9
 Requires: devtoolset-7-gdb
 Requires: vespa-boost >= 1.59.0-6
 Requires: vespa-zookeeper-c-client >= 3.4.9-6
-%define _extra_link_directory /usr/lib64/llvm3.9/lib;/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib
-%define _extra_include_directory /usr/include/llvm3.9;/opt/vespa-boost/include;/opt/vespa-libtorrent/include;/opt/vespa-zookeeper-c-client/include;/opt/vespa-cppunit/include
+%define _extra_link_directory /usr/lib64/llvm3.9/lib;/opt/vespa-boost/lib;/opt/vespa-cppunit/lib
+%define _extra_include_directory /usr/include/llvm3.9;/opt/vespa-boost/include;/opt/vespa-cppunit/include
 %endif
 %if 0%{?fedora}
 %if 0%{?fc25}
@@ -132,14 +131,13 @@ Requires: boost >= 1.64
 %define _vespa_llvm_include_directory /usr/include/llvm4.0
 %endif
 Requires: zookeeper >= 3.4.9
-%define _extra_link_directory /opt/vespa-libtorrent/lib;/opt/vespa-cppunit/lib%{?_vespa_llvm_link_directory:;%{_vespa_llvm_link_directory}}
-%define _extra_include_directory /opt/vespa-libtorrent/include;/opt/vespa-cppunit/include%{?_vespa_llvm_include_directory:;%{_vespa_llvm_include_directory}}
+%define _extra_link_directory /opt/vespa-cppunit/lib%{?_vespa_llvm_link_directory:;%{_vespa_llvm_link_directory}}
+%define _extra_include_directory /opt/vespa-cppunit/include%{?_vespa_llvm_include_directory:;%{_vespa_llvm_include_directory}}
 %define _vespa_boost_lib_suffix %{nil}
 %endif
 Requires: java-1.8.0-openjdk
 Requires: openssl
 Requires: vespa-cppunit >= 1.12.1-6
-Requires: vespa-libtorrent >= 1.0.11-6
 Requires(pre): shadow-utils
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
