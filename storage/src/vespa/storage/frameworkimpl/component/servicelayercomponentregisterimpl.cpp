@@ -42,18 +42,9 @@ void
 ServiceLayerComponentRegisterImpl::setDistribution(lib::Distribution::SP distribution)
 {
     _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
-    if (enableMultipleBucketSpaces()) {
-        auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
-        _bucketSpaceRepo.get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
-    }
+    auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
+    _bucketSpaceRepo.get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
     StorageComponentRegisterImpl::setDistribution(distribution);
-}
-
-void ServiceLayerComponentRegisterImpl::setEnableMultipleBucketSpaces(bool enabled) {
-    StorageComponentRegisterImpl::setEnableMultipleBucketSpaces(enabled);
-    if (enabled) {
-        _bucketSpaceRepo.enableGlobalBucketSpace();
-    }
 }
 
 } // storage
