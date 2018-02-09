@@ -126,7 +126,7 @@ public class DockerHostCapacity {
         if (!dockerHost.type().equals(NodeType.host)) return new ResourceCapacity();
 
         ResourceCapacity hostCapacity = new ResourceCapacity(dockerHost);
-        for (Node container : allNodes.childNodes(dockerHost).asList()) {
+        for (Node container : allNodes.childrenOf(dockerHost).asList()) {
             boolean isUsedCapacity = !(treatInactiveOrRetiredAsUnusedCapacity && isInactiveOrRetired(container));
             if (isUsedCapacity) {
                 hostCapacity.subtract(container);
@@ -151,7 +151,7 @@ public class DockerHostCapacity {
      */
     static Set<String> findFreeIps(Node dockerHost, List<Node> allNodes) {
         Set<String> freeIPAddresses = new HashSet<>(dockerHost.additionalIpAddresses());
-        for (Node child : new NodeList(allNodes).childNodes(dockerHost).asList()) {
+        for (Node child : new NodeList(allNodes).childrenOf(dockerHost).asList()) {
             freeIPAddresses.removeAll(child.ipAddresses());
         }
         return freeIPAddresses;

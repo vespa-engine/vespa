@@ -745,12 +745,12 @@ public class ProvisioningTest {
 
         assertEquals("Hosts in each group cluster is disjunct and the total number of unretired nodes is correct",
                      expectedContainer0Size + expectedContainer1Size + expectedContent0Size + expectedContent1Size,
-                     tester.nonretired(allHosts).size());
+                     tester.nonRetired(allHosts).size());
         // Check cluster/group sizes
-        assertEquals(expectedContainer0Size, tester.nonretired(container0).size());
-        assertEquals(expectedContainer1Size, tester.nonretired(container1).size());
-        assertEquals(expectedContent0Size, tester.nonretired(content0).size());
-        assertEquals(expectedContent1Size, tester.nonretired(content1).size());
+        assertEquals(expectedContainer0Size, tester.nonRetired(container0).size());
+        assertEquals(expectedContainer1Size, tester.nonRetired(container1).size());
+        assertEquals(expectedContent0Size, tester.nonRetired(content0).size());
+        assertEquals(expectedContent1Size, tester.nonRetired(content1).size());
         // Check cluster membership
         tester.assertMembersOf(containerCluster0, container0);
         tester.assertMembersOf(containerCluster1, container1);

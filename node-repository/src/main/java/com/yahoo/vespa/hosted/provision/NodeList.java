@@ -67,22 +67,24 @@ public class NodeList {
     }
 
     /** Returns the parent nodes of the given child nodes */
-    public NodeList parentNodes(Collection<Node> childNodes) {
-        return childNodes.stream()
-                .map(Node::parentHostname)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .map(hostName -> nodes.stream().filter(node -> node.hostname().equals(hostName)).findFirst())
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(collectingAndThen(Collectors.toList(), NodeList::new));
+    public NodeList parentsOf(Collection<Node> children) {
+        return children.stream()
+                       .map(Node::parentHostname)
+                       .filter(Optional::isPresent)
+                       .map(Optional::get)
+                       .map(hostName -> nodes.stream().filter(node -> node.hostname().equals(hostName)).findFirst())
+                       .filter(Optional::isPresent)
+                       .map(Optional::get)
+                       .collect(collectingAndThen(Collectors.toList(), NodeList::new));
     }
 
     /** Returns the child nodes of the given parent node */
-    public NodeList childNodes(Node parentNode) {
+    public NodeList childrenOf(Node parent) {
         return nodes.stream()
-                .filter(n -> n.parentHostname().map(hostName -> hostName.equals(parentNode.hostname())).orElse(false))
-                .collect(collectingAndThen(Collectors.toList(), NodeList::new));
+                    .filter(n -> n.parentHostname()
+                                  .map(hostName -> hostName.equals(parent.hostname()))
+                                  .orElse(false))
+                    .collect(collectingAndThen(Collectors.toList(), NodeList::new));
     }
 
     public int size() { return nodes.size(); }
