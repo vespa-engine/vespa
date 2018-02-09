@@ -4,6 +4,7 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -17,6 +18,7 @@ LOG_SETUP(".dummypersistence");
 using vespalib::make_string;
 using std::binary_search;
 using std::lower_bound;
+using document::FixedBucketSpaces;
 
 namespace storage::spi::dummy {
 
@@ -341,16 +343,18 @@ DummyPersistence::getPartitionStates() const
 
 
 BucketIdListResult
-DummyPersistence::listBuckets(BucketSpace, PartitionId id) const
+DummyPersistence::listBuckets(BucketSpace bucketSpace, PartitionId id) const
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "listBuckets(%u)", uint16_t(id));
     vespalib::MonitorGuard lock(_monitor);
     BucketIdListResult::List list;
-    for (PartitionContent::const_iterator it = _content[id].begin();
-         it != _content[id].end(); ++it)
-    {
-        list.push_back(it->first);
+    if (bucketSpace == FixedBucketSpaces::default_space()) {
+        for (PartitionContent::const_iterator it = _content[id].begin();
+             it != _content[id].end(); ++it)
+        {
+            list.push_back(it->first);
+        }
     }
     return BucketIdListResult(list);
 }
@@ -363,23 +367,30 @@ DummyPersistence::setModifiedBuckets(const BucketIdListResult::List& buckets)
 }
 
 BucketIdListResult
-DummyPersistence::getModifiedBuckets(BucketSpace) const
+DummyPersistence::getModifiedBuckets(BucketSpace bucketSpace) const
 {
     vespalib::MonitorGuard lock(_monitor);
-    return BucketIdListResult(_modifiedBuckets);
+    if (bucketSpace == FixedBucketSpaces::default_space()) {
+        return BucketIdListResult(_modifiedBuckets);
+    } else {
+        BucketIdListResult::List emptyList;
+        return BucketIdListResult(emptyList);
+    }
 }
 
 Result
-DummyPersistence::setClusterState(BucketSpace, const ClusterState& c)
+DummyPersistence::setClusterState(BucketSpace bucketSpace, const ClusterState& c)
 {
     vespalib::MonitorGuard lock(_monitor);
-    _clusterState.reset(new ClusterState(c));
-    if (!_clusterState->nodeUp()) {
-        for (uint32_t i=0, n=_content.size(); i<n; ++i) {
-            for (PartitionContent::iterator it = _content[i].begin();
-                 it != _content[i].end(); ++it)
-            {
-                it->second->setActive(false);
+    if (bucketSpace == FixedBucketSpaces::default_space()) {
+        _clusterState.reset(new ClusterState(c));
+        if (!_clusterState->nodeUp()) {
+            for (uint32_t i=0, n=_content.size(); i<n; ++i) {
+                for (PartitionContent::iterator it = _content[i].begin();
+                     it != _content[i].end(); ++it)
+                {
+                    it->second->setActive(false);
+                }
             }
         }
     }
@@ -394,6 +405,7 @@ DummyPersistence::setActiveState(const Bucket& b,
     LOG(debug, "setCurrentState(%s, %s)",
         b.toString().c_str(),
         newState == BucketInfo::ACTIVE ? "ACTIVE" : "INACTIVE");
+    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
 
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
     if (!bc.get()) {
@@ -407,6 +419,7 @@ BucketInfoResult
 DummyPersistence::getBucketInfo(const Bucket& b) const
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
     if (!bc.get()) {
         LOG(debug, "getBucketInfo(%s) : (bucket not found)",
@@ -430,6 +443,7 @@ DummyPersistence::put(const Bucket& b, Timestamp t, const Document::SP& doc,
         b.toString().c_str(),
         uint64_t(t),
         doc->getId().toString().c_str());
+    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
     if (!bc.get()) {
         return BucketInfoResult(Result::TRANSIENT_ERROR, "Bucket not found");
@@ -456,6 +470,7 @@ Result
 DummyPersistence::maintain(const Bucket& b,
                            MaintenanceLevel)
 {
+    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     if (_simulateMaintainFailure) {
         BucketContentGuard::UP bc(acquireBucketWithLock(b));
         if (!bc.get()) {
@@ -484,6 +499,7 @@ DummyPersistence::remove(const Bucket& b,
         b.toString().c_str(),
         uint64_t(t),
         did.toString().c_str());
+    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
 
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
     if (!bc.get()) {
@@ -511,6 +527,7 @@ DummyPersistence::get(const Bucket& b,
     LOG(debug, "get(%s, %s)",
         b.toString().c_str(),
         did.toString().c_str());
+    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
     if (!bc.get()) {
     } else {
@@ -538,6 +555,7 @@ DummyPersistence::createIterator(
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "createIterator(%s)", b.toString().c_str());
+    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     std::unique_ptr<document::select::Node> docSelection;
     if (!s.getDocumentSelection().getDocumentSelection().empty()) {
         docSelection.reset(
@@ -712,6 +730,7 @@ DummyPersistence::createBucket(const Bucket& b, Context&)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "createBucket(%s)", b.toString().c_str());
+    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     vespalib::MonitorGuard lock(_monitor);
     if (_content[b.getPartition()].find(b) == _content[b.getPartition()].end()) {
         _content[b.getPartition()][b] = std::make_shared<BucketContent>();
@@ -727,6 +746,7 @@ DummyPersistence::deleteBucket(const Bucket& b, Context&)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "deleteBucket(%s)", b.toString().c_str());
+    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     vespalib::MonitorGuard lock(_monitor);
     if (_content[b.getPartition()][b].get()) {
         assert(!_content[b.getPartition()][b]->_inUse);
@@ -746,6 +766,9 @@ DummyPersistence::split(const Bucket& source,
         source.toString().c_str(),
         target1.toString().c_str(),
         target2.toString().c_str());
+    assert(source.getBucketSpace() == FixedBucketSpaces::default_space());
+    assert(target1.getBucketSpace() == FixedBucketSpaces::default_space());
+    assert(target2.getBucketSpace() == FixedBucketSpaces::default_space());
     createBucket(source, context);
     createBucket(target1, context);
     createBucket(target2, context);
@@ -799,6 +822,9 @@ DummyPersistence::join(const Bucket& source1, const Bucket& source2,
         source1.toString().c_str(),
         source2.toString().c_str(),
         target.toString().c_str());
+    assert(source1.getBucketSpace() == FixedBucketSpaces::default_space());
+    assert(source2.getBucketSpace() == FixedBucketSpaces::default_space());
+    assert(target.getBucketSpace() == FixedBucketSpaces::default_space());
     createBucket(target, context);
     BucketContentGuard::UP targetGuard(acquireBucketWithLock(target));
     assert(targetGuard.get());
@@ -833,6 +859,7 @@ DummyPersistence::revert(const Bucket& b, Timestamp t, Context&)
     LOG(debug, "revert(%s, %zu)",
         b.toString().c_str(),
         uint64_t(t));
+    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
 
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
     if (!bc.get()) {
@@ -883,6 +910,7 @@ DummyPersistence::dumpBucket(const Bucket& b) const
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(spam, "dumpBucket(%s)", b.toString().c_str());
+    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     vespalib::MonitorGuard lock(_monitor);
     PartitionContent::const_iterator it(_content[b.getPartition()].find(b));
     if (it == _content[b.getPartition()].end()) {
@@ -902,6 +930,7 @@ bool
 DummyPersistence::isActive(const Bucket& b) const
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     vespalib::MonitorGuard lock(_monitor);
     LOG(spam, "isActive(%s)", b.toString().c_str());
     PartitionContent::const_iterator it(_content[b.getPartition()].find(b));
@@ -919,6 +948,7 @@ BucketContentGuard::~BucketContentGuard()
 BucketContentGuard::UP
 DummyPersistence::acquireBucketWithLock(const Bucket& b) const
 {
+    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     vespalib::MonitorGuard lock(_monitor);
     DummyPersistence& ncp(const_cast<DummyPersistence&>(*this));
     PartitionContent::iterator it(ncp._content[b.getPartition()].find(b));
