@@ -352,8 +352,8 @@ TEST("testQueryResultX") {
         EXPECT_EQUAL(2u, ptr->_totNumDocs);
         EXPECT_EQUAL((search::HitRank)3, ptr->_maxRank);
         EXPECT_EQUAL(4u, ptr->getDistributionKey());
-        EXPECT_EQUAL(ptr->_features & QRF_COVERAGE_NODES ? 12 : 0u, ptr->getNodesQueried());
-        EXPECT_EQUAL(ptr->_features & QRF_COVERAGE_NODES ? 11 : 0u, ptr->getNodesReplied());
+        EXPECT_EQUAL(ptr->_features & QRF_COVERAGE_NODES ? 12 : 1u, ptr->getNodesQueried());
+        EXPECT_EQUAL(ptr->_features & QRF_COVERAGE_NODES ? 11 : 1u, ptr->getNodesReplied());
         EXPECT_EQUAL(6u, ptr->_coverageDocs);
         EXPECT_EQUAL(7u, ptr->_activeDocs);
         EXPECT_EQUAL(8u, ptr->_soonActiveDocs);

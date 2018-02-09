@@ -906,8 +906,8 @@ FS4Packet_QUERYRESULTX::AllocateHits(uint32_t cnt)
 FS4Packet_QUERYRESULTX::FS4Packet_QUERYRESULTX()
     : FS4Packet(),
       _distributionKey(0),
-      _nodesQueried(0),
-      _nodesReplied(0),
+      _nodesQueried(1),
+      _nodesReplied(1),
       _features(QRF_COVERAGE | QRF_EXTENDED_COVERAGE),
       _offset(0),
       _numDocs(0),
