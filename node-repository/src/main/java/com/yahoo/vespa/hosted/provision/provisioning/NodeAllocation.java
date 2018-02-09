@@ -243,24 +243,25 @@ class NodeAllocation {
         return nodes.stream().map(n -> n.node).collect(Collectors.toList());
     }
 
-    List<Node> acceptedInactiveAndReadyNodes() {
+    List<Node> reservableNodes() {
         return nodes.stream().map(n -> n.node)
-                .filter(n -> n.state().equals(Node.State.inactive) || n.state().equals(Node.State.ready))
-                .collect(Collectors.toList());
+                    .filter(n -> n.state() == Node.State.inactive ||
+                                 n.state() == Node.State.ready)
+                    .collect(Collectors.toList());
     }
 
-    List<Node> acceptedSurplusNodes() {
+    List<Node> surplusNodes() {
         return nodes.stream()
-                .filter(n -> n.isSurplusNode)
-                .map(n -> n.node)
-                .collect(Collectors.toList());
+                    .filter(n -> n.isSurplusNode)
+                    .map(n -> n.node)
+                    .collect(Collectors.toList());
     }
 
-    List<Node> acceptedNewNodes() {
+    List<Node> newNodes() {
         return nodes.stream()
-                .filter(n -> n.isNewNode)
-                .map(n -> n.node)
-                .collect(Collectors.toList());
+                    .filter(n -> n.isNewNode)
+                    .map(n -> n.node)
+                    .collect(Collectors.toList());
     }
 
     private List<PrioritizableNode> byDecreasingIndex(Set<PrioritizableNode> nodes) {

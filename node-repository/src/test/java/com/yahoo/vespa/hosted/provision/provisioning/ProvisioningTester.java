@@ -31,7 +31,6 @@ import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
-import java.io.IOException;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,7 +54,7 @@ import static org.mockito.Mockito.mock;
  *
  * @author bratseth
  */
-public class ProvisioningTester implements AutoCloseable {
+public class ProvisioningTester {
 
     private final Curator curator;
     private final NodeFlavors nodeFlavors;
@@ -118,15 +117,6 @@ public class ProvisioningTester implements AutoCloseable {
 
     public Curator getCurator() {
         return curator;
-    }
-
-    @Override
-    public void close() throws IOException {
-        //testingServer.close();
-    }
-
-    public List<AllocationSnapshot> getAllocationSnapshots() {
-        return allocationSnapshots;
     }
 
     public void advanceTime(TemporalAmount duration) { clock.advance(duration); }
@@ -312,7 +302,7 @@ public class ProvisioningTester implements AutoCloseable {
     }
 
     /** Returns the hosts from the input list which are not retired */
-    List<HostSpec> nonretired(Collection<HostSpec> hosts) {
+    List<HostSpec> nonRetired(Collection<HostSpec> hosts) {
         return hosts.stream().filter(host -> ! host.membership().get().retired()).collect(Collectors.toList());
     }
 

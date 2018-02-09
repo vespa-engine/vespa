@@ -185,7 +185,7 @@ public class NodeRepository extends AbstractComponent {
                 // - proxy nodes
                 // - parent (Docker) hosts of already trusted nodes. This is needed in a transition period, while
                 //   we migrate away from IPv4-only nodes
-                trustedNodes.addAll(candidates.parentNodes(trustedNodes).asList()); // TODO: Remove when we no longer have IPv4-only nodes
+                trustedNodes.addAll(candidates.parentsOf(trustedNodes).asList()); // TODO: Remove when we no longer have IPv4-only nodes
                 trustedNodes.addAll(candidates.nodeType(NodeType.proxy).asList());
                 if (node.state() == Node.State.ready) {
                     // Tenant nodes in state ready, trust:
@@ -229,9 +229,9 @@ public class NodeRepository extends AbstractComponent {
     public List<NodeAcl> getNodeAcls(Node node, boolean children) {
         NodeList candidates = new NodeList(getNodes());
         if (children) {
-            return candidates.childNodes(node).asList().stream()
-                    .map(childNode -> getNodeAcl(childNode, candidates))
-                    .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+            return candidates.childrenOf(node).asList().stream()
+                             .map(childNode -> getNodeAcl(childNode, candidates))
+                             .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
         } else {
             return Collections.singletonList(getNodeAcl(node, candidates));
         }

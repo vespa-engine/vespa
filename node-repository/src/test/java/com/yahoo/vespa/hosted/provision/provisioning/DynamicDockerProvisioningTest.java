@@ -483,9 +483,9 @@ public class DynamicDockerProvisioningTest {
         List<Node> nodes = tester.nodeRepository().getNodes(Node.State.values());
         NodeList nl = new NodeList(nodes);
         return nodes.stream()
-                .filter(n -> n.type() == NodeType.host)
-                .filter(n -> nl.childNodes(n).size() == 0) // Nodes without children
-                .collect(Collectors.toList());
+                    .filter(n -> n.type() == NodeType.host)
+                    .filter(n -> nl.childrenOf(n).size() == 0) // Nodes without children
+                    .collect(Collectors.toList());
     }
 
     private FlavorsConfig flavorsConfig(boolean includeHeadroom) {
