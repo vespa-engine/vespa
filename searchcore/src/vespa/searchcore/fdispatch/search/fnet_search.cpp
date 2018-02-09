@@ -1156,7 +1156,7 @@ FastS_FNET_Search::setupQueryPacket(uint32_t hitsPerNode, uint32_t qflags,
     qx._features      = search::fs4transport::QF_PARSEDQUERY | search::fs4transport::QF_RANKP;
     qx._offset        = _util.GetAlignedSearchOffset();
     qx._maxhits       = hitsPerNode; // capped maxhits
-    qx._qflags        = qflags; // filtered query flags
+    qx.setQueryFlags(qflags);
     qx.setTimeout(_queryArgs->getTimeLeft());
 
     qx.setRanking(_queryArgs->ranking);

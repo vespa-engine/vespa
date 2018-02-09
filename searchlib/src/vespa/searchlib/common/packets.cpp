@@ -1172,10 +1172,10 @@ FS4Packet_QUERYRESULTX::toString(uint32_t indent) const
 FS4Packet_QUERYX::FS4Packet_QUERYX()
     : FS4Packet(),
       _timeout(0),
+      _qflags(0),
       _features(0),
       _offset(0),
       _maxhits(0),
-      _qflags(0),
       _ranking(),
       _propsVector(),
       _sortSpec(),

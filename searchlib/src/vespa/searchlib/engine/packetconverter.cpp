@@ -55,7 +55,7 @@ PacketConverter::toSearchRequest(const QUERYX &packet, SearchRequest &request)
     request.offset     = packet._offset;
     request.maxhits    = packet._maxhits;
     request.setTimeout(packet.getTimeout());
-    request.queryFlags = packet._qflags;
+    request.queryFlags = packet.getQueryFlags();
     request.ranking    = packet._ranking;
 
     for (uint32_t i = 0; i < packet._propsVector.size(); ++i) {

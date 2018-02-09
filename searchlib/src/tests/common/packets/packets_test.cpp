@@ -398,7 +398,7 @@ createAndFill_QUERYX()
     EXPECT_EQUAL(0l, src->getTimeout());
     src->setTimeout(fastos::TimeStamp(4*fastos::TimeStamp::MS));
     EXPECT_EQUAL(fastos::TimeStamp(4*fastos::TimeStamp::MS), src->getTimeout());
-    src->_qflags = 5u;
+    src->setQueryFlags(5u);
     src->setRanking("seven");
     src->_numStackItems = 14u;
     src->_propsVector.resize(2);
@@ -419,7 +419,7 @@ verifyQueryX(FS4Packet_QUERYX & queryX, uint32_t features)
     EXPECT_EQUAL(2u, queryX._offset);
     EXPECT_EQUAL(3u, queryX._maxhits);
     EXPECT_EQUAL(fastos::TimeStamp(4*fastos::TimeStamp::MS), queryX.getTimeout());
-    EXPECT_EQUAL(0x5u, queryX._qflags);
+    EXPECT_EQUAL(0x1u, queryX.getQueryFlags());  //Filtered
     if (queryX._features & QF_RANKP) {
         EXPECT_EQUAL("seven", queryX._ranking);
     } else {
