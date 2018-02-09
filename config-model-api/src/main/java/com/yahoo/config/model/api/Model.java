@@ -53,6 +53,8 @@ public interface Model {
      * once per deployment.
      * @param fileDistribution {@link com.yahoo.config.model.api.FileDistribution} instance.
      */
+    // TODO: Remove when 6.206 is the oldest version in use
+    @Deprecated
     default void reloadDeployFileDistributor(FileDistribution fileDistribution) { }
 
     /**

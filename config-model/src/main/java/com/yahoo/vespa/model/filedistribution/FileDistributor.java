@@ -133,10 +133,4 @@ public class FileDistributor {
         dbHandler.removeDeploymentsThatHaveDifferentApplicationId(getTargetHostnames());
     }
 
-    // should only be called during deploy, and only once, since it leads to file distributor
-    // rescanning all files, which is very expensive ATM (April 2016)
-    public void reloadDeployFileDistributor(FileDistribution dbHandler) {
-        dbHandler.reloadDeployFileDistributor();
-    }
-
 }
