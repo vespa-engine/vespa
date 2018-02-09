@@ -213,23 +213,23 @@ class NodeAllocation {
      * @return the final list of nodes
      */
     List<Node> finalNodes(List<Node> surplusNodes) {
-        long currentRetired = nodes.stream().filter(node -> node.node.allocation().get().membership().retired()).count();
-        long surplus = requestedNodes.surplusGiven(nodes.size()) - currentRetired;
+        int currentRetiredCount = (int) nodes.stream().filter(node -> node.node.allocation().get().membership().retired()).count();
+        int deltaRetiredCount = requestedNodes.idealRetiredCount(nodes.size(), currentRetiredCount) - currentRetiredCount;
 
-        if (surplus > 0) { // retire until surplus is 0, prefer to retire higher indexes to minimize redistribution
+        if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0, prefer to retire higher indexes to minimize redistribution
             for (PrioritizableNode node : byDecreasingIndex(nodes)) {
                 if ( ! node.node.allocation().get().membership().retired() && node.node.state().equals(Node.State.active)) {
                     node.node = node.node.retire(Agent.application, clock.instant());
                     surplusNodes.add(node.node); // offer this node to other groups
-                    if (--surplus == 0) break;
+                    if (--deltaRetiredCount == 0) break;
                 }
             }
         }
-        else if (surplus < 0) { // unretire until surplus is 0
+        else if (deltaRetiredCount < 0) { // unretire until deltaRetiredCount is 0
             for (PrioritizableNode node : byIncreasingIndex(nodes)) {
                 if ( node.node.allocation().get().membership().retired() && hasCompatibleFlavor(node.node)) {
                     node.node = node.node.unretire();
-                    if (++surplus == 0) break;
+                    if (++deltaRetiredCount == 0) break;
                 }
             }
         }
