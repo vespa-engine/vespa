@@ -24,9 +24,7 @@ public class FileDistributionConfigProvider {
     }
 
     public void getConfig(FiledistributorrpcConfig.Builder builder) {
-        // If disabled config proxy should act as file distributor, so use config proxy port
-        int port = ConfigProxy.BASEPORT;
-        builder.connectionspec("tcp/" + host.getHostname() + ":" + port);
+        builder.connectionspec("tcp/" + host.getHostname() + ":" + ConfigProxy.BASEPORT);
     }
 
     public void getConfig(FilereferencesConfig.Builder builder) {

@@ -412,11 +412,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     @Override
-    public void reloadDeployFileDistributor(FileDistribution fileDistribution) {
-        getFileDistributor().reloadDeployFileDistributor(fileDistribution);
-    }
-
-    @Override
     public AllocatedHosts allocatedHosts() {
         return allocatedHosts;
     }

@@ -72,7 +72,7 @@ class FileAcquirerImpl implements FileAcquirer {
 
         private void logWarning() {
             if (logCount == 0 || System.currentTimeMillis() > nextLogTime ) {
-                log.warning("Could not connect to the file distributor '" + spec.toString() + "'" + " - " + this + "@" + System.identityHashCode(this));
+                log.warning("Could not connect to the config proxy '" + spec.toString() + "'" + " - " + this + "@" + System.identityHashCode(this));
 
                 nextLogTime = System.currentTimeMillis() +
                         Math.min(TimeUnit.DAYS.toMillis(1),
@@ -152,7 +152,7 @@ class FileAcquirerImpl implements FileAcquirer {
             if (request.checkReturnTypes("s")) {
                 return new File(request.returnValues().get(0).asString());
             } else if (!request.isError()) {
-                throw new RuntimeException("Invalid answer from file distributor: " + request.returnValues());
+                throw new RuntimeException("Invalid answer from config proxy: " + request.returnValues());
             } else if (temporaryError(request.errorCode())) {
                 log.log(LogLevel.INFO, "Retrying waitFor: " + request.errorCode() + " -- " + request.errorMessage());
                 Thread.sleep(1000);
