@@ -207,6 +207,9 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +
+                        "        field rating_yelp type int {" +
+                        "          indexing: attribute" +
+                        "        }" +
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
