@@ -42,12 +42,12 @@ enum fnet_feature_masks {
                                GDF_RESCLASSNAME |
                                GDF_PROPERTIES |
                                GDF_FLAGS),
-    FNET_QFLAG_SUPPORTED_MASK = (QFLAG_EXTENDED_COVERAGE |
-                                 QFLAG_COVERAGE_NODES |
-                                 QFLAG_ESTIMATE |
-                                 QFLAG_DROP_SORTDATA |
-                                 QFLAG_NO_RESULTCACHE |
-                                 QFLAG_DUMP_FEATURES),
+    ACTIVE_QUERY_FLAGS = (QFLAG_EXTENDED_COVERAGE |
+                          QFLAG_COVERAGE_NODES |
+                          QFLAG_ESTIMATE |
+                          QFLAG_DROP_SORTDATA |
+                          QFLAG_NO_RESULTCACHE |
+                          QFLAG_DUMP_FEATURES),
 
     FNET_MQF_SUPPORTED_MASK = (MQF_QFLAGS),
 
@@ -463,7 +463,7 @@ public:
     uint32_t  _numStackItems; // if QF_PARSEDQUERY
     string    _stackDump;     // if QF_PARSEDQUERY
 
-    void setQueryFlags(uint32_t qflags) { _qflags = FNET_QFLAG_SUPPORTED_MASK & qflags; }
+    void setQueryFlags(uint32_t qflags) { _qflags = ACTIVE_QUERY_FLAGS & qflags; }
     void setRanking(const vespalib::stringref &ranking) { _ranking = ranking; }
     void setSortSpec(const vespalib::stringref &spec) { _sortSpec = spec; }
     void setGroupSpec(const vespalib::stringref &spec) { _groupSpec = spec; }
