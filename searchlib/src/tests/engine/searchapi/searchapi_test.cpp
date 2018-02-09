@@ -54,7 +54,7 @@ Test::convertToRequest()
     src._offset = 2u;
     src._maxhits = 3u;
     src.setTimeout(fastos::TimeStamp(4*fastos::TimeStamp::MS));
-    src._qflags = 5u;
+    src.setQueryFlags(5u);
     src._features |= QF_RANKP;
     src.setRanking("seven");
     src._features |= QF_PROPERTIES;
@@ -92,7 +92,7 @@ Test::convertToRequest()
         EXPECT_EQUAL(dst.offset, 2u);
         EXPECT_EQUAL(dst.maxhits, 3u);
         EXPECT_EQUAL((dst.getTimeOfDoom() - dst.getStartTime()).ms(), 4u);
-        EXPECT_EQUAL(dst.queryFlags, 5u);
+        EXPECT_EQUAL(dst.queryFlags, 1u);  //Filtered
         EXPECT_EQUAL(vespalib::string("seven"), dst.ranking);
         EXPECT_EQUAL(dst.propertiesMap.size(), 2u);
         EXPECT_EQUAL(dst.propertiesMap.featureOverrides().lookup("p1k1").get(), std::string("p1v1"));

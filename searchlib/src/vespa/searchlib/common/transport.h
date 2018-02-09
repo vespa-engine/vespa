@@ -12,6 +12,7 @@ namespace search::fs4transport {
  * are as follows:
  * <ul>
  *  <li><b>QFLAG_EXTENDED_COVERAGE</b>: Indicates that the it is able to receive extended coverage information.</li>
+ *  <li><b>QFLAG_COVERAGE_NODES</b>: Indicate that it is able to handle nodes information.</li>
  *  <li><b>QFLAG_ESTIMATE</b>: Indicates that the  query is performed to get
  *                             an estimate of the total number of hits</li>
  *  <li><b>QFLAG_DUMP_FEATURES</b>: Dump detailed ranking information. Note that

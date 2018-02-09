@@ -42,6 +42,12 @@ enum fnet_feature_masks {
                                GDF_RESCLASSNAME |
                                GDF_PROPERTIES |
                                GDF_FLAGS),
+    FNET_QFLAG_SUPPORTED_MASK = (QFLAG_EXTENDED_COVERAGE |
+                                 QFLAG_COVERAGE_NODES |
+                                 QFLAG_ESTIMATE |
+                                 QFLAG_DROP_SORTDATA |
+                                 QFLAG_NO_RESULTCACHE |
+                                 QFLAG_DUMP_FEATURES),
 
     FNET_MQF_SUPPORTED_MASK = (MQF_QFLAGS),
 
@@ -441,12 +447,12 @@ private:
     FS4Packet_QUERYX& operator=(const FS4Packet_QUERYX &);
 
     uint32_t  _timeout;
+    uint32_t  _qflags;
 
 public:
     uint32_t  _features;      // see query_features
     uint32_t  _offset;
     uint32_t  _maxhits;
-    uint32_t  _qflags;
     string    _ranking;       // if QF_RANKP
     PropsVector _propsVector; // if QF_PROPERTIES
     string    _sortSpec;      // if QF_SORTSPEC
@@ -457,6 +463,7 @@ public:
     uint32_t  _numStackItems; // if QF_PARSEDQUERY
     string    _stackDump;     // if QF_PARSEDQUERY
 
+    void setQueryFlags(uint32_t qflags) { _qflags = FNET_QFLAG_SUPPORTED_MASK & qflags; }
     void setRanking(const vespalib::stringref &ranking) { _ranking = ranking; }
     void setSortSpec(const vespalib::stringref &spec) { _sortSpec = spec; }
     void setGroupSpec(const vespalib::stringref &spec) { _groupSpec = spec; }
@@ -465,6 +472,7 @@ public:
     void setStackDump(const vespalib::stringref &buf) { _stackDump = buf; }
     void setTimeout(const fastos::TimeStamp & timeout);
     fastos::TimeStamp getTimeout() const;
+    uint32_t getQueryFlags() const { return _qflags; }
 
     explicit FS4Packet_QUERYX();
     ~FS4Packet_QUERYX();
