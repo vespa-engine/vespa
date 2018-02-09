@@ -29,9 +29,7 @@ public class ExactMatch extends Processor {
     public void process() {
         for (SDField field : search.allConcreteFields()) {
             Matching.Type matching = field.getMatching().getType();
-            if (matching.equals(Matching.Type.EXACT) ||
-                matching.equals(Matching.Type.WORD))
-            {
+            if (matching.equals(Matching.Type.EXACT) || matching.equals(Matching.Type.WORD)) {
                 implementExactMatch(field, search);
             } else if (field.getMatching().getExactMatchTerminator() != null) {
                 warn(search, field, "exact-terminator requires 'exact' matching to have any effect.");

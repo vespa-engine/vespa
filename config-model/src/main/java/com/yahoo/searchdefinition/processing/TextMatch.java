@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class TextMatch extends Processor {
 
