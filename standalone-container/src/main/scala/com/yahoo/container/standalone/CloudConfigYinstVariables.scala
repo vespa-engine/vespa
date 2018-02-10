@@ -39,7 +39,6 @@ class CloudConfigYinstVariables extends CloudConfigOptions {
   override val dockerRegistry = optionalYinstVar[java.lang.String]("docker_registry")
   override val dockerVespaBaseImage = optionalYinstVar[java.lang.String]("docker_vespa_base_image")
   override val loadBalancerAddress = optionalYinstVar[java.lang.String]("load_balancer_address")
-  override val disableFiledistributor = optionalYinstVar[java.lang.Boolean]("disable_filedistributor")
 }
 
 object CloudConfigYinstVariables {

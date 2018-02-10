@@ -141,7 +141,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean hostedVespa;
         private final Zone zone;
         private final Set<Rotation> rotations;
-        private final boolean disableFileDistributor;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenant,
@@ -149,8 +148,7 @@ public class ModelContextImpl implements ModelContext {
                           HostName loadBalancerName,
                           boolean hostedVespa,
                           Zone zone,
-                          Set<Rotation> rotations,
-                          boolean disableFileDistributor) {
+                          Set<Rotation> rotations) {
             this.applicationId = applicationId;
             this.multitenant = multitenant;
             this.configServerSpecs = configServerSpecs;
@@ -158,7 +156,6 @@ public class ModelContextImpl implements ModelContext {
             this.hostedVespa = hostedVespa;
             this.zone = zone;
             this.rotations = rotations;
-            this.disableFileDistributor = disableFileDistributor;
         }
 
         @Override
@@ -194,8 +191,6 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public Set<Rotation> rotations() { return rotations; }
 
-        @Override
-        public boolean disableFileDistributor() { return disableFileDistributor; }
     }
 
 }

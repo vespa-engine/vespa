@@ -306,7 +306,6 @@ public class AdminTestCase {
     @Test
     public void testDisableFileDistributorForAllApps() {
         DeployState state = new DeployState.Builder()
-                .disableFiledistributor(true)
                 .properties(
                         new DeployProperties.Builder().
                                 zone(new Zone(Environment.dev, RegionName.from("baz"))).
