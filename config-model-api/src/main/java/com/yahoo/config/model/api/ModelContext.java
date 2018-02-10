@@ -46,7 +46,7 @@ public interface ModelContext {
         boolean hostedVespa();
         Zone zone();
         Set<Rotation> rotations();
-        default boolean disableFileDistributor() { return false; }
+        default boolean disableFileDistributor() { return true; } // TODO: Remove when oldest version in use is 6.206
     }
 
 }

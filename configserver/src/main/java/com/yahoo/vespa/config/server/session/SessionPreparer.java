@@ -154,8 +154,7 @@ public class SessionPreparer {
                                                               HostName.from(configserverConfig.loadBalancerAddress()),
                                                               configserverConfig.hostedVespa(),
                                                               zone,
-                                                              rotationsSet,
-                                                              configserverConfig.disableFiledistributor());
+                                                              rotationsSet);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,

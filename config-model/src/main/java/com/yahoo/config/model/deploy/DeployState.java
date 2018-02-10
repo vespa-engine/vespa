@@ -68,7 +68,6 @@ public class DeployState implements ConfigDefinitionStore {
     private final Version wantedNodeVespaVersion;
     private final Instant now;
     private final HostProvisioner provisioner;
-    private final boolean disableFiledistributor;
 
     public static DeployState createTestState() {
         return new Builder().build();
@@ -82,7 +81,7 @@ public class DeployState implements ConfigDefinitionStore {
                         FileRegistry fileRegistry, DeployLogger deployLogger, Optional<HostProvisioner> hostProvisioner, DeployProperties properties,
                         Optional<ApplicationPackage> permanentApplicationPackage, Optional<ConfigDefinitionRepo> configDefinitionRepo,
                         java.util.Optional<Model> previousModel, Set<Rotation> rotations, Zone zone, QueryProfiles queryProfiles,
-                        SemanticRules semanticRules, Instant now, Version wantedNodeVespaVersion, boolean disableFiledistributor) {
+                        SemanticRules semanticRules, Instant now, Version wantedNodeVespaVersion) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.rankProfileRegistry = rankProfileRegistry;
@@ -101,7 +100,6 @@ public class DeployState implements ConfigDefinitionStore {
         this.validationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.now = now;
-        this.disableFiledistributor = disableFiledistributor;
     }
 
     public static HostProvisioner getDefaultModelHostProvisioner(ApplicationPackage applicationPackage) {
@@ -215,8 +213,6 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Instant now() { return now; }
 
-    public boolean disableFiledistributor() { return disableFiledistributor; }
-
     public static class Builder {
 
         private ApplicationPackage applicationPackage = MockApplicationPackage.createEmpty();
@@ -231,7 +227,6 @@ public class DeployState implements ConfigDefinitionStore {
         private Zone zone = Zone.defaultZone();
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
-        private boolean disableFiledistributor = false;
 
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
@@ -293,11 +288,6 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
-        public Builder disableFiledistributor(boolean disableFiledistributor) {
-            this.disableFiledistributor = disableFiledistributor;
-            return this;
-        }
-
         public DeployState build() {
             RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
             QueryProfiles queryProfiles = new QueryProfilesBuilder().build(applicationPackage);
@@ -305,7 +295,7 @@ public class DeployState implements ConfigDefinitionStore {
             SearchDocumentModel searchDocumentModel = createSearchDocumentModel(rankProfileRegistry, logger, queryProfiles);
             return new DeployState(applicationPackage, searchDocumentModel, rankProfileRegistry, fileRegistry, logger, hostProvisioner,
                                    properties, permanentApplicationPackage, configDefinitionRepo, previousModel, rotations,
-                                   zone, queryProfiles, semanticRules, now, wantedNodeVespaVersion, disableFiledistributor);
+                                   zone, queryProfiles, semanticRules, now, wantedNodeVespaVersion);
         }
 
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
