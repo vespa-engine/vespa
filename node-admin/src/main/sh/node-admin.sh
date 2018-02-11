@@ -67,14 +67,6 @@ EOF
     exit 1
 }
 
-Start() {
-    "$VESPA_HOME"/libexec/vespa/standalone-container.sh start -s node-admin -u root "$@"
-}
-
-Stop() {
-    "$VESPA_HOME"/libexec/vespa/standalone-container.sh stop -s node-admin -u root "$@"
-}
-
 if (( $# == 0 )); then
     Usage
 fi
@@ -83,11 +75,11 @@ command="$1"
 shift
 
 case "$command" in
-    start) Start "$@" ;;
-    stop) Stop "$@" ;;
-    restart)
-	Stop "$@"
-	Start "$@"
+    start)
+	"$VESPA_HOME"/libexec/vespa/standalone-container.sh start -s node-admin -u root "$@"
+	;;
+    stop)
+	"$VESPA_HOME"/libexec/vespa/standalone-container.sh stop -s node-admin -u root "$@"
 	;;
     *) Usage ;;
 esac
