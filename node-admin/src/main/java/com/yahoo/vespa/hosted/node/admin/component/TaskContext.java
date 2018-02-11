@@ -50,10 +50,4 @@ public interface TaskContext {
      *                        or later if the task failed. Either way, it will only be called once.
      */
     default void logOnFailure(Logger logger, Supplier<String> messageSupplier) {}
-
-    /**
-     * Execute a task as a child of this task, and with its own sub-TaskContext. Please  avoid
-     * excessive task hierarchies.
-     */
-    boolean executeSubtask(IdempotentTask task);
 }

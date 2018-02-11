@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.component;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.ChainedComponent;
 
-public abstract class TaskComponent extends ChainedComponent implements IdempotentTask {
+public abstract class TaskComponent extends ChainedComponent implements IdempotentTask<TaskContext> {
     protected TaskComponent(ComponentId id) {
         super(id);
     }
