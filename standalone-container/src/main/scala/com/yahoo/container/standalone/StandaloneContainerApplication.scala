@@ -40,7 +40,7 @@ class StandaloneContainerApplication @Inject()(injector: Injector) extends Appli
 
   ConfiguredApplication.ensureVespaLoggingInitialized()
 
-  val applicationPath: Path = injectedApplicationPath.getOrElse(yinstApplicationPath)
+  val applicationPath: Path = injectedApplicationPath.getOrElse(installApplicationPath)
 
   val distributedFiles = new LocalFileDb(applicationPath)
 
@@ -73,7 +73,7 @@ class StandaloneContainerApplication @Inject()(injector: Injector) extends Appli
     injector.getInstance(Key.get(classOf[Path], applicationPathName))
   }.toOption
 
-  def yinstApplicationPath = path(yinstVariable(applicationLocationYinstVariable))
+  def installApplicationPath = path(installVariable(applicationLocationInstallVariable))
 
   override def start() {
     try {
@@ -97,10 +97,10 @@ class StandaloneContainerApplication @Inject()(injector: Injector) extends Appli
 
 object StandaloneContainerApplication {
   val packageName = "standalone_jdisc_container"
-  val applicationLocationYinstVariable = s"$packageName.app_location"
-  val deploymentProfileYinstVariable = s"$packageName.deployment_profile"
+  val applicationLocationInstallVariable = s"$packageName.app_location"
+  val deploymentProfileInstallVariable = s"$packageName.deployment_profile"
 
-  val applicationPathName = Names.named(applicationLocationYinstVariable)
+  val applicationPathName = Names.named(applicationLocationInstallVariable)
 
   val disableNetworkingAnnotation = "JDisc.disableNetworking"
   val configModelRepoName = Names.named("ConfigModelRepo")
@@ -143,9 +143,9 @@ object StandaloneContainerApplication {
   }
 
   def newContainerModelBuilder(networkingOption: Networking): ContainerModelBuilder = {
-    optionalYinstVariable(deploymentProfileYinstVariable) match {
+    optionalInstallVariable(deploymentProfileInstallVariable) match {
       case None => new ContainerModelBuilder(true, networkingOption)
-      case Some("configserver") => new ConfigServerContainerModelBuilder(new CloudConfigYinstVariables)
+      case Some("configserver") => new ConfigServerContainerModelBuilder(new CloudConfigInstallVariables)
       case profileName => throw new RuntimeException(s"Invalid deployment profile '$profileName'")
     }
   }

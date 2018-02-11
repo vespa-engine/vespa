@@ -127,7 +127,7 @@ public class CoreCollector {
 
         installStatePath.ifPresent(installState -> {
             try {
-                data.put("yinst_state", readInstallState(installState));
+                data.put("install_state", readInstallState(installState));
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Failed to read install state", e);
             }

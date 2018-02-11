@@ -23,7 +23,7 @@ object StandaloneContainer {
 
   def withStandaloneContainer[T](containerNode: Node) {
     withTempDirectory { applicationDirectory =>
-      System.setProperty(StandaloneContainerApplication.applicationLocationYinstVariable, applicationDirectory.toString)
+      System.setProperty(StandaloneContainerApplication.applicationLocationInstallVariable, applicationDirectory.toString)
       createServicesXml(applicationDirectory, containerNode)
 
       val driver = TestDriver.newInjectedApplicationInstance(classOf[StandaloneContainerApplication])
