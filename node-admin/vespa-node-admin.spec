@@ -32,6 +32,7 @@ cp node-admin/src/main/application/services.xml "$app_dir"
 
 declare -a jar_components=(
   node-admin/target/node-admin-jar-with-dependencies.jar
+  node-admin/target/node-admin-app/components/*
   docker-api/target/docker-api-jar-with-dependencies.jar
 )
 for path in "${jar_components[@]}"; do
