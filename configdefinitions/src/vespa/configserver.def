@@ -4,7 +4,7 @@ namespace=cloud.config
 # Ports
 rpcport int default=19070
 httpport int default=19071
-numthreads int default=16
+numthreads int default=32
 
 # ZooKeeper
 zookeeperserver[].hostname string
