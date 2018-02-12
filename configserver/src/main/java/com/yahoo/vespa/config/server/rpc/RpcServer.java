@@ -116,8 +116,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         this.metrics = metrics.getOrCreateMetricUpdater(Collections.<String, String>emptyMap());
         this.hostLivenessTracker = hostLivenessTracker;
         BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(config.maxgetconfigclients());
-        int rpcNumThreads = config.numRpcThreads() == 0 ? Runtime.getRuntime().availableProcessors() : config.numRpcThreads();
-        executorService = new ThreadPoolExecutor(rpcNumThreads, rpcNumThreads,
+        int numberOfRpcThreads = config.numRpcThreads() == 0 ? Runtime.getRuntime().availableProcessors() : config.numRpcThreads();
+        executorService = new ThreadPoolExecutor(numberOfRpcThreads, numberOfRpcThreads,
                 0, TimeUnit.SECONDS, workQueue, ThreadFactoryFactory.getThreadFactory(THREADPOOL_NAME));
         delayedConfigResponses = new DelayedConfigResponses(this, config.numDelayedResponseThreads());
         spec = new Spec(null, config.rpcport());
