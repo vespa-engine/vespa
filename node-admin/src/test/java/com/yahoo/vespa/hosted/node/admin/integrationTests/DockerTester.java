@@ -14,15 +14,16 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
-import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
-import com.yahoo.vespa.hosted.node.admin.util.PathResolver;
+import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static org.mockito.Matchers.any;
@@ -67,7 +68,8 @@ public class DockerTester implements AutoCloseable {
                 orchestratorMock, dockerOperations, storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL);
         nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer, mr, Clock.systemUTC());
         nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(nodeRepositoryMock, orchestratorMock, storageMaintainer,
-                nodeAdmin, "basehostname", clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL, new ClassLocking());
+                nodeAdmin, "basehostname", clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL,
+                Optional.of(new ClassLocking()));
         nodeAdminStateUpdater.start();
     }
 

@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.util;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.component.Environment;
+import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

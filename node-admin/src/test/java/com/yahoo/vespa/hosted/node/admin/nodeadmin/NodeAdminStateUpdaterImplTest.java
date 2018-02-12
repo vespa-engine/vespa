@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -47,7 +48,8 @@ public class NodeAdminStateUpdaterImplTest {
     private final Duration convergeStateInterval = Duration.ofSeconds(30);
 
     private final NodeAdminStateUpdaterImpl refresher = spy(new NodeAdminStateUpdaterImpl(
-            nodeRepository, orchestrator, storageMaintainer, nodeAdmin, parentHostname, clock, convergeStateInterval, null));
+            nodeRepository, orchestrator, storageMaintainer, nodeAdmin, parentHostname, clock,
+            convergeStateInterval, Optional.empty()));
 
 
     @Test
