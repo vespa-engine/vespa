@@ -171,7 +171,6 @@ public class LogDispatcher implements LogHandler, SelectLoopHook {
      * Make defensive copy and return array of LogHandlers.
      */
     public LogHandler[] getLogHandlers() {
-        handlers.toArray();
         LogHandler[] h = new LogHandler[handlers.size()];
         return handlers.toArray(h);
     }
