@@ -3,8 +3,12 @@ package com.yahoo.vespa.hosted.node.admin.component;
 
 /**
  * This class is thread unsafe: All method calls MUST be exclusive and serialized.
+ *
+ * In a specialized environment it is possible to provide a richer context than TaskContext:
+ *  - Define a subclass T of TaskContext with the additional functionality.
+ *  - Define task classes that implement IdempotentTask&lt;T&gt;.
  */
-public interface IdempotentTask {
+public interface IdempotentTask<T extends TaskContext> {
     String name();
 
     /**
@@ -17,5 +21,5 @@ public interface IdempotentTask {
      * @return false if the system was already converged, i.e. converge() was a no-op.
      * @throws RuntimeException (or a subclass) if the task is unable to converge.
      */
-    boolean converge(TaskContext context);
+    boolean converge(T context);
 }
