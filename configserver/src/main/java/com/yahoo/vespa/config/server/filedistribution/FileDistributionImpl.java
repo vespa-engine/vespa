@@ -57,7 +57,7 @@ public class FileDistributionImpl implements FileDistribution {
         log.log(LogLevel.DEBUG, "Executing " + request.methodName() + " against " + target.toString());
         target.invokeSync(request, timeout);
         if (request.isError() && request.errorCode() != ErrorCode.CONNECTION) {
-            log.log(LogLevel.INFO, request.methodName() + " failed: " + request.errorCode() + " (" + request.errorMessage() + ")");
+            log.log(LogLevel.DEBUG, request.methodName() + " failed: " + request.errorCode() + " (" + request.errorMessage() + ")");
         }
         target.close();
     }
