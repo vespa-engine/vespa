@@ -140,6 +140,8 @@ ModifiedBucketCheckerTest::testDoNotCheckModifiedBucketsIfAlreadyPending()
     expectCommandsAndSendReplies(0, 0);
     // After replies received, tick should send new requests again.
     replyToAll(messages, 0);
+    _handler->tick(); // global bucket space ==> nothing to do
+    expectCommandsAndSendReplies(0, 0);
     _handler->tick();
     expectCommandsAndSendReplies(3, 3);
 }
@@ -177,12 +179,19 @@ ModifiedBucketCheckerTest::testRecheckRequestsAreChunked()
     _handler->tick();
     expectCommandsAndSendReplies(1, 4);
 
+    _handler->tick(); // global bucket space ==> nothing to do
+    expectCommandsAndSendReplies(0, 0);
+
     // New round of fetching
     _handler->tick();
     expectCommandsAndSendReplies(1, 10);
+    _handler->tick(); // global bucket space ==> nothing to do
+    expectCommandsAndSendReplies(0, 0);
 
     // And done!
     _handler->tick();
+    expectCommandsAndSendReplies(0, 0);
+    _handler->tick(); // global bucket space ==> nothing to do
     expectCommandsAndSendReplies(0, 0);
 }
 
