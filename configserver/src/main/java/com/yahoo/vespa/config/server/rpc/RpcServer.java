@@ -116,7 +116,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         this.metrics = metrics.getOrCreateMetricUpdater(Collections.<String, String>emptyMap());
         this.hostLivenessTracker = hostLivenessTracker;
         BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(config.maxgetconfigclients());
-        int numberOfRpcThreads = config.numRpcThreads() == 0 ? Runtime.getRuntime().availableProcessors() : config.numRpcThreads();
+        int numberOfRpcThreads = (config.numRpcThreads() == 0) ? Runtime.getRuntime().availableProcessors() : config.numRpcThreads();
         executorService = new ThreadPoolExecutor(numberOfRpcThreads, numberOfRpcThreads,
                 0, TimeUnit.SECONDS, workQueue, ThreadFactoryFactory.getThreadFactory(THREADPOOL_NAME));
         delayedConfigResponses = new DelayedConfigResponses(this, config.numDelayedResponseThreads());
@@ -462,7 +462,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             request.parameters().add(new StringValue(fileData.filename()));
             request.parameters().add(new StringValue(fileData.type().name()));
             request.parameters().add(new Int64Value(fileData.size()));
-            target.invokeSync(request, 600);
+            invokeRpcIfValidConnection(request);
             if (request.isError()) {
                 log.warning("Failed delivering meta for reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
                         target.toString() + " with error: '" + request.errorMessage() + "'.");
@@ -480,7 +480,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             request.parameters().add(new Int32Value(session));
             request.parameters().add(new Int32Value(partId));
             request.parameters().add(new DataValue(buf));
-            target.invokeSync(request, 600);
+            invokeRpcIfValidConnection(request);
             if (request.isError()) {
                 throw new IllegalArgumentException("Failed delivering reference '" + ref.value() + "' to " +
                                                            target.toString() + " with error: '" + request.errorMessage() + "'.");
@@ -497,7 +497,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             request.parameters().add(new Int64Value(fileData.xxhash()));
             request.parameters().add(new Int32Value(status.getCode()));
             request.parameters().add(new StringValue(status.getDescription()));
-            target.invokeSync(request, 600);
+            invokeRpcIfValidConnection(request);
             if (request.isError()) {
                 throw new IllegalArgumentException("Failed delivering reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
                                                            target.toString() + " with error: '" + request.errorMessage() + "'.");
@@ -505,6 +505,14 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                 if (request.returnValues().get(0).asInt32() != 0) {
                     throw new IllegalArgumentException("Unknown error from target '" + target.toString() + "' during rpc call " + request.methodName());
                 }
+            }
+        }
+
+        private void invokeRpcIfValidConnection(Request request) {
+            if (target.isValid()) {
+                target.invokeSync(request, 600);
+            } else {
+                throw new RuntimeException("Connection to " + target + " is invalid", target.getConnectionLostReason());
             }
         }
     }
