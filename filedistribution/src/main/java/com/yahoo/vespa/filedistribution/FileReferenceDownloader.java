@@ -57,12 +57,15 @@ public class FileReferenceDownloader {
         }
         long end = System.currentTimeMillis() + timeout.toMillis();
         boolean downloadStarted = false;
+        int retryCount = 0;
         while ((System.currentTimeMillis() < end) && !downloadStarted) {
             try {
                 if (startDownloadRpc(fileReference)) {
                     downloadStarted = true;
                 } else {
-                    Thread.sleep(10);
+                    // Simple exponential backoff, might consider adding some randomness
+                    retryCount++;
+                    Thread.sleep(((int) Math.min(Math.round(Math.pow(2, retryCount)), 300) * 1000));
                 }
             }
             catch (InterruptedException e) { /* ignored */}
