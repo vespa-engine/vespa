@@ -15,7 +15,7 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.logging.FilebeatConfigProvider;
-import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 
@@ -223,6 +223,11 @@ public class StorageMaintainer {
     }
 
     private void addHandleCoredumpsCommand(MaintainerExecutor maintainerExecutor, ContainerName containerName, ContainerNodeSpec nodeSpec) {
+        if (!environment.getCoredumpFeedEndpoint().isPresent()) {
+            // Core dump handling is disabled.
+            return;
+        }
+
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("hostname", nodeSpec.hostname);
         attributes.put("parent_hostname", HostName.getLocalhost());
@@ -243,7 +248,7 @@ public class StorageMaintainer {
                 .withArgument("doneCoredumpsPath", environment.pathInNodeAdminToDoneCoredumps())
                 .withArgument("coredumpsPath", environment.pathInNodeAdminFromPathInNode(
                         containerName, getDefaults().underVespaHome("var/crash")))
-                .withArgument("feedEndpoint", environment.getCoredumpFeedEndpoint())
+                .withArgument("feedEndpoint", environment.getCoredumpFeedEndpoint().get())
                 .withArgument("attributes", attributes);
     }
 

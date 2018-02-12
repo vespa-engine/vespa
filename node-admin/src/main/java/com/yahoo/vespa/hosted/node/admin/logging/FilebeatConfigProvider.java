@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.logging;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.component.Environment;
 
 import java.util.Optional;
 import java.util.stream.Collectors;

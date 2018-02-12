@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.NATCommand;
-import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.io.IOException;

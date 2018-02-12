@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.logging;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 

@@ -1,5 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.util;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.node.admin.component;
 
 import com.google.common.base.Strings;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -7,6 +7,8 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
+import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
+import com.yahoo.vespa.hosted.node.admin.util.KeyStoreOptions;
 
 import java.net.InetAddress;
 import java.net.URI;
@@ -46,7 +48,7 @@ public class Environment {
     private final InetAddressResolver inetAddressResolver;
     private final PathResolver pathResolver;
     private final List<String> logstashNodes;
-    private final String feedEndpoint;
+    private final Optional<String> feedEndpoint;
     private final Optional<KeyStoreOptions> keyStoreOptions;
     private final Optional<KeyStoreOptions> trustStoreOptions;
     private final Optional<AthenzIdentity> athenzIdentity;
@@ -56,30 +58,42 @@ public class Environment {
     }
 
     public Environment(ConfigServerConfig configServerConfig) {
+        this(configServerConfig,
+             getEnvironmentVariable(ENVIRONMENT),
+             getEnvironmentVariable(REGION),
+             new PathResolver(),
+             Optional.of(getEnvironmentVariable(COREDUMP_FEED_ENDPOINT)));
+    }
+
+    public Environment(ConfigServerConfig configServerConfig,
+                       String hostedEnvironment,
+                       String hostedRegion,
+                       PathResolver pathResolver,
+                       Optional<String> coreDumpFeedEndpoint) {
         this(createConfigServerUris(
                 configServerConfig.scheme(),
                 configServerConfig.hosts(),
                 configServerConfig.port()),
 
-             getEnvironmentVariable(ENVIRONMENT),
-             getEnvironmentVariable(REGION),
-             Defaults.getDefaults().vespaHostname(),
-             new InetAddressResolver(),
-             new PathResolver(),
-             getLogstashNodesFromEnvironment(),
-             getEnvironmentVariable(COREDUMP_FEED_ENDPOINT),
+                hostedEnvironment,
+                hostedRegion,
+                Defaults.getDefaults().vespaHostname(),
+                new InetAddressResolver(),
+                pathResolver,
+                getLogstashNodesFromEnvironment(),
+                coreDumpFeedEndpoint,
 
-             createKeyStoreOptions(
-                     configServerConfig.keyStoreConfig().path(),
-                     configServerConfig.keyStoreConfig().password().toCharArray(),
-                     configServerConfig.keyStoreConfig().type().name()),
-             createKeyStoreOptions(
-                     configServerConfig.trustStoreConfig().path(),
-                     configServerConfig.trustStoreConfig().password().toCharArray(),
-                     configServerConfig.trustStoreConfig().type().name()),
-            createAthenzIdentity(
-                    configServerConfig.athenzDomain(),
-                    configServerConfig.serviceName())
+                createKeyStoreOptions(
+                        configServerConfig.keyStoreConfig().path(),
+                        configServerConfig.keyStoreConfig().password().toCharArray(),
+                        configServerConfig.keyStoreConfig().type().name()),
+                createKeyStoreOptions(
+                        configServerConfig.trustStoreConfig().path(),
+                        configServerConfig.trustStoreConfig().password().toCharArray(),
+                        configServerConfig.trustStoreConfig().type().name()),
+                createAthenzIdentity(
+                        configServerConfig.athenzDomain(),
+                        configServerConfig.serviceName())
         );
     }
 
@@ -90,7 +104,7 @@ public class Environment {
                        InetAddressResolver inetAddressResolver,
                        PathResolver pathResolver,
                        List<String> logstashNodes,
-                       String feedEndpoint,
+                       Optional<String> feedEndpoint,
                        Optional<KeyStoreOptions> keyStoreOptions,
                        Optional<KeyStoreOptions> trustStoreOptions,
                        Optional<AthenzIdentity> athenzIdentity) {
@@ -166,7 +180,7 @@ public class Environment {
         return pathResolver;
     }
 
-    public String getCoredumpFeedEndpoint() {
+    public Optional<String> getCoredumpFeedEndpoint() {
         return feedEndpoint;
     }
 
@@ -245,7 +259,7 @@ public class Environment {
         private InetAddressResolver inetAddressResolver;
         private PathResolver pathResolver;
         private List<String> logstashNodes = Collections.emptyList();
-        private String feedEndpoint;
+        private Optional<String> feedEndpoint = Optional.empty();
         private KeyStoreOptions keyStoreOptions;
         private KeyStoreOptions trustStoreOptions;
         private AthenzIdentity athenzIdentity;
@@ -288,7 +302,7 @@ public class Environment {
         }
 
         public Builder feedEndpoint(String feedEndpoint) {
-            this.feedEndpoint = feedEndpoint;
+            this.feedEndpoint = Optional.of(feedEndpoint);
             return this;
         }
 

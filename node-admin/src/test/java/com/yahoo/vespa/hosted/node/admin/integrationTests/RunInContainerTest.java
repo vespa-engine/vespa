@@ -15,14 +15,14 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
-import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
-import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -46,6 +46,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
@@ -243,7 +244,8 @@ public class RunInContainerTest {
                         storageMaintainer, aclMaintainer, environment, Clock.systemUTC(), NODE_AGENT_SCAN_INTERVAL);
         private final NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperationsMock, nodeAgentFactory, storageMaintainer, aclMaintainer, mr, Clock.systemUTC());
         private final NodeAdminStateUpdaterImpl nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(nodeRepositoryMock,
-                orchestratorMock, storageMaintainer, nodeAdmin, "localhost.test.yahoo.com", Clock.systemUTC(), NODE_ADMIN_CONVERGE_STATE_INTERVAL, new ClassLocking());
+                orchestratorMock, storageMaintainer, nodeAdmin, "localhost.test.yahoo.com",
+                Clock.systemUTC(), NODE_ADMIN_CONVERGE_STATE_INTERVAL, Optional.of(new ClassLocking()));
 
         public NodeAdminProviderWithMocks() {
             nodeAdminStateUpdater.start();

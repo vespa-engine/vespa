@@ -64,8 +64,8 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     private final String dockerHostHostName;
     private final Duration nodeAdminConvergeStateInterval;
 
-    private final ClassLocking classLocking;
-    private Optional<ClassLock> classLock;
+    private final Optional<ClassLocking> classLocking;
+    private Optional<ClassLock> classLock = Optional.empty();
     private Instant lastTick;
 
     public NodeAdminStateUpdaterImpl(
@@ -76,7 +76,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             String dockerHostHostName,
             Clock clock,
             Duration nodeAdminConvergeStateInterval,
-            ClassLocking classLocking) {
+            Optional<ClassLocking> classLocking) {
         log.info(objectToString() + ": Creating object");
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
@@ -88,12 +88,14 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
         this.lastTick = clock.instant();
 
         this.loopThread = new Thread(() -> {
-            log.info(objectToString() + ": Acquiring lock");
-            try {
-                classLock = Optional.of(classLocking.lockWhile(NodeAdminStateUpdater.class, () -> !terminated.get()));
-            } catch (LockInterruptException e) {
-                classLock = Optional.empty();
-                return;
+            if (classLocking.isPresent()) {
+                log.info(objectToString() + ": Acquiring lock");
+                try {
+                    classLock = Optional.of(classLocking.get().lockWhile(NodeAdminStateUpdater.class, () -> !terminated.get()));
+                } catch (LockInterruptException e) {
+                    classLock = Optional.empty();
+                    return;
+                }
             }
 
             log.info(objectToString() + ": Starting threads and schedulers");
@@ -308,7 +310,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
 
-        classLocking.interrupt();
+        classLocking.ifPresent(ClassLocking::interrupt);
 
         // First we need to stop NodeAdminStateUpdaterImpl thread to make sure no new NodeAgents are spawned
         signalWorkToBeDone();

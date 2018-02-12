@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.component.AdminComponent;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
+import com.yahoo.vespa.hosted.node.admin.component.DockerAdminComponent;
 import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 
 import java.io.File;
@@ -59,7 +60,7 @@ public class NodeAdminMain implements AutoCloseable {
 
     private AdminComponent selectAdminComponent(NodeAdminConfig config) {
         if (config.mainComponent == null) {
-            return new DockerAdminComponent(configServerConfig, config, docker, metricReceiver, classLocking);
+            return new DockerAdminComponent(configServerConfig, docker, metricReceiver, classLocking);
         }
 
         logger.log(LogLevel.INFO, () -> {

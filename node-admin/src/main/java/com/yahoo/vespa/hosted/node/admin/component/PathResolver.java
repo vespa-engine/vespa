@@ -1,5 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.util;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.node.admin.component;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -8,9 +8,9 @@ import java.nio.file.Paths;
  * @author freva
  */
 public class PathResolver {
-    static final Path ROOT = Paths.get("/");
+    public static final Path ROOT = Paths.get("/");
+    public static final Path RELATIVE_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage");
 
-    private static final Path RELATIVE_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage");
     private final Path applicationStoragePathForNodeAdmin;
     private final Path applicationStoragePathForHost;
 

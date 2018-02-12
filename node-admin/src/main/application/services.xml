@@ -11,7 +11,9 @@
     <component id="docker-api" class="com.yahoo.vespa.hosted.dockerapi.DockerImpl" bundle="docker-api"/>
     <component id="metrics-wrapper" class="com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper" bundle="docker-api"/>
 
-    <nodes type="host"/>
+    <config name="vespa.hosted.dockerapi.docker">
+      <uri>unix:///var/run/docker.sock</uri>
+    </config>
 
     <preprocess:include file="variant.xml" required="false"/>
   </jdisc>
