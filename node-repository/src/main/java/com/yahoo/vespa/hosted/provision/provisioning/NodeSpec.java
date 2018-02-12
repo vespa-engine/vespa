@@ -34,8 +34,8 @@ public interface NodeSpec {
     /** Returns whether the given node count is sufficient to fulfill this spec */
     boolean fulfilledBy(int count);
 
-    /** Returns the amount the given count is above the minimum amount needed to fulfill this request */
-    int surplusGiven(int count);
+    /** Returns the ideal number of nodes that should be retired to fulfill this spec */
+    int idealRetiredCount(int acceptedCount, int currentRetiredCount);
 
     /** Returns a specification of a fraction of all the nodes of this. It is assumed the argument is a valid divisor. */
     NodeSpec fraction(int divisor);
@@ -97,7 +97,7 @@ public interface NodeSpec {
         public boolean saturatedBy(int count) { return fulfilledBy(count); } // min=max for count specs
 
         @Override
-        public int surplusGiven(int count) { return count - this.count; }
+        public int idealRetiredCount(int acceptedCount, int currentRetiredCount) { return acceptedCount - this.count; }
 
         @Override
         public NodeSpec fraction(int divisor) { return new CountNodeSpec(count/divisor, requestedFlavor); }
@@ -152,7 +152,14 @@ public interface NodeSpec {
         public boolean saturatedBy(int count) { return false; }
 
         @Override
-        public int surplusGiven(int count) { return 0; }
+        public int idealRetiredCount(int acceptedCount, int currentRetiredCount) {
+            /*
+             * All nodes marked with wantToRetire get marked as retired just before this function is called,
+             * the job of this function is to throttle the retired count. If no nodes are marked as retired
+             * then continue this way, otherwise allow only 1 node to be retired
+             */
+            return Math.min(1, currentRetiredCount);
+        }
 
         @Override
         public NodeSpec fraction(int divisor) { return this; }
