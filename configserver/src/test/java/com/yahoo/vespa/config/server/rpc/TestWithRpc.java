@@ -82,7 +82,11 @@ public class TestWithRpc {
 
     protected void createAndStartRpcServer(boolean hostedVespa) {
         ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
-        rpcServer = new RpcServer(new ConfigserverConfig(new ConfigserverConfig.Builder().rpcport(port).numthreads(1).maxgetconfigclients(1).hostedVespa(hostedVespa)),
+        rpcServer = new RpcServer(new ConfigserverConfig(new ConfigserverConfig.Builder()
+                                                                 .rpcport(port)
+                                                                 .numRpcThreads(1)
+                                                                 .maxgetconfigclients(1)
+                                                                 .hostedVespa(hostedVespa)),
                                   new SuperModelRequestHandler(new TestConfigDefinitionRepo(),
                                                                configserverConfig,
                                                                new SuperModelManager(
