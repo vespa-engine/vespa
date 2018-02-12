@@ -45,10 +45,6 @@ public interface Docker {
         Map<String, Object> getBlkioStats();
     }
 
-    default boolean networkNATed() {
-        return false;
-    }
-
     Optional<ContainerStats> getContainerStats(ContainerName containerName);
     
     void startContainer(ContainerName containerName);
@@ -117,5 +113,5 @@ public interface Docker {
      */
     ProcessResult executeInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... command);
 
-    String getGlobalIPv6Address(ContainerName name);
+
 }
