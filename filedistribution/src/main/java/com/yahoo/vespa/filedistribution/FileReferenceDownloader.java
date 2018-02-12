@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 public class FileReferenceDownloader {
 
     private final static Logger log = Logger.getLogger(FileReferenceDownloader.class.getName());
-    private final static Duration rpcTimeout = Duration.ofSeconds(10);
+    private final static Duration rpcTimeout = Duration.ofMinutes(10);
 
     private final ExecutorService downloadExecutor =
             Executors.newFixedThreadPool(10, new DaemonThreadFactory("filereference downloader"));
