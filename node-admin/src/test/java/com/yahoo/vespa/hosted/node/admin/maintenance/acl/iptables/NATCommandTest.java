@@ -20,23 +20,19 @@ public class NATCommandTest {
     public void sampleNATCommandIPv6() throws UnknownHostException{
         InetAddress externalIP = Inet6Address.getByName("2001:db8::1");
         InetAddress internalIP = Inet6Address.getByName("2001:db8::2");
+        String iface = "eth0";
 
-        String insert = NATCommand.insert(externalIP, internalIP);
-        Assert.assertEquals("ip6tables -t nat -I POSTROUTING -s 2001:db8:0:0:0:0:0:2 -j SNAT --to 2001:db8:0:0:0:0:0:1 && ip6tables -t nat -I PREROUTING -d 2001:db8:0:0:0:0:0:1 -j DNAT --to-destination 2001:db8:0:0:0:0:0:2 && ip6tables -t nat -I OUTPUT -o lo -d 2001:db8:0:0:0:0:0:1 -j DNAT --to-destination 2001:db8:0:0:0:0:0:2", insert);
-
-        String drop = NATCommand.drop(externalIP, internalIP);
-        Assert.assertEquals("ip6tables -t nat -D POSTROUTING -s 2001:db8:0:0:0:0:0:2 -j SNAT --to 2001:db8:0:0:0:0:0:1; ip6tables -t nat -D PREROUTING -d 2001:db8:0:0:0:0:0:1 -j DNAT --to-destination 2001:db8:0:0:0:0:0:2; ip6tables -t nat -D OUTPUT -o lo -d 2001:db8:0:0:0:0:0:1 -j DNAT --to-destination 2001:db8:0:0:0:0:0:2", drop);
+        NATCommand command = new NATCommand(externalIP, internalIP, iface);
+        Assert.assertEquals("ip6tables -t nat -A POSTROUTING -o eth0 -s 2001:db8:0:0:0:0:0:2 -j SNAT --to 2001:db8:0:0:0:0:0:1; ip6tables -t nat -A PREROUTING -i eth0 -d 2001:db8:0:0:0:0:0:1 -j DNAT --to-destination 2001:db8:0:0:0:0:0:2", command.asString());
     }
 
     @Test
     public void sampleNATCommandIPv4() throws UnknownHostException{
         InetAddress externalIP = Inet4Address.getByName("192.168.0.1");
         InetAddress internalIP = Inet4Address.getByName("192.168.0.2");
+        String iface = "eth0";
 
-        String insert = NATCommand.insert(externalIP, internalIP);
-        Assert.assertEquals("iptables -t nat -I POSTROUTING -s 192.168.0.2 -j SNAT --to 192.168.0.1 && iptables -t nat -I PREROUTING -d 192.168.0.1 -j DNAT --to-destination 192.168.0.2 && iptables -t nat -I OUTPUT -o lo -d 192.168.0.1 -j DNAT --to-destination 192.168.0.2", insert);
-
-        String drop = NATCommand.drop(externalIP, internalIP);
-        Assert.assertEquals("iptables -t nat -D POSTROUTING -s 192.168.0.2 -j SNAT --to 192.168.0.1; iptables -t nat -D PREROUTING -d 192.168.0.1 -j DNAT --to-destination 192.168.0.2; iptables -t nat -D OUTPUT -o lo -d 192.168.0.1 -j DNAT --to-destination 192.168.0.2", drop);
+        NATCommand command = new NATCommand(externalIP, internalIP, iface);
+        Assert.assertEquals("iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.2 -j SNAT --to 192.168.0.1; iptables -t nat -A PREROUTING -i eth0 -d 192.168.0.1 -j DNAT --to-destination 192.168.0.2", command.asString());
     }
 }

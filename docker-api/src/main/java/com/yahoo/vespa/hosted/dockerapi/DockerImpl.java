@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.dockerapi;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
-import com.github.dockerjava.api.command.InspectContainerCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.InspectImageResponse;
@@ -126,21 +125,13 @@ public class DockerImpl implements Docker {
                 Duration minAgeToDelete = Duration.ofMinutes(config.imageGCMinTimeToLiveMinutes());
                 dockerImageGC = Optional.of(new DockerImageGarbageCollector(minAgeToDelete));
 
-
-                if (!config.networkNATed()) {
-                    try {
-                        setupDockerNetworkIfNeeded();
-                    } catch (Exception e) {
-                        throw new DockerException("Could not setup docker network", e);
-                    }
+                try {
+                    setupDockerNetworkIfNeeded();
+                } catch (Exception e) {
+                    throw new DockerException("Could not setup docker network", e);
                 }
             }
         }
-    }
-
-    @Override
-    public boolean networkNATed() {
-        return config.networkNATed();
     }
 
     static DefaultDockerClientConfig.Builder buildDockerClientConfig(DockerConfig config) {
@@ -400,12 +391,6 @@ public class DockerImpl implements Docker {
     @Override
     public Optional<Container> getContainer(ContainerName containerName) {
         return asContainer(containerName.asString()).findFirst();
-    }
-
-    @Override
-    public String getGlobalIPv6Address(ContainerName name) {
-        InspectContainerCmd cmd = dockerClient.inspectContainerCmd(name.asString());
-        return cmd.exec().getNetworkSettings().getGlobalIPv6Address();
     }
 
     private Stream<Container> asContainer(String container) {

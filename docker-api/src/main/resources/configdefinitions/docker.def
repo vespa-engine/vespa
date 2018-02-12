@@ -14,5 +14,3 @@ readTimeoutMillis int default = 1800000 # 30 min
 
 isRunningLocally bool default = false
 imageGCMinTimeToLiveMinutes int default = 45
-
-networkNATed bool default = false
