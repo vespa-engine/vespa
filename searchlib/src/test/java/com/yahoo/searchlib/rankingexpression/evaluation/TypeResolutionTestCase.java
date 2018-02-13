@@ -18,7 +18,7 @@ public class TypeResolutionTestCase {
 
     @Test
     public void testTypeResolution() {
-        TypeMapContext context = new TypeMapContext();
+        MapTypeContext context = new MapTypeContext();
         context.setType("query(x1)", TensorType.fromSpec("tensor(x[])"));
         context.setType("query(x2)", TensorType.fromSpec("tensor(x[10])"));
         context.setType("query(y1)", TensorType.fromSpec("tensor(y[])"));

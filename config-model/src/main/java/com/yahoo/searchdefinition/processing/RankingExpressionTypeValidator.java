@@ -3,11 +3,11 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.searchdefinition.MapTypeContext;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -40,15 +40,17 @@ public class RankingExpressionTypeValidator extends Processor {
     private void validate(RankProfile profile) {
         profile.parseExpressions();
         TypeContext context = profile.typeContext(queryProfiles);
-        for (RankProfile.Macro macro : profile.getMacros().values())
-            ensureValid(macro.getRankingExpression(), "macro '" + macro.getName() + "'", context);
+        profile.getSummaryFeatures().forEach(f -> ensureValid(f, "summary feature " + f, context));
         ensureValidDouble(profile.getFirstPhaseRanking(), "first-phase expression", context);
         ensureValidDouble(profile.getSecondPhaseRanking(), "second-phase expression", context);
     }
 
     private TensorType ensureValid(RankingExpression expression, String expressionDescription, TypeContext context) {
         if (expression == null) return null;
+        return ensureValid(expression.getRoot(), expressionDescription, context);
+    }
 
+    private TensorType ensureValid(ExpressionNode expression, String expressionDescription, TypeContext context) {
         TensorType type;
         try {
             type = expression.type(context);

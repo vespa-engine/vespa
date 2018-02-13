@@ -101,6 +101,13 @@ public class FeatureNames {
         return canonicalize("query(\"" + propertyName + "\")");
     }
 
+    /** Returns true if this is a cpomstant, attribute, or query feature */
+    public static boolean isFeature(String feature) {
+        return FeatureNames.isConstantFeature(feature) ||
+               FeatureNames.isAttributeFeature(feature) ||
+               FeatureNames.isQueryFeature(feature);
+    }
+
     public static boolean isConstantFeature(String feature) {
         return feature.startsWith("constant(");
     }

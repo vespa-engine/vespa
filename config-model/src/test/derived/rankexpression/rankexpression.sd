@@ -5,12 +5,10 @@ search rankexpression {
 
     field artist type string {
       indexing: summary | index
-      # index-to: artist, default
     }
 
     field title type string {
       indexing: summary | index
-      # index-to: title, default
     }
 
     field surl type string {
@@ -19,6 +17,38 @@ search rankexpression {
 
     field year type int {
       indexing: summary | attribute
+    }
+
+    field foo1 type int {
+      indexing: attribute
+    }
+
+    field foo2 type int {
+      indexing: attribute
+    }
+
+    field foo3 type int {
+      indexing: attribute
+    }
+
+    field foo4 type int {
+      indexing: attribute
+    }
+
+    field bar1 type int {
+      indexing: attribute
+    }
+
+    field bar2 type int {
+      indexing: attribute
+    }
+
+    field bar3 type int {
+      indexing: attribute
+    }
+
+    field bar4 type int {
+      indexing: attribute
     }
 
   }
@@ -33,7 +63,7 @@ search rankexpression {
         expression: if(3>2,4,2)
         rerank-count: 10
       }
-      rank-features: attribute(foo1).out attribute(bar1.out)
+      rank-features: attribute(foo1).out attribute(bar1)
       rank-features { attribute(foo2).out attribute(bar2).out }
       rank-features {
         attribute(foo3).out attribute(bar3).out }
@@ -65,7 +95,7 @@ search rankexpression {
             file:rankexpression
         }
       }
-      summary-features: attribute(foo1).out attribute(bar1.out)
+      summary-features: attribute(foo1).out attribute(bar1)
       summary-features { attribute(foo2).out attribute(bar2).out }
       summary-features {
         attribute(foo3).out attribute(bar3).out }

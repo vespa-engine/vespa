@@ -13,11 +13,13 @@ import java.util.Deque;
 import java.util.List;
 
 /**
- * A node referring either to a value in the context or to another named ranking expression.
+ * A node referring either to a value in the context or to a named ranking expression (function aka macro).
  *
  * @author simon
  * @author bratseth
  */
+// TODO: Using the same node to represent formal function argument, the function itself, and to features is confusing.
+//       At least the first two should be split into separate classes.
 public final class ReferenceNode extends CompositeNode {
 
     private final String name, output;
@@ -71,7 +73,7 @@ public final class ReferenceNode extends CompositeNode {
         List<ExpressionNode> myArguments = this.arguments.expressions();
 
         String resolvedArgument = context.getBinding(myName);
-        if (resolvedArgument != null && this.arguments.expressions().size() == 0 && myOutput == null) {
+        if (resolvedArgument != null && isBindableName()) {
             // Replace this whole node with the value of the argument value that it maps to
             myName = resolvedArgument;
             myArguments = null;
@@ -110,15 +112,18 @@ public final class ReferenceNode extends CompositeNode {
         return ret.toString();
     }
 
+    /** Returns whether this is a name that can be bound to a value (during argument passing) */
+    public boolean isBindableName() {
+        return this.arguments.expressions().size() == 0 && output == null;
+    }
+
     @Override
     public TensorType type(TypeContext context) {
-        // Ensure base name (excluding output exists,
-        // but don't support outputs of different tensor types (not used, so no need)
-        String name = toString(new SerializationContext(), null, false);
-        TensorType type = context.getType(name);
-
+        String feature = toString(new SerializationContext(), null, false);
+        TensorType type = context.getType(feature);
+        // TensorType type = context.getType(name, arguments, output); TODO
         if (type == null)
-            throw new IllegalArgumentException("Unknown feature '" + toString() + "'");
+            throw new IllegalArgumentException("Unknown feature '" + feature + "'");
         return type;
     }
 

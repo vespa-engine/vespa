@@ -33,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Represents a rank profile - a named set of ranking settings
@@ -747,7 +748,9 @@ public class RankProfile implements Serializable, Cloneable {
      * referable from this rank profile.
      */
     public TypeContext typeContext(QueryProfileRegistry queryProfiles) {
-        MapTypeContext context = new MapTypeContext();
+        MapEvaluationTypeContext context = new MapEvaluationTypeContext(getMacros().values().stream()
+                                                                                   .map(Macro::asExpressionFunction)
+                                                                                   .collect(Collectors.toList()));
 
         // Add small constants
         getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));
@@ -955,7 +958,7 @@ public class RankProfile implements Serializable, Cloneable {
             return inline && formalParams.size() == 0; // only inline no-arg macros;
         }
 
-        public ExpressionFunction toExpressionMacro() {
+        public ExpressionFunction asExpressionFunction() {
             return new ExpressionFunction(getName(), getFormalParams(), getRankingExpression());
         }
 
