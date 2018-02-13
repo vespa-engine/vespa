@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.node.admin.util.HttpException;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,31 +36,24 @@ public class NodeRepositoryImpl implements NodeRepository {
     }
 
     @Override
-    public List<ContainerNodeSpec> getContainersToRun(String baseHostName) throws IOException {
-        try {
-            final GetNodesResponse nodesForHost = requestExecutor.get(
-                    "/nodes/v2/node/?parentHost=" + baseHostName + "&recursive=true",
-                    GetNodesResponse.class);
+    public List<ContainerNodeSpec> getContainersToRun(String baseHostName) {
+        final GetNodesResponse nodesForHost = requestExecutor.get(
+                "/nodes/v2/node/?parentHost=" + baseHostName + "&recursive=true",
+                GetNodesResponse.class);
 
-            if (nodesForHost.nodes == null) {
-                throw new IOException("Response didn't contain nodes element");
+        List<ContainerNodeSpec> nodes = new ArrayList<>(nodesForHost.nodes.size());
+        for (GetNodesResponse.Node node : nodesForHost.nodes) {
+            ContainerNodeSpec nodeSpec;
+            try {
+                nodeSpec = createContainerNodeSpec(node);
+            } catch (IllegalArgumentException | NullPointerException e) {
+                NODE_ADMIN_LOGGER.warning("Bad node received from node repo when requesting children of the "
+                        + baseHostName + " host: " + node, e);
+                continue;
             }
-            List<ContainerNodeSpec> nodes = new ArrayList<>(nodesForHost.nodes.size());
-            for (GetNodesResponse.Node node : nodesForHost.nodes) {
-                ContainerNodeSpec nodeSpec;
-                try {
-                    nodeSpec = createContainerNodeSpec(node);
-                } catch (IllegalArgumentException | NullPointerException e) {
-                    NODE_ADMIN_LOGGER.warning("Bad node received from node repo when requesting children of the "
-                            + baseHostName + " host: " + node, e);
-                    continue;
-                }
-                nodes.add(nodeSpec);
-            }
-            return nodes;
-        } catch (Exception e) {
-            throw new IOException(e);
+            nodes.add(nodeSpec);
         }
+        return nodes;
     }
 
     @Override

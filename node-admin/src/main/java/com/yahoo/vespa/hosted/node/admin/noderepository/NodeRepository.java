@@ -5,7 +5,6 @@ import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,7 +12,7 @@ import java.util.Optional;
  * @author stiankri
  */
 public interface NodeRepository {
-    List<ContainerNodeSpec> getContainersToRun(String baseHostName) throws IOException;
+    List<ContainerNodeSpec> getContainersToRun(String baseHostName);
 
     Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName);
 

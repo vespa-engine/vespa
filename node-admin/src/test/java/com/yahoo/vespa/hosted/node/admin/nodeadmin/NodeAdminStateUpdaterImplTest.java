@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +52,7 @@ public class NodeAdminStateUpdaterImplTest {
 
 
     @Test
-    public void testStateConvergence() throws IOException {
+    public void testStateConvergence() {
         mockNodeRepo(4);
         List<String> activeHostnames = nodeRepository.getContainersToRun(parentHostname).stream()
                 .map(node -> node.hostname)
@@ -155,7 +154,7 @@ public class NodeAdminStateUpdaterImplTest {
     }
 
     @Test
-    public void half_transition_revert() throws IOException {
+    public void half_transition_revert() {
         mockNodeRepo(3);
 
         // Initially everything is frozen to force convergence
@@ -182,7 +181,7 @@ public class NodeAdminStateUpdaterImplTest {
         verify(nodeAdmin, times(2)).setFrozen(eq(false)); // Make sure that we unfreeze!
     }
 
-    private void mockNodeRepo(int numberOfNodes) throws IOException {
+    private void mockNodeRepo(int numberOfNodes) {
         List<ContainerNodeSpec> containersToRun = IntStream.range(0, numberOfNodes)
                 .mapToObj(i -> new ContainerNodeSpec.Builder()
                         .hostname("host" + i + ".test.yahoo.com")

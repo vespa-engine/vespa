@@ -95,7 +95,7 @@ public class NodeRepositoryImplTest {
     }
 
     @Test
-    public void testGetContainersToRunApi() throws IOException, InterruptedException {
+    public void testGetContainersToRunApi() throws InterruptedException {
         waitForJdiscContainerToServe();
         NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor);
         String dockerHostHostname = "dockerhost1.yahoo.com";

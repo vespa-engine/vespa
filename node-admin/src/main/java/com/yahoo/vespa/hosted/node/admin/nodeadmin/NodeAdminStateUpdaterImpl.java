@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.util.HttpException;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -269,35 +268,22 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
                 log.info("Frozen, skipping fetching info from node repository");
                 return;
             }
-            final List<ContainerNodeSpec> containersToRun;
+
             try {
-                containersToRun = nodeRepository.getContainersToRun(dockerHostHostName);
-            } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed fetching container info from node repository", e);
-                return;
-            }
-            if (containersToRun == null) {
-                log.warning("Got null from node repository");
-                return;
-            }
-            try {
+                final List<ContainerNodeSpec> containersToRun = nodeRepository.getContainersToRun(dockerHostHostName);
                 nodeAdmin.refreshContainersToRun(containersToRun);
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed updating node admin: ", e);
+                log.log(LogLevel.WARNING, "Failed to update which containers should be running", e);
             }
         }
     }
 
     private List<String> getNodesInActiveState() {
-        try {
-            return nodeRepository.getContainersToRun(dockerHostHostName)
-                                 .stream()
-                                 .filter(nodespec -> nodespec.nodeState == Node.State.active)
-                                 .map(nodespec -> nodespec.hostname)
-                                 .collect(Collectors.toList());
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to get nodes from node repo", e);
-        }
+        return nodeRepository.getContainersToRun(dockerHostHostName)
+                             .stream()
+                             .filter(nodespec -> nodespec.nodeState == Node.State.active)
+                             .map(nodespec -> nodespec.hostname)
+                             .collect(Collectors.toList());
     }
 
     public void start() {
