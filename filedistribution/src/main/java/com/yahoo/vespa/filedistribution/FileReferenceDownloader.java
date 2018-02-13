@@ -51,10 +51,6 @@ public class FileReferenceDownloader {
 
     private void startDownload(Duration timeout, FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
-        synchronized (downloads) {
-            downloads.put(fileReference, fileReferenceDownload);
-            downloadStatus.put(fileReference, 0.0);
-        }
         long end = System.currentTimeMillis() + timeout.toMillis();
         boolean downloadStarted = false;
         while ((System.currentTimeMillis() < end) && !downloadStarted) {
@@ -77,7 +73,12 @@ public class FileReferenceDownloader {
     }
 
     void addToDownloadQueue(FileReferenceDownload fileReferenceDownload) {
-        log.log(LogLevel.DEBUG, "Will download file reference '" + fileReferenceDownload.fileReference().value() + "' with timeout " + downloadTimeout);
+        FileReference fileReference = fileReferenceDownload.fileReference();
+        log.log(LogLevel.DEBUG, "Will download file reference '" + fileReference.value() + "' with timeout " + downloadTimeout);
+        synchronized (downloads) {
+            downloads.put(fileReference, fileReferenceDownload);
+            downloadStatus.put(fileReference, 0.0);
+        }
         downloadExecutor.submit(() -> startDownload(downloadTimeout, fileReferenceDownload));
     }
 
@@ -118,7 +119,7 @@ public class FileReferenceDownloader {
             log.log(LogLevel.WARNING, "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
                     ", error code: " + request.errorCode());
             if (request.isError() && request.errorCode() == ErrorCode.CONNECTION || request.errorCode() == ErrorCode.TIMEOUT) {
-                log.log(LogLevel.WARNING, "Setting error for connection " + connection.getAddress());
+                log.log(LogLevel.INFO, "Mark connection " + connection.getAddress() + " with error");
                 connectionPool.setError(connection, request.errorCode());
             }
             return false;
