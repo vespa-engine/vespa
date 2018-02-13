@@ -79,24 +79,7 @@ public class FileDistributionRpcServer {
     @SuppressWarnings({"UnusedDeclaration"})
     public final void getFile(Request req) {
         req.detach();
-        rpcDownloadExecutor.execute(() -> {
-            FileReference fileReference = new FileReference(req.parameters().get(0).asString());
-            log.log(LogLevel.DEBUG, "getFile() called for file reference '" + fileReference.value() + "'");
-            Optional<File> pathToFile = downloader.getFile(fileReference);
-            try {
-                if (pathToFile.isPresent()) {
-                    req.returnValues().add(new StringValue(pathToFile.get().getAbsolutePath()));
-                    log.log(LogLevel.DEBUG, "File reference '" + fileReference.value() + "' available at " + pathToFile.get());
-                } else {
-                    log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
-                    req.setError(fileReferenceDoesNotExists, "File reference '" + fileReference.value() + "' not found");
-                }
-            } catch (Throwable e) {
-                log.log(LogLevel.WARNING, "File reference '" + fileReference.value() + "' got exception: " + e.getMessage());
-                req.setError(fileReferenceInternalError, "File reference '" + fileReference.value() + "' removed");
-            }
-            req.returnRequest();
-        });
+        downloadFile(req);
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
@@ -128,6 +111,27 @@ public class FileDistributionRpcServer {
         downloader.queueForAsyncDownload(fileReferences);
 
         req.returnValues().add(new Int32Value(0));
+    }
+
+    private void downloadFile(Request req) {
+        rpcDownloadExecutor.execute(() -> {
+            FileReference fileReference = new FileReference(req.parameters().get(0).asString());
+            log.log(LogLevel.DEBUG, "getFile() called for file reference '" + fileReference.value() + "'");
+            Optional<File> pathToFile = downloader.getFile(fileReference);
+            try {
+                if (pathToFile.isPresent()) {
+                    req.returnValues().add(new StringValue(pathToFile.get().getAbsolutePath()));
+                    log.log(LogLevel.DEBUG, "File reference '" + fileReference.value() + "' available at " + pathToFile.get());
+                } else {
+                    log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
+                    req.setError(fileReferenceDoesNotExists, "File reference '" + fileReference.value() + "' not found");
+                }
+            } catch (Throwable e) {
+                log.log(LogLevel.WARNING, "File reference '" + fileReference.value() + "' got exception: " + e.getMessage());
+                req.setError(fileReferenceInternalError, "File reference '" + fileReference.value() + "' removed");
+            }
+            req.returnRequest();
+        });
     }
 
 }
