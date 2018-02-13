@@ -90,9 +90,8 @@ public class TenantBuilder {
      * Create a real tenant from the properties given by this builder.
      *
      * @return a new {@link Tenant} instance.
-     * @throws Exception if building fails
      */
-    public Tenant build() throws Exception {
+    public Tenant build() {
         createTenantRequestHandler();
         createApplicationRepo();
         createRemoteSessionFactory(componentRegistry.getClock());
@@ -169,7 +168,7 @@ public class TenantBuilder {
         }
     }
 
-    private void createRemoteSessionRepo() throws Exception {
+    private void createRemoteSessionRepo() {
         if (remoteSessionRepo == null) {
             remoteSessionRepo = new RemoteSessionRepo(componentRegistry.getCurator(),
                     remoteSessionFactory,
