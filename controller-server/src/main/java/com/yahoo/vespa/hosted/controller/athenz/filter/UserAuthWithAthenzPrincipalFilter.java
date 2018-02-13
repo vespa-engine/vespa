@@ -21,7 +21,7 @@ import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.controller.athenz.filter.SecurityFilterUtils.sendErrorResponse;
+import static com.yahoo.vespa.hosted.controller.restapi.filter.SecurityFilterUtils.sendErrorResponse;
 
 /**
  * A variant of the {@link AthenzPrincipalFilter} to be used in combination with a cookie-based
