@@ -102,6 +102,11 @@ public class ZmsClientImpl implements ZmsClient {
         return hasAccess(TenantAction._modify_.name(), tenantResourceString(tenantDomain), identity);
     }
 
+    @Override
+    public boolean hasHostedOperatorAccess(AthenzIdentity identity) {
+        return getOrThrow(() -> hasAccess("modify", service.getDomain() + ":hosted-vespa", identity));
+    }
+
     /**
      * Used when creating tenancies. As there are no tenancy policies at this point,
      * we cannot use {@link #hasTenantAdminAccess(AthenzIdentity, AthenzDomain)}

@@ -1,13 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.mock;
 
-import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -17,9 +19,15 @@ import java.util.Set;
 public class AthenzDbMock {
 
     public final Map<AthenzDomain, Domain> domains = new HashMap<>();
+    public final List<AthenzIdentity> hostedOperators = new ArrayList<>();
 
     public AthenzDbMock addDomain(Domain domain) {
         domains.put(domain.name, domain);
+        return this;
+    }
+
+    public AthenzDbMock addHostedOperator(AthenzIdentity athenzIdentity) {
+        hostedOperators.add(athenzIdentity);
         return this;
     }
 
