@@ -692,6 +692,11 @@
                 <artifactId>athenz-zts-java-client</artifactId>
                 <version>${athenz.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.github.tomakehurst</groupId>
+                <artifactId>wiremock-standalone</artifactId>
+                <version>2.6.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -702,7 +707,7 @@
         <aries.util.version>1.0.0</aries.util.version>
         <asm-debug-all.version>5.0.3</asm-debug-all.version>
         <!-- Athenz dependencies. Make sure these dependencies matches those in Vespa's internal repositories -->
-        <athenz.version>1.7.28</athenz.version>
+        <athenz.version>1.7.41</athenz.version>
         <bouncycastle.version>1.58</bouncycastle.version>
         <commons-lang.version>2.6</commons-lang.version>
         <!-- WARNING: If you change curator version, you also need to update
