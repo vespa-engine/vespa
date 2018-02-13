@@ -51,6 +51,11 @@ public class MemoryTenantApplications implements TenantApplications {
     }
 
     @Override
+    public void removeUnusedApplications() {
+        // do nothing
+    }
+
+    @Override
     public void close() {
         isOpen = false;
     }

@@ -45,6 +45,12 @@ public interface TenantApplications {
     Transaction deleteApplication(ApplicationId applicationId);
 
     /**
+     * Removes unused applications
+     *
+     */
+    void removeUnusedApplications();
+
+    /**
      * Closes the application repo. Once a repo has been closed, it should not be used again.
      */
     void close();
