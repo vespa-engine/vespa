@@ -63,6 +63,8 @@ public:
     void testAND();
     void testDocumentRouteSelector();
     void testDocumentRouteSelectorIgnore();
+    void remove_document_messages_are_sent_to_the_route_handling_the_given_document_type();
+    void remove_document_messages_with_legacy_document_ids_are_sent_to_all_routes();
     void testExternSend();
     void testExternMultipleSlobroks();
     void testLoadBalancer();
@@ -103,6 +105,8 @@ Test::Main() {
     testAND();                          TEST_FLUSH();
     testDocumentRouteSelector();        TEST_FLUSH();
     testDocumentRouteSelectorIgnore();  TEST_FLUSH();
+    remove_document_messages_are_sent_to_the_route_handling_the_given_document_type(); TEST_FLUSH();
+    remove_document_messages_with_legacy_document_ids_are_sent_to_all_routes();        TEST_FLUSH();
     testExternSend();                   TEST_FLUSH();
     testExternMultipleSlobroks();       TEST_FLUSH();
     testLoadBalancer();                 TEST_FLUSH();
@@ -670,6 +674,62 @@ Test::testDocumentRouteSelectorIgnore()
     frame.setMessage(make_unique<UpdateDocumentMessage>(
             make_shared<DocumentUpdate>(*_docType, DocumentId("doc:scheme:"))));
     EXPECT_TRUE(frame.testSelect(StringList().add("docproc/cluster.foo")));
+}
+
+namespace {
+
+vespalib::string
+createDocumentRouteSelectorConfigWithTwoRoutes()
+{
+    return "[DocumentRouteSelector:raw:"
+            "route[2]\n"
+            "route[0].name \"testdoc-route\"\n"
+            "route[0].selector \"testdoc and testdoc.stringfield != '0'\"\n"
+            "route[0].feed \"\"\n"
+            "route[1].name \"other-route\"\n"
+            "route[1].selector \"other and other.intfield != '0'\"\n"
+            "route[1].feed \"\"\n]";
+}
+
+std::unique_ptr<TestFrame>
+createFrameWithTwoRoutes(DocumentTypeRepo::SP repo)
+{
+    auto result = std::make_unique<TestFrame>(repo);
+    result->setHop(mbus::HopSpec("test", createDocumentRouteSelectorConfigWithTwoRoutes())
+                           .addRecipient("testdoc-route").addRecipient("other-route"));
+    return result;
+}
+
+std::unique_ptr<RemoveDocumentMessage>
+makeRemove(vespalib::string docId)
+{
+    return std::make_unique<RemoveDocumentMessage>(DocumentId(docId));
+}
+
+}
+
+void
+Test::remove_document_messages_are_sent_to_the_route_handling_the_given_document_type()
+{
+    auto frame = createFrameWithTwoRoutes(_repo);
+
+    frame->setMessage(makeRemove("id:ns:testdoc::1"));
+    EXPECT_TRUE(frame->testSelect({"testdoc-route"}));
+
+    frame->setMessage(makeRemove("id:ns:other::1"));
+    EXPECT_TRUE(frame->testSelect({"other-route"}));
+}
+
+void
+Test::remove_document_messages_with_legacy_document_ids_are_sent_to_all_routes()
+{
+    auto frame = createFrameWithTwoRoutes(_repo);
+
+    frame->setMessage(makeRemove("userdoc:testdoc:1234:1"));
+    EXPECT_TRUE(frame->testSelect({"testdoc-route", "other-route"}));
+
+    frame->setMessage(makeRemove("userdoc:other:1234:1"));
+    EXPECT_TRUE(frame->testSelect({"testdoc-route", "other-route"}));
 }
 
 namespace {

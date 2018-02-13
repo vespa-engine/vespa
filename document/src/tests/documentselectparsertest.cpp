@@ -37,6 +37,7 @@ class DocumentSelectParserTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testThatComplexFieldValuesHaveCorrectFieldNames);
     CPPUNIT_TEST(testBodyFieldDetection);
     CPPUNIT_TEST(testDocumentUpdates);
+    CPPUNIT_TEST(testDocumentIdsInRemoves);
     CPPUNIT_TEST(test_syntax_error_reporting);
     CPPUNIT_TEST(test_operator_precedence);
     CPPUNIT_TEST(test_token_used_as_ident_preserves_casing);
@@ -102,6 +103,7 @@ public:
     void testDocumentUpdates2();
     void testDocumentUpdates3();
     void testDocumentUpdates4();
+    void testDocumentIdsInRemoves();
     void test_syntax_error_reporting();
     void test_operator_precedence();
     void test_token_used_as_ident_preserves_casing();
@@ -1236,6 +1238,19 @@ void DocumentSelectParserTest::testDocumentUpdates4()
     PARSEI("\"foo\" + 4 = 25", *_update[0], Invalid);
     PARSEI("34.0 % 4 = 4", *_update[0], Invalid);
     PARSEI("-6 % 10 = -6", *_update[0], True);
+}
+
+void DocumentSelectParserTest::testDocumentIdsInRemoves()
+{
+    PARSE("testdoctype1", DocumentId("id:ns:testdoctype1::1"), True);
+    PARSE("testdoctype1", DocumentId("id:ns:null::1"), False);
+    PARSE("testdoctype1", DocumentId("userdoc:testdoctype1:1234:1"), False);
+    PARSE("testdoctype1.headerval", DocumentId("id:ns:testdoctype1::1"), Invalid);
+    // FIXME: Should ideally be False. As long as there always is an AND node with doctype in a selection expression
+    // we won't end up sending removes using the wrong route.
+    PARSE("testdoctype1.headerval", DocumentId("id:ns:null::1"), Invalid);
+    PARSE("testdoctype1.headerval == 0", DocumentId("id:ns:testdoctype1::1"), Invalid);
+    PARSE("testdoctype1 and testdoctype1.headerval == 0", DocumentId("id:ns:testdoctype1::1"), Invalid);
 }
 
 void DocumentSelectParserTest::testUtf8()

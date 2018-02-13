@@ -41,7 +41,7 @@ DocType::contains(const Context &context) const
                                        _doctype)));
     }
     if (context._docId != NULL) {
-        return ResultList(Result::False);
+        return ResultList(Result::get((context._docId->getDocType() == _doctype)));
     }
     const DocumentUpdate &upd(*context._docUpdate);
     return ResultList(Result::get(

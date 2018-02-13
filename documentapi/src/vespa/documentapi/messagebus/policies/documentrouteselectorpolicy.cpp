@@ -15,6 +15,8 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
+#include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
+
 LOG_SETUP(".documentrouteselectorpolicy");
 
 using document::select::Result;
@@ -128,6 +130,15 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context, const vespali
 
     case DocumentProtocol::MESSAGE_UPDATEDOCUMENT:
         return it->second->contains(static_cast<const UpdateDocumentMessage&>(msg).getDocumentUpdate()) != Result::False;
+
+    case DocumentProtocol::MESSAGE_REMOVEDOCUMENT: {
+        const RemoveDocumentMessage &removeMsg = static_cast<const RemoveDocumentMessage &>(msg);
+        if (removeMsg.getDocumentId().hasDocType()) {
+            return it->second->contains(removeMsg.getDocumentId()) != Result::False;
+        } else {
+            return true;
+        }
+    }
 
     case DocumentProtocol::MESSAGE_MULTIOPERATION:
     {

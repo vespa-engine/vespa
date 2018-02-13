@@ -133,6 +133,8 @@ public class AttributeNode implements ExpressionNode {
             return handler.values;
         } else if (value instanceof DocumentUpdate) {
             return Result.INVALID;
+        } else if (value instanceof DocumentRemove) {
+            return Result.INVALID;
         }
         return Result.FALSE;
     }
