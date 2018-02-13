@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.jrt.DoubleArray;
 import com.yahoo.jrt.Int32Value;
@@ -15,6 +16,8 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -30,6 +33,8 @@ public class FileDistributionRpcServer {
 
     private final Supervisor supervisor;
     private final FileDownloader downloader;
+    private final ExecutorService rpcDownloadExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),
+                                                                                     new DaemonThreadFactory("Rpc executor"));
 
     public FileDistributionRpcServer(Supervisor supervisor, FileDownloader downloader) {
         this.supervisor = supervisor;
@@ -74,22 +79,24 @@ public class FileDistributionRpcServer {
     @SuppressWarnings({"UnusedDeclaration"})
     public final void getFile(Request req) {
         req.detach();
-        FileReference fileReference = new FileReference(req.parameters().get(0).asString());
-        log.log(LogLevel.DEBUG, "getFile() called for file reference '" + fileReference.value() + "'");
-        Optional<File> pathToFile = downloader.getFile(fileReference);
-        try {
-            if (pathToFile.isPresent()) {
-                req.returnValues().add(new StringValue(pathToFile.get().getAbsolutePath()));
-                log.log(LogLevel.DEBUG, "File reference '" + fileReference.value() + "' available at " + pathToFile.get());
-            } else {
-                log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
-                req.setError(fileReferenceDoesNotExists, "File reference '" + fileReference.value() + "' not found");
+        rpcDownloadExecutor.execute(() -> {
+            FileReference fileReference = new FileReference(req.parameters().get(0).asString());
+            log.log(LogLevel.DEBUG, "getFile() called for file reference '" + fileReference.value() + "'");
+            Optional<File> pathToFile = downloader.getFile(fileReference);
+            try {
+                if (pathToFile.isPresent()) {
+                    req.returnValues().add(new StringValue(pathToFile.get().getAbsolutePath()));
+                    log.log(LogLevel.DEBUG, "File reference '" + fileReference.value() + "' available at " + pathToFile.get());
+                } else {
+                    log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
+                    req.setError(fileReferenceDoesNotExists, "File reference '" + fileReference.value() + "' not found");
+                }
+            } catch (Throwable e) {
+                log.log(LogLevel.WARNING, "File reference '" + fileReference.value() + "' got exception: " + e.getMessage());
+                req.setError(fileReferenceInternalError, "File reference '" + fileReference.value() + "' removed");
             }
-        } catch (Throwable e) {
-            log.log(LogLevel.WARNING, "File reference '" + fileReference.value() + "' got exception: " + e.getMessage());
-            req.setError(fileReferenceInternalError, "File reference '" + fileReference.value() + "' removed");
-        }
-        req.returnRequest();
+            req.returnRequest();
+        });
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
