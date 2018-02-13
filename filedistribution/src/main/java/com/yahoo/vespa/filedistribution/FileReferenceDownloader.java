@@ -118,7 +118,7 @@ public class FileReferenceDownloader {
             log.log(LogLevel.WARNING, "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
                     ", error code: " + request.errorCode());
             if (request.isError() && request.errorCode() == ErrorCode.CONNECTION || request.errorCode() == ErrorCode.TIMEOUT) {
-                log.log(LogLevel.INFO, "Mark connection " + connection.getAddress() + " with error");
+                log.log(LogLevel.WARNING, "Setting error for connection " + connection.getAddress());
                 connectionPool.setError(connection, request.errorCode());
             }
             return false;
