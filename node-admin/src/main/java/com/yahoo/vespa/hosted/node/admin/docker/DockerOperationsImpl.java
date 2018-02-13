@@ -80,6 +80,7 @@ public class DockerOperationsImpl implements DockerOperations {
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/yca"), true);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/ycore++"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/zookeeper"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/zpu"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("tmp"), false);
     }
 
