@@ -95,7 +95,7 @@ public class Authorizer {
         return new ForbiddenException(formattedMessage);
     }
 
-    private boolean isTenantAdmin(AthenzIdentity identity, Tenant tenant) {
+    public boolean isTenantAdmin(AthenzIdentity identity, Tenant tenant) {
         switch (tenant.tenantType()) {
             case ATHENS:
                 return isAthenzTenantAdmin(identity, tenant.getAthensDomain().get());
