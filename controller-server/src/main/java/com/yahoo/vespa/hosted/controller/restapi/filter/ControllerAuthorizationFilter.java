@@ -146,7 +146,7 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     }
 
     private void verifyIsTenantAdmin(AthenzPrincipal principal, TenantId tenantId) {
-        if (!isHostedOperator(principal.getIdentity()) && !isTenantAdmin(principal.getIdentity(), tenantId)) {
+        if (!isTenantAdmin(principal.getIdentity(), tenantId)) {
             throw new ForbiddenException("Tenant admin or Vespa operator role required");
         }
     }
