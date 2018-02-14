@@ -376,4 +376,14 @@ DistributorTestUtil::getDistribution() const {
     return getBucketSpaceRepo().get(makeBucketSpace()).getDistribution();
 }
 
+std::vector<document::BucketSpace>
+DistributorTestUtil::getBucketSpaces() const
+{
+    std::vector<document::BucketSpace> res;
+    for (const auto &repo : getBucketSpaceRepo()) {
+        res.push_back(repo.first);
+    }
+    return res;
+}
+
 }

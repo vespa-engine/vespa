@@ -9,11 +9,13 @@
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <tests/distributor/distributortestutil.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
 
 using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;
+using document::FixedBucketSpaces;
 
 namespace storage {
 namespace distributor {
@@ -22,9 +24,14 @@ class IdealStateManagerTest : public CppUnit::TestFixture,
                               public DistributorTestUtil
 {
 public:
-    IdealStateManagerTest() {}
+    IdealStateManagerTest()
+        : CppUnit::TestFixture(),
+        DistributorTestUtil(),
+        _bucketSpaces()
+    {}
     void setUp() override {
         createLinks();
+        _bucketSpaces = getBucketSpaces();
     };
 
     void tearDown() override {
@@ -54,6 +61,9 @@ public:
     CPPUNIT_TEST(testBlockIdealStateOpsOnFullRequestBucketInfo);
     CPPUNIT_TEST(testBlockCheckForAllOperationsToSpecificBucket);
     CPPUNIT_TEST_SUITE_END();
+private:
+    std::vector<document::BucketSpace> _bucketSpaces;
+    std::string makeBucketStatusString(const std::string &defaultSpaceBucketStatus);
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(IdealStateManagerTest);
@@ -91,8 +101,7 @@ IdealStateManagerTest::testStatusPage() {
     std::ostringstream ost;
     getIdealStateManager().getBucketStatus(ost);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("<h2>default - BucketSpace(0x0000000000000001)</h2>\n"
-                                     "BucketId(0x4000000000000002) : [node(idx=0,crc=0xff,docs=10/10,bytes=10/10,trusted=true,active=true,ready=false)]<br>\n"
+    CPPUNIT_ASSERT_EQUAL(makeBucketStatusString("BucketId(0x4000000000000002) : [node(idx=0,crc=0xff,docs=10/10,bytes=10/10,trusted=true,active=true,ready=false)]<br>\n"
                                      "<b>BucketId(0x4000000000000005):</b> <i> : split: [Splitting bucket because its maximum size (200 b, 100 docs, 100 meta, 200 b total) is "
                                      "higher than the configured limit of (100, 1000000)]</i> [node(idx=0,crc=0xff,docs=100/100,bytes=200/200,trusted=true,"
                                      "active=true,ready=false)]<br>\n"),
@@ -113,8 +122,7 @@ IdealStateManagerTest::testDisabledStateChecker() {
     std::ostringstream ost;
     getIdealStateManager().getBucketStatus(ost);
 
-    CPPUNIT_ASSERT_EQUAL(std::string(
-        "<h2>default - BucketSpace(0x0000000000000001)</h2>\n"
+    CPPUNIT_ASSERT_EQUAL(makeBucketStatusString(
         "BucketId(0x4000000000000002) : [node(idx=0,crc=0xff,docs=10/10,bytes=10/10,trusted=true,active=true,ready=false)]<br>\n"
          "<b>BucketId(0x4000000000000005):</b> <i> : split: [Splitting bucket because its maximum size (200 b, 100 docs, 100 meta, 200 b total) is "
          "higher than the configured limit of (100, 1000000)]</i> [node(idx=0,crc=0xff,docs=100/100,bytes=200/200,trusted=true,"
@@ -259,6 +267,19 @@ IdealStateManagerTest::testBlockCheckForAllOperationsToSpecificBucket()
         // But blocked for bucket match!
         CPPUNIT_ASSERT(op.checkBlockForAllNodes(makeDocumentBucket(bid), tracker));
     }
+}
+
+std::string
+IdealStateManagerTest::makeBucketStatusString(const std::string &defaultSpaceBucketStatus)
+{
+    std::ostringstream ost;
+    for (const auto &bucketSpace : _bucketSpaces) {
+        ost << "<h2>" << FixedBucketSpaces::to_string(bucketSpace) << " - " << bucketSpace << "</h2>\n";
+        if (bucketSpace == FixedBucketSpaces::default_space()) {
+            ost << defaultSpaceBucketStatus;
+        }
+    }
+    return ost.str();
 }
 
 } // distributor
