@@ -9,6 +9,7 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 #include <tests/distributor/distributortestutil.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
@@ -18,6 +19,7 @@
 
 using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;
+using document::FixedBucketSpaces;
 
 namespace storage {
 
@@ -58,6 +60,9 @@ class Distributor_Test : public CppUnit::TestFixture,
     CPPUNIT_TEST(closing_aborts_priority_queued_client_requests);
     CPPUNIT_TEST_SUITE_END();
 
+public:
+    Distributor_Test();
+
 protected:
     void testOperationGeneration();
     void testOperationsGeneratedAndStartedWithoutDuplicates();
@@ -89,9 +94,12 @@ protected:
     void internal_messages_are_started_in_fifo_order_batch();
     void closing_aborts_priority_queued_client_requests();
 
+    std::vector<document::BucketSpace> _bucketSpaces;
+
 public:
     void setUp() override {
         createLinks();
+        _bucketSpaces = getBucketSpaces();
     };
 
     void tearDown() override {
@@ -196,6 +204,13 @@ private:
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(Distributor_Test);
+
+Distributor_Test::Distributor_Test()
+    : CppUnit::TestFixture(),
+    DistributorTestUtil(),
+    _bucketSpaces()
+{
+}
 
 void
 Distributor_Test::testOperationGeneration()
@@ -752,19 +767,23 @@ void Distributor_Test::sendDownClusterStateCommand() {
 }
 
 void Distributor_Test::replyToSingleRequestBucketInfoCommandWith1Bucket() {
-    CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.commands.size());
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::REQUESTBUCKETINFO,
-                         _sender.commands[0]->getType());
-    auto& bucketReq(static_cast<api::RequestBucketInfoCommand&>(
-            *_sender.commands[0]));
-    auto bucketReply = bucketReq.makeReply();
-    // Make sure we have a bucket to route our remove op to, or we'd get
-    // an immediate reply anyway.
-    dynamic_cast<api::RequestBucketInfoReply&>(*bucketReply)
-        .getBucketInfo().push_back(
-            api::RequestBucketInfoReply::Entry(document::BucketId(1, 1),
-                api::BucketInfo(20, 10, 12, 50, 60, true, true)));
-    _distributor->handleMessage(std::move(bucketReply));
+    CPPUNIT_ASSERT_EQUAL(_bucketSpaces.size(), _sender.commands.size());
+    for (uint32_t i = 0; i < _sender.commands.size(); ++i) {
+        CPPUNIT_ASSERT_EQUAL(api::MessageType::REQUESTBUCKETINFO,
+                             _sender.commands[i]->getType());
+        auto& bucketReq(static_cast<api::RequestBucketInfoCommand&>
+                        (*_sender.commands[i]));
+        auto bucketReply = bucketReq.makeReply();
+        if (bucketReq.getBucketSpace() == FixedBucketSpaces::default_space()) {
+            // Make sure we have a bucket to route our remove op to, or we'd get
+            // an immediate reply anyway.
+            dynamic_cast<api::RequestBucketInfoReply&>(*bucketReply)
+                .getBucketInfo().push_back(
+                        api::RequestBucketInfoReply::Entry(document::BucketId(1, 1),
+                                                           api::BucketInfo(20, 10, 12, 50, 60, true, true)));
+        }
+        _distributor->handleMessage(std::move(bucketReply));
+    }
     _sender.commands.clear();
 }
 
