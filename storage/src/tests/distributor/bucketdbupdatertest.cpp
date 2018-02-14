@@ -2099,7 +2099,7 @@ BucketDBUpdaterTest::testClusterStateAlwaysSendsFullFetchWhenDistributionChangeP
 
     CPPUNIT_ASSERT_EQUAL(12 * _bucketSpaces.size(), _sender.commands.size());
 
-    // Send replies for first 6 * _bucketSpaces.siz() (outdated requests).
+    // Send replies for first 6 * _bucketSpaces.size() (outdated requests).
     int numBuckets = 10;
     for (uint32_t i = 0; i < 6 * _bucketSpaces.size(); ++i) {
         fakeBucketReply(lib::ClusterState("distributor:6 storage:6"),
