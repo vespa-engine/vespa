@@ -132,8 +132,11 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                                      Arguments invocationArguments) {
         // TODO: What is our position on argument overloading/argument count differences?
         Map<String, String> bindings = new HashMap<>(formalArguments.size());
-        for (int i = 0; i < formalArguments.size(); i++)
-            bindings.put(formalArguments.get(i), invocationArguments.expressions().get(i).toString()); // TODO: toString does not work generally
+        for (int i = 0; i < formalArguments.size(); i++) {
+            String identifier = invocationArguments.expressions().get(i).toString(); // TODO: ...
+            identifier = super.bindings.getOrDefault(identifier, identifier);
+            bindings.put(formalArguments.get(i), identifier);
+        }
         return bindings;
     }
 

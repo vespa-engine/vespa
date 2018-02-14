@@ -20,6 +20,7 @@ public class FunctionReferenceContext {
     private final ImmutableMap<String, ExpressionFunction> functions;
 
     /** Mapping from argument names to the expressions they resolve to */
+    // TODO: Make private
     public final Map<String, String> bindings = new HashMap<>();
 
     /** Create a context for a single serialization task */

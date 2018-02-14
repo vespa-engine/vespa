@@ -146,6 +146,43 @@ public class RankingExpressionTypeValidatorTestCase {
                      summaryFeatures(profile).get("macro1(b)").type(profile.typeContext(builder.getQueryProfileRegistry())));
     }
 
+    @Test
+    public void testMacroInvocationTypes_Nested() throws Exception {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        builder.importString(joinLines(
+                "search test {",
+                "  document test { ",
+                "    field a type tensor(x[],y[]) {",
+                "      indexing: attribute",
+                "    }",
+                "    field b type tensor(z[10]) {",
+                "      indexing: attribute",
+                "    }",
+                "  }",
+                "  rank-profile my_rank_profile {",
+                "    macro use_first(attribute1, attribute2) {",
+                "      expression: attribute(attribute1)",
+                "    }",
+                "    macro use_second(attribute1, attribute2) {",
+                "      expression: use_first(attribute2, attribute1)",
+                "    }",
+                "    summary-features {",
+                "      use_first(a, b)",
+                "      use_second(a, b)",
+                "    }",
+                "  }",
+                "}"
+        ));
+        builder.build();
+        RankProfile profile =
+                builder.getRankProfileRegistry().getRankProfile(builder.getSearch(), "my_rank_profile");
+        assertEquals(TensorType.fromSpec("tensor(x[],y[])"),
+                     summaryFeatures(profile).get("use_first(a,b)").type(profile.typeContext(builder.getQueryProfileRegistry())));
+        assertEquals(TensorType.fromSpec("tensor(z[10])"),
+                     summaryFeatures(profile).get("use_second(a,b)").type(profile.typeContext(builder.getQueryProfileRegistry())));
+    }
+
     private Map<String, ReferenceNode> summaryFeatures(RankProfile profile) {
         return profile.getSummaryFeatures().stream().collect(Collectors.toMap(f -> f.toString(), f -> f));
     }
