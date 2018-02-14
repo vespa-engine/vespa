@@ -121,13 +121,16 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withAddCapability("SYS_ADMIN"); // Needed for perf
 
             if (!docker.networkNPTed()) {
-                logger.info("Network not NPTed - setting up container with public ip address on a macvlan");
+                logger.info("Network is macvlan - setting up container with public ip address on a macvlan");
                 command.withIpAddress(nodeInetAddress);
                 command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
                 command.withVolume("/etc/hosts", "/etc/hosts"); // TODO This is probably not nessesary - review later
             } else {
                 logger.info("Network is NPTed - setting up container with private ip address");
-                command.withIpAddress(nodeInetAddress);
+                command.withIpAddress(NetworkPrefixTranslator.translate(
+                        nodeInetAddress,
+                        InetAddress.getByName("fd00::"),
+                        64));
                 command.withNetworkMode("vespa-bridge");
             }
 
@@ -163,6 +166,10 @@ public class DockerOperationsImpl implements DockerOperations {
         } catch (IOException e) {
             throw new RuntimeException("Failed to create container " + containerName.asString(), e);
         }
+    }
+
+    private InetAddress toPrivateSubnet(InetAddress nodeInetAddress) {
+        return null;
     }
 
     @Override
