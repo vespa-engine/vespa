@@ -106,6 +106,12 @@
       <artifactId>vespalog</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>vespa-athenz</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
     <!-- WARNING: These are only here to make bundlification work -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
