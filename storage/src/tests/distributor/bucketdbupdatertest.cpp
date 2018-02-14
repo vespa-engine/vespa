@@ -986,13 +986,13 @@ BucketDBUpdaterTest::testBitChange()
                     lib::Distribution distribution = defaultDistributorBucketSpace().getDistribution();
                     std::vector<uint16_t> distributors;
                     if (distribution.getIdealDistributorNode(
-                                                                     lib::ClusterState("redundancy:1 bits:14 storage:1 distributor:2"),
-                                                                     document::BucketId(16, i))
+                        lib::ClusterState("redundancy:1 bits:14 storage:1 distributor:2"),
+                        document::BucketId(16, i))
                         == 0)
                     {
                         vec.push_back(api::RequestBucketInfoReply::Entry(
-                                                                                 document::BucketId(16, i),
-                                                                                 api::BucketInfo(10,1,1)));
+                           document::BucketId(16, i),
+                           api::BucketInfo(10,1,1)));
 
                         bucketlist.push_back(document::BucketId(16, i));
                         cnt++;
