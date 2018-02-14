@@ -65,7 +65,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       framework::StatusReporter("distributor", "Distributor"),
       _compReg(compReg),
       _component(compReg, "distributor"),
-      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(_component.enableMultipleBucketSpaces())),
+      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
       _metrics(new DistributorMetricSet(_component.getLoadTypes()->getMetricLoadTypes())),
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
@@ -527,10 +527,8 @@ Distributor::propagateDefaultDistribution(
         std::shared_ptr<const lib::Distribution> distribution)
 {
     _bucketSpaceRepo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
-    if (_component.enableMultipleBucketSpaces()) {
-        auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
-        _bucketSpaceRepo->get(document::FixedBucketSpaces::global_space()).setDistribution(std::move(global_distr));
-    }
+    auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
+    _bucketSpaceRepo->get(document::FixedBucketSpaces::global_space()).setDistribution(std::move(global_distr));
 }
 
 void

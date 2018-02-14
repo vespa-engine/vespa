@@ -14,13 +14,11 @@ using document::BucketSpace;
 namespace storage {
 namespace distributor {
 
-DistributorBucketSpaceRepo::DistributorBucketSpaceRepo(bool enableGlobalBucketSpace)
+DistributorBucketSpaceRepo::DistributorBucketSpaceRepo()
     : _map()
 {
     add(document::FixedBucketSpaces::default_space(), std::make_unique<DistributorBucketSpace>());
-    if (enableGlobalBucketSpace) {
-        add(document::FixedBucketSpaces::global_space(), std::make_unique<DistributorBucketSpace>());
-    }
+    add(document::FixedBucketSpaces::global_space(), std::make_unique<DistributorBucketSpace>());
 }
 
 DistributorBucketSpaceRepo::~DistributorBucketSpaceRepo() = default;
