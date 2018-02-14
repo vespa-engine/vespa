@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantType;
@@ -45,6 +46,7 @@ public class ApplicationInstanceAuthorizer {
                                     Tenant tenant,
                                     ApplicationName application) {
         AthenzDomain principalDomain = principal.getDomain();
+        if (isHostedOperator(principal.getIdentity())) return;
 
         if (!principalDomain.equals(SCREWDRIVER_DOMAIN)) {
             throw loggedForbiddenException(
@@ -110,6 +112,11 @@ public class ApplicationInstanceAuthorizer {
         String formattedMessage = String.format(message, args);
         log.info(formattedMessage);
         return new NotAuthorizedException(formattedMessage);
+    }
+
+    private boolean isHostedOperator(AthenzIdentity identity) {
+        return athenzClientFactory.createZmsClientWithServicePrincipal()
+                .hasHostedOperatorAccess(identity);
     }
 
     private boolean hasDeployAccessToAthenzApplication(AthenzPrincipal principal, AthenzDomain domain, ApplicationName application) {

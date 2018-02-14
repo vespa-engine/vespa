@@ -154,7 +154,6 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     private void verifyIsTenantPipelineOperator(AthenzPrincipal principal,
                                                 TenantId tenantId,
                                                 ApplicationName applicationName) {
-        if (isHostedOperator(principal.getIdentity())) return;
         controller.tenants().tenant(tenantId)
                 .ifPresent(tenant -> applicationInstanceAuthorizer.throwIfUnauthorized(principal, tenant, applicationName));
     }
