@@ -45,6 +45,9 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private static final String MANAGER_NAME = "node-admin";
 
+    private static final String LOCAL_IPV6_PREFIX = "fd00::";
+    private static final String DOCKER_CUSTOM_BRIDGE_NETWORK_NAME = "vespa-bridge";
+
     // Map of directories to mount and whether they should be writable by everyone
     private static final Map<String, Boolean> DIRECTORIES_TO_MOUNT = new HashMap<>();
 
@@ -121,17 +124,15 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withAddCapability("SYS_ADMIN"); // Needed for perf
 
             if (!docker.networkNPTed()) {
-                logger.info("Network is macvlan - setting up container with public ip address on a macvlan");
                 command.withIpAddress(nodeInetAddress);
                 command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
                 command.withVolume("/etc/hosts", "/etc/hosts"); // TODO This is probably not nessesary - review later
             } else {
-                logger.info("Network is NPTed - setting up container with private ip address");
                 command.withIpAddress(NetworkPrefixTranslator.translate(
                         nodeInetAddress,
-                        InetAddress.getByName("fd00::"),
+                        InetAddress.getByName(LOCAL_IPV6_PREFIX),
                         64));
-                command.withNetworkMode("vespa-bridge");
+                command.withNetworkMode(DOCKER_CUSTOM_BRIDGE_NETWORK_NAME);
             }
 
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
@@ -166,10 +167,6 @@ public class DockerOperationsImpl implements DockerOperations {
         } catch (IOException e) {
             throw new RuntimeException("Failed to create container " + containerName.asString(), e);
         }
-    }
-
-    private InetAddress toPrivateSubnet(InetAddress nodeInetAddress) {
-        return null;
     }
 
     @Override

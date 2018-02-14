@@ -16,7 +16,7 @@ class NetworkPrefixTranslator {
      *
      * @param address    The original address to translate
      * @param prefix     The prefix address
-     * @param subnetSize nof bits - e.g /64 subnet is 64
+     * @param subnetSize in bits - e.g a /64 subnet equals 64 bits
      * @return The translated address
      */
     static Inet6Address translate(InetAddress address, InetAddress prefix, int subnetSize) {
