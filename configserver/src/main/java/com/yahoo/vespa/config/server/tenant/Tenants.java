@@ -94,10 +94,10 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor);
         directoryCache.start();
         directoryCache.addListener(this);
-        log.log(LogLevel.INFO, "Creating all tenants"); // TODO: Change to debug
+        log.log(LogLevel.DEBUG, "Creating all tenants");
         createTenants();
         notifyTenantsLoaded();
-        log.log(LogLevel.INFO, "All tenants created"); // TODO: Change to debug
+        log.log(LogLevel.DEBUG, "All tenants created");
         checkForRemovedApplicationsService.scheduleWithFixedDelay(this::removeUnusedApplications,
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
