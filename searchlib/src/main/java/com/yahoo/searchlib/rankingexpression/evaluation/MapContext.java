@@ -42,7 +42,7 @@ public class MapContext extends Context {
 
     /** Returns the type of the given value key, or null if it is not bound. */
     @Override
-    public TensorType getType(String key) {
+    public TensorType getType(Name key) {
         Value value = bindings.get(key);
         if (value == null) return null;
         return value.type();

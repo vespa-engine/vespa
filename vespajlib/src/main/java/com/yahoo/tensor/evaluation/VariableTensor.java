@@ -45,7 +45,7 @@ public class VariableTensor extends PrimitiveTensorFunction {
 
     @Override
     public TensorType type(TypeContext context) {
-        TensorType givenType = context.getType(name);
+        TensorType givenType = context.getType(new TypeContext.Name(name));
         if (givenType == null) return null;
         verifyType(givenType);
         return givenType;

@@ -18,6 +18,7 @@ import com.yahoo.searchdefinition.parser.TokenMgrError;
 import com.yahoo.searchdefinition.processing.Processing;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.IOException;
@@ -153,7 +154,7 @@ public class SearchBuilder {
         } catch (TokenMgrError e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
         } catch (ParseException pe) {
-            throw new ParseException(stream.formatException(pe.getMessage()));
+            throw new ParseException(stream.formatException(Exceptions.toMessageString(pe)));
         }
         return importRawSearch(search);
     }

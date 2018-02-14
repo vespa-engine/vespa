@@ -3,12 +3,10 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
-import com.yahoo.searchlib.rankingexpression.rule.EvaluationTypeContext;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.evaluation.MapEvaluationContext;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collection;
@@ -26,9 +24,9 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-public class MapEvaluationTypeContext extends FunctionReferenceContext implements EvaluationTypeContext {
+public class MapEvaluationTypeContext extends FunctionReferenceContext implements TypeContext {
 
-    private final Map<String, TensorType> featureTypes = new HashMap<>();
+    private final Map<ReferenceNode.Reference, TensorType> featureTypes = new HashMap<>();
 
     public MapEvaluationTypeContext(Collection<ExpressionFunction> functions) {
         super(functions);
@@ -36,33 +34,34 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     public MapEvaluationTypeContext(Map<String, ExpressionFunction> functions,
                                     Map<String, String> bindings,
-                                    Map<String, TensorType> featureTypes) {
+                                    Map<ReferenceNode.Reference, TensorType> featureTypes) {
         super(functions, bindings);
         this.featureTypes.putAll(featureTypes);
     }
 
-    public void setType(String name, TensorType type) {
-        featureTypes.put(FeatureNames.canonicalize(name), type);
-    }
-
-    // TODO: Remove?
-    @Override
-    public TensorType getType(String name) {
-        if (FeatureNames.isFeature(name))
-            return featureTypes.get(FeatureNames.canonicalize(name));
-        else
-            return TensorType.empty; // we do not have type information for these. Correct would be either empty or null
+    public void setType(Name name, TensorType type) {
+        // TODO: Use a type parameter if we do this both here and in getType ...
+        if ( ! (name instanceof ReferenceNode.Reference))
+            throw new IllegalArgumentException("Not expecting unstructured names here");
+        featureTypes.put((ReferenceNode.Reference)name, type);
     }
 
     @Override
-    public TensorType getType(String name, Arguments arguments, String output) {
-        Optional<String> simpleFeature = simpleFeature(name, arguments); // (all simple feature outputs return the same type)
-        if (simpleFeature.isPresent())
-            return featureTypes.get(simpleFeature.get());
+    public TensorType getType(Name name) {
+        if ( ! (name instanceof ReferenceNode.Reference))
+            throw new IllegalArgumentException("Not expecting unstructured names here");
+        ReferenceNode.Reference reference = (ReferenceNode.Reference)name;
 
-        Optional<ExpressionFunction> function = functionInvocation(name, output);
+        if (isSimpleFeature(reference)) {
+            // The argument may be a local identifier bound to the actual value
+            String argument = simpleArgument(reference.arguments()).get();
+            reference = ReferenceNode.Reference.simple(reference.name(), bindings.getOrDefault(argument, argument));
+            return featureTypes.get(reference);
+        }
+
+        Optional<ExpressionFunction> function = functionInvocation(reference);
         if (function.isPresent())
-            return function.get().getBody().type(this.withBindings(bind(function.get().arguments())));
+            return function.get().getBody().type(this.withBindings(bind(function.get().arguments(), reference.arguments())));
 
         // We do not know what this is - since we do not have complete knowledge abut the match features
         // in Java we must assume this is a match feature and return the double type - which is the type of all
@@ -71,18 +70,33 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     }
 
     /**
-     * If the arguments makes a simple feature ("attribute(name)", "constant(name)" or "query(name)",
-     * it is returned. Otherwise empty is returned.
+     * Return whether the reference (discarding the output) is a simple feature
+     * ("attribute(name)", "constant(name)" or "query(name)").
+     * We disregard the output because all outputs under a simple feature have the same type.
      */
-    private Optional<String> simpleFeature(String name, Arguments arguments) {
-        Optional<String> argument = simpleArgument(arguments);
+    private boolean isSimpleFeature(ReferenceNode.Reference reference) {
+        Optional<String> argument = simpleArgument(reference.arguments());
+        if ( ! argument.isPresent()) return false;
+        return reference.name().equals("attribute") ||
+               reference.name().equals("constant") ||
+               reference.name().equals("query");
+    }
+
+    /**
+     * If the reference (discarding the output) is a simple feature
+     * ("attribute(name)", "constant(name)" or "query(name)"),
+     * it is returned. Otherwise empty is returned.
+     * We disregard the output because all outputs under a simple feature have the same type.
+     */
+    private Optional<String> simpleFeature(ReferenceNode.Reference reference) {
+        Optional<String> argument = simpleArgument(reference.arguments());
         if ( ! argument.isPresent()) return Optional.empty();
 
         // The argument may be a "local value" bound to another value, or else it is the "global" argument of the feature
         String actualArgument = bindings.getOrDefault(argument.get(), argument.get());
 
-        String feature = asFeatureString(name, actualArgument);
-        if (FeatureNames.isFeature(feature))
+        String feature = asFeatureString(reference.name(), actualArgument);
+        if (FeatureNames.isSimpleFeature(feature))
             return Optional.of(feature);
         else
             return Optional.empty();
@@ -108,20 +122,24 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         return Optional.of(refArgument.getName());
     }
 
-    private Optional<ExpressionFunction> functionInvocation(String name, String output) {
-        if (output != null) return Optional.empty();
-        return Optional.ofNullable(functions().get(name));
+    private Optional<ExpressionFunction> functionInvocation(ReferenceNode.Reference reference) {
+        if (reference.output() != null) return Optional.empty();
+        return Optional.ofNullable(functions().get(reference.name()));
     }
 
     /** Binds the given list of formal arguments to their actual values */
-    private Map<String, String> bind(List<String> arguments) {
-        Map<String, String> bindings = new HashMap<>(arguments.size());
-        for (String formalArgument : arguments)
-            bindings.put(formalArgument, null); // TODO
+    private Map<String, String> bind(List<String> formalArguments,
+                                     Arguments invocationArguments) {
+        // TODO: What is our position on argument overloading/argument count differences?
+        Map<String, String> bindings = new HashMap<>(formalArguments.size());
+        for (int i = 0; i < formalArguments.size(); i++)
+            bindings.put(formalArguments.get(i), invocationArguments.expressions().get(i).toString()); // TODO: toString does not work generally
         return bindings;
     }
 
-    public Map<String, TensorType> featureTypes() { return Collections.unmodifiableMap(featureTypes); }
+    public Map<ReferenceNode.Reference, TensorType> featureTypes() {
+        return Collections.unmodifiableMap(featureTypes);
+    }
 
     @Override
     public MapEvaluationTypeContext withBindings(Map<String, String> bindings) {

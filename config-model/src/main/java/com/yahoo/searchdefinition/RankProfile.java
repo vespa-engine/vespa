@@ -32,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -357,14 +358,14 @@ public class RankProfile implements Serializable, Cloneable {
 
     /** Returns a read-only view of the summary features to use in this profile. This is never null */
     public Set<ReferenceNode> getSummaryFeatures() {
-        if (summaryFeatures!=null) return Collections.unmodifiableSet(summaryFeatures);
-        if (getInherited()!=null) return getInherited().getSummaryFeatures();
+        if (summaryFeatures != null) return Collections.unmodifiableSet(summaryFeatures);
+        if (getInherited() != null) return getInherited().getSummaryFeatures();
         return Collections.emptySet();
     }
 
     public void addSummaryFeature(ReferenceNode feature) {
-        if (summaryFeatures==null)
-            summaryFeatures=new LinkedHashSet<>();
+        if (summaryFeatures == null)
+            summaryFeatures = new LinkedHashSet<>();
         summaryFeatures.add(feature);
     }
 
@@ -766,16 +767,18 @@ public class RankProfile implements Serializable, Cloneable {
         for (QueryProfileType queryProfileType : queryProfiles.getTypeRegistry().allComponents()) {
             for (FieldDescription field : queryProfileType.declaredFields().values()) {
                 TensorType type = field.getType().asTensorType();
-                if ( ! FeatureNames.isQueryFeature(field.getName())) continue;
-                String feature = FeatureNames.canonicalize(field.getName());
-                TensorType existingType = context.getType(feature);
+                Optional<ReferenceNode.Reference> feature = ReferenceNode.Reference.simple(field.getName());
+                if ( ! feature.isPresent() || ! feature.get().name().equals("query")) continue;
+
+                TensorType existingType = context.getType(feature.get());
                 if (existingType != null)
                     type = existingType.dimensionwiseGeneralizationWith(type).orElseThrow( () ->
                         new IllegalArgumentException(queryProfileType + " contains query feature " + feature +
                                                      " with type " + field.getType().asTensorType() +
                                                      ", but this is already defined " +
-                                                     "in another query profile with type " + context.getType(feature)));
-                context.setType(feature, type);
+                                                     "in another query profile with type " +
+                                                     context.getType(feature.get())));
+                context.setType(feature.get(), type);
             }
         }
 

@@ -68,7 +68,7 @@ public class DoubleOnlyArrayContext extends AbstractArrayContext {
     }
 
     @Override
-    public TensorType getType(String name) { return TensorType.empty; }
+    public TensorType getType(Name name) { return TensorType.empty; }
 
     /** Perform a slow lookup by name */
     @Override

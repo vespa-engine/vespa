@@ -82,8 +82,8 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
     }
 
     @Override
-    public TensorType getType(String name) {
-        Integer index = nameToIndex().get(name);
+    public TensorType getType(Name name) {
+        Integer index = nameToIndex().get(name.toString());
         if (index == null) return null;
         return values[index].type();
     }

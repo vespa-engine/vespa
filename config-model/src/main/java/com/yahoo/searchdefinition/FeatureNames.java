@@ -5,6 +5,8 @@
  */
 package com.yahoo.searchdefinition;
 
+import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -69,7 +71,7 @@ public class FeatureNames {
                            feature.substring(endParenthesis));
     }
 
-    /** Canomicalizes a single argument */
+    /** Canonicalizes a single argument */
     private static String canonicalizeArgument(String argument) {
         if (argument.startsWith("'")) {
             if ( ! argument.endsWith("'"))
@@ -89,20 +91,20 @@ public class FeatureNames {
             return "\"" + argument + "\"";
     }
 
-    public static String asConstantFeature(String constantName) {
-        return canonicalize("constant(\"" + constantName + "\")");
+    public static ReferenceNode.Reference asConstantFeature(String constantName) {
+        return ReferenceNode.Reference.simple("constant", constantName);
     }
 
-    public static String asAttributeFeature(String attributeName) {
-        return canonicalize("attribute(\"" + attributeName + "\")");
+    public static ReferenceNode.Reference asAttributeFeature(String attributeName) {
+        return ReferenceNode.Reference.simple("attribute", attributeName);
     }
 
-    public static String asQueryFeature(String propertyName) {
-        return canonicalize("query(\"" + propertyName + "\")");
+    public static ReferenceNode.Reference asQueryFeature(String propertyName) {
+        return ReferenceNode.Reference.simple("query", propertyName);
     }
 
-    /** Returns true if this is a cpomstant, attribute, or query feature */
-    public static boolean isFeature(String feature) {
+    /** Returns true if this is a constant, attribute, or query feature */
+    public static boolean isSimpleFeature(String feature) {
         return FeatureNames.isConstantFeature(feature) ||
                FeatureNames.isAttributeFeature(feature) ||
                FeatureNames.isQueryFeature(feature);

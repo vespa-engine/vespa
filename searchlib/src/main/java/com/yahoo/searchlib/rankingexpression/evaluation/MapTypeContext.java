@@ -15,18 +15,18 @@ import java.util.Map;
  */
 public class MapTypeContext implements TypeContext {
 
-    private final Map<String, TensorType> featureTypes = new HashMap<>();
+    private final Map<Name, TensorType> featureTypes = new HashMap<>();
 
     public void setType(String name, TensorType type) {
-        featureTypes.put(name, type);
+        featureTypes.put(new Name(name), type);
     }
 
     @Override
-    public TensorType getType(String name) {
+    public TensorType getType(Name name) {
         return featureTypes.get(name);
     }
 
     /** Returns an unmodifiable map of the bindings in this */
-    public Map<String, TensorType> bindings() { return Collections.unmodifiableMap(featureTypes); }
+    public Map<Name, TensorType> bindings() { return Collections.unmodifiableMap(featureTypes); }
 
 }

@@ -42,17 +42,20 @@ public class FeatureNamesTestCase {
 
     @Test
     public void testConstantFeature() {
-        assertEquals("constant(\"foo/bar\")", FeatureNames.asConstantFeature("foo/bar"));
+        assertEquals("constant(\"foo/bar\")",
+                     FeatureNames.asConstantFeature("foo/bar").toString());
     }
 
     @Test
     public void testAttributeFeature() {
-        assertEquals("attribute(foo)", FeatureNames.asAttributeFeature("foo"));
+        assertEquals("attribute(foo)",
+                     FeatureNames.asAttributeFeature("foo").toString());
     }
 
     @Test
     public void testQueryFeature() {
-        assertEquals("query(\"foo.bar\")", FeatureNames.asQueryFeature("foo.bar"));
+        assertEquals("query(\"foo.bar\")",
+                     FeatureNames.asQueryFeature("foo.bar").toString());
     }
 
 }

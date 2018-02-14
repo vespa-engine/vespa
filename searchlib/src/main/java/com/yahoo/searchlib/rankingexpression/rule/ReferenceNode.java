@@ -9,8 +9,13 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * A node referring either to a value in the context or to a named ranking expression (function aka macro).
@@ -31,6 +36,7 @@ public final class ReferenceNode extends CompositeNode {
     }
 
     public ReferenceNode(String name, List<? extends ExpressionNode> arguments, String output) {
+        Objects.requireNonNull(name, "name cannot be null");
         this.name = name;
         this.arguments = arguments != null ? new Arguments(arguments) : new Arguments();
         this.output = output;
@@ -119,11 +125,10 @@ public final class ReferenceNode extends CompositeNode {
 
     @Override
     public TensorType type(TypeContext context) {
-        String feature = toString(new SerializationContext(), null, false);
-        TensorType type = context.getType(feature);
-        // TensorType type = context.getType(name, arguments, output); TODO
+        TensorType type = context.getType(new Reference(name, arguments, output,
+                                                        toString(new SerializationContext(), null, true)));
         if (type == null)
-            throw new IllegalArgumentException("Unknown feature '" + feature + "'");
+            throw new IllegalArgumentException("Unknown feature '" + toString() + "'");
         return type;
     }
 
@@ -137,6 +142,84 @@ public final class ReferenceNode extends CompositeNode {
     @Override
     public CompositeNode setChildren(List<ExpressionNode> newChildren) {
         return new ReferenceNode(name, newChildren, output);
+    }
+
+    /** Wraps the content of this in a form which can be passed to a type context */
+    // TODO: Extract to top level?
+    public static class Reference extends TypeContext.Name {
+
+        private static final Pattern identifierRegexp = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9_-]*");
+
+        private final String name;
+        private final Arguments arguments;
+
+        /** The output, or null if none */
+        private final String output;
+
+        public Reference(String name, Arguments arguments, String output, String stringForm) {
+            super(stringForm);
+            Objects.requireNonNull(name, "name cannot be null");
+            Objects.requireNonNull(arguments, "arguments cannot be null");
+            Objects.requireNonNull(stringForm, "stringForm cannot be null");
+            this.name = name;
+            this.arguments = arguments;
+            this.output = output;
+        }
+
+        public String name() { return name; }
+        public Arguments arguments() { return arguments; }
+        public String output() { return output; }
+
+        /** Creates a reference to a simple feature consisting of a name and a single argument */
+        public static Reference simple(String name, String argumentValue) {
+            return new Reference(name,
+                                 new Arguments(new ReferenceNode(argumentValue)),
+                                 null,
+                                 name + "(" + quoteIfNecessary(argumentValue) + ")");
+        }
+
+        /**
+         * Returns the given simple feature as a reference, or empty if it is not a valid simple
+         * feature string on the form name(argument).
+         */
+        public static Optional<Reference> simple(String feature) {
+            int startParenthesis = feature.indexOf('(');
+            if (startParenthesis < 0)
+                return Optional.empty();
+            int endParenthesis = feature.lastIndexOf(')');
+            String featureName = feature.substring(0, startParenthesis);
+            if (startParenthesis < 1 || endParenthesis < startParenthesis) return Optional.empty();
+            String argument = feature.substring(startParenthesis + 1, endParenthesis);
+            if (argument.startsWith("'") || argument.startsWith("\""))
+                argument = argument.substring(1);
+            if (argument.endsWith("'") || argument.endsWith("\""))
+                argument = argument.substring(0, argument.length() - 1);
+            return Optional.of(simple(featureName, argument));
+        }
+
+        private static String quoteIfNecessary(String s) {
+            if (identifierRegexp.matcher(s).matches())
+                return s;
+            else
+                return "\"" + s + "\"";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if ( ! (o instanceof Reference)) return false;
+            Reference other = (Reference)o;
+            if ( ! Objects.equals(other.name, this.name)) return false;
+            if ( ! Objects.equals(other.arguments, this.arguments)) return false;
+            if ( ! Objects.equals(other.output, this.output)) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, arguments, output);
+        }
+
     }
 
 }
