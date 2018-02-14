@@ -119,8 +119,8 @@ StorageProtocol::encode(const vespalib::Version& version,
         }
 
     } catch (std::exception & e) {
-        if (version < version6_0 &&
-            !suppressEncodeWarning(message.getInternalMessage().get())) {
+        if (!(version < version6_0 &&
+              suppressEncodeWarning(message.getInternalMessage().get()))) {
             LOGBP(warning, "Failed to encode %s storage protocol message %s: %s",
                   version.toString().c_str(),
                   message.getInternalMessage()->toString().c_str(),
