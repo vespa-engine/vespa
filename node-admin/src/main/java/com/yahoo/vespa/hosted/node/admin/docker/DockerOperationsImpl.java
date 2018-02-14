@@ -12,8 +12,8 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.NATCommand;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
+import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.NATCommand;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.io.IOException;
@@ -44,6 +44,9 @@ public class DockerOperationsImpl implements DockerOperations {
     private static final String[] STOP_NODE_COMMAND = new String[]{NODE_PROGRAM, "stop"};
 
     private static final String MANAGER_NAME = "node-admin";
+
+    private static final String LOCAL_IPV6_PREFIX = "fd00::";
+    private static final String DOCKER_CUSTOM_BRIDGE_NETWORK_NAME = "vespa-bridge";
 
     // Map of directories to mount and whether they should be writable by everyone
     private static final Map<String, Boolean> DIRECTORIES_TO_MOUNT = new HashMap<>();
@@ -120,11 +123,16 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
                     .withAddCapability("SYS_ADMIN"); // Needed for perf
 
-            if (!docker.networkNATed()) {
-                logger.info("Network not nated - setting up with specific ip address on a macvlan");
+            if (!docker.networkNPTed()) {
                 command.withIpAddress(nodeInetAddress);
                 command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
                 command.withVolume("/etc/hosts", "/etc/hosts"); // TODO This is probably not nessesary - review later
+            } else {
+                command.withIpAddress(NetworkPrefixTranslator.translate(
+                        nodeInetAddress,
+                        InetAddress.getByName(LOCAL_IPV6_PREFIX),
+                        64));
+                command.withNetworkMode(DOCKER_CUSTOM_BRIDGE_NETWORK_NAME);
             }
 
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
@@ -144,17 +152,14 @@ public class DockerOperationsImpl implements DockerOperations {
             command.create();
 
             if (isIPv6) {
-                if (!docker.networkNATed()) {
+                if (!docker.networkNPTed()) {
                     docker.connectContainerToNetwork(containerName, "bridge");
                 }
 
                 docker.startContainer(containerName);
-                setupContainerNetworkConnectivity(containerName, nodeInetAddress);
+                setupContainerNetworkConnectivity(containerName);
             } else {
                 docker.startContainer(containerName);
-                if (docker.networkNATed()) {
-                    setupContainerNetworkConnectivity(containerName, nodeInetAddress);
-                }
             }
 
             DIRECTORIES_TO_MOUNT.entrySet().stream().filter(Map.Entry::getValue).forEach(entry ->
@@ -176,7 +181,7 @@ public class DockerOperationsImpl implements DockerOperations {
         logger.info("Deleting container " + containerName.asString());
         docker.deleteContainer(containerName);
 
-        if (docker.networkNATed()) {
+        if (docker.networkNPTed()) {
             logger.info("Delete iptables NAT rules for " + containerName.asString());
             try {
                 InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname);
@@ -222,16 +227,12 @@ public class DockerOperationsImpl implements DockerOperations {
 
     /**
      * For macvlan:
+     * <p>
      * Due to a bug in docker (https://github.com/docker/libnetwork/issues/1443), we need to manually set
      * IPv6 gateway in containers connected to more than one docker network
-     *
-     * For nat:
-     * Setup iptables NAT rules to map the hosts public ips to the containers
      */
-    private void setupContainerNetworkConnectivity(ContainerName containerName, InetAddress externalAddress) throws IOException {
-        if (docker.networkNATed()) {
-            insertNAT(containerName, externalAddress);
-        } else {
+    private void setupContainerNetworkConnectivity(ContainerName containerName) throws IOException {
+        if (!docker.networkNPTed()) {
             InetAddress hostDefaultGateway = DockerNetworkCreator.getDefaultGatewayLinux(true);
             executeCommandInNetworkNamespace(containerName,
                     "route", "-A", "inet6", "add", "default", "gw", hostDefaultGateway.getHostAddress(), "dev", "eth1");
@@ -275,7 +276,7 @@ public class DockerOperationsImpl implements DockerOperations {
         final String[] wrappedCommand = Stream.concat(
                 Stream.of("sudo", "nsenter", String.format("--net=/host/proc/%d/ns/net", containerPid), "--"),
                 Stream.of(command))
-        .toArray(String[]::new);
+                .toArray(String[]::new);
 
         try {
             Pair<Integer, String> result = processExecuter.exec(wrappedCommand);
@@ -326,26 +327,5 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public void deleteUnusedDockerImages() {
         docker.deleteUnusedDockerImages();
-    }
-
-    /**
-     * Only insert NAT rules if they don't exist (or else they compounded)
-     */
-    private void insertNAT(ContainerName containerName, InetAddress externalAddress) throws IOException {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-        String ipv6Str = docker.getGlobalIPv6Address(containerName);
-
-        // Check if exist
-        String checkCommand = NATCommand.check(externalAddress, InetAddress.getByName(ipv6Str));
-        Pair<Integer, String> result = processExecuter.exec(checkCommand);
-        if (result.getFirst() == 0 ) return;
-
-        // Setup NAT
-        String natCommand = NATCommand.insert(externalAddress, InetAddress.getByName(ipv6Str));
-        logger.info("Setting up NAT rules: " + natCommand);
-        result = processExecuter.exec(checkCommand);
-        if (result.getFirst() != 0 ) {
-            throw new IOException("Unable to setup NAT rule - error message: " + result.getSecond());
-        }
     }
 }
