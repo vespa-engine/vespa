@@ -176,6 +176,8 @@ public class TenantBuilder {
                     tenant,
                     applicationRepo,
                     componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenant)),
+                    // TODO: Check if we can avoid using one executor service per tenant. Either one for all
+                    // or have a few executors and hash on tenant name to find out which one to use here
                     createSingleThreadedExecutorService(RemoteSessionRepo.class.getName()));
         }
     }
