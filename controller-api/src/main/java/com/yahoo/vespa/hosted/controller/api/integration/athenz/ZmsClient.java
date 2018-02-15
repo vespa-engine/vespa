@@ -26,6 +26,8 @@ public interface ZmsClient {
 
     boolean hasTenantAdminAccess(AthenzIdentity athenzIdentity, AthenzDomain tenantDomain);
 
+    boolean hasHostedOperatorAccess(AthenzIdentity identity);
+
     // Used before vespa tenancy is established for the domain.
     boolean isDomainAdmin(AthenzIdentity athenzIdentity, AthenzDomain domain);
 

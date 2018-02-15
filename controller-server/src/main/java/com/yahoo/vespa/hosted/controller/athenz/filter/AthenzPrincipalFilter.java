@@ -16,7 +16,7 @@ import java.security.cert.X509Certificate;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
-import static com.yahoo.vespa.hosted.controller.athenz.filter.SecurityFilterUtils.sendErrorResponse;
+import static com.yahoo.vespa.hosted.controller.restapi.filter.SecurityFilterUtils.sendErrorResponse;
 
 /**
  * Authenticates Athenz principal, either through:
