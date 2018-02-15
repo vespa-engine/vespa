@@ -28,6 +28,7 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>config-provisioning</artifactId>
             <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
