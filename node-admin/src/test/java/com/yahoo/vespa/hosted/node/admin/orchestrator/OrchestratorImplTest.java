@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
-import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
-import com.yahoo.vespa.hosted.node.admin.util.HttpException;
+import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
+import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.HostStateChangeDenialReason;
@@ -23,12 +23,12 @@ import static org.mockito.Mockito.when;
 public class OrchestratorImplTest {
     private static final String hostName = "host123.yahoo.com";
 
-    private final ConfigServerHttpRequestExecutor requestExecutor = mock(ConfigServerHttpRequestExecutor.class);
-    private final OrchestratorImpl orchestrator = new OrchestratorImpl(requestExecutor);
+    private final ConfigServerApiImpl configServerApi = mock(ConfigServerApiImpl.class);
+    private final OrchestratorImpl orchestrator = new OrchestratorImpl(configServerApi);
 
     @Test
     public void testSuspendCall() {
-        when(requestExecutor.put(
+        when(configServerApi.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
                 Optional.empty(),
                 UpdateHostResponse.class
@@ -39,7 +39,7 @@ public class OrchestratorImplTest {
 
     @Test(expected=OrchestratorException.class)
     public void testSuspendCallWithFailureReason() {
-        when(requestExecutor.put(
+        when(configServerApi.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
                 Optional.empty(),
                 UpdateHostResponse.class
@@ -50,7 +50,7 @@ public class OrchestratorImplTest {
 
     @Test(expected=OrchestratorNotFoundException.class)
     public void testSuspendCallWithNotFound() {
-        when(requestExecutor.put(
+        when(configServerApi.put(
                 any(String.class),
                 any(),
                 any()
@@ -61,7 +61,7 @@ public class OrchestratorImplTest {
 
     @Test(expected=RuntimeException.class)
     public void testSuspendCallWithSomeOtherException() {
-        when(requestExecutor.put(
+        when(configServerApi.put(
                 any(String.class),
                 any(),
                 any()
@@ -73,7 +73,7 @@ public class OrchestratorImplTest {
 
     @Test
     public void testResumeCall() {
-        when(requestExecutor.delete(
+        when(configServerApi.delete(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, null));
@@ -83,7 +83,7 @@ public class OrchestratorImplTest {
 
     @Test(expected=OrchestratorException.class)
     public void testResumeCallWithFailureReason() {
-        when(requestExecutor.delete(
+        when(configServerApi.delete(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "fail")));
@@ -93,7 +93,7 @@ public class OrchestratorImplTest {
 
     @Test(expected=OrchestratorNotFoundException.class)
     public void testResumeCallWithNotFound() {
-        when(requestExecutor.delete(
+        when(configServerApi.delete(
                 any(String.class),
                 any()
         )).thenThrow(new HttpException.NotFoundException("Not Found"));
@@ -103,7 +103,7 @@ public class OrchestratorImplTest {
 
     @Test(expected=RuntimeException.class)
     public void testResumeCallWithSomeOtherException() {
-        when(requestExecutor.put(
+        when(configServerApi.put(
                 any(String.class),
                 any(),
                 any()
@@ -118,7 +118,7 @@ public class OrchestratorImplTest {
         String parentHostName = "host1.test.yahoo.com";
         List<String> hostNames = Arrays.asList("a1.host1.test.yahoo.com", "a2.host1.test.yahoo.com");
 
-        when(requestExecutor.put(
+        when(configServerApi.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class
@@ -133,7 +133,7 @@ public class OrchestratorImplTest {
         List<String> hostNames = Arrays.asList("a1.host1.test.yahoo.com", "a2.host1.test.yahoo.com");
         String failureReason = "Failed to suspend";
 
-        when(requestExecutor.put(
+        when(configServerApi.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class
@@ -148,7 +148,7 @@ public class OrchestratorImplTest {
         List<String> hostNames = Arrays.asList("a1.host1.test.yahoo.com", "a2.host1.test.yahoo.com");
         String exceptionMessage = "Exception: Something crashed!";
 
-        when(requestExecutor.put(
+        when(configServerApi.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class

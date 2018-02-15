@@ -5,14 +5,14 @@ import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetAclResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetNodesResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.NodeMessageResponse;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesRequestBody;
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesResponse;
-import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
-import com.yahoo.vespa.hosted.node.admin.util.HttpException;
+import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -29,15 +29,15 @@ import java.util.stream.Collectors;
 public class NodeRepositoryImpl implements NodeRepository {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(NodeRepositoryImpl.class);
 
-    private final ConfigServerHttpRequestExecutor requestExecutor;
+    private final ConfigServerApi configServerApi;
 
-    public NodeRepositoryImpl(ConfigServerHttpRequestExecutor requestExecutor) {
-        this.requestExecutor = requestExecutor;
+    public NodeRepositoryImpl(ConfigServerApi configServerApi) {
+        this.configServerApi = configServerApi;
     }
 
     @Override
     public List<ContainerNodeSpec> getContainersToRun(String baseHostName) {
-        final GetNodesResponse nodesForHost = requestExecutor.get(
+        final GetNodesResponse nodesForHost = configServerApi.get(
                 "/nodes/v2/node/?parentHost=" + baseHostName + "&recursive=true",
                 GetNodesResponse.class);
 
@@ -59,7 +59,7 @@ public class NodeRepositoryImpl implements NodeRepository {
     @Override
     public Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName) {
         try {
-            GetNodesResponse.Node nodeResponse = requestExecutor.get("/nodes/v2/node/" + hostName,
+            GetNodesResponse.Node nodeResponse = configServerApi.get("/nodes/v2/node/" + hostName,
                                                                      GetNodesResponse.Node.class);
             if (nodeResponse == null) {
                 return Optional.empty();
@@ -74,7 +74,7 @@ public class NodeRepositoryImpl implements NodeRepository {
     public List<ContainerAclSpec> getContainerAclSpecs(String hostName) {
         try {
             final String path = String.format("/nodes/v2/acl/%s?children=true", hostName);
-            final GetAclResponse response = requestExecutor.get(path, GetAclResponse.class);
+            final GetAclResponse response = configServerApi.get(path, GetAclResponse.class);
             return response.trustedNodes.stream()
                     .map(node -> new ContainerAclSpec(
                             node.hostname, node.ipAddress, ContainerName.fromHostname(node.trustedBy)))
@@ -134,7 +134,7 @@ public class NodeRepositoryImpl implements NodeRepository {
 
     @Override
     public void updateNodeAttributes(final String hostName, final NodeAttributes nodeAttributes) {
-        UpdateNodeAttributesResponse response = requestExecutor.patch(
+        UpdateNodeAttributesResponse response = configServerApi.patch(
                 "/nodes/v2/node/" + hostName,
                 new UpdateNodeAttributesRequestBody(nodeAttributes),
                 UpdateNodeAttributesResponse.class);
@@ -158,7 +158,7 @@ public class NodeRepositoryImpl implements NodeRepository {
     }
 
     private void markNodeToState(String hostName, String state) {
-        NodeMessageResponse response = requestExecutor.put(
+        NodeMessageResponse response = configServerApi.put(
                 "/nodes/v2/state/" + state + "/" + hostName,
                 Optional.empty(), /* body */
                 NodeMessageResponse.class);
