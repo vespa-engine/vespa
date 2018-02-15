@@ -15,9 +15,10 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClients;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
@@ -66,7 +67,8 @@ public class NodeAgentImpl implements NodeAgent {
 
     private final ContainerName containerName;
     private final String hostname;
-    private final ConfigServerClients configServerClients;
+    private final NodeRepository nodeRepository;
+    private final Orchestrator orchestrator;
     private final DockerOperations dockerOperations;
     private final StorageMaintainer storageMaintainer;
     private final Runnable aclMaintainer;
@@ -110,7 +112,8 @@ public class NodeAgentImpl implements NodeAgent {
 
     public NodeAgentImpl(
             final String hostName,
-            final ConfigServerClients configServerClients,
+            final NodeRepository nodeRepository,
+            final Orchestrator orchestrator,
             final DockerOperations dockerOperations,
             final StorageMaintainer storageMaintainer,
             final Runnable aclMaintainer,
@@ -120,7 +123,8 @@ public class NodeAgentImpl implements NodeAgent {
         this.containerName = ContainerName.fromHostname(hostName);
         this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class, containerName);
         this.hostname = hostName;
-        this.configServerClients = configServerClients;
+        this.nodeRepository = nodeRepository;
+        this.orchestrator = orchestrator;
         this.dockerOperations = dockerOperations;
         this.storageMaintainer = storageMaintainer;
         this.aclMaintainer = aclMaintainer;
@@ -244,7 +248,7 @@ public class NodeAgentImpl implements NodeAgent {
                     + lastAttributesSet + " -> " + currentAttributes);
             addDebugMessage("Publishing new set of attributes to node repo: {" +
                     lastAttributesSet + "} -> {" + currentAttributes + "}");
-            configServerClients.nodeRepository().updateNodeAttributes(hostname, currentAttributes);
+            nodeRepository.updateNodeAttributes(hostname, currentAttributes);
             lastAttributesSet = currentAttributes;
         }
     }
@@ -426,8 +430,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     // Public for testing
     void converge() {
-        final Optional<ContainerNodeSpec> nodeSpecOptional = configServerClients.nodeRepository()
-                .getContainerNodeSpec(hostname);
+        final Optional<ContainerNodeSpec> nodeSpecOptional = nodeRepository.getContainerNodeSpec(hostname);
 
         // We just removed the node from node repo, so this is expected until NodeAdmin stop this NodeAgent
         if (!nodeSpecOptional.isPresent() && expectNodeNotInNodeRepo) return;
@@ -490,21 +493,21 @@ public class NodeAgentImpl implements NodeAgent {
                 //    to allow upgrade (suspend).
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 logger.info("Call resume against Orchestrator");
-                configServerClients.orchestrator().resume(hostname);
+                orchestrator.resume(hostname);
                 break;
             case inactive:
                 removeContainerIfNeededUpdateContainerState(nodeSpec, container);
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
             case provisioned:
-                configServerClients.nodeRepository().markAsDirty(hostname);
+                nodeRepository.markAsDirty(hostname);
                 break;
             case dirty:
                 removeContainerIfNeededUpdateContainerState(nodeSpec, container);
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
                 storageMaintainer.cleanupNodeStorage(containerName, nodeSpec);
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
-                configServerClients.nodeRepository().markNodeAvailableForNewAllocation(hostname);
+                nodeRepository.markNodeAvailableForNewAllocation(hostname);
                 expectNodeNotInNodeRepo = true;
                 break;
             default:
@@ -667,6 +670,6 @@ public class NodeAgentImpl implements NodeAgent {
     // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
     private void orchestratorSuspendNode() {
         logger.info("Ask Orchestrator for permission to suspend node " + hostname);
-        configServerClients.orchestrator().suspend(hostname);
+        orchestrator.suspend(hostname);
     }
 }

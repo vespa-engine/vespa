@@ -10,8 +10,6 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClients;
-import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClientsImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
@@ -65,10 +63,9 @@ import static org.mockito.Mockito.when;
 public class RunInContainerTest {
     private final Logger logger = Logger.getLogger("RunInContainerTest");
 
-    private final NodeRepository nodeRepositoryMock = mock(NodeRepository.class);
-    private final Orchestrator orchestratorMock = mock(Orchestrator.class);
-    private final ConfigServerClients configServerClients = new ConfigServerClientsImpl(nodeRepositoryMock, orchestratorMock);
-    private final DockerOperations dockerOperationsMock = mock(DockerOperations.class);
+    private static final NodeRepository nodeRepositoryMock = mock(NodeRepository.class);
+    private static final Orchestrator orchestratorMock = mock(Orchestrator.class);
+    private static final DockerOperations dockerOperationsMock = mock(DockerOperations.class);
 
     private final String parentHostname = "localhost.test.yahoo.com";
     private JDisc container;
@@ -243,11 +240,11 @@ public class RunInContainerTest {
         private final Environment environment = new Environment.Builder().build();
         private final MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
         private final Function<String, NodeAgent> nodeAgentFactory =
-                (hostName) -> new NodeAgentImpl(hostName, configServerClients, dockerOperationsMock,
+                (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, dockerOperationsMock,
                         storageMaintainer, aclMaintainer, environment, Clock.systemUTC(), NODE_AGENT_SCAN_INTERVAL);
         private final NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperationsMock, nodeAgentFactory, storageMaintainer, aclMaintainer, mr, Clock.systemUTC());
-        private final NodeAdminStateUpdaterImpl nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(
-                configServerClients, storageMaintainer, nodeAdmin, "localhost.test.yahoo.com",
+        private final NodeAdminStateUpdaterImpl nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(nodeRepositoryMock,
+                orchestratorMock, storageMaintainer, nodeAdmin, "localhost.test.yahoo.com",
                 Clock.systemUTC(), NODE_ADMIN_CONVERGE_STATE_INTERVAL, Optional.of(new ClassLocking()));
 
         public NodeAdminProviderWithMocks() {

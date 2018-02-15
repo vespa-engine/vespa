@@ -6,8 +6,6 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClients;
-import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClientsImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
@@ -46,7 +44,6 @@ public class DockerTester implements AutoCloseable {
     final NodeAdminStateUpdaterImpl nodeAdminStateUpdater;
     final NodeAdmin nodeAdmin;
     private final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
-    private final ConfigServerClients configServerClients = new ConfigServerClientsImpl(nodeRepositoryMock, orchestratorMock);
 
 
     DockerTester() {
@@ -67,10 +64,10 @@ public class DockerTester implements AutoCloseable {
 
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, configServerClients,
-                dockerOperations, storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL);
+        Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock,
+                orchestratorMock, dockerOperations, storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL);
         nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer, mr, Clock.systemUTC());
-        nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(configServerClients, storageMaintainer,
+        nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(nodeRepositoryMock, orchestratorMock, storageMaintainer,
                 nodeAdmin, "basehostname", clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL,
                 Optional.of(new ClassLocking()));
         nodeAdminStateUpdater.start();

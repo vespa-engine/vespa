@@ -110,7 +110,8 @@ public class DockerAdminComponent implements AdminComponent {
 
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(
                 hostName,
-                configServerClients.get(),
+                configServerClients.get().nodeRepository(),
+                configServerClients.get().orchestrator(),
                 dockerOperations,
                 storageMaintainer,
                 aclMaintainer,
@@ -127,7 +128,8 @@ public class DockerAdminComponent implements AdminComponent {
                 clock);
 
         return new NodeAdminStateUpdaterImpl(
-                configServerClients.get(),
+                configServerClients.get().nodeRepository(),
+                configServerClients.get().orchestrator(),
                 storageMaintainer,
                 nodeAdmin,
                 dockerHostHostName,

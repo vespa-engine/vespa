@@ -43,7 +43,7 @@ public class SslConfigServerApiImpl implements ConfigServerApi {
         this.keyStoreRefresher = environment.getKeyStoreOptions().map(keyStoreOptions -> {
             // Any callback from KeyStoreRefresher should result in using the latest keystore on disk
             Runnable connectionFactoryRefresher = () -> configServerApi.setSSLConnectionSocketFactory(
-                    makeSslConnectionSocketFactory(environment.getKeyStoreOptions()));
+                    makeSslConnectionSocketFactory(Optional.of(keyStoreOptions)));
 
             ConfigServerKeyStoreRefresher keyStoreRefresher = new ConfigServerKeyStoreRefresher(
                     keyStoreOptions, connectionFactoryRefresher, configServerApi);

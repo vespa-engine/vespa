@@ -12,8 +12,6 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClients;
-import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClientsImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
@@ -72,7 +70,6 @@ public class NodeAgentImplTest {
     private final DockerOperations dockerOperations = mock(DockerOperations.class);
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
-    private final ConfigServerClients configServerClients = new ConfigServerClientsImpl(nodeRepository, orchestrator);
     private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
     private final MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
     private final AclMaintainer aclMaintainer = mock(AclMaintainer.class);
@@ -98,7 +95,7 @@ public class NodeAgentImplTest {
 
 
     @Test
-    public void upToDateContainerIsUntouched() throws Exception {
+    public void upToDateContainerIsUntouched() {
         final long restartGeneration = 1;
         final long rebootGeneration = 0;
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
@@ -138,7 +135,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void verifyRemoveOldFilesIfDiskFull() throws Exception {
+    public void verifyRemoveOldFilesIfDiskFull() {
         final long restartGeneration = 1;
         final long rebootGeneration = 0;
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
@@ -202,7 +199,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void containerIsNotStoppedIfNewImageMustBePulled() throws Exception {
+    public void containerIsNotStoppedIfNewImageMustBePulled() {
         final DockerImage newDockerImage = new DockerImage("new-image");
         final long wantedRestartGeneration = 2;
         final long currentRestartGeneration = 1;
@@ -233,7 +230,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void containerIsRestartedIfFlavorChanged() throws Exception {
+    public void containerIsRestartedIfFlavorChanged() {
         final long wantedRestartGeneration = 1;
         final long currentRestartGeneration = 1;
         ContainerNodeSpec.Builder specBuilder = nodeSpecBuilder
@@ -271,7 +268,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void noRestartIfOrchestratorSuspendFails() throws Exception {
+    public void noRestartIfOrchestratorSuspendFails() {
         final long wantedRestartGeneration = 2;
         final long currentRestartGeneration = 1;
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
@@ -297,7 +294,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void failedNodeRunningContainerShouldStillBeRunning() throws Exception {
+    public void failedNodeRunningContainerShouldStillBeRunning() {
         final long restartGeneration = 1;
         final long rebootGeneration = 0;
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
@@ -327,7 +324,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void readyNodeLeadsToNoAction() throws Exception {
+    public void readyNodeLeadsToNoAction() {
         final long restartGeneration = 1;
         final long rebootGeneration = 0;
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
@@ -359,7 +356,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void inactiveNodeRunningContainerShouldStillBeRunning() throws Exception {
+    public void inactiveNodeRunningContainerShouldStillBeRunning() {
         final long restartGeneration = 1;
         final long rebootGeneration = 0;
 
@@ -393,7 +390,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void reservedNodeDoesNotUpdateNodeRepoWithVersion() throws Exception {
+    public void reservedNodeDoesNotUpdateNodeRepoWithVersion() {
         final long restartGeneration = 1;
         final long rebootGeneration = 0;
 
@@ -465,7 +462,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void provisionedNodeIsMarkedAsDirty() throws Exception {
+    public void provisionedNodeIsMarkedAsDirty() {
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(dockerImage)
                 .nodeState(Node.State.provisioned)
@@ -500,7 +497,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void resumeProgramRunsUntilSuccess() throws Exception {
+    public void resumeProgramRunsUntilSuccess() {
         final long restartGeneration = 1;
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(dockerImage)
@@ -629,7 +626,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void testGetRelevantMetricsForReadyNode() throws Exception {
+    public void testGetRelevantMetricsForReadyNode() {
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .nodeState(Node.State.ready)
                 .build();
@@ -664,7 +661,7 @@ public class NodeAgentImplTest {
         doNothing().when(storageMaintainer).writeFilebeatConfig(any(), any());
         doNothing().when(storageMaintainer).writeMetricsConfig(any(), any());
 
-        return new NodeAgentImpl(hostName, configServerClients, dockerOperations,
+        return new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
                 storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL);
     }
 }

@@ -3,8 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClients;
-import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClientsImpl;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
@@ -42,7 +40,6 @@ import static org.mockito.Mockito.when;
 public class NodeAdminStateUpdaterImplTest {
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
-    private final ConfigServerClients configServerClients = new ConfigServerClientsImpl(nodeRepository, orchestrator);
     private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
     private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
     private final String parentHostname = "basehost1.test.yahoo.com";
@@ -50,7 +47,7 @@ public class NodeAdminStateUpdaterImplTest {
     private final Duration convergeStateInterval = Duration.ofSeconds(30);
 
     private final NodeAdminStateUpdaterImpl refresher = spy(new NodeAdminStateUpdaterImpl(
-            configServerClients, storageMaintainer, nodeAdmin, parentHostname, clock,
+            nodeRepository, orchestrator, storageMaintainer, nodeAdmin, parentHostname, clock,
             convergeStateInterval, Optional.empty()));
 
 
