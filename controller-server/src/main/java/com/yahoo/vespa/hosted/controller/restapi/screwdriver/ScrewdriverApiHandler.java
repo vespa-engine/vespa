@@ -147,6 +147,10 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
+    /**
+     * @deprecated Method migrated to application v4 - this method will be removed soon.
+     */
+    @Deprecated
     private HttpResponse notifyJobCompletion(HttpRequest request) {
         controller.applications().notifyJobCompletion(toJobReport(toSlime(request.getData()).get()));
         return new StringResponse("ok");

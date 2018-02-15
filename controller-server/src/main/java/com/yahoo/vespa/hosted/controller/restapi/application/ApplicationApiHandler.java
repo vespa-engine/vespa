@@ -64,6 +64,7 @@ import com.yahoo.vespa.hosted.controller.application.ClusterCost;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
@@ -194,6 +195,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/promote")) return promoteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploy(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -895,6 +897,40 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             log.log(LogLevel.ERROR, String.format("Error during Chef copy environment. (%s.%s %s.%s)", tenantName, applicationName, environmentName, regionName), e);
             return ErrorResponse.internalServerError("Unable to promote Chef environments for application");
         }
+    }
+
+    private HttpResponse notifyJobCompletion(String tenant, String applicationName, HttpRequest request) {
+        try {
+            controller.applications().notifyJobCompletion(toJobReport(tenant, applicationName, toSlime(request.getData()).get()));
+            return new MessageResponse("ok");
+        } catch (IllegalStateException e) {
+            return ErrorResponse.badRequest(Exceptions.toMessageString(e));
+        }
+    }
+
+    private static DeploymentJobs.JobReport toJobReport(String tenantName, String applicationName, Inspector report) {
+        Optional<DeploymentJobs.JobError> jobError = Optional.empty();
+        if (report.field("jobError").valid()) {
+            jobError = Optional.of(DeploymentJobs.JobError.valueOf(report.field("jobError").asString()));
+        }
+        return new DeploymentJobs.JobReport(
+                ApplicationId.from(tenantName, applicationName, report.field("instance").asString()),
+                DeploymentJobs.JobType.fromJobName(report.field("jobName").asString()),
+                report.field("projectId").asLong(),
+                report.field("buildNumber").asLong(),
+                toSourceRevision(report.field("sourceRevision")),
+                jobError
+        );
+    }
+
+    private static Optional<SourceRevision> toSourceRevision(Inspector object) {
+        if (!object.field("repository").valid() ||
+                !object.field("branch").valid() ||
+                !object.field("commit").valid()) {
+            return Optional.empty();
+        }
+        return Optional.of(new SourceRevision(object.field("repository").asString(), object.field("branch").asString(),
+                                              object.field("commit").asString()));
     }
 
     private Tenant getTenantOrThrow(String tenantName) {
