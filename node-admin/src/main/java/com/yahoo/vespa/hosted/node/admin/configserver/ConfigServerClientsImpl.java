@@ -6,9 +6,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeReposit
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorImpl;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import java.security.Security;
 import java.util.Optional;
 
 /**
@@ -34,8 +32,6 @@ public class ConfigServerClientsImpl implements ConfigServerClients {
 
     private ConfigServerClientsImpl(NodeRepository nodeRepository, Orchestrator orchestrator,
                                     Optional<ConfigServerApi> configServerApi) {
-        Security.addProvider(new BouncyCastleProvider());
-
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.configServerApi = configServerApi;
