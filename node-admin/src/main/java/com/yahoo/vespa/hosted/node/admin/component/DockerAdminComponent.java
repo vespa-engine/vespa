@@ -7,6 +7,8 @@ import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
+import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClients;
+import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClientsImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
@@ -16,12 +18,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorImpl;
 import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
-import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -41,7 +38,7 @@ public class DockerAdminComponent implements AdminComponent {
     private final Optional<ClassLocking> classLocking;
 
     private Optional<Environment> environment = Optional.empty();
-    private Optional<ConfigServerHttpRequestExecutor> requestExecutor = Optional.empty();
+    private Optional<ConfigServerClients> configServerClients = Optional.empty();
     private Optional<NodeAdminStateUpdaterImpl> nodeAdminStateUpdater = Optional.empty();
 
     public DockerAdminComponent(ConfigServerConfig configServerConfig,
@@ -85,16 +82,9 @@ public class DockerAdminComponent implements AdminComponent {
             environment = Optional.of(new Environment(configServerConfig));
         }
 
-        if (!requestExecutor.isPresent()) {
-            requestExecutor = Optional.of(ConfigServerHttpRequestExecutor.create(
-                    environment.get().getConfigServerUris(),
-                    environment.get().getKeyStoreOptions(),
-                    environment.get().getTrustStoreOptions(),
-                    environment.get().getAthenzIdentity()));
+        if (!configServerClients.isPresent()) {
+            configServerClients = Optional.of(new ConfigServerClientsImpl(environment.get()));
         }
-
-        NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor.get());
-        Orchestrator orchestrator = new OrchestratorImpl(requestExecutor.get());
 
         Clock clock = Clock.systemUTC();
         String dockerHostHostName = HostName.getLocalhost();
@@ -115,13 +105,12 @@ public class DockerAdminComponent implements AdminComponent {
 
         AclMaintainer aclMaintainer = new AclMaintainer(
                 dockerOperations,
-                nodeRepository,
+                configServerClients.get().nodeRepository(),
                 dockerHostHostName);
 
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(
                 hostName,
-                nodeRepository,
-                orchestrator,
+                configServerClients.get(),
                 dockerOperations,
                 storageMaintainer,
                 aclMaintainer,
@@ -138,8 +127,7 @@ public class DockerAdminComponent implements AdminComponent {
                 clock);
 
         return new NodeAdminStateUpdaterImpl(
-                nodeRepository,
-                orchestrator,
+                configServerClients.get(),
                 storageMaintainer,
                 nodeAdmin,
                 dockerHostHostName,
@@ -155,7 +143,7 @@ public class DockerAdminComponent implements AdminComponent {
         }
 
         nodeAdminStateUpdater.ifPresent(NodeAdminStateUpdaterImpl::stop);
-        requestExecutor.ifPresent(ConfigServerHttpRequestExecutor::close);
+        configServerClients.ifPresent(ConfigServerClients::stop);
         nodeAdminStateUpdater = Optional.empty();
     }
 

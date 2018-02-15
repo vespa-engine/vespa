@@ -7,13 +7,12 @@ import com.yahoo.concurrent.classlock.ClassLocking;
 import com.yahoo.concurrent.classlock.LockInterruptException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClients;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
-import com.yahoo.vespa.hosted.node.admin.util.HttpException;
+import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.time.Clock;
@@ -56,8 +55,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("specverifier"));
     private final Thread loopThread;
 
-    private final NodeRepository nodeRepository;
-    private final Orchestrator orchestrator;
+    private final ConfigServerClients configServerClients;
     private final NodeAdmin nodeAdmin;
     private final Clock clock;
     private final String dockerHostHostName;
@@ -68,8 +66,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     private Instant lastTick;
 
     public NodeAdminStateUpdaterImpl(
-            NodeRepository nodeRepository,
-            Orchestrator orchestrator,
+            ConfigServerClients configServerClients,
             StorageMaintainer storageMaintainer,
             NodeAdmin nodeAdmin,
             String dockerHostHostName,
@@ -77,8 +74,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             Duration nodeAdminConvergeStateInterval,
             Optional<ClassLocking> classLocking) {
         log.info(objectToString() + ": Creating object");
-        this.nodeRepository = nodeRepository;
-        this.orchestrator = orchestrator;
+        this.configServerClients = configServerClients;
         this.nodeAdmin = nodeAdmin;
         this.dockerHostHostName = dockerHostHostName;
         this.clock = clock;
@@ -129,14 +125,14 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
         if (currentState != RESUMED) return;
 
         try {
-            ContainerNodeSpec nodeSpec = nodeRepository.getContainerNodeSpec(dockerHostHostName)
+            ContainerNodeSpec nodeSpec = configServerClients.nodeRepository().getContainerNodeSpec(dockerHostHostName)
                     .orElseThrow(() -> new RuntimeException("Failed to get host's node spec from node-repo"));
             String hardwareDivergence = maintainer.getHardwareDivergence(nodeSpec);
 
             // Only update hardware divergence if there is a change.
             if (!nodeSpec.hardwareDivergence.orElse("null").equals(hardwareDivergence)) {
                 NodeAttributes nodeAttributes = new NodeAttributes().withHardwareDivergence(hardwareDivergence);
-                nodeRepository.updateNodeAttributes(dockerHostHostName, nodeAttributes);
+                configServerClients.nodeRepository().updateNodeAttributes(dockerHostHostName, nodeAttributes);
             }
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to report hardware divergence", e);
@@ -224,10 +220,10 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
 
         switch (wantedState) {
             case RESUMED:
-                orchestrator.resume(dockerHostHostName);
+                configServerClients.orchestrator().resume(dockerHostHostName);
                 break;
             case SUSPENDED_NODE_ADMIN:
-                orchestrator.suspend(dockerHostHostName);
+                configServerClients.orchestrator().suspend(dockerHostHostName);
                 break;
             case SUSPENDED:
                 // Fetch active nodes from node repo before suspending nodes.
@@ -241,7 +237,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
                 List<String> nodesToSuspend = new ArrayList<>();
                 nodesToSuspend.addAll(nodesInActiveState);
                 nodesToSuspend.add(dockerHostHostName);
-                orchestrator.suspend(dockerHostHostName, nodesToSuspend);
+                configServerClients.orchestrator().suspend(dockerHostHostName, nodesToSuspend);
                 log.info("Orchestrator allows suspension of " + nodesToSuspend);
 
                 // The node agent services are stopped by this thread, which is OK only
@@ -270,7 +266,8 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             }
 
             try {
-                final List<ContainerNodeSpec> containersToRun = nodeRepository.getContainersToRun(dockerHostHostName);
+                final List<ContainerNodeSpec> containersToRun = configServerClients.nodeRepository()
+                        .getContainersToRun(dockerHostHostName);
                 nodeAdmin.refreshContainersToRun(containersToRun);
             } catch (Exception e) {
                 log.log(LogLevel.WARNING, "Failed to update which containers should be running", e);
@@ -279,11 +276,12 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     }
 
     private List<String> getNodesInActiveState() {
-        return nodeRepository.getContainersToRun(dockerHostHostName)
-                             .stream()
-                             .filter(nodespec -> nodespec.nodeState == Node.State.active)
-                             .map(nodespec -> nodespec.hostname)
-                             .collect(Collectors.toList());
+        return configServerClients.nodeRepository()
+                .getContainersToRun(dockerHostHostName)
+                .stream()
+                .filter(nodespec -> nodespec.nodeState == Node.State.active)
+                .map(nodespec -> nodespec.hostname)
+                .collect(Collectors.toList());
     }
 
     public void start() {

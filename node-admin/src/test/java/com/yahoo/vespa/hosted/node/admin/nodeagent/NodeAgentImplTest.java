@@ -12,6 +12,8 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClients;
+import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClientsImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
@@ -70,6 +72,7 @@ public class NodeAgentImplTest {
     private final DockerOperations dockerOperations = mock(DockerOperations.class);
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
+    private final ConfigServerClients configServerClients = new ConfigServerClientsImpl(nodeRepository, orchestrator);
     private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
     private final MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
     private final AclMaintainer aclMaintainer = mock(AclMaintainer.class);
@@ -661,7 +664,7 @@ public class NodeAgentImplTest {
         doNothing().when(storageMaintainer).writeFilebeatConfig(any(), any());
         doNothing().when(storageMaintainer).writeMetricsConfig(any(), any());
 
-        return new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
+        return new NodeAgentImpl(hostName, configServerClients, dockerOperations,
                 storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL);
     }
 }
