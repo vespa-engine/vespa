@@ -60,7 +60,7 @@ void
 SimpleMaintenanceScannerTest::setUp()
 {
     _priorityGenerator.reset(new MockMaintenancePriorityGenerator());
-    _bucketSpaceRepo = std::make_unique<DistributorBucketSpaceRepo>(false);
+    _bucketSpaceRepo = std::make_unique<DistributorBucketSpaceRepo>();
     _priorityDb.reset(new SimpleBucketPriorityDatabase());
     _scanner.reset(new SimpleMaintenanceScanner(*_priorityDb, *_priorityGenerator, *_bucketSpaceRepo));
 }
