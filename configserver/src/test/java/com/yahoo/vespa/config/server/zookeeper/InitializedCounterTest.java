@@ -11,8 +11,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class InitializedCounterTest extends TestWithCurator {
 
@@ -28,7 +27,7 @@ public class InitializedCounterTest extends TestWithCurator {
 
     @Test
     public void requireThatCounterIsInitializedFromNumberOfSessions() {
-        InitializedCounter counter = new InitializedCounter(curator, "/counter", "/sessions");
+        InitializedCounter counter = new InitializedCounter(configCurator, "/counter", "/sessions");
         assertThat(counter.counter.get(), is(2l));
     }
 

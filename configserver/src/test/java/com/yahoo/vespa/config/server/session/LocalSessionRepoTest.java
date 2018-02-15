@@ -50,7 +50,7 @@ public class LocalSessionRepoTest extends TestWithCurator {
         }
         clock = new ManualClock(Instant.ofEpochSecond(1));
         LocalSessionLoader loader = new SessionFactoryImpl(globalComponentRegistry,
-                new SessionCounter(globalComponentRegistry.getCurator(), tenantName),
+                new SessionCounter(globalComponentRegistry.getConfigCurator(), tenantName),
                 new MemoryTenantApplications(),
                 tenantFileSystemDirs, new HostRegistry<>(),
                 tenantName);
