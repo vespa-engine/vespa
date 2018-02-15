@@ -37,19 +37,18 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
     @Override
     public boolean nextConfig(long timeout) {
         if (!file.exists() && !file.isFile()) throw new IllegalArgumentException("Not a file: "+file);
-        Long nextGen = getConfigState().getGeneration() + 1;
         if (checkReloaded()) {
             log.log(LogLevel.DEBUG, "User forced config reload at " + System.currentTimeMillis());
             // User forced reload
             T  newConfig = updateConfig();
-            setConfigIfChanged(nextGen, updateConfig());
+            setConfigIfChangedIncGen(updateConfig());
             ConfigState<T> configState = getConfigState();
             log.log(LogLevel.DEBUG, "Config updated at " + System.currentTimeMillis() + ", changed: " + configState.isConfigChanged());
             log.log(LogLevel.DEBUG, "Config: " + configState.getConfig().toString());
             return true;
         }
         if (file.lastModified()!=ts) {
-            setConfig(nextGen, updateConfig());
+            setConfigIncGen(updateConfig());
             return true;
         }
         try {

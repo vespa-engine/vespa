@@ -37,14 +37,13 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
         do {
             ConfigInstance myInstance = getNewInstance();
             ConfigState<T> configState = getConfigState();
-            Long nextGen = configState.getGeneration() + 1;
             // User forced reload
             if (checkReloaded()) {
-                updateInstance(nextGen, myInstance);
+                updateInstance(myInstance);
                 return true;
             }
             if (!myInstance.equals(configState.getConfig())) {
-                updateInstance(nextGen, myInstance);
+                updateInstance(myInstance);
                 return true;
             }
             sleep();
@@ -61,8 +60,8 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
     }
 
     @SuppressWarnings("unchecked")
-    private void updateInstance(Long generation, ConfigInstance myInstance) {
-        setConfigIfChanged(generation, (T)myInstance);
+    private void updateInstance(ConfigInstance myInstance) {
+        setConfigIfChangedIncGen((T)myInstance);
     }
 
     @Override

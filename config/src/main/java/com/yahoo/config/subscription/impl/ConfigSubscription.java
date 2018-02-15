@@ -175,6 +175,19 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         this.config.set(new ConfigState<>(true, generation, true, config));
     }
 
+    void setConfigIncGen(T config) {
+        ConfigState<T> prev = this.config.get();
+        while ( !this.config.compareAndSet(prev, new ConfigState<>(true, prev.getGeneration()+1, true, config))) {
+            prev = this.config.get();
+        }
+    }
+
+    void setConfigIfChangedIncGen(T config) {
+        ConfigState<T> prev = this.config.get();
+        while (!this.config.compareAndSet(prev, new ConfigState<>(true, prev.getGeneration() + 1, !config.equals(prev.getConfig()), config))) {
+            prev = this.config.get();
+        }
+    }
     void setConfigIfChanged(Long generation, T config) {
         this.config.set(new ConfigState<>(true, generation, !config.equals(this.config.get().getConfig()), config));
     }
