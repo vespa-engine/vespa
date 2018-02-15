@@ -171,13 +171,13 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
 
     private static TenantId getTenantId(Path path) {
         if (!path.matches("/application/v4/tenant/{tenant}/{*}"))
-            throw new InternalServerErrorException("Unable to handle path: " + path.getPath());
+            throw new InternalServerErrorException("Unable to handle path: " + path.asString());
         return new TenantId(path.get("tenant"));
     }
 
     private static ApplicationName getApplicationName(Path path) {
         if (!path.matches("/application/v4/tenant/{tenant}/application/{application}/{*}"))
-            throw new InternalServerErrorException("Unable to handle path: " + path.getPath());
+            throw new InternalServerErrorException("Unable to handle path: " + path.asString());
         return ApplicationName.from(path.get("application"));
     }
 

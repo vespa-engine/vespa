@@ -98,7 +98,7 @@ public class Path {
      */
     public String getRest() { return rest; }
 
-    public String getPath() {
+    public String asString() {
         return pathString;
     }
 
