@@ -76,7 +76,7 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
         this.authorizationResponseHandler = authorizationResponseHandler;
     }
 
-    // NOTE: Be aware of the ordering of the path pattern matching. Semantics may change of the patterns are evaluated
+    // NOTE: Be aware of the ordering of the path pattern matching. Semantics may change if the patterns are evaluated
     //       in different order.
     @Override
     public void filter(DiscFilterRequest request, ResponseHandler handler) {
