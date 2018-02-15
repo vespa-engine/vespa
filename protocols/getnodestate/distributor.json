@@ -9,7 +9,19 @@
                         "latency-ms-sum": 10000,
                         "count": 3
                     }
-                }
+                },
+                "bucket-spaces" : [
+                    {
+                        "name": "default",
+                        "total": 11,
+                        "pending": 3
+                    },
+                    {
+                        "name": "global",
+                        "total": 13,
+                        "pending": 5
+                    }
+                ]
             },
             {
                 "node-index": 5,
@@ -19,7 +31,14 @@
                         "latency-ms-sum": 25000,
                         "count": 7
                     }
-                }
+                },
+                "bucket-spaces" : [
+                    {
+                        "name": "default",
+                        "total": 17,
+                        "pending": 7
+                    }
+                ]
             }
         ]
     }
