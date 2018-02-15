@@ -11,8 +11,8 @@ import org.hamcrest.Matchers.{arrayContaining}
  * @author tonytv
  * @since 5.
  */
-class CloudConfigYinstVariablesTest {
-  def convert = CloudConfigYinstVariables.configServerConverter.convert _
+class CloudConfigInstallVariablesTest {
+  def convert = CloudConfigInstallVariables.configServerConverter.convert _
 
   @Test
   def test_configserver_parsing {

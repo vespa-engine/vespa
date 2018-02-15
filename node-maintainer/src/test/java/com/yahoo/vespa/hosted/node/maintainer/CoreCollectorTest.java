@@ -160,7 +160,7 @@ public class CoreCollectorTest {
         expectedData.put("bin_path", TEST_BIN_PATH.toString());
         expectedData.put("backtrace", new ArrayList<>(GDB_BACKTRACE));
         expectedData.put("backtrace_all_threads", new ArrayList<>(GDB_BACKTRACE));
-        expectedData.put("yinst_state", new ArrayList<>(INSTALL_STATE));
+        expectedData.put("install_state", new ArrayList<>(INSTALL_STATE));
         expectedData.put("rpm_packages", new ArrayList<>(RPM_PACKAGES));
         assertEquals(expectedData, coreCollector.collect(TEST_CORE_PATH, Optional.of(INSTALL_STATE_PATH)));
     }
@@ -171,7 +171,7 @@ public class CoreCollectorTest {
         mockExec(new String[]{"cat", INSTALL_STATE_PATH.toString()}, String.join("\n", INSTALL_STATE));
 
         Map<String, Object> expectedData = new HashMap<>();
-        expectedData.put("yinst_state", new ArrayList<>(INSTALL_STATE));
+        expectedData.put("install_state", new ArrayList<>(INSTALL_STATE));
         assertEquals(expectedData, coreCollector.collect(TEST_CORE_PATH, Optional.of(INSTALL_STATE_PATH)));
     }
 

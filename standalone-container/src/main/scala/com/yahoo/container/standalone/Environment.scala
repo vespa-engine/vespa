@@ -6,13 +6,13 @@ package com.yahoo.container.standalone
  * TODO: copied from standalone-container. Move to separate lib module instead.
  */
 object Environment {
-  def optionalYinstVariable(name: String) = {
+  def optionalInstallVariable(name: String) = {
     env(name.replace(".", "__")).
       orElse(systemProperty(name)) //for unit testing
   }
 
-  def yinstVariable(name: String) = {
-    optionalYinstVariable(name).
+  def installVariable(name: String) = {
+    optionalInstallVariable(name).
       getOrElse {
       throw new IllegalStateException("Environment variable not set: " + name)
     }
