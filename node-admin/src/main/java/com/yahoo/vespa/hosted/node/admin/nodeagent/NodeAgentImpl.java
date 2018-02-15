@@ -18,7 +18,7 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClients;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
+import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;

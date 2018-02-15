@@ -6,7 +6,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.verification.VerificationMode;

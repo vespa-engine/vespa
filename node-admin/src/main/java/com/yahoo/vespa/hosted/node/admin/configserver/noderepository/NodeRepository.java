@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.noderepository;
+package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;

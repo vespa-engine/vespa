@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.ArrayList;

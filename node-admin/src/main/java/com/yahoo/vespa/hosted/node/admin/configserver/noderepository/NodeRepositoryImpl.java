@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.noderepository;
+package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
@@ -7,11 +7,11 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
-import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetAclResponse;
-import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.GetNodesResponse;
-import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.NodeMessageResponse;
-import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesRequestBody;
-import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesResponse;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetAclResponse;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetNodesResponse;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeMessageResponse;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.UpdateNodeAttributesRequestBody;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.UpdateNodeAttributesResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;

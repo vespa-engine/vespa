@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClients;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
+import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.provision.Node;

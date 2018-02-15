@@ -2,10 +2,10 @@
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorImpl;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepositoryImpl;
+import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorImpl;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.security.Security;
