@@ -57,7 +57,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
             configChanged = false;
             generationChanged = false;
         }
-        private ConfigState createUnchanged() { return new ConfigState(generation, config); }
+        private ConfigState<T> createUnchanged() { return new ConfigState<T>(generation, config); }
         public boolean isConfigChanged() { return configChanged; }
         public boolean isGenerationChanged() { return generationChanged; }
         public Long getGeneration() { return generation; }

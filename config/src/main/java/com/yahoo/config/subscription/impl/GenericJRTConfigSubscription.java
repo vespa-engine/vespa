@@ -36,6 +36,7 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
         setConfig(jrtReq.getNewGeneration(), null );
         this.config = RawConfig.createFromResponseParameters(jrtReq);
