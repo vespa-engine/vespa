@@ -2,27 +2,27 @@
 
 #pragma once
 
-#include "idealstatemanager.h"
+#include "bucket_spaces_stats_provider.h"
 #include "bucketdbupdater.h"
-#include "pendingmessagetracker.h"
-#include "externaloperationhandler.h"
-#include "min_replica_provider.h"
-#include "distributorinterface.h"
-
-#include "statusreporterdelegate.h"
 #include "distributor_host_info_reporter.h"
-#include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
-#include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>
+#include "distributorinterface.h"
+#include "externaloperationhandler.h"
+#include "idealstatemanager.h"
+#include "min_replica_provider.h"
+#include "pendingmessagetracker.h"
+#include "statusreporterdelegate.h"
+#include <vespa/config/config.h>
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/messagesender.h>
+#include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>
+#include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
 #include <vespa/storageapi/message/state.h>
-#include <vespa/storageframework/generic/thread/tickingthread.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
-#include <vespa/config/config.h>
+#include <vespa/storageframework/generic/thread/tickingthread.h>
 #include <vespa/vespalib/util/sync.h>
-#include <unordered_map>
 #include <queue>
+#include <unordered_map>
 
 namespace storage {
 
@@ -43,7 +43,8 @@ class Distributor : public StorageLink,
                     public StatusDelegator,
                     public framework::StatusReporter,
                     public framework::TickingThread,
-                    public MinReplicaProvider
+                    public MinReplicaProvider,
+                    public BucketSpacesStatsProvider
 {
 public:
     Distributor(DistributorComponentRegister&,
@@ -196,6 +197,11 @@ private:
      * Return a copy of the latest min replica data, see MinReplicaProvider.
      */
     std::unordered_map<uint16_t, uint32_t> getMinReplica() const override;
+
+    PerNodeBucketSpacesStats getBucketSpacesStats() const override {
+        // TODO: implement
+        return BucketSpacesStatsProvider::PerNodeBucketSpacesStats();
+    }
 
     /**
      * Atomically publish internal metrics to external ideal state metrics.
