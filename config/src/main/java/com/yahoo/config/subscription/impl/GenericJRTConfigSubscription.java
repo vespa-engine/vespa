@@ -20,13 +20,12 @@ import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
  *
  */
 @SuppressWarnings("rawtypes")
-public class GenericJRTConfigSubscription extends JRTConfigSubscription {
+public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfig> {
 
-    private RawConfig config;
     private final List<String> defContent;
 
     @SuppressWarnings("unchecked")
-    public GenericJRTConfigSubscription(ConfigKey<?> key,
+    public GenericJRTConfigSubscription(ConfigKey<RawConfig> key,
                                         List<String> defContent,
             ConfigSubscriber subscriber,
             ConfigSource source,
@@ -38,10 +37,9 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription {
     @Override
     @SuppressWarnings("unchecked")
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
-        setConfig(jrtReq.getNewGeneration(), null );
-        this.config = RawConfig.createFromResponseParameters(jrtReq);
+        setConfig(jrtReq.getNewGeneration(), RawConfig.createFromResponseParameters(jrtReq) );
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "in setNewConfig, config=" + this.config);
+            log.log(LogLevel.DEBUG, "in setNewConfig, config=" + this.getConfigState().getConfig());
         }
     }
 
@@ -50,13 +48,15 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription {
     @Override
     void setGeneration(Long generation) {
         super.setGeneration(generation);
-        if (this.config != null) {
-            this.config.setGeneration(generation);
+        ConfigState<RawConfig> configState = getConfigState();
+
+        if (configState.getConfig() != null) {
+            configState.getConfig().setGeneration(generation);
         }
     }
 
     public RawConfig getRawConfig() {
-        return config;
+        return getConfigState().getConfig();
     }
 
     /**
