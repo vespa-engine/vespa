@@ -2,6 +2,8 @@
 package com.yahoo.config.subscription.impl;
 
 import java.io.File;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import com.yahoo.config.ConfigInstance;
@@ -25,22 +27,49 @@ import com.yahoo.vespa.config.protocol.DefContent;
  */
 public abstract class ConfigSubscription<T extends ConfigInstance> {
     protected static Logger log = Logger.getLogger(ConfigSubscription.class.getName());
-    protected ConfigSubscriber subscriber;
-    protected boolean configChanged = false;
-    protected boolean generationChanged = false;
-    protected volatile T config = null;
-    protected Long generation = null;
-    protected ConfigKey<T> key;
-    protected Class<T> configClass;
+    protected final ConfigSubscriber subscriber;
+    private final AtomicReference<ConfigState<T>> config = new AtomicReference<>();
+    protected final ConfigKey<T> key;
+    protected final Class<T> configClass;
     private volatile RuntimeException exception = null;
     private State state = State.OPEN;
+
+    public static class ConfigState<T extends ConfigInstance> {
+        private final boolean configChanged;
+        private final boolean generationChanged;
+        private final T config;
+        private final Long generation;
+        private ConfigState(boolean generationChanged, Long generation, boolean configChanged, T config) {
+            this.configChanged = configChanged;
+            this.config = config;
+            this.generationChanged = generationChanged;
+            this.generation = generation;
+        }
+        private ConfigState(Long generation, T config) {
+            configChanged = false;
+            generationChanged = false;
+            this.generation = generation;
+            this.config = config;
+        }
+        private ConfigState() {
+            generation = 0L;
+            config = null;
+            configChanged = false;
+            generationChanged = false;
+        }
+        private ConfigState createUnchanged() { return new ConfigState(generation, config); }
+        public boolean isConfigChanged() { return configChanged; }
+        public boolean isGenerationChanged() { return generationChanged; }
+        public Long getGeneration() { return generation; }
+        public T getConfig() { return config; }
+    }
     /**
      * If non-null: The user has set this generation explicitly. nextConfig should take this into account.
      * Access to these variables _must_ be synchronized, as nextConfig and reload() is likely to be run from
      * independent threads.
      */
-    private boolean doReload = false;
-    private long reloadedGeneration = -1;
+
+    private final AtomicReference<Long> reloadedGeneration = new AtomicReference<>();
 
     enum State {
         OPEN, CLOSED
@@ -56,6 +85,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         this.key = key;
         this.configClass = key.getConfigClass();
         this.subscriber = subscriber;
+        this.config.set(new ConfigState<T>());
     }
 
 
@@ -129,50 +159,39 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         return false;
     }
 
-    void setConfigChanged(boolean changed) {
-        this.configChanged = changed;
-    }
-
-    void setGenerationChanged(boolean genChanged) {
-        this.generationChanged = genChanged;
-    }
 
     /**
      * Called from {@link ConfigSubscriber} when the changed status of this config is propagated to the clients
      */
-    public void resetChangedFlags() {
-        setConfigChanged(false);
-        setGenerationChanged(false);
+    public boolean isConfigChangedAndReset() {
+        ConfigState<T> prev = config.get();
+        while ( !config.compareAndSet(prev, prev.createUnchanged())) {
+            prev = config.get();
+        }
+        return prev.isConfigChanged();
     }
 
-    public boolean isConfigChanged() {
-        return configChanged;
+    void setConfig(Long generation, T config) {
+        this.config.set(new ConfigState<>(true, generation, true, config));
     }
 
-    public boolean isGenerationChanged() {
-        return generationChanged;
+    void setConfigIfChanged(Long generation, T config) {
+        this.config.set(new ConfigState<>(true, generation, !config.equals(this.config.get().getConfig()), config));
     }
 
-    void setConfig(T config) {
-        this.config = config;
+    void setGeneration(Long generation) {
+        ConfigState<T> c = config.get();
+        this.config.set(new ConfigState<>(true, generation, c.isConfigChanged(), c.getConfig()));
     }
 
     /**
-     * The config object of this subscription
+     * The config state object of this subscription
      *
      * @return the ConfigInstance (the config) of this subscription
      */
-    public T getConfig() {
-        return config;
-    }
 
-    /**
-     * The generation of this subscription
-     *
-     * @return the generation of this subscription
-     */
-    public Long getGeneration() {
-        return generation;
+    public ConfigState<T> getConfigState() {
+        return config.get();
     }
 
     /**
@@ -183,16 +202,13 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         return configClass;
     }
 
-    void setGeneration(Long generation) {
-        this.generation = generation;
-    }
-
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder(key.toString());
-        s.append(", Current generation: ").append(generation)
-                .append(", Generation changed: ").append(generationChanged)
-                .append(", Config changed: ").append(configChanged);
+        ConfigState<T> c = config.get();
+        s.append(", Current generation: ").append(c.getGeneration())
+                .append(", Generation changed: ").append(c.isGenerationChanged())
+                .append(", Config changed: ").append(c.isConfigChanged());
         if (exception != null)
             s.append(", Exception: ").append(exception);
         return s.toString();
@@ -212,7 +228,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
      * that can be set by {@link ConfigSubscriber#reload(long)}.
      *
      * @param timeout in milliseconds
-     * @return false if timed out, true if the state of {@link #configChanged}, {@link #generationChanged} or {@link #exception} changed. If true, the {@link #config} field will be set also.
+     * @return false if timed out, true if generation or config or {@link #exception} changed. If true, the {@link #config} field will be set also.
      *         has changed
      */
     public abstract boolean nextConfig(long timeout);
@@ -277,23 +293,20 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
      * Force this into the given generation, used in testing
      * @param generation a config generation
      */
-    public synchronized void reload(long generation) {
-        this.doReload = true;
-        this.reloadedGeneration = generation;
+    public void reload(long generation) {
+        reloadedGeneration.set(generation);
     }
 
     /**
      * True if someone has set the {@link #reloadedGeneration} number by calling {@link #reload(long)}
      * and hence wants to force a given generation programmatically. If that is the case,
-     * sets the {@link #generation} and {@link #generationChanged} fields accordingly.
+     * sets the generation and flags it as changed accordingly.
      * @return true if {@link #reload(long)} has been called, false otherwise
      */
-    protected synchronized boolean checkReloaded() {
-        if (doReload) {
-            // User has called reload
-            generation = reloadedGeneration;
-            setGenerationChanged(true);
-            doReload = false;
+    protected boolean checkReloaded() {
+        Long reloaded = reloadedGeneration.getAndSet(null);
+        if (reloaded != null) {
+            setGeneration(reloaded);
             return true;
         }
         return false;

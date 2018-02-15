@@ -163,7 +163,7 @@ public class JRTConfigRequester implements RequestWaiter {
     }
 
     private void handleFailedRequest(JRTClientConfigRequest jrtReq, JRTConfigSubscription<ConfigInstance> sub, Connection connection) {
-        final boolean configured = (sub.getConfig() != null);
+        final boolean configured = (sub.getConfigState().getConfig() != null);
         if (configured) {
             // The subscription object has an "old" config, which is all we have to offer back now
             log.log(LogLevel.INFO, "Failure of config subscription, clients will keep existing config until resolved: " + sub);
@@ -226,7 +226,7 @@ public class JRTConfigRequester implements RequestWaiter {
         if (sub.getState() != ConfigSubscription.State.OPEN) return;
         fatalFailures++;
         // The logging depends on whether we are configured or not.
-        Level logLevel = sub.getConfig() == null ? LogLevel.DEBUG : LogLevel.INFO;
+        Level logLevel = sub.getConfigState().getConfig() == null ? LogLevel.DEBUG : LogLevel.INFO;
         String logMessage = "Request for config " + jrtReq.getShortDescription() + "' failed with error code " +
                 jrtReq.errorCode() + " (" + jrtReq.errorMessage() + "), scheduling new connect " +
                 " in " + delay + " ms";

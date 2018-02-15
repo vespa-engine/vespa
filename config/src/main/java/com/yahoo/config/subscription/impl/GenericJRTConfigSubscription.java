@@ -37,6 +37,7 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription {
 
     @Override
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
+        setConfig(jrtReq.getNewGeneration(), null );
         this.config = RawConfig.createFromResponseParameters(jrtReq);
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, "in setNewConfig, config=" + this.config);
@@ -65,10 +66,5 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription {
     @Override
     public DefContent getDefContent() {
         return (DefContent.fromList(defContent));
-    }
-
-    @Override
-    public ConfigInstance getConfig() {
-        return null;
     }
 }

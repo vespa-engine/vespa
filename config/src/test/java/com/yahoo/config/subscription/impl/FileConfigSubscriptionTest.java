@@ -48,11 +48,11 @@ public class FileConfigSubscriptionTest {
                 subscriber,
                 TEST_TYPES_FILE);
         assertTrue(sub.nextConfig(1000));
-        assertThat(sub.config.intval(), is(23));
+        assertThat(sub.getConfigState().getConfig().intval(), is(23));
         Thread.sleep(1000);
         writeConfig("intval", "33");
         assertTrue(sub.nextConfig(1000));
-        assertThat(sub.config.intval(), is(33));
+        assertThat(sub.getConfigState().getConfig().intval(), is(33));
     }
 
     @Test
@@ -64,18 +64,20 @@ public class FileConfigSubscriptionTest {
                 subscriber,
                 TEST_TYPES_FILE);
         assertTrue(sub.nextConfig(1000));
-        assertThat(sub.config.intval(), is(23));
+        assertThat(sub.getConfigState().getConfig().intval(), is(23));
         writeConfig("intval", "33");
         sub.reload(1);
         assertTrue(sub.nextConfig(1000));
-        assertThat(sub.config.intval(), is(33));
-        assertTrue(sub.isConfigChanged());
-        assertTrue(sub.isGenerationChanged());
+        ConfigSubscription.ConfigState<SimpletypesConfig> configState = sub.getConfigState();
+        assertThat(configState.getConfig().intval(), is(33));
+        assertTrue(configState.isConfigChanged());
+        assertTrue(configState.isGenerationChanged());
         sub.reload(2);
         assertTrue(sub.nextConfig(1000));
-        assertThat(sub.config.intval(), is(33));
-        assertFalse(sub.isConfigChanged());
-        assertTrue(sub.isGenerationChanged());
+        configState = sub.getConfigState();
+        assertThat(configState.getConfig().intval(), is(33));
+        assertFalse(configState.isConfigChanged());
+        assertTrue(configState.isGenerationChanged());
     }
 
     @Test
@@ -86,7 +88,7 @@ public class FileConfigSubscriptionTest {
         ConfigSubscriber subscriber = new ConfigSubscriber();
         ConfigSubscription<TestReferenceConfig> sub = ConfigSubscription.get(key, subscriber, new DirSource(new File(cfgDir)), new TimingValues());
         assertTrue(sub.nextConfig(1000));
-        assertThat(sub.config.configId(), is(cfgId));
+        assertThat(sub.getConfigState().getConfig().configId(), is(cfgId));
     }
 
     @Test(expected = IllegalArgumentException.class)

@@ -36,21 +36,19 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
         long end = System.currentTimeMillis() + timeout;
         do {
             ConfigInstance myInstance = getNewInstance();
+            ConfigState<T> configState = getConfigState();
+            Long nextGen = configState.getGeneration() + 1;
             // User forced reload
             if (checkReloaded()) {
-                updateInstance(myInstance);
+                updateInstance(nextGen, myInstance);
                 return true;
             }
-            if (!myInstance.equals(config)) {
-                generation++;
-                updateInstance(myInstance);
+            if (!myInstance.equals(configState.getConfig())) {
+                updateInstance(nextGen, myInstance);
                 return true;
             }
             sleep();
         } while (System.currentTimeMillis() < end);
-        // These shouldn't be checked anywhere since we return false now, but setting them still
-        setGenerationChanged(false);
-        setConfigChanged(false);
         return false;
     }
 
@@ -63,12 +61,8 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
     }
 
     @SuppressWarnings("unchecked")
-    private void updateInstance(ConfigInstance myInstance) {
-        if (!myInstance.equals(config)) {
-            setConfigChanged(true);
-        }
-        setConfig((T) myInstance);
-        setGenerationChanged(true);
+    private void updateInstance(Long generation, ConfigInstance myInstance) {
+        setConfigIfChanged(generation, (T)myInstance);
     }
 
     @Override

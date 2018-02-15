@@ -35,12 +35,8 @@ public class RawConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         }
         if (payload==null) {
             payload = inputPayload;
-            setGeneration(0L);
-            setGenerationChanged(true);
-            setConfigChanged(true);
-
             ConfigPayload configPayload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(payload.split("\n")));
-            config = configPayload.toInstance(configClass, key.getConfigId());
+            setConfig(0L, configPayload.toInstance(configClass, key.getConfigId()));
             return true;
         }
         try {
@@ -48,9 +44,6 @@ public class RawConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         } catch (InterruptedException e) {
             throw new ConfigInterruptedException(e);
         }
-        // These shouldn't be checked anywhere since we return false now, but setting them still
-        setGenerationChanged(false);
-        setConfigChanged(false);
         return false;
     }
 
