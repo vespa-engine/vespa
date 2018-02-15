@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.util;
+package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
  *
  * @author dybis
  */
-public class ConfigServerHttpRequestExecutorTest {
+public class ConfigServerApiImplTest {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class TestPojo {
@@ -49,7 +49,7 @@ public class ConfigServerHttpRequestExecutorTest {
     private final List<URI> configServers = Arrays.asList(URI.create(uri1), URI.create(uri2));
     private final StringBuilder mockLog = new StringBuilder();
 
-    private ConfigServerHttpRequestExecutor executor;
+    private ConfigServerApiImpl executor;
     private int mockReturnCode = 200;
 
     @Before
@@ -72,7 +72,7 @@ public class ConfigServerHttpRequestExecutorTest {
 
             return response;
         });
-        executor = new ConfigServerHttpRequestExecutor(configServers, httpMock);
+        executor = new ConfigServerApiImpl(configServers, httpMock);
     }
 
     @Test
