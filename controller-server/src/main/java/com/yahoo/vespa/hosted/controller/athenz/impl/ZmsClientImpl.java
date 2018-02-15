@@ -104,7 +104,7 @@ public class ZmsClientImpl implements ZmsClient {
 
     @Override
     public boolean hasHostedOperatorAccess(AthenzIdentity identity) {
-        return getOrThrow(() -> hasAccess("modify", service.getDomain() + ":hosted-vespa", identity));
+        return getOrThrow(() -> hasAccess("modify", service.getDomain().getName() + ":hosted-vespa", identity));
     }
 
     /**
