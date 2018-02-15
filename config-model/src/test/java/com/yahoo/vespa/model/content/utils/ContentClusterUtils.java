@@ -12,7 +12,6 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.admin.FileDistributionOptions;
 import com.yahoo.vespa.model.admin.monitoring.DefaultMonitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
