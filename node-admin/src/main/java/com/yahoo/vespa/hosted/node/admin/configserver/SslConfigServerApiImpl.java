@@ -87,9 +87,9 @@ public class SslConfigServerApiImpl implements ConfigServerApi {
     }
 
     @Override
-    public void stop() {
+    public void close() {
         keyStoreRefresher.ifPresent(ConfigServerKeyStoreRefresher::stop);
-        configServerApi.stop();
+        configServerApi.close();
     }
 
     private SSLConnectionSocketFactory makeSslConnectionSocketFactory(Optional<KeyStoreOptions> keyStoreOptions) {

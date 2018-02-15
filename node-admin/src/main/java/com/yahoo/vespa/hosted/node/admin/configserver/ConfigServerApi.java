@@ -8,7 +8,7 @@ import java.util.Optional;
  *
  * @author freva
  */
-public interface ConfigServerApi {
+public interface ConfigServerApi extends AutoCloseable {
 
     <T> T get(String path, Class<T> wantedReturnType);
 
@@ -23,5 +23,6 @@ public interface ConfigServerApi {
     /**
      * Close the underlying HTTP client and any threads this class might have started.
      */
-    void stop();
+    @Override
+    void close();
 }

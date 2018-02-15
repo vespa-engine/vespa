@@ -49,6 +49,6 @@ public class ConfigServerClientsImpl implements ConfigServerClients {
 
     @Override
     public void stop() {
-        configServerApi.ifPresent(ConfigServerApi::stop);
+        configServerApi.ifPresent(ConfigServerApi::close);
     }
 }

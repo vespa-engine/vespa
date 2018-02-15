@@ -165,7 +165,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     }
 
     @Override
-    public void stop() {
+    public void close() {
         client.close();
     }
 }
