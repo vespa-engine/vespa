@@ -139,7 +139,7 @@ public class TenantBuilder {
 
     private void createSessionCounter() {
         if (sessionCounter == null) {
-            sessionCounter = new SessionCounter(componentRegistry.getCurator(), tenant);
+            sessionCounter = new SessionCounter(componentRegistry.getConfigCurator(), tenant);
         }
     }
 

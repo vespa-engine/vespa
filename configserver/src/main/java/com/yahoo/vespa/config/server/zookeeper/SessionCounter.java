@@ -3,18 +3,16 @@ package com.yahoo.vespa.config.server.zookeeper;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.tenant.Tenants;
-import com.yahoo.vespa.curator.Curator;
 
 /**
  * A counter keeping track of session ids in an atomic fashion across multiple config servers.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class SessionCounter extends InitializedCounter {
 
-    public SessionCounter(Curator curator, TenantName tenantName) {
-        super(curator,
+    public SessionCounter(ConfigCurator configCurator, TenantName tenantName) {
+        super(configCurator,
               Tenants.getTenantPath(tenantName).append("sessionCounter").getAbsolute(),
               Tenants.getSessionsPath(tenantName).getAbsolute());
     }

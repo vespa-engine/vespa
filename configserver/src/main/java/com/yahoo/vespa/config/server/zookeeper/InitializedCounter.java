@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.zookeeper;
 
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
-import com.yahoo.vespa.curator.Curator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,8 +12,7 @@ import java.util.List;
  * A counter that sets its initial value to the number of apps in zookeeper if no counter value is set. Subclass
  * this to get that behavior.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class InitializedCounter {
 
@@ -22,10 +20,10 @@ public class InitializedCounter {
     protected final CuratorCounter counter;
     private final String sessionsDirPath;
 
-    public InitializedCounter(Curator curator, String counterPath, String sessionsDirPath) {
+    public InitializedCounter(ConfigCurator configCurator, String counterPath, String sessionsDirPath) {
         this.sessionsDirPath = sessionsDirPath;
-        this.counter = new CuratorCounter(curator, counterPath);
-        initializeCounterValue(getLatestSessionId(ConfigCurator.create(curator), sessionsDirPath));
+        this.counter = new CuratorCounter(configCurator.curator(), counterPath);
+        initializeCounterValue(getLatestSessionId(configCurator, sessionsDirPath));
     }
 
     private void initializeCounterValue(Long latestSessionId) {
