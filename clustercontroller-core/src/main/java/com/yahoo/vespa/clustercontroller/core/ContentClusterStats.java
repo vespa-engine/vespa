@@ -7,23 +7,23 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Class for storing the pending merge operation stats for all the storage nodes.
+ * Class for storing the pending merge operation stats for all the content nodes.
  *
  * @author hakonhall
  */
-public class StorageMergeStats implements Iterable<NodeMergeStats> {
+public class ContentClusterStats implements Iterable<NodeMergeStats> {
 
     // Maps a storage node index to the storage node's pending merges stats.
     private final Map<Integer, NodeMergeStats> mapToNodeStats;
 
-    public StorageMergeStats(Set<Integer> storageNodes) {
+    public ContentClusterStats(Set<Integer> storageNodes) {
         mapToNodeStats = new HashMap<>(storageNodes.size());
         for (Integer index : storageNodes) {
             mapToNodeStats.put(index, new NodeMergeStats(index));
         }
     }
 
-    public StorageMergeStats(Map<Integer, NodeMergeStats> mapToNodeStats) {
+    public ContentClusterStats(Map<Integer, NodeMergeStats> mapToNodeStats) {
         this.mapToNodeStats = mapToNodeStats;
     }
 
@@ -43,11 +43,11 @@ public class StorageMergeStats implements Iterable<NodeMergeStats> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof StorageMergeStats)) {
+        if (!(o instanceof ContentClusterStats)) {
             return false;
         }
 
-        StorageMergeStats that = (StorageMergeStats) o;
+        ContentClusterStats that = (ContentClusterStats) o;
 
         if (mapToNodeStats != null ? !mapToNodeStats.equals(that.mapToNodeStats) : that.mapToNodeStats != null) {
             return false;

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core.hostinfo;
 
 import com.yahoo.vespa.clustercontroller.core.NodeMergeStats;
-import com.yahoo.vespa.clustercontroller.core.StorageMergeStats;
+import com.yahoo.vespa.clustercontroller.core.ContentClusterStats;
 import com.yahoo.vespa.clustercontroller.core.StorageNodeStats;
 import com.yahoo.vespa.clustercontroller.core.StorageNodeStatsContainer;
 import org.junit.Test;
@@ -53,7 +53,7 @@ public class StorageNodeStatsBridgeTest {
         String data = getJsonString();
         HostInfo hostInfo = HostInfo.createHostInfo(data);
 
-        StorageMergeStats storageMergeStats = StorageNodeStatsBridge.generate(hostInfo.getDistributor());
+        ContentClusterStats storageMergeStats = StorageNodeStatsBridge.generate(hostInfo.getDistributor());
         int size = 0;
         for (NodeMergeStats mergeStats : storageMergeStats) {
             assertThat(mergeStats.getCopyingIn().getBuckets(), is(2L));

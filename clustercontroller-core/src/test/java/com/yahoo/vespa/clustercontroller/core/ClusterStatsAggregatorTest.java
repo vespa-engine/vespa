@@ -24,7 +24,7 @@ public class ClusterStatsAggregatorTest {
     final Set<Integer> storageNodes = new HashSet<>();
     final Map<Integer, String> hostnames = new HashMap<>();
     final MetricUpdater updater = mock(MetricUpdater.class);
-    StorageMergeStats storageStats;
+    ContentClusterStats clusterStats;
 
     private void addDistributors(Integer... indices) {
         for (Integer i : indices) {
@@ -46,11 +46,11 @@ public class ClusterStatsAggregatorTest {
             storageNodes.add(spec.index);
             hostnames.put(spec.index, spec.hostname);
         }
-        storageStats = new StorageMergeStats(storageNodes);
+        clusterStats = new ContentClusterStats(storageNodes);
     }
 
     private void putStorageStats(int index, int syncing, int copyingIn, int movingOut, int copyingOut) {
-        storageStats.getStorageNode(index).set(createStats(index, syncing, copyingIn, movingOut, copyingOut));
+        clusterStats.getStorageNode(index).set(createStats(index, syncing, copyingIn, movingOut, copyingOut));
     }
 
     private static NodeMergeStats createStats(int index, int syncing, int copyingIn, int movingOut, int copyingOut) {
@@ -73,7 +73,7 @@ public class ClusterStatsAggregatorTest {
         putStorageStats(storageNodeIndex, 5, 6, 7, 8);
 
         ClusterStatsAggregator aggregator = new ClusterStatsAggregator(distributors, storageNodes, updater);
-        aggregator.updateForDistributor(hostnames, distributorIndex, storageStats);
+        aggregator.updateForDistributor(hostnames, distributorIndex, clusterStats);
 
         Map<String, NodeMergeStats> expectedStorageNodeStats = new HashMap<>();
         expectedStorageNodeStats.put("storage-node", createStats(storageNodeIndex, 5, 6, 7, 8));
@@ -98,12 +98,12 @@ public class ClusterStatsAggregatorTest {
         // Distributor 1.
         putStorageStats(storageNode1, 0, 1, 2, 3);
         putStorageStats(storageNode2, 20, 21, 22, 23);
-        aggregator.updateForDistributor(hostnames, distributor1, storageStats);
+        aggregator.updateForDistributor(hostnames, distributor1, clusterStats);
 
         // Distributor 2.
         putStorageStats(storageNode1, 10, 11, 12, 13);
         putStorageStats(storageNode2, 30, 31, 32, 33);
-        aggregator.updateForDistributor(hostnames, distributor2, storageStats);
+        aggregator.updateForDistributor(hostnames, distributor2, clusterStats);
 
         Map<String, NodeMergeStats> expectedStorageNodeStats = new HashMap<>();
         expectedStorageNodeStats.put("storage-node-1", createStats(storageNode1, 0 + 10, 1 + 11, 2 + 12, 3 + 13));
@@ -129,16 +129,16 @@ public class ClusterStatsAggregatorTest {
         // Distributor 1.
         putStorageStats(storageNode1, 0, 1, 2, 3);
         putStorageStats(storageNode2, 20, 21, 22, 23);
-        aggregator.updateForDistributor(hostnames, distributor1, storageStats);
+        aggregator.updateForDistributor(hostnames, distributor1, clusterStats);
 
         // Distributor 2.
         putStorageStats(storageNode1, 10, 11, 12, 13);
         putStorageStats(storageNode2, 30, 31, 32, 33);
-        aggregator.updateForDistributor(hostnames, distributor2, storageStats);
+        aggregator.updateForDistributor(hostnames, distributor2, clusterStats);
 
         // If we add call another updateForDistributor with the same arguments, updateMergeOpMetrics() should not be called.
         // See times(1) below.
-        aggregator.updateForDistributor(hostnames, distributor2, storageStats);
+        aggregator.updateForDistributor(hostnames, distributor2, clusterStats);
 
         Map<String, NodeMergeStats> expectedStorageNodeStats = new HashMap<>();
         expectedStorageNodeStats.put("storage-node-1", createStats(storageNode1, 0 + 10, 1 + 11, 2 + 12, 3 + 13));
@@ -160,7 +160,7 @@ public class ClusterStatsAggregatorTest {
         putStorageStats(storageNodeIndex, 5, 6, 7, 8);
 
         ClusterStatsAggregator aggregator = new ClusterStatsAggregator(distributors, storageNodes, updater);
-        aggregator.updateForDistributor(hostnames, DownDistributorIndex, storageStats);
+        aggregator.updateForDistributor(hostnames, DownDistributorIndex, clusterStats);
 
         verify(updater, never()).updateMergeOpMetrics(any());
     }
@@ -181,7 +181,7 @@ public class ClusterStatsAggregatorTest {
         // Distributor 1.
         putStorageStats(storageNode1, 0, 1, 2, 3);
         putStorageStats(storageNode2, 20, 21, 22, 23);
-        aggregator.updateForDistributor(hostnames, distributor1, storageStats);
+        aggregator.updateForDistributor(hostnames, distributor1, clusterStats);
 
         Map<String, NodeMergeStats> expectedStorageNodeStats = new HashMap<>();
         expectedStorageNodeStats.put("storage-node-1", createStats(storageNode1, 0, 1, 2, 3));
@@ -203,11 +203,11 @@ public class ClusterStatsAggregatorTest {
 
         // Distributor 1.
         putStorageStats(storageNode1, 0, 1, 2, 3);
-        aggregator.updateForDistributor(hostnames, distributor1, storageStats);
+        aggregator.updateForDistributor(hostnames, distributor1, clusterStats);
 
         // Distributor 2.
         putStorageStats(storageNode1, 10, 11, 12, 13);
-        aggregator.updateForDistributor(hostnames, distributor2, storageStats);
+        aggregator.updateForDistributor(hostnames, distributor2, clusterStats);
 
         Map<String, NodeMergeStats> expectedStorageNodeStats = new HashMap<>();
         expectedStorageNodeStats.put("storage-node-1", createStats(storageNode1, 0 + 10, 1 + 11, 2 + 12, 3 + 13));

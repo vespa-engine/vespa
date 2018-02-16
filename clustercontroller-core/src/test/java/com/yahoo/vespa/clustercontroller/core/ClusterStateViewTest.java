@@ -22,7 +22,6 @@ public class ClusterStateViewTest {
     final NodeInfo nodeInfo = mock(NodeInfo.class);
     final Node node = mock(Node.class);
     final ClusterStatsAggregator statsAggregator = mock(ClusterStatsAggregator.class);
-    final StorageMergeStats storageStats = mock(StorageMergeStats.class);
     final ClusterState clusterState = mock(ClusterState.class);
     final MetricUpdater metricUpdater = mock(MetricUpdater.class);
     final ClusterStateView clusterStateView = new ClusterStateView(clusterState, statsAggregator, metricUpdater);
