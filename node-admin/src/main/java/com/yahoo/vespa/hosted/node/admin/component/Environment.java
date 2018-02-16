@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.component;
 
 import com.google.common.base.Strings;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.defaults.Defaults;
@@ -42,7 +41,7 @@ public class Environment {
     private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
     private static final String COREDUMP_FEED_ENDPOINT = "COREDUMP_FEED_ENDPOINT";
 
-    private final List<URI> configServerURIs;
+    private final List<URI> configServerHosts;
     private final String environment;
     private final String region;
     private final String parentHostHostname;
@@ -53,7 +52,6 @@ public class Environment {
     private final Optional<KeyStoreOptions> keyStoreOptions;
     private final Optional<KeyStoreOptions> trustStoreOptions;
     private final Optional<AthenzIdentity> athenzIdentity;
-    private final NodeType nodeType;
 
     static {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -64,16 +62,14 @@ public class Environment {
              getEnvironmentVariable(ENVIRONMENT),
              getEnvironmentVariable(REGION),
              new PathResolver(),
-             Optional.of(getEnvironmentVariable(COREDUMP_FEED_ENDPOINT)),
-             NodeType.host);
+             Optional.of(getEnvironmentVariable(COREDUMP_FEED_ENDPOINT)));
     }
 
     public Environment(ConfigServerConfig configServerConfig,
                        String hostedEnvironment,
                        String hostedRegion,
                        PathResolver pathResolver,
-                       Optional<String> coreDumpFeedEndpoint,
-                       NodeType nodeType) {
+                       Optional<String> coreDumpFeedEndpoint) {
         this(createConfigServerUris(
                 configServerConfig.scheme(),
                 configServerConfig.hosts(),
@@ -99,12 +95,11 @@ public class Environment {
                         null),
                 createAthenzIdentity(
                         configServerConfig.athenzDomain(),
-                        configServerConfig.serviceName()),
-             nodeType
+                        configServerConfig.serviceName())
         );
     }
 
-    public Environment(List<URI> configServerURIs,
+    public Environment(List<URI> configServerHosts,
                        String environment,
                        String region,
                        String parentHostHostname,
@@ -114,9 +109,8 @@ public class Environment {
                        Optional<String> feedEndpoint,
                        Optional<KeyStoreOptions> keyStoreOptions,
                        Optional<KeyStoreOptions> trustStoreOptions,
-                       Optional<AthenzIdentity> athenzIdentity,
-                       NodeType nodeType) {
-        this.configServerURIs = configServerURIs;
+                       Optional<AthenzIdentity> athenzIdentity) {
+        this.configServerHosts = configServerHosts;
         this.environment = environment;
         this.region = region;
         this.parentHostHostname = parentHostHostname;
@@ -127,10 +121,9 @@ public class Environment {
         this.keyStoreOptions = keyStoreOptions;
         this.trustStoreOptions = trustStoreOptions;
         this.athenzIdentity = athenzIdentity;
-        this.nodeType = nodeType;
     }
 
-    public List<URI> getConfigServerUris() { return configServerURIs; }
+    public List<URI> getConfigServerUris() { return configServerHosts; }
 
     public String getEnvironment() {
         return environment;
@@ -156,7 +149,7 @@ public class Environment {
         return getEnvironment() + "." + getRegion();
     }
 
-    public static List<URI> createConfigServerUris(String scheme, List<String> configServerHosts, int port) {
+    private static List<URI> createConfigServerUris(String scheme, List<String> configServerHosts, int port) {
         return configServerHosts.stream()
                 .map(hostname -> URI.create(scheme + "://" + hostname + ":" + port))
                 .collect(Collectors.toList());
@@ -259,10 +252,9 @@ public class Environment {
         return athenzIdentity;
     }
 
-    public NodeType getNodeType() { return nodeType; }
 
     public static class Builder {
-        private List<URI> configServerURIs = Collections.emptyList();
+        private List<URI> configServerHosts = Collections.emptyList();
         private String environment;
         private String region;
         private String parentHostHostname;
@@ -273,10 +265,11 @@ public class Environment {
         private KeyStoreOptions keyStoreOptions;
         private KeyStoreOptions trustStoreOptions;
         private AthenzIdentity athenzIdentity;
-        private NodeType nodeType = NodeType.tenant;
 
-        public Builder configServerUris(List<URI> uris) {
-            configServerURIs = uris;
+        public Builder configServerUris(String... hosts) {
+            configServerHosts = Arrays.stream(hosts)
+                    .map(URI::create)
+                    .collect(Collectors.toList());
             return this;
         }
 
@@ -330,17 +323,11 @@ public class Environment {
             return this;
         }
 
-        public Builder nodeType(NodeType nodeType) {
-            this.nodeType = nodeType;
-            return this;
-        }
-
         public Environment build() {
-            return new Environment(configServerURIs, environment, region, parentHostHostname, inetAddressResolver,
+            return new Environment(configServerHosts, environment, region, parentHostHostname, inetAddressResolver,
                                    pathResolver, logstashNodes, feedEndpoint,
                                    Optional.ofNullable(keyStoreOptions), Optional.ofNullable(trustStoreOptions),
-                                   Optional.ofNullable(athenzIdentity),
-                                   nodeType);
+                                   Optional.ofNullable(athenzIdentity));
         }
     }
 }

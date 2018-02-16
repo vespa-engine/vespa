@@ -18,9 +18,6 @@ public enum NodeType {
     tenant,
 
     /** A config server */
-    config,
-
-    /** A host of a (docker) config server node */
-    confighost
+    config
 
 }
