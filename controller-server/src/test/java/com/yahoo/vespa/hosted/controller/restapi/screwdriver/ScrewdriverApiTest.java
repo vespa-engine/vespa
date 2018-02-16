@@ -73,7 +73,7 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
         notifyCompletion(app.id(), projectId, JobType.systemTest, Optional.empty());
 
         // Notifying about unknown job fails
-        tester.containerTester().assertResponse(new Request("http://localhost:8080/screwdriver/v1/jobreport",
+        tester.containerTester().assertResponse(new Request("http://localhost:8080/application/v4/tenant/tenant1/application/application1/jobreport",
                                                             jsonReport(app.id(), JobType.productionUsEast3, projectId, 1L,
                                                                        Optional.empty())
                                                                     .getBytes(StandardCharsets.UTF_8),

@@ -53,7 +53,7 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     private final AuthorizationResponseHandler authorizationResponseHandler;
 
     public interface AuthorizationResponseHandler {
-        void handle(ResponseHandler responseHandler, WebApplicationException verificationException);
+        void handle(ResponseHandler responseHandler, DiscFilterRequest request, WebApplicationException verificationException);
     }
 
     @Inject
@@ -85,7 +85,7 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
 
         try {
             Path path = new Path(request.getRequestURI());
-            AthenzPrincipal principal = getPrincipal(request);
+            AthenzPrincipal principal = getPrincipalOrThrow(request);
             if (isWhiteListedOperation(path, method)) {
                 // no authz check
             } else if (isHostedOperatorOperation(path, method)) {
@@ -98,7 +98,7 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
                 throw new ForbiddenException("No access control is explicitly declared for this api.");
             }
         } catch (WebApplicationException e) {
-            authorizationResponseHandler.handle(handler, e);
+            authorizationResponseHandler.handle(handler, request, e);
         }
     }
 
@@ -134,7 +134,8 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
 
     private static boolean isTenantPipelineOperation(Path path, Method method) {
         if (isTenantAdminOperation(path, method)) return false;
-        return path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/prod/{*}") ||
+        return path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport") ||
+                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/prod/{*}") ||
                 path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/test/{*}") ||
                 path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/staging/{*}");
     }
@@ -185,10 +186,14 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
         return Method.valueOf(request.getMethod().toUpperCase());
     }
 
-    private static AthenzPrincipal getPrincipal(DiscFilterRequest request) {
-        return Optional.ofNullable(request.getUserPrincipal())
-                .map(AthenzPrincipal.class::cast)
+    private static AthenzPrincipal getPrincipalOrThrow(DiscFilterRequest request) {
+        return getPrincipal(request)
                 .orElseThrow(() -> new NotAuthorizedException("User not authenticated"));
+    }
+
+    private static Optional<AthenzPrincipal> getPrincipal(DiscFilterRequest request) {
+        return Optional.ofNullable(request.getUserPrincipal())
+                .map(AthenzPrincipal.class::cast);
     }
 
     private static class LoggingAuthorizationResponseHandler implements AuthorizationResponseHandler {
@@ -197,10 +202,15 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
         private static final Logger log = Logger.getLogger(ControllerAuthorizationFilter.class.getName());
 
         @Override
-        public void handle(ResponseHandler responseHandler, WebApplicationException exception) {
+        public void handle(ResponseHandler responseHandler,
+                           DiscFilterRequest request,
+                           WebApplicationException exception) {
             log.log(LogLevel.WARNING,
-                    String.format("Access denied (%d): %s",
-                                  exception.getResponse().getStatus(), exception.getMessage()));
+                    String.format("Access denied (%d): '%s'\nPath: %s\nIdentity: %s",
+                                  exception.getResponse().getStatus(),
+                                  exception.getMessage(),
+                                  request.getRequestURI(),
+                                  getPrincipal(request).map(p -> p.getIdentity().getFullName()).orElse("[none]")));
         }
     }
 
@@ -208,7 +218,9 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     @SuppressWarnings("unused")
     static class HttpRespondingAuthorizationResponseHandler implements AuthorizationResponseHandler {
         @Override
-        public void handle(ResponseHandler responseHandler, WebApplicationException exception) {
+        public void handle(ResponseHandler responseHandler,
+                           DiscFilterRequest request,
+                           WebApplicationException exception) {
             sendErrorResponse(responseHandler, exception.getResponse().getStatus(), exception.getMessage());
         }
     }
