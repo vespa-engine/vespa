@@ -36,6 +36,7 @@ import static org.junit.Assert.assertTrue;
  * @author bratseth
  * @author jvenstad
  */
+// TODO Move /application/v4/.../jobreport specific testing to ApplicationApiTest
 public class ScrewdriverApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/screwdriver/responses/";
@@ -183,10 +184,10 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
     }
     
     private void notifyCompletion(ApplicationId app, long projectId, JobType jobType, Optional<JobError> error) throws IOException {
-        assertResponse(new Request("http://localhost:8080/screwdriver/v1/jobreport",
+        assertResponse(new Request("http://localhost:8080/application/v4/tenant/tenant1/application/application1/jobreport",
                                    jsonReport(app, jobType, projectId, 1L, error).getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST),
-                       200, "ok");
+                       200, "{\"message\":\"ok\"}");
     }
 
     private static String jsonReport(ApplicationId applicationId, JobType jobType, long projectId, long buildNumber,

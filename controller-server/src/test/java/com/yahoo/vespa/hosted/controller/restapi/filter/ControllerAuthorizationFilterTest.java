@@ -22,6 +22,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.container.jdisc.RequestHandlerTestDriver.MockResponseHandler;
@@ -29,6 +30,8 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.DELETE;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static com.yahoo.jdisc.http.HttpResponse.Status.FORBIDDEN;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -64,24 +67,16 @@ public class ControllerAuthorizationFilterTest {
         controllerTester.athenzDb().hostedOperators.add(HOSTED_OPERATOR);
 
         ControllerAuthorizationFilter filter = createFilter(controllerTester);
-        {
-            String path = "/application/v4/tenant/mytenant/application/myapp/deploying";
-            Method method = PUT;
-            assertIsAllowed(invokeFilter(filter, createRequest(method, path, HOSTED_OPERATOR)));
-            assertIsForbidden(invokeFilter(filter, createRequest(method, path, USER)));
-        }
-        {
-            String path = "/screwdriver/v1/trigger/tenant/mytenant/application/myapp/";
-            Method method = POST;
-            assertIsAllowed(invokeFilter(filter, createRequest(method, path, HOSTED_OPERATOR)));
-            assertIsForbidden(invokeFilter(filter, createRequest(method, path, USER)));
-        }
-        {
-            String path = "/provision/v2/provision/enqueue";
-            Method method = DELETE;
-            assertIsAllowed(invokeFilter(filter, createRequest(method, path, HOSTED_OPERATOR)));
-            assertIsForbidden(invokeFilter(filter, createRequest(method, path, USER)));
-        }
+
+        List<AthenzIdentity> allowed = singletonList(HOSTED_OPERATOR);
+        List<AthenzIdentity> forbidden = singletonList(USER);
+
+        testApiAccess(PUT, "/application/v4/tenant/mytenant/application/myapp/deploying",
+                      allowed, forbidden, filter);
+        testApiAccess(POST, "/screwdriver/v1/trigger/tenant/mytenant/application/myapp/",
+                      allowed, forbidden, filter);
+        testApiAccess(DELETE, "/provision/v2/provision/enqueue",
+                      allowed, forbidden, filter);
     }
 
     @Test
@@ -92,27 +87,16 @@ public class ControllerAuthorizationFilterTest {
         controllerTester.athenzDb().domains.get(TENANT_DOMAIN).admins.add(TENANT_ADMIN);
 
         ControllerAuthorizationFilter filter = createFilter(controllerTester);
-        {
-            String path = "/application/v4/tenant/mytenant";
-            Method method = DELETE;
-            assertIsAllowed(invokeFilter(filter, createRequest(method, path, HOSTED_OPERATOR)));
-            assertIsAllowed(invokeFilter(filter, createRequest(method, path, TENANT_ADMIN)));
-            assertIsForbidden(invokeFilter(filter, createRequest(method, path, USER)));
-        }
-        {
-            String path = "/application/v4/tenant/mytenant/application/myapp/environment/perf/region/myregion/instance/default/deploy";
-            Method method = POST;
-            assertIsAllowed(invokeFilter(filter, createRequest(method, path, HOSTED_OPERATOR)));
-            assertIsAllowed(invokeFilter(filter, createRequest(method, path, TENANT_ADMIN)));
-            assertIsForbidden(invokeFilter(filter, createRequest(method, path, USER)));
-        }
-        {
-            String path = "/application/v4/tenant/mytenant/application/myapp/environment/prod/region/myregion/instance/default/global-rotation/override";
-            Method method = PUT;
-            assertIsAllowed(invokeFilter(filter, createRequest(method, path, HOSTED_OPERATOR)));
-            assertIsAllowed(invokeFilter(filter, createRequest(method, path, TENANT_ADMIN)));
-            assertIsForbidden(invokeFilter(filter, createRequest(method, path, USER)));
-        }
+
+        List<AthenzIdentity> allowed = asList(HOSTED_OPERATOR, TENANT_ADMIN);
+        List<AthenzIdentity> forbidden = singletonList(USER);
+
+        testApiAccess(DELETE, "/application/v4/tenant/mytenant",
+                      allowed, forbidden, filter);
+        testApiAccess(POST, "/application/v4/tenant/mytenant/application/myapp/environment/perf/region/myregion/instance/default/deploy",
+                      allowed, forbidden, filter);
+        testApiAccess(PUT, "/application/v4/tenant/mytenant/application/myapp/environment/prod/region/myregion/instance/default/global-rotation/override",
+                      allowed, forbidden, filter);
     }
 
     @Test
@@ -126,14 +110,29 @@ public class ControllerAuthorizationFilterTest {
         domainMock.applications.get(APPLICATION).addRoleMember(ApplicationAction.deploy, TENANT_PIPELINE);
 
         ControllerAuthorizationFilter filter = createFilter(controllerTester);
-        {
-            String path = "/application/v4/tenant/mytenant/application/myapp/environment/prod/region/myregion/instance/default/deploy";
-            Method method = POST;
-            assertIsAllowed(invokeFilter(filter, createRequest(method, path, HOSTED_OPERATOR)));
-            assertIsAllowed(invokeFilter(filter, createRequest(method, path, TENANT_PIPELINE)));
-            assertIsForbidden(invokeFilter(filter, createRequest(method, path, TENANT_ADMIN)));
-            assertIsForbidden(invokeFilter(filter, createRequest(method, path, USER)));
-        }
+
+        List<AthenzIdentity> allowed = asList(HOSTED_OPERATOR, TENANT_PIPELINE);
+        List<AthenzIdentity> forbidden = asList(TENANT_ADMIN, USER);
+
+        testApiAccess(POST, "/application/v4/tenant/mytenant/application/myapp/environment/prod/region/myregion/instance/default/deploy",
+                      allowed, forbidden, filter);
+
+        testApiAccess(POST, "/application/v4/tenant/mytenant/application/myapp/jobreport",
+                      allowed, forbidden, filter);
+
+        testApiAccess(POST, "/application/v4/tenant/mytenant/application/myapp/promote",
+                      allowed, forbidden, filter);
+    }
+
+    private static void testApiAccess(Method method,
+                                      String path,
+                                      List<? extends AthenzIdentity> allowedIdentities,
+                                      List<? extends AthenzIdentity> forbiddenIdentities,
+                                      ControllerAuthorizationFilter filter) {
+        allowedIdentities.forEach(
+                identity -> assertIsAllowed(invokeFilter(filter, createRequest(method, path, identity))));
+        forbiddenIdentities.forEach(
+                identity -> assertIsForbidden(invokeFilter(filter, createRequest(method, path, identity))));
     }
 
     private static void assertIsAllowed(Optional<AuthorizationResponse> response) {
