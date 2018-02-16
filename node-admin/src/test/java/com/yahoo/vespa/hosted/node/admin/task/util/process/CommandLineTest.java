@@ -144,4 +144,21 @@ public class CommandLineTest {
                         .mapToInt(i -> i)
                         .sum());
     }
+
+    @Test
+    public void addTokensWithMultipleWhiteSpaces() {
+        terminal.expectCommand("iptables -L 2>&1");
+        commandLine.addTokens("iptables  -L").execute();
+
+        terminal.verifyAllCommandsExecuted();
+    }
+
+    @Test
+    public void addTokensWithSpecialCharacters() {
+        terminal.expectCommand("find . ! -name hei 2>&1");
+        commandLine.addTokens("find . ! -name hei").execute();
+
+        terminal.verifyAllCommandsExecuted();
+    }
+
 }
