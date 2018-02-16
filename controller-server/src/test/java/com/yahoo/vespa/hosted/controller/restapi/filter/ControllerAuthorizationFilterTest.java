@@ -134,6 +134,22 @@ public class ControllerAuthorizationFilterTest {
             assertIsForbidden(invokeFilter(filter, createRequest(method, path, TENANT_ADMIN)));
             assertIsForbidden(invokeFilter(filter, createRequest(method, path, USER)));
         }
+        {
+            String path = "/application/v4/tenant/mytenant/application/myapp/jobreport";
+            Method method = POST;
+            assertIsAllowed(invokeFilter(filter, createRequest(method, path, HOSTED_OPERATOR)));
+            assertIsAllowed(invokeFilter(filter, createRequest(method, path, TENANT_PIPELINE)));
+            assertIsForbidden(invokeFilter(filter, createRequest(method, path, TENANT_ADMIN)));
+            assertIsForbidden(invokeFilter(filter, createRequest(method, path, USER)));
+        }
+        {
+            String path = "/application/v4/tenant/mytenant/application/myapp/promote";
+            Method method = POST;
+            assertIsAllowed(invokeFilter(filter, createRequest(method, path, HOSTED_OPERATOR)));
+            assertIsAllowed(invokeFilter(filter, createRequest(method, path, TENANT_PIPELINE)));
+            assertIsForbidden(invokeFilter(filter, createRequest(method, path, TENANT_ADMIN)));
+            assertIsForbidden(invokeFilter(filter, createRequest(method, path, USER)));
+        }
     }
 
     private static void assertIsAllowed(Optional<AuthorizationResponse> response) {
