@@ -1,3 +1,4 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identity;
 
 import com.yahoo.athenz.auth.util.Crypto;
@@ -13,6 +14,9 @@ import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
+/**
+ * @author mortent
+ */
 public class SiaIdentityProvider implements AthenzIdentityProvider {
 
     private final AthenzDomain domain;

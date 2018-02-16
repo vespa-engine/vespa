@@ -2,6 +2,9 @@
 
 package com.yahoo.container.jdisc;
 
+/**
+ * @author mortent
+ */
 public interface Ckms {
     /** Returns the secret for this key */
     String getSecret(String key);
