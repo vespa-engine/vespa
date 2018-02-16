@@ -25,7 +25,13 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-        <groupId>com.yahoo.vespa</groupId>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>config-provisioning</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
             <artifactId>node-repository</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -169,7 +175,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>target/node-admin-app/components</outputDirectory>
-                            <includeArtifactIds>bcprov-jdk15on,bcpkix-jdk15on</includeArtifactIds>
+                            <includeArtifactIds>bcprov-jdk15on,bcpkix-jdk15on,config-provisioning</includeArtifactIds>
                         </configuration>
                     </execution>
                 </executions>
