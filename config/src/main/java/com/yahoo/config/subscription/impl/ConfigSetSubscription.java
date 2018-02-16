@@ -39,11 +39,11 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
             ConfigState<T> configState = getConfigState();
             // User forced reload
             if (checkReloaded()) {
-                updateInstance(myInstance);
+                setConfigIfChanged((T)myInstance);
                 return true;
             }
             if (!myInstance.equals(configState.getConfig())) {
-                updateInstance(myInstance);
+                setConfigIfChangedIncGen((T)myInstance);
                 return true;
             }
             sleep();
@@ -57,11 +57,6 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
         } catch (InterruptedException e) {
             throw new RuntimeException("nextConfig aborted", e);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void updateInstance(ConfigInstance myInstance) {
-        setConfigIfChangedIncGen((T)myInstance);
     }
 
     @Override
