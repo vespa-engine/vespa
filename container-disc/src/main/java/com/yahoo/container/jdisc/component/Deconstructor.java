@@ -40,10 +40,14 @@ public class Deconstructor implements ComponentDeconstructor {
                 executor.schedule(new DestructComponentTask(abstractComponent), delay, TimeUnit.SECONDS);
             }
         } else if (component instanceof Provider) {
+            log.info("Starting deconstruction of " + component);
             ((Provider)component).deconstruct();
+            log.info("Finished deconstructing " + component);
         } else if (component instanceof SharedResource) {
             // No need to delay release, as jdisc does ref-counting
+            log.info("Starting deconstruction of " + component);
             ((SharedResource)component).release();
+            log.info("Finished deconstructing " + component);
         }
     }
 
