@@ -40,8 +40,7 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
         if (checkReloaded()) {
             log.log(LogLevel.DEBUG, "User forced config reload at " + System.currentTimeMillis());
             // User forced reload
-            T  newConfig = updateConfig();
-            setConfigIfChangedIncGen(updateConfig());
+            setConfigIfChanged(updateConfig());
             ConfigState<T> configState = getConfigState();
             log.log(LogLevel.DEBUG, "Config updated at " + System.currentTimeMillis() + ", changed: " + configState.isConfigChanged());
             log.log(LogLevel.DEBUG, "Config: " + configState.getConfig().toString());

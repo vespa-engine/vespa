@@ -79,7 +79,7 @@ public class FileConfigSubscriptionTest {
         assertSame(configState, sub.getConfigState());
         assertTrue(configState.isConfigChanged());
         assertTrue(configState.isGenerationChanged());
-        assertTrue(sub.isConfigChangedAndReset(2L));
+        assertTrue(sub.isConfigChangedAndReset(1L));
         assertNotSame(configState, sub.getConfigState());
         configState = sub.getConfigState();
         assertFalse(configState.isConfigChanged());
@@ -92,7 +92,7 @@ public class FileConfigSubscriptionTest {
         assertFalse(configState.isConfigChanged());
         assertTrue(configState.isGenerationChanged());
 
-        assertFalse(sub.isConfigChangedAndReset(3L));
+        assertFalse(sub.isConfigChangedAndReset(2L));
         assertNotSame(configState, sub.getConfigState());
         configState = sub.getConfigState();
         assertFalse(configState.isConfigChanged());

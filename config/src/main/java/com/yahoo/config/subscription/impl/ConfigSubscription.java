@@ -46,16 +46,10 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
             this.generation = generation;
         }
         private ConfigState(Long generation, T config) {
-            configChanged = false;
-            generationChanged = false;
-            this.generation = generation;
-            this.config = config;
+            this(false, generation,false, config);
         }
         private ConfigState() {
-            generation = 0L;
-            config = null;
-            configChanged = false;
-            generationChanged = false;
+            this(false, 0L, false, null);
         }
         private ConfigState<T> createUnchanged() { return new ConfigState<T>(generation, config); }
         public boolean isConfigChanged() { return configChanged; }
@@ -188,6 +182,11 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         ConfigState<T> prev = this.config.get();
         this.config.set(new ConfigState<>(true, prev.getGeneration() + 1,
                                           !config.equals(prev.getConfig()), config));
+    }
+    protected void setConfigIfChanged(T config) {
+        ConfigState<T> prev = this.config.get();
+        this.config.set(new ConfigState<>(true, prev.getGeneration(),
+                !config.equals(prev.getConfig()), config));
     }
 
     void setGeneration(Long generation) {
