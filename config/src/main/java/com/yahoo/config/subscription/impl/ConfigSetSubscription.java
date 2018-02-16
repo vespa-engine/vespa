@@ -64,11 +64,12 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
         return true;
     }
 
-    public ConfigInstance getNewInstance() {
+    @SuppressWarnings("unchecked")
+    private T getNewInstance() {
         try {
             ConfigInstance.Builder builder = set.get(subKey);
             Constructor<?> constructor = builder.getClass().getDeclaringClass().getConstructor(builder.getClass());
-            return (ConfigInstance) constructor.newInstance(builder);
+            return (T) constructor.newInstance(builder);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
