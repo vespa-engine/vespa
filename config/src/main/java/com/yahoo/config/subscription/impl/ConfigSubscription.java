@@ -96,7 +96,8 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
      * @param subscriber the subscriber for this subscription
      * @return a subclass of a ConfigsSubscription
      */
-    public static <T extends ConfigInstance> ConfigSubscription<T> get(ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource source, TimingValues timingValues) {
+    public static <T extends ConfigInstance> ConfigSubscription<T> get(ConfigKey<T> key, ConfigSubscriber subscriber,
+                                                                       ConfigSource source, TimingValues timingValues) {
         String configId = key.getConfigId();
         if (source instanceof RawSource || configId.startsWith("raw:")) return getRawSub(key, subscriber, source);
         if (source instanceof FileSource || configId.startsWith("file:")) return getFileSub(key, subscriber, source);
@@ -163,12 +164,13 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     /**
      * Called from {@link ConfigSubscriber} when the changed status of this config is propagated to the clients
      */
-    public boolean isConfigChangedAndReset() {
+    public boolean isConfigChangedAndReset(Long requiredGen) {
         ConfigState<T> prev = config.get();
-        while ( !config.compareAndSet(prev, prev.createUnchanged())) {
+        while ( prev.getGeneration().equals(requiredGen) && !config.compareAndSet(prev, prev.createUnchanged())) {
             prev = config.get();
         }
-        return prev.isConfigChanged();
+        // A false positive is a lot better than a false negative
+        return !prev.getGeneration().equals(requiredGen) || prev.isConfigChanged();
     }
 
     void setConfig(Long generation, T config) {

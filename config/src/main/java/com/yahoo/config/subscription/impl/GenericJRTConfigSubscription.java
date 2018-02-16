@@ -3,7 +3,6 @@ package com.yahoo.config.subscription.impl;
 
 import java.util.List;
 
-import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.log.LogLevel;
@@ -19,23 +18,18 @@ import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
  * @author vegardh
  *
  */
-@SuppressWarnings("rawtypes")
 public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfig> {
 
     private final List<String> defContent;
 
-    @SuppressWarnings("unchecked")
-    public GenericJRTConfigSubscription(ConfigKey<RawConfig> key,
-                                        List<String> defContent,
-            ConfigSubscriber subscriber,
-            ConfigSource source,
-            TimingValues timingValues) {
+    public GenericJRTConfigSubscription(ConfigKey<RawConfig> key, List<String> defContent, ConfigSubscriber subscriber,
+                                        ConfigSource source, TimingValues timingValues)
+    {
         super(key, subscriber, source, timingValues);
         this.defContent = defContent;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
         setConfig(jrtReq.getNewGeneration(), RawConfig.createFromResponseParameters(jrtReq) );
         if (log.isLoggable(LogLevel.DEBUG)) {

@@ -230,7 +230,7 @@ public class ConfigSubscriber {
         boolean anyConfigChanged = false;
         boolean allGenerationsChanged = true;
         boolean allGenerationsTheSame = true;
-        Long currentGenChecker = null;
+        Long currentGen = null;
         for (ConfigHandle<? extends ConfigInstance> h : subscriptionHandles) {
             h.setChanged(false); // Reset this flag, if it was set, the user should have acted on it the last time this method returned true.
         }
@@ -245,8 +245,8 @@ public class ConfigSubscriber {
                 }
                 throwIfExceptionSet(subscription);
                 ConfigSubscription.ConfigState<? extends ConfigInstance> config = subscription.getConfigState();
-                if (currentGenChecker == null) currentGenChecker = config.getGeneration();
-                if (!currentGenChecker.equals(config.getGeneration())) allGenerationsTheSame = false;
+                if (currentGen == null) currentGen = config.getGeneration();
+                if (!currentGen.equals(config.getGeneration())) allGenerationsTheSame = false;
                 allGenerationsChanged = allGenerationsChanged && config.isGenerationChanged();
                 if (config.isConfigChanged()) anyConfigChanged = true;
                 timeLeftMillis = timeLeftMillis - (System.currentTimeMillis() - started);
@@ -259,8 +259,8 @@ public class ConfigSubscriber {
         if (reconfigDue) {
             // This indicates the clients will possibly reconfigure their services, so "reset" changed-logic in subscriptions.
             // Also if appropriate update the changed flag on the handler, which clients use.
-            markSubsChangedSeen();
-            generation = currentGenChecker;
+            markSubsChangedSeen(currentGen);
+            generation = currentGen;
         }
         return reconfigDue;
     }
@@ -286,10 +286,10 @@ public class ConfigSubscriber {
         }
     }
 
-    private void markSubsChangedSeen() {
+    private void markSubsChangedSeen(Long requiredGen) {
         for (ConfigHandle<? extends ConfigInstance> h : subscriptionHandles) {
             ConfigSubscription<? extends ConfigInstance> sub = h.subscription();
-            h.setChanged(sub.isConfigChangedAndReset());
+            h.setChanged(sub.isConfigChangedAndReset(requiredGen));
         }
     }
 
