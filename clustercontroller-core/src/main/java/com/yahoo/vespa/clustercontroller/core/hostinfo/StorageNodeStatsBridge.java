@@ -43,9 +43,9 @@ public class StorageNodeStatsBridge {
     }
 
     public static ContentClusterStats generate(Distributor distributor) {
-        Map<Integer, NodeMergeStats> mapToNodeStats = new HashMap<>();
+        Map<Integer, ContentNodeStats> mapToNodeStats = new HashMap<>();
         for (StorageNode storageNode : distributor.getStorageNodes()) {
-            mapToNodeStats.put(storageNode.getIndex(), new NodeMergeStats(storageNode));
+            mapToNodeStats.put(storageNode.getIndex(), new ContentNodeStats(storageNode));
         }
         return new ContentClusterStats(mapToNodeStats);
     }

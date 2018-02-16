@@ -71,7 +71,7 @@ public class ClusterStatsAggregator {
             return;
         }
 
-        Map<String, NodeMergeStats> hostToStatsMap = getHostToStatsMap(hostnames);
+        Map<String, ContentNodeStats> hostToStatsMap = getHostToStatsMap(hostnames);
         if (hostToStatsMap == null) {
             return;
         }
@@ -82,9 +82,9 @@ public class ClusterStatsAggregator {
         }
     }
 
-    private Map<String, NodeMergeStats> getHostToStatsMap(Map<Integer, String> hostnames) {
-        Map<String, NodeMergeStats> hostToStatsMap = new HashMap<>(aggregatedStats.size());
-        for (NodeMergeStats nodeStats : aggregatedStats) {
+    private Map<String, ContentNodeStats> getHostToStatsMap(Map<Integer, String> hostnames) {
+        Map<String, ContentNodeStats> hostToStatsMap = new HashMap<>(aggregatedStats.size());
+        for (ContentNodeStats nodeStats : aggregatedStats) {
             // The hosts names are kept up-to-date from Slobrok, and MAY therefore be arbitrarily
             // different from the node set used by aggregatedStats (and typically tied to a cluster state).
             // If so, we will not pretend the returned map is complete, and will return null.
@@ -104,18 +104,18 @@ public class ClusterStatsAggregator {
     private void addStatsFromDistributor(int distributorIndex, ContentClusterStats clusterStats) {
         ContentClusterStats previousStorageStats = distributorToStats.put(distributorIndex, clusterStats);
 
-        for (NodeMergeStats storageNode : aggregatedStats) {
-            Integer storageNodeIndex = storageNode.getNodeIndex();
+        for (ContentNodeStats contentNode : aggregatedStats) {
+            Integer nodeIndex = contentNode.getNodeIndex();
 
-            NodeMergeStats statsToAdd = clusterStats.getStorageNode(storageNodeIndex);
+            ContentNodeStats statsToAdd = clusterStats.getStorageNode(nodeIndex);
             if (statsToAdd != null) {
-                storageNode.add(statsToAdd);
+                contentNode.add(statsToAdd);
             }
 
             if (previousStorageStats != null) {
-                NodeMergeStats statsToSubtract = clusterStats.getStorageNode(storageNodeIndex);
+                ContentNodeStats statsToSubtract = clusterStats.getStorageNode(nodeIndex);
                 if (statsToSubtract != null) {
-                    storageNode.subtract(statsToSubtract);
+                    contentNode.subtract(statsToSubtract);
                 }
             }
         }

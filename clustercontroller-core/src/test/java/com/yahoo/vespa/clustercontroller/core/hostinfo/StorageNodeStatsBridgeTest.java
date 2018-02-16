@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.hostinfo;
 
-import com.yahoo.vespa.clustercontroller.core.NodeMergeStats;
+import com.yahoo.vespa.clustercontroller.core.ContentNodeStats;
 import com.yahoo.vespa.clustercontroller.core.ContentClusterStats;
 import com.yahoo.vespa.clustercontroller.core.StorageNodeStats;
 import com.yahoo.vespa.clustercontroller.core.StorageNodeStatsContainer;
@@ -53,13 +53,13 @@ public class StorageNodeStatsBridgeTest {
         String data = getJsonString();
         HostInfo hostInfo = HostInfo.createHostInfo(data);
 
-        ContentClusterStats storageMergeStats = StorageNodeStatsBridge.generate(hostInfo.getDistributor());
+        ContentClusterStats clusterStats = StorageNodeStatsBridge.generate(hostInfo.getDistributor());
         int size = 0;
-        for (NodeMergeStats mergeStats : storageMergeStats) {
-            assertThat(mergeStats.getCopyingIn().getBuckets(), is(2L));
-            assertThat(mergeStats.getCopyingOut().getBuckets(), is(4L));
-            assertThat(mergeStats.getSyncing().getBuckets(), is(1L));
-            assertThat(mergeStats.getMovingOut().getBuckets(), is(3L));
+        for (ContentNodeStats nodeStats : clusterStats) {
+            assertThat(nodeStats.getCopyingIn().getBuckets(), is(2L));
+            assertThat(nodeStats.getCopyingOut().getBuckets(), is(4L));
+            assertThat(nodeStats.getSyncing().getBuckets(), is(1L));
+            assertThat(nodeStats.getMovingOut().getBuckets(), is(3L));
             size++;
         }
         assertThat(size, is(2));

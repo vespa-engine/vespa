@@ -53,13 +53,13 @@ public class ClusterStatsAggregatorTest {
         clusterStats.getStorageNode(index).set(createStats(index, syncing, copyingIn, movingOut, copyingOut));
     }
 
-    private static NodeMergeStats createStats(int index, int syncing, int copyingIn, int movingOut, int copyingOut) {
-        return new NodeMergeStats(
+    private static ContentNodeStats createStats(int index, int syncing, int copyingIn, int movingOut, int copyingOut) {
+        return new ContentNodeStats(
                 index,
-                new NodeMergeStats.Amount(syncing),
-                new NodeMergeStats.Amount(copyingIn),
-                new NodeMergeStats.Amount(movingOut),
-                new NodeMergeStats.Amount(copyingOut));
+                new ContentNodeStats.Amount(syncing),
+                new ContentNodeStats.Amount(copyingIn),
+                new ContentNodeStats.Amount(movingOut),
+                new ContentNodeStats.Amount(copyingOut));
     }
 
     @Test
@@ -75,10 +75,10 @@ public class ClusterStatsAggregatorTest {
         ClusterStatsAggregator aggregator = new ClusterStatsAggregator(distributors, storageNodes, updater);
         aggregator.updateForDistributor(hostnames, distributorIndex, clusterStats);
 
-        Map<String, NodeMergeStats> expectedStorageNodeStats = new HashMap<>();
-        expectedStorageNodeStats.put("storage-node", createStats(storageNodeIndex, 5, 6, 7, 8));
+        Map<String, ContentNodeStats> expectedContentNodeStats = new HashMap<>();
+        expectedContentNodeStats.put("storage-node", createStats(storageNodeIndex, 5, 6, 7, 8));
 
-        verify(updater).updateMergeOpMetrics(expectedStorageNodeStats);
+        verify(updater).updateMergeOpMetrics(expectedContentNodeStats);
     }
 
     @Test
@@ -105,11 +105,11 @@ public class ClusterStatsAggregatorTest {
         putStorageStats(storageNode2, 30, 31, 32, 33);
         aggregator.updateForDistributor(hostnames, distributor2, clusterStats);
 
-        Map<String, NodeMergeStats> expectedStorageNodeStats = new HashMap<>();
-        expectedStorageNodeStats.put("storage-node-1", createStats(storageNode1, 0 + 10, 1 + 11, 2 + 12, 3 + 13));
-        expectedStorageNodeStats.put("storage-node-2", createStats(storageNode2, 20 + 30, 21 + 31, 22 + 32, 23 + 33));
+        Map<String, ContentNodeStats> expectedContentNodeStats = new HashMap<>();
+        expectedContentNodeStats.put("storage-node-1", createStats(storageNode1, 0 + 10, 1 + 11, 2 + 12, 3 + 13));
+        expectedContentNodeStats.put("storage-node-2", createStats(storageNode2, 20 + 30, 21 + 31, 22 + 32, 23 + 33));
 
-        verify(updater, times(1)).updateMergeOpMetrics(expectedStorageNodeStats);
+        verify(updater, times(1)).updateMergeOpMetrics(expectedContentNodeStats);
     }
 
     @Test
@@ -140,12 +140,12 @@ public class ClusterStatsAggregatorTest {
         // See times(1) below.
         aggregator.updateForDistributor(hostnames, distributor2, clusterStats);
 
-        Map<String, NodeMergeStats> expectedStorageNodeStats = new HashMap<>();
-        expectedStorageNodeStats.put("storage-node-1", createStats(storageNode1, 0 + 10, 1 + 11, 2 + 12, 3 + 13));
-        expectedStorageNodeStats.put("storage-node-2", createStats(storageNode2, 20 + 30, 21 + 31, 22 + 32, 23 + 33));
+        Map<String, ContentNodeStats> expectedContentNodeStats = new HashMap<>();
+        expectedContentNodeStats.put("storage-node-1", createStats(storageNode1, 0 + 10, 1 + 11, 2 + 12, 3 + 13));
+        expectedContentNodeStats.put("storage-node-2", createStats(storageNode2, 20 + 30, 21 + 31, 22 + 32, 23 + 33));
 
 
-        verify(updater, times(1)).updateMergeOpMetrics(expectedStorageNodeStats);
+        verify(updater, times(1)).updateMergeOpMetrics(expectedContentNodeStats);
     }
 
     @Test
@@ -183,11 +183,11 @@ public class ClusterStatsAggregatorTest {
         putStorageStats(storageNode2, 20, 21, 22, 23);
         aggregator.updateForDistributor(hostnames, distributor1, clusterStats);
 
-        Map<String, NodeMergeStats> expectedStorageNodeStats = new HashMap<>();
-        expectedStorageNodeStats.put("storage-node-1", createStats(storageNode1, 0, 1, 2, 3));
-        expectedStorageNodeStats.put("storage-node-2", createStats(storageNode2, 20, 21, 22, 23));
+        Map<String, ContentNodeStats> expectedContentNodeStats = new HashMap<>();
+        expectedContentNodeStats.put("storage-node-1", createStats(storageNode1, 0, 1, 2, 3));
+        expectedContentNodeStats.put("storage-node-2", createStats(storageNode2, 20, 21, 22, 23));
 
-        verify(updater, times(1)).updateMergeOpMetrics(expectedStorageNodeStats);
+        verify(updater, times(1)).updateMergeOpMetrics(expectedContentNodeStats);
     }
 
     @Test
@@ -209,9 +209,9 @@ public class ClusterStatsAggregatorTest {
         putStorageStats(storageNode1, 10, 11, 12, 13);
         aggregator.updateForDistributor(hostnames, distributor2, clusterStats);
 
-        Map<String, NodeMergeStats> expectedStorageNodeStats = new HashMap<>();
-        expectedStorageNodeStats.put("storage-node-1", createStats(storageNode1, 0 + 10, 1 + 11, 2 + 12, 3 + 13));
+        Map<String, ContentNodeStats> expectedContentNodeStats = new HashMap<>();
+        expectedContentNodeStats.put("storage-node-1", createStats(storageNode1, 0 + 10, 1 + 11, 2 + 12, 3 + 13));
 
-        verify(updater, times(1)).updateMergeOpMetrics(expectedStorageNodeStats);
+        verify(updater, times(1)).updateMergeOpMetrics(expectedContentNodeStats);
     }
 }

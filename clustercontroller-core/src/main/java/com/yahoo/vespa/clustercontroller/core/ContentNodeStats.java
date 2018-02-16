@@ -6,12 +6,12 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNode;
 /**
  * @author hakonhall
  */
-public class NodeMergeStats {
+public class ContentNodeStats {
 
     /**
      * Constructor that sets values to zero if not present.
      */
-    public NodeMergeStats(StorageNode storageNodePojo) {
+    public ContentNodeStats(StorageNode storageNodePojo) {
         this.nodeIndex = storageNodePojo.getIndex();
 
         StorageNode.OutstandingMergeOps mergeOps = storageNodePojo.getOutstandingMergeOpsOrNull();
@@ -78,11 +78,11 @@ public class NodeMergeStats {
     /**
      * An instance with all 0 amounts.
      */
-    public NodeMergeStats(int index) {
+    public ContentNodeStats(int index) {
         this(index, new Amount(), new Amount(), new Amount(), new Amount());
     }
 
-    NodeMergeStats(int index, Amount syncing, Amount copyingIn, Amount movingOut, Amount copyingOut) {
+    ContentNodeStats(int index, Amount syncing, Amount copyingIn, Amount movingOut, Amount copyingOut) {
         this.nodeIndex = index;
         this.syncing = syncing;
         this.copyingIn = copyingIn;
@@ -90,7 +90,7 @@ public class NodeMergeStats {
         this.copyingOut = copyingOut;
     }
 
-    public void set(NodeMergeStats stats) {
+    public void set(ContentNodeStats stats) {
         nodeIndex = stats.nodeIndex;
         syncing.set(stats.syncing);
         copyingIn.set(stats.copyingIn);
@@ -104,18 +104,18 @@ public class NodeMergeStats {
     public Amount getMovingOut() { return movingOut; }
     public Amount getCopyingOut() { return copyingOut; }
 
-    void add(NodeMergeStats stats) {
+    void add(ContentNodeStats stats) {
         scaledAdd(1, stats);
     }
 
-    void subtract(NodeMergeStats stats) {
+    void subtract(ContentNodeStats stats) {
         scaledAdd(-1, stats);
     }
 
     /**
      * Logically, adds (factor * stats) to this object. factor of 1 is normal add, -1 is subtraction.
      */
-    private void scaledAdd(int factor, NodeMergeStats stats) {
+    private void scaledAdd(int factor, ContentNodeStats stats) {
         syncing.scaledAdd(factor, stats.syncing);
         copyingIn.scaledAdd(factor, stats.copyingIn);
         movingOut.scaledAdd(factor, stats.movingOut);
@@ -132,11 +132,11 @@ public class NodeMergeStats {
 
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof NodeMergeStats)) {
+        if (!(other instanceof ContentNodeStats)) {
             return false;
         }
 
-        NodeMergeStats otherStats = (NodeMergeStats) other;
+        ContentNodeStats otherStats = (ContentNodeStats) other;
         return nodeIndex == otherStats.nodeIndex &&
                 syncing.equals(otherStats.syncing) &&
                 copyingIn.equals(otherStats.copyingIn) &&

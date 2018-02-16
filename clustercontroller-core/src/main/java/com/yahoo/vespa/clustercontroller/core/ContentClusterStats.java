@@ -11,28 +11,28 @@ import java.util.Set;
  *
  * @author hakonhall
  */
-public class ContentClusterStats implements Iterable<NodeMergeStats> {
+public class ContentClusterStats implements Iterable<ContentNodeStats> {
 
     // Maps a storage node index to the storage node's pending merges stats.
-    private final Map<Integer, NodeMergeStats> mapToNodeStats;
+    private final Map<Integer, ContentNodeStats> mapToNodeStats;
 
     public ContentClusterStats(Set<Integer> storageNodes) {
         mapToNodeStats = new HashMap<>(storageNodes.size());
         for (Integer index : storageNodes) {
-            mapToNodeStats.put(index, new NodeMergeStats(index));
+            mapToNodeStats.put(index, new ContentNodeStats(index));
         }
     }
 
-    public ContentClusterStats(Map<Integer, NodeMergeStats> mapToNodeStats) {
+    public ContentClusterStats(Map<Integer, ContentNodeStats> mapToNodeStats) {
         this.mapToNodeStats = mapToNodeStats;
     }
 
     @Override
-    public Iterator<NodeMergeStats> iterator() {
+    public Iterator<ContentNodeStats> iterator() {
         return mapToNodeStats.values().iterator();
     }
 
-    NodeMergeStats getStorageNode(Integer index) {
+    ContentNodeStats getStorageNode(Integer index) {
         return mapToNodeStats.get(index);
     }
 
