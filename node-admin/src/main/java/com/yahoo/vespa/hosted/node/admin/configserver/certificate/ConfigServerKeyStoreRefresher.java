@@ -90,6 +90,7 @@ public class ConfigServerKeyStoreRefresher {
     }
 
     public void stop() {
+        executor.shutdown();
         do {
             try {
                 executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
