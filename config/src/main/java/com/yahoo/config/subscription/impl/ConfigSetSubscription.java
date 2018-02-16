@@ -35,15 +35,15 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
     public boolean nextConfig(long timeout) {
         long end = System.currentTimeMillis() + timeout;
         do {
-            ConfigInstance myInstance = getNewInstance();
+            T myInstance = getNewInstance();
             ConfigState<T> configState = getConfigState();
             // User forced reload
             if (checkReloaded()) {
-                setConfigIfChanged((T)myInstance);
+                setConfigIfChanged(myInstance);
                 return true;
             }
             if (!myInstance.equals(configState.getConfig())) {
-                setConfigIfChangedIncGen((T)myInstance);
+                setConfigIfChangedIncGen(myInstance);
                 return true;
             }
             sleep();
