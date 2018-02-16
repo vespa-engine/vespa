@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.orchestrator;
+package com.yahoo.vespa.hosted.node.admin.configserver.orchestrator;
 
-import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
+import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 
-import com.yahoo.vespa.hosted.node.admin.util.HttpException;
+import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
 import com.yahoo.vespa.orchestrator.restapi.HostSuspensionApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
@@ -25,17 +25,17 @@ public class OrchestratorImpl implements Orchestrator {
     static final String ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API
             = ORCHESTRATOR_PATH_PREFIX + HostSuspensionApi.PATH_PREFIX;
 
-    private final ConfigServerHttpRequestExecutor requestExecutor;
+    private final ConfigServerApi configServerApi;
 
-    public OrchestratorImpl(ConfigServerHttpRequestExecutor requestExecutor) {
-        this.requestExecutor = requestExecutor;
+    public OrchestratorImpl(ConfigServerApi configServerApi) {
+        this.configServerApi = configServerApi;
     }
 
     @Override
     public void suspend(final String hostName) {
         UpdateHostResponse response;
         try {
-            response = requestExecutor.put(getSuspendPath(hostName),
+            response = configServerApi.put(getSuspendPath(hostName),
                     Optional.empty(), /* body */
                     UpdateHostResponse.class);
         } catch (HttpException.NotFoundException n) {
@@ -56,7 +56,7 @@ public class OrchestratorImpl implements Orchestrator {
     public void suspend(String parentHostName, List<String> hostNames) {
         final BatchOperationResult batchOperationResult;
         try {
-            batchOperationResult = requestExecutor.put(
+            batchOperationResult = configServerApi.put(
                     ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
                     Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                     BatchOperationResult.class);
@@ -77,7 +77,7 @@ public class OrchestratorImpl implements Orchestrator {
         UpdateHostResponse response;
         try {
             String path = getSuspendPath(hostName);
-            response = requestExecutor.delete(path, UpdateHostResponse.class);
+            response = configServerApi.delete(path, UpdateHostResponse.class);
         } catch (HttpException.NotFoundException n) {
             throw new OrchestratorNotFoundException("Failed to resume " + hostName + ", host not found");
         } catch (HttpException e) {

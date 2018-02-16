@@ -1,12 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.util;
+package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
-import com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder;
+import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
@@ -18,28 +15,15 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.nio.file.Path;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.Security;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 /**
  * Retries request on config server a few times before giving up. Assumes that all requests should be sent with
@@ -47,13 +31,11 @@ import java.util.function.Supplier;
  *
  * @author dybdahl
  */
-public class ConfigServerHttpRequestExecutor implements AutoCloseable {
-    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(ConfigServerHttpRequestExecutor.class);
-    private static final Duration CLIENT_REFRESH_INTERVAL = Duration.ofHours(1);
+public class ConfigServerApiImpl implements ConfigServerApi {
+    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(ConfigServerApiImpl.class);
 
     private final ObjectMapper mapper = new ObjectMapper();
-    private final ScheduledExecutorService clientRefresherScheduler =
-            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("http-client-refresher"));
+
     private final List<URI> configServerHosts;
 
     /**
@@ -66,30 +48,20 @@ public class ConfigServerHttpRequestExecutor implements AutoCloseable {
      */
     private volatile SelfCloseableHttpClient client;
 
-    public static ConfigServerHttpRequestExecutor create(
-            Collection<URI> configServerUris,
-            Optional<KeyStoreOptions> keyStoreOptions,
-            Optional<KeyStoreOptions> trustStoreOptions,
-            Optional<AthenzIdentity> athenzIdentity) {
-        Security.addProvider(new BouncyCastleProvider());
-
-        Supplier<SelfCloseableHttpClient> clientSupplier = () -> createHttpClient(keyStoreOptions, trustStoreOptions, athenzIdentity);
-        ConfigServerHttpRequestExecutor requestExecutor = new ConfigServerHttpRequestExecutor(
-                randomizeConfigServerUris(configServerUris), clientSupplier.get());
-
-        if (keyStoreOptions.isPresent() || trustStoreOptions.isPresent()) {
-            requestExecutor.clientRefresherScheduler.scheduleAtFixedRate(() -> requestExecutor.client = clientSupplier.get(),
-                    CLIENT_REFRESH_INTERVAL.toMillis(), CLIENT_REFRESH_INTERVAL.toMillis(), TimeUnit.MILLISECONDS);
-        }
-        return requestExecutor;
+    public ConfigServerApiImpl(Collection<URI> configServerUris) {
+        this(configServerUris, SSLConnectionSocketFactory.getSocketFactory());
     }
 
-    ConfigServerHttpRequestExecutor(List<URI> configServerHosts, SelfCloseableHttpClient client) {
+    ConfigServerApiImpl(Collection<URI> configServerUris, SSLConnectionSocketFactory sslConnectionSocketFactory) {
+        this(randomizeConfigServerUris(configServerUris), new SelfCloseableHttpClient(sslConnectionSocketFactory));
+    }
+
+    ConfigServerApiImpl(List<URI> configServerHosts, SelfCloseableHttpClient client) {
         this.configServerHosts = configServerHosts;
         this.client = client;
     }
 
-    public interface CreateRequest {
+    interface CreateRequest {
         HttpUriRequest createRequest(URI configServerUri) throws JsonProcessingException, UnsupportedEncodingException;
     }
 
@@ -181,6 +153,10 @@ public class ConfigServerHttpRequestExecutor implements AutoCloseable {
         request.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
     }
 
+    public void setSSLConnectionSocketFactory(SSLConnectionSocketFactory sslSocketFactory) {
+        this.client = new SelfCloseableHttpClient(sslSocketFactory);
+    }
+
     // Shuffle config server URIs to balance load
     private static List<URI> randomizeConfigServerUris(Collection<URI> configServerUris) {
         List<URI> shuffledConfigServerHosts = new ArrayList<>(configServerUris);
@@ -188,62 +164,8 @@ public class ConfigServerHttpRequestExecutor implements AutoCloseable {
         return shuffledConfigServerHosts;
     }
 
-    private static SelfCloseableHttpClient createHttpClient(Optional<KeyStoreOptions> keyStoreOptions,
-                                                            Optional<KeyStoreOptions> trustStoreOptions,
-                                                            Optional<AthenzIdentity> athenzIdentity) {
-        NODE_ADMIN_LOGGER.info("Creating new HTTP client");
-        try {
-            SSLContext sslContext = makeSslContext(keyStoreOptions, trustStoreOptions);
-            HostnameVerifier hostnameVerifier = makeHostnameVerifier(athenzIdentity);
-            SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
-            return new SelfCloseableHttpClient(sslSocketFactory);
-        } catch (Exception e) {
-            NODE_ADMIN_LOGGER.error("Failed to create HTTP client with custom SSL Context, proceeding with default", e);
-            return new SelfCloseableHttpClient();
-        }
-    }
-
-    private static SSLContext makeSslContext(Optional<KeyStoreOptions> keyStoreOptions, Optional<KeyStoreOptions> trustStoreOptions) {
-        AthenzSslContextBuilder sslContextBuilder = new AthenzSslContextBuilder();
-        trustStoreOptions.ifPresent(options -> sslContextBuilder.withTrustStore(options.path.toFile(), options.type));
-        keyStoreOptions.ifPresent(options -> {
-            try {
-                KeyStore keyStore = loadKeyStoreFromFileWithProvider(options.path, options.password, options.type, "BC");
-                sslContextBuilder.withKeyStore(keyStore, options.password);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to read key store", e);
-            }
-        });
-
-        return sslContextBuilder.build();
-    }
-
-    private static HostnameVerifier makeHostnameVerifier(Optional<AthenzIdentity> athenzIdentity) {
-        return athenzIdentity
-                .map(identity -> (HostnameVerifier) new AthenzIdentityVerifier(Collections.singleton(identity)))
-                .orElse(SSLConnectionSocketFactory.getDefaultHostnameVerifier());
-    }
-
     @Override
     public void close() {
-        clientRefresherScheduler.shutdown();
-        do {
-            try {
-                clientRefresherScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-            } catch (InterruptedException e1) {
-                NODE_ADMIN_LOGGER.info("Interrupted while waiting for clientRefresherScheduler to shutdown");
-            }
-        } while (!clientRefresherScheduler.isTerminated());
-
         client.close();
-    }
-
-    private static KeyStore loadKeyStoreFromFileWithProvider(Path path, char[] password, String keyStoreType, String provider)
-            throws IOException, GeneralSecurityException {
-        KeyStore keyStore = KeyStore.getInstance(keyStoreType, provider);
-        try (FileInputStream in = new FileInputStream(path.toFile())) {
-            keyStore.load(in, password);
-        }
-        return keyStore;
     }
 }

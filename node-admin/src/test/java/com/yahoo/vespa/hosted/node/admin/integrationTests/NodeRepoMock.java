@@ -4,10 +4,9 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +31,7 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public List<ContainerNodeSpec> getContainersToRun(String dockerHostHostname) throws IOException {
+    public List<ContainerNodeSpec> getContainersToRun(String dockerHostHostname) {
         synchronized (monitor) {
             return new ArrayList<>(containerNodeSpecsByHostname.values());
         }

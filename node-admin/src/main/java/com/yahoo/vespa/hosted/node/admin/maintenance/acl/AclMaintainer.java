@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Chain;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Command;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.FlushCommand;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.PolicyCommand;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.util.HashMap;
