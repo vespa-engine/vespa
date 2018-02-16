@@ -18,6 +18,8 @@ import java.nio.file.Files;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -72,12 +74,29 @@ public class FileConfigSubscriptionTest {
         assertThat(configState.getConfig().intval(), is(33));
         assertTrue(configState.isConfigChanged());
         assertTrue(configState.isGenerationChanged());
+
+        assertTrue(sub.isConfigChangedAndReset(7L));
+        assertSame(configState, sub.getConfigState());
+        assertTrue(configState.isConfigChanged());
+        assertTrue(configState.isGenerationChanged());
+        assertTrue(sub.isConfigChangedAndReset(2L));
+        assertNotSame(configState, sub.getConfigState());
+        configState = sub.getConfigState();
+        assertFalse(configState.isConfigChanged());
+        assertFalse(configState.isGenerationChanged());
+
         sub.reload(2);
         assertTrue(sub.nextConfig(1000));
         configState = sub.getConfigState();
         assertThat(configState.getConfig().intval(), is(33));
         assertFalse(configState.isConfigChanged());
         assertTrue(configState.isGenerationChanged());
+
+        assertFalse(sub.isConfigChangedAndReset(3L));
+        assertNotSame(configState, sub.getConfigState());
+        configState = sub.getConfigState();
+        assertFalse(configState.isConfigChanged());
+        assertFalse(configState.isGenerationChanged());
     }
 
     @Test
