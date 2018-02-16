@@ -55,11 +55,6 @@ public class MockNodeRepository extends NodeRepository {
         populate();
     }
 
-    @Override
-    public boolean dynamicAllocationEnabled() {
-        return true;
-    }
-
     private void populate() {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this, flavors, Zone.defaultZone());
 

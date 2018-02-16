@@ -64,8 +64,7 @@ class GroupPreparer {
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
                 prioritizer.addReadyNodes();
-                if (nodeRepository.dynamicAllocationEnabled())
-                    prioritizer.addNewDockerNodes();
+                prioritizer.addNewDockerNodes();
 
                 // Allocate from the prioritized list
                 NodeAllocation allocation = new NodeAllocation(application, cluster, requestedNodes, highestIndex, clock);
