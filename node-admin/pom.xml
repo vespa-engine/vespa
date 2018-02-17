@@ -25,7 +25,13 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-        <groupId>com.yahoo.vespa</groupId>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>config-provisioning</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
             <artifactId>node-repository</artifactId>
             <version>${project.version}</version>
         </dependency>
