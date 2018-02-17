@@ -18,6 +18,11 @@ public class MapEvaluationContext implements EvaluationContext<TypeContext.Name>
     public void put(String name, Tensor tensor) { bindings.put(name, tensor); }
 
     @Override
+    public TensorType getType(String name) {
+        return getType(new Name(name));
+    }
+
+    @Override
     public TensorType getType(Name name) {
         Tensor tensor = bindings.get(name.toString());
         if (tensor == null) return null;

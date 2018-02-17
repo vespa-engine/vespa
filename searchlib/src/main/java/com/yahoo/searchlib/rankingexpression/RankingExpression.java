@@ -244,10 +244,6 @@ public class RankingExpression implements Serializable {
      * @return a list of named rank properties required to implement this expression.
      */
     public Map<String, String> getRankProperties(List<ExpressionFunction> macros) {
-        Map<String, ExpressionFunction> arg = new HashMap<>();
-        for (ExpressionFunction function : macros) {
-            arg.put(function.getName(), function);
-        }
         Deque<String> path = new LinkedList<>();
         SerializationContext context = new SerializationContext(macros);
         String serializedRoot = root.toString(context, path, null);
@@ -272,7 +268,7 @@ public class RankingExpression implements Serializable {
      *
      * @throws IllegalArgumentException if this expression is not type correct in this context
      */
-    public TensorType type(TypeContext context) {
+    public TensorType type(TypeContext<Reference> context) {
         return root.type(context);
     }
 

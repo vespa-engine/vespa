@@ -48,6 +48,11 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     }
 
     @Override
+    public TensorType getType(String reference) {
+        throw new UnsupportedOperationException("Not able to parse gereral references from string form");
+    }
+
+    @Override
     public TensorType getType(Reference reference) {
         Optional<String> binding = boundIdentifier(reference);
         if (binding.isPresent()) {

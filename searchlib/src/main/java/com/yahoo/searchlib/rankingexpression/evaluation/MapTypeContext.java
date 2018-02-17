@@ -23,6 +23,11 @@ public class MapTypeContext implements TypeContext<Reference> {
     }
 
     @Override
+    public TensorType getType(String reference) {
+        throw new UnsupportedOperationException("Not able to parse gereral references from string form");
+    }
+
+    @Override
     public TensorType getType(Reference reference) {
         return featureTypes.get(reference);
     }

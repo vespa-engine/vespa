@@ -5,6 +5,7 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.Set;
@@ -24,6 +25,11 @@ public abstract class Context implements EvaluationContext<Reference> {
      * @return the value of the named variable.
      */
     public abstract Value get(String name);
+
+    @Override
+    public TensorType getType(String reference) {
+        throw new UnsupportedOperationException("Not able to parse gereral references from string form");
+    }
 
     /** Returns a variable as a tensor */
     @Override

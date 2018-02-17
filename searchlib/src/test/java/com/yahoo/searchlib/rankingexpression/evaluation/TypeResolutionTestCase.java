@@ -37,7 +37,7 @@ public class TypeResolutionTestCase {
         assertIncompatibleType("if (1>0, query(x1), query(y1))", context);
     }
 
-    private void assertType(String type, String expression, TypeContext context) {
+    private void assertType(String type, String expression, TypeContext<Reference> context) {
         try {
             assertEquals(TensorType.fromSpec(type), new RankingExpression(expression).type(context));
         }
@@ -46,7 +46,7 @@ public class TypeResolutionTestCase {
         }
     }
 
-    private void assertIncompatibleType(String expression, TypeContext context) {
+    private void assertIncompatibleType(String expression, TypeContext<Reference> context) {
         try {
             new RankingExpression(expression).type(context);
             fail("Expected type incompatibility exception");

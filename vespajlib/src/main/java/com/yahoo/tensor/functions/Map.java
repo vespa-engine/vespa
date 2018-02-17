@@ -53,12 +53,12 @@ public class Map extends PrimitiveTensorFunction {
     }
 
     @Override
-    public TensorType type(TypeContext context) {
+    public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) {
         return argument.type(context);
     }
 
     @Override
-    public Tensor evaluate(EvaluationContext context) {
+    public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor argument = argument().evaluate(context);
         Tensor.Builder builder = Tensor.Builder.of(argument.type());
         for (Iterator<Tensor.Cell> i = argument.cellIterator(); i.hasNext(); ) {

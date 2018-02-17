@@ -92,7 +92,7 @@ public final class ReferenceNode extends CompositeNode {
     public Reference reference() { return reference; }
 
     @Override
-    public TensorType type(TypeContext context) {
+    public TensorType type(TypeContext<Reference> context) {
         TensorType type = context.getType(reference);
         if (type == null)
             throw new IllegalArgumentException("Unknown feature '" + toString() + "'");

@@ -18,6 +18,14 @@ public interface TypeContext<NAMETYPE extends TypeContext.Name> {
      */
     TensorType getType(NAMETYPE name);
 
+    /**
+     * Returns the type of the tensor with this name by converting from a string name.
+     *
+     * @return returns the type of the tensor which will be returned by calling getTensor(name)
+     *         or null if getTensor will return null.
+     */
+    TensorType getType(String name);
+
     /** A name which is just a string. Names are value objects. */
     class Name {
 
