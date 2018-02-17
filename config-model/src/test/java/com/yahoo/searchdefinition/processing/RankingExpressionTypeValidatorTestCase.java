@@ -147,7 +147,7 @@ public class RankingExpressionTypeValidatorTestCase {
     }
 
     @Test
-    public void testMacroInvocationTypes_Nested() throws Exception {
+    public void testTensorMacroInvocationTypes_Nested() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(joinLines(
@@ -161,15 +161,21 @@ public class RankingExpressionTypeValidatorTestCase {
                 "    }",
                 "  }",
                 "  rank-profile my_rank_profile {",
-                "    macro use_first(attribute1, attribute2) {",
-                "      expression: attribute(attribute1)",
+                "    macro return_a() {",
+                "      expression: return_first(attribute(a), attribute(b))",
                 "    }",
-                "    macro use_second(attribute1, attribute2) {",
-                "      expression: use_first(attribute2, attribute1)",
+                "    macro return_b() {",
+                "      expression: return_second(attribute(a), attribute(b))",
+                "    }",
+                "    macro return_first(e1, e2) {",
+                "      expression: e1",
+                "    }",
+                "    macro return_second(e1, e2) {",
+                "      expression: return_first(e2, e1)",
                 "    }",
                 "    summary-features {",
-                "      use_first(a, b)",
-                "      use_second(a, b)",
+                "      return_a",
+                "      return_b",
                 "    }",
                 "  }",
                 "}"
@@ -178,9 +184,9 @@ public class RankingExpressionTypeValidatorTestCase {
         RankProfile profile =
                 builder.getRankProfileRegistry().getRankProfile(builder.getSearch(), "my_rank_profile");
         assertEquals(TensorType.fromSpec("tensor(x[],y[])"),
-                     summaryFeatures(profile).get("use_first(a,b)").type(profile.typeContext(builder.getQueryProfileRegistry())));
+                     summaryFeatures(profile).get("return_a").type(profile.typeContext(builder.getQueryProfileRegistry())));
         assertEquals(TensorType.fromSpec("tensor(z[10])"),
-                     summaryFeatures(profile).get("use_second(a,b)").type(profile.typeContext(builder.getQueryProfileRegistry())));
+                     summaryFeatures(profile).get("return_b").type(profile.typeContext(builder.getQueryProfileRegistry())));
     }
 
     private Map<String, ReferenceNode> summaryFeatures(RankProfile profile) {

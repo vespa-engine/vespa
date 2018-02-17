@@ -2,9 +2,12 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
+import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext;
+import com.yahoo.searchlib.rankingexpression.rule.NameNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -52,21 +55,48 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             throw new IllegalArgumentException("Not expecting unstructured names here");
         ReferenceNode.Reference reference = (ReferenceNode.Reference)name;
 
+        System.out.println("Returning type of " + name);
+
+        Optional<String> binding = boundIdentifier(reference);
+        if (binding.isPresent()) {
+            System.out.println("  Is bound identifier: " + binding.get());
+            try {
+                return new RankingExpression(binding.get()).type(this);
+            }
+            catch (ParseException e) {
+                throw new IllegalArgumentException(e);
+            }
+        }
+
         if (isSimpleFeature(reference)) {
             // The argument may be a local identifier bound to the actual value
             String argument = simpleArgument(reference.arguments()).get();
             reference = ReferenceNode.Reference.simple(reference.name(), bindings.getOrDefault(argument, argument));
+            System.out.println("  Is simple feature reference: " + reference);
             return featureTypes.get(reference);
         }
 
         Optional<ExpressionFunction> function = functionInvocation(reference);
-        if (function.isPresent())
+        if (function.isPresent()) {
+            System.out.println("  Is function reference: " + function.get());
             return function.get().getBody().type(this.withBindings(bind(function.get().arguments(), reference.arguments())));
+        }
 
         // We do not know what this is - since we do not have complete knowledge abut the match features
         // in Java we must assume this is a match feature and return the double type - which is the type of all
         // all match features
+        System.out.println("  Is something else");
         return TensorType.empty;
+    }
+
+    /**
+     * Returns the binding if this reference is a simple identifier which is bound in this context.
+     * Returns empty otherwise.
+     */
+    private Optional<String> boundIdentifier(ReferenceNode.Reference reference) {
+        if ( ! reference.arguments().isEmpty()) return Optional.empty();
+        if ( reference.output() != null) return Optional.empty();
+        return Optional.ofNullable(bindings.get(reference.name()));
     }
 
     /**
@@ -80,30 +110,6 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         return reference.name().equals("attribute") ||
                reference.name().equals("constant") ||
                reference.name().equals("query");
-    }
-
-    /**
-     * If the reference (discarding the output) is a simple feature
-     * ("attribute(name)", "constant(name)" or "query(name)"),
-     * it is returned. Otherwise empty is returned.
-     * We disregard the output because all outputs under a simple feature have the same type.
-     */
-    private Optional<String> simpleFeature(ReferenceNode.Reference reference) {
-        Optional<String> argument = simpleArgument(reference.arguments());
-        if ( ! argument.isPresent()) return Optional.empty();
-
-        // The argument may be a "local value" bound to another value, or else it is the "global" argument of the feature
-        String actualArgument = bindings.getOrDefault(argument.get(), argument.get());
-
-        String feature = asFeatureString(reference.name(), actualArgument);
-        if (FeatureNames.isSimpleFeature(feature))
-            return Optional.of(feature);
-        else
-            return Optional.empty();
-    }
-
-    private String asFeatureString(String name, String argument) {
-        return name + "(" + argument + ")";
     }
 
     /**
@@ -133,11 +139,23 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         // TODO: What is our position on argument overloading/argument count differences?
         Map<String, String> bindings = new HashMap<>(formalArguments.size());
         for (int i = 0; i < formalArguments.size(); i++) {
-            String identifier = invocationArguments.expressions().get(i).toString(); // TODO: ...
+            // ensureIsIdentifier(invocationArguments.expressions().get(i),
+            //                   "Argument " + i + " (" + formalArguments.get(i) + ")" );
+            String identifier = invocationArguments.expressions().get(i).toString();
             identifier = super.bindings.getOrDefault(identifier, identifier);
             bindings.put(formalArguments.get(i), identifier);
         }
         return bindings;
+    }
+
+    private void ensureIsIdentifier(ExpressionNode expression, String description) {
+        if (expression instanceof NameNode) return;
+        if (expression instanceof ReferenceNode) {
+            ReferenceNode referenceExpression = (ReferenceNode)expression;
+            if (referenceExpression.getArguments().isEmpty() && referenceExpression.getOutput() == null)
+                return;
+        }
+        throw new IllegalArgumentException(description + " must be an identifier but is '" + expression + "'");
     }
 
     public Map<ReferenceNode.Reference, TensorType> featureTypes() {
