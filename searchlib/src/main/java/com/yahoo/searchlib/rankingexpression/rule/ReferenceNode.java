@@ -64,10 +64,6 @@ public final class ReferenceNode extends CompositeNode {
 
     @Override
     public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return toString(context, path, true);
-    }
-
-    private String toString(SerializationContext context, Deque<String> path, boolean includeOutput) {
         if (path == null)
             path = new ArrayDeque<>();
         String myName = getName();
@@ -110,8 +106,7 @@ public final class ReferenceNode extends CompositeNode {
             }
             ret.append(")");
         }
-        if (includeOutput)
-            ret.append(myOutput != null ? "." + myOutput : "");
+        ret.append(myOutput != null ? "." + myOutput : "");
         return ret.toString();
     }
 
