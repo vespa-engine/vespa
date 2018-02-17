@@ -14,6 +14,7 @@ import java.util.Deque;
  *
  * @author Simon Thoresen
  */
+// TODO: This is achieved by ReferenceNode in almost all cases - remove this
 public final class NameNode extends ExpressionNode {
 
     private final String name;

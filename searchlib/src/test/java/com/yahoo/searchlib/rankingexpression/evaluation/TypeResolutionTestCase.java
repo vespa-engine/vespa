@@ -3,8 +3,8 @@
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
-import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 import org.junit.Test;
@@ -20,15 +20,15 @@ public class TypeResolutionTestCase {
     @Test
     public void testTypeResolution() {
         MapTypeContext context = new MapTypeContext();
-        context.setType(ReferenceNode.Reference.simple("query", "x1"),
+        context.setType(Reference.simple("query", "x1"),
                         TensorType.fromSpec("tensor(x[])"));
-        context.setType(ReferenceNode.Reference.simple("query", "x2"),
+        context.setType(Reference.simple("query", "x2"),
                         TensorType.fromSpec("tensor(x[10])"));
-        context.setType(ReferenceNode.Reference.simple("query", "y1"),
+        context.setType(Reference.simple("query", "y1"),
                         TensorType.fromSpec("tensor(y[])"));
-        context.setType(ReferenceNode.Reference.simple("query", "xy1"),
+        context.setType(Reference.simple("query", "xy1"),
                         TensorType.fromSpec("tensor(x[10],y[])"));
-        context.setType(ReferenceNode.Reference.simple("query", "xy2"),
+        context.setType(Reference.simple("query", "xy2"),
                         TensorType.fromSpec("tensor(x[],y[10])"));
 
         assertType("tensor(x[])", "query(x1)", context);

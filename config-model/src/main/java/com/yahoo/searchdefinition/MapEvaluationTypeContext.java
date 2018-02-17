@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
@@ -29,7 +30,7 @@ import java.util.Optional;
  */
 public class MapEvaluationTypeContext extends FunctionReferenceContext implements TypeContext {
 
-    private final Map<ReferenceNode.Reference, TensorType> featureTypes = new HashMap<>();
+    private final Map<Reference, TensorType> featureTypes = new HashMap<>();
 
     public MapEvaluationTypeContext(Collection<ExpressionFunction> functions) {
         super(functions);
@@ -37,23 +38,23 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     public MapEvaluationTypeContext(Map<String, ExpressionFunction> functions,
                                     Map<String, String> bindings,
-                                    Map<ReferenceNode.Reference, TensorType> featureTypes) {
+                                    Map<Reference, TensorType> featureTypes) {
         super(functions, bindings);
         this.featureTypes.putAll(featureTypes);
     }
 
     public void setType(Name name, TensorType type) {
         // TODO: Use a type parameter if we do this both here and in getType ...
-        if ( ! (name instanceof ReferenceNode.Reference))
+        if ( ! (name instanceof Reference))
             throw new IllegalArgumentException("Not expecting unstructured names here");
-        featureTypes.put((ReferenceNode.Reference)name, type);
+        featureTypes.put((Reference)name, type);
     }
 
     @Override
     public TensorType getType(Name name) {
-        if ( ! (name instanceof ReferenceNode.Reference))
+        if ( ! (name instanceof Reference))
             throw new IllegalArgumentException("Not expecting unstructured names here");
-        ReferenceNode.Reference reference = (ReferenceNode.Reference)name;
+        Reference reference = (Reference)name;
 
         Optional<String> binding = boundIdentifier(reference);
         if (binding.isPresent()) {
@@ -70,7 +71,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         if (isSimpleFeature(reference)) {
             // The argument may be a local identifier bound to the actual value
             String argument = simpleArgument(reference.arguments()).get();
-            reference = ReferenceNode.Reference.simple(reference.name(), bindings.getOrDefault(argument, argument));
+            reference = Reference.simple(reference.name(), bindings.getOrDefault(argument, argument));
             return featureTypes.get(reference);
         }
 
@@ -89,7 +90,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
      * Returns the binding if this reference is a simple identifier which is bound in this context.
      * Returns empty otherwise.
      */
-    private Optional<String> boundIdentifier(ReferenceNode.Reference reference) {
+    private Optional<String> boundIdentifier(Reference reference) {
         if ( ! reference.arguments().isEmpty()) return Optional.empty();
         if ( reference.output() != null) return Optional.empty();
         return Optional.ofNullable(bindings.get(reference.name()));
@@ -100,7 +101,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
      * ("attribute(name)", "constant(name)" or "query(name)").
      * We disregard the output because all outputs under a simple feature have the same type.
      */
-    private boolean isSimpleFeature(ReferenceNode.Reference reference) {
+    private boolean isSimpleFeature(Reference reference) {
         Optional<String> argument = simpleArgument(reference.arguments());
         if ( ! argument.isPresent()) return false;
         return reference.name().equals("attribute") ||
@@ -124,7 +125,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         return Optional.of(refArgument.getName());
     }
 
-    private Optional<ExpressionFunction> functionInvocation(ReferenceNode.Reference reference) {
+    private Optional<ExpressionFunction> functionInvocation(Reference reference) {
         if (reference.output() != null) return Optional.empty();
         return Optional.ofNullable(functions().get(reference.name()));
     }
@@ -154,7 +155,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         throw new IllegalArgumentException(description + " must be an identifier but is '" + expression + "'");
     }
 
-    public Map<ReferenceNode.Reference, TensorType> featureTypes() {
+    public Map<Reference, TensorType> featureTypes() {
         return Collections.unmodifiableMap(featureTypes);
     }
 

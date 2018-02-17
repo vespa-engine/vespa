@@ -12,6 +12,7 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
@@ -767,7 +768,7 @@ public class RankProfile implements Serializable, Cloneable {
         for (QueryProfileType queryProfileType : queryProfiles.getTypeRegistry().allComponents()) {
             for (FieldDescription field : queryProfileType.declaredFields().values()) {
                 TensorType type = field.getType().asTensorType();
-                Optional<ReferenceNode.Reference> feature = ReferenceNode.Reference.simple(field.getName());
+                Optional<Reference> feature = Reference.simple(field.getName());
                 if ( ! feature.isPresent() || ! feature.get().name().equals("query")) continue;
 
                 TensorType existingType = context.getType(feature.get());
