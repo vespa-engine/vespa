@@ -64,9 +64,6 @@ public final class ReferenceNode extends CompositeNode {
 
     @Override
     public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        if (path == null)
-            path = new ArrayDeque<>();
-
         if (reference.isIdentifier() && context.getBinding(getName()) != null) {
             // a bound identifier: replace by the value it is bound to
             return context.getBinding(getName());
@@ -75,6 +72,8 @@ public final class ReferenceNode extends CompositeNode {
         ExpressionFunction function = context.getFunction(getName());
         if (function != null && function.arguments().size() == getArguments().size() && getOutput() == null) {
             // a function reference: replace by the referenced function wrapped in rankingExpression
+            if (path == null)
+                path = new ArrayDeque<>();
             String myPath = getName() + getArguments().expressions();
             if (path.contains(myPath))
                 throw new IllegalStateException("Cycle in ranking expression function: " + path);
@@ -85,19 +84,8 @@ public final class ReferenceNode extends CompositeNode {
             return "rankingExpression(" + instance.getName() + ")";
         }
 
-        StringBuilder ret = new StringBuilder(getName());
-        if (getArguments().size() > 0) {
-            ret.append("(");
-            for (int i = 0; i < getArguments().size(); ++i) {
-                ret.append(getArguments().expressions().get(i).toString(context, path, this));
-                if (i < getArguments().size() - 1) {
-                    ret.append(",");
-                }
-            }
-            ret.append(")");
-        }
-        ret.append(getOutput() != null ? "." + getOutput() : "");
-        return ret.toString();
+        // not resolved in this context: output as-is
+        return reference.toString(context, path, parent);
     }
 
     /** Returns the reference of this node */
@@ -114,7 +102,6 @@ public final class ReferenceNode extends CompositeNode {
     @Override
     public Value evaluate(Context context) {
         // TODO: Context should accept a Reference instead.
-
         if (reference.isIdentifier())
             return context.get(reference.name());
         return context.get(getName(), getArguments(), getOutput());

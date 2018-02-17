@@ -2,10 +2,13 @@
 package com.yahoo.searchlib.rankingexpression;
 
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
+import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.evaluation.TypeContext;
 
+import java.util.Deque;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -20,7 +23,9 @@ public class Reference extends TypeContext.Name {
     private final String name;
     private final Arguments arguments;
 
-    /** The output, or null if none */
+    /**
+     * The output, or null if none
+     */
     private final String output;
 
     public Reference(String name, Arguments arguments, String output) {
@@ -33,10 +38,14 @@ public class Reference extends TypeContext.Name {
     }
 
     public String name() { return name; }
+
     public Arguments arguments() { return arguments; }
+
     public String output() { return output; }
 
-    /** Creates a reference to a simple feature consisting of a name and a single argument */
+    /**
+     * Creates a reference to a simple feature consisting of a name and a single argument
+     */
     public static Reference simple(String name, String argumentValue) {
         return new Reference(name,
                              new Arguments(new ReferenceNode(argumentValue)),
@@ -62,7 +71,9 @@ public class Reference extends TypeContext.Name {
         return Optional.of(simple(featureName, argument));
     }
 
-    /** Returns whether this is a simple identifier - no arguments or output */
+    /**
+     * Returns whether this is a simple identifier - no arguments or output
+     */
     public boolean isIdentifier() {
         return this.arguments.expressions().size() == 0 && output == null;
     }
@@ -78,11 +89,11 @@ public class Reference extends TypeContext.Name {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof Reference)) return false;
-        Reference other = (Reference)o;
-        if ( ! Objects.equals(other.name, this.name)) return false;
-        if ( ! Objects.equals(other.arguments, this.arguments)) return false;
-        if ( ! Objects.equals(other.output, this.output)) return false;
+        if (!(o instanceof Reference)) return false;
+        Reference other = (Reference) o;
+        if (!Objects.equals(other.name, this.name)) return false;
+        if (!Objects.equals(other.arguments, this.arguments)) return false;
+        if (!Objects.equals(other.output, this.output)) return false;
         return true;
     }
 
@@ -93,10 +104,16 @@ public class Reference extends TypeContext.Name {
 
     @Override
     public String toString() {
+        return toString(new SerializationContext(), null, null);
+    }
+
+    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
         StringBuilder b = new StringBuilder(name);
         if (arguments != null && arguments.expressions().size() > 0)
-            b.append("(").append(arguments.expressions().stream().map(ExpressionNode::toString).collect(Collectors.joining(","))).append(")");
-        if (output !=null)
+            b.append("(").append(arguments.expressions().stream()
+                                                        .map(node -> node.toString(context, path, parent))
+                                                        .collect(Collectors.joining(","))).append(")");
+        if (output != null)
             b.append(".").append(output);
         return b.toString();
     }
