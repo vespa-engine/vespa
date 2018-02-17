@@ -43,7 +43,7 @@ public final class Arguments implements Serializable {
         this.expressions = b.build();
     }
 
-    /** Returns an unmodifiable list of the expressions in this */
+    /** Returns an unmodifiable list of the expressions in this, never null */
     public List<ExpressionNode> expressions() { return expressions; }
 
     /** Evaluate all arguments in this */

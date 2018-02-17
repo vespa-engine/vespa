@@ -70,28 +70,22 @@ public final class ReferenceNode extends CompositeNode {
         String myOutput = getOutput();
         List<ExpressionNode> myArguments = getArguments().expressions();
 
-        String resolvedArgument = context.getBinding(myName);
-        if (resolvedArgument != null && reference.isIdentifier()) {
-            // Replace this whole node with the value of the argument value that it maps to
-            myName = resolvedArgument;
-            myArguments = null;
-            myOutput = null;
-        } else if (context.getFunction(myName) != null) {
-            // Replace by the referenced expression
-            ExpressionFunction function = context.getFunction(myName);
-            if (function != null && myArguments != null && function.arguments().size() == myArguments.size() && myOutput == null) {
-                String myPath = getName() + getArguments().expressions();
-                if (path.contains(myPath)) {
-                    throw new IllegalStateException("Cycle in ranking expression function: " + path);
-                }
-                path.addLast(myPath);
-                ExpressionFunction.Instance instance = function.expand(context, myArguments, path);
-                path.removeLast();
-                context.addFunctionSerialization(RankingExpression.propertyName(instance.getName()), instance.getExpressionString());
-                myName = "rankingExpression(" + instance.getName() + ")";
-                myArguments = null;
-                myOutput = null;
-            }
+        if (reference.isIdentifier() && context.getBinding(myName) != null) {
+            // a bound identifier: replace by the value it is bound to
+            return context.getBinding(myName);
+        }
+
+        ExpressionFunction function = context.getFunction(myName);
+        if (function != null  && function.arguments().size() == myArguments.size() && myOutput == null) {
+            // a function reference: replace by the referenced function wrapped in rankingExpression
+            String myPath = getName() + getArguments().expressions();
+            if (path.contains(myPath))
+                throw new IllegalStateException("Cycle in ranking expression function: " + path);
+            path.addLast(myPath);
+            ExpressionFunction.Instance instance = function.expand(context, myArguments, path);
+            path.removeLast();
+            context.addFunctionSerialization(RankingExpression.propertyName(instance.getName()), instance.getExpressionString());
+            return "rankingExpression(" + instance.getName() + ")";
         }
 
         // Always print the same way, the magic is already done.
