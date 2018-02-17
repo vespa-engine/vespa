@@ -66,41 +66,37 @@ public final class ReferenceNode extends CompositeNode {
     public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
         if (path == null)
             path = new ArrayDeque<>();
-        String myName = getName();
-        String myOutput = getOutput();
-        List<ExpressionNode> myArguments = getArguments().expressions();
 
-        if (reference.isIdentifier() && context.getBinding(myName) != null) {
+        if (reference.isIdentifier() && context.getBinding(getName()) != null) {
             // a bound identifier: replace by the value it is bound to
-            return context.getBinding(myName);
+            return context.getBinding(getName());
         }
 
-        ExpressionFunction function = context.getFunction(myName);
-        if (function != null  && function.arguments().size() == myArguments.size() && myOutput == null) {
+        ExpressionFunction function = context.getFunction(getName());
+        if (function != null && function.arguments().size() == getArguments().size() && getOutput() == null) {
             // a function reference: replace by the referenced function wrapped in rankingExpression
             String myPath = getName() + getArguments().expressions();
             if (path.contains(myPath))
                 throw new IllegalStateException("Cycle in ranking expression function: " + path);
             path.addLast(myPath);
-            ExpressionFunction.Instance instance = function.expand(context, myArguments, path);
+            ExpressionFunction.Instance instance = function.expand(context, getArguments().expressions(), path);
             path.removeLast();
             context.addFunctionSerialization(RankingExpression.propertyName(instance.getName()), instance.getExpressionString());
             return "rankingExpression(" + instance.getName() + ")";
         }
 
-        // Always print the same way, the magic is already done.
-        StringBuilder ret = new StringBuilder(myName);
-        if (myArguments != null && myArguments.size() > 0) {
+        StringBuilder ret = new StringBuilder(getName());
+        if (getArguments().size() > 0) {
             ret.append("(");
-            for (int i = 0; i < myArguments.size(); ++i) {
-                ret.append(myArguments.get(i).toString(context, path, this));
-                if (i < myArguments.size() - 1) {
+            for (int i = 0; i < getArguments().size(); ++i) {
+                ret.append(getArguments().expressions().get(i).toString(context, path, this));
+                if (i < getArguments().size() - 1) {
                     ret.append(",");
                 }
             }
             ret.append(")");
         }
-        ret.append(myOutput != null ? "." + myOutput : "");
+        ret.append(getOutput() != null ? "." + getOutput() : "");
         return ret.toString();
     }
 

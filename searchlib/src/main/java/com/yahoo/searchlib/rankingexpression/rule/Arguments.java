@@ -14,7 +14,6 @@ import java.util.List;
 /**
  * A set of argument expressions to a function or feature.
  * This is a value object.
- *.
  *
  * @author bratseth
  */
@@ -45,6 +44,9 @@ public final class Arguments implements Serializable {
 
     /** Returns an unmodifiable list of the expressions in this, never null */
     public List<ExpressionNode> expressions() { return expressions; }
+
+    /** Returns the number of arguments in this */
+    public int size() { return expressions.size(); }
 
     /** Evaluate all arguments in this */
     public Value[] evaluate(Context context) {
