@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.evaluation;// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
@@ -13,20 +14,20 @@ import java.util.Map;
  *
  * @author bratseth
  */
-public class MapTypeContext implements TypeContext {
+public class MapTypeContext implements TypeContext<Reference> {
 
-    private final Map<Name, TensorType> featureTypes = new HashMap<>();
+    private final Map<Reference, TensorType> featureTypes = new HashMap<>();
 
-    public void setType(Name name, TensorType type) {
-        featureTypes.put(name, type);
+    public void setType(Reference reference, TensorType type) {
+        featureTypes.put(reference, type);
     }
 
     @Override
-    public TensorType getType(Name name) {
-        return featureTypes.get(name);
+    public TensorType getType(Reference reference) {
+        return featureTypes.get(reference);
     }
 
     /** Returns an unmodifiable map of the bindings in this */
-    public Map<Name, TensorType> bindings() { return Collections.unmodifiableMap(featureTypes); }
+    public Map<Reference, TensorType> bindings() { return Collections.unmodifiableMap(featureTypes); }
 
 }

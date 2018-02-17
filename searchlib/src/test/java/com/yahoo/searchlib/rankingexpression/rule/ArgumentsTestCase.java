@@ -9,13 +9,13 @@ import java.util.Collections;
 import static org.junit.Assert.*;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class ArgumentsTestCase {
 
     @Test
     public void requireThatAccessorsWork() {
-        Arguments args = new Arguments(null);
+        Arguments args = new Arguments();
         assertTrue(args.expressions().isEmpty());
 
         args = new Arguments(Collections.<ExpressionNode>emptyList());

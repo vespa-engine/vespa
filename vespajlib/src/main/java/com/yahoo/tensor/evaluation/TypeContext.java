@@ -8,7 +8,7 @@ import com.yahoo.tensor.TensorType;
  *
  * @author bratseth
  */
-public interface TypeContext {
+public interface TypeContext<NAMETYPE extends TypeContext.Name> {
 
     /**
      * Returns the type of the tensor with this name.
@@ -16,7 +16,7 @@ public interface TypeContext {
      * @return returns the type of the tensor which will be returned by calling getTensor(name)
      *         or null if getTensor will return null.
      */
-    TensorType getType(Name name);
+    TensorType getType(NAMETYPE name);
 
     /** A name which is just a string. Names are value objects. */
     class Name {

@@ -28,7 +28,7 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-public class MapEvaluationTypeContext extends FunctionReferenceContext implements TypeContext {
+public class MapEvaluationTypeContext extends FunctionReferenceContext implements TypeContext<Reference> {
 
     private final Map<Reference, TensorType> featureTypes = new HashMap<>();
 
@@ -43,19 +43,12 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         this.featureTypes.putAll(featureTypes);
     }
 
-    public void setType(Name name, TensorType type) {
-        // TODO: Use a type parameter if we do this both here and in getType ...
-        if ( ! (name instanceof Reference))
-            throw new IllegalArgumentException("Not expecting unstructured names here");
-        featureTypes.put((Reference)name, type);
+    public void setType(Reference reference, TensorType type) {
+        featureTypes.put(reference, type);
     }
 
     @Override
-    public TensorType getType(Name name) {
-        if ( ! (name instanceof Reference))
-            throw new IllegalArgumentException("Not expecting unstructured names here");
-        Reference reference = (Reference)name;
-
+    public TensorType getType(Reference reference) {
         Optional<String> binding = boundIdentifier(reference);
         if (binding.isPresent()) {
             try {

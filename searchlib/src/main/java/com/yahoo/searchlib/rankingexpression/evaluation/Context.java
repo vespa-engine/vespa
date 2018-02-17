@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.tensor.Tensor;
@@ -14,7 +15,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-public abstract class Context implements EvaluationContext {
+public abstract class Context implements EvaluationContext<Reference> {
 
     /**
      * Returns the value of a simple variable name.
