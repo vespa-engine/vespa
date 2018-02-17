@@ -17,8 +17,8 @@ public class MapTypeContext implements TypeContext {
 
     private final Map<Name, TensorType> featureTypes = new HashMap<>();
 
-    public void setType(String name, TensorType type) {
-        featureTypes.put(new Name(name), type);
+    public void setType(Name name, TensorType type) {
+        featureTypes.put(name, type);
     }
 
     @Override

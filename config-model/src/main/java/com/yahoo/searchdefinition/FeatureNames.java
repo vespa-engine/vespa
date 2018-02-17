@@ -92,34 +92,15 @@ public class FeatureNames {
     }
 
     public static ReferenceNode.Reference asConstantFeature(String constantName) {
-        return ReferenceNode.Reference.simple("constant", constantName);
+        return ReferenceNode.Reference.simple("constant", quoteIfNecessary(constantName));
     }
 
     public static ReferenceNode.Reference asAttributeFeature(String attributeName) {
-        return ReferenceNode.Reference.simple("attribute", attributeName);
+        return ReferenceNode.Reference.simple("attribute", quoteIfNecessary(attributeName));
     }
 
     public static ReferenceNode.Reference asQueryFeature(String propertyName) {
-        return ReferenceNode.Reference.simple("query", propertyName);
-    }
-
-    /** Returns true if this is a constant, attribute, or query feature */
-    public static boolean isSimpleFeature(String feature) {
-        return FeatureNames.isConstantFeature(feature) ||
-               FeatureNames.isAttributeFeature(feature) ||
-               FeatureNames.isQueryFeature(feature);
-    }
-
-    public static boolean isConstantFeature(String feature) {
-        return feature.startsWith("constant(");
-    }
-
-    public static boolean isAttributeFeature(String feature) {
-        return feature.startsWith("attribute(");
-    }
-
-    public static boolean isQueryFeature(String feature) {
-        return feature.startsWith("query(");
+        return ReferenceNode.Reference.simple("query", quoteIfNecessary(propertyName));
     }
 
     /**
@@ -136,6 +117,13 @@ public class FeatureNames {
             else
                 return possiblyQuotedArgument;
         });
+    }
+
+    private static String quoteIfNecessary(String s) {
+        if (identifierRegexp.matcher(s).matches())
+            return s;
+        else
+            return "\"" + s + "\"";
     }
 
 }

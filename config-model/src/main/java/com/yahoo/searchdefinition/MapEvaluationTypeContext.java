@@ -55,12 +55,11 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             throw new IllegalArgumentException("Not expecting unstructured names here");
         ReferenceNode.Reference reference = (ReferenceNode.Reference)name;
 
-        System.out.println("Returning type of " + name);
-
         Optional<String> binding = boundIdentifier(reference);
         if (binding.isPresent()) {
-            System.out.println("  Is bound identifier: " + binding.get());
             try {
+                // This is not pretty, but changing to bind expressions rather
+                // than their string values requires deeper changes
                 return new RankingExpression(binding.get()).type(this);
             }
             catch (ParseException e) {
@@ -72,20 +71,17 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             // The argument may be a local identifier bound to the actual value
             String argument = simpleArgument(reference.arguments()).get();
             reference = ReferenceNode.Reference.simple(reference.name(), bindings.getOrDefault(argument, argument));
-            System.out.println("  Is simple feature reference: " + reference);
             return featureTypes.get(reference);
         }
 
         Optional<ExpressionFunction> function = functionInvocation(reference);
         if (function.isPresent()) {
-            System.out.println("  Is function reference: " + function.get());
             return function.get().getBody().type(this.withBindings(bind(function.get().arguments(), reference.arguments())));
         }
 
         // We do not know what this is - since we do not have complete knowledge abut the match features
         // in Java we must assume this is a match feature and return the double type - which is the type of all
         // all match features
-        System.out.println("  Is something else");
         return TensorType.empty;
     }
 
@@ -123,7 +119,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         if ( ! (argument instanceof ReferenceNode)) return Optional.empty();
         ReferenceNode refArgument = (ReferenceNode)argument;
 
-        if ( ! refArgument.isBindableName()) return Optional.empty();
+        if ( ! refArgument.reference().isIdentifier()) return Optional.empty();
 
         return Optional.of(refArgument.getName());
     }
