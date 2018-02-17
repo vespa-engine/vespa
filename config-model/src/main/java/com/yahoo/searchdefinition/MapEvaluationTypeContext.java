@@ -127,32 +127,22 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     private Optional<ExpressionFunction> functionInvocation(Reference reference) {
         if (reference.output() != null) return Optional.empty();
-        return Optional.ofNullable(functions().get(reference.name()));
+        ExpressionFunction function = functions().get(reference.name());
+        if (function == null) return Optional.empty();
+        if (function.arguments().size() != reference.arguments().size()) return Optional.empty();
+        return Optional.of(function);
     }
 
     /** Binds the given list of formal arguments to their actual values */
     private Map<String, String> bind(List<String> formalArguments,
                                      Arguments invocationArguments) {
-        // TODO: What is our position on argument overloading/argument count differences?
         Map<String, String> bindings = new HashMap<>(formalArguments.size());
         for (int i = 0; i < formalArguments.size(); i++) {
-            // ensureIsIdentifier(invocationArguments.expressions().get(i),
-            //                   "Argument " + i + " (" + formalArguments.get(i) + ")" );
             String identifier = invocationArguments.expressions().get(i).toString();
             identifier = super.bindings.getOrDefault(identifier, identifier);
             bindings.put(formalArguments.get(i), identifier);
         }
         return bindings;
-    }
-
-    private void ensureIsIdentifier(ExpressionNode expression, String description) {
-        if (expression instanceof NameNode) return;
-        if (expression instanceof ReferenceNode) {
-            ReferenceNode referenceExpression = (ReferenceNode)expression;
-            if (referenceExpression.getArguments().isEmpty() && referenceExpression.getOutput() == null)
-                return;
-        }
-        throw new IllegalArgumentException(description + " must be an identifier but is '" + expression + "'");
     }
 
     public Map<Reference, TensorType> featureTypes() {
