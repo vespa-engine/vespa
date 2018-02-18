@@ -10,7 +10,6 @@ import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
 
 /**
@@ -44,7 +43,7 @@ public class GenericConfigSubscriber extends ConfigSubscriber {
      * @param timingValues {@link TimingValues}
      * @return generic handle
      */
-    public GenericConfigHandle subscribe(ConfigKey<RawConfig> key, List<String> defContent, ConfigSource source, TimingValues timingValues) {
+    public GenericConfigHandle subscribe(ConfigKey<?> key, List<String> defContent, ConfigSource source, TimingValues timingValues) {
         checkStateBeforeSubscribe();
         GenericJRTConfigSubscription sub = new GenericJRTConfigSubscription(key, defContent, this, source, timingValues);
         GenericConfigHandle handle = new GenericConfigHandle(sub);

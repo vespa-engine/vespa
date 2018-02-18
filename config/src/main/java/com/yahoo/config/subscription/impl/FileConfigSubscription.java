@@ -40,14 +40,15 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
         if (checkReloaded()) {
             log.log(LogLevel.DEBUG, "User forced config reload at " + System.currentTimeMillis());
             // User forced reload
-            setConfigIfChanged(updateConfig());
-            ConfigState<T> configState = getConfigState();
-            log.log(LogLevel.DEBUG, "Config updated at " + System.currentTimeMillis() + ", changed: " + configState.isConfigChanged());
-            log.log(LogLevel.DEBUG, "Config: " + configState.getConfig().toString());
+            updateConfig();
+            log.log(LogLevel.DEBUG, "Config updated at " + System.currentTimeMillis() + ", changed: " + isConfigChanged());
+            log.log(LogLevel.DEBUG, "Config: " + config.toString());
             return true;
         }
         if (file.lastModified()!=ts) {
-            setConfigIncGen(updateConfig());
+            updateConfig();
+            generation++;
+            setGenerationChanged(true);
             return true;
         }
         try {
@@ -55,18 +56,22 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
         } catch (InterruptedException e) {
             throw new ConfigInterruptedException(e);
         }
-
+        // These shouldn't be checked anywhere since we return false now, but setting them still
+        setGenerationChanged(false);
+        setConfigChanged(false);
         return false;
     }
 
-    private T updateConfig() {
+    private void updateConfig() {
         ts=file.lastModified();
+        ConfigInstance prev = config;
         try {
             ConfigPayload payload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(IOUtils.readFile(file).split("\n")));
-            return payload.toInstance(configClass, key.getConfigId());
+            config = payload.toInstance(configClass, key.getConfigId());
         } catch (IOException e) {
             throw new ConfigurationRuntimeException(e);
         }
+        setConfigChanged(!config.equals(prev));
     }
 
     @Override

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
-import com.yahoo.config.ConfigInstance;
 import com.yahoo.text.Utf8String;
 import com.yahoo.vespa.config.protocol.CompressionInfo;
 import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
@@ -21,7 +20,7 @@ import java.util.Optional;
  *
  * @author hmusum
  */
-public class RawConfig extends ConfigInstance {
+public class RawConfig {
 
     private final ConfigKey<?> key;
     private final String defMd5;

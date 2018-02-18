@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.config.subscription.impl.ConfigSubscription;
 import com.yahoo.config.subscription.impl.JRTConfigSubscription;
 import com.yahoo.jrt.Request;
 import com.yahoo.text.Utf8Array;
@@ -74,13 +73,12 @@ public class JRTClientConfigRequestV3 extends SlimeClientConfigRequest {
     public static <T extends ConfigInstance> JRTClientConfigRequest createFromSub(JRTConfigSubscription<T> sub, Trace trace, CompressionType compressionType, Optional<VespaVersion> vespaVersion) {
         String hostname = ConfigUtils.getCanonicalHostName();
         ConfigKey<T> key = sub.getKey();
-        ConfigSubscription.ConfigState<T> configState = sub.getConfigState();
-        T i = configState.getConfig();
+        T i = sub.getConfig();
         return createWithParams(key,
                 sub.getDefContent(),
                 hostname,
                 i != null ? i.getConfigMd5() : "",
-                configState.getGeneration() != null ? configState.getGeneration() : 0L,
+                sub.getGeneration() != null ? sub.getGeneration() : 0L,
                 sub.timingValues().getSubscribeTimeout(),
                 trace,
                 compressionType,

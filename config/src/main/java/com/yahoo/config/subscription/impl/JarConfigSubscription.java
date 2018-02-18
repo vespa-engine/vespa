@@ -53,7 +53,6 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             }
             zipEntry = getEntry(jarFile, path);
             if (zipEntry==null) throw new IllegalArgumentException("Config '" + key.getName() + "' not found in '" + jarName + "!/" + path + "'.");
-            T config = null;
             try {
                 ConfigPayload payload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(IOUtils.readAll(new InputStreamReader(jarFile.getInputStream(zipEntry), "UTF-8")).split("\n")));
                 config = payload.toInstance(configClass, key.getConfigId());
@@ -62,7 +61,9 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             } catch (IOException e) {
                 throw new ConfigurationRuntimeException(e);
             }
-            setConfig(0L, config);
+            setGeneration(0L);
+            setGenerationChanged(true);
+            setConfigChanged(true);
             try {
                 jarFile.close();
             } catch (IOException e) {
@@ -76,6 +77,9 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         } catch (InterruptedException e) {
             throw new ConfigInterruptedException(e);
         }
+        // These shouldn't be checked anywhere since we return false now, but setting them still
+        setGenerationChanged(false);
+        setConfigChanged(false);
         return false;
     }
     /**
