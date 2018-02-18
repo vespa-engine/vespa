@@ -49,8 +49,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     public boolean nextConfig(long timeoutMillis) {
         // These flags may have been left true from a previous call, since ConfigSubscriber's nextConfig
         // not necessarily returned true and reset the flags then
-        ConfigState<T> configState = getConfigState();
-        boolean gotNew = configState.isGenerationChanged() || configState.isConfigChanged() || hasException();
+        boolean gotNew = isGenerationChanged() || isConfigChanged() || hasException();
         // Return that now, if there's nothing in queue, so that ConfigSubscriber can move on to other subscriptions to check
         if (getReqQueue().peek()==null && gotNew) {
             return true;
@@ -61,8 +60,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         // there is a race here. However: the caller will handle it no matter what it gets from the queue here,
         // the important part is that local state on the subscription objects is preserved.
         if (!pollQueue(timeoutMillis)) return gotNew;
-        configState = getConfigState();
-        gotNew = configState.isGenerationChanged() || configState.isConfigChanged() || hasException();
+        gotNew = isGenerationChanged() || isConfigChanged() || hasException();
         return gotNew;
     }
 
@@ -85,17 +83,20 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             return false;
         }
         if (jrtReq.hasUpdatedGeneration()) {
+            //printStatus(jrtReq, "Updated generation or config");
+            setGeneration(jrtReq.getNewGeneration());
+            setGenerationChanged(true);
             if (jrtReq.hasUpdatedConfig()) {
+                // payload changed
                 setNewConfig(jrtReq);
-            } else {
-                setGeneration(jrtReq.getNewGeneration());
+                setConfigChanged(true);
             }
         }
         return true;
     }
 
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
-        setConfig(jrtReq.getNewGeneration(), toConfigInstance(jrtReq) );
+        setConfig(toConfigInstance(jrtReq));
     }
 
     /**

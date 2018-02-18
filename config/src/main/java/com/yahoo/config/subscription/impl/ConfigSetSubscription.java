@@ -35,19 +35,22 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
     public boolean nextConfig(long timeout) {
         long end = System.currentTimeMillis() + timeout;
         do {
-            T myInstance = getNewInstance();
-            ConfigState<T> configState = getConfigState();
+            ConfigInstance myInstance = getNewInstance();
             // User forced reload
             if (checkReloaded()) {
-                setConfigIfChanged(myInstance);
+                updateInstance(myInstance);
                 return true;
             }
-            if (!myInstance.equals(configState.getConfig())) {
-                setConfigIfChangedIncGen(myInstance);
+            if (!myInstance.equals(config)) {
+                generation++;
+                updateInstance(myInstance);
                 return true;
             }
             sleep();
         } while (System.currentTimeMillis() < end);
+        // These shouldn't be checked anywhere since we return false now, but setting them still
+        setGenerationChanged(false);
+        setConfigChanged(false);
         return false;
     }
 
@@ -59,17 +62,25 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private void updateInstance(ConfigInstance myInstance) {
+        if (!myInstance.equals(config)) {
+            setConfigChanged(true);
+        }
+        setConfig((T) myInstance);
+        setGenerationChanged(true);
+    }
+
     @Override
     public boolean subscribe(long timeout) {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
-    private T getNewInstance() {
+    public ConfigInstance getNewInstance() {
         try {
             ConfigInstance.Builder builder = set.get(subKey);
             Constructor<?> constructor = builder.getClass().getDeclaringClass().getConstructor(builder.getClass());
-            return (T) constructor.newInstance(builder);
+            return (ConfigInstance) constructor.newInstance(builder);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);

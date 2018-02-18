@@ -249,7 +249,7 @@ public abstract class JRTConfigRequestBase {
         assertTrue(sub.nextConfig(120_0000));
         sub.close();
         JRTClientConfigRequest nextReq = createReq(sub, Trace.createNew());
-        SimpletypesConfig config = sub.getConfigState().getConfig();
+        SimpletypesConfig config = sub.getConfig();
         assertThat(nextReq.getRequestConfigMd5(), is(config.getConfigMd5()));
         assertThat(nextReq.getRequestGeneration(), is(currentGeneration));
         System.setProperty("VESPA_CONFIG_PROTOCOL_VERSION", "");
