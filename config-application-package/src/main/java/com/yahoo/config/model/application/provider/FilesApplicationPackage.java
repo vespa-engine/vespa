@@ -8,7 +8,6 @@ import com.yahoo.config.application.XmlPreProcessor;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.application.api.RuleConfigDeriver;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.application.api.ApplicationFile;
@@ -666,11 +665,6 @@ public class FilesApplicationPackage implements ApplicationPackage {
         try (FileOutputStream outputStream = new FileOutputStream(destination)) {
             transformer.transform(new DOMSource(document), new StreamResult(outputStream));
         }
-    }
-
-    @Override
-    public ApplicationPackage preprocess(Zone zone, RuleConfigDeriver ignored, DeployLogger logger) throws IOException, TransformerException, ParserConfigurationException, SAXException {
-        return preprocess(zone, logger);
     }
 
     @Override
