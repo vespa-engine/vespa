@@ -113,7 +113,7 @@ public class FileReceiver {
                 // Unpack if necessary
                 if (fileType == FileReferenceData.Type.compressed) {
                     File decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
-                    log.log(LogLevel.DEBUG, "Archived file, unpacking " + inprogressFile + " to " + decompressedDir);
+                    log.log(LogLevel.DEBUG, () -> "Archived file, unpacking " + inprogressFile + " to " + decompressedDir);
                     CompressedFileReference.decompress(inprogressFile, decompressedDir);
                     moveFileToDestination(decompressedDir, fileReferenceDir);
                 } else {
@@ -123,7 +123,7 @@ public class FileReceiver {
                         log.log(LogLevel.ERROR, "Failed creating directory (" + fileReferenceDir.toPath() + "): " + e.getMessage(), e);
                         throw new RuntimeException("Failed creating directory (" + fileReferenceDir.toPath() + "): ", e);
                     }
-                    log.log(LogLevel.DEBUG, "Uncompressed file, moving to " + file.getAbsolutePath());
+                    log.log(LogLevel.DEBUG, () -> "Uncompressed file, moving to " + file.getAbsolutePath());
                     moveFileToDestination(inprogressFile, file);
                 }
             } catch (IOException e) {
@@ -202,11 +202,11 @@ public class FileReceiver {
             // Unpack if necessary
             if (fileReferenceData.type() == FileReferenceData.Type.compressed) {
                 File decompressedDir = Files.createTempDirectory(tempDownloadedDir.toPath(), "decompressed").toFile();
-                log.log(LogLevel.DEBUG, "Compressed file, unpacking " + tempFile + " to " + decompressedDir);
+                log.log(LogLevel.DEBUG, () -> "Compressed file, unpacking " + tempFile + " to " + decompressedDir);
                 CompressedFileReference.decompress(tempFile, decompressedDir);
                 moveFileToDestination(decompressedDir, fileReferenceDir);
             } else {
-                log.log(LogLevel.DEBUG, "Uncompressed file, moving to " + file.getAbsolutePath());
+                log.log(LogLevel.DEBUG, () -> "Uncompressed file, moving to " + file.getAbsolutePath());
                 Files.createDirectories(fileReferenceDir.toPath());
                 moveFileToDestination(tempFile, file);
             }
@@ -220,11 +220,11 @@ public class FileReceiver {
     private static void moveFileToDestination(File tempFile, File destination) {
         try {
             Files.move(tempFile.toPath(), destination.toPath());
-            log.log(LogLevel.DEBUG, "File moved from " + tempFile.getAbsolutePath()+ " to " + destination.getAbsolutePath());
+            log.log(LogLevel.DEBUG, () -> "File moved from " + tempFile.getAbsolutePath()+ " to " + destination.getAbsolutePath());
         } catch (FileAlreadyExistsException e) {
             // Don't fail if it already exists (we might get the file from several config servers when retrying, servers are down etc.
             // so it might be written already). Delete temp file in that case, to avoid filling the disk.
-            log.log(LogLevel.DEBUG, "File '" + destination.getAbsolutePath() + "' already exists, continuing: " + e.getMessage());
+            log.log(LogLevel.DEBUG, () -> "File '" + destination.getAbsolutePath() + "' already exists, continuing: " + e.getMessage());
             try {
                 Files.delete(tempFile.toPath());
             } catch (IOException ioe) { /* ignore failure */}
@@ -237,7 +237,7 @@ public class FileReceiver {
 
     @SuppressWarnings({"UnusedDeclaration"})
     public final void receiveFileMeta(Request req) {
-        log.log(LogLevel.DEBUG, "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        log.log(LogLevel.DEBUG, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         String fileName = req.parameters().get(1).asString();
         String type = req.parameters().get(2).asString();
@@ -263,7 +263,7 @@ public class FileReceiver {
 
     @SuppressWarnings({"UnusedDeclaration"})
     public final void receiveFilePart(Request req) {
-        log.log(LogLevel.DEBUG, "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        log.log(LogLevel.DEBUG, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
 
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         int sessionId = req.parameters().get(1).asInt32();
@@ -278,14 +278,14 @@ public class FileReceiver {
             retval = 1;
         }
         double completeness = (double) session.currentFileSize / (double) session.fileSize;
-        log.log(LogLevel.DEBUG, String.format("%.1f percent of '%s' downloaded", completeness * 100, reference.value()));
+        log.log(LogLevel.DEBUG, () -> String.format("%.1f percent of '%s' downloaded", completeness * 100, reference.value()));
         downloader.setDownloadStatus(reference, completeness);
         req.returnValues().add(new Int32Value(retval));
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
     public final void receiveFileEof(Request req) {
-        log.log(LogLevel.DEBUG, "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        log.log(LogLevel.DEBUG, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         int sessionId = req.parameters().get(1).asInt32();
         long xxhash = req.parameters().get(2).asInt64();
