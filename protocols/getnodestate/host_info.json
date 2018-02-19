@@ -48,20 +48,22 @@
                         "count": 16
                     }
                 },
-                "outstanding-merge-ops": {
-                    "syncing": {
-                        "buckets": 1
+                "bucket-spaces": [
+                    {
+                        "name": "default",
+                        "buckets": {
+                            "total": 11,
+                            "pending": 3
+                        }
                     },
-                    "copying-in": {
-                        "buckets": 2
-                    },
-                    "moving-out": {
-                        "buckets": 3
-                    },
-                    "copying-out": {
-                        "buckets": 4
+                    {
+                        "name": "global",
+                        "buckets": {
+                            "total": 13,
+                            "pending": 5
+                        }
                     }
-                }
+                ]
             },
             {
                 "node-index": 1,
@@ -71,24 +73,13 @@
                         "latency-ms-sum": 17,
                         "count": 18
                     }
-                 },
-                 "outstanding-merge-ops": {
-                    "syncing": {
-                        "buckets": 1
-                    },
-                    "copying-in": {
-                        "buckets": 2
-                    },
-                    "moving-out": {
-                        "buckets": 3
-                    },
-                    "copying-out": {
-                        "buckets": 4
+                },
+                "bucket-spaces": [
+                    {
+                        "name": "default"
                     }
-                }
-
+                ]
             }
-
         ]
     }
 }

@@ -85,7 +85,4 @@ public class MetricUpdater {
         metricReporter.add("node-event", 1);
     }
 
-    public void updateMergeOpMetrics(Map<String, ContentNodeStats> contentNodeStats) {
-        // TODO(hakonhall): Remove this method once we figure out how to propagate metrics to state HTTP API.
-    }
 }

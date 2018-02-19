@@ -3,149 +3,130 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNode;
 
+import java.util.*;
+
 /**
  * @author hakonhall
  */
 public class ContentNodeStats {
 
-    /**
-     * Constructor that sets values to zero if not present.
-     */
-    public ContentNodeStats(StorageNode storageNodePojo) {
-        this.nodeIndex = storageNodePojo.getIndex();
-
-        StorageNode.OutstandingMergeOps mergeOps = storageNodePojo.getOutstandingMergeOpsOrNull();
-        if (mergeOps == null) {
-            mergeOps = new StorageNode.OutstandingMergeOps();
-        }
-        syncing = createAmount(mergeOps.getSyncingOrNull());
-        copyingIn = createAmount(mergeOps.getCopyingInOrNull());
-        movingOut = createAmount(mergeOps.getMovingOutOrNull());
-        copyingOut = createAmount(mergeOps.getCopyingOutOrNull());
-    }
-
-    private static Amount createAmount(StorageNode.Buckets bucketOrNull) {
-        if (bucketOrNull == null) {
-            return new Amount();
-        }
-        return new Amount(bucketOrNull.getBuckets());
-    }
-
-    static public class Amount {
-        private long buckets;
-
-        Amount() { this(0); }
-        Amount(long buckets) { this.buckets = buckets; }
-
-        public void set(Amount other) {
-            buckets = other.buckets;
-        }
-
-        public long getBuckets() {
-            return buckets;
-        }
-
-        /**
-         * Logically, add (factor * amount) to this object.
-         */
-        void scaledAdd(int factor, Amount amount) {
-            buckets += factor * amount.buckets;
-        }
-
-        public boolean equals(Object other) {
-            if (!(other instanceof Amount)) {
-                return false;
-            }
-            Amount otherAmount = (Amount) other;
-            return buckets == otherAmount.buckets;
-        }
-
-        public int hashCode() {
-                return (int)buckets;
-        }
-
-        public String toString() {
-            return String.format("{buckets = %d}", buckets);
-        }
-    }
-
-    private final Amount syncing;
-    private final Amount copyingIn;
-    private final Amount movingOut;
-    private final Amount copyingOut;
     private int nodeIndex;
+    private Map<String, BucketSpaceStats> bucketSpaces = new HashMap<>();
 
-    /**
-     * An instance with all 0 amounts.
-     */
+    public static class BucketSpaceStats {
+        private long bucketsTotal;
+        private long bucketsPending;
+
+        public BucketSpaceStats() {
+            this.bucketsTotal = 0;
+            this.bucketsPending = 0;
+        }
+
+        public BucketSpaceStats(long bucketsTotal, long bucketsPending) {
+            this.bucketsTotal = bucketsTotal;
+            this.bucketsPending = bucketsPending;
+        }
+
+        public long getBucketsTotal() {
+            return bucketsTotal;
+        }
+
+        public long getBucketsPending() {
+            return bucketsPending;
+        }
+
+        public void merge(BucketSpaceStats rhs, int factor) {
+            this.bucketsTotal += (factor * rhs.bucketsTotal);
+            this.bucketsPending += (factor * rhs.bucketsPending);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            BucketSpaceStats that = (BucketSpaceStats) o;
+            return bucketsTotal == that.bucketsTotal &&
+                    bucketsPending == that.bucketsPending;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(bucketsTotal, bucketsPending);
+        }
+
+        @Override
+        public String toString() {
+            return "{bucketsTotal=" + bucketsTotal + ", bucketsPending=" + bucketsPending + "}";
+        }
+    }
+
+    public ContentNodeStats(StorageNode storageNode) {
+        this.nodeIndex = storageNode.getIndex();
+        for (StorageNode.BucketSpaceStats stats : storageNode.getBucketSpacesStats()) {
+            if (stats.valid()) {
+                this.bucketSpaces.put(stats.getName(),
+                        new BucketSpaceStats(stats.getBucketStats().getTotal(),
+                                stats.getBucketStats().getPending()));
+            } else {
+                // TODO: better handling of invalid bucket space stats
+                this.bucketSpaces.put(stats.getName(), new BucketSpaceStats());
+            }
+        }
+    }
+
     public ContentNodeStats(int index) {
-        this(index, new Amount(), new Amount(), new Amount(), new Amount());
+        this(index, new HashMap<>());
     }
 
-    ContentNodeStats(int index, Amount syncing, Amount copyingIn, Amount movingOut, Amount copyingOut) {
+    public ContentNodeStats(int index, Map<String, BucketSpaceStats> bucketSpaces) {
         this.nodeIndex = index;
-        this.syncing = syncing;
-        this.copyingIn = copyingIn;
-        this.movingOut = movingOut;
-        this.copyingOut = copyingOut;
+        this.bucketSpaces = bucketSpaces;
     }
 
-    public void set(ContentNodeStats stats) {
-        nodeIndex = stats.nodeIndex;
-        syncing.set(stats.syncing);
-        copyingIn.set(stats.copyingIn);
-        movingOut.set(stats.movingOut);
-        copyingOut.set(stats.copyingOut);
+    public int getNodeIndex() { return nodeIndex; }
+
+    public void add(ContentNodeStats stats) {
+        merge(stats, 1);
     }
 
-    int getNodeIndex() { return nodeIndex; }
-    public Amount getSyncing() { return syncing; }
-    public Amount getCopyingIn() { return copyingIn; }
-    public Amount getMovingOut() { return movingOut; }
-    public Amount getCopyingOut() { return copyingOut; }
-
-    void add(ContentNodeStats stats) {
-        scaledAdd(1, stats);
+    public void subtract(ContentNodeStats stats) {
+        merge(stats, -1);
     }
 
-    void subtract(ContentNodeStats stats) {
-        scaledAdd(-1, stats);
+    private void merge(ContentNodeStats stats, int factor) {
+        for (Map.Entry<String, BucketSpaceStats> entry : stats.bucketSpaces.entrySet()) {
+            BucketSpaceStats statsToUpdate = bucketSpaces.get(entry.getKey());
+            if (statsToUpdate == null && factor == 1) {
+                statsToUpdate = new BucketSpaceStats();
+                bucketSpaces.put(entry.getKey(), statsToUpdate);
+            }
+            if (statsToUpdate != null) {
+                statsToUpdate.merge(entry.getValue(), factor);
+            }
+        }
     }
 
-    /**
-     * Logically, adds (factor * stats) to this object. factor of 1 is normal add, -1 is subtraction.
-     */
-    private void scaledAdd(int factor, ContentNodeStats stats) {
-        syncing.scaledAdd(factor, stats.syncing);
-        copyingIn.scaledAdd(factor, stats.copyingIn);
-        movingOut.scaledAdd(factor, stats.movingOut);
-        copyingOut.scaledAdd(factor, stats.copyingOut);
+    public Map<String, BucketSpaceStats> getBucketSpaces() {
+        return bucketSpaces;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ContentNodeStats that = (ContentNodeStats) o;
+        return nodeIndex == that.nodeIndex &&
+                Objects.equals(bucketSpaces, that.bucketSpaces);
     }
 
     @Override
     public int hashCode() {
-        return (int) (syncing.buckets +
-                copyingIn.buckets * 31 +
-                movingOut.buckets * 17 +
-                copyingOut.buckets * 7);
+        return Objects.hash(nodeIndex, bucketSpaces);
     }
 
     @Override
-    public boolean equals(Object other) {
-        if (!(other instanceof ContentNodeStats)) {
-            return false;
-        }
-
-        ContentNodeStats otherStats = (ContentNodeStats) other;
-        return nodeIndex == otherStats.nodeIndex &&
-                syncing.equals(otherStats.syncing) &&
-                copyingIn.equals(otherStats.copyingIn) &&
-                movingOut.equals(otherStats.movingOut) &&
-                copyingOut.equals(otherStats.copyingOut);
-    }
-
     public String toString() {
-        return String.format("{index = %d, syncing = %s, copyingIn = %s, movingOut = %s, copyingOut = %s}",
-                nodeIndex, syncing, copyingIn, movingOut, copyingOut);
+        return String.format("{index=%d, bucketSpaces=[%s]}",
+                nodeIndex, Arrays.toString(bucketSpaces.entrySet().toArray()));
     }
 }

@@ -11,14 +11,11 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 
 public class StateVersionTrackerTest {
 
@@ -28,7 +25,7 @@ public class StateVersionTrackerTest {
     }
 
     private static StateVersionTracker createWithMockedMetrics() {
-        return new StateVersionTracker(mock(MetricUpdater.class));
+        return new StateVersionTracker();
     }
 
     private static void updateAndPromote(final StateVersionTracker versionTracker,

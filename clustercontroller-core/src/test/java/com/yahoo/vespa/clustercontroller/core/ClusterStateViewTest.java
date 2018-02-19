@@ -23,8 +23,7 @@ public class ClusterStateViewTest {
     final Node node = mock(Node.class);
     final ClusterStatsAggregator statsAggregator = mock(ClusterStatsAggregator.class);
     final ClusterState clusterState = mock(ClusterState.class);
-    final MetricUpdater metricUpdater = mock(MetricUpdater.class);
-    final ClusterStateView clusterStateView = new ClusterStateView(clusterState, statsAggregator, metricUpdater);
+    final ClusterStateView clusterStateView = new ClusterStateView(clusterState, statsAggregator);
 
     HostInfo createHostInfo(String version) {
         return HostInfo.createHostInfo("{ \"cluster-state-version\": " + version + " }");
@@ -36,7 +35,7 @@ public class ClusterStateViewTest {
 
         clusterStateView.handleUpdatedHostInfo(hostnames, nodeInfo, createHostInfo("101"));
 
-        verify(statsAggregator, never()).updateForDistributor(any(), anyInt(), any());
+        verify(statsAggregator, never()).updateForDistributor(anyInt(), any());
     }
 
 
@@ -48,7 +47,7 @@ public class ClusterStateViewTest {
 
         clusterStateView.handleUpdatedHostInfo(hostnames, nodeInfo, createHostInfo("22"));
 
-        verify(statsAggregator, never()).updateForDistributor(any(), anyInt(), any());
+        verify(statsAggregator, never()).updateForDistributor(anyInt(), any());
     }
 
     @Test
@@ -58,7 +57,7 @@ public class ClusterStateViewTest {
 
         clusterStateView.handleUpdatedHostInfo(hostnames, nodeInfo, createHostInfo("22"));
 
-        verify(statsAggregator, never()).updateForDistributor(any(), anyInt(), any());
+        verify(statsAggregator, never()).updateForDistributor(anyInt(), any());
     }
 
     @Test
@@ -80,8 +79,7 @@ public class ClusterStateViewTest {
 
         clusterStateView.handleUpdatedHostInfo(hostnames, nodeInfo, hostInfo);
 
-        verify(statsAggregator).updateForDistributor(
-                hostnames, 3, StorageNodeStatsBridge.generate(hostInfo.getDistributor()));
+        verify(statsAggregator).updateForDistributor(3, StorageNodeStatsBridge.generate(hostInfo.getDistributor()));
     }
 
     @Test

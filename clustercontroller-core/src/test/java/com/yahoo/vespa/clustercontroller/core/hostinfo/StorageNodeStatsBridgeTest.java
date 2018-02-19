@@ -12,11 +12,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * @author hakonhall
@@ -49,19 +49,30 @@ public class StorageNodeStatsBridgeTest {
     }
 
     @Test
-    public void testStorageMergeStats() throws IOException {
+    public void testContentNodeStats() throws IOException {
         String data = getJsonString();
         HostInfo hostInfo = HostInfo.createHostInfo(data);
 
         ContentClusterStats clusterStats = StorageNodeStatsBridge.generate(hostInfo.getDistributor());
-        int size = 0;
-        for (ContentNodeStats nodeStats : clusterStats) {
-            assertThat(nodeStats.getCopyingIn().getBuckets(), is(2L));
-            assertThat(nodeStats.getCopyingOut().getBuckets(), is(4L));
-            assertThat(nodeStats.getSyncing().getBuckets(), is(1L));
-            assertThat(nodeStats.getMovingOut().getBuckets(), is(3L));
-            size++;
+        Iterator<ContentNodeStats> itr = clusterStats.iterator();
+        { // content node 0
+            ContentNodeStats stats = itr.next();
+            assertThat(stats.getNodeIndex(), is(0));
+            assertThat(stats.getBucketSpaces().size(), is(2));
+            assertBucketSpaceStats(11, 3, stats.getBucketSpaces().get("default"));
+            assertBucketSpaceStats(13, 5, stats.getBucketSpaces().get("global"));
         }
-        assertThat(size, is(2));
+        { // content node 1
+            ContentNodeStats stats = itr.next();
+            assertThat(stats.getNodeIndex(), is(1));
+            assertThat(stats.getBucketSpaces().size(), is(1));
+            assertBucketSpaceStats(0, 0, stats.getBucketSpaces().get("default"));
+        }
+        assertFalse(itr.hasNext());
+    }
+
+    private static void assertBucketSpaceStats(long expBucketsTotal, long expBucketsPending, ContentNodeStats.BucketSpaceStats stats) {
+        assertThat(stats.getBucketsTotal(), is(expBucketsTotal));
+        assertThat(stats.getBucketsPending(), is(expBucketsPending));
     }
 }

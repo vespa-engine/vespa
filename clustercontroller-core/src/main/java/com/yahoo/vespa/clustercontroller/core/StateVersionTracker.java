@@ -32,15 +32,13 @@ public class StateVersionTracker {
     private AnnotatedClusterState latestCandidateState = AnnotatedClusterState.emptyState();
     private AnnotatedClusterState currentClusterState = latestCandidateState;
 
-    private final MetricUpdater metricUpdater;
     private ClusterStateView clusterStateView;
 
     private final LinkedList<ClusterStateHistoryEntry> clusterStateHistory = new LinkedList<>();
     private int maxHistoryEntryCount = 50;
 
-    StateVersionTracker(final MetricUpdater metricUpdater) {
-        this.metricUpdater = metricUpdater;
-        clusterStateView = ClusterStateView.create(currentUnversionedState, metricUpdater);
+    StateVersionTracker() {
+        clusterStateView = ClusterStateView.create(currentUnversionedState);
     }
 
     void setVersionRetrievedFromZooKeeper(final int version) {
@@ -121,7 +119,7 @@ public class StateVersionTracker {
                 lowestObservedDistributionBits,
                 newState.getClusterState().getDistributionBitCount());
         // TODO should this take place in updateLatestCandidateState instead? I.e. does it require a consolidated state?
-        clusterStateView = ClusterStateView.create(currentClusterState.getClusterState(), metricUpdater);
+        clusterStateView = ClusterStateView.create(currentClusterState.getClusterState());
     }
 
     private void recordCurrentStateInHistoryAtTime(final long currentTimeMs) {

@@ -1,19 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
- * Class for storing the pending merge operation stats for all the content nodes.
+ * Class for storing pending content node stats for all content nodes in the cluster.
  *
  * @author hakonhall
  */
 public class ContentClusterStats implements Iterable<ContentNodeStats> {
 
-    // Maps a storage node index to the storage node's pending merges stats.
+    // Maps a content node index to the content node's stats.
     private final Map<Integer, ContentNodeStats> mapToNodeStats;
 
     public ContentClusterStats(Set<Integer> storageNodes) {
@@ -32,7 +29,7 @@ public class ContentClusterStats implements Iterable<ContentNodeStats> {
         return mapToNodeStats.values().iterator();
     }
 
-    ContentNodeStats getStorageNode(Integer index) {
+    ContentNodeStats getContentNode(Integer index) {
         return mapToNodeStats.get(index);
     }
 
@@ -43,21 +40,19 @@ public class ContentClusterStats implements Iterable<ContentNodeStats> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ContentClusterStats)) {
-            return false;
-        }
-
+        if (o == null || getClass() != o.getClass()) return false;
         ContentClusterStats that = (ContentClusterStats) o;
-
-        if (mapToNodeStats != null ? !mapToNodeStats.equals(that.mapToNodeStats) : that.mapToNodeStats != null) {
-            return false;
-        }
-        return true;
+        return Objects.equals(mapToNodeStats, that.mapToNodeStats);
     }
 
     @Override
     public int hashCode() {
-        return mapToNodeStats != null ? mapToNodeStats.hashCode() : 0;
+        return Objects.hash(mapToNodeStats);
     }
 
+    @Override
+    public String toString() {
+        return String.format("{mapToNodeStats=[%s]}",
+                Arrays.toString(mapToNodeStats.entrySet().toArray()));
+    }
 }
