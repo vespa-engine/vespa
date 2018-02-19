@@ -8,6 +8,7 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.defaults.Defaults;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -164,7 +165,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private static TrustManager[] createTrustManagersWithAthenzCa() {
         try {
             KeyStore trustStore = KeyStore.getInstance("JKS");
-            try (FileInputStream in = new FileInputStream("/opt/yahoo/share/ssl/certs/yahoo_certificate_bundle.jks")) {
+            try (FileInputStream in = new FileInputStream(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks"))) {
                 trustStore.load(in, null);
             }
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
