@@ -61,15 +61,6 @@ public class NodeRepositoryTest {
     }
 
     @Test
-    public void featureToggleDynamicAllocationTest() {
-        NodeRepositoryTester tester = new NodeRepositoryTester();
-        assertFalse(tester.nodeRepository().dynamicAllocationEnabled());
-
-        tester.curator().set(Path.fromString("/provision/v1/dynamicDockerAllocation"), new byte[0]);
-        assertTrue(tester.nodeRepository().dynamicAllocationEnabled());
-    }
-
-    @Test
     public void only_allow_docker_containers_remove_in_ready() {
         NodeRepositoryTester tester = new NodeRepositoryTester();
         tester.addNode("id1", "host1", "docker", NodeType.tenant);

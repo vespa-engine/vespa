@@ -14,6 +14,7 @@ import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstru
 import com.yahoo.container.di.componentgraph.core.{ComponentGraph, ComponentNode, JerseyNode}
 import com.yahoo.container.di.config.{RestApiContext, SubscriberFactory}
 import com.yahoo.container.{BundlesConfig, ComponentsConfig}
+import com.yahoo.log.LogLevel.DEBUG
 import com.yahoo.protect.Process
 import com.yahoo.vespa.config.ConfigKey
 
@@ -116,22 +117,42 @@ class Container(
                            fallbackInjector: Injector): ComponentGraph = {
 
     val snapshot = configurer.getConfigs(graph.configKeys, leastGeneration)
-    log.fine("""createNewGraph:
-      graph.configKeys = %s
-      graph.generation = %s
-      snapshot = %s
-    """.format(graph.configKeys, graph.generation, snapshot))
+    log.log(DEBUG,
+            """createNewGraph:
+              |graph.configKeys = %s
+              |graph.generation = %s
+              |snapshot = %s"""
+              .format(graph.configKeys, graph.generation, snapshot).stripMargin)
 
     val preventTailRecursion =
       snapshot match {
         case BootstrapConfigs(configs) if getBootstrapGeneration > previousConfigGeneration =>
+          log.log(DEBUG,
+            """Got new bootstrap generation
+              |bootstrap generation = %d
+              |components generation: %d
+              |previous generation: %d"""
+              .format(getBootstrapGeneration, getComponentsGeneration, previousConfigGeneration).stripMargin)
           installBundles(configs)
           createNewGraph(
             createComponentsGraph(configs, getBootstrapGeneration,fallbackInjector),
             fallbackInjector)
-        case BootstrapConfigs(_)        =>
+        case BootstrapConfigs(_) =>
+          // This is an assumed dead code branch, most likely remains from before config set subscriptions were available.
+          log.warning(
+            """Got bootstrap configs with previous generation. (This should not happen.)
+              |bootstrap generation = %d
+              |components generation: %d
+              |previous generation: %d"""
+              .format(getBootstrapGeneration, getComponentsGeneration, previousConfigGeneration).stripMargin)
           createNewGraph(graph, fallbackInjector)
         case ComponentsConfigs(configs) =>
+          log.log(DEBUG,
+            """Got components configs,
+              |bootstrap generation = %d
+              |components generation: %d
+              |previous generation: %d"""
+              .format(getBootstrapGeneration, getComponentsGeneration, previousConfigGeneration).stripMargin)
           createAndConfigureComponentsGraph(configs, fallbackInjector)
       }
 

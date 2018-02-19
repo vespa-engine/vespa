@@ -107,7 +107,7 @@ public class FileServer {
 
     private void serveFile(FileReference reference, Receiver target) {
         File file = root.getFile(reference);
-        log.log(LogLevel.DEBUG, "Start serving reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
+        log.log(LogLevel.DEBUG, () -> "Start serving reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
         boolean success = false;
         String errorDescription = "OK";
         FileReferenceData fileData = FileReferenceDataBlob.empty(reference, file.getName());
@@ -141,7 +141,7 @@ public class FileServer {
     private void serveFile(String fileReference, Request request, Receiver receiver) {
         FileApiErrorCodes result;
         try {
-            log.log(LogLevel.DEBUG, "Received request for reference '" + fileReference + "'");
+            log.log(LogLevel.DEBUG, () -> "Received request for reference '" + fileReference + "'");
             result = hasFile(fileReference)
                     ? FileApiErrorCodes.OK
                     : FileApiErrorCodes.NOT_FOUND;

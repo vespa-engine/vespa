@@ -492,11 +492,7 @@ public class NodeRepository extends AbstractComponent {
                     "Cannot make " + hostname + " available for new allocation, must be in state dirty, but was in " + node.state());
         }
 
-        if (dynamicAllocationEnabled()) {
-            return removeRecursively(node, true);
-        } else {
-            return setReady(Collections.singletonList(node));
-        }
+        return removeRecursively(node, true);
     }
 
     /**
@@ -652,13 +648,5 @@ public class NodeRepository extends AbstractComponent {
     /** Acquires the appropriate lock for this node */
     private Mutex lock(Node node) {
         return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
-    }
-
-    /*
-     * Temporary feature toggle to enable/disable dynamic docker allocation
-     * TODO: Remove when enabled in all zones
-     */
-    public boolean dynamicAllocationEnabled() {
-        return curator.exists(Path.fromString("/provision/v1/dynamicDockerAllocation"));
     }
 }

@@ -115,12 +115,12 @@ public class FileDistributionRpcServer {
 
     private void downloadFile(Request req) {
         FileReference fileReference = new FileReference(req.parameters().get(0).asString());
-        log.log(LogLevel.DEBUG, "getFile() called for file reference '" + fileReference.value() + "'");
+        log.log(LogLevel.DEBUG, () -> "getFile() called for file reference '" + fileReference.value() + "'");
         Optional<File> pathToFile = downloader.getFile(fileReference);
         try {
             if (pathToFile.isPresent()) {
                 req.returnValues().add(new StringValue(pathToFile.get().getAbsolutePath()));
-                log.log(LogLevel.DEBUG, "File reference '" + fileReference.value() + "' available at " + pathToFile.get());
+                log.log(LogLevel.DEBUG, () -> "File reference '" + fileReference.value() + "' available at " + pathToFile.get());
             } else {
                 log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
                 req.setError(fileReferenceDoesNotExists, "File reference '" + fileReference.value() + "' not found");
