@@ -8,7 +8,6 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClients;
-import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClientsImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
@@ -36,35 +35,39 @@ public class DockerAdminComponent implements AdminComponent {
     private final Docker docker;
     private final MetricReceiverWrapper metricReceiver;
     private final Optional<ClassLocking> classLocking;
+    private final ConfigServerClients configServerClients;
 
     private Optional<Environment> environment = Optional.empty();
-    private Optional<ConfigServerClients> configServerClients = Optional.empty();
     private Optional<NodeAdminStateUpdaterImpl> nodeAdminStateUpdater = Optional.empty();
 
     public DockerAdminComponent(ConfigServerConfig configServerConfig,
                                 Docker docker,
                                 MetricReceiverWrapper metricReceiver,
-                                ClassLocking classLocking) {
-        this(configServerConfig, docker, metricReceiver, Optional.empty(), Optional.of(classLocking));
+                                ClassLocking classLocking,
+                                ConfigServerClients configServerClients) {
+        this(configServerConfig, docker, metricReceiver, Optional.empty(), Optional.of(classLocking), configServerClients);
     }
 
     public DockerAdminComponent(ConfigServerConfig configServerConfig,
                                 Docker docker,
                                 MetricReceiverWrapper metricReceiver,
-                                Environment environment) {
-        this(configServerConfig, docker, metricReceiver, Optional.of(environment), Optional.empty());
+                                Environment environment,
+                                ConfigServerClients configServerClients) {
+        this(configServerConfig, docker, metricReceiver, Optional.of(environment), Optional.empty(), configServerClients);
     }
 
     private DockerAdminComponent(ConfigServerConfig configServerConfig,
                                  Docker docker,
                                  MetricReceiverWrapper metricReceiver,
                                  Optional<Environment> environment,
-                                 Optional<ClassLocking> classLocking) {
+                                 Optional<ClassLocking> classLocking,
+                                 ConfigServerClients configServerClients) {
         this.configServerConfig = configServerConfig;
         this.docker = docker;
         this.metricReceiver = metricReceiver;
         this.environment = environment;
         this.classLocking = classLocking;
+        this.configServerClients = configServerClients;
     }
 
     @Override
@@ -80,10 +83,6 @@ public class DockerAdminComponent implements AdminComponent {
     private NodeAdminStateUpdaterImpl createNodeAdminStateUpdater() {
         if (!environment.isPresent()) {
             environment = Optional.of(new Environment(configServerConfig));
-        }
-
-        if (!configServerClients.isPresent()) {
-            configServerClients = Optional.of(new ConfigServerClientsImpl(environment.get()));
         }
 
         Clock clock = Clock.systemUTC();
@@ -105,13 +104,13 @@ public class DockerAdminComponent implements AdminComponent {
 
         AclMaintainer aclMaintainer = new AclMaintainer(
                 dockerOperations,
-                configServerClients.get().nodeRepository(),
+                configServerClients.nodeRepository(),
                 dockerHostHostName);
 
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(
                 hostName,
-                configServerClients.get().nodeRepository(),
-                configServerClients.get().orchestrator(),
+                configServerClients.nodeRepository(),
+                configServerClients.orchestrator(),
                 dockerOperations,
                 storageMaintainer,
                 aclMaintainer,
@@ -128,8 +127,8 @@ public class DockerAdminComponent implements AdminComponent {
                 clock);
 
         return new NodeAdminStateUpdaterImpl(
-                configServerClients.get().nodeRepository(),
-                configServerClients.get().orchestrator(),
+                configServerClients.nodeRepository(),
+                configServerClients.orchestrator(),
                 storageMaintainer,
                 nodeAdmin,
                 dockerHostHostName,
@@ -145,7 +144,7 @@ public class DockerAdminComponent implements AdminComponent {
         }
 
         nodeAdminStateUpdater.ifPresent(NodeAdminStateUpdaterImpl::stop);
-        configServerClients.ifPresent(ConfigServerClients::stop);
+        configServerClients.stop();
         nodeAdminStateUpdater = Optional.empty();
     }
 
