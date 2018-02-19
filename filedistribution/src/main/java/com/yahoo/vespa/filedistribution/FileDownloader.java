@@ -57,7 +57,7 @@ public class FileDownloader {
     private Future<Optional<File>> getFutureFile(FileReference fileReference) {
         Objects.requireNonNull(fileReference, "file reference cannot be null");
         File directory = new File(downloadDirectory, fileReference.value());
-        log.log(LogLevel.DEBUG, "Checking if there is a file in '" + directory.getAbsolutePath() + "' ");
+        log.log(LogLevel.DEBUG, () -> "Checking if there is a file in '" + directory.getAbsolutePath() + "' ");
 
         Optional<File> file = getFileFromFileSystem(fileReference, directory);
         if (file.isPresent()) {
@@ -65,7 +65,7 @@ public class FileDownloader {
             future.set(file);
             return future;
         } else {
-            log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found in " +
+            log.log(LogLevel.DEBUG, () -> "File reference '" + fileReference.value() + "' not found in " +
                     directory.getAbsolutePath() + ", starting download");
             return queueForAsyncDownload(fileReference, timeout);
         }
@@ -75,7 +75,7 @@ public class FileDownloader {
     public void queueForAsyncDownload(List<FileReference> fileReferences) {
         fileReferences.forEach(fileReference -> {
             if (fileReferenceDownloader.isDownloading(fileReference)) {
-                log.log(LogLevel.DEBUG, "Already downloading '" + fileReference.value() + "'");
+                log.log(LogLevel.DEBUG, () -> "Already downloading '" + fileReference.value() + "'");
             } else {
                 queueForAsyncDownload(fileReference);
             }
@@ -117,12 +117,12 @@ public class FileDownloader {
     private synchronized Future<Optional<File>> queueForAsyncDownload(FileReference fileReference, Duration timeout) {
         Future<Optional<File>> inProgress = fileReferenceDownloader.addDownloadListener(fileReference, () -> getFile(fileReference));
         if (inProgress != null) {
-            log.log(LogLevel.DEBUG, "Already downloading '" + fileReference.value() + "'");
+            log.log(LogLevel.DEBUG, () -> "Already downloading '" + fileReference.value() + "'");
             return inProgress;
         }
 
         Future<Optional<File>> future = queueForAsyncDownload(fileReference);
-        log.log(LogLevel.INFO, "Queued '" + fileReference.value() + "' for download with timeout " + timeout);
+        log.log(LogLevel.DEBUG, () -> "Queued '" + fileReference.value() + "' for download with timeout " + timeout);
         return future;
     }
 

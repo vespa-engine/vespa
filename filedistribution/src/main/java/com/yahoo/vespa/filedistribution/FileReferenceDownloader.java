@@ -11,6 +11,7 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
+import org.apache.commons.compress.archivers.ArchiveEntry;
 
 import java.io.File;
 import java.time.Duration;
@@ -74,7 +75,7 @@ public class FileReferenceDownloader {
 
     void addToDownloadQueue(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
-        log.log(LogLevel.DEBUG, "Will download file reference '" + fileReference.value() + "' with timeout " + downloadTimeout);
+        log.log(LogLevel.DEBUG, () -> "Will download file reference '" + fileReference.value() + "' with timeout " + downloadTimeout);
         synchronized (downloads) {
             downloads.put(fileReference, fileReferenceDownload);
             downloadStatus.put(fileReference, 0.0);
@@ -94,7 +95,7 @@ public class FileReferenceDownloader {
                 downloads.remove(fileReference);
                 download.future().set(Optional.of(file));
             } else {
-                log.log(LogLevel.INFO, "Received '" + fileReference + "', which was not requested. Can be ignored if happening during upgrades/restarts");
+                log.log(LogLevel.DEBUG, () -> "Received '" + fileReference + "', which was not requested. Can be ignored if happening during upgrades/restarts");
             }
         }
     }
@@ -106,9 +107,9 @@ public class FileReferenceDownloader {
 
         execute(request, connection);
         if (validateResponse(request)) {
-            log.log(LogLevel.DEBUG, "Request callback, OK. Req: " + request + "\nSpec: " + connection);
+            log.log(LogLevel.DEBUG, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection);
             if (request.returnValues().get(0).asInt32() == 0) {
-                log.log(LogLevel.DEBUG, "Found file reference '" + fileReference.value() + "' available at " + connection.getAddress());
+                log.log(LogLevel.DEBUG, () -> "Found file reference '" + fileReference.value() + "' available at " + connection.getAddress());
                 return true;
             } else {
                 log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found for " + connection.getAddress());
@@ -116,7 +117,7 @@ public class FileReferenceDownloader {
                 return false;
             }
         } else {
-            log.log(LogLevel.WARNING, "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
+            log.log(LogLevel.INFO, "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
                     ", error code: " + request.errorCode());
             if (request.isError() && request.errorCode() == ErrorCode.CONNECTION || request.errorCode() == ErrorCode.TIMEOUT) {
                 log.log(LogLevel.INFO, "Mark connection " + connection.getAddress() + " with error");
