@@ -149,8 +149,9 @@ DistributorHostInfoReporterTest::verifyBucketSpaceStats(const vespalib::Slime& r
                                                         size_t bucketsPending)
 {
     const auto &stats = getBucketSpaceStats(root, nodeIndex, bucketSpaceName);
-    CPPUNIT_ASSERT_EQUAL(bucketsTotal, static_cast<size_t>(stats["total"].asLong()));
-    CPPUNIT_ASSERT_EQUAL(bucketsPending, static_cast<size_t>(stats["pending"].asLong()));
+    const auto &buckets = stats["buckets"];
+    CPPUNIT_ASSERT_EQUAL(bucketsTotal, static_cast<size_t>(buckets["total"].asLong()));
+    CPPUNIT_ASSERT_EQUAL(bucketsPending, static_cast<size_t>(buckets["pending"].asLong()));
 }
 
 void
@@ -159,8 +160,7 @@ DistributorHostInfoReporterTest::verifyBucketSpaceStats(const vespalib::Slime& r
                                                         const vespalib::string& bucketSpaceName)
 {
     const auto &stats = getBucketSpaceStats(root, nodeIndex, bucketSpaceName);
-    CPPUNIT_ASSERT(!stats["total"].valid());
-    CPPUNIT_ASSERT(!stats["pending"].valid());
+    CPPUNIT_ASSERT(!stats["buckets"].valid());
 }
 
 struct Fixture {
@@ -233,7 +233,7 @@ DistributorHostInfoReporterTest::generateExampleJson()
     PerNodeBucketSpacesStats stats;
     stats[0]["default"] = BucketSpaceStats(11, 3);
     stats[0]["global"] = BucketSpaceStats(13, 5);
-    stats[5]["default"] = BucketSpaceStats(17, 7);
+    stats[5]["default"] = BucketSpaceStats();
     f.bucketSpacesStatsProvider.stats = stats;
 
     vespalib::asciistream json;
