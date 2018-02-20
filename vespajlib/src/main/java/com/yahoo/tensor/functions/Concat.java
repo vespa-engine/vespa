@@ -60,7 +60,7 @@ public class Concat extends PrimitiveTensorFunction {
     }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) {
+    public TensorType type(TypeContext context) {
         return type(argumentA.type(context), argumentB.type(context));
     }
 
@@ -74,7 +74,7 @@ public class Concat extends PrimitiveTensorFunction {
     }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
+    public Tensor evaluate(EvaluationContext context) {
         Tensor a = argumentA.evaluate(context);
         Tensor b = argumentB.evaluate(context);
         a = ensureIndexedDimension(dimension, a);

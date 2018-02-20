@@ -42,10 +42,10 @@ public class ConstantTensor extends PrimitiveTensorFunction {
     public PrimitiveTensorFunction toPrimitive() { return this; }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) { return constant.type(); }
+    public TensorType type(TypeContext context) { return constant.type(); }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) { return constant; }
+    public Tensor evaluate(EvaluationContext context) { return constant; }
 
     @Override
     public String toString(ToStringContext context) { return constant.toString(); }

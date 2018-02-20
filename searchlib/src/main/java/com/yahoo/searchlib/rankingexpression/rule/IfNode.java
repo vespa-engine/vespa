@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
-import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
@@ -76,7 +75,7 @@ public final class IfNode extends CompositeNode {
     }
 
     @Override
-    public TensorType type(TypeContext<Reference> context) {
+    public TensorType type(TypeContext context) {
         TensorType trueType = trueExpression.type(context);
         TensorType falseType = falseExpression.type(context);
         return trueType.dimensionwiseGeneralizationWith(falseType).orElseThrow(() ->
