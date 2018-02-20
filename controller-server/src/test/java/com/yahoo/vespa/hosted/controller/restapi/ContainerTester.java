@@ -14,7 +14,6 @@ import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -152,12 +151,19 @@ public class ContainerTester {
         if ( ! fieldsToCensor.contains(fieldName)) return;
 
         String fromString;
-        if ( fieldValue.type().equals(Type.STRING))
-            fromString = "\"" + fieldName + "\":\"" + fieldValue.asString() + "\"";
-        else if ( fieldValue.type().equals(Type.LONG))
-            fromString = "\"" + fieldName + "\":" + fieldValue.asLong();
-        else
-            throw new IllegalArgumentException("Can only censor strings and longs");
+        switch (fieldValue.type()) {
+            case STRING:
+                fromString = "\"" + fieldName + "\":\"" + fieldValue.asString() + "\"";
+                break;
+            case LONG:
+                fromString = "\"" + fieldName + "\":" + fieldValue.asLong();
+                break;
+            case BOOL:
+                fromString = "\"" + fieldName + "\":" + fieldValue.asBool();
+                break;
+            default:
+                throw new IllegalArgumentException("Can only censor strings, longs and booleans");
+        }
         String toString = "\"" + fieldName + "\":\"(ignore)\"";
         replaceStrings.add(new Pair<>(fromString, toString));
     }

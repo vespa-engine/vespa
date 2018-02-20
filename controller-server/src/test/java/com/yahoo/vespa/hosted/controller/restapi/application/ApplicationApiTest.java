@@ -87,6 +87,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
             .region("corp-us-east-1")
             .region("us-east-3")
             .region("us-west-1")
+            .blockChange(false, true, "mon-fri", "0-8", "UTC")
             .build();
 
     private static final AthenzDomain ATHENZ_TENANT_DOMAIN = new AthenzDomain("domain1");
