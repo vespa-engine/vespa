@@ -5,6 +5,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
@@ -20,6 +21,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.config.SlimeUtils;
@@ -80,6 +82,7 @@ import com.yahoo.yolean.Exceptions;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotAuthorizedException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -89,6 +92,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -104,19 +108,15 @@ import java.util.logging.Level;
 public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
-    private final Authorizer authorizer;
     private final AthenzClientFactory athenzClientFactory;
-    private final ApplicationInstanceAuthorizer applicationInstanceAuthorizer;
 
     @Inject
     public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
-                                 Controller controller, Authorizer authorizer,
+                                 Controller controller,
                                  AthenzClientFactory athenzClientFactory) {
         super(parentCtx);
         this.controller = controller;
-        this.authorizer = authorizer;
         this.athenzClientFactory = athenzClientFactory;
-        this.applicationInstanceAuthorizer = new ApplicationInstanceAuthorizer(controller.zoneRegistry(), athenzClientFactory);
     }
 
     @Override
@@ -240,7 +240,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse authenticatedUser(HttpRequest request) {
         String userIdString = request.getProperty("userOverride");
         if (userIdString == null)
-            userIdString = authorizer.getUserId(request)
+            userIdString = getUserId(request)
                     .map(UserId::id)
                     .orElseThrow(() -> new ForbiddenException("You must be authenticated or specify userOverride"));
         UserId userId = new UserId(userIdString);
@@ -501,13 +501,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (!existingTenant.isPresent())
             return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
 
-        authorizer.throwIfUnauthorized(existingTenant.get().getId(), request);
 
         // Decode payload (reason) and construct parameter to the configserver
 
         Inspector requestData = toSlime(request.getData()).get();
         String reason = mandatory("reason", requestData).asString();
-        String agent = authorizer.getIdentity(request).getFullName();
+        String agent = getUserPrincipal(request).getIdentity().getFullName();
         long timestamp = controller.clock().instant().getEpochSecond();
         EndpointStatus.Status status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
         EndpointStatus endPointStatus = new EndpointStatus(status, reason, agent, timestamp);
@@ -596,7 +595,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse createUser(HttpRequest request) {
-        Optional<UserId> user = authorizer.getUserId(request);
+        Optional<UserId> user = getUserId(request);
         if ( ! user.isPresent() ) throw new ForbiddenException("Not authenticated or not an user.");
 
         try {
@@ -614,7 +613,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Inspector requestData = toSlime(request.getData()).get();
 
-        authorizer.throwIfUnauthorized(existingTenant.get().getId(), request);
         Tenant updatedTenant;
         switch (existingTenant.get().tenantType()) {
             case USER: {
@@ -626,8 +624,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                          userGroup,
                                                          new Property(mandatory("property", requestData).asString()),
                                                          optional("propertyId", requestData).map(PropertyId::new));
-                throwIfNotSuperUserOrPartOfOpsDbGroup(userGroup, request);
-                controller.tenants().updateTenant(updatedTenant, authorizer.getNToken(request));
+                controller.tenants().updateTenant(updatedTenant, getUserPrincipal(request).getNToken());
                 break;
             }
             case ATHENS: {
@@ -637,7 +634,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                           new AthenzDomain(mandatory("athensDomain", requestData).asString()),
                                                           new Property(mandatory("property", requestData).asString()),
                                                           optional("propertyId", requestData).map(PropertyId::new));
-                controller.tenants().updateTenant(updatedTenant, authorizer.getNToken(request));
+                controller.tenants().updateTenant(updatedTenant, getUserPrincipal(request).getNToken());
                 break;
             }
             default: {
@@ -658,12 +655,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                    optional("property", requestData).map(Property::new),
                                    optional("athensDomain", requestData).map(AthenzDomain::new),
                                    optional("propertyId", requestData).map(PropertyId::new));
-        if (tenant.isOpsDbTenant())
-            throwIfNotSuperUserOrPartOfOpsDbGroup(new UserGroup(mandatory("userGroup", requestData).asString()), request);
         if (tenant.isAthensTenant())
             throwIfNotAthenzDomainAdmin(new AthenzDomain(mandatory("athensDomain", requestData).asString()), request);
 
-        controller.tenants().addTenant(tenant, authorizer.getNToken(request));
+        controller.tenants().addTenant(tenant, getUserPrincipal(request).getNToken());
         return tenant(tenant, request, true);
     }
 
@@ -674,9 +669,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Property property = new Property(mandatory("property", requestData).asString());
         PropertyId propertyId = new PropertyId(mandatory("propertyId", requestData).asString());
 
-        authorizer.throwIfUnauthorized(tenantid, request);
         throwIfNotAthenzDomainAdmin(tenantDomain, request);
-        NToken nToken = authorizer.getNToken(request)
+        NToken nToken = getUserPrincipal(request).getNToken()
                 .orElseThrow(() ->
                                      new BadRequestException("The NToken for a domain admin is required to migrate tenant to Athens"));
         Tenant tenant = controller.tenants().migrateTenantToAthenz(tenantid, tenantDomain, propertyId, property, nToken);
@@ -684,10 +678,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse createApplication(String tenantName, String applicationName, HttpRequest request) {
-        authorizer.throwIfUnauthorized(new TenantId(tenantName), request);
         Application application;
         try {
-            application = controller.applications().createApplication(ApplicationId.from(tenantName, applicationName, "default"), authorizer.getNToken(request));
+            application = controller.applications().createApplication(ApplicationId.from(tenantName, applicationName, "default"), getUserPrincipal(request).getNToken());
         }
         catch (ZmsException e) { // TODO: Push conversion down
             if (e.getCode() == com.yahoo.jdisc.Response.Status.FORBIDDEN)
@@ -702,7 +695,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     /** Trigger deployment of the last built application package, on a given version */
-    // TODO Add authorization
     // TODO Consider move to API for maintenance related operations
     private HttpResponse deploy(String tenantName, String applicationName, HttpRequest request) {
         Version version = decideDeployVersion(request);
@@ -723,7 +715,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     /** Cancel any ongoing change for given application */
-    // TODO Add authorization
     // TODO Consider move to API for maintenance related operations
     private HttpResponse cancelDeploy(String tenantName, String applicationName) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
@@ -746,11 +737,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // TODO: Propagate all filters
         Optional<Hostname> hostname = Optional.ofNullable(request.getProperty("hostname")).map(Hostname::new);
 
-        applicationInstanceAuthorizer.throwIfUnauthorized(authorizer.getPrincipal(request),
-                                                          Environment.from(environment),
-                                                          getTenantOrThrow(tenantName),
-                                                          deploymentId.applicationId().application());
-        controller.applications().restart(deploymentId, hostname);
 
         // TODO: Change to return JSON
         return new StringResponse("Requested restart of " + path(TenantResource.API_PATH, tenantName,
@@ -770,10 +756,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
                                                          ZoneId.from(environment, region));
 
-            applicationInstanceAuthorizer.throwIfUnauthorized(authorizer.getPrincipal(request),
-                                                              Environment.from(environment),
-                                                              getTenantOrThrow(tenantName),
-                                                              deploymentId.applicationId().application());
             return new JacksonJsonResponse(controller.grabLog(deploymentId));
         }
         catch (RuntimeException e) {
@@ -795,11 +777,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Optional<ApplicationPackage> applicationPackage = Optional.ofNullable(dataParts.get("applicationZip"))
                                                                   .map(ApplicationPackage::new);
-        applicationInstanceAuthorizer.throwIfUnauthorizedForDeploy(authorizer.getPrincipal(request),
-                                                                   Environment.from(environment),
-                                                                   getTenantOrThrow(tenantName),
-                                                                   ApplicationName.from(applicationName),
-                                                                   applicationPackage);
+
+        verifyApplicationIdentityConfiguration(tenantName, applicationPackage);
 
         // TODO: get rid of the json object
         DeployOptions deployOptionsJsonClass = new DeployOptions(screwdriverBuildJobFromSlime(deployOptions.field("screwdriverBuildJob")),
@@ -813,22 +792,36 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(toSlime(result));
     }
 
+    private void verifyApplicationIdentityConfiguration(String tenantName, Optional<ApplicationPackage> applicationPackage) {
+        // Validate that domain in identity configuration (deployment.xml) is same as tenant domain
+        applicationPackage.map(ApplicationPackage::deploymentSpec).flatMap(DeploymentSpec::athenzDomain)
+                .ifPresent(identityDomain -> {
+                    Tenant tenant = controller.tenants().tenant(new TenantId(tenantName)).orElseThrow(() -> new IllegalArgumentException("Tenant does not exist"));
+                    AthenzDomain tenantDomain = tenant.getAthensDomain().orElseThrow(() -> new IllegalArgumentException("Identity provider only available to Athenz onboarded tenants"));
+                    if (! Objects.equals(tenantDomain.getName(), identityDomain.value())) {
+                        throw new ForbiddenException(
+                                String.format(
+                                        "Athenz domain in deployment.xml: [%s] must match tenant domain: [%s]",
+                                        identityDomain.value(),
+                                        tenantDomain.getName()
+                                ));
+                    }
+                });
+    }
+
     private HttpResponse deleteTenant(String tenantName, HttpRequest request) {
         Optional<Tenant> tenant = controller.tenants().tenant(new TenantId(tenantName));
         if ( ! tenant.isPresent()) return ErrorResponse.notFoundError("Could not delete tenant '" + tenantName + "': Tenant not found"); // NOTE: The Jersey implementation would silently ignore this
 
-        authorizer.throwIfUnauthorized(new TenantId(tenantName), request);
-        controller.tenants().deleteTenant(new TenantId(tenantName), authorizer.getNToken(request));
+        controller.tenants().deleteTenant(new TenantId(tenantName), getUserPrincipal(request).getNToken());
 
         // TODO: Change to a message response saying the tenant was deleted
         return tenant(tenant.get(), request, false);
     }
 
     private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
-        authorizer.throwIfUnauthorized(new TenantId(tenantName), request);
-
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
-        controller.applications().deleteApplication(id, authorizer.getNToken(request));
+        controller.applications().deleteApplication(id, getUserPrincipal(request).getNToken());
         return new EmptyJsonResponse(); // TODO: Replicates current behavior but should return a message response instead
     }
 
@@ -837,11 +830,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         ZoneId zone = ZoneId.from(environment, region);
         Deployment deployment = application.deployments().get(zone);
-
-        applicationInstanceAuthorizer.throwIfUnauthorized(authorizer.getPrincipal(request),
-                                                          Environment.from(environment),
-                                                          getTenantOrThrow(tenantName),
-                                                          ApplicationName.from(applicationName));
 
         if (deployment == null) {
             // Attempt to deactivate application even if the deployment is not known by the controller
@@ -863,10 +851,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
      */
     private HttpResponse promoteApplication(String tenantName, String applicationName, HttpRequest request) {
         try{
-            applicationInstanceAuthorizer.throwIfUnauthorized(authorizer.getPrincipal(request),
-                                                              getTenantOrThrow(tenantName),
-                                                              ApplicationName.from(applicationName));
-
             ApplicationChefEnvironment chefEnvironment = new ApplicationChefEnvironment(controller.system());
             String sourceEnvironment = chefEnvironment.systemChefEnvironment();
             String targetEnvironment = chefEnvironment.applicationSourceEnvironment(TenantName.from(tenantName), ApplicationName.from(applicationName));
@@ -883,11 +867,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
      */
     private HttpResponse promoteApplicationDeployment(String tenantName, String applicationName, String environmentName, String regionName, String instanceName, HttpRequest request) {
         try {
-            applicationInstanceAuthorizer.throwIfUnauthorized(authorizer.getPrincipal(request),
-                                                              Environment.from(environmentName),
-                                                              getTenantOrThrow(tenantName),
-                                                              ApplicationName.from(applicationName));
-
             ApplicationChefEnvironment chefEnvironment = new ApplicationChefEnvironment(controller.system());
             String sourceEnvironment = chefEnvironment.applicationSourceEnvironment(TenantName.from(tenantName), ApplicationName.from(applicationName));
             String targetEnvironment = chefEnvironment.applicationTargetEnvironment(TenantName.from(tenantName), ApplicationName.from(applicationName), Environment.from(environmentName), RegionName.from(regionName));
@@ -1046,24 +1025,29 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private void throwIfNotSuperUserOrPartOfOpsDbGroup(UserGroup userGroup, HttpRequest request) {
-        AthenzIdentity identity = authorizer.getIdentity(request);
-        if (!(identity instanceof AthenzUser)) {
-            throw new ForbiddenException("Identity not an user: " + identity.getFullName());
-        }
-        AthenzUser user = (AthenzUser) identity;
-        if (!authorizer.isSuperUser(request) && !authorizer.isGroupMember(new UserId(user.getName()), userGroup) ) {
-            throw new ForbiddenException(String.format("User '%s' is not super user or part of the OpsDB user group '%s'",
-                                                       user.getName(), userGroup.id()));
-        }
-    }
-
     private void throwIfNotAthenzDomainAdmin(AthenzDomain tenantDomain, HttpRequest request) {
-        AthenzIdentity identity = authorizer.getIdentity(request);
-        if ( ! authorizer.isAthenzDomainAdmin(identity, tenantDomain)) {
+        AthenzIdentity identity = getUserPrincipal(request).getIdentity();
+        boolean isDomainAdmin = athenzClientFactory.createZmsClientWithServicePrincipal()
+                .isDomainAdmin(identity, tenantDomain);
+        if ( ! isDomainAdmin) {
             throw new ForbiddenException(
                     String.format("The user '%s' is not admin in Athenz domain '%s'", identity.getFullName(), tenantDomain.getName()));
         }
+    }
+
+    private static Optional<UserId> getUserId(HttpRequest request) {
+        return Optional.of(getUserPrincipal(request))
+                .map(AthenzPrincipal::getIdentity)
+                .filter(AthenzUser.class::isInstance)
+                .map(AthenzUser.class::cast)
+                .map(AthenzUser::getName)
+                .map(UserId::new);
+    }
+
+    private static AthenzPrincipal getUserPrincipal(HttpRequest request) {
+        return Optional.ofNullable(request.getJDiscRequest().getUserPrincipal())
+                .map(AthenzPrincipal.class::cast)
+                .orElseThrow(() -> new InternalServerErrorException("Expected user principal"));
     }
 
     private Inspector mandatory(String key, Inspector object) {
