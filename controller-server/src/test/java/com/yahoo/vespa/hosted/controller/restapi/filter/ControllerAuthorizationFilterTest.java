@@ -17,7 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationActio
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
-import com.yahoo.vespa.hosted.controller.restapi.filter.ControllerAuthorizationFilter.HttpRespondingAuthorizationResponseHandler;
+import com.yahoo.vespa.hosted.controller.restapi.filter.ControllerAuthorizationFilter.DefaultAuthorizationResponseHandler;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -149,7 +149,7 @@ public class ControllerAuthorizationFilterTest {
                                                  controllerTester.controller(),
                                                  controllerTester.entityService(),
                                                  controllerTester.zoneRegistry(),
-                                                 new HttpRespondingAuthorizationResponseHandler());
+                                                 new DefaultAuthorizationResponseHandler());
     }
 
     private static Optional<AuthorizationResponse> invokeFilter(ControllerAuthorizationFilter filter,
