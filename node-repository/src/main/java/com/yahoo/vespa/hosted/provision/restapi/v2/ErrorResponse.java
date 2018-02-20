@@ -19,35 +19,49 @@ import static com.yahoo.jdisc.Response.Status.*;
 public class ErrorResponse extends HttpResponse {
 
     private final Slime slime = new Slime();
+    private final String message;
 
-    public enum errorCodes {
+    public enum ErrorCode {
+        FORBIDDEN,
+        UNAUTHORIZED,
         NOT_FOUND,
         BAD_REQUEST,
         METHOD_NOT_ALLOWED,
         INTERNAL_SERVER_ERROR
     }
 
-    public ErrorResponse(int code, String errorType, String message) {
+    private ErrorResponse(int code, ErrorCode errorCode, String message) {
         super(code);
+        this.message = message;
         Cursor root = slime.setObject();
-        root.setString("error-code", errorType);
+        root.setString("error-code", errorCode.name());
         root.setString("message", message);
     }
 
+    public String message() { return message; }
+
     public static ErrorResponse notFoundError(String message) {
-        return new ErrorResponse(NOT_FOUND, errorCodes.NOT_FOUND.name(), message);
+        return new ErrorResponse(NOT_FOUND, ErrorCode.NOT_FOUND, message);
     }
 
     public static ErrorResponse internalServerError(String message) {
-        return new ErrorResponse(INTERNAL_SERVER_ERROR, errorCodes.INTERNAL_SERVER_ERROR.name(), message);
+        return new ErrorResponse(INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_SERVER_ERROR, message);
     }
 
     public static ErrorResponse badRequest(String message) {
-        return new ErrorResponse(BAD_REQUEST, errorCodes.BAD_REQUEST.name(), message);
+        return new ErrorResponse(BAD_REQUEST, ErrorCode.BAD_REQUEST, message);
     }
 
     public static ErrorResponse methodNotAllowed(String message) {
-        return new ErrorResponse(METHOD_NOT_ALLOWED, errorCodes.METHOD_NOT_ALLOWED.name(), message);
+        return new ErrorResponse(METHOD_NOT_ALLOWED, ErrorCode.METHOD_NOT_ALLOWED, message);
+    }
+
+    public static ErrorResponse unauthorized(String message) {
+        return new ErrorResponse(UNAUTHORIZED, ErrorCode.UNAUTHORIZED, message);
+    }
+
+    public static ErrorResponse forbidden(String message) {
+        return new ErrorResponse(FORBIDDEN, ErrorCode.FORBIDDEN, message);
     }
 
     @Override

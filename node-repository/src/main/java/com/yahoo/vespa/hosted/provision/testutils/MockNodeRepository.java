@@ -43,7 +43,7 @@ public class MockNodeRepository extends NodeRepository {
      * Constructor
      * @param flavors flavors to have in node repo
      */
-    public MockNodeRepository(MockCurator curator, NodeFlavors flavors) throws Exception {
+    public MockNodeRepository(MockCurator curator, NodeFlavors flavors) {
         super(flavors, curator, Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")), Zone.defaultZone(),
               new MockNameResolver()
                       .addRecord("test-container-1", "::2")
