@@ -13,13 +13,17 @@
                 "bucket-spaces" : [
                     {
                         "name": "default",
-                        "total": 11,
-                        "pending": 3
+                        "buckets": {
+                            "total": 11,
+                            "pending": 3
+                        }
                     },
                     {
                         "name": "global",
-                        "total": 13,
-                        "pending": 5
+                        "buckets": {
+                            "total": 13,
+                            "pending": 5
+                        }
                     }
                 ]
             },
@@ -34,9 +38,7 @@
                 },
                 "bucket-spaces" : [
                     {
-                        "name": "default",
-                        "total": 17,
-                        "pending": 7
+                        "name": "default"
                     }
                 ]
             }
