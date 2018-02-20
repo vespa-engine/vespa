@@ -12,6 +12,14 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+/**
+ * Validates the types of all ranking expressions under a search instance:
+ * Some operators constrain the types of inputs, and first-and second-phase expressions
+ * must return scalar values. In addition, the existence of all referred attribute, query and constant
+ * features is ensured.
+ *
+ * @author bratseth
+ */
 public class RankingExpressionTypeValidator extends Processor {
 
     private final QueryProfileRegistry queryProfiles;
