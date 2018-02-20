@@ -37,8 +37,8 @@ public class OutstandingChangeDeployerTest {
                 .region("us-west-1")
                 .build();
 
-        tester.createAndDeploy("app1", 11, "default");
-        tester.createAndDeploy("app2", 22, "default");
+        tester.createAndDeploy("app1", 11, applicationPackage);
+        tester.createAndDeploy("app2", 22, applicationPackage);
 
         Version version = new Version(6, 2);
         tester.deploymentTrigger().triggerChange(tester.application("app1").id(), Change.of(version));
@@ -60,11 +60,16 @@ public class OutstandingChangeDeployerTest {
 
         deployer.maintain();
         assertEquals("No effect as job is in progress", 1, tester.buildSystem().jobs().size());
+        assertEquals("1.0.43-cafed00d", app.outstandingChange().application().get().id());
 
-        tester.deployCompletely("app1");
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsWest1);
         assertEquals("Upgrade done", 0, tester.buildSystem().jobs().size());
 
         deployer.maintain();
+        app = tester.application("app1");
+        assertEquals("1.0.43-cafed00d", app.change().application().get().id());
         List<BuildService.BuildJob> jobs = tester.buildSystem().jobs();
         assertEquals(1, jobs.size());
         assertEquals(11, jobs.get(0).projectId());
