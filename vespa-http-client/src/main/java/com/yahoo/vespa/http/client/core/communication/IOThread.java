@@ -319,12 +319,12 @@ class IOThread implements Runnable, AutoCloseable {
                     successfullHandshakes.getAndIncrement();
                 } catch (ServerResponseException ser) {
                     executeProblemsCounter.incrementAndGet();
-                    log.log(Level.INFO, "Handshake did not work out " + endpoint, Exceptions.toMessageString(ser));
+                    log.info("Handshake did not work out " + endpoint + ": " + Exceptions.toMessageString(ser));
                     drainFirstDocumentsInQueueIfOld();
                     return ThreadState.CONNECTED;
                 } catch (Throwable throwable) { // This cover IOException as well
                     executeProblemsCounter.incrementAndGet();
-                    log.log(Level.INFO, "Problem with Handshake " + endpoint, Exceptions.toMessageString(throwable));
+                    log.info("Problem with Handshake " + endpoint + ": " + Exceptions.toMessageString(throwable));
                     drainFirstDocumentsInQueueIfOld();
                     client.close();
                     return ThreadState.DISCONNECTED;
@@ -340,7 +340,7 @@ class IOThread implements Runnable, AutoCloseable {
                     return ThreadState.CONNECTED;
                 }
                 catch (Throwable e) { // Covers IOException as well
-                    log.info("Problems while handing data over to gateway  " + endpoint + ": " + Exceptions.toMessageString(e));
+                    log.info("Problems while handing data over to gateway " + endpoint + ": " + Exceptions.toMessageString(e));
                     client.close();
                     return ThreadState.DISCONNECTED;
                 }
