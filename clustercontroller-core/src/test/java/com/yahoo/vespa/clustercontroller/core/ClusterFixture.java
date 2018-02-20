@@ -149,6 +149,11 @@ class ClusterFixture {
         return this;
     }
 
+    ClusterFixture assignDummyRpcAddresses() {
+        cluster.getNodeInfo().forEach(ni -> ni.setRpcAddress("tcp/localhost:0"));
+        return this;
+    }
+
     static Map<NodeType, Integer> buildTransitionTimeMap(int distributorTransitionTime, int storageTransitionTime) {
         Map<NodeType, Integer> maxTransitionTime = new TreeMap<>();
         maxTransitionTime.put(NodeType.DISTRIBUTOR, distributorTransitionTime);

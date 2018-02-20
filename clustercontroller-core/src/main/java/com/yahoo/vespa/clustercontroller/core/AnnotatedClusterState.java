@@ -28,6 +28,10 @@ public class AnnotatedClusterState {
         return new AnnotatedClusterState(ClusterState.emptyState(), Optional.empty(), emptyNodeStateReasons());
     }
 
+    public static AnnotatedClusterState withoutAnnotations(ClusterState state) {
+        return new AnnotatedClusterState(state, Optional.empty(), emptyNodeStateReasons());
+    }
+
     static Map<Node, NodeStateReason> emptyNodeStateReasons() {
         return Collections.emptyMap();
     }

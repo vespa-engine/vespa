@@ -18,7 +18,7 @@ public interface Communicator {
 
     void getNodeState(NodeInfo node, Waiter<GetNodeStateRequest> waiter);
 
-    void setSystemState(ClusterState state, NodeInfo node, Waiter<SetClusterStateRequest> waiter);
+    void setSystemState(ClusterStateBundle states, NodeInfo node, Waiter<SetClusterStateRequest> waiter);
 
     void shutdown();
 

@@ -28,10 +28,10 @@ public class DatabaseHandler {
     private static Logger log = Logger.getLogger(DatabaseHandler.class.getName());
 
     public interface Context {
-        public ContentCluster getCluster();
-        public FleetController getFleetController();
-        public NodeAddedOrRemovedListener getNodeAddedOrRemovedListener();
-        public NodeStateOrHostInfoChangeHandler getNodeStateUpdateListener();
+        ContentCluster getCluster();
+        FleetController getFleetController();
+        NodeAddedOrRemovedListener getNodeAddedOrRemovedListener();
+        NodeStateOrHostInfoChangeHandler getNodeStateUpdateListener();
     }
 
     private class Data {
