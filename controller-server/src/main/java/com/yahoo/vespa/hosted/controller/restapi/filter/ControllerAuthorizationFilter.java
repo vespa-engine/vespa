@@ -256,7 +256,7 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     /**
      * Maps {@link WebApplicationException} to http response ({@link Response}.
      */
-    static class DefaultAuthorizationResponseHandler implements AuthorizationResponseHandler {
+    private static class DefaultAuthorizationResponseHandler implements AuthorizationResponseHandler {
         @Override
         public void handle(ResponseHandler responseHandler,
                            DiscFilterRequest request,
