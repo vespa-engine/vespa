@@ -142,6 +142,7 @@ create_cloudconfig_dir();
 $session_id_file = "$cloudconfig_dir/$tenant/deploy-session-id";
 
 my $command = shift;
+$command ||= "help";
 
 
 given($command) {
@@ -213,6 +214,7 @@ sub usage {
   if ($command && $command eq "help") {
     $command = $arg;
   }
+  $command ||= "help";
 
   given($command) {
     when ("upload") { usage_upload(); }
