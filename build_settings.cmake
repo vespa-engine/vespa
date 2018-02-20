@@ -81,6 +81,11 @@ else()
 set (VESPA_BOOST_LIB_SUFFIX "-mt-d")
 endif()
 
+if(VESPA_USER)
+else()
+  set(VESPA_USER "vespa")
+endif()
+
 if(EXTRA_INCLUDE_DIRECTORY)
     include_directories(SYSTEM ${EXTRA_INCLUDE_DIRECTORY})
 endif()
