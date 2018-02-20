@@ -110,7 +110,7 @@ case $1 in
         echo "Waiting for config proxy to start"
         fail=true
         for ((sleepcount=0;$sleepcount<600;sleepcount=$sleepcount+1)) ; do
-            usleep 100000
+            sleep 0.1
             if [ -f $P_CONFIG_PROXY ] && kill -0 `cat $P_CONFIG_PROXY` && vespa-ping-configproxy -s $hname 2>/dev/null
             then
                 echo "config proxy started (runserver pid `cat $P_CONFIG_PROXY`)"
