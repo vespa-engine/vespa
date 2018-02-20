@@ -2,7 +2,6 @@
 package com.yahoo.vespa.clustercontroller.core.hostinfo;
 
 import com.yahoo.vespa.clustercontroller.core.*;
-import com.yahoo.vespa.clustercontroller.core.ContentClusterStats;
 
 import java.util.HashMap;
 import java.util.List;
