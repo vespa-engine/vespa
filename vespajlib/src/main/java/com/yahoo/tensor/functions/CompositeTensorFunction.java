@@ -18,14 +18,10 @@ public abstract class CompositeTensorFunction extends TensorFunction {
 
     /** Finds the type this produces by first converting it to a primitive function */
     @Override
-    public final <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) {
-        return toPrimitive().type(context);
-    }
+    public final TensorType type(TypeContext context) { return toPrimitive().type(context); }
 
     /** Evaluates this by first converting it to a primitive function */
     @Override
-    public final <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
-        return toPrimitive().evaluate(context);
-    }
+    public final Tensor evaluate(EvaluationContext context) { return toPrimitive().evaluate(context); }
 
 }

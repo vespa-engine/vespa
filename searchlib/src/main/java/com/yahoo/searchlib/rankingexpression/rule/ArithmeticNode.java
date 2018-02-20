@@ -2,7 +2,6 @@
 package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
@@ -81,7 +80,7 @@ public final class ArithmeticNode extends CompositeNode {
     }
 
     @Override
-    public TensorType type(TypeContext<Reference> context) {
+    public TensorType type(TypeContext context) {
         // Compute type using tensor types as arithmetic operators are supported on tensors
         // and is correct also in the special case of doubles.
         // As all our functions are type-commutative, we don't need to take operator precedence into account

@@ -16,10 +16,16 @@ import java.util.Map;
  *
  * @author bratseth
  */
-public class SerializationContext extends FunctionReferenceContext {
+public class SerializationContext {
     
-    /** Serialized form of functions indexed by name */
+    /** Expression functions indexed by name */
+    private final ImmutableMap<String, ExpressionFunction> functions;
+
+    /** A cache of already serialized expressions indexed by name */
     private final Map<String, String> serializedFunctions;
+
+    /** Mapping from argument names to the expressions they resolve to */
+    public final Map<String, String> bindings = new HashMap<>();
 
     /** Create a context for a single serialization task */
     public SerializationContext() {
@@ -71,9 +77,16 @@ public class SerializationContext extends FunctionReferenceContext {
      */
     public SerializationContext(ImmutableMap<String,ExpressionFunction> functions, Map<String, String> bindings,
                                 Map<String, String> serializedFunctions) {
-        super(functions, bindings);
+        this.functions = functions;
         this.serializedFunctions = serializedFunctions;
+        if (bindings != null)
+            this.bindings.putAll(bindings);
     }
+
+    /**
+     * Returns a function or null if it isn't defined in this context
+     */
+    public ExpressionFunction getFunction(String name) { return functions.get(name); }
 
     /** Adds the serialization of a function */
     public void addFunctionSerialization(String name, String expressionString) {
@@ -85,9 +98,17 @@ public class SerializationContext extends FunctionReferenceContext {
         return serializedFunctions.get(name);
     }
 
-    @Override
-    public SerializationContext withBindings(Map<String, String> bindings) {
-        return new SerializationContext(functions().values(), bindings, this.serializedFunctions);
+    /**
+     * Returns the resolution of an argument, or null if it isn't defined in this context
+     */
+    public String getBinding(String name) { return bindings.get(name); }
+
+    /**
+     * Returns a new context which shares the functions and serialized function map with this but has different
+     * arguments.
+     */
+    public SerializationContext createBinding(Map<String, String> arguments) {
+        return new SerializationContext(this.functions, arguments, this.serializedFunctions);
     }
 
     public Map<String, String> serializedFunctions() { return serializedFunctions; }

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
-import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -49,7 +48,7 @@ public class GeneratorLambdaFunctionNode extends CompositeNode {
     }
 
     @Override
-    public TensorType type(TypeContext<Reference> context) { return type; }
+    public TensorType type(TypeContext context) { return type; }
 
     /** Evaluate this in a context which must have the arguments bound */
     @Override
