@@ -254,9 +254,9 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void startContainer(ContainerNodeSpec nodeSpec) {
-        aclMaintainer.run();
         dockerOperations.createContainer(containerName, nodeSpec);
         dockerOperations.startContainer(containerName, nodeSpec);
+        aclMaintainer.run();
         lastCpuMetric = new CpuUsageReporter();
 
         currentFilebeatRestarter = filebeatRestarter.scheduleWithFixedDelay(() -> serviceRestarter.accept("filebeat"), 1, 1, TimeUnit.DAYS);
