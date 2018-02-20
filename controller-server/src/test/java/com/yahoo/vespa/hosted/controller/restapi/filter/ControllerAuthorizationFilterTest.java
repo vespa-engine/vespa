@@ -148,7 +148,6 @@ public class ControllerAuthorizationFilterTest {
         return new ControllerAuthorizationFilter(new AthenzClientFactoryMock(controllerTester.athenzDb()),
                                                  controllerTester.controller(),
                                                  controllerTester.entityService(),
-                                                 controllerTester.zoneRegistry(),
                                                  new DefaultAuthorizationResponseHandler());
     }
 
