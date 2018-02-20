@@ -2,6 +2,7 @@
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
@@ -82,8 +83,8 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
     }
 
     @Override
-    public TensorType getType(String name) {
-        Integer index = nameToIndex().get(name);
+    public TensorType getType(Reference reference) {
+        Integer index = nameToIndex().get(reference.toString());
         if (index == null) return null;
         return values[index].type();
     }

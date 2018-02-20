@@ -18,6 +18,7 @@ import com.yahoo.searchdefinition.parser.TokenMgrError;
 import com.yahoo.searchdefinition.processing.Processing;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +35,6 @@ import java.util.List;
  * expressions, using the setRankXXX() methods, 3) invoke the {@link #build()} method, and 4) retrieve the built
  * search objects using the {@link #getSearch(String)} method.
  */
-// TODO: This should be cleaned up and more or maybe completely taken over by MockApplicationPackage
 public class SearchBuilder {
 
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
@@ -154,7 +154,7 @@ public class SearchBuilder {
         } catch (TokenMgrError e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
         } catch (ParseException pe) {
-            throw new ParseException(stream.formatException(pe.getMessage()));
+            throw new ParseException(stream.formatException(Exceptions.toMessageString(pe)));
         }
         return importRawSearch(search);
     }
@@ -196,11 +196,7 @@ public class SearchBuilder {
      * @throws IllegalStateException Thrown if this method has already been called.
      */
     public void build() {
-        build(new BaseDeployLogger(), new QueryProfiles());
-    }
-
-    public void build(DeployLogger logger) {
-        build(logger, new QueryProfiles());
+        build(new BaseDeployLogger());
     }
 
     /**
@@ -209,12 +205,10 @@ public class SearchBuilder {
      *
      * @throws IllegalStateException Thrown if this method has already been called.
      * @param deployLogger The logger to use during build
-     * @param queryProfiles The query profiles contained in the application this search is part of.
      */
-    public void build(DeployLogger deployLogger, QueryProfiles queryProfiles) {
-        if (isBuilt) {
-            throw new IllegalStateException("Searches already built.");
-        }
+    public void build(DeployLogger deployLogger) {
+        if (isBuilt) throw new IllegalStateException("Model already built");
+
         List<Search> built = new ArrayList<>();
         List<SDDocumentType> sdocs = new ArrayList<>();
         sdocs.add(SDDocumentType.VESPA_DOCUMENT);
@@ -240,7 +234,7 @@ public class SearchBuilder {
         for (Search search : new SearchOrderer().order(searchList)) {
             new FieldOperationApplierForSearch().process(search);
             // These two needed for a couple of old unit tests, ideally these are just read from app
-            process(search, deployLogger, queryProfiles);
+            process(search, deployLogger, new QueryProfiles(queryProfileRegistry));
             built.add(search);
         }
         builder.addToModel(searchList);
@@ -254,8 +248,6 @@ public class SearchBuilder {
     /**
      * Processes and returns the given {@link Search} object. This method has been factored out of the {@link
      * #build()} method so that subclasses can choose not to build anything.
-     *
-     * @param search The object to build.
      */
     protected void process(Search search, DeployLogger deployLogger, QueryProfiles queryProfiles) {
         Processing.process(search, deployLogger, rankProfileRegistry, queryProfiles);
@@ -352,7 +344,7 @@ public class SearchBuilder {
                                                   rankProfileRegistry,
                                                   queryprofileRegistry);
         builder.importFile(fileName);
-        builder.build(deployLogger, new QueryProfiles());
+        builder.build(deployLogger);
         return builder;
     }
 
@@ -368,7 +360,7 @@ public class SearchBuilder {
         for (Iterator<Path> i = Files.list(new File(dir).toPath()).filter(p -> p.getFileName().toString().endsWith(".sd")).iterator(); i.hasNext(); ) {
             builder.importFile(i.next());
         }
-        builder.build(new BaseDeployLogger(), new QueryProfiles());
+        builder.build(new BaseDeployLogger());
         return builder;
     }
 

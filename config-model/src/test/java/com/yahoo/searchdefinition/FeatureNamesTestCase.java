@@ -18,17 +18,6 @@ import static org.junit.Assert.assertFalse;
 public class FeatureNamesTestCase {
 
     @Test
-    public void testCanonicalization() {
-        assertFalse(FeatureNames.canonicalizeIfValid("foo").isPresent());
-        assertEquals("query(bar)", FeatureNames.canonicalize("query(bar)"));
-        assertEquals("query(bar)", FeatureNames.canonicalize("query('bar')"));
-        assertEquals("constant(bar)", FeatureNames.canonicalize("constant(\"bar\")"));
-        assertEquals("query(\"ba.r\")", FeatureNames.canonicalize("query(ba.r)"));
-        assertEquals("query(\"ba.r\")", FeatureNames.canonicalize("query('ba.r')"));
-        assertEquals("attribute(\"ba.r\")", FeatureNames.canonicalize("attribute(\"ba.r\")"));
-    }
-
-    @Test
     public void testArgument() {
         assertFalse(FeatureNames.argumentOf("foo(bar)").isPresent());
         assertFalse(FeatureNames.argumentOf("foo(bar.baz)").isPresent());
@@ -42,17 +31,20 @@ public class FeatureNamesTestCase {
 
     @Test
     public void testConstantFeature() {
-        assertEquals("constant(\"foo/bar\")", FeatureNames.asConstantFeature("foo/bar"));
+        assertEquals("constant(\"foo/bar\")",
+                     FeatureNames.asConstantFeature("foo/bar").toString());
     }
 
     @Test
     public void testAttributeFeature() {
-        assertEquals("attribute(foo)", FeatureNames.asAttributeFeature("foo"));
+        assertEquals("attribute(foo)",
+                     FeatureNames.asAttributeFeature("foo").toString());
     }
 
     @Test
     public void testQueryFeature() {
-        assertEquals("query(\"foo.bar\")", FeatureNames.asQueryFeature("foo.bar"));
+        assertEquals("query(\"foo.bar\")",
+                     FeatureNames.asQueryFeature("foo.bar").toString());
     }
 
 }

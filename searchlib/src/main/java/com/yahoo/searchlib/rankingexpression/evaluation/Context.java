@@ -1,9 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.Set;
@@ -14,7 +16,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-public abstract class Context implements EvaluationContext {
+public abstract class Context implements EvaluationContext<Reference> {
 
     /**
      * Returns the value of a simple variable name.
@@ -23,6 +25,11 @@ public abstract class Context implements EvaluationContext {
      * @return the value of the named variable.
      */
     public abstract Value get(String name);
+
+    @Override
+    public TensorType getType(String reference) {
+        throw new UnsupportedOperationException("Not able to parse gereral references from string form");
+    }
 
     /** Returns a variable as a tensor */
     @Override
@@ -46,6 +53,7 @@ public abstract class Context implements EvaluationContext {
      *                  calculation to output several), or null to output the
      *                  "main" (or only) value.
      */
+    // TODO: Remove/change to use reference?
     public Value get(String name, Arguments arguments, String output) {
         if (arguments != null && arguments.expressions().size() > 0)
             name = name + "(" + arguments.expressions().stream().map(ExpressionNode::toString).collect(Collectors.joining(",")) + ")";

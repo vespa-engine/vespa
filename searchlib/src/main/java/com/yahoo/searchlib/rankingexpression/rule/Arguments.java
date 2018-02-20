@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * A set of argument expressions to a function or feature.
- * This is immutable.
+ * This is a value object.
  *
  * @author bratseth
  */
@@ -22,7 +22,11 @@ public final class Arguments implements Serializable {
     private final ImmutableList<ExpressionNode> expressions;
 
     public Arguments() {
-        this(null);
+        this(ImmutableList.of());
+    }
+
+    public Arguments(ExpressionNode singleArgument) {
+        this(ImmutableList.of(singleArgument));
     }
 
     public Arguments(List<? extends ExpressionNode> expressions) {
@@ -38,8 +42,11 @@ public final class Arguments implements Serializable {
         this.expressions = b.build();
     }
 
-    /** Returns an unmodifiable list of the expressions in this */
+    /** Returns an unmodifiable list of the expressions in this, never null */
     public List<ExpressionNode> expressions() { return expressions; }
+
+    /** Returns the number of arguments in this */
+    public int size() { return expressions.size(); }
 
     /** Evaluate all arguments in this */
     public Value[] evaluate(Context context) {
@@ -62,8 +69,9 @@ public final class Arguments implements Serializable {
     }
 
     @Override
-    public boolean equals(Object rhs) {
-        return rhs instanceof Arguments && expressions.equals(((Arguments)rhs).expressions);
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        return other instanceof Arguments && expressions.equals(((Arguments)other).expressions);
     }
 
     @Override
