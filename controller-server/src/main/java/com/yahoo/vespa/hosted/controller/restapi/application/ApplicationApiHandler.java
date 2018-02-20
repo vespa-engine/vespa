@@ -355,6 +355,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             application.change().application()
                                    .filter(v -> v != ApplicationVersion.unknown)
                                    .ifPresent(v -> toSlime(v, deployingObject.setObject("revision")));
+            deployingObject.setBool("blocked",
+                                    application.change().blockedBy(application.deploymentSpec(),
+                                                                   controller.clock().instant()));
         }
 
         // Jobs sorted according to deployment spec

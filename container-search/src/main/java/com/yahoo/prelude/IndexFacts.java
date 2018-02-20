@@ -25,16 +25,6 @@ public class IndexFacts {
 
     private Map<String, List<String>> clusterByDocument;
 
-    private static class DocumentTypeListOffset {
-        public final int offset;
-        public final SearchDefinition searchDefinition;
-
-        public DocumentTypeListOffset(int offset, SearchDefinition searchDefinition) {
-            this.offset = offset;
-            this.searchDefinition = searchDefinition;
-        }
-    }
-
     /** A Map of all known search definitions indexed by name */
     private Map<String, SearchDefinition> searchDefinitions = new LinkedHashMap<>();
 
@@ -448,6 +438,17 @@ public class IndexFacts {
             return "index facts for search definitions " + documentTypes;
         }
 
+    }
+
+    private static class DocumentTypeListOffset {
+
+        public final int offset;
+        public final SearchDefinition searchDefinition;
+
+        public DocumentTypeListOffset(int offset, SearchDefinition searchDefinition) {
+            this.offset = offset;
+            this.searchDefinition = searchDefinition;
+        }
     }
 
 }

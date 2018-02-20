@@ -68,7 +68,7 @@ public class Index {
     private boolean exact = false;
 
     private boolean isNGram = false;
-    private int gramSize=2;
+    private int gramSize = 2;
 
     /**
      * The string terminating an exact token in this index,

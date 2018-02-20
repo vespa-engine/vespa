@@ -17,10 +17,11 @@ import java.util.*;
 /**
  * Defines the searcher models used in the vespa and native search chains, except for federation.
  *
- * @author tonytv
+ * @author Tony Vaagnes
  */
 @SuppressWarnings({"rawtypes", "deprecation", "unchecked"})
 public class VespaSearchers {
+
     public static final Collection<ChainedComponentModel> vespaSearcherModels =
             toSearcherModels(
                     com.yahoo.prelude.querytransform.IndexCombinatorSearcher.class,
@@ -81,4 +82,5 @@ public class VespaSearchers {
         }
         return searcherModels;
     }
+
 }

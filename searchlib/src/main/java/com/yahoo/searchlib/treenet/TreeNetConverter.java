@@ -7,15 +7,11 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class TreeNetConverter {
 
-    /**
-     * Implements an application main function so that the converter can be used as a command-line tool.
-     *
-     * @param args List of arguments.
-     */
+    /** Implements an application main function so that the converter can be used as a command-line tool. */
     public static void main(String[] args) {
         if (args.length != 1) {
             System.err.println("Usage: TreeNetConverter <filename>");
@@ -32,4 +28,5 @@ public class TreeNetConverter {
             System.exit(1);
         }
     }
+
 }

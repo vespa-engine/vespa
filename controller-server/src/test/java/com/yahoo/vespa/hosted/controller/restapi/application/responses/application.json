@@ -2,7 +2,8 @@
   "application": "application1",
   "instance": "default",
   "deploying": {
-    "version": "(ignore)"
+    "version": "(ignore)",
+    "blocked": false
   },
   "deploymentJobs": [
     {

@@ -51,9 +51,9 @@ public abstract class HTTPProviderSearcher extends HTTPSearcher {
     protected final static Logger log = Logger.getLogger(HTTPProviderSearcher.class.getName());
 
     /** The name of the cache used (which is just getid().stringValue(), or null if no cache is used */
-    protected String cacheName=null;
+    protected String cacheName = null;
 
-    public HTTPProviderSearcher(ComponentId id, List<Connection> connections,String path, Statistics statistics) {
+    public HTTPProviderSearcher(ComponentId id, List<Connection> connections, String path, Statistics statistics) {
         this(id,connections,new HTTPParameters(path), statistics);
     }
 
