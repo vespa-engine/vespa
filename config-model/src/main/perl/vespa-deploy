@@ -144,53 +144,48 @@ $session_id_file = "$cloudconfig_dir/$tenant/deploy-session-id";
 my $command = shift;
 
 
-given($command) {
-  when ("upload") {
-    my $application_package = shift;
-    if (!$opt_F) {
-      if (!$application_package) {
-        print "Command failed. No application package specified\n";
-        usage("upload");
-        exit 1;
-      }
-      if (!(-e $application_package)) {
-        print "Command failed. No such directory found: '$application_package'\n";
-        exit 1;
-      }
-      check_application_directory($application_package);
+if ($command eq "upload") {
+  my $application_package = shift;
+  if (!$opt_F) {
+    if (!$application_package) {
+      print "Command failed. No application package specified\n";
+      usage("upload");
+      exit 1;
     }
+    if (!(-e $application_package)) {
+      print "Command failed. No such directory found: '$application_package'\n";
+      exit 1;
+    }
+    check_application_directory($application_package);
+  }
 
-    do_http_request("upload", $application_package);
-  }
-  when ("prepare") {
-      my $arg = shift;
-      if ($arg && looks_like_number($arg) && !(-d $arg)) {
-        do_http_request("prepare", "", $arg);
-      } elsif ($arg) {
-        check_application_directory($arg);
-        do_http_request("upload", $arg);
-        do_http_request("prepare");
-      } else {
-        do_http_request("prepare");
-      }
-  }
-  when ("activate") {
-      my $session_id = shift;
-      do_http_request("activate", "", $session_id);
-  }
-  when ("fetch") {
-      my $arg = shift;
-      if ($arg) {
-        fetch_active_application($arg);
-      } else {
-        usage("fetch", $arg);
-      }
-  }
-  when ("help") {
+  do_http_request("upload", $application_package);
+} elsif ($command eq "prepare") {
     my $arg = shift;
-    usage($command, $arg);
-  }
-  default { usage($command); }
+    if ($arg && looks_like_number($arg) && !(-d $arg)) {
+      do_http_request("prepare", "", $arg);
+    } elsif ($arg) {
+      check_application_directory($arg);
+      do_http_request("upload", $arg);
+      do_http_request("prepare");
+    } else {
+      do_http_request("prepare");
+    }
+} elsif ($command eq "activate") {
+    my $session_id = shift;
+    do_http_request("activate", "", $session_id);
+} elsif ($command eq "fetch") {
+    my $arg = shift;
+    if ($arg) {
+      fetch_active_application($arg);
+    } else {
+      usage("fetch", $arg);
+    }
+} elsif ($command eq "help") {
+  my $arg = shift;
+  usage($command, $arg);
+} else {
+    usage($command);
 }
 
 
@@ -214,17 +209,19 @@ sub usage {
     $command = $arg;
   }
 
-  given($command) {
-    when ("upload") { usage_upload(); }
-    when ("prepare") { usage_prepare(); }
-    when ("activate") { usage_activate(); }
-    when ("fetch") { usage_fetch(); }
-    default {
-      print "Usage: vespa-deploy [-h] [-v] [-f] [-t] [-p] [<command>] [args]\n";
-      print "Supported commands: 'upload', 'prepare', 'activate', 'fetch' and 'help'\n";
-      print "Supported options: '-h' (help), '-v' (verbose), '-f' (force/ignore validation errors), '-t' (timeout in seconds), '-p' (config server http port)\n";
-      print "Try 'vespa-deploy help <command>' to get more help\n";
-   }
+  if ($command eq "upload") {
+      usage_upload();
+  } elsif ($command eq "prepare") {
+      usage_prepare();
+  } elsif ($command eq "activate") {
+      usage_activate();
+  } elsif ($command eq "fetch") {
+      usage_fetch();
+  } else {
+    print "Usage: vespa-deploy [-h] [-v] [-f] [-t] [-p] [<command>] [args]\n";
+    print "Supported commands: 'upload', 'prepare', 'activate', 'fetch' and 'help'\n";
+    print "Supported options: '-h' (help), '-v' (verbose), '-f' (force/ignore validation errors), '-t' (timeout in seconds), '-p' (config server http port)\n";
+    print "Try 'vespa-deploy help <command>' to get more help\n";
   }
 }
 
@@ -340,18 +337,14 @@ sub do_http_request {
 
   my $output;
   my $exitcode = 1;
-  given($command) {
-    when ("upload")   {
-      ($exitcode, $output) = http_upload(\@configsources, $configsource_url, $application_package);
-    }
-    when ("prepare")  {
-      $output = http_prepare($configsource_url, $supplied_session_id);
-      $exitcode = $? >> 8;
-    }
-    when ("activate") {
-      $output = http_activate($configsource_url, $supplied_session_id);
-      $exitcode = $? >> 8;
-    }
+  if ($command eq "upload") {
+    ($exitcode, $output) = http_upload(\@configsources, $configsource_url, $application_package);
+  } elsif ($command eq "prepare")  {
+    $output = http_prepare($configsource_url, $supplied_session_id);
+    $exitcode = $? >> 8;
+  } elsif ($command eq "activate") {
+    $output = http_activate($configsource_url, $supplied_session_id);
+    $exitcode = $? >> 8;
   }
 
   my $response;
