@@ -5,13 +5,14 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.container.core.identity.IdentityConfig;
+import com.yahoo.container.jdisc.athenz.impl.AthenzIdentityProviderImpl;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
 /**
  * @author mortent
  */
 public class IdentityProvider extends SimpleComponent implements IdentityConfig.Producer {
-    public static final String CLASS = "com.yahoo.vespa.hosted.athenz.identityprovider.AthenzIdentityProviderImpl";
+    public static final String CLASS = AthenzIdentityProviderImpl.class.getName();
 
     private final AthenzDomain domain;
     private final AthenzService service;

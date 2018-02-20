@@ -7,7 +7,8 @@ import javax.net.ssl.SSLContext;
  * @author mortent
  */
 public interface AthenzIdentityProvider {
+    String getNToken() throws AthenzIdentityProviderException;
     String getDomain();
     String getService();
-    SSLContext getIdentitySslContext();
+    SSLContext getSslContext();
 }
