@@ -5,7 +5,9 @@ import com.google.common.annotations.Beta;
 import net.jcip.annotations.Immutable;
 
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -23,6 +25,7 @@ public class Request {
     private final byte[] body;
     private final Method method;
     private final Map<String, Object> attributes = new ConcurrentHashMap<>();
+    private final Principal userPrincipal;
 
     /**
      * Creates a Request with an empty body.
@@ -60,9 +63,22 @@ public class Request {
      * @param body the body of the request
      */
     public Request(String uri, byte[] body, Method method) {
+        this(uri, body, method, null);
+    }
+
+    /**
+     * Creates a Request with a message body, method and user principal.
+     *
+     * @param uri the URI of the request
+     * @param body the body of the request
+     * @param method the method of the request
+     * @param principal the user principal of the request
+     */
+    public Request(String uri, byte[] body, Method method, Principal principal) {
         this.uri = uri;
         this.body = body;
         this.method = method;
+        this.userPrincipal = principal;
     }
 
     /**
@@ -116,6 +132,10 @@ public class Request {
 
     public Method getMethod() {
         return method;
+    }
+
+    public Optional<Principal> getUserPrincipal() {
+        return Optional.ofNullable(userPrincipal);
     }
 
     public enum Method {

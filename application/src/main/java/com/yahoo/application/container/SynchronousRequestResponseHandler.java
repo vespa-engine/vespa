@@ -88,9 +88,11 @@ final class SynchronousRequestResponseHandler {
         String scheme = getScheme(request.getUri());
         com.yahoo.jdisc.Request discRequest;
         if ("http".equals(scheme) || "https".equals(scheme)) {
-            discRequest = com.yahoo.jdisc.http.HttpRequest.newServerRequest(currentContainer,
+            com.yahoo.jdisc.http.HttpRequest httpRequest = com.yahoo.jdisc.http.HttpRequest.newServerRequest(currentContainer,
                                                                             URI.create(request.getUri()),
                                                                             com.yahoo.jdisc.http.HttpRequest.Method.valueOf(request.getMethod().name()));
+            request.getUserPrincipal().ifPresent(httpRequest::setUserPrincipal);
+            discRequest = httpRequest;
         } else {
             discRequest = new com.yahoo.jdisc.Request(currentContainer, URI.create(request.getUri()));
         }
