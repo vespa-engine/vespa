@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
@@ -59,7 +60,7 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
                                          Controller controller,
                                          EntityService entityService,
                                          ZoneRegistry zoneRegistry) {
-        this(clientFactory, controller, entityService, zoneRegistry, new HttpRespondingAuthorizationResponseHandler());
+        this(clientFactory, controller, entityService, zoneRegistry, new DefaultAuthorizationResponseHandler());
     }
 
     ControllerAuthorizationFilter(AthenzClientFactory clientFactory,
@@ -195,8 +196,10 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
                 .map(AthenzPrincipal.class::cast);
     }
 
-    @SuppressWarnings("unused")
-    static class HttpRespondingAuthorizationResponseHandler implements AuthorizationResponseHandler {
+    /**
+     * Maps {@link WebApplicationException} to http response ({@link Response}.
+     */
+    static class DefaultAuthorizationResponseHandler implements AuthorizationResponseHandler {
         @Override
         public void handle(ResponseHandler responseHandler,
                            DiscFilterRequest request,
