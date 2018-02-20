@@ -21,6 +21,14 @@ public class Node implements Comparable<Node> {
         index = Integer.valueOf(serialized.substring(dot + 1));
     }
 
+    public static Node ofStorage(int index) {
+        return new Node(NodeType.STORAGE, index);
+    }
+
+    public static Node ofDistributor(int index) {
+        return new Node(NodeType.DISTRIBUTOR, index);
+    }
+
     public String toString() {
         return type.toString() + "." + index;
     }

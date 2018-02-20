@@ -28,9 +28,9 @@ public class StateVersionTracker {
     // TODO this mirrors legacy behavior, but should be moved into stable ZK state.
     private int lowestObservedDistributionBits = 16;
 
-    private ClusterState currentUnversionedState = ClusterState.emptyState();
-    private AnnotatedClusterState latestCandidateState = AnnotatedClusterState.emptyState();
-    private AnnotatedClusterState currentClusterState = latestCandidateState;
+    private ClusterStateBundle currentUnversionedState = ClusterStateBundle.ofBaselineOnly(AnnotatedClusterState.emptyState());
+    private ClusterStateBundle latestCandidateState = ClusterStateBundle.ofBaselineOnly(AnnotatedClusterState.emptyState());
+    private ClusterStateBundle currentClusterState = latestCandidateState;
 
     private ClusterStateView clusterStateView;
 
@@ -38,7 +38,7 @@ public class StateVersionTracker {
     private int maxHistoryEntryCount = 50;
 
     StateVersionTracker() {
-        clusterStateView = ClusterStateView.create(currentUnversionedState);
+        clusterStateView = ClusterStateView.create(currentUnversionedState.getBaselineClusterState());
     }
 
     void setVersionRetrievedFromZooKeeper(final int version) {
@@ -70,26 +70,30 @@ public class StateVersionTracker {
     }
 
     AnnotatedClusterState getAnnotatedVersionedClusterState() {
-        return currentClusterState;
+        return currentClusterState.getBaselineAnnotatedState();
     }
 
     public ClusterState getVersionedClusterState() {
-        return currentClusterState.getClusterState();
+        return currentClusterState.getBaselineClusterState();
     }
 
-    public void updateLatestCandidateState(final AnnotatedClusterState candidate) {
-        assert(latestCandidateState.getClusterState().getVersion() == 0);
-        latestCandidateState = candidate;
+    public ClusterStateBundle getVersionedClusterStateBundle() {
+        return currentClusterState;
+    }
+
+    public void updateLatestCandidateStateBundle(final ClusterStateBundle candidateBundle) {
+        assert(latestCandidateState.getBaselineClusterState().getVersion() == 0);
+        latestCandidateState = candidateBundle;
     }
 
     /**
-     * Returns the last state provided to updateLatestCandidateState, which _may or may not_ be
+     * Returns the last state provided to updateLatestCandidateStateBundle, which _may or may not_ be
      * a published state. Primary use case for this function is a caller which is interested in
      * changes that may not be reflected in the published state. The best example of this would
      * be node state changes when a cluster is marked as Down.
      */
     public AnnotatedClusterState getLatestCandidateState() {
-        return latestCandidateState;
+        return latestCandidateState.getBaselineAnnotatedState();
     }
 
     public List<ClusterStateHistoryEntry> getClusterStateHistory() {
@@ -97,7 +101,9 @@ public class StateVersionTracker {
     }
 
     boolean candidateChangedEnoughFromCurrentToWarrantPublish() {
-        return !currentUnversionedState.similarToIgnoringInitProgress(latestCandidateState.getClusterState());
+        // Neither latestCandidateState nor currentUnversionedState has a version set, so the
+        // similarity is only done on structural state metadata.
+        return !currentUnversionedState.similarTo(latestCandidateState);
     }
 
     void promoteCandidateToVersionedState(final long currentTimeMs) {
@@ -108,23 +114,19 @@ public class StateVersionTracker {
         recordCurrentStateInHistoryAtTime(currentTimeMs);
     }
 
-    private void updateStatesForNewVersion(final AnnotatedClusterState newState, final int newVersion) {
-        currentClusterState = new AnnotatedClusterState(
-                newState.getClusterState().clone(), // Because we mutate version below
-                newState.getClusterStateReason(),
-                newState.getNodeStateReasons());
-        currentClusterState.getClusterState().setVersion(newVersion);
-        currentUnversionedState = newState.getClusterState().clone();
+    private void updateStatesForNewVersion(final ClusterStateBundle newStateBundle, final int newVersion) {
+        currentClusterState = newStateBundle.clonedWithVersionSet(newVersion);
+        currentUnversionedState = newStateBundle; // TODO should we clone..? ClusterState really should be made immutable
         lowestObservedDistributionBits = Math.min(
                 lowestObservedDistributionBits,
-                newState.getClusterState().getDistributionBitCount());
-        // TODO should this take place in updateLatestCandidateState instead? I.e. does it require a consolidated state?
-        clusterStateView = ClusterStateView.create(currentClusterState.getClusterState());
+                newStateBundle.getBaselineClusterState().getDistributionBitCount());
+        // TODO should this take place in updateLatestCandidateStateBundle instead? I.e. does it require a consolidated state?
+        clusterStateView = ClusterStateView.create(currentClusterState.getBaselineClusterState());
     }
 
     private void recordCurrentStateInHistoryAtTime(final long currentTimeMs) {
         clusterStateHistory.addFirst(new ClusterStateHistoryEntry(
-                currentClusterState.getClusterState(), currentTimeMs));
+                currentClusterState.getBaselineClusterState(), currentTimeMs));
         while (clusterStateHistory.size() > maxHistoryEntryCount) {
             clusterStateHistory.removeLast();
         }
@@ -134,5 +136,14 @@ public class StateVersionTracker {
         // TODO the wiring here isn't unit tested. Need mockable integration points.
         clusterStateView.handleUpdatedHostInfo(hostnames, node, hostInfo);
     }
+
+    boolean bucketSpaceMergeCompletionStateHasChanged() {
+        return false; // TODO wire changes in merge info
+    }
+
+    /*
+    TODO test and implement
+      - derived default space down-condition can only _keep_ a node in maintenance (down), not transition it from up -> maintenance
+    */
 
 }
