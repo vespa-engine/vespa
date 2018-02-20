@@ -122,7 +122,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         this.stateGatherer = nodeStateGatherer;
         this.stateChangeHandler = stateChangeHandler;
         this.systemStateBroadcaster = systemStateBroadcaster;
-        this.stateVersionTracker = new StateVersionTracker(metricUpdater);
+        this.stateVersionTracker = new StateVersionTracker();
         this.metricUpdater = metricUpdater;
 
         this.statusPageServer = statusPage;

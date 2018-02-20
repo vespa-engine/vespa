@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.hostinfo;
 
-import com.yahoo.vespa.clustercontroller.core.NodeMergeStats;
-import com.yahoo.vespa.clustercontroller.core.StorageMergeStats;
+import com.yahoo.vespa.clustercontroller.core.ContentNodeStats;
+import com.yahoo.vespa.clustercontroller.core.ContentClusterStats;
 import com.yahoo.vespa.clustercontroller.core.StorageNodeStats;
 import com.yahoo.vespa.clustercontroller.core.StorageNodeStatsContainer;
 import org.junit.Test;
@@ -12,11 +12,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * @author hakonhall
@@ -49,19 +49,30 @@ public class StorageNodeStatsBridgeTest {
     }
 
     @Test
-    public void testStorageMergeStats() throws IOException {
+    public void testContentNodeStats() throws IOException {
         String data = getJsonString();
         HostInfo hostInfo = HostInfo.createHostInfo(data);
 
-        StorageMergeStats storageMergeStats = StorageNodeStatsBridge.generate(hostInfo.getDistributor());
-        int size = 0;
-        for (NodeMergeStats mergeStats : storageMergeStats) {
-            assertThat(mergeStats.getCopyingIn().getBuckets(), is(2L));
-            assertThat(mergeStats.getCopyingOut().getBuckets(), is(4L));
-            assertThat(mergeStats.getSyncing().getBuckets(), is(1L));
-            assertThat(mergeStats.getMovingOut().getBuckets(), is(3L));
-            size++;
+        ContentClusterStats clusterStats = StorageNodeStatsBridge.generate(hostInfo.getDistributor());
+        Iterator<ContentNodeStats> itr = clusterStats.iterator();
+        { // content node 0
+            ContentNodeStats stats = itr.next();
+            assertThat(stats.getNodeIndex(), is(0));
+            assertThat(stats.getBucketSpaces().size(), is(2));
+            assertBucketSpaceStats(11, 3, stats.getBucketSpaces().get("default"));
+            assertBucketSpaceStats(13, 5, stats.getBucketSpaces().get("global"));
         }
-        assertThat(size, is(2));
+        { // content node 1
+            ContentNodeStats stats = itr.next();
+            assertThat(stats.getNodeIndex(), is(1));
+            assertThat(stats.getBucketSpaces().size(), is(1));
+            assertBucketSpaceStats(0, 0, stats.getBucketSpaces().get("default"));
+        }
+        assertFalse(itr.hasNext());
+    }
+
+    private static void assertBucketSpaceStats(long expBucketsTotal, long expBucketsPending, ContentNodeStats.BucketSpaceStats stats) {
+        assertThat(stats.getBucketsTotal(), is(expBucketsTotal));
+        assertThat(stats.getBucketsPending(), is(expBucketsPending));
     }
 }

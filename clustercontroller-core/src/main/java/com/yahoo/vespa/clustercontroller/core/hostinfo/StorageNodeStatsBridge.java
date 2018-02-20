@@ -1,11 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.hostinfo;
 
-import com.yahoo.vespa.clustercontroller.core.LatencyStats;
-import com.yahoo.vespa.clustercontroller.core.NodeMergeStats;
-import com.yahoo.vespa.clustercontroller.core.StorageMergeStats;
-import com.yahoo.vespa.clustercontroller.core.StorageNodeStats;
-import com.yahoo.vespa.clustercontroller.core.StorageNodeStatsContainer;
+import com.yahoo.vespa.clustercontroller.core.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -45,12 +41,12 @@ public class StorageNodeStatsBridge {
         return container;
     }
 
-    public static StorageMergeStats generate(Distributor distributor) {
-        Map<Integer, NodeMergeStats> mapToNodeStats = new HashMap<>();
+    public static ContentClusterStats generate(Distributor distributor) {
+        Map<Integer, ContentNodeStats> mapToNodeStats = new HashMap<>();
         for (StorageNode storageNode : distributor.getStorageNodes()) {
-            mapToNodeStats.put(storageNode.getIndex(), new NodeMergeStats(storageNode));
+            mapToNodeStats.put(storageNode.getIndex(), new ContentNodeStats(storageNode));
         }
-        return new StorageMergeStats(mapToNodeStats);
+        return new ContentClusterStats(mapToNodeStats);
     }
 
 }

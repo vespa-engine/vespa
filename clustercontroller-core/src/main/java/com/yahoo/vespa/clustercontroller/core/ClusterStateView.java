@@ -29,31 +29,25 @@ public class ClusterStateView {
     private static Logger log = Logger.getLogger(ClusterStateView.class.getName());
     private final ClusterState clusterState;
     private final ClusterStatsAggregator statsAggregator;
-    private final MetricUpdater metricUpdater;
 
-    /**
-     * @param metricUpdater may be null, in which case no stats will be reported.
-     */
-    public static ClusterStateView create(String serializedClusterState, MetricUpdater metricUpdater)
-            throws ParseException {
+    public static ClusterStateView create(String serializedClusterState) throws ParseException {
         ClusterState clusterState = new ClusterState(serializedClusterState);
-        return new ClusterStateView(clusterState, createNewAggregator(clusterState, metricUpdater), metricUpdater);
+        return new ClusterStateView(clusterState, createNewAggregator(clusterState));
     }
 
-    public static ClusterStateView create(final ClusterState clusterState, final MetricUpdater metricUpdater) {
-        return new ClusterStateView(clusterState, createNewAggregator(clusterState, metricUpdater), metricUpdater);
+    public static ClusterStateView create(final ClusterState clusterState) {
+        return new ClusterStateView(clusterState, createNewAggregator(clusterState));
     }
 
-    private static ClusterStatsAggregator createNewAggregator(ClusterState clusterState, MetricUpdater metricUpdater) {
+    private static ClusterStatsAggregator createNewAggregator(ClusterState clusterState) {
         Set<Integer> upDistributors = getIndicesOfUpNodes(clusterState, NodeType.DISTRIBUTOR);
         Set<Integer> upStorageNodes = getIndicesOfUpNodes(clusterState, NodeType.STORAGE);
-        return new ClusterStatsAggregator(upDistributors, upStorageNodes, metricUpdater);
+        return new ClusterStatsAggregator(upDistributors, upStorageNodes);
     }
 
-    ClusterStateView(ClusterState clusterState, ClusterStatsAggregator statsAggregator, MetricUpdater metricUpdater) {
+    ClusterStateView(ClusterState clusterState, ClusterStatsAggregator statsAggregator) {
         this.clusterState = clusterState;
         this.statsAggregator = statsAggregator;
-        this.metricUpdater = metricUpdater;
     }
 
     /**
@@ -85,8 +79,7 @@ public class ClusterStateView {
         ClusterState clonedClusterState = clusterState.clone();
         return new ClusterStateView(
                 clonedClusterState,
-                createNewAggregator(clonedClusterState, metricUpdater),
-                metricUpdater);
+                createNewAggregator(clonedClusterState));
     }
 
     public ClusterState getClusterState() { return clusterState; }
@@ -115,8 +108,8 @@ public class ClusterStateView {
             return;
         }
 
-        statsAggregator.updateForDistributor(
-                hostnames, node.getNodeIndex(), StorageNodeStatsBridge.generate(hostInfo.getDistributor()));
+        statsAggregator.updateForDistributor(node.getNodeIndex(),
+                StorageNodeStatsBridge.generate(hostInfo.getDistributor()));
     }
 
     public String toString() {

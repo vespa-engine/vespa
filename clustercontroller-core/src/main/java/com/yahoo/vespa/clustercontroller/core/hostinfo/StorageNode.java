@@ -4,6 +4,9 @@ package com.yahoo.vespa.clustercontroller.core.hostinfo;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Keeping information about a storage node seen from the distributor.
  *
@@ -36,31 +39,43 @@ public class StorageNode {
         public Put getPut() { return put; }
     }
 
-    static public class Buckets {
-        private final long buckets;
+    static public class BucketStats {
+        private final long total;
+        private final long pending;
 
         @JsonCreator
-        public Buckets(@JsonProperty("buckets") Long buckets) {
-            this.buckets = buckets;
+        public BucketStats(@JsonProperty("total") Long total, @JsonProperty("pending") Long pending) {
+            this.total = total;
+            this.pending = pending;
         }
 
-        public long getBuckets() { return buckets; }
+        public long getTotal() {
+            return total;
+        }
+        public long getPending() {
+            return pending;
+        }
     }
 
-    static public class OutstandingMergeOps {
-        @JsonProperty("syncing")
-        private Buckets syncing;
-        @JsonProperty("copying-in")
-        private Buckets copyingIn;
-        @JsonProperty("moving-out")
-        private Buckets movingOut;
-        @JsonProperty("copying-out")
-        private Buckets copyingOut;
+    static public class BucketSpaceStats {
+        private final String name;
+        @JsonProperty("buckets")
+        private BucketStats bucketStats = null;
 
-        public Buckets getSyncingOrNull() { return syncing; }
-        public Buckets getCopyingInOrNull() { return copyingIn; }
-        public Buckets getMovingOutOrNull() { return movingOut; }
-        public Buckets getCopyingOutOrNull() { return copyingOut; }
+        @JsonCreator
+        public BucketSpaceStats(@JsonProperty("name") String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+        public boolean valid() {
+            return bucketStats != null;
+        }
+        public BucketStats getBucketStats() {
+            return bucketStats;
+        }
     }
 
     private final Integer index;
@@ -74,8 +89,8 @@ public class StorageNode {
     @JsonProperty("min-current-replication-factor")
     private Integer minCurrentReplicationFactor;
 
-    @JsonProperty("outstanding-merge-ops")
-    private OutstandingMergeOps outstandingMergeOps;
+    @JsonProperty("bucket-spaces")
+    private List<BucketSpaceStats> bucketSpacesStats = new ArrayList<>();
 
     @JsonCreator
     public StorageNode(@JsonProperty("node-index") Integer index) {
@@ -95,8 +110,7 @@ public class StorageNode {
         return minCurrentReplicationFactor;
     }
 
-    public OutstandingMergeOps getOutstandingMergeOpsOrNull() {
-        return outstandingMergeOps;
+    public List<BucketSpaceStats> getBucketSpacesStats() {
+        return bucketSpacesStats;
     }
-
 }
