@@ -18,10 +18,10 @@ public class ClusterStatsAggregatorTest {
         private final Map<Integer, Map<String, ContentNodeStats.BucketSpaceStats> > stats = new HashMap<>();
 
         public StatsBuilder add(int nodeIndex, String bucketSpace, long bucketsTotal, long bucketsPending) {
-            return add(nodeIndex, bucketSpace, new ContentNodeStats.BucketSpaceStats(bucketsTotal, bucketsPending));
+            return add(nodeIndex, bucketSpace, ContentNodeStats.BucketSpaceStats.of(bucketsTotal, bucketsPending));
         }
         public StatsBuilder add(int nodeIndex, String bucketSpace) {
-            return add(nodeIndex, bucketSpace, new ContentNodeStats.BucketSpaceStats());
+            return add(nodeIndex, bucketSpace, ContentNodeStats.BucketSpaceStats.empty());
         }
         public StatsBuilder add(int nodeIndex, String bucketSpace, ContentNodeStats.BucketSpaceStats bucketSpaceStats) {
             Map<String, ContentNodeStats.BucketSpaceStats> contentNodeStats = stats.get(nodeIndex);

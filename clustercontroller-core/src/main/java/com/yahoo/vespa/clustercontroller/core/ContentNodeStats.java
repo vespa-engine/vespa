@@ -17,14 +17,22 @@ public class ContentNodeStats {
         private long bucketsTotal;
         private long bucketsPending;
 
-        public BucketSpaceStats() {
+        private BucketSpaceStats() {
             this.bucketsTotal = 0;
             this.bucketsPending = 0;
         }
 
-        public BucketSpaceStats(long bucketsTotal, long bucketsPending) {
+        private BucketSpaceStats(long bucketsTotal, long bucketsPending) {
             this.bucketsTotal = bucketsTotal;
             this.bucketsPending = bucketsPending;
+        }
+
+        public static BucketSpaceStats empty() {
+            return new BucketSpaceStats();
+        }
+
+        public static BucketSpaceStats of(long bucketsTotal, long bucketsPending) {
+            return new BucketSpaceStats(bucketsTotal, bucketsPending);
         }
 
         public long getBucketsTotal() {
@@ -65,11 +73,10 @@ public class ContentNodeStats {
         for (StorageNode.BucketSpaceStats stats : storageNode.getBucketSpacesStats()) {
             if (stats.valid()) {
                 this.bucketSpaces.put(stats.getName(),
-                        new BucketSpaceStats(stats.getBucketStats().getTotal(),
+                        BucketSpaceStats.of(stats.getBucketStats().getTotal(),
                                 stats.getBucketStats().getPending()));
             } else {
-                // TODO: better handling of invalid bucket space stats
-                this.bucketSpaces.put(stats.getName(), new BucketSpaceStats());
+                this.bucketSpaces.put(stats.getName(), BucketSpaceStats.empty());
             }
         }
     }
