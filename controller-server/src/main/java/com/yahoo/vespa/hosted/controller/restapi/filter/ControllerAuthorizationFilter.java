@@ -7,7 +7,6 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -27,7 +26,6 @@ import javax.ws.rs.WebApplicationException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.jdisc.http.HttpRequest.Method.HEAD;
@@ -61,7 +59,7 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
                                          Controller controller,
                                          EntityService entityService,
                                          ZoneRegistry zoneRegistry) {
-        this(clientFactory, controller, entityService, zoneRegistry, new LoggingAuthorizationResponseHandler());
+        this(clientFactory, controller, entityService, zoneRegistry, new HttpRespondingAuthorizationResponseHandler());
     }
 
     ControllerAuthorizationFilter(AthenzClientFactory clientFactory,
@@ -197,25 +195,6 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
                 .map(AthenzPrincipal.class::cast);
     }
 
-    private static class LoggingAuthorizationResponseHandler implements AuthorizationResponseHandler {
-
-        @SuppressWarnings("LoggerInitializedWithForeignClass")
-        private static final Logger log = Logger.getLogger(ControllerAuthorizationFilter.class.getName());
-
-        @Override
-        public void handle(ResponseHandler responseHandler,
-                           DiscFilterRequest request,
-                           WebApplicationException exception) {
-            log.log(LogLevel.WARNING,
-                    String.format("Access denied (%d): '%s'\nPath: %s\nIdentity: %s",
-                                  exception.getResponse().getStatus(),
-                                  exception.getMessage(),
-                                  request.getRequestURI(),
-                                  getPrincipal(request).map(p -> p.getIdentity().getFullName()).orElse("[none]")));
-        }
-    }
-
-    // TODO Use this as default once we are confident that the access control does not block legal operations
     @SuppressWarnings("unused")
     static class HttpRespondingAuthorizationResponseHandler implements AuthorizationResponseHandler {
         @Override
