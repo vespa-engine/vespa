@@ -25,8 +25,7 @@ public class RankingExpressionTypeValidatorTestCase {
     @Test
     public void tensorFirstPhaseMustProduceDouble() throws Exception {
         try {
-            RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-            SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+            SearchBuilder builder = new SearchBuilder();
             builder.importString(joinLines(
                     "search test {",
                     "  document test { ",
@@ -53,8 +52,7 @@ public class RankingExpressionTypeValidatorTestCase {
     @Test
     public void tensorSecondPhaseMustProduceDouble() throws Exception {
         try {
-            RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-            SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+            SearchBuilder builder = new SearchBuilder();
             builder.importString(joinLines(
                     "search test {",
                     "  document test { ",
@@ -84,8 +82,7 @@ public class RankingExpressionTypeValidatorTestCase {
     @Test
     public void tensorConditionsMustHaveTypeCompatibleBranches() throws Exception {
         try {
-            RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-            SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
+            SearchBuilder searchBuilder = new SearchBuilder();
             searchBuilder.importString(joinLines(
                     "search test {",
                     "  document test { ",
@@ -148,8 +145,7 @@ public class RankingExpressionTypeValidatorTestCase {
 
     @Test
     public void testTensorMacroInvocationTypes_Nested() throws Exception {
-        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SearchBuilder builder = new SearchBuilder();
         builder.importString(joinLines(
                 "search test {",
                 "  document test { ",
