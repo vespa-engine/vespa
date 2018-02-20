@@ -340,6 +340,18 @@ public class DockerImpl implements Docker {
     }
 
     @Override
+    public void createContainer(CreateContainerCommand createContainerCommand) {
+        try {
+            dockerClient.execCreateCmd(createContainerCommand.toString());
+        } catch (NotModifiedException ignored) {
+            // If is already created, ignore
+        } catch (RuntimeException e) {
+            numberOfDockerDaemonFails.add();
+            throw new DockerException("Failed to create container '" + createContainerCommand.toString() + "'", e);
+        }
+    }
+
+    @Override
     public void startContainer(ContainerName containerName) {
         try {
             dockerClient.startContainerCmd(containerName.asString()).exec();

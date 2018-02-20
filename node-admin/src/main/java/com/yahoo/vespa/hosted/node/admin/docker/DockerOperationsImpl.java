@@ -33,7 +33,7 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 /**
  * Class that wraps the Docker class and have some tools related to running programs in docker.
  *
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public class DockerOperationsImpl implements DockerOperations {
     public static final String NODE_PROGRAM = getDefaults().underVespaHome("bin/vespa-nodectl");
@@ -98,13 +98,11 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void startContainer(ContainerName containerName, final ContainerNodeSpec nodeSpec) {
+    public void createContainer(ContainerName containerName, final ContainerNodeSpec nodeSpec) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-
-        logger.info("Starting container " + containerName);
+        logger.info("Creating container " + containerName);
         try {
             InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname);
-            final boolean isIPv6 = nodeInetAddress instanceof Inet6Address;
 
             String configServers = environment.getConfigServerUris().stream()
                     .map(URI::getHost)
@@ -126,7 +124,7 @@ public class DockerOperationsImpl implements DockerOperations {
             if (!docker.networkNPTed()) {
                 command.withIpAddress(nodeInetAddress);
                 command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
-                command.withVolume("/etc/hosts", "/etc/hosts"); // TODO This is probably not nessesary - review later
+                command.withVolume("/etc/hosts", "/etc/hosts"); // TODO This is probably not necessary - review later
             } else {
                 command.withIpAddress(NetworkPrefixTranslator.translate(
                         nodeInetAddress,
@@ -148,8 +146,22 @@ public class DockerOperationsImpl implements DockerOperations {
                 command.withEnvironment("VESPA_TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
             }
 
-            logger.info("Starting new container with args: " + command);
+            logger.info("Creating new container with args: " + command);
             command.create();
+
+            docker.createContainer(command);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create container " + containerName.asString(), e);
+        }
+    }
+
+    @Override
+    public void startContainer(ContainerName containerName, final ContainerNodeSpec nodeSpec) {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
+        logger.info("Starting container " + containerName);
+        try {
+            InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname);
+            boolean isIPv6 = nodeInetAddress instanceof Inet6Address;
 
             if (isIPv6) {
                 if (!docker.networkNPTed()) {
@@ -165,7 +177,7 @@ public class DockerOperationsImpl implements DockerOperations {
             DIRECTORIES_TO_MOUNT.entrySet().stream().filter(Map.Entry::getValue).forEach(entry ->
                     docker.executeInContainerAsRoot(containerName, "chmod", "-R", "a+w", entry.getKey()));
         } catch (IOException e) {
-            throw new RuntimeException("Failed to create container " + containerName.asString(), e);
+            throw new RuntimeException("Failed to start container " + containerName.asString(), e);
         }
     }
 

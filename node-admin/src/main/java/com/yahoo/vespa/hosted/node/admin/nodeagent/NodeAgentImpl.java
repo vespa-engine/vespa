@@ -255,6 +255,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void startContainer(ContainerNodeSpec nodeSpec) {
         aclMaintainer.run();
+        dockerOperations.createContainer(containerName, nodeSpec);
         dockerOperations.startContainer(containerName, nodeSpec);
         lastCpuMetric = new CpuUsageReporter();
 

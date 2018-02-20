@@ -187,6 +187,7 @@ public class NodeAgentImplTest {
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository, aclMaintainer);
         inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(dockerImage));
         inOrder.verify(aclMaintainer, times(1)).run();
+        inOrder.verify(dockerOperations, times(1)).createContainer(eq(containerName), eq(nodeSpec));
         inOrder.verify(dockerOperations, times(1)).startContainer(eq(containerName), eq(nodeSpec));
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName));
         inOrder.verify(nodeRepository).updateNodeAttributes(
@@ -263,6 +264,7 @@ public class NodeAgentImplTest {
         inOrder.verify(orchestrator).resume(any(String.class));
         inOrder.verify(orchestrator).suspend(any(String.class));
         inOrder.verify(dockerOperations).removeContainer(any(), any());
+        inOrder.verify(dockerOperations, times(1)).createContainer(eq(containerName), eq(thirdSpec));
         inOrder.verify(dockerOperations).startContainer(eq(containerName), eq(thirdSpec));
         inOrder.verify(orchestrator).resume(any(String.class));
     }
@@ -288,6 +290,7 @@ public class NodeAgentImplTest {
             fail("Expected to throw an exception");
         } catch (Exception ignored) { }
 
+        verify(dockerOperations, never()).createContainer(eq(containerName), eq(nodeSpec));
         verify(dockerOperations, never()).startContainer(eq(containerName), eq(nodeSpec));
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository, never()).updateNodeAttributes(any(String.class), any(NodeAttributes.class));
@@ -345,6 +348,7 @@ public class NodeAgentImplTest {
         // Should only be called once, when we initialize
         verify(dockerOperations, times(1)).getContainer(eq(containerName));
         verify(dockerOperations, never()).removeContainer(any(), any());
+        verify(dockerOperations, never()).createContainer(eq(containerName), eq(nodeSpec));
         verify(dockerOperations, never()).startContainer(eq(containerName), eq(nodeSpec));
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository).updateNodeAttributes(
@@ -439,6 +443,7 @@ public class NodeAgentImplTest {
         inOrder.verify(storageMaintainer, times(1)).cleanupNodeStorage(eq(containerName), eq(nodeSpec));
         inOrder.verify(nodeRepository, times(1)).markNodeAvailableForNewAllocation(eq(hostName));
 
+        verify(dockerOperations, never()).createContainer(eq(containerName), any());
         verify(dockerOperations, never()).startContainer(eq(containerName), any());
         verify(orchestrator, never()).resume(any(String.class));
         verify(orchestrator, never()).suspend(any(String.class));
@@ -493,6 +498,7 @@ public class NodeAgentImplTest {
         nodeAgent.tick();
 
         verify(dockerOperations, times(1)).removeContainer(any(), any());
+        verify(dockerOperations, times(1)).createContainer(eq(containerName), eq(nodeSpec));
         verify(dockerOperations, times(1)).startContainer(eq(containerName), eq(nodeSpec));
     }
 
