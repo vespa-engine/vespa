@@ -186,9 +186,9 @@ public class NodeAgentImplTest {
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository, aclMaintainer);
         inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(dockerImage));
-        inOrder.verify(aclMaintainer, times(1)).run();
         inOrder.verify(dockerOperations, times(1)).createContainer(eq(containerName), eq(nodeSpec));
         inOrder.verify(dockerOperations, times(1)).startContainer(eq(containerName), eq(nodeSpec));
+        inOrder.verify(aclMaintainer, times(1)).run();
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName));
         inOrder.verify(nodeRepository).updateNodeAttributes(
                 hostName, new NodeAttributes()
