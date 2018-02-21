@@ -3,6 +3,8 @@ package com.yahoo.tensor.functions;
 
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
+import com.yahoo.lang.MutableInteger;
+import com.yahoo.lang.MutableLong;
 import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
@@ -66,11 +68,25 @@ public class Concat extends PrimitiveTensorFunction {
 
     /** Returns the type resulting from concatenating a and b */
     private TensorType type(TensorType a, TensorType b) {
+        // TODO: Fail if concat dimension is present but not indexed in a or b
         TensorType.Builder builder = new TensorType.Builder(a, b);
-        if (builder.getDimension(dimension).get().size().isPresent()) // both types have size: correct to concat size
-            builder.set(TensorType.Dimension.indexed(dimension, a.dimension(dimension).get().size().get() +
-                                                                b.dimension(dimension).get().size().get()));
+        if ( ! unboundIn(a, dimension) && ! unboundIn(b, dimension)) {
+            builder.set(TensorType.Dimension.indexed(dimension, a.sizeOfDimension(dimension).orElse(1L) +
+                                                                b.sizeOfDimension(dimension).orElse(1L)));
+            /*
+            MutableLong concatSize = new MutableLong(0);
+            a.sizeOfDimension(dimension).ifPresent(concatSize::add);
+            b.sizeOfDimension(dimension).ifPresent(concatSize::add);
+                builder.set(TensorType.Dimension.indexed(dimension, concatSize.get()));
+                */
+        }
         return builder.build();
+    }
+
+    /** Returns true if this dimension is present and unbound */
+    private boolean unboundIn(TensorType type, String dimensionName) {
+        Optional<TensorType.Dimension> dimension = type.dimension(dimensionName);
+        return dimension.isPresent() && ! dimension.get().size().isPresent();
     }
 
     @Override
