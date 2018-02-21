@@ -88,6 +88,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.Principal;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -1045,9 +1046,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private static AthenzPrincipal getUserPrincipal(HttpRequest request) {
-        return Optional.ofNullable(request.getJDiscRequest().getUserPrincipal())
-                .map(AthenzPrincipal.class::cast)
-                .orElseThrow(() -> new InternalServerErrorException("Expected user principal"));
+        Principal principal = request.getJDiscRequest().getUserPrincipal();
+        if (principal == null) throw new InternalServerErrorException("Expected a user principal");
+        if (!(principal instanceof AthenzPrincipal))
+            throw new InternalServerErrorException(
+                    String.format("Expected principal of type %s, got %s",
+                                  AthenzPrincipal.class.getSimpleName(), principal.getClass().getName()));
+        return (AthenzPrincipal) principal;
     }
 
     private Inspector mandatory(String key, Inspector object) {
