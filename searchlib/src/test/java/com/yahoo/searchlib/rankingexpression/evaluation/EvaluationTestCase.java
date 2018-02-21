@@ -378,13 +378,8 @@ public class EvaluationTestCase {
     private static class StructuredTestContext extends MapContext {
 
         @Override
-        public Value get(String feature) {
-            throw new RuntimeException("Called simple get for feature " + feature);
-        }
-
-        @Override
         public Value get(String name, Arguments arguments, String output) {
-            if ( ! name.equals("average")) {
+            if (!name.equals("average")) {
                 throw new IllegalArgumentException("Unknown operation '" + name + "'");
             }
             if (arguments.expressions().size() != 2) {

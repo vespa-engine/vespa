@@ -2,7 +2,6 @@
 package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.BooleanValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
@@ -61,7 +60,7 @@ public class SetMembershipNode extends BooleanNode {
     }
 
     @Override
-    public TensorType type(TypeContext<Reference> context) {
+    public TensorType type(TypeContext context) {
         return TensorType.empty;
     }
 

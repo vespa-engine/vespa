@@ -73,7 +73,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     public void testTensorFlowReferenceWithQueryFeature() {
         String queryProfile = "<query-profile id='default' type='root'/>";
         String queryProfileType = "<query-profile-type id='root'>" +
-                                  "  <field name='query(mytensor)' type='tensor(d0[3],d1[784])'/>" +
+                                  "  <field name='mytensor' type='tensor(d0[3],d1[784])'/>" +
                                   "</query-profile-type>";
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir,
                                                                               queryProfile,
@@ -107,7 +107,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     public void testTensorFlowReferenceWithFeatureCombination() {
         String queryProfile = "<query-profile id='default' type='root'/>";
         String queryProfileType = "<query-profile-type id='root'>" +
-                                  "  <field name='query(mytensor)' type='tensor(d0[3],d1[784],d2[10])'/>" +
+                                  "  <field name='mytensor' type='tensor(d0[3],d1[784],d2[10])'/>" +
                                   "</query-profile-type>";
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir,
                                                                               queryProfile,

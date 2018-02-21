@@ -72,7 +72,7 @@ public class Rename extends PrimitiveTensorFunction {
     public PrimitiveTensorFunction toPrimitive() { return this; }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) {
+    public TensorType type(TypeContext context) {
         return type(argument.type(context));
     }
 
@@ -84,7 +84,7 @@ public class Rename extends PrimitiveTensorFunction {
     }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
+    public Tensor evaluate(EvaluationContext context) {
         Tensor tensor = argument.evaluate(context);
 
         TensorType renamedType = type(tensor.type());

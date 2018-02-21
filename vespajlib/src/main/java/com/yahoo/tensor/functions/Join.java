@@ -95,12 +95,12 @@ public class Join extends PrimitiveTensorFunction {
     }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) {
+    public TensorType type(TypeContext context) {
         return new TensorType.Builder(argumentA.type(context), argumentB.type(context)).build();
     }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
+    public Tensor evaluate(EvaluationContext context) {
         Tensor a = argumentA.evaluate(context);
         Tensor b = argumentB.evaluate(context);
         TensorType joinedType = new TensorType.Builder(a.type(), b.type()).build();

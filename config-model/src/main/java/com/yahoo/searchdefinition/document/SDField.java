@@ -209,9 +209,6 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     }
 
     @Override
-    public ImmutableSDField getBackingField() { return this; }
-
-    @Override
     public boolean doesAttributing() {
         return containsExpression(AttributeExpression.class);
     }
@@ -626,7 +623,8 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     public RankType getRankType() { return this.rankType; }
 
     /**
-     * Returns the search-time attribute settings of this field or null if none is set.
+     * <p>Returns the search-time attribute settings of this field
+     * or null if none is set.</p>
      *
      * <p>TODO: Make unmodifiable.</p>
      */

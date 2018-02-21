@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
  * Test validation of changes between a current and next document type used in a document database.
  *
  * @author toregge
+ * @since 2014-11-25
  */
 public class DocumentTypeChangeValidatorTest {
 
