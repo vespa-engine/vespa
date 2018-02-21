@@ -18,8 +18,8 @@ first-phase {
 second-phase {
   expression {
     if (attribute(artist) == query(testvar1),
-        0.0 * fieldMatch(title) +  0.0 * attribute(popularity) + 0.0 * fieldMatch(artist), 
-        0.0 * attribute(popularity) + 0.0 * fieldMatch(artist) +  0.0 * fieldMatch(title))
+        0.0 * fieldMatch(title) +  0.0 * attribute(Popularity) + 0.0 * fieldMatch(artist),
+        0.0 * attribute(Popularity) + 0.0 * fieldMatch(artist) +  0.0 * fieldMatch(title))
   }
 }
 
@@ -42,8 +42,8 @@ first-phase {
 second-phase {
   expression {
     if (attribute(artist) == query(testvar1),  
-        0.0 * fieldMatch(title) +  0.0 * attribute(popularity) + 0.0 * fieldMatch(artist),
-        0.0 * attribute(popularity) + 0.0 * fieldMatch(artist) +  0.0 * fieldMatch(title))
+        0.0 * fieldMatch(title) +  0.0 * attribute(Popularity) + 0.0 * fieldMatch(artist),
+        0.0 * attribute(Popularity) + 0.0 * fieldMatch(artist) +  0.0 * fieldMatch(title))
   }
 }
 }

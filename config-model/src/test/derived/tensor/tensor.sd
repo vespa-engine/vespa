@@ -28,7 +28,7 @@ search tensor {
   rank-profile profile2 {
 
     first-phase {
-      expression: matmul(attribute(f4), diag(x[2],y[2],z[3]), x)
+      expression: sum(matmul(attribute(f4), diag(x[2],y[2],z[3]), x))
     }
   
   }

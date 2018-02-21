@@ -43,14 +43,14 @@ public abstract class TensorFunction {
      *
      * @param context a context which must be passed to all nexted functions when evaluating
      */
-    public abstract Tensor evaluate(EvaluationContext context);
+    public abstract <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE>  context);
 
     /**
      * Returns the type of the tensor this produces given the input types in the context
      *
      * @param context a context which must be passed to all nexted functions when evaluating
      */
-    public abstract TensorType type(TypeContext context);
+    public abstract <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context);
 
     /** Evaluate with no context */
     public final Tensor evaluate() { return evaluate(new MapEvaluationContext()); }
@@ -58,7 +58,7 @@ public abstract class TensorFunction {
     /**
      * Return a string representation of this context.
      *
-     * @param context a context which must be passed to all nexted functions when requesting the string value
+     * @param context a context which must be passed to all nested functions when requesting the string value
      */
     public abstract String toString(ToStringContext context);
 
