@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
@@ -48,7 +49,7 @@ public abstract class ExpressionNode implements Serializable {
      * @param context the variable type bindings to use for this evaluation
      * @throws IllegalArgumentException if there are variables which are not bound in the given map
      */
-    public abstract TensorType type(TypeContext context);
+    public abstract TensorType type(TypeContext<Reference> context);
 
     /**
      * Returns the value of evaluating this expression over the given context.

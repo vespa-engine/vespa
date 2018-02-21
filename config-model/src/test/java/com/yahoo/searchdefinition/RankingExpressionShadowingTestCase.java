@@ -2,7 +2,10 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -149,11 +152,12 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                      censorBindingHash(testRankProperties.get(4).toString()));
     }
 
-
     @Test
     public void testNeuralNetworkSetup() throws ParseException {
+        // Note: the type assigned to query profile and constant tensors here is not the correct type
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        QueryProfileRegistry queryProfiles = queryProfileWith("query(q)", "tensor(x[])");
+        SearchBuilder builder = new SearchBuilder(rankProfileRegistry, queryProfiles);
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +
@@ -176,13 +180,28 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "            expression: sum(final_layer)\n" +
                         "        }\n" +
                         "    }\n" +
-                        "\n" +
+                        "    constant W_hidden {\n" +
+                        "        type: tensor(x[])\n" +
+                        "        file: ignored.json\n" +
+                        "    }\n" +
+                        "    constant b_input {\n" +
+                        "        type: tensor(x[])\n" +
+                        "        file: ignored.json\n" +
+                        "    }\n" +
+                        "    constant W_final {\n" +
+                        "        type: tensor(x[])\n" +
+                        "        file: ignored.json\n" +
+                        "    }\n" +
+                        "    constant b_final {\n" +
+                        "        type: tensor(x[])\n" +
+                        "        file: ignored.json\n" +
+                        "    }\n" +
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry());
+        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(queryProfiles);
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
-                                                                           new QueryProfileRegistry(),
+                                                                           queryProfiles,
                                                                            new AttributeFields(s)).configProperties();
         assertEquals("(rankingExpression(relu).rankingScript,max(1.0,x))",
                      testRankProperties.get(0).toString());
@@ -196,6 +215,17 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                      testRankProperties.get(4).toString());
         assertEquals("(rankingExpression(secondphase).rankingScript,reduce(rankingExpression(final_layer), sum))",
                      testRankProperties.get(5).toString());
+    }
+
+    private QueryProfileRegistry queryProfileWith(String field, String type) {
+        QueryProfileType queryProfileType = new QueryProfileType("root");
+        queryProfileType.addField(new FieldDescription(field, type));
+        QueryProfileRegistry queryProfileRegistry = new QueryProfileRegistry();
+        queryProfileRegistry.getTypeRegistry().register(queryProfileType);
+        QueryProfile profile = new QueryProfile("default");
+        profile.setType(queryProfileType);
+        queryProfileRegistry.register(profile);
+        return queryProfileRegistry;
     }
 
     private String censorBindingHash(String s) {

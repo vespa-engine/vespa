@@ -5,7 +5,6 @@ package com.yahoo.searchlib.rankingexpression.rule;
  * A node which produces a boolean value when evaluated.
  *
  * @author bratseth
- * @since  5.1.21
  */
 public abstract class BooleanNode extends CompositeNode {
 }

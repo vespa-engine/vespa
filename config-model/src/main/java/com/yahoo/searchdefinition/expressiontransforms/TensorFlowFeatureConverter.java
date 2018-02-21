@@ -208,6 +208,10 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
                 throw new IllegalArgumentException("Model refers Placeholder '" + macroName +
                                                    "' of type " + requiredType + " but this macro is not present in " +
                                                    profile);
+            // TODO: We should verify this in the (function reference(s) this is invoked (starting from first/second
+            // phase and summary features), as it may only resolve correctly given those bindings
+            // Or, probably better, annotate the macros with type constraints here and verify during general
+            // type verification
             TensorType actualType = macro.getRankingExpression().getRoot().type(profile.typeContext(queryProfiles));
             if ( actualType == null)
                 throw new IllegalArgumentException("Model refers Placeholder '" + macroName +

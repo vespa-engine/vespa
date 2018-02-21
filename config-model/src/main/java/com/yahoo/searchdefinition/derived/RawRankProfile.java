@@ -188,7 +188,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             if (macros.isEmpty()) return;
             Map<String, ExpressionFunction> expressionMacros = new LinkedHashMap<>();
             for (Map.Entry<String, RankProfile.Macro> macro : macros.entrySet()) {
-                expressionMacros.put(macro.getKey(), macro.getValue().toExpressionMacro());
+                expressionMacros.put(macro.getKey(), macro.getValue().asExpressionFunction());
             }
 
             Map<String, String> macroProperties = new LinkedHashMap<>();
@@ -223,7 +223,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 // Is the feature a macro?
                 if (context.getFunction(referenceNode.getName()) != null) {
                     context.addFunctionSerialization(RankingExpression.propertyName(referenceNode.getName()),
-                            referenceNode.toString(context, null, null));
+                                                     referenceNode.toString(context, null, null));
                     ReferenceNode newReferenceNode = new ReferenceNode("rankingExpression(" + referenceNode.getName() + ")", referenceNode.getArguments().expressions(), referenceNode.getOutput());
                     macroSummaryFeatures.put(referenceNode.getName(), newReferenceNode);
                     i.remove(); // Will add the expanded one in next block

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.evaluation.gbdtoptimization;
 
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -26,7 +27,7 @@ public class GBDTForestNode extends ExpressionNode {
     }
 
     @Override
-    public final TensorType type(TypeContext context) { return TensorType.empty; }
+    public final TensorType type(TypeContext<Reference> context) { return TensorType.empty; }
 
     @Override
     public final Value evaluate(Context context) {
