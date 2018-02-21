@@ -24,6 +24,8 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
+import com.yahoo.vespa.hosted.provision.maintenance.ReservationExpirer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
@@ -31,6 +33,7 @@ import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -680,6 +683,44 @@ public class ProvisioningTest {
             assertEquals(2, retiredNodes.size());
             assertTrue("Nodes are retired by system", retiredNodes.stream().allMatch(retiredBy(Agent.system)));
         }
+    }
+
+    @Test
+    public void application_deployment_extends_existing_reservations_on_deploy() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+
+        ApplicationId application = tester.makeApplicationId();
+        tester.makeReadyNodes(2, "default");
+
+        // Deploy fails with out of capacity
+        try {
+            prepare(application, 2, 0, 2, 0,
+                    "default", tester);
+            fail("Expected exception");
+        } catch (OutOfCapacityException ignored) {}
+        assertEquals("Reserved a subset of required nodes", 2,
+                     tester.getNodes(application, Node.State.reserved).size());
+
+        // Enough nodes become available
+        tester.makeReadyNodes(2, "default");
+
+        // Deploy is retried after a few minutes
+        tester.clock().advance(Duration.ofMinutes(2));
+        SystemState state = prepare(application, 2, 0, 2, 0,
+                                    "default", tester);
+        assertEquals("Reserved required nodes", 4,
+                     tester.getNodes(application, Node.State.reserved).size());
+
+        // Over 10 minutes pass since first reservation. First set of reserved nodes are not expired
+        tester.clock().advance(Duration.ofMinutes(8).plus(Duration.ofSeconds(1)));
+        ReservationExpirer expirer = new ReservationExpirer(tester.nodeRepository(), tester.clock(),
+                                                            Duration.ofMinutes(10),
+                                                            new JobControl(tester.nodeRepository().database()));
+        expirer.run();
+        assertEquals("Nodes remain reserved", 4,
+                     tester.getNodes(application, Node.State.reserved).size());
+        tester.activate(application, state.allHosts);
+        assertEquals(4, tester.getNodes(application, Node.State.active).size());
     }
 
     private void assertCorrectFlavorPreferences(boolean largeIsStock) {
