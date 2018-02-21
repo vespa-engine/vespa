@@ -7,6 +7,9 @@ import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
 import org.junit.Test;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -20,11 +23,11 @@ public class EnvironmentTest {
         ContainerName containerName = new ContainerName("docker1-1");
         assertEquals(
                 "/host/home/docker/container-storage/" + containerName.asString(),
-                environment.pathInNodeAdminFromPathInNode(containerName, "/").toString());
+                environment.pathInNodeAdminFromPathInNode(containerName, Paths.get("/")).toString());
 
         assertEquals(
                 "/home/docker/container-storage/" + containerName.asString(),
-                environment.pathInHostFromPathInNode(containerName, "/").toString());
+                environment.pathInHostFromPathInNode(containerName, Paths.get("/")).toString());
     }
 
     @Test
@@ -35,13 +38,13 @@ public class EnvironmentTest {
         String[] absolutePathsInContainer = {"/" + varPath, varPath, varPath + "/"};
 
         for (String pathInContainer : absolutePathsInContainer) {
-            assertEquals(expected, environment.pathInNodeAdminFromPathInNode(containerName, pathInContainer).toString());
+            assertEquals(expected, environment.pathInNodeAdminFromPathInNode(containerName, Paths.get(pathInContainer)).toString());
         }
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testNonAbsolutePathInNodeConversion() {
-        String varPath = getDefaults().underVespaHome("var").substring(1);
+        Path varPath = Paths.get("some/relative/path");
         environment.pathInNodeAdminFromPathInNode(new ContainerName("container-1"), varPath);
     }
 }

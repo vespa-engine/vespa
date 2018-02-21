@@ -40,16 +40,16 @@ public class MultiDockerTest {
 
             dockerTester.callOrderVerifier.assertInOrder(
                     "createContainerCommand with DockerImage { imageId=image1 }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
-                    "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
+                    "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerTester.NODE_PROGRAM + ", resume]",
 
                     "createContainerCommand with DockerImage { imageId=image2 }, HostName: host2.test.yahoo.com, ContainerName { name=host2 }",
-                    "executeInContainerAsRoot with ContainerName { name=host2 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
+                    "executeInContainerAsRoot with ContainerName { name=host2 }, args: [" + DockerTester.NODE_PROGRAM + ", resume]",
 
                     "stopContainer with ContainerName { name=host2 }",
                     "deleteContainer with ContainerName { name=host2 }",
 
                     "createContainerCommand with DockerImage { imageId=image1 }, HostName: host3.test.yahoo.com, ContainerName { name=host3 }",
-                    "executeInContainerAsRoot with ContainerName { name=host3 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                    "executeInContainerAsRoot with ContainerName { name=host3 }, args: [" + DockerTester.NODE_PROGRAM + ", resume]");
 
             dockerTester.callOrderVerifier.assertInOrderWithAssertMessage(
                     "Maintainer did not receive call to delete application storage",
@@ -89,7 +89,7 @@ public class MultiDockerTest {
         ContainerName containerName = ContainerName.fromHostname(hostName);
         tester.callOrderVerifier.assertInOrder(
                 "createContainerCommand with " + dockerImage + ", HostName: " + hostName + ", " + containerName,
-                "executeInContainerAsRoot with " + containerName + ", args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                "executeInContainerAsRoot with " + containerName + ", args: [" + DockerTester.NODE_PROGRAM + ", resume]");
 
         return containerNodeSpec;
     }
