@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author bjorncs
  */
-class ApplicationRequestToDiscFilterRequestWrapper extends DiscFilterRequest {
+public class ApplicationRequestToDiscFilterRequestWrapper extends DiscFilterRequest {
 
     private final Request request;
     private Principal userPrincipal;

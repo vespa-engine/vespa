@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author bjorncs
  */
-class ResponseHandlerToApplicationResponseWrapper implements ResponseHandler {
+public class ResponseHandlerToApplicationResponseWrapper implements ResponseHandler {
 
     private Response response;
     private SimpleContentChannel contentChannel;
@@ -31,7 +31,7 @@ class ResponseHandlerToApplicationResponseWrapper implements ResponseHandler {
         return contentChannel;
     }
 
-    Optional<com.yahoo.application.container.handler.Response> toResponse() {
+    public Optional<com.yahoo.application.container.handler.Response> toResponse() {
         return Optional.ofNullable(this.response)
                 .map(r -> {
                     byte[] bytes = contentChannel.toByteArray();
