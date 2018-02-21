@@ -2,13 +2,12 @@
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.google.common.collect.ImmutableSet;
-import com.yahoo.application.container.handler.Request;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
@@ -79,8 +78,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
 
         tester.controller().updateVersionStatus(censorConfigServers(VersionStatus.compute(tester.controller()),
                                                                     tester.controller()));
-        tester.assertResponse(new Request("http://localhost:8080/deployment/v1/"),
-                              new File("root.json"));
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/deployment/v1/"), new File("root.json"));
     }
 
     private VersionStatus censorConfigServers(VersionStatus versionStatus, Controller controller) {
