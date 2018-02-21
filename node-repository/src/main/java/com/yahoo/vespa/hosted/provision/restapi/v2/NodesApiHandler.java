@@ -126,7 +126,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Moved " + lastElement(path) + " to dirty");
         }
         else if (path.startsWith("/nodes/v2/state/active/")) {
-            nodeRepository.reactivate(lastElement(path), Agent.operator);
+            nodeRepository.reactivate(lastElement(path), Agent.operator, "Reactivated through nodes/v2 API");
             return new MessageResponse("Moved " + lastElement(path) + " to active");
         }
         else if (path.startsWith("/nodes/v2/state/availablefornewallocations/")) {

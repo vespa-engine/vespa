@@ -439,8 +439,8 @@ public class NodeRepository extends AbstractComponent {
      * @return the node in its new state
      * @throws NoSuchNodeException if the node is not found
      */
-    public Node reactivate(String hostname, Agent agent) {
-        return move(hostname, Node.State.active, agent, Optional.empty());
+    public Node reactivate(String hostname, Agent agent, String reason) {
+        return move(hostname, Node.State.active, agent, Optional.of(reason));
     }
 
     private List<Node> moveRecursively(String hostname, Node.State toState, Agent agent, Optional<String> reason) {

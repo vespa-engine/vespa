@@ -88,9 +88,9 @@ public class PeriodicApplicationMaintainerTest {
         assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
 
         // Reactivate the previously failed nodes
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system);
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system);
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.parked).get(0).hostname(), Agent.system);
+        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system, getClass().getSimpleName());
+        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system, getClass().getSimpleName());
+        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.parked).get(0).hostname(), Agent.system, getClass().getSimpleName());
         int reactivatedInApp1 = 1;
         int reactivatedInApp2 = 2;
         assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
