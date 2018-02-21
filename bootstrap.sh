@@ -26,7 +26,7 @@ else
 fi
 
 mvn_install() {
-    mvn -e -X --quiet --batch-mode --threads 1.5C --no-snapshot-updates install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true "$@"
+    mvn --quiet --batch-mode --threads 1.5C --no-snapshot-updates install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true "$@"
 }
 
 # Generate vtag map
