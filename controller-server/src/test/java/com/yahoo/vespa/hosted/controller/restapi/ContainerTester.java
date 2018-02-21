@@ -5,8 +5,12 @@ import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.collections.Pair;
+import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
+import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.io.IOUtils;
+import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
+import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -21,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -70,7 +75,9 @@ public class ContainerTester {
     public void assertResponse(Request request, File responseFile, int expectedStatusCode) throws IOException {
         String expectedResponse = IOUtils.readFile(new File(responseFilePath + responseFile.toString()));
         expectedResponse = include(expectedResponse);
-        Response response = container.handleRequest(request);
+        FilterResult filterResult = invokeSecurityFilters(request);
+        request = filterResult.request;
+        Response response = filterResult.response != null ? filterResult.response : container.handleRequest(request);
         Slime expectedSlime = SlimeUtils.jsonToSlime(expectedResponse.getBytes(StandardCharsets.UTF_8));
         Set<String> fieldsToCensor = fieldsToCensor(null, expectedSlime.get(), new HashSet<>());
         Slime responseSlime = SlimeUtils.jsonToSlime(response.getBody());
@@ -96,9 +103,29 @@ public class ContainerTester {
     }
 
     public void assertResponse(Request request, String expectedResponse, int expectedStatusCode) throws IOException {
-        Response response = container.handleRequest(request);
+        FilterResult filterResult = invokeSecurityFilters(request);
+        request = filterResult.request;
+        Response response = filterResult.response != null ? filterResult.response : container.handleRequest(request);
         assertEquals(expectedResponse, response.getBodyAsString());
         assertEquals("Status code", expectedStatusCode, response.getStatus());
+    }
+
+    // Hack to run request filters as part of the request processing chain.
+    // Limitation: Bindings ignored, disc filter request wrapper only support limited set of methods.
+    private FilterResult invokeSecurityFilters(Request request) {
+        FilterChainRepository filterChainRepository = (FilterChainRepository) container.components().getComponent(FilterChainRepository.class.getName());
+        SecurityRequestFilterChain chain = (SecurityRequestFilterChain) filterChainRepository.getFilter(ComponentSpecification.fromString("default"));
+        for (SecurityRequestFilter securityRequestFilter : chain.getFilters()) {
+            ApplicationRequestToDiscFilterRequestWrapper discFilterRequest = new ApplicationRequestToDiscFilterRequestWrapper(request);
+            ResponseHandlerToApplicationResponseWrapper responseHandlerWrapper = new ResponseHandlerToApplicationResponseWrapper();
+            securityRequestFilter.filter(discFilterRequest, responseHandlerWrapper);
+            request = discFilterRequest.getUpdatedRequest();
+            Optional<Response> filterResponse = responseHandlerWrapper.toResponse();
+            if (filterResponse.isPresent()) {
+                return new FilterResult(request, filterResponse.get());
+            }
+        }
+        return new FilterResult(request, null);
     }
 
     private Set<String> fieldsToCensor(String fieldNameOrNull, Inspector value, Set<String> fieldsToCensor) {
@@ -157,5 +184,14 @@ public class ContainerTester {
         return prefix + includedContent + postFix;
     }
 
+    static class FilterResult {
+        final Request request;
+        final Response response;
+
+        FilterResult(Request request, Response response) {
+            this.request = request;
+            this.response = response;
+        }
+    }
 }
     

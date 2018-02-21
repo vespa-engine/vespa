@@ -5,11 +5,17 @@ import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import org.junit.After;
 import org.junit.Before;
 
 import java.io.IOException;
 
+import static com.yahoo.vespa.hosted.controller.AthenzFilterMock.ATHENZ_NTOKEN_HEADER_NAME;
+import static com.yahoo.vespa.hosted.controller.AthenzFilterMock.IDENTITY_HEADER_NAME;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -24,6 +30,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class ControllerContainerTest {
 
+    public static final AthenzUser USER = AthenzUser.fromUserId("bob");
     protected JDisc container;
 
     @Before
@@ -87,6 +94,16 @@ public class ControllerContainerTest {
             "    <binding>http://*/zone/v2</binding>\n" +
             "    <binding>http://*/zone/v2/*</binding>\n" +
             "  </handler>\n" +
+            "  <http>\n" +
+            "    <server id='default' port='8080' />\n" +
+            "    <filtering>\n" +
+            "      <request-chain id='default'>\n" +
+            "        <filter id='com.yahoo.vespa.hosted.controller.AthenzFilterMock'/>\n" +
+            "        <filter id='com.yahoo.vespa.hosted.controller.restapi.filter.ControllerAuthorizationFilter'/>\n" +
+            "        <binding>http://*/*</binding>\n" +
+            "      </request-chain>\n" +
+            "    </filtering>\n" +
+            "  </http>\n" +
             "</jdisc>";
 
     protected void assertResponse(Request request, int responseStatus, String responseMessage) throws IOException {
@@ -94,6 +111,34 @@ public class ControllerContainerTest {
         // Compare both status and message at once for easier diagnosis
         assertEquals("status: " + responseStatus + "\nmessage: " + responseMessage,
                      "status: " + response.getStatus() + "\nmessage: " + response.getBodyAsString());
+    }
+
+    protected static Request authenticatedRequest(String uri) {
+        return addIdentityToRequest(new Request(uri), USER);
+    }
+
+    protected static Request authenticatedRequest(String uri, String body, Request.Method method) {
+        return addIdentityToRequest(new Request(uri, body, method), USER);
+    }
+
+    protected static Request authenticatedRequest(String uri, byte[] body, Request.Method method) {
+        return addIdentityToRequest(new Request(uri, body, method), USER);
+    }
+
+    protected static Request addIdentityToRequest(Request request, AthenzIdentity identity) {
+        request.getHeaders().put(IDENTITY_HEADER_NAME, identity.getFullName());
+        return request;
+    }
+
+    protected static Request addNTokenToRequest(Request request, NToken nToken) {
+        request.getHeaders().put(ATHENZ_NTOKEN_HEADER_NAME, nToken.getRawToken());
+        return request;
+    }
+
+    protected void addUserToHostedOperatorRole(AthenzIdentity athenzIdentity) {
+        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
+                .getComponent(AthenzClientFactoryMock.class.getName());
+        mock.getSetup().addHostedOperator(athenzIdentity);
     }
 
 }
