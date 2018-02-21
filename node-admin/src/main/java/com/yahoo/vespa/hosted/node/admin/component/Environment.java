@@ -212,13 +212,12 @@ public class Environment {
     /**
      * Translates an absolute path in node agent container to an absolute path in node admin container.
      * @param containerName name of the node agent container
-     * @param absolutePathInNode absolute path in that container
+     * @param pathInNode absolute path in that container
      * @return the absolute path in node admin container pointing at the same inode
      */
-    public Path pathInNodeAdminFromPathInNode(ContainerName containerName, String absolutePathInNode) {
-        Path pathInNode = Paths.get(absolutePathInNode);
+    public Path pathInNodeAdminFromPathInNode(ContainerName containerName, Path pathInNode) {
         if (! pathInNode.isAbsolute()) {
-            throw new IllegalArgumentException("The specified path in node was not absolute: " + absolutePathInNode);
+            throw new IllegalArgumentException("The specified path in node was not absolute: " + pathInNode);
         }
 
         return pathResolver.getApplicationStoragePathForNodeAdmin()
@@ -229,18 +228,22 @@ public class Environment {
     /**
      * Translates an absolute path in node agent container to an absolute path in host.
      * @param containerName name of the node agent container
-     * @param absolutePathInNode absolute path in that container
+     * @param pathInNode absolute path in that container
      * @return the absolute path in host pointing at the same inode
      */
-    public Path pathInHostFromPathInNode(ContainerName containerName, String absolutePathInNode) {
-        Path pathInNode = Paths.get(absolutePathInNode);
+    public Path pathInHostFromPathInNode(ContainerName containerName, Path pathInNode) {
         if (! pathInNode.isAbsolute()) {
-            throw new IllegalArgumentException("The specified path in node was not absolute: " + absolutePathInNode);
+            throw new IllegalArgumentException("The specified path in node was not absolute: " + pathInNode);
         }
 
         return pathResolver.getApplicationStoragePathForHost()
                 .resolve(containerName.asString())
                 .resolve(PathResolver.ROOT.relativize(pathInNode));
+    }
+
+    public Path pathInNodeUnderVespaHome(String relativePath) {
+        return pathResolver.getVespaHomePathForContainer()
+                .resolve(relativePath);
     }
 
     public List<String> getLogstashNodes() {

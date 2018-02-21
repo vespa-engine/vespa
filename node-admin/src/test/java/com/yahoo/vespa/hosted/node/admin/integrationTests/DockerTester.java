@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
@@ -37,6 +38,8 @@ import static org.mockito.Mockito.when;
 public class DockerTester implements AutoCloseable {
     private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofMillis(100);
     private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofMillis(10);
+    private static final Path pathToVespaHome = Paths.get("/opt/vespa");
+    static final String NODE_PROGRAM = pathToVespaHome.resolve("bin/vespa-nodectl").toString();
 
     final CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
     final Docker dockerMock = new DockerMock(callOrderVerifier);
@@ -56,7 +59,7 @@ public class DockerTester implements AutoCloseable {
 
         Environment environment = new Environment.Builder()
                 .inetAddressResolver(inetAddressResolver)
-                .pathResolver(new PathResolver(Paths.get("/tmp"), Paths.get("/tmp"))).build();
+                .pathResolver(new PathResolver(pathToVespaHome, Paths.get("/tmp"), Paths.get("/tmp"))).build();
         Clock clock = Clock.systemUTC();
         DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, null);
         StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(dockerOperations, null, environment, callOrderVerifier, clock);

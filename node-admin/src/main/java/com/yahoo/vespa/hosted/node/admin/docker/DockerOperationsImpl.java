@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -36,65 +38,25 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  * @author Haakon Dybdahl
  */
 public class DockerOperationsImpl implements DockerOperations {
-    public static final String NODE_PROGRAM = getDefaults().underVespaHome("bin/vespa-nodectl");
-
-    private static final String[] RESUME_NODE_COMMAND = new String[]{NODE_PROGRAM, "resume"};
-    private static final String[] SUSPEND_NODE_COMMAND = new String[]{NODE_PROGRAM, "suspend"};
-    private static final String[] RESTART_VESPA_ON_NODE_COMMAND = new String[]{NODE_PROGRAM, "restart-vespa"};
-    private static final String[] STOP_NODE_COMMAND = new String[]{NODE_PROGRAM, "stop"};
 
     private static final String MANAGER_NAME = "node-admin";
 
     private static final String LOCAL_IPV6_PREFIX = "fd00::";
     private static final String DOCKER_CUSTOM_BRIDGE_NETWORK_NAME = "vespa-bridge";
-
-    // Map of directories to mount and whether they should be writable by everyone
-    private static final Map<String, Boolean> DIRECTORIES_TO_MOUNT = new HashMap<>();
-
-    static {
-        DIRECTORIES_TO_MOUNT.put("/etc/yamas-agent", true);
-        DIRECTORIES_TO_MOUNT.put("/etc/filebeat", true);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/daemontools_y"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/jdisc_core"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/langdetect/"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/vespa"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/yca"), true);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/yck"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/yell"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/ykeykey"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/ykeykeyd"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/yms_agent"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/ysar"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/ystatus"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/zpu"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/cache"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/crash"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/db/jdisc"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/db/vespa"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/jdisc_container"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/jdisc_core"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/maven"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/run"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/scoreboards"), true);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/service"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/share"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/spool"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/vespa"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/yca"), true);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/ycore++"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/zookeeper"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/zpe"), false);
-        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("tmp"), false);
-    }
-
+    
     private final Docker docker;
     private final Environment environment;
     private final ProcessExecuter processExecuter;
+    private final String nodeProgram;
+    private Map<Path, Boolean> directoriesToMount;
 
     public DockerOperationsImpl(Docker docker, Environment environment, ProcessExecuter processExecuter) {
         this.docker = docker;
         this.environment = environment;
         this.processExecuter = processExecuter;
+
+        this.nodeProgram = environment.pathInNodeUnderVespaHome("bin/vespa-nodectl").toString();
+        this.directoriesToMount = getDirectoriesToMount(environment);
     }
 
     @Override
@@ -133,9 +95,9 @@ public class DockerOperationsImpl implements DockerOperations {
                 command.withNetworkMode(DOCKER_CUSTOM_BRIDGE_NETWORK_NAME);
             }
 
-            for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
+            for (Path pathInNode : directoriesToMount.keySet()) {
                 String pathInHost = environment.pathInHostFromPathInNode(containerName, pathInNode).toString();
-                command.withVolume(pathInHost, pathInNode);
+                command.withVolume(pathInHost, pathInNode.toString());
             }
 
             // TODO: Enforce disk constraints
@@ -174,8 +136,11 @@ public class DockerOperationsImpl implements DockerOperations {
                 docker.startContainer(containerName);
             }
 
-            DIRECTORIES_TO_MOUNT.entrySet().stream().filter(Map.Entry::getValue).forEach(entry ->
-                    docker.executeInContainerAsRoot(containerName, "chmod", "-R", "a+w", entry.getKey()));
+            directoriesToMount.entrySet().stream()
+                    .filter(Map.Entry::getValue)
+                    .map(Map.Entry::getKey)
+                    .forEach(path ->
+                            docker.executeInContainerAsRoot(containerName, "chmod", "-R", "a+w", path.toString()));
         } catch (IOException e) {
             throw new RuntimeException("Failed to start container " + containerName.asString(), e);
         }
@@ -227,13 +192,12 @@ public class DockerOperationsImpl implements DockerOperations {
     public void trySuspendNode(ContainerName containerName) {
         try {
             // TODO: Change to waiting w/o timeout (need separate thread that we can stop).
-            executeCommandInContainer(containerName, SUSPEND_NODE_COMMAND);
+            executeCommandInContainer(containerName, nodeProgram, "suspend");
         } catch (RuntimeException e) {
             PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
             // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
             // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
-            logger.warning("Failed trying to suspend container " + containerName.asString() + "  with "
-                    + Arrays.toString(SUSPEND_NODE_COMMAND), e);
+            logger.warning("Failed trying to suspend container " + containerName.asString(), e);
         }
     }
 
@@ -308,17 +272,17 @@ public class DockerOperationsImpl implements DockerOperations {
 
     @Override
     public void resumeNode(ContainerName containerName) {
-        executeCommandInContainer(containerName, RESUME_NODE_COMMAND);
+        executeCommandInContainer(containerName, nodeProgram, "resume");
     }
 
     @Override
     public void restartVespaOnNode(ContainerName containerName) {
-        executeCommandInContainer(containerName, RESTART_VESPA_ON_NODE_COMMAND);
+        executeCommandInContainer(containerName, nodeProgram, "restart-vespa");
     }
 
     @Override
     public void stopServicesOnNode(ContainerName containerName) {
-        executeCommandInContainer(containerName, STOP_NODE_COMMAND);
+        executeCommandInContainer(containerName, nodeProgram, "stop");
     }
 
     @Override
@@ -339,5 +303,47 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public void deleteUnusedDockerImages() {
         docker.deleteUnusedDockerImages();
+    }
+
+    /**
+     * Returns map of directories to mount and whether they should be writable by everyone
+     */
+    private static Map<Path, Boolean> getDirectoriesToMount(Environment environment) {
+        final Map<Path, Boolean> directoriesToMount = new HashMap<>();
+        directoriesToMount.put(Paths.get("/etc/yamas-agent"), true);
+        directoriesToMount.put(Paths.get("/etc/filebeat"), true);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/daemontools_y"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/jdisc_core"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/langdetect/"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/vespa"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/yca"), true);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/yck"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/yell"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/ykeykey"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/ykeykeyd"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/yms_agent"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/ysar"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/ystatus"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/zpu"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/cache"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/crash"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/db/jdisc"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/db/vespa"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/jdisc_container"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/jdisc_core"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/maven"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/run"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/scoreboards"), true);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/service"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/share"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/spool"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/vespa"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/yca"), true);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/ycore++"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/zookeeper"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/zpe"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("tmp"), false);
+        
+        return directoriesToMount;
     }
 }

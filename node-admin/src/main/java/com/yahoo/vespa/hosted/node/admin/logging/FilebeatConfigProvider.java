@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.logging;
 
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 
@@ -61,7 +60,7 @@ public class FilebeatConfigProvider {
                 : String.format("\"%s\"", logstashNode);
     }
 
-    private static String getTemplate() {
+    private String getTemplate() {
         return "################### Filebeat Configuration Example #########################\n" +
                 "\n" +
                 "############################# Filebeat ######################################\n" +
@@ -71,7 +70,7 @@ public class FilebeatConfigProvider {
                 "\n" +
                 "    # vespa\n" +
                 "    - paths:\n" +
-                "        - " + getDefaults().underVespaHome("logs/vespa/vespa.log") + "\n" +
+                "        - " + environment.pathInNodeUnderVespaHome("logs/vespa/vespa.log") + "\n" +
                 "      exclude_files: [\".gz$\"]\n" +
                 "      document_type: vespa\n" +
                 "      fields:\n" +
@@ -87,7 +86,7 @@ public class FilebeatConfigProvider {
                 "\n" +
                 "    # vespa qrs\n" +
                 "    - paths:\n" +
-                "        - " + getDefaults().underVespaHome("logs/vespa/qrs/QueryAccessLog.*.*") + "\n" +
+                "        - " + environment.pathInNodeUnderVespaHome("logs/vespa/qrs/QueryAccessLog.*.*") + "\n" +
                 "      exclude_files: [\".gz$\"]\n" +
                 "      exclude_lines: [\"reserved-for-internal-use/feedapi\"]\n" +
                 "      document_type: vespa-qrs\n" +
@@ -201,7 +200,7 @@ public class FilebeatConfigProvider {
                 "  # To enable logging to files, to_files option has to be set to true\n" +
                 "  files:\n" +
                 "    # The directory where the log files will written to.\n" +
-                "    path: " + getDefaults().underVespaHome("logs/filebeat") + "\n" +
+                "    path: " + environment.pathInNodeUnderVespaHome("logs/filebeat") + "\n" +
                 "\n" +
                 "    # The name of the files where the logs are written to.\n" +
                 "    name: filebeat\n" +

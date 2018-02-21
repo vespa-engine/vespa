@@ -58,7 +58,7 @@ public class RebootTest {
             assertTrue(nodeAdmin.setFrozen(false));
 
             dockerTester.callOrderVerifier.assertInOrder(
-                    "executeInContainer with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", stop]");
+                    "executeInContainer with ContainerName { name=host1 }, args: [" + DockerTester.NODE_PROGRAM + ", stop]");
         }
     }
 
