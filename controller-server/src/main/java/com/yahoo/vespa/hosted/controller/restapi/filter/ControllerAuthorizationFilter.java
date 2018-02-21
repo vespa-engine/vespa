@@ -8,19 +8,16 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
-import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
+import com.yahoo.vespa.hosted.controller.restapi.application.ApplicationInstanceAuthorizer;
+import com.yahoo.vespa.hosted.controller.restapi.application.Authorizer;
 import com.yahoo.yolean.chain.After;
 
 import javax.ws.rs.ForbiddenException;
@@ -36,7 +33,6 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.HEAD;
 import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
-import static com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAthenzIdentities.SCREWDRIVER_DOMAIN;
 import static com.yahoo.vespa.hosted.controller.restapi.filter.SecurityFilterUtils.sendErrorResponse;
 
 /**
@@ -51,7 +47,8 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
 
     private final AthenzClientFactory clientFactory;
     private final Controller controller;
-    private final EntityService entityService;
+    private final Authorizer authorizer;
+    private final ApplicationInstanceAuthorizer applicationInstanceAuthorizer;
     private final AuthorizationResponseHandler authorizationResponseHandler;
 
     public interface AuthorizationResponseHandler {
@@ -61,17 +58,20 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     @Inject
     public ControllerAuthorizationFilter(AthenzClientFactory clientFactory,
                                          Controller controller,
-                                         EntityService entityService) {
-        this(clientFactory, controller, entityService, new DefaultAuthorizationResponseHandler());
+                                         EntityService entityService,
+                                         ZoneRegistry zoneRegistry) {
+        this(clientFactory, controller, entityService, zoneRegistry, new DefaultAuthorizationResponseHandler());
     }
 
     ControllerAuthorizationFilter(AthenzClientFactory clientFactory,
                                   Controller controller,
                                   EntityService entityService,
+                                  ZoneRegistry zoneRegistry,
                                   AuthorizationResponseHandler authorizationResponseHandler) {
         this.clientFactory = clientFactory;
         this.controller = controller;
-        this.entityService = entityService;
+        this.authorizer = new Authorizer(controller, entityService, clientFactory);
+        this.applicationInstanceAuthorizer = new ApplicationInstanceAuthorizer(zoneRegistry, clientFactory);
         this.authorizationResponseHandler = authorizationResponseHandler;
     }
 
@@ -146,85 +146,28 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
         }
     }
 
-    private boolean isHostedOperator(AthenzIdentity identity) {
-        return clientFactory.createZmsClientWithServicePrincipal()
-                .hasHostedOperatorAccess(identity);
-    }
-
     private void verifyIsTenantAdmin(AthenzPrincipal principal, TenantId tenantId) {
-        controller.tenants().tenant(tenantId)
-                .ifPresent(tenant -> {
-                    if (!isTenantAdmin(principal.getIdentity(), tenant)) {
-                        throw new ForbiddenException("Tenant admin or Vespa operator role required");
-                    }
-                });
-    }
-
-    private boolean isTenantAdmin(AthenzIdentity identity, Tenant tenant) {
-        switch (tenant.tenantType()) {
-            case ATHENS:
-                return clientFactory.createZmsClientWithServicePrincipal()
-                        .hasTenantAdminAccess(identity, tenant.getAthensDomain().get());
-            case OPSDB: {
-                if (!(identity instanceof AthenzUser)) {
-                    return false;
-                }
-                AthenzUser user = (AthenzUser) identity;
-                return entityService.isGroupMember(new UserId(user.getName()), tenant.getUserGroup().get());
-            }
-            case USER: {
-                if (!(identity instanceof AthenzUser)) {
-                    return false;
-                }
-                AthenzUser user = (AthenzUser) identity;
-                return tenant.getId().equals(new UserId(user.getName()).toTenantId());
-            }
-            default:
-                throw new InternalServerErrorException("Unknown tenant type: " + tenant.tenantType());
+        if (!isTenantAdmin(principal.getIdentity(), tenantId)) {
+            throw new ForbiddenException("Tenant admin or Vespa operator role required");
         }
     }
 
     private void verifyIsTenantPipelineOperator(AthenzPrincipal principal,
                                                 TenantId tenantId,
-                                                ApplicationName application) {
+                                                ApplicationName applicationName) {
         controller.tenants().tenant(tenantId)
-                .ifPresent(tenant -> verifyIsTenantPipelineOperator(principal.getIdentity(), tenant, application));
+                .ifPresent(tenant -> applicationInstanceAuthorizer.throwIfUnauthorized(principal, tenant, applicationName));
     }
 
-    private void verifyIsTenantPipelineOperator(AthenzIdentity identity, Tenant tenant, ApplicationName application) {
-        if (isHostedOperator(identity)) return;
-
-        AthenzDomain principalDomain = identity.getDomain();
-        if (!principalDomain.equals(SCREWDRIVER_DOMAIN)) {
-            throw new ForbiddenException(String.format(
-                    "'%s' is not a Screwdriver identity. Only Screwdriver is allowed to deploy to this environment.",
-                    identity.getFullName()));
-        }
-
-        // NOTE: no fine-grained deploy authorization for non-Athenz tenants
-        if (tenant.isAthensTenant()) {
-            AthenzDomain tenantDomain = tenant.getAthensDomain().get();
-            if (!hasDeployerAccess(identity, tenantDomain, application)) {
-                throw new ForbiddenException(String.format(
-                        "'%1$s' does not have access to '%2$s'. " +
-                                "Either the application has not been created at Vespa dashboard or " +
-                                "'%1$s' is not added to the application's deployer role in Athenz domain '%3$s'.",
-                        identity.getFullName(), application.value(), tenantDomain.getName()));
-            }
-        }
+    private boolean isHostedOperator(AthenzIdentity identity) {
+        return clientFactory.createZmsClientWithServicePrincipal()
+                .hasHostedOperatorAccess(identity);
     }
 
-    private boolean hasDeployerAccess(AthenzIdentity identity, AthenzDomain tenantDomain, ApplicationName application) {
-        try {
-            return clientFactory.createZmsClientWithServicePrincipal()
-                    .hasApplicationAccess(
-                            identity,
-                            ApplicationAction.deploy,
-                            tenantDomain,
-                            new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(application.value()));
-        } catch (ZmsException e) {
-            throw new InternalServerErrorException("Failed to authorize operation:  (" + e.getMessage() + ")", e);
-        }
+    private boolean isTenantAdmin(AthenzIdentity identity, TenantId tenantId) {
+        return controller.tenants().tenant(tenantId)
+                .map(tenant -> authorizer.isTenantAdmin(identity, tenant))
+                .orElse(false);
     }
 
     private static TenantId getTenantId(Path path) {
@@ -256,7 +199,7 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     /**
      * Maps {@link WebApplicationException} to http response ({@link Response}.
      */
-    private static class DefaultAuthorizationResponseHandler implements AuthorizationResponseHandler {
+    static class DefaultAuthorizationResponseHandler implements AuthorizationResponseHandler {
         @Override
         public void handle(ResponseHandler responseHandler,
                            DiscFilterRequest request,
