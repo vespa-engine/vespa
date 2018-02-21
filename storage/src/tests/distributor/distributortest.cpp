@@ -630,18 +630,18 @@ Distributor_Test::mergeStatsAreAccumulatedDuringDatabaseIteration()
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
         wanted.copyingOut = 2;
-        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(0));
+        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(0, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wanted;
         wanted.movingOut = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(1));
+        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(1, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
         wanted.copyingIn = 2;
-        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(2));
+        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(2, makeBucketSpace()));
     }
 }
 
@@ -666,12 +666,12 @@ Distributor_Test::statsGeneratedForPreemptedOperations()
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(0));
+        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(0, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(1));
+        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(1, makeBucketSpace()));
     }
 }
 

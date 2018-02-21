@@ -4,16 +4,25 @@
 #include <unordered_map>
 #include <iosfwd>
 #include <stdint.h>
+#include <vespa/document/bucket/bucketspace.h>
 
 namespace storage {
 namespace distributor {
 
 struct NodeMaintenanceStats
 {
-    uint64_t movingOut {0};
-    uint64_t syncing {0};
-    uint64_t copyingIn {0};
-    uint64_t copyingOut {0};
+    uint64_t movingOut;
+    uint64_t syncing;
+    uint64_t copyingIn;
+    uint64_t copyingOut;
+
+    NodeMaintenanceStats()
+        : movingOut(0), syncing(0), copyingIn(0), copyingOut(0)
+    {}
+
+    NodeMaintenanceStats(uint64_t movingOut_, uint64_t syncing_, uint64_t copyingIn_, uint64_t copyingOut_)
+        : movingOut(movingOut_), syncing(syncing_), copyingIn(copyingIn_), copyingOut(copyingOut_)
+    {}
 
     bool operator==(const NodeMaintenanceStats& other) const noexcept {
         return (movingOut == other.movingOut
@@ -27,35 +36,47 @@ std::ostream& operator<<(std::ostream&, const NodeMaintenanceStats&);
 
 class NodeMaintenanceStatsTracker
 {
-    std::unordered_map<uint16_t, NodeMaintenanceStats> _stats;
-    static const NodeMaintenanceStats _emptyStats;
+public:
+    using BucketSpacesStats = std::unordered_map<document::BucketSpace, NodeMaintenanceStats, document::BucketSpace::hash>;
+
+private:
+    std::unordered_map<uint16_t, BucketSpacesStats> _stats;
+    static const NodeMaintenanceStats _emptyNodeMaintenanceStats;
+
 public:
     NodeMaintenanceStatsTracker();
     ~NodeMaintenanceStatsTracker();
-    void incMovingOut(uint16_t node) {
-        ++_stats[node].movingOut;
+    void incMovingOut(uint16_t node, document::BucketSpace bucketSpace) {
+        ++_stats[node][bucketSpace].movingOut;
     }
 
-    void incSyncing(uint16_t node) {
-        ++_stats[node].syncing;
+    void incSyncing(uint16_t node, document::BucketSpace bucketSpace) {
+        ++_stats[node][bucketSpace].syncing;
     }
 
-    void incCopyingIn(uint16_t node) {
-        ++_stats[node].copyingIn;
+    void incCopyingIn(uint16_t node, document::BucketSpace bucketSpace) {
+        ++_stats[node][bucketSpace].copyingIn;
     }
 
-    void incCopyingOut(uint16_t node) {
-        ++_stats[node].copyingOut;
+    void incCopyingOut(uint16_t node, document::BucketSpace bucketSpace) {
+        ++_stats[node][bucketSpace].copyingOut;
     }
 
     /**
-     * Returned statistics for a given node index, or all zero statistics
+     * Returned statistics for a given node index and bucket space, or all zero statistics
      * if none have been recorded yet
      */
-    const NodeMaintenanceStats& forNode(uint16_t node) const {
-        auto iter = _stats.find(node);
-        return (iter != _stats.end() ? iter->second : _emptyStats);
+    const NodeMaintenanceStats& forNode(uint16_t node, document::BucketSpace bucketSpace) const {
+        auto nodeItr = _stats.find(node);
+        if (nodeItr != _stats.end()) {
+            auto bucketSpaceItr = nodeItr->second.find(bucketSpace);
+            if (bucketSpaceItr != nodeItr->second.end()) {
+                return bucketSpaceItr->second;
+            }
+        }
+        return _emptyNodeMaintenanceStats;
     }
+
 };
 
 } // distributor

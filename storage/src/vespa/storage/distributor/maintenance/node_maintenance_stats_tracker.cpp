@@ -5,7 +5,7 @@
 
 namespace storage::distributor {
 
-const NodeMaintenanceStats NodeMaintenanceStatsTracker::_emptyStats;
+const NodeMaintenanceStats NodeMaintenanceStatsTracker::_emptyNodeMaintenanceStats;
 
 std::ostream&
 operator<<(std::ostream& os, const NodeMaintenanceStats& stats)
