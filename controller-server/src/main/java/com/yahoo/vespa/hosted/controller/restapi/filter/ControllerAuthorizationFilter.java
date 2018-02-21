@@ -152,12 +152,12 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     }
 
     private void verifyIsTenantAdmin(AthenzPrincipal principal, TenantId tenantId) {
-        boolean isTenantAdmin = controller.tenants().tenant(tenantId)
-                .map(tenant -> isTenantAdmin(principal.getIdentity(), tenant))
-                .orElse(false);
-        if (!isTenantAdmin) {
-            throw new ForbiddenException("Tenant admin or Vespa operator role required");
-        }
+        controller.tenants().tenant(tenantId)
+                .ifPresent(tenant -> {
+                    if (!isTenantAdmin(principal.getIdentity(), tenant)) {
+                        throw new ForbiddenException("Tenant admin or Vespa operator role required");
+                    }
+                });
     }
 
     private boolean isTenantAdmin(AthenzIdentity identity, Tenant tenant) {
