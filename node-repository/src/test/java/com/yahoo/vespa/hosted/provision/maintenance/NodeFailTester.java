@@ -221,7 +221,7 @@ public class NodeFailTester {
 
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
-        return nodeRepository.setReady(nodes);
+        return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     private List<Node> createHostNodes(int count) {
@@ -230,7 +230,7 @@ public class NodeFailTester {
             nodes.add(nodeRepository.createNode("parent" + i, "parent" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
-        return nodeRepository.setReady(nodes);
+        return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     private void activate(ApplicationId applicationId, ClusterSpec cluster, int nodeCount) {

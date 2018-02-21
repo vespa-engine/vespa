@@ -73,7 +73,7 @@ public class NodeRepositoryTest {
         }
 
         tester.nodeRepository().setDirty("host1", Agent.system, getClass().getSimpleName());
-        tester.nodeRepository().setReady("host1");
+        tester.nodeRepository().setReady("host1", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().removeRecursively("host1");
     }
 
@@ -104,7 +104,7 @@ public class NodeRepositoryTest {
         assertEquals(4, tester.nodeRepository().getNodes().size());
 
         // Now node10 and node12 are in provisioned, set node11 to ready, and it should be OK to delete host1
-        tester.nodeRepository().setReady("node11");
+        tester.nodeRepository().setReady("node11", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().removeRecursively("node11"); // Remove one of the children first instead
         assertEquals(3, tester.nodeRepository().getNodes().size());
 

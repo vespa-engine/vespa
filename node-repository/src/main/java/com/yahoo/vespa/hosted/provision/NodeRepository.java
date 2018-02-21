@@ -305,7 +305,7 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /** Sets a list of nodes ready and returns the nodes in the ready state */
-    public List<Node> setReady(List<Node> nodes) {
+    public List<Node> setReady(List<Node> nodes, Agent agent, String reason) {
         try (Mutex lock = lockUnallocated()) {
             List<Node> nodesWithResetFields = nodes.stream()
                     .map(node -> {
@@ -315,16 +315,16 @@ public class NodeRepository extends AbstractComponent {
                     })
                     .collect(Collectors.toList());
 
-            return db.writeTo(Node.State.ready, nodesWithResetFields, Agent.system, Optional.empty());
+            return db.writeTo(Node.State.ready, nodesWithResetFields, agent, Optional.of(reason));
         }
     }
 
-    public Node setReady(String hostname) {
+    public Node setReady(String hostname, Agent agent, String reason) {
         Node nodeToReady = getNode(hostname).orElseThrow(() ->
                 new NoSuchNodeException("Could not move " + hostname + " to ready: Node not found"));
 
         if (nodeToReady.state() == Node.State.ready) return nodeToReady;
-        return setReady(Collections.singletonList(nodeToReady)).get(0);
+        return setReady(Collections.singletonList(nodeToReady), agent, reason).get(0);
     }
 
     /** Reserve nodes. This method does <b>not</b> lock the node repository */

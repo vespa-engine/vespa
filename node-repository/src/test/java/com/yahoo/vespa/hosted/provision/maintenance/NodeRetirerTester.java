@@ -102,7 +102,7 @@ public class NodeRetirerTester {
 
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
-        nodeRepository.setReady(nodes);
+        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     void deployApp(String tenantName, String applicationName, int[] flavorIds, int[] numNodes) {

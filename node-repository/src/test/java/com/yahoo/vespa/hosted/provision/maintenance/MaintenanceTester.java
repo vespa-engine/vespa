@@ -46,7 +46,7 @@ public class MaintenanceTester {
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodes = simulateInitialReboot(nodes);
-        nodeRepository.setReady(nodes);
+        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     public void createReadyHostNodes(int count) {
@@ -56,7 +56,7 @@ public class MaintenanceTester {
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodes = simulateInitialReboot(nodes);
-        nodeRepository.setReady(nodes);
+        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     /** Simulate the initial reboot the node performs when it's in dirty */

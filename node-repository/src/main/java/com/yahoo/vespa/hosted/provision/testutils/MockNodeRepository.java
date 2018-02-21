@@ -104,7 +104,7 @@ public class MockNodeRepository extends NodeRepository {
         nodes.remove(6);
         nodes.remove(7);
         nodes = setDirty(nodes, Agent.system, getClass().getSimpleName());
-        setReady(nodes);
+        setReady(nodes, Agent.system, getClass().getSimpleName());
 
         fail("host5.yahoo.com", Agent.system, getClass().getSimpleName());
         setDirty("host55.yahoo.com", Agent.system, getClass().getSimpleName());

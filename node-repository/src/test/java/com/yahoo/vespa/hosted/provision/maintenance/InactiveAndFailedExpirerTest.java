@@ -14,6 +14,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
@@ -68,7 +69,7 @@ public class InactiveAndFailedExpirerTest {
         assertFalse(dirty.get(1).allocation().isPresent());
 
         // One node is set back to ready
-        Node ready = tester.nodeRepository().setReady(Collections.singletonList(dirty.get(0))).get(0);
+        Node ready = tester.nodeRepository().setReady(Collections.singletonList(dirty.get(0)), Agent.system, getClass().getSimpleName()).get(0);
         assertEquals("Allocated history is removed on readying",
                 Arrays.asList(History.Event.Type.provisioned, History.Event.Type.readied),
                 ready.history().events().stream().map(History.Event::type).collect(Collectors.toList()));
