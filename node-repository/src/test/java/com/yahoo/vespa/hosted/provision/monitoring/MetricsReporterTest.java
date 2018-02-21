@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
 import com.yahoo.vespa.hosted.provision.maintenance.MetricsReporter;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
@@ -122,7 +123,7 @@ public class MetricsReporterTest {
 
         Node dockerHost = Node.create("openStackId1", Collections.singleton("::1"), additionalIps, "dockerHost", Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
         nodeRepository.addNodes(Collections.singletonList(dockerHost));
-        nodeRepository.setDirty("dockerHost");
+        nodeRepository.setDirty("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost");
 
         Node container1 = Node.createDockerNode("openStackId1:1", Collections.singleton("::2"), Collections.emptySet(), "container1", Optional.of("dockerHost"), nodeFlavors.getFlavorOrThrow("docker"), NodeType.tenant);

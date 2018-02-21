@@ -284,7 +284,7 @@ public class ProvisioningTester implements AutoCloseable {
 
     List<Node> makeReadyNodes(int n, String flavor, NodeType type, int additionalIps) {
         List<Node> nodes = makeProvisionedNodes(n, flavor, type, additionalIps);
-        nodes = nodeRepository.setDirty(nodes);
+        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         return nodeRepository.setReady(nodes);
     }
 
@@ -302,7 +302,7 @@ public class ProvisioningTester implements AutoCloseable {
                                                 nodeFlavors.getFlavorOrThrow(flavor), NodeType.tenant));
         }
         nodes = nodeRepository.addNodes(nodes);
-        nodes = nodeRepository.setDirty(nodes);
+        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes);
         return nodes;
     }

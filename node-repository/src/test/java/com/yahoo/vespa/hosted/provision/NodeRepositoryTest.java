@@ -72,7 +72,7 @@ public class NodeRepositoryTest {
             // Expected
         }
 
-        tester.nodeRepository().setDirty("host1");
+        tester.nodeRepository().setDirty("host1", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().setReady("host1");
         tester.nodeRepository().removeRecursively("host1");
     }
@@ -89,7 +89,7 @@ public class NodeRepositoryTest {
         tester.addNode("node20", "node20", "host2", "docker", NodeType.tenant);
         assertEquals(6, tester.nodeRepository().getNodes().size());
 
-        tester.nodeRepository().setDirty("node11");
+        tester.nodeRepository().setDirty("node11", Agent.system, getClass().getSimpleName());
 
         try {
             tester.nodeRepository().removeRecursively("host1");

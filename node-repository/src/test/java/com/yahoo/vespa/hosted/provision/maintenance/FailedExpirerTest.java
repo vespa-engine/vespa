@@ -276,7 +276,7 @@ public class FailedExpirerTest {
             List<Node> nodes = Stream.of(hostname)
                                      .map(this::get)
                                      .collect(Collectors.toList());
-            nodeRepository.setReady(nodeRepository.setDirty(nodes));
+            nodeRepository.setReady(nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName()));
             return this;
         }
 

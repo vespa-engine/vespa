@@ -12,7 +12,6 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.NodeRepositoryConfig;
-import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
@@ -372,13 +371,8 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /** Move nodes to the dirty state */
-    public List<Node> setDirty(List<Node> nodes) {
-        return performOn(NodeListFilter.from(nodes), this::setDirty);
-    }
-
-    /** Move a single node to the dirty state */
-    public Node setDirty(Node node) {
-        return db.writeTo(Node.State.dirty, node, Agent.system, Optional.empty());
+    public List<Node> setDirty(List<Node> nodes, Agent agent, String reason) {
+        return performOn(NodeListFilter.from(nodes), node -> setDirty(node, agent, reason));
     }
 
     /**
@@ -387,13 +381,18 @@ public class NodeRepository extends AbstractComponent {
      *
      * @throws IllegalArgumentException if the node has hardware failure
      */
-    public Node setDirty(String hostname) {
-        Node nodeToDirty = getNode(hostname, Node.State.provisioned, Node.State.failed, Node.State.parked).orElseThrow(() ->
+    public Node setDirty(Node node, Agent agent, String reason) {
+        if (node.status().hardwareFailureDescription().isPresent())
+            throw new IllegalArgumentException("Could not deallocate " + node.hostname() + ": It has a hardware failure");
+
+        return db.writeTo(Node.State.dirty, node, agent, Optional.of(reason));
+    }
+
+    public Node setDirty(String hostname, Agent agent, String reason) {
+        Node node = getNode(hostname, Node.State.provisioned, Node.State.failed, Node.State.parked).orElseThrow(() ->
                 new IllegalArgumentException("Could not deallocate " + hostname + ": No such node in the provisioned, failed or parked state"));
 
-        if (nodeToDirty.status().hardwareFailureDescription().isPresent())
-            throw new IllegalArgumentException("Could not deallocate " + hostname + ": It has a hardware failure");
-        return setDirty(nodeToDirty);
+        return setDirty(node, agent, reason);
     }
 
     /**
