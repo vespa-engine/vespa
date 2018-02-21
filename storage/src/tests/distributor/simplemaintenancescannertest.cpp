@@ -1,15 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/test/make_bucket_space.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
-#include <vespa/storage/distributor/distributor_bucket_space.h>
-#include <vespa/storage/distributor/maintenance/simplemaintenancescanner.h>
-#include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
-#include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <tests/distributor/maintenancemocks.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
+#include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
+#include <vespa/storage/distributor/maintenance/simplemaintenancescanner.h>
+#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <algorithm>
 
 namespace storage::distributor {
 
@@ -225,7 +223,7 @@ SimpleMaintenanceScannerTest::perNodeMaintenanceStatsAreTracked()
     {
         auto stats(_scanner->getPendingMaintenanceStats());
         NodeMaintenanceStats emptyStats;
-        CPPUNIT_ASSERT_EQUAL(emptyStats, stats.perNodeStats.forNode(0));
+        CPPUNIT_ASSERT_EQUAL(emptyStats, stats.perNodeStats.forNode(0, makeBucketSpace()));
     }
     CPPUNIT_ASSERT(scanEntireDatabase(2));
     // Mock is currently hardwired to increment movingOut for node 1 and
@@ -234,12 +232,12 @@ SimpleMaintenanceScannerTest::perNodeMaintenanceStatsAreTracked()
     {
         NodeMaintenanceStats wantedNode1Stats;
         wantedNode1Stats.movingOut = 2;
-        CPPUNIT_ASSERT_EQUAL(wantedNode1Stats, stats.perNodeStats.forNode(1));
+        CPPUNIT_ASSERT_EQUAL(wantedNode1Stats, stats.perNodeStats.forNode(1, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wantedNode2Stats;
         wantedNode2Stats.copyingIn = 2;
-        CPPUNIT_ASSERT_EQUAL(wantedNode2Stats, stats.perNodeStats.forNode(2));
+        CPPUNIT_ASSERT_EQUAL(wantedNode2Stats, stats.perNodeStats.forNode(2, makeBucketSpace()));
     }
 }
 
