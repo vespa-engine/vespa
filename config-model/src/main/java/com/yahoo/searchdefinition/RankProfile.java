@@ -7,7 +7,6 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
-import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
@@ -34,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -760,8 +760,8 @@ public class RankProfile implements Serializable, Cloneable {
         getSearch().getRankingConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.getTensorType()));
 
         // Add attributes
-        getSearch().allFields().forEach(field -> addAttributeTypes(field, context));
-        getSearch().allImportedFields().forEach(field -> addAttributeTypes(field, context));
+        getSearch().allFields().forEach(field -> addAttributeFeatureTypes(field, context));
+        getSearch().allImportedFields().forEach(field -> addAttributeFeatureTypes(field, context));
 
         // Add query features from rank profile types reached from the "default" profile
         for (QueryProfileType queryProfileType : queryProfiles.getTypeRegistry().allComponents()) {
@@ -771,9 +771,9 @@ public class RankProfile implements Serializable, Cloneable {
                 if ( ! feature.isPresent() || ! feature.get().name().equals("query")) continue;
 
                 TensorType existingType = context.getType(feature.get());
-                if (existingType != null)
+                if ( ! Objects.equals(existingType, context.defaultTypeOf(feature.get())))
                     type = existingType.dimensionwiseGeneralizationWith(type).orElseThrow( () ->
-                        new IllegalArgumentException(queryProfileType + " contains query feature " + feature +
+                        new IllegalArgumentException(queryProfileType + " contains query feature " + feature.get() +
                                                      " with type " + field.getType().asTensorType() +
                                                      ", but this is already defined " +
                                                      "in another query profile with type " +
@@ -785,7 +785,7 @@ public class RankProfile implements Serializable, Cloneable {
         return context;
     }
 
-    private void addAttributeTypes(ImmutableSDField field, MapEvaluationTypeContext context) {
+    private void addAttributeFeatureTypes(ImmutableSDField field, MapEvaluationTypeContext context) {
         field.getAttributes().forEach((k, a) -> {
             String name = k;
             if (k.equals(field.getBackingField().getName())) // this attribute should take the fields name

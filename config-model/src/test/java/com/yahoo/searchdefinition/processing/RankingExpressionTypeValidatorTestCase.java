@@ -215,6 +215,23 @@ public class RankingExpressionTypeValidatorTestCase {
         builder.build();
     }
 
+    @Test
+    public void undeclaredQueryFeaturesAreAccepted() throws Exception {
+        SearchBuilder builder = new SearchBuilder();
+        builder.importString(joinLines(
+                "search test {",
+                "  document test { ",
+                "  }",
+                "  rank-profile my_rank_profile {",
+                "    first-phase {",
+                "      expression: query(foo)",
+                "    }",
+                "  }",
+                "}"
+        ));
+        builder.build();
+    }
+
     private Map<String, ReferenceNode> summaryFeatures(RankProfile profile) {
         return profile.getSummaryFeatures().stream().collect(Collectors.toMap(f -> f.toString(), f -> f));
     }

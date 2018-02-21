@@ -70,7 +70,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             // The argument may be a local identifier bound to the actual value
             String argument = simpleArgument(reference.arguments()).get();
             reference = Reference.simple(reference.name(), bindings.getOrDefault(argument, argument));
-            return featureTypes.get(reference);
+            return featureTypes.getOrDefault(reference, defaultTypeOf(reference));
         }
 
         Optional<ExpressionFunction> function = functionInvocation(reference);
@@ -82,6 +82,17 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         // in Java we must assume this is a match feature and return the double type - which is the type of all
         // all match features
         return TensorType.empty;
+    }
+
+    /**
+     * Returns the default type for this simple feature, or nullif it does not have a default
+     */
+    public TensorType defaultTypeOf(Reference reference) {
+        if ( ! isSimpleFeature(reference))
+            throw new IllegalArgumentException("This can only be called for simple references, not " + reference);
+        if (reference.name().equals("query")) // we do not require all query features to be declared, only non-doubles
+            return TensorType.empty;
+        return null;
     }
 
     /**
