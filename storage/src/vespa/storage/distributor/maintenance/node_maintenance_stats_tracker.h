@@ -38,9 +38,10 @@ class NodeMaintenanceStatsTracker
 {
 public:
     using BucketSpacesStats = std::unordered_map<document::BucketSpace, NodeMaintenanceStats, document::BucketSpace::hash>;
+    using PerNodeStats = std::unordered_map<uint16_t, BucketSpacesStats>;
 
 private:
-    std::unordered_map<uint16_t, BucketSpacesStats> _stats;
+    PerNodeStats _stats;
     static const NodeMaintenanceStats _emptyNodeMaintenanceStats;
 
 public:
@@ -77,6 +78,9 @@ public:
         return _emptyNodeMaintenanceStats;
     }
 
+    const PerNodeStats& perNodeStats() const {
+        return _stats;
+    }
 };
 
 } // distributor

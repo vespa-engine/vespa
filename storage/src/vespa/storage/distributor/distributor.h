@@ -198,10 +198,7 @@ private:
      */
     std::unordered_map<uint16_t, uint32_t> getMinReplica() const override;
 
-    PerNodeBucketSpacesStats getBucketSpacesStats() const override {
-        // TODO: implement
-        return BucketSpacesStatsProvider::PerNodeBucketSpacesStats();
-    }
+    PerNodeBucketSpacesStats getBucketSpacesStats() const override;
 
     /**
      * Atomically publish internal metrics to external ideal state metrics.
@@ -305,6 +302,7 @@ private:
      * manager thread but written by distributor thread.
      */
     SimpleMaintenanceScanner::PendingMaintenanceStats _maintenanceStats;
+    BucketSpacesStatsProvider::PerNodeBucketSpacesStats _bucketSpacesStats;
     BucketDBMetricUpdater::Stats _bucketDbStats;
     DistributorHostInfoReporter _hostInfoReporter;
     std::unique_ptr<OwnershipTransferSafeTimePointCalculator> _ownershipSafeTimeCalc;
