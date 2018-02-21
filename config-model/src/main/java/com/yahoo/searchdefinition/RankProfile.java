@@ -6,6 +6,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -754,15 +755,13 @@ public class RankProfile implements Serializable, Cloneable {
                                                                                    .map(Macro::asExpressionFunction)
                                                                                    .collect(Collectors.toList()));
 
-        // Add small constants
+        // Add small and large constants, respectively
         getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));
-        // Add large constants
         getSearch().getRankingConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.getTensorType()));
 
         // Add attributes
-        for (SDField field : getSearch().allConcreteFields()) {
-            field.getAttributes().forEach((k, a) -> context.setType(FeatureNames.asAttributeFeature(k), a.tensorType().orElse(TensorType.empty)));
-        }
+        getSearch().allFields().forEach(field -> addAttributeTypes(field, context));
+        getSearch().allImportedFields().forEach(field -> addAttributeTypes(field, context));
 
         // Add query features from rank profile types reached from the "default" profile
         for (QueryProfileType queryProfileType : queryProfiles.getTypeRegistry().allComponents()) {
@@ -784,6 +783,16 @@ public class RankProfile implements Serializable, Cloneable {
         }
 
         return context;
+    }
+
+    private void addAttributeTypes(ImmutableSDField field, MapEvaluationTypeContext context) {
+        field.getAttributes().forEach((k, a) -> {
+            String name = k;
+            if (k.equals(field.getBackingField().getName())) // this attribute should take the fields name
+                name = field.getName();                      // switch to that - it is separate for imported fields
+            context.setType(FeatureNames.asAttributeFeature(name),
+                            a.tensorType().orElse(TensorType.empty));
+        });
     }
 
     /**

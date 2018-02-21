@@ -34,7 +34,7 @@ public class RankingExpressionTypeValidator extends Processor {
 
     @Override
     public void process() {
-        for (RankProfile profile : rankProfileRegistry.allRankProfiles()) {
+        for (RankProfile profile : rankProfileRegistry.localRankProfiles(search)) {
             try {
                 validate(profile);
             }

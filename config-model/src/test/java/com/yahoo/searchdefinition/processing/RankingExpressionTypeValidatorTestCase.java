@@ -185,6 +185,36 @@ public class RankingExpressionTypeValidatorTestCase {
                      summaryFeatures(profile).get("return_b").type(profile.typeContext(builder.getQueryProfileRegistry())));
     }
 
+    @Test
+    public void importedFieldsAreAvailable() throws Exception {
+        SearchBuilder builder = new SearchBuilder();
+        builder.importString(joinLines(
+                "search parent {",
+                "  document parent {",
+                "    field a type tensor(x[],y[]) {",
+                "      indexing: attribute",
+                "    }",
+                "  }",
+                "}"
+        ));
+        builder.importString(joinLines(
+                "search child {",
+                "  document child { ",
+                "    field ref type reference<parent> {",
+                        "indexing: attribute | summary",
+                "    }",
+                "  }",
+                "  import field ref.a as imported_a {}",
+                "  rank-profile my_rank_profile {",
+                "    first-phase {",
+                "      expression: sum(attribute(imported_a))",
+                "    }",
+                "  }",
+                "}"
+        ));
+        builder.build();
+    }
+
     private Map<String, ReferenceNode> summaryFeatures(RankProfile profile) {
         return profile.getSummaryFeatures().stream().collect(Collectors.toMap(f -> f.toString(), f -> f));
     }
