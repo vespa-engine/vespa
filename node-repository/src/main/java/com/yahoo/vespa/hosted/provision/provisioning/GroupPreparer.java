@@ -71,6 +71,9 @@ public class GroupPreparer {
                     throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
                                                      outOfCapacityDetails(allocation));
 
+                // Extend reservation for already reserved nodes
+                nodeRepository.reserve(nodeRepository.getNodes(application, Node.State.reserved));
+
                 // Carry out and return allocation
                 nodeRepository.reserve(allocation.reservableNodes());
                 nodeRepository.addDockerNodes(allocation.newNodes());
