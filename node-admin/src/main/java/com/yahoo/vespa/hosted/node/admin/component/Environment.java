@@ -336,11 +336,14 @@ public class Environment {
         }
 
         public Environment build() {
-            return new Environment(configServerURIs, environment, region, parentHostHostname, inetAddressResolver,
-                                   pathResolver, logstashNodes, feedEndpoint,
-                                   Optional.ofNullable(keyStoreOptions), Optional.ofNullable(trustStoreOptions),
-                                   Optional.ofNullable(athenzIdentity),
-                                   nodeType);
+            return new Environment(configServerURIs, environment, region, parentHostHostname,
+                    Optional.ofNullable(inetAddressResolver).orElseGet(InetAddressResolver::new),
+                    Optional.ofNullable(pathResolver).orElseGet(PathResolver::new),
+                    logstashNodes, feedEndpoint,
+                    Optional.ofNullable(keyStoreOptions),
+                    Optional.ofNullable(trustStoreOptions),
+                    Optional.ofNullable(athenzIdentity),
+                    nodeType);
         }
     }
 }
