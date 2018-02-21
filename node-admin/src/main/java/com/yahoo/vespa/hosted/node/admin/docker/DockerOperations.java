@@ -13,6 +13,8 @@ import java.util.Optional;
 
 public interface DockerOperations {
 
+    void createContainer(ContainerName containerName, ContainerNodeSpec nodeSpec);
+
     void startContainer(ContainerName containerName, ContainerNodeSpec nodeSpec);
 
     void removeContainer(Container existingContainer, ContainerNodeSpec nodeSpec);
