@@ -37,14 +37,14 @@ public class DockerFailTest {
 
             dockerTester.callOrderVerifier.assertInOrder(
                     "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
-                    "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                    "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerTester.NODE_PROGRAM + ", resume]");
 
             dockerTester.dockerMock.deleteContainer(new ContainerName("host1"));
 
             dockerTester.callOrderVerifier.assertInOrder(
                     "deleteContainer with ContainerName { name=host1 }",
                     "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
-                    "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                    "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerTester.NODE_PROGRAM + ", resume]");
         }
     }
 }
