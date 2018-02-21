@@ -177,7 +177,6 @@
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
         <configuration>
-          <Bundle-Activator>com.yahoo.container.jdisc.osgi.ContainerBundleActivator</Bundle-Activator>
           <discApplicationClass>com.yahoo.container.jdisc.ConfiguredApplication</discApplicationClass>
             <discPreInstallBundle>
                 config-bundle-jar-with-dependencies.jar,
