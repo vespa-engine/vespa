@@ -11,7 +11,7 @@
   ],
   "nodes": "http://localhost:8080/zone/v2/dev/us-west-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.default",
   "yamasUrl": "http://monitoring-system.test/?environment=dev&region=us-west-1&application=tenant1.application1",
-  "version": "6.1.0",
+  "version": "(ignore)",
   "revision": "(ignore)",
   "deployTimeEpochMs": "(ignore)",
   "screwdriverId": "123",

@@ -78,14 +78,14 @@ public class DeploymentIssueReporterTest {
         // NOTE: All maintenance should be idempotent within a small enough time interval, so maintain is called twice in succession throughout.
 
         // apps 1 and 3 have one failure each.
-        tester.notifyJobCompletion(component, app1, true);
+        tester.jobCompletion(component).application(app1).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, false, stagingTest);
 
         // app2 is successful, but will fail later.
         tester.deployCompletely(app2, canaryPackage);
 
-        tester.notifyJobCompletion(component, app3, true);
+        tester.jobCompletion(component).application(app3).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app3, applicationPackage, true, systemTest);
         tester.deployAndNotify(app3, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app3, applicationPackage, false, productionCorpUsEast1);
@@ -134,7 +134,7 @@ public class DeploymentIssueReporterTest {
 
 
         // app3 now has a new failure past max failure age; see that a new issue is filed.
-        tester.notifyJobCompletion(component, app3, true);
+        tester.jobCompletion(component).application(app3).submit();
         tester.deployAndNotify(app3, applicationPackage, false, systemTest);
         tester.clock().advance(maxInactivity.plus(maxFailureAge));
 

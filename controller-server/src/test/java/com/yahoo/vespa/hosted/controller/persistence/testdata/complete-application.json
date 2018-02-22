@@ -501,7 +501,7 @@
     ]
   },
   "deployingField": {
-    "applicationPackageHash": "ec548fa61cbfab7a270a51d46b1263ec1be5d9a8",
+    "buildNumber": 42,
     "sourceRevision": {
       "repositoryField": "git@git.host:user/repo.git",
       "branchField": "origin/master",

@@ -79,7 +79,7 @@ public class RotationTest {
                 .region("us-west-1")
                 .searchDefinition("search foo { }") // Update application package so there is something to deploy
                 .build();
-        tester.deployCompletely(application, applicationPackage);
+        tester.deployCompletely(application, applicationPackage, 43);
         assertEquals(expected.id(), tester.applications().require(application.id()).rotation().get().id());
     }
     

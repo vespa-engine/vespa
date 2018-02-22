@@ -8,7 +8,8 @@ import com.yahoo.application.container.handler.Response;
 import org.junit.After;
 import org.junit.Before;
 
-import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.CharacterCodingException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -90,11 +91,15 @@ public class ControllerContainerTest {
             "  </handler>\n" +
             "</jdisc>";
 
-    protected void assertResponse(Request request, int responseStatus, String responseMessage) throws IOException {
+    protected void assertResponse(Request request, int responseStatus, String responseMessage) {
         Response response = container.handleRequest(request);
         // Compare both status and message at once for easier diagnosis
-        assertEquals("status: " + responseStatus + "\nmessage: " + responseMessage,
-                     "status: " + response.getStatus() + "\nmessage: " + response.getBodyAsString());
+        try {
+            assertEquals("status: " + responseStatus + "\nmessage: " + responseMessage,
+                         "status: " + response.getStatus() + "\nmessage: " + response.getBodyAsString());
+        } catch (CharacterCodingException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
 }

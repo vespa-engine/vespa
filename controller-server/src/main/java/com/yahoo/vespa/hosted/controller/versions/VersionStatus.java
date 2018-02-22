@@ -124,7 +124,7 @@ public class VersionStatus {
 
         ListMap<Version, String> versions = new ListMap<>();
         for (URI configServer : configServers)
-            versions.put(controller.applications().configserverClient().version(configServer), configServer.getHost());
+            versions.put(controller.applications().configServer().version(configServer), configServer.getHost());
         return versions;
     }
 

@@ -15,7 +15,7 @@
   "nodes": "http://localhost:8080/zone/v2/prod/corp-us-east-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.default",
   "elkUrl": "http://log.prod.corp-us-east-1.test/#/discover?_g=()&_a=(columns:!(_source),index:'logstash-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'HV-tenant:%22tenant1%22%20AND%20HV-application:%22application1%22%20AND%20HV-region:%22corp-us-east-1%22%20AND%20HV-instance:%22default%22%20AND%20HV-environment:%22prod%22')),sort:!('@timestamp',desc))",
   "yamasUrl": "http://monitoring-system.test/?environment=prod&region=corp-us-east-1&application=tenant1.application1",
-  "version": "6.1.0",
+  "version": "(ignore)",
   "revision": "(ignore)",
   "deployTimeEpochMs": "(ignore)",
   "screwdriverId": "123",

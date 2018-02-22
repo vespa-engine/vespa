@@ -6,14 +6,30 @@
       "type": "component",
       "success": true,
       "lastCompleted": {
-        "id": 42,
+        "id": 101,
         "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
         "reason": "Application commit",
         "at": "(ignore)"
       },
       "lastSuccess": {
-        "id": 42,
+        "id": 101,
         "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
         "reason": "Application commit",
         "at": "(ignore)"
       }
@@ -78,7 +94,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"system-test completed",
+        "reason": "system-test completed",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -92,7 +108,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"system-test completed",
+        "reason": "system-test completed",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -106,7 +122,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"system-test completed",
+        "reason": "system-test completed",
         "at": "(ignore)"
       }
     },
@@ -124,7 +140,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"staging-test completed",
+        "reason": "staging-test completed",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -138,7 +154,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"staging-test completed",
+        "reason": "staging-test completed",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -152,7 +168,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"staging-test completed",
+        "reason": "staging-test completed",
         "at": "(ignore)"
       }
     },
@@ -170,7 +186,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"production-us-west-1 completed",
+        "reason": "production-us-west-1 completed",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -184,7 +200,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"production-us-west-1 completed",
+        "reason": "production-us-west-1 completed",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -198,7 +214,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason":"production-us-west-1 completed",
+        "reason": "production-us-west-1 completed",
         "at": "(ignore)"
       }
     }

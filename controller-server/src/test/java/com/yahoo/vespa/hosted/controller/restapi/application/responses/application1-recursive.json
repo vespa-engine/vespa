@@ -2,15 +2,54 @@
   "application": "application1",
   "instance": "default",
   "deploying": {
-    "version": "6.1"
+    "revision": {
+      "hash": "(ignore)",
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      }
+    }
   },
   "deploymentJobs": [
+    {
+      "type": "component",
+      "success": true,
+      "lastCompleted": {
+        "id": 42,
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "Application commit",
+        "at": "(ignore)"
+      },
+      "lastSuccess": {
+        "id": 42,
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "Application commit",
+        "at": "(ignore)"
+      }
+    },
     {
       "type": "system-test",
       "success": true,
       "lastTriggered": {
         "id": -1,
-        "version": "6.1.0",
+        "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -19,12 +58,12 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "",
+        "reason": "component completed",
         "at": "(ignore)"
       },
       "lastCompleted": {
         "id": 42,
-        "version": "6.1.0",
+        "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -33,12 +72,12 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "",
+        "reason": "component completed",
         "at": "(ignore)"
       },
       "lastSuccess": {
         "id": 42,
-        "version": "6.1.0",
+        "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -47,7 +86,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "",
+        "reason": "component completed",
         "at": "(ignore)"
       }
     },
@@ -56,7 +95,7 @@
       "success": true,
       "lastTriggered": {
         "id": -1,
-        "version": "6.1.0",
+        "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -70,7 +109,7 @@
       },
       "lastCompleted": {
         "id": 42,
-        "version": "6.1.0",
+        "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -84,7 +123,7 @@
       },
       "lastSuccess": {
         "id": 42,
-        "version": "6.1.0",
+        "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -102,7 +141,7 @@
       "success": false,
       "lastTriggered": {
         "id": -1,
-        "version": "6.1.0",
+        "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -116,7 +155,7 @@
       },
       "lastCompleted": {
         "id": 42,
-        "version": "6.1.0",
+        "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -130,7 +169,7 @@
       },
       "firstFailing": {
         "id": 42,
-        "version": "6.1.0",
+        "version": "(ignore)",
         "revision": {
           "hash": "(ignore)",
           "source": {
@@ -144,7 +183,7 @@
       }
     }
   ],
-  "compileVersion": "6.1.0",
+  "compileVersion": "(ignore)",
   "globalRotations": [
     "http://application1.tenant1.global.vespa.yahooapis.com:4080/",
     "https://application1--tenant1.global.vespa.yahooapis.com:4443/"

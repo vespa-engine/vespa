@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -39,7 +40,7 @@ public class FailureRedeployerTest {
         tester.updateVersionStatus(version);
 
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.component, app, true);
+        tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
@@ -82,7 +83,7 @@ public class FailureRedeployerTest {
         tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.productionUsEast3);
         tester.buildSystem().takeJobsToRun();
         tester.clock().advance(Duration.ofMinutes(10));
-        tester.notifyJobCompletion(DeploymentJobs.JobType.productionUsEast3, app, false);
+        tester.jobCompletion(DeploymentJobs.JobType.productionUsEast3).application(app).unsuccessful().submit();
         assertTrue("Retries exhausted", tester.buildSystem().jobs().isEmpty());
         assertTrue("Failure is recorded", tester.application(app.id()).deploymentJobs().hasFailures());
 
@@ -108,7 +109,7 @@ public class FailureRedeployerTest {
                 .build();
 
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.component, app, true);
+        tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
 
         // staging-test starts, but does not complete
@@ -123,7 +124,7 @@ public class FailureRedeployerTest {
 
         // Deployment completes
         tester.deploy(DeploymentJobs.JobType.stagingTest, app, applicationPackage, true);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.stagingTest, app, true);
+        tester.jobCompletion(DeploymentJobs.JobType.stagingTest).application(app).submit();
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
         assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
     }
@@ -140,7 +141,7 @@ public class FailureRedeployerTest {
         tester.updateVersionStatus(version);
 
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.component, app, true);
+        tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
@@ -156,7 +157,7 @@ public class FailureRedeployerTest {
         tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.systemTest);
         tester.buildSystem().takeJobsToRun();
         tester.clock().advance(Duration.ofMinutes(10));
-        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, app, false);
+        tester.jobCompletion(DeploymentJobs.JobType.systemTest).application(app).unsuccessful().submit();
         assertTrue("Retries exhausted", tester.buildSystem().jobs().isEmpty());
 
         // Another version is released
@@ -195,6 +196,7 @@ public class FailureRedeployerTest {
                 .upgradePolicy("canary")
                 .region("cd-us-central-1")
                 .build();
+        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
 
         // New version is released
         version = Version.fromString("6.142.1");
@@ -207,12 +209,12 @@ public class FailureRedeployerTest {
         tester.deploy(DeploymentJobs.JobType.systemTest, application, applicationPackage);
         tester.buildSystem().takeJobsToRun();
         tester.clock().advance(Duration.ofMinutes(10));
-        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, application, true);
+        tester.jobCompletion(DeploymentJobs.JobType.systemTest).application(application).submit();
 
         tester.deploy(DeploymentJobs.JobType.stagingTest, application, applicationPackage);
         tester.buildSystem().takeJobsToRun();
         tester.clock().advance(Duration.ofMinutes(10));
-        tester.notifyJobCompletion(DeploymentJobs.JobType.stagingTest, application, true);
+        tester.jobCompletion(DeploymentJobs.JobType.stagingTest).application(application).submit();
 
         // Production job starts, but does not complete
         assertEquals(1, tester.buildSystem().jobs().size());
@@ -224,12 +226,12 @@ public class FailureRedeployerTest {
         assertTrue("No jobs retried", tester.buildSystem().jobs().isEmpty());
 
         // Deployment notifies completeness but has not actually made a deployment
-        tester.notifyJobCompletion(DeploymentJobs.JobType.productionCdUsCentral1, application, true);
+        tester.jobCompletion(DeploymentJobs.JobType.productionCdUsCentral1).application(application).submit();
         assertTrue("Change not really deployed", tester.application(application.id()).change().isPresent());
 
         // Deployment actually deploys and notifies completeness
         tester.deploy(DeploymentJobs.JobType.productionCdUsCentral1, application, applicationPackage);
-        tester.notifyJobCompletion(DeploymentJobs.JobType.productionCdUsCentral1, application, true);
+        tester.jobCompletion(DeploymentJobs.JobType.productionCdUsCentral1).application(application).submit();
         assertFalse("Change not really deployed", tester.application(application.id()).change().isPresent());
     }
 

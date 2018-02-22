@@ -32,8 +32,7 @@ public final class Change {
         Objects.requireNonNull(platform, "platform cannot be null");
         Objects.requireNonNull(application, "application cannot be null");
         if (application.isPresent() && application.get().isUnknown()) {
-            // TODO: Require version to be known for application change
-            //throw new IllegalArgumentException("Application version to deploy must be a known version");
+            throw new IllegalArgumentException("Application version to deploy must be a known version");
         }
         this.platform = platform;
         this.application = application;

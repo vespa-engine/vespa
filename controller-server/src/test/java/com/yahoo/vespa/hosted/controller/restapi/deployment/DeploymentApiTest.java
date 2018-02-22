@@ -6,10 +6,11 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -22,11 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionCorpUsEast1;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 
 /**
  * @author bratseth
@@ -101,17 +97,31 @@ public class DeploymentApiTest extends ControllerContainerTest {
 
     private void deployCompletely(Application application, ApplicationPackage applicationPackage, long projectId,
                                   boolean success) {
-        tester.notifyJobCompletion(application.id(), projectId, true, component);
+        tester.jobCompletion(DeploymentJobs.JobType.component)
+              .application(application)
+              .projectId(projectId)
+              .uploadArtifact(applicationPackage)
+              .submit();
         tester.deploy(application, applicationPackage, ZoneId.from(Environment.test, RegionName.from("us-east-1")),
                       projectId);
-        tester.notifyJobCompletion(application.id(), projectId, true, systemTest);
+        tester.jobCompletion(DeploymentJobs.JobType.systemTest)
+              .application(application)
+              .projectId(projectId)
+              .submit();
         tester.deploy(application, applicationPackage, ZoneId.from(Environment.staging, RegionName.from("us-east-3")),
                       projectId);
-        tester.notifyJobCompletion(application.id(), projectId, success, stagingTest);
+        tester.jobCompletion(DeploymentJobs.JobType.stagingTest)
+              .application(application)
+              .projectId(projectId)
+              .success(success)
+              .submit();
         if (success) {
             tester.deploy(application, applicationPackage, ZoneId.from(Environment.prod,
                                                                        RegionName.from("corp-us-east-1")), projectId);
-            tester.notifyJobCompletion(application.id(), projectId, true, productionCorpUsEast1);
+            tester.jobCompletion(DeploymentJobs.JobType.productionCorpUsEast1)
+                  .application(application)
+                  .projectId(projectId)
+                  .submit();
         }
     }
 
