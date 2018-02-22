@@ -29,6 +29,8 @@
 
 namespace storage {
 
+class ClusterStateBundle;
+
 struct StateListener {
     virtual ~StateListener() {}
     virtual void handleNewState() = 0;
@@ -41,7 +43,7 @@ struct NodeStateUpdater {
 
     virtual lib::NodeState::CSP getReportedNodeState() const = 0;
     virtual lib::NodeState::CSP getCurrentNodeState() const = 0;
-    virtual lib::ClusterState::CSP getSystemState() const = 0;
+    virtual std::shared_ptr<const ClusterStateBundle> getClusterStateBundle() const = 0;
 
     virtual void addStateListener(StateListener&) = 0;
     virtual void removeStateListener(StateListener&) = 0;
