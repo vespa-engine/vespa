@@ -103,11 +103,11 @@ public class MockNodeRepository extends NodeRepository {
         nodes = addNodes(nodes);
         nodes.remove(6);
         nodes.remove(7);
-        nodes = setDirty(nodes);
-        setReady(nodes);
+        nodes = setDirty(nodes, Agent.system, getClass().getSimpleName());
+        setReady(nodes, Agent.system, getClass().getSimpleName());
 
-        fail("host5.yahoo.com", Agent.system, "Failing to unit test");
-        setDirty("host55.yahoo.com");
+        fail("host5.yahoo.com", Agent.system, getClass().getSimpleName());
+        setDirty("host55.yahoo.com", Agent.system, getClass().getSimpleName());
 
         ApplicationId zoneApp = ApplicationId.from(TenantName.from("zoneapp"), ApplicationName.from("zoneapp"), InstanceName.from("zoneapp"));
         ClusterSpec zoneCluster = ClusterSpec.request(ClusterSpec.Type.container,

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Duration;
@@ -29,6 +30,6 @@ public class ReservationExpirer extends Expirer {
     }
 
     @Override
-    protected void expire(List<Node> expired) { nodeRepository.setDirty(expired); }
+    protected void expire(List<Node> expired) { nodeRepository.setDirty(expired, Agent.system, "Expired by ReservationExpirer"); }
 
 }

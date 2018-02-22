@@ -91,8 +91,8 @@ public class OperatorChangeApplicationMaintainerTest {
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes = nodeRepository.addNodes(nodes);
-        nodes = nodeRepository.setDirty(nodes);
-        nodeRepository.setReady(nodes);
+        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
+        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     private void createHostNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
@@ -100,8 +100,8 @@ public class OperatorChangeApplicationMaintainerTest {
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("hostNode" + i, "realHost" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
         nodes = nodeRepository.addNodes(nodes);
-        nodes = nodeRepository.setDirty(nodes);
-        nodeRepository.setReady(nodes);
+        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
+        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     private class Fixture {

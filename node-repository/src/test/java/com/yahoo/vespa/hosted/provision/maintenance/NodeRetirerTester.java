@@ -18,6 +18,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
@@ -100,8 +101,8 @@ public class NodeRetirerTester {
         }
 
         nodes = nodeRepository.addNodes(nodes);
-        nodes = nodeRepository.setDirty(nodes);
-        nodeRepository.setReady(nodes);
+        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
+        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     void deployApp(String tenantName, String applicationName, int[] flavorIds, int[] numNodes) {

@@ -111,7 +111,7 @@ public class FailedExpirer extends Maintainer {
                 nodesToRecycle.add(candidate);
             }
         }
-        nodeRepository.setDirty(nodesToRecycle);
+        nodeRepository.setDirty(nodesToRecycle, Agent.system, "Expired by FailedExpirer");
     }
 
     /** Returns whether the current node fail count should be used as an indicator of hardware issue */

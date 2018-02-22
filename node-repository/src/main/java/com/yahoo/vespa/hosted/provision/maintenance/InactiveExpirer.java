@@ -40,9 +40,9 @@ public class InactiveExpirer extends Expirer {
     protected void expire(List<Node> expired) {
         expired.forEach(node -> {
             if (node.status().wantToRetire()) {
-                nodeRepository.park(node.hostname(), Agent.system, "Parked by InactiveExpirer");
+                nodeRepository.park(node.hostname(), Agent.system, "Expired by InactiveExpirer");
             } else {
-                nodeRepository.setDirty(node);
+                nodeRepository.setDirty(node, Agent.system, "Expired by InactiveExprier");
             }
         });
     }

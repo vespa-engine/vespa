@@ -108,7 +108,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         String path = request.getUri().getPath();
         // Check paths to disallow illegal state changes
         if (path.startsWith("/nodes/v2/state/ready/")) {
-            nodeRepository.setReady(lastElement(path));
+            nodeRepository.setReady(lastElement(path), Agent.operator, "Readied through the nodes/v2 API");
             return new MessageResponse("Moved " + lastElement(path) + " to ready");
         }
         else if (path.startsWith("/nodes/v2/state/failed/")) {
@@ -122,11 +122,11 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Moved " + parkedHostnames + " to parked");
         }
         else if (path.startsWith("/nodes/v2/state/dirty/")) {
-            nodeRepository.setDirty(lastElement(path));
+            nodeRepository.setDirty(lastElement(path), Agent.operator, "Dirtied through the nodes/v2 API");
             return new MessageResponse("Moved " + lastElement(path) + " to dirty");
         }
         else if (path.startsWith("/nodes/v2/state/active/")) {
-            nodeRepository.reactivate(lastElement(path), Agent.operator);
+            nodeRepository.reactivate(lastElement(path), Agent.operator, "Reactivated through nodes/v2 API");
             return new MessageResponse("Moved " + lastElement(path) + " to active");
         }
         else if (path.startsWith("/nodes/v2/state/availablefornewallocations/")) {

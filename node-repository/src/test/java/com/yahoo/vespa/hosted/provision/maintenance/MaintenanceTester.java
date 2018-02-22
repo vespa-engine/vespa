@@ -12,6 +12,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
@@ -43,9 +44,9 @@ public class MaintenanceTester {
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes = nodeRepository.addNodes(nodes);
-        nodes = nodeRepository.setDirty(nodes);
+        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodes = simulateInitialReboot(nodes);
-        nodeRepository.setReady(nodes);
+        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     public void createReadyHostNodes(int count) {
@@ -53,9 +54,9 @@ public class MaintenanceTester {
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("hostNode" + i, "realHost" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
         nodes = nodeRepository.addNodes(nodes);
-        nodes = nodeRepository.setDirty(nodes);
+        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodes = simulateInitialReboot(nodes);
-        nodeRepository.setReady(nodes);
+        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     /** Simulate the initial reboot the node performs when it's in dirty */

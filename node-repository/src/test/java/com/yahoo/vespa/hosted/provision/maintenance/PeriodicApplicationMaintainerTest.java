@@ -88,9 +88,9 @@ public class PeriodicApplicationMaintainerTest {
         assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
 
         // Reactivate the previously failed nodes
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system);
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system);
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.parked).get(0).hostname(), Agent.system);
+        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system, getClass().getSimpleName());
+        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system, getClass().getSimpleName());
+        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.parked).get(0).hostname(), Agent.system, getClass().getSimpleName());
         int reactivatedInApp1 = 1;
         int reactivatedInApp2 = 2;
         assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
@@ -133,8 +133,8 @@ public class PeriodicApplicationMaintainerTest {
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes = nodeRepository.addNodes(nodes);
-        nodes = nodeRepository.setDirty(nodes);
-        nodeRepository.setReady(nodes);
+        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
+        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     private void createHostNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
@@ -142,8 +142,8 @@ public class PeriodicApplicationMaintainerTest {
         for (int i = 0; i < count; i++)
             nodes.add(nodeRepository.createNode("hostNode" + i, "realHost" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
         nodes = nodeRepository.addNodes(nodes);
-        nodes = nodeRepository.setDirty(nodes);
-        nodeRepository.setReady(nodes);
+        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
+        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     private class Fixture {
