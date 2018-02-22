@@ -17,7 +17,7 @@ class ClusterStateBundle
     using ClusterState = lib::ClusterState;
     std::shared_ptr<const ClusterState> _baselineClusterState;
 public:
-    ClusterStateBundle(const ClusterState &baselineClusterState);
+    explicit ClusterStateBundle(const ClusterState &baselineClusterState);
     ~ClusterStateBundle();
     const std::shared_ptr<const ClusterState> &getBaselineClusterState() const;
     const std::shared_ptr<const ClusterState> &getDerivedClusterState(document::BucketSpace bucketSpace) const;
