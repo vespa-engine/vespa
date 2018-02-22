@@ -4,7 +4,9 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.identity.IdentityConfig;
+import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
 /**
@@ -12,13 +14,14 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
  */
 public class IdentityProvider extends SimpleComponent implements IdentityConfig.Producer {
     public static final String CLASS = "com.yahoo.vespa.hosted.athenz.identityprovider.AthenzIdentityProviderImpl";
+    public static final String BUNDLE = "vespa-athenz";
 
     private final AthenzDomain domain;
     private final AthenzService service;
     private final HostName loadBalancerName;
 
     public IdentityProvider(AthenzDomain domain, AthenzService service, HostName loadBalancerName) {
-        super(CLASS);
+        super(new ComponentModel(BundleInstantiationSpecification.getFromStrings(CLASS, CLASS, BUNDLE)));
         this.domain = domain;
         this.service = service;
         this.loadBalancerName = loadBalancerName;
