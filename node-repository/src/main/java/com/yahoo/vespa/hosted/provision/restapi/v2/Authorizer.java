@@ -65,7 +65,7 @@ public class Authorizer implements BiPredicate<Principal, URI> {
                              .orElse(false);
     }
 
-    /** Returns whehter principal can access all nodes identified by given hostnames */
+    /** Returns whether principal can access all nodes identified by given hostnames */
     private boolean canAccess(List<String> hostnames, Principal principal) {
         return !hostnames.isEmpty() && hostnames.stream().allMatch(hostname -> canAccess(hostname, principal));
     }
