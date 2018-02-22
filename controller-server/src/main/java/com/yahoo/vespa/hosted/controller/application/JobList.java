@@ -65,7 +65,7 @@ public class JobList {
         return new JobList(list, ! negate);
     }
 
-    /** Returns the subset of jobs which are current upgrading */
+    /** Returns the subset of jobs which are currently upgrading */
     public JobList upgrading() { // TODO: Centralise and standardise reasoning about upgrades and application versions.
         return filter(job ->      job.lastSuccess().isPresent()
                              &&   job.lastTriggered().isPresent()
@@ -155,17 +155,12 @@ public class JobList {
             return filter(run -> run.version().equals(version));
         }
 
-        public JobList upgrade() {
-            return filter(JobRun::upgrade);
-        }
-
         /** Transforms the JobRun condition to a JobStatus condition, by considering only the JobRun mapped by which, and executes */
         private JobList filter(Predicate<JobRun> condition) {
             return JobList.this.filter(job -> which.apply(job).filter(condition).isPresent());
         }
 
     }
-
 
     // ----------------------------------- Internal helpers
 

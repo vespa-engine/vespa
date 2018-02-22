@@ -115,12 +115,12 @@ public class ControllerTest {
         ApplicationVersion applicationVersion = tester.controller().applications().require(app1.id()).change().application().get();
         assertTrue("Application version has been set during deployment", applicationVersion != ApplicationVersion.unknown);
         assertStatus(JobStatus.initial(stagingTest)
-                              .withTriggering(version1, applicationVersion, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                              .withTriggering(version1, applicationVersion, "", tester.clock().instant().minus(Duration.ofMillis(1)))
                               .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
 
         // Causes first deployment job to be triggered
         assertStatus(JobStatus.initial(productionCorpUsEast1)
-                              .withTriggering(version1, applicationVersion, false, "", tester.clock().instant()), app1.id(), tester.controller());
+                              .withTriggering(version1, applicationVersion, "", tester.clock().instant()), app1.id(), tester.controller());
         tester.clock().advance(Duration.ofSeconds(1));
 
         // production job (failing)
@@ -128,9 +128,9 @@ public class ControllerTest {
         assertEquals(4, applications.require(app1.id()).deploymentJobs().jobStatus().size());
 
         JobStatus expectedJobStatus = JobStatus.initial(productionCorpUsEast1)
-                                               .withTriggering(version1, applicationVersion, false, "", tester.clock().instant()) // Triggered first without application version info
+                                               .withTriggering(version1, applicationVersion, "", tester.clock().instant()) // Triggered first without application version info
                                                .withCompletion(42, Optional.of(JobError.unknown), tester.clock().instant(), tester.controller())
-                                               .withTriggering(version1, applicationVersion, false, "", tester.clock().instant()); // Re-triggering (due to failure) has application version info
+                                               .withTriggering(version1, applicationVersion, "", tester.clock().instant()); // Re-triggering (due to failure) has application version info
 
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
 
@@ -154,20 +154,20 @@ public class ControllerTest {
         tester.jobCompletion(component).application(app1).submit();
         tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
         assertStatus(JobStatus.initial(systemTest)
-                              .withTriggering(version1, applicationVersion, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                              .withTriggering(version1, applicationVersion, "", tester.clock().instant().minus(Duration.ofMillis(1)))
                               .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
 
         // production job succeeding now
         tester.deployAndNotify(app1, applicationPackage, true, productionCorpUsEast1);
         expectedJobStatus = expectedJobStatus
-                .withTriggering(version1, applicationVersion, false, "", tester.clock().instant().minus(Duration.ofMillis(1)))
+                .withTriggering(version1, applicationVersion, "", tester.clock().instant().minus(Duration.ofMillis(1)))
                 .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller());
         assertStatus(expectedJobStatus, app1.id(), tester.controller());
 
         // causes triggering of next production job
         assertStatus(JobStatus.initial(productionUsEast3)
-                              .withTriggering(version1, applicationVersion, false, "", tester.clock().instant()),
+                              .withTriggering(version1, applicationVersion, "", tester.clock().instant()),
                      app1.id(), tester.controller());
         tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
 
@@ -854,7 +854,7 @@ public class ControllerTest {
         tester.deployAndNotify(app, applicationPackage, true, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, true, stagingTest);
         assertStatus(JobStatus.initial(stagingTest)
-                             .withTriggering(vespaVersion, version, upgrade.isPresent(), "",
+                             .withTriggering(vespaVersion, version, "",
                                              tester.clock().instant().minus(Duration.ofMillis(1)))
                              .withCompletion(42, Optional.empty(), tester.clock().instant(),
                                              tester.controller()), app.id(), tester.controller());
@@ -862,13 +862,13 @@ public class ControllerTest {
         // Deploy in production
         tester.deployAndNotify(app, applicationPackage, true, true, productionCorpUsEast1);
         assertStatus(JobStatus.initial(productionCorpUsEast1)
-                             .withTriggering(vespaVersion, version, upgrade.isPresent(), "",
+                             .withTriggering(vespaVersion, version, "",
                                              tester.clock().instant().minus(Duration.ofMillis(1)))
                              .withCompletion(42, Optional.empty(), tester.clock().instant(),
                                              tester.controller()), app.id(), tester.controller());
         tester.deployAndNotify(app, applicationPackage, true, true, productionUsEast3);
         assertStatus(JobStatus.initial(productionUsEast3)
-                             .withTriggering(vespaVersion, version, upgrade.isPresent(), "",
+                             .withTriggering(vespaVersion, version, "",
                                              tester.clock().instant().minus(Duration.ofMillis(1)))
                              .withCompletion(42, Optional.empty(), tester.clock().instant(),
                                              tester.controller()), app.id(), tester.controller());
