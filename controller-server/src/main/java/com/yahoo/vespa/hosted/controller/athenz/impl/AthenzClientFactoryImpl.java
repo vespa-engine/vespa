@@ -10,12 +10,12 @@ import com.yahoo.athenz.auth.token.PrincipalToken;
 import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.athenz.zms.ZMSClient;
 import com.yahoo.athenz.zts.ZTSClient;
+import com.yahoo.container.jdisc.Ckms;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZtsClient;
-import com.yahoo.vespa.hosted.controller.api.integration.security.KeyService;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
 import java.security.PrivateKey;
@@ -24,15 +24,16 @@ import java.time.Duration;
 /**
  * @author bjorncs
  */
+// TODO Use SiaIdentityProvider
 public class AthenzClientFactoryImpl implements AthenzClientFactory {
 
-    private final KeyService secretService;
+    private final Ckms ckms;
     private final AthenzConfig config;
     private final AthenzPrincipalAuthority athenzPrincipalAuthority;
 
     @Inject
-    public AthenzClientFactoryImpl(KeyService secretService, AthenzConfig config) {
-        this.secretService = secretService;
+    public AthenzClientFactoryImpl(Ckms ckms, AthenzConfig config) {
+        this.ckms = ckms;
         this.config = config;
         this.athenzPrincipalAuthority = new AthenzPrincipalAuthority(config.principalHeaderName());
     }
@@ -85,7 +86,7 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
 
     private PrivateKey getServicePrivateKey() {
         AthenzConfig.Service service = config.service();
-        String privateKey = secretService.getSecret(service.privateKeySecretName(), service.privateKeyVersion()).trim();
+        String privateKey = ckms.getSecret(service.privateKeySecretName(), service.privateKeyVersion()).trim();
         return Crypto.loadPrivateKey(privateKey);
     }
 
