@@ -12,25 +12,25 @@ import java.util.Optional;
 /**
  * @author freva
  */
-public class ConfigServerClientsImpl implements ConfigServerClients {
+public class RealConfigServerClients implements ConfigServerClients {
 
     private final Optional<ConfigServerApi> configServerApi;
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
 
-    public ConfigServerClientsImpl(Environment environment) {
+    public RealConfigServerClients(Environment environment) {
         this(new SslConfigServerApiImpl(environment));
     }
 
-    public ConfigServerClientsImpl(NodeRepository nodeRepository, Orchestrator orchestrator) {
+    public RealConfigServerClients(NodeRepository nodeRepository, Orchestrator orchestrator) {
         this(nodeRepository, orchestrator, Optional.empty());
     }
 
-    private ConfigServerClientsImpl(ConfigServerApi configServerApi) {
+    private RealConfigServerClients(ConfigServerApi configServerApi) {
         this(new NodeRepositoryImpl(configServerApi), new OrchestratorImpl(configServerApi), Optional.of(configServerApi));
     }
 
-    private ConfigServerClientsImpl(NodeRepository nodeRepository, Orchestrator orchestrator,
+    private RealConfigServerClients(NodeRepository nodeRepository, Orchestrator orchestrator,
                                     Optional<ConfigServerApi> configServerApi) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
