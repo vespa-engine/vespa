@@ -2,7 +2,7 @@
 #include "distributorcomponentregisterimpl.h"
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/storage/common/cluster_state_bundle.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
 
 namespace storage {
 

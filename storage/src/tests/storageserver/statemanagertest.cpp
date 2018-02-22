@@ -4,7 +4,7 @@
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
-#include <vespa/storage/common/cluster_state_bundle.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storage/storageserver/statemanager.h>
 #include <tests/common/teststorageapp.h>

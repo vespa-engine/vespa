@@ -16,7 +16,7 @@ struct TestNodeStateUpdater : public NodeStateUpdater
 {
     lib::NodeState::CSP _reported;
     lib::NodeState::CSP _current;
-    std::shared_ptr<const ClusterStateBundle> _clusterStateBundle;
+    std::shared_ptr<const lib::ClusterStateBundle> _clusterStateBundle;
     std::vector<StateListener*> _listeners;
 
 public:
@@ -25,7 +25,7 @@ public:
 
     lib::NodeState::CSP getReportedNodeState() const override { return _reported; }
     lib::NodeState::CSP getCurrentNodeState() const override { return _current; }
-    std::shared_ptr<const ClusterStateBundle> getClusterStateBundle() const override;
+    std::shared_ptr<const lib::ClusterStateBundle> getClusterStateBundle() const override;
     void addStateListener(StateListener& s) override { _listeners.push_back(&s); }
     void removeStateListener(StateListener&) override {}
     Lock::SP grabStateChangeLock() override { return Lock::SP(new Lock); }
