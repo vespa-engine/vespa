@@ -110,9 +110,6 @@
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
-                <configuration>
-                    <useCommonAssemblyIds>false</useCommonAssemblyIds>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -127,7 +124,7 @@
                         <configuration>
                             <artifacts>
                                 <artifact>
-                                    <file>target/${project.artifactId}-deploy.jar</file>
+                                    <file>target/${project.artifactId}-jar-with-dependencies.jar</file>
                                     <type>jar</type>
                                     <classifier>deploy</classifier>
                                 </artifact>
