@@ -103,7 +103,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             effectiveGroups = 1; // type request with multiple groups is not supported
         }
 
-        return asSortedHosts(preparer.prepare(application, cluster, requestedNodes, effectiveGroups, debugRecorder));
+        return asSortedHosts(preparer.prepare(application, cluster, requestedNodes, effectiveGroups));
     }
 
     @Override

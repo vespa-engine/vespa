@@ -34,10 +34,10 @@ import static org.junit.Assert.assertFalse;
  */
 public class ReservationExpirerTest {
 
-    private Curator curator = new MockCurator();
+    private final Curator curator = new MockCurator();
 
     @Test
-    public void ensure_reservation_times_out() throws InterruptedException {
+    public void ensure_reservation_times_out() {
         ManualClock clock = new ManualClock();
         NodeFlavors flavors = FlavorConfigBuilder.createDummies("default");
         NodeRepository nodeRepository = new NodeRepository(flavors, curator, clock, Zone.defaultZone(),

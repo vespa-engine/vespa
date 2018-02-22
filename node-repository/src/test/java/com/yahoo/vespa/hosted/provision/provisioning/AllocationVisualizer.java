@@ -81,7 +81,7 @@ public class AllocationVisualizer extends JPanel {
             paintNode(host, g, nodeX, nodeY, true);
 
             // Paint containers
-            NodeList containers = simStep.nodes.childNodes(host);
+            NodeList containers = simStep.nodes.childrenOf(host);
             for (Node container : containers.asList()) {
                 nodeY = paintNode(container, g, nodeX, nodeY, false);
             }

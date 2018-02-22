@@ -17,7 +17,6 @@ import java.util.List;
  * For this reason, all reserved nodes go through the dirty state before going back to ready.
  *
  * @author bratseth
- * @version $Id$
  */
 public class ReservationExpirer extends Expirer {
 

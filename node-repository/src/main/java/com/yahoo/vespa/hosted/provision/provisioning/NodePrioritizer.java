@@ -43,7 +43,8 @@ public class NodePrioritizer {
     private final Set<Node> spareHosts;
     private final Map<Node, ResourceCapacity> headroomHosts;
 
-    NodePrioritizer(List<Node> allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec, NodeFlavors nodeFlavors, int spares, NameResolver nameResolver) {
+    NodePrioritizer(List<Node> allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec,
+                    NodeFlavors nodeFlavors, int spares, NameResolver nameResolver) {
         this.allNodes = Collections.unmodifiableList(allNodes);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
@@ -181,8 +182,8 @@ public class NodePrioritizer {
             if (node.status().wantToRetire()) continue;
 
             boolean hostHasCapacityForWantedFlavor = capacity.hasCapacity(node, wantedResourceCapacity);
-            boolean conflictingCluster = list.childNodes(node).owner(appId).asList().stream()
-                    .anyMatch(child -> child.allocation().get().membership().cluster().id().equals(clusterSpec.id()));
+            boolean conflictingCluster = list.childrenOf(node).owner(appId).asList().stream()
+                                             .anyMatch(child -> child.allocation().get().membership().cluster().id().equals(clusterSpec.id()));
 
             if (!hostHasCapacityForWantedFlavor || conflictingCluster) continue;
 
@@ -265,11 +266,11 @@ public class NodePrioritizer {
 
     static boolean isPreferredNodeToBeReloacted(List<Node> nodes, Node node, Node parent) {
         NodeList list = new NodeList(nodes);
-        return list.childNodes(parent).asList().stream()
-                .sorted(NodePrioritizer::compareForRelocation)
-                .findFirst()
-                .filter(n -> n.equals(node))
-                .isPresent();
+        return list.childrenOf(parent).asList().stream()
+                   .sorted(NodePrioritizer::compareForRelocation)
+                   .findFirst()
+                   .filter(n -> n.equals(node))
+                   .isPresent();
     }
 
     private boolean isReplacement(long nofNodesInCluster, long nodeFailedNodes) {
