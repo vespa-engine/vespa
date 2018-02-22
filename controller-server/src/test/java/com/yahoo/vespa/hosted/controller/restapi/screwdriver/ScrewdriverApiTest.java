@@ -8,6 +8,8 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -45,22 +47,24 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/screwdriver/responses/";
     private static final ZoneId testZone = ZoneId.from(Environment.test, RegionName.from("us-east-1"));
     private static final ZoneId stagingZone = ZoneId.from(Environment.staging, RegionName.from("us-east-3"));
+    private static final AthenzIdentity HOSTED_VESPA_OPERATOR = AthenzUser.fromUserId("johnoperator");
 
     @Test
     public void testGetReleaseStatus() throws Exception {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
-        tester.containerTester().assertResponse(new Request("http://localhost:8080/screwdriver/v1/release/vespa"),
+        tester.containerTester().assertResponse(authenticatedRequest("http://localhost:8080/screwdriver/v1/release/vespa"),
                                                 "{\"error-code\":\"NOT_FOUND\",\"message\":\"Information about the current system version is not available at this time\"}",
                                                 404);
 
         tester.controller().updateVersionStatus(VersionStatus.compute(tester.controller()));
-        tester.containerTester().assertResponse(new Request("http://localhost:8080/screwdriver/v1/release/vespa"),
+        tester.containerTester().assertResponse(authenticatedRequest("http://localhost:8080/screwdriver/v1/release/vespa"),
                                                 new File("release-response.json"), 200);
     }
 
     @Test
     public void testJobStatusReporting() throws Exception {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
+        addUserToHostedOperatorRole(HOSTED_VESPA_OPERATOR);
         tester.containerTester().updateSystemVersion();
         long projectId = 1;
         Application app = tester.createApplication();
@@ -79,11 +83,12 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
         job.type(JobType.systemTest).submit();
 
         // Notifying about unknown job fails
-        tester.containerTester().assertResponse(new Request("http://localhost:8080/application/v4/tenant/tenant1/application/application1/jobreport",
-                                                            asJson(job.type(JobType.productionUsEast3).report()),
-                                                            Request.Method.POST),
-                                                new File("unexpected-completion.json"), 400);
-        
+        Request request = new Request("http://localhost:8080/application/v4/tenant/tenant1/application/application1/jobreport",
+                                      asJson(job.type(JobType.productionUsEast3).report()),
+                                      Request.Method.POST);
+        addIdentityToRequest(request, HOSTED_VESPA_OPERATOR);
+        tester.containerTester().assertResponse(request, new File("unexpected-completion.json"), 400);
+
         // ... and assert it was recorded
         JobStatus recordedStatus =
                 tester.controller().applications().get(app.id()).get().deploymentJobs().jobStatus().get(JobType.component);
