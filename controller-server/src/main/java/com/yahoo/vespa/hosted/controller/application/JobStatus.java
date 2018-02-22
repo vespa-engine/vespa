@@ -55,10 +55,10 @@ public class JobStatus {
         return new JobStatus(type, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    public JobStatus withTriggering(Version version, ApplicationVersion applicationVersion,
-                                    boolean upgrade, String reason, Instant triggerTime) {
-        return new JobStatus(type, jobError, Optional.of(new JobRun(-1, version, applicationVersion, upgrade,
-                                                                    reason, triggerTime)),
+    public JobStatus withTriggering(Version version, ApplicationVersion applicationVersion, String reason,
+                                    Instant triggerTime) {
+        return new JobStatus(type, jobError, Optional.of(new JobRun(-1, version, applicationVersion, reason,
+                                                                    triggerTime)),
                              lastCompleted, firstFailing, lastSuccess);
     }
 
@@ -71,11 +71,9 @@ public class JobStatus {
                                     Optional<DeploymentJobs.JobError> jobError, Instant completionTime,
                                     Controller controller) {
         Version version;
-        boolean upgrade;
         String reason;
         if (type == DeploymentJobs.JobType.component) { // not triggered by us
             version = controller.systemVersion();
-            upgrade = false;
             reason = "Application commit";
         } else if (! lastTriggered.isPresent()) {
             throw new IllegalStateException("Got notified about completion of " + this +
@@ -84,11 +82,10 @@ public class JobStatus {
         } else {
             version = lastTriggered.get().version();
             applicationVersion = lastTriggered.get().applicationVersion();
-            upgrade = lastTriggered.get().upgrade();
             reason = lastTriggered.get().reason();
         }
 
-        JobRun thisCompletion = new JobRun(runId, version, applicationVersion, upgrade, reason, completionTime);
+        JobRun thisCompletion = new JobRun(runId, version, applicationVersion, reason, completionTime);
 
         Optional<JobRun> firstFailing = this.firstFailing;
         if (jobError.isPresent() &&  ! this.firstFailing.isPresent())
@@ -172,12 +169,10 @@ public class JobStatus {
         private final long id;
         private final Version version;
         private final ApplicationVersion applicationVersion;
-        private final boolean upgrade;
         private final String reason;
         private final Instant at;
 
-        public JobRun(long id, Version version, ApplicationVersion applicationVersion,
-                      boolean upgrade, String reason, Instant at) {
+        public JobRun(long id, Version version, ApplicationVersion applicationVersion,String reason, Instant at) {
             Objects.requireNonNull(version, "version cannot be null");
             Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
             Objects.requireNonNull(reason, "Reason cannot be null");
@@ -185,7 +180,6 @@ public class JobStatus {
             this.id = id;
             this.version = version;
             this.applicationVersion = applicationVersion;
-            this.upgrade = upgrade;
             this.reason = reason;
             this.at = at;
         }
@@ -193,10 +187,6 @@ public class JobStatus {
         // TODO: Replace with proper ID, and make the build number part optional, or something -- it's not there for lastTriggered!
         /** Returns the id of this run of this job, or -1 if not known */
         public long id() { return id; }
-
-        // TODO: Fix how this is set, and add an applicationChange() method as well, in the same vein.
-        /** Returns whether this job run was a Vespa upgrade */
-        public boolean upgrade() { return upgrade; }
 
         /** Returns the Vespa version used on this run */
         public Version version() { return version; }
@@ -220,7 +210,7 @@ public class JobStatus {
 
         @Override
         public int hashCode() {
-            return Objects.hash(version, applicationVersion, upgrade, at);
+            return Objects.hash(version, applicationVersion, at);
         }
 
         @Override
@@ -231,12 +221,11 @@ public class JobStatus {
             return id == jobRun.id &&
                    Objects.equals(version, jobRun.version) &&
                    Objects.equals(applicationVersion, jobRun.applicationVersion) &&
-                   upgrade == jobRun.upgrade &&
                    Objects.equals(at, jobRun.at);
         }
 
         @Override
-        public String toString() { return "job run " + id + " of version " + (upgrade() ? "upgrade " : "") + version + " "
+        public String toString() { return "job run " + id + " of version " + version + " "
                                           + applicationVersion + " at " + at; }
 
     }

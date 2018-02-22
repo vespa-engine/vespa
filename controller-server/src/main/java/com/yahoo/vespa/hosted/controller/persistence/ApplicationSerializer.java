@@ -85,7 +85,6 @@ public class ApplicationSerializer {
     private final String jobRunIdField = "id";
     private final String versionField = "version";
     private final String revisionField = "revision";
-    private final String upgradeField = "upgrade";
     private final String reasonField = "reason";
     private final String atField = "at";
 
@@ -238,7 +237,6 @@ public class ApplicationSerializer {
         object.setLong(jobRunIdField, jobRun.get().id());
         object.setString(versionField, jobRun.get().version().toString());
         toSlime(jobRun.get().applicationVersion(), object.setObject(revisionField));
-        object.setBool(upgradeField, jobRun.get().upgrade());
         object.setString(reasonField, jobRun.get().reason());
         object.setLong(atField, jobRun.get().at().toEpochMilli());
     }
@@ -403,7 +401,6 @@ public class ApplicationSerializer {
         return Optional.of(new JobStatus.JobRun(optionalLong(object.field(jobRunIdField)).orElse(-1L), // TODO: Make non-optional after November 2017 -- what about lastTriggered?
                                                 new Version(object.field(versionField).asString()),
                                                 applicationVersionFromSlime(object.field(revisionField)),
-                                                object.field(upgradeField).asBool(),
                                                 optionalString(object.field(reasonField)).orElse(""), // TODO: Make non-optional after November 2017
                                                 Instant.ofEpochMilli(object.field(atField).asLong())));
     }
