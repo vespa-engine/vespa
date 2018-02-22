@@ -3,6 +3,7 @@ package com.yahoo.searchlib.rankingexpression;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
+import com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.text.Utf8;
 
@@ -11,9 +12,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 /**
- * <p>A function defined by a ranking expression</p>
+ * A function defined by a ranking expression
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  * @author bratseth
  */
 public class ExpressionFunction {
@@ -23,7 +24,7 @@ public class ExpressionFunction {
     private final RankingExpression body;
 
     /**
-     * <p>Constructs a new function</p>
+     * Constructs a new function
      *
      * @param name the name of this function
      * @param arguments its argument names
@@ -43,28 +44,27 @@ public class ExpressionFunction {
     public RankingExpression getBody() { return body; }
 
     /**
-     * <p>Create and return an instance of this function based on the given
-     * arguments. If function calls are nested, this call might produce
-     * additional scripts.</p>
+     * Creates and returns an instance of this function based on the given
+     * arguments. If function calls are nested, this call may produce
+     * additional functions.
      *
      * @param context the context used to expand this
-     * @param arguments the arguments to instantiate on.
+     * @param argumentValues the arguments to instantiate on.
      * @param path the expansion path leading to this.
      * @return the script function instance created.
      */
-    public Instance expand(SerializationContext context, List<ExpressionNode> arguments, Deque<String> path) {
+    public Instance expand(SerializationContext context, List<ExpressionNode> argumentValues, Deque<String> path) {
         Map<String, String> argumentBindings = new HashMap<>();
-        for (int i = 0; i < this.arguments.size() && i < arguments.size(); ++i) {
-            argumentBindings.put(this.arguments.get(i), arguments.get(i).toString(context, path, null));
+        for (int i = 0; i < arguments.size() && i < arguments.size(); ++i) {
+            argumentBindings.put(arguments.get(i), argumentValues.get(i).toString(context, path, null));
         }
-        return new Instance(toSymbol(argumentBindings), body.getRoot().toString(context.createBinding(argumentBindings), path, null));
+        return new Instance(toSymbol(argumentBindings), body.getRoot().toString(context.withBindings(argumentBindings), path, null));
     }
 
     /**
      * Returns a symbolic string that represents this function with a given
      * list of arguments. The arguments are mangled by hashing the string
-     * representation of the argument expressions, so we might need to revisit
-     * this if we start seeing collisions.
+     * representation of the argument expressions.
      *
      * @param  argumentBindings the bound arguments to include in the symbolic name.
      * @return the symbolic name for an instance of this function
@@ -85,8 +85,8 @@ public class ExpressionFunction {
 
 
     /**
-     * <p>Returns a more unique hash code than what Java's own {@link
-     * String#hashCode()} method would produce.</p>
+     * Returns a more unique hash code than what Java's own {@link
+     * String#hashCode()} method would produce.
      *
      * @param str The string to hash.
      * @return A 64 bit long hash code.
@@ -136,4 +136,5 @@ public class ExpressionFunction {
         }
 
     }
+
 }

@@ -323,7 +323,7 @@ public class DeployState implements ConfigDefinitionStore {
                     closeIgnoreException(reader.getReader());
                 }
             }
-            builder.build(logger, queryProfiles);
+            builder.build(logger);
             return SearchDocumentModel.fromBuilderAndNames(builder, names);
         }
 

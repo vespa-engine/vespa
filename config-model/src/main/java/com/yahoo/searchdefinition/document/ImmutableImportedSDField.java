@@ -63,6 +63,9 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     }
 
     @Override
+    public ImmutableSDField getBackingField() { return importedField.targetField(); }
+
+    @Override
     public boolean isIndexStructureField() {
         return importedField.targetField().isIndexStructureField();
     }

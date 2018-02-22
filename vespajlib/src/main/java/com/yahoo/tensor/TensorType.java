@@ -77,6 +77,13 @@ public class TensorType {
         return Optional.empty();
     }
 
+    /* Returns the bound of this dimension if it is present and bound in this, empty otherwise */
+    public Optional<Long> sizeOfDimension(String dimension) {
+        Optional<Dimension> d = dimension(dimension);
+        if ( ! d.isPresent()) return Optional.empty();
+        return d.get().size();
+    }
+
     /**
      * Returns whether this type can be assigned to the given type,
      * i.e if the given type is a generalization of this type.
