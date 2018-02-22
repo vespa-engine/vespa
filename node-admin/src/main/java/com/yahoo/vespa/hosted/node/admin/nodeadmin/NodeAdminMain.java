@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.node.admin.component.AdminComponent;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.component.DockerAdminComponent;
-import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerClientsImpl;
+import com.yahoo.vespa.hosted.node.admin.configserver.RealConfigServerClients;
 import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 
 import java.io.File;
@@ -66,7 +66,7 @@ public class NodeAdminMain implements AutoCloseable {
                                             docker,
                                             metricReceiver,
                                             classLocking,
-                                            new ConfigServerClientsImpl(new Environment(configServerConfig)));
+                                            new RealConfigServerClients(new Environment(configServerConfig)));
         }
 
         logger.log(LogLevel.INFO, () -> {
