@@ -101,11 +101,12 @@ public class Reduce extends PrimitiveTensorFunction {
     }
 
     @Override
-    public TensorType type(TypeContext context) {
+    public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) {
         return type(argument.type(context));
     }
 
     private TensorType type(TensorType argumentType) {
+        if (dimensions.isEmpty()) return TensorType.empty; // means reduce all
         TensorType.Builder builder = new TensorType.Builder();
         for (TensorType.Dimension dimension : argumentType.dimensions())
             if ( ! dimensions.contains(dimension.name())) // keep
@@ -114,7 +115,7 @@ public class Reduce extends PrimitiveTensorFunction {
     }
 
     @Override
-    public Tensor evaluate(EvaluationContext context) {
+    public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor argument = this.argument.evaluate(context);
         if ( ! dimensions.isEmpty() && ! argument.type().dimensionNames().containsAll(dimensions))
             throw new IllegalArgumentException("Cannot reduce " + argument + " over dimensions " +

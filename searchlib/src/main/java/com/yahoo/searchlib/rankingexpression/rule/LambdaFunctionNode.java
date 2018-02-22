@@ -2,6 +2,7 @@
 package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -57,7 +58,7 @@ public class LambdaFunctionNode extends CompositeNode {
     }
 
     @Override
-    public TensorType type(TypeContext context) {
+    public TensorType type(TypeContext<Reference> context) {
         return TensorType.empty; // by definition - no nested lambdas
     }
 

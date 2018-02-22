@@ -61,10 +61,10 @@ public class Generate extends PrimitiveTensorFunction {
     public PrimitiveTensorFunction toPrimitive() { return this; }
 
     @Override
-    public TensorType type(TypeContext context) { return type; }
+    public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) { return type; }
 
     @Override
-    public Tensor evaluate(EvaluationContext context) {
+    public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor.Builder builder = Tensor.Builder.of(type);
         IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(dimensionSizes(type));
         for (int i = 0; i < indexes.size(); i++) {

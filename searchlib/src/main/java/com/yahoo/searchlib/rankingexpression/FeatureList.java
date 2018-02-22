@@ -91,8 +91,8 @@ public class FeatureList implements Iterable<ReferenceNode> {
     /**
      * Returns the feature at the given index.
      *
-     * @param i The index of the feature to return.
-     * @return The featuer at the given index.
+     * @param i the index of the feature to return.
+     * @return the feature at the given index.
      */
     public ReferenceNode get(int i) {
         return features.get(i);
@@ -137,4 +137,5 @@ public class FeatureList implements Iterable<ReferenceNode> {
     public Iterator<ReferenceNode> iterator() {
         return features.iterator();
     }
+
 }
