@@ -60,14 +60,6 @@ public class NodeTest extends StateRestApiTest {
                 "      \"reason\": \"\"\n" +
                 "    }\n" +
                 "  },\n" +
-                "  \"metrics\": {\n" +
-                        // Why 24 and 28? There are 4 distributor nodes seen in slobrok (see StateRestApiTest).
-                        // Each gets a host info with distributor-put-latency-ms-sum 6 and
-                        // distributor-put-latency-count 7 (see StateRestApiTest.getHostInfo()).
-                        // Therefore, in aggregate, 4*6 is 24, and 4*7 is 28.
-                "    \"distributor-put-latency-ms-sum\": 24,\n" +
-                "    \"distributor-put-latency-count\": 28\n" +
-                "  },\n" +
                 "  \"partition\": {\n" +
                 "    \"0\": {\"link\": \"\\/cluster\\/v2\\/music\\/storage\\/1\\/0\"},\n" +
                 "    \"1\": {\"link\": \"\\/cluster\\/v2\\/music\\/storage\\/1\\/1\"}\n" +
@@ -96,14 +88,6 @@ public class NodeTest extends StateRestApiTest {
                 "      \"state\": \"up\",\n" +
                 "      \"reason\": \"\"\n" +
                 "    }\n" +
-                "  },\n" +
-                "  \"metrics\": {\n" +
-                        // Why 24 and 28? There are 4 distributor nodes seen in slobrok (see StateRestApiTest).
-                        // Each gets a host info with distributor-put-latency-ms-sum 6 and
-                        // distributor-put-latency-count 7 (see StateRestApiTest.getHostInfo()).
-                        // Therefore, in aggregate, 4*6 is 24, and 4*7 is 28.
-                "    \"distributor-put-latency-ms-sum\": 24,\n" +
-                "    \"distributor-put-latency-count\": 28\n" +
                 "  },\n" +
                 "  \"partition\": {\n" +
                 "    \"0\": {\n" +
@@ -158,10 +142,6 @@ public class NodeTest extends StateRestApiTest {
                 "      \"state\": \"up\",\n" +
                 "      \"reason\": \"\"\n" +
                 "    }\n" +
-                "  },\n" +
-                "  \"metrics\": {\n" +
-                "    \"distributor-put-latency-ms-sum\": 0,\n" +
-                "    \"distributor-put-latency-count\": 0\n" +
                 "  }\n" +
                 "}";
         assertEquals(expected, jsonWriter.createJson(response).toString(2));

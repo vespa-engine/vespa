@@ -1,10 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2.requests;
 
-import com.yahoo.vespa.clustercontroller.core.LatencyStats;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
-import com.yahoo.vespa.clustercontroller.core.StorageNodeStats;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Id;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Request;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Response;
@@ -40,13 +38,6 @@ public class NodeStateRequest extends Request<Response.NodeResponse> {
         result.addState("generated", new Response.UnitStateImpl(context.currentState.getNodeState(id.getNode())));
         result.addState("unit", new Response.UnitStateImpl(info.getReportedState()));
         result.addState("user", new Response.UnitStateImpl(info.getWantedState()));
-
-        if (info.isStorage() && verboseReports.contains(VerboseReport.STATISTICS)) {
-            StorageNodeStats storageStats = context.cluster.getStorageNodeStats(info.getNodeIndex());
-            LatencyStats latencyStats = storageStats.getDistributorPutLatency();
-            result.addMetric("distributor-put-latency-ms-sum", latencyStats.getLatencyMsSum());
-            result.addMetric("distributor-put-latency-count", latencyStats.getCount());
-        }
 
         for (int i=0; i<info.getReportedState().getDiskCount(); ++i) {
             Id.Partition partitionId = new Id.Partition(id, i);

@@ -3,8 +3,6 @@ package com.yahoo.vespa.clustercontroller.core.hostinfo;
 
 import com.yahoo.vespa.clustercontroller.core.ContentNodeStats;
 import com.yahoo.vespa.clustercontroller.core.ContentClusterStats;
-import com.yahoo.vespa.clustercontroller.core.StorageNodeStats;
-import com.yahoo.vespa.clustercontroller.core.StorageNodeStatsContainer;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -28,24 +26,6 @@ public class StorageNodeStatsBridgeTest {
         byte[] encoded;
         encoded = Files.readAllBytes(path);
         return new String(encoded, StandardCharsets.UTF_8);
-    }
-
-    @Test
-    public void testStorageNodeStatsContainer() throws IOException {
-        String data = getJsonString();
-        HostInfo hostInfo = HostInfo.createHostInfo(data);
-        StorageNodeStatsContainer container = StorageNodeStatsBridge.traverseHostInfo(hostInfo);
-        assertEquals(2, container.size());
-
-        StorageNodeStats node0 = container.get(0);
-        assertNotNull(node0);
-        assertEquals(15, node0.getDistributorPutLatency().getLatencyMsSum());
-        assertEquals(16, node0.getDistributorPutLatency().getCount());
-
-        StorageNodeStats node1 = container.get(1);
-        assertNotNull(node1);
-        assertEquals(17, node1.getDistributorPutLatency().getLatencyMsSum());
-        assertEquals(18, node1.getDistributorPutLatency().getCount());
     }
 
     @Test
