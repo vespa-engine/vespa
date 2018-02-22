@@ -4,6 +4,7 @@ package com.yahoo.vespa.clustercontroller.core.testutils;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.DummyVdsNode;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
 import com.yahoo.vespa.clustercontroller.core.listeners.SystemStateListener;
@@ -25,9 +26,9 @@ public interface WaitCondition {
         protected ClusterState currentState;
         private final SystemStateListener listener = new SystemStateListener() {
             @Override
-            public void handleNewSystemState(ClusterState state) {
+            public void handleNewSystemState(ClusterStateBundle state) {
                 synchronized (monitor) {
-                    currentState = state;
+                    currentState = state.getBaselineClusterState();
                     monitor.notifyAll();
                 }
             }

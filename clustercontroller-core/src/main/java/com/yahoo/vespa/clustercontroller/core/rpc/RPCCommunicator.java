@@ -157,8 +157,9 @@ public class RPCCommunicator implements Communicator {
     }
 
     @Override
-    public void setSystemState(ClusterState state, NodeInfo node, Waiter<SetClusterStateRequest> externalWaiter) {
-        RPCSetClusterStateWaiter waiter = new RPCSetClusterStateWaiter(externalWaiter, timer);
+    public void setSystemState(ClusterStateBundle stateBundle, NodeInfo node, Waiter<SetClusterStateRequest> externalWaiter) {
+        final RPCSetClusterStateWaiter waiter = new RPCSetClusterStateWaiter(externalWaiter, timer);
+        final ClusterState baselineState = stateBundle.getBaselineClusterState();
 
         Target connection = getConnection(node);
         if (!connection.isValid()) {
@@ -172,17 +173,17 @@ public class RPCCommunicator implements Communicator {
         Request req;
         if (node.getVersion() == 0) {
             req = new Request("setsystemstate");
-            req.parameters().add(new StringValue(state.toString(true)));
+            req.parameters().add(new StringValue(baselineState.toString(true)));
         } else {
             req = new Request("setsystemstate2");
-            req.parameters().add(new StringValue(state.toString(false)));
+            req.parameters().add(new StringValue(baselineState.toString(false)));
         }
 
-        RPCSetClusterStateRequest stateRequest = new RPCSetClusterStateRequest(node, req, state.getVersion());
+        RPCSetClusterStateRequest stateRequest = new RPCSetClusterStateRequest(node, req, baselineState.getVersion());
         waiter.setRequest(stateRequest);
 
         connection.invokeAsync(req, 60, waiter);
-        node.setSystemStateVersionSent(state);
+        node.setSystemStateVersionSent(baselineState);
     }
 
     // protected for testing.

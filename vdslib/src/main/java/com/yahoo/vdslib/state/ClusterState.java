@@ -103,6 +103,9 @@ public class ClusterState implements Cloneable {
     }
 
     private boolean similarToImpl(final ClusterState other, final NodeStateCmp nodeStateCmp) {
+        if (other == this) {
+            return true; // We're definitely similar to ourselves.
+        }
         // Two cluster states are considered similar if they are both down. When clusters
         // are down, their individual node states do not matter to ideal state computations
         // and content nodes therefore do not need to observe them.
