@@ -4,7 +4,7 @@
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
-#include <vespa/storage/common/cluster_state_bundle.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/backtrace.h>

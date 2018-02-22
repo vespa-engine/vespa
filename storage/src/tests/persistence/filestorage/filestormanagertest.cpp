@@ -7,7 +7,7 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/storageserver/statemanager.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
-#include <vespa/storage/common/cluster_state_bundle.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/storage/persistence/persistencethread.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>

@@ -1,9 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "cluster_state_bundle.h"
-#include <vespa/vdslib/state/clusterstate.h>
+#include "clusterstate.h"
 
-namespace storage {
+namespace storage::lib {
 
 ClusterStateBundle::ClusterStateBundle(const ClusterState &baselineClusterState)
     : _baselineClusterState(std::make_shared<const ClusterState>(baselineClusterState))

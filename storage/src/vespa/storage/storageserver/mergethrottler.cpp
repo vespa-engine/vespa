@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mergethrottler.h"
-#include <vespa/storage/common/cluster_state_bundle.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/messagebus/message.h>
