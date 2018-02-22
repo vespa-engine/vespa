@@ -181,5 +181,7 @@
     <preprocess:include file='athenz-identity-provider.xml' required='false' />
 
     <preprocess:include file='configserver-config.xml' required='false' />
+
+    <preprocess:include file='configserver-components.xml' required='false' />
   </jdisc>
 </services>
