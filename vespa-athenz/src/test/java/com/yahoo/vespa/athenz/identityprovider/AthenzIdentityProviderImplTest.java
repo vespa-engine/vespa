@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.athenz.identityprovider;
+package com.yahoo.vespa.athenz.identityprovider;
 
 import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
-import com.yahoo.vespa.hosted.athenz.identityprovider.AthenzIdentityProviderImpl.RunnableWithTag;
-import com.yahoo.vespa.hosted.athenz.identityprovider.AthenzIdentityProviderImpl.Scheduler;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.athenz.identityprovider.AthenzIdentityProviderImpl.RunnableWithTag;
+import com.yahoo.vespa.athenz.identityprovider.AthenzIdentityProviderImpl.Scheduler;
 import org.junit.Test;
 
 import java.security.cert.X509Certificate;
@@ -19,21 +19,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.PriorityQueue;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.athenz.identityprovider.AthenzIdentityProviderImpl.INITIAL_BACKOFF_DELAY;
-import static com.yahoo.vespa.hosted.athenz.identityprovider.AthenzIdentityProviderImpl.INITIAL_WAIT_NTOKEN;
-import static com.yahoo.vespa.hosted.athenz.identityprovider.AthenzIdentityProviderImpl.MAX_REGISTER_BACKOFF_DELAY;
-import static com.yahoo.vespa.hosted.athenz.identityprovider.AthenzIdentityProviderImpl.METRICS_UPDATER_TAG;
-import static com.yahoo.vespa.hosted.athenz.identityprovider.AthenzIdentityProviderImpl.REDUCED_UPDATE_PERIOD;
-import static com.yahoo.vespa.hosted.athenz.identityprovider.AthenzIdentityProviderImpl.REGISTER_INSTANCE_TAG;
-import static com.yahoo.vespa.hosted.athenz.identityprovider.AthenzIdentityProviderImpl.TIMEOUT_INITIAL_WAIT_TAG;
-import static com.yahoo.vespa.hosted.athenz.identityprovider.AthenzIdentityProviderImpl.UPDATE_CREDENTIALS_TAG;
-import static com.yahoo.vespa.hosted.athenz.identityprovider.AthenzIdentityProviderImpl.UPDATE_PERIOD;
+import static com.yahoo.vespa.athenz.identityprovider.AthenzIdentityProviderImpl.METRICS_UPDATER_TAG;
+import static com.yahoo.vespa.athenz.identityprovider.AthenzIdentityProviderImpl.REDUCED_UPDATE_PERIOD;
+import static com.yahoo.vespa.athenz.identityprovider.AthenzIdentityProviderImpl.UPDATE_CREDENTIALS_TAG;
+import static com.yahoo.vespa.athenz.identityprovider.AthenzIdentityProviderImpl.UPDATE_PERIOD;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
