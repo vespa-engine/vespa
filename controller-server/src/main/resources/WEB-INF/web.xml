@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-<jdisc-config>
-    <init-param>
-        <param-name>com.sun.jersey.spi.container.ContainerRequestFilters</param-name>
-        <param-value>com.yahoo.vespa.hosted.controller.restapi.filter.securitycontext.PropagateSecurityContextFilter</param-value>
-    </init-param>
-</jdisc-config>
