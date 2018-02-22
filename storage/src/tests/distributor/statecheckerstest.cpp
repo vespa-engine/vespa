@@ -1,36 +1,26 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <tests/common/dummystoragelink.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storage/distributor/bucketdbupdater.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/storage/common/bucketmessages.h>
-#include <vespa/storage/config/config-stor-distributormanager.h>
-#include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
-#include <vespa/storage/distributor/operations/idealstate/removebucketoperation.h>
-#include <vespa/storage/distributor/operations/idealstate/setbucketstateoperation.h>
-#include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
-#include <vespa/storage/distributor/maintenance/node_maintenance_stats_tracker.h>
-#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
-#include <vespa/storage/distributor/distributor_bucket_space.h>
-#include <vespa/storageapi/message/stat.h>
-#include <vespa/storage/storageutil/utils.h>
 #include <tests/distributor/distributortestutil.h>
-#include <vespa/storage/distributor/statecheckers.h>
-#include <vespa/storageapi/message/state.h>
 #include <vespa/config-stor-distribution.h>
-#include <vespa/storage/distributor/distributor.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/storage/distributor/bucketdbupdater.h>
+#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
+#include <vespa/storage/distributor/idealstatemanager.h>
+#include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
+#include <vespa/storage/distributor/statecheckers.h>
+#include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/stat.h>
+#include <vespa/vdstestlib/cppunit/macros.h>
 
 using namespace std::literals::string_literals;
 using document::test::makeBucketSpace;
 using document::test::makeDocumentBucket;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 struct StateCheckersTest : public CppUnit::TestFixture,
                            public DistributorTestUtil
@@ -1812,7 +1802,7 @@ StateCheckersTest::statsUpdatedWhenMergingDueToMove()
     {
         NodeMaintenanceStats wanted;
         wanted.copyingOut = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(1));
+        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(1, makeBucketSpace()));
     }
     // Moving 1 bucket from nodes {0, 2} into 3.
     // Note that we do not at this point in time distinguish _which_ of these
@@ -1820,13 +1810,13 @@ StateCheckersTest::statsUpdatedWhenMergingDueToMove()
     {
         NodeMaintenanceStats wanted;
         wanted.copyingIn = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(3));
+        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(3, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wanted;
         wanted.movingOut = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(0));
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(2));
+        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(0, makeBucketSpace()));
+        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(2, makeBucketSpace()));
     }
 }
 
@@ -1842,12 +1832,12 @@ StateCheckersTest::statsUpdatedWhenMergingDueToMissingCopy()
     {
         NodeMaintenanceStats wanted;
         wanted.copyingIn = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(3));
+        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(3, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wanted;
         wanted.copyingOut = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(1));
+        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(1, makeBucketSpace()));
     }
 }
 
@@ -1861,10 +1851,9 @@ StateCheckersTest::statsUpdatedWhenMergingDueToOutOfSyncCopies()
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(1));
-        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(3));
+        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(1, makeBucketSpace()));
+        CPPUNIT_ASSERT_EQUAL(wanted, runner.stats().forNode(3, makeBucketSpace()));
     }
 }
 
-} // distributor
-} // storage}
+}

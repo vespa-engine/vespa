@@ -1,12 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
 #include <vespa/storage/distributor/operationstarter.h>
 #include <vespa/storage/distributor/operations/operation.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <sstream>
+
+using document::test::makeBucketSpace;
 
 namespace storage {
 namespace distributor {
@@ -18,8 +21,8 @@ class MockMaintenancePriorityGenerator
             const document::Bucket&,
             NodeMaintenanceStatsTracker& stats) const override
     {
-        stats.incMovingOut(1);
-        stats.incCopyingIn(2);
+        stats.incMovingOut(1, makeBucketSpace());
+        stats.incCopyingIn(2, makeBucketSpace());
         return MaintenancePriorityAndType(
                 MaintenancePriority(MaintenancePriority::VERY_HIGH),
                 MaintenanceOperation::MERGE_BUCKET);

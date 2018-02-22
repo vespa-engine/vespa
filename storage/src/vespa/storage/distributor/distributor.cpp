@@ -93,6 +93,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _metricUpdateHook(*this),
       _metricLock(),
       _maintenanceStats(),
+      _bucketSpacesStats(),
       _bucketDbStats(),
       _hostInfoReporter(_pendingMessageTracker.getLatencyStatisticsProvider(), *this, *this),
       _ownershipSafeTimeCalc(
@@ -610,6 +611,13 @@ Distributor::getMinReplica() const
     return _bucketDbStats._minBucketReplica;
 }
 
+BucketSpacesStatsProvider::PerNodeBucketSpacesStats
+Distributor::getBucketSpacesStats() const
+{
+    vespalib::LockGuard guard(_metricLock);
+    return _bucketSpacesStats;
+}
+
 void
 Distributor::propagateInternalScanMetricsToExternal()
 {
@@ -624,6 +632,29 @@ Distributor::propagateInternalScanMetricsToExternal()
     }
 }
 
+namespace {
+
+BucketSpaceStats
+toBucketSpaceStats(const NodeMaintenanceStats &stats)
+{
+    return BucketSpaceStats(0, stats.syncing + stats.copyingIn);
+}
+
+BucketSpacesStatsProvider::PerNodeBucketSpacesStats
+toBucketSpacesStats(const NodeMaintenanceStatsTracker &maintenanceStats)
+{
+    BucketSpacesStatsProvider::PerNodeBucketSpacesStats result;
+    for (const auto &nodeEntry : maintenanceStats.perNodeStats()) {
+        for (const auto &bucketSpaceEntry : nodeEntry.second) {
+            auto bucketSpace = document::FixedBucketSpaces::to_string(bucketSpaceEntry.first);
+            result[nodeEntry.first][bucketSpace] = toBucketSpaceStats(bucketSpaceEntry.second);
+        }
+    }
+    return result;
+}
+
+}
+
 void
 Distributor::updateInternalMetricsForCompletedScan()
 {
@@ -632,7 +663,7 @@ Distributor::updateInternalMetricsForCompletedScan()
     _bucketDBMetricUpdater.completeRound();
     _bucketDbStats = _bucketDBMetricUpdater.getLastCompleteStats();
     _maintenanceStats = _scanner->getPendingMaintenanceStats();
-
+    _bucketSpacesStats = toBucketSpacesStats(_maintenanceStats.perNodeStats);
 }
 
 void
