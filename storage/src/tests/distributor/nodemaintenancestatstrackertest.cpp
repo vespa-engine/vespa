@@ -25,7 +25,7 @@ class NodeMaintenanceStatsTrackerTest : public CppUnit::TestFixture
     void requestingNonExistingNodeGivesEmptyStats();
     void statsAreTrackedPerNode();
     void statsAreTrackedPerBucketSpace();
-    void assertBucketStats(BucketSpace bucketSpace, const NodeMaintenanceStatsTracker& tracker);
+    void assertEmptyBucketStats(BucketSpace bucketSpace, const NodeMaintenanceStatsTracker& tracker);
     void assertBucketStats(uint64_t expMovingOut, uint64_t expSyncing, uint64_t expCopyingIn, uint64_t expCopyingOut,
                            BucketSpace bucketSpace, const NodeMaintenanceStatsTracker& tracker);
 };
@@ -114,7 +114,7 @@ NodeMaintenanceStatsTrackerTest::statsAreTrackedPerBucketSpace()
 
     tracker.incMovingOut(0, fooSpace);
     assertBucketStats(1, 0, 0, 0, fooSpace, tracker);
-    assertBucketStats(barSpace, tracker);
+    assertEmptyBucketStats(barSpace, tracker);
 
     tracker.incMovingOut(0, barSpace);
     assertBucketStats(1, 0, 0, 0, fooSpace, tracker);
@@ -134,8 +134,8 @@ NodeMaintenanceStatsTrackerTest::statsAreTrackedPerBucketSpace()
 }
 
 void
-NodeMaintenanceStatsTrackerTest::assertBucketStats(BucketSpace bucketSpace,
-                                                   const NodeMaintenanceStatsTracker& tracker)
+NodeMaintenanceStatsTrackerTest::assertEmptyBucketStats(BucketSpace bucketSpace,
+                                                        const NodeMaintenanceStatsTracker& tracker)
 {
     NodeMaintenanceStats expStats;
     CPPUNIT_ASSERT_EQUAL(expStats, tracker.forNode(0, bucketSpace));
