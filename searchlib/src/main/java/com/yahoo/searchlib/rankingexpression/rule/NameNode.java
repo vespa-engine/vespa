@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
-import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
@@ -15,7 +14,6 @@ import java.util.Deque;
  *
  * @author Simon Thoresen
  */
-// TODO: This is achieved by ReferenceNode in almost all cases - remove this
 public final class NameNode extends ExpressionNode {
 
     private final String name;
@@ -34,7 +32,7 @@ public final class NameNode extends ExpressionNode {
     }
 
     @Override
-    public TensorType type(TypeContext<Reference> context) { throw new RuntimeException("Named nodes can not have a type"); }
+    public TensorType type(TypeContext context) { throw new RuntimeException("Named nodes can not have a type"); }
 
     @Override
     public Value evaluate(Context context) {

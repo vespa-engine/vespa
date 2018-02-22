@@ -10,7 +10,7 @@ import com.yahoo.tensor.Tensor;
  * @author bratseth
  */
 @Beta
-public interface EvaluationContext<NAMETYPE extends TypeContext.Name> extends TypeContext<NAMETYPE> {
+public interface EvaluationContext extends TypeContext {
 
     /** Returns the tensor bound to this name, or null if none */
     Tensor getTensor(String name);

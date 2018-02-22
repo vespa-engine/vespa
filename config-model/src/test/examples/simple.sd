@@ -116,7 +116,7 @@ search simple {
     first-phase {
       keep-rank-count:200
       rank-score-drop-limit: -13.0
-      expression: attribute(popularity)
+      expression: attribute(year)
     }
     second-phase {
       rerank-count: 99

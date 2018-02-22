@@ -2,7 +2,6 @@
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.TensorType;
 
 /**
@@ -69,9 +68,7 @@ public class DoubleOnlyArrayContext extends AbstractArrayContext {
     }
 
     @Override
-    public TensorType getType(Reference reference) {
-        return TensorType.empty; // Double only
-    }
+    public TensorType getType(String name) { return TensorType.empty; }
 
     /** Perform a slow lookup by name */
     @Override

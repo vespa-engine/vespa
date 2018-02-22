@@ -16,7 +16,8 @@ import java.util.Set;
  * Having both of these mappings consolidated here make it easier to remove dependencies on these mappings at
  * run time, since it is essentially only used when building rank profile config at deployment time.
  *
- * TODO: Rank profiles should be stored under its owning Search instance.
+ * TODO: Reconsider the difference between local and global maps. Right now, the local maps might better be
+ *       served from a different class owned by SearchBuilder.
  *
  * @author Ulf Lilleengen
  */
@@ -29,6 +30,9 @@ public class RankProfileRegistry {
 
     /* These rank profiles can be overridden: 'default' rank profile, as that is documented to work. And 'unranked'. */
     static final Set<String> overridableRankProfileNames = new HashSet<>(Arrays.asList("default", "unranked"));
+
+    public RankProfileRegistry() {
+    }
 
     public static RankProfileRegistry createRankProfileRegistryWithBuiltinRankProfiles(Search search) {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
@@ -43,7 +47,7 @@ public class RankProfileRegistry {
      * @param rankProfile the rank profile to add
      */
     public void addRankProfile(RankProfile rankProfile) {
-        if ( ! rankProfiles.containsKey(rankProfile.getSearch())) {
+        if (!rankProfiles.containsKey(rankProfile.getSearch())) {
             rankProfiles.put(rankProfile.getSearch(), new LinkedHashMap<>());
         }
         checkForDuplicateRankProfile(rankProfile);

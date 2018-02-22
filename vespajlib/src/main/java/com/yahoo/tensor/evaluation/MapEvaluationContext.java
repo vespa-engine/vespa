@@ -11,20 +11,17 @@ import java.util.HashMap;
  * @author bratseth
  */
 @Beta
-public class MapEvaluationContext implements EvaluationContext<TypeContext.Name> {
+public class MapEvaluationContext implements EvaluationContext {
 
     private final java.util.Map<String, Tensor> bindings = new HashMap<>();
+
+    static MapEvaluationContext empty() { return new MapEvaluationContext(); }
 
     public void put(String name, Tensor tensor) { bindings.put(name, tensor); }
 
     @Override
     public TensorType getType(String name) {
-        return getType(new Name(name));
-    }
-
-    @Override
-    public TensorType getType(Name name) {
-        Tensor tensor = bindings.get(name.toString());
+        Tensor tensor = bindings.get(name);
         if (tensor == null) return null;
         return tensor.type();
     }

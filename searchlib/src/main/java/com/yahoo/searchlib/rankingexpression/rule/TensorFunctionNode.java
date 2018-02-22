@@ -2,7 +2,6 @@
 package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.google.common.annotations.Beta;
-import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -65,7 +64,7 @@ public class TensorFunctionNode extends CompositeNode {
     }
 
     @Override
-    public TensorType type(TypeContext<Reference> context) { return function.type(context); }
+    public TensorType type(TypeContext context) { return function.type(context); }
 
     @Override
     public Value evaluate(Context context) {
@@ -112,13 +111,12 @@ public class TensorFunctionNode extends CompositeNode {
         public PrimitiveTensorFunction toPrimitive() { return this; }
 
         @Override
-        @SuppressWarnings("unchecked") // Generics awkwardness
-        public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) {
-            return expression.type((TypeContext<Reference>)context);
+        public TensorType type(TypeContext context) {
+            return expression.type(context);
         }
 
         @Override
-        public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
+        public Tensor evaluate(EvaluationContext context) {
             return expression.evaluate((Context)context).asTensor();
         }
 

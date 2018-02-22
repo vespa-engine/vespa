@@ -19,7 +19,6 @@ import java.util.Map;
  * @author bjorncs
  */
 public interface ImmutableSDField {
-
     <T extends Expression> boolean containsExpression(Class<T> searchFor);
 
     boolean doesAttributing();
@@ -33,12 +32,6 @@ public interface ImmutableSDField {
     boolean isHeader();
 
     boolean isImportedField();
-
-    /**
-     * Returns the field backing this - the field itself if this is a regular field,
-     * and the target field if this is imported.
-     */
-    ImmutableSDField getBackingField();
 
     default boolean isConcreteField() {
         return !isImportedField();
