@@ -73,10 +73,10 @@ public class ApplicationSerializerTest {
         List<JobStatus> statusList = new ArrayList<>();
 
         statusList.add(JobStatus.initial(DeploymentJobs.JobType.systemTest)
-                                .withTriggering(Version.fromString("5.6.7"), ApplicationVersion.unknown, true, "Test", Instant.ofEpochMilli(7))
+                                .withTriggering(Version.fromString("5.6.7"), ApplicationVersion.unknown, "Test", Instant.ofEpochMilli(7))
                                 .withCompletion(30, Optional.empty(), Instant.ofEpochMilli(8), tester.controller()));
         statusList.add(JobStatus.initial(DeploymentJobs.JobType.stagingTest)
-                                .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, true, "Test 2", Instant.ofEpochMilli(5))
+                                .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, "Test 2", Instant.ofEpochMilli(5))
                                 .withCompletion(11, Optional.of(JobError.unknown), Instant.ofEpochMilli(6), tester.controller()));
 
         DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, Optional.empty());
@@ -210,12 +210,6 @@ public class ApplicationSerializerTest {
 
         Application applicationWithFailingJob = applicationSerializer.fromSlime(applicationSlime(true));
         assertEquals(JobError.unknown, applicationWithFailingJob.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest).jobError().get());
-    }
-
-    @Test
-    public void testLegacySerializationWithoutUpgradeField() {
-        Application application = applicationSerializer.fromSlime(applicationSlime(false));
-        assertFalse(application.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest).lastCompleted().get().upgrade());
     }
 
     @Test
