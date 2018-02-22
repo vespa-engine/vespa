@@ -15,28 +15,8 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNodeStatsBridge;
  */
 public class DistributorNodeInfo extends NodeInfo {
 
-    private StorageNodeStatsContainer storageNodeStatsContainer = null;
-
     public DistributorNodeInfo(ContentCluster cluster, int index, String rpcAddress, Distribution distribution) {
         super(cluster, new Node(NodeType.DISTRIBUTOR, index), false, rpcAddress, distribution);
-    }
-
-    @Override
-    public void setHostInfo(HostInfo hostInfo) {
-        // This affects getHostInfo(), and makes the host info available through NodeInfo.
-        super.setHostInfo(hostInfo);
-        storageNodeStatsContainer = StorageNodeStatsBridge.traverseHostInfo(hostInfo);
-    }
-
-    /**
-     * @return Stats this distributor has about a storage node, or null if unknown.
-     */
-    public StorageNodeStats getStorageNodeStatsOrNull(int storageNodeIndex) {
-        if (storageNodeStatsContainer == null) {
-            return null;
-        }
-
-        return storageNodeStatsContainer.get(storageNodeIndex);
     }
 
 }
