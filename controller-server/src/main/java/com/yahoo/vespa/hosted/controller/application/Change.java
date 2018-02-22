@@ -98,8 +98,4 @@ public final class Change {
         return new Change(Optional.of(platformChange), Optional.empty());
     }
 
-    public static Change of(Version platformChange, ApplicationVersion applicationVersion) {
-        return new Change(Optional.of(platformChange), Optional.of(applicationVersion));
-    }
-
 }
