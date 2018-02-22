@@ -8,6 +8,7 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -30,6 +31,7 @@ import javax.ws.rs.WebApplicationException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.jdisc.http.HttpRequest.Method.HEAD;
@@ -48,6 +50,8 @@ import static com.yahoo.vespa.hosted.controller.restapi.filter.SecurityFilterUti
 public class ControllerAuthorizationFilter implements SecurityRequestFilter {
 
     private static final List<Method> WHITELISTED_METHODS = Arrays.asList(GET, OPTIONS, HEAD);
+
+    private static final Logger log = Logger.getLogger(ControllerAuthorizationFilter.class.getName());
 
     private final AthenzClientFactory clientFactory;
     private final Controller controller;
@@ -261,7 +265,10 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
         public void handle(ResponseHandler responseHandler,
                            DiscFilterRequest request,
                            WebApplicationException exception) {
-            sendErrorResponse(responseHandler, exception.getResponse().getStatus(), exception.getMessage());
+            int statusCode = exception.getResponse().getStatus();
+            String errorMessage = exception.getMessage();
+            log.log(LogLevel.WARNING, String.format("Access denied(%d): %s", statusCode, errorMessage), exception);
+            sendErrorResponse(responseHandler, statusCode, errorMessage);
         }
     }
 
