@@ -42,6 +42,7 @@ public class AuthorizerTest {
         assertFalse(authorized("node1", "/nodes/v2/state/dirty/"));
         assertFalse(authorized("node1", "/nodes/v2/state/dirty/node2"));
         assertFalse(authorized("node1", "/nodes/v2/acl/node2"));
+        assertFalse(authorized("node1", "/nodes/v2/node/?parentHost=node2"));
         // Node resource always takes precedence over filter
         assertFalse(authorized("node1", "/nodes/v2/acl/node2?hostname=node1"));
         assertFalse(authorized("node1", "/nodes/v2/command/reboot/"));
@@ -51,6 +52,7 @@ public class AuthorizerTest {
         assertTrue(authorized("node1", "/nodes/v2/state/dirty/node1"));
         assertTrue(authorized("node1", "/nodes/v2/acl/node1"));
         assertTrue(authorized("node1", "/nodes/v2/command/reboot?hostname=node1"));
+        assertTrue(authorized("node1", "/nodes/v2/node/?parentHost=node1"));
 
         // Host node can access itself and its children
         assertFalse(authorized("dockerhost1.yahoo.com", "/nodes/v2/node/host5.yahoo.com"));

@@ -87,7 +87,8 @@ public class Authorizer implements BiPredicate<Principal, URI> {
     private static List<String> hostnamesFrom(URI uri) {
         return URLEncodedUtils.parse(uri, StandardCharsets.UTF_8.name())
                               .stream()
-                              .filter(pair -> "hostname".equals(pair.getName()))
+                              .filter(pair -> "hostname".equals(pair.getName()) ||
+                                              "parentHost".equals(pair.getName()))
                               .map(NameValuePair::getValue)
                               .filter(hostname -> !hostname.isEmpty())
                               .collect(Collectors.toList());
@@ -102,7 +103,8 @@ public class Authorizer implements BiPredicate<Principal, URI> {
 
     /** Returns whether given path supports filtering through query parameters */
     private static boolean supportsFiltering(URI uri) {
-        return isChildOf("/nodes/v2/command/", uri.getPath());
+        return isChildOf("/nodes/v2/command/", uri.getPath()) ||
+               "/nodes/v2/node/".equals(uri.getPath());
     }
 
     /** Returns whether child is a sub-path of parent */
