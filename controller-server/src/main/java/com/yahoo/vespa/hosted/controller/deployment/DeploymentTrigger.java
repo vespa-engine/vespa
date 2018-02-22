@@ -86,14 +86,9 @@ public class DeploymentTrigger {
             if (report.success()) {
                 if (report.jobType() == JobType.component) {
                     if (acceptNewApplicationVersionNow(application)) {
-                        // If there's an ongoing upgrade, we allow the upgrade and new application package to be
-                        // deployed together
-                        if (application.change().platform().isPresent()) {
-                            application = application.withChange(Change.of(application.change().platform().get(),
-                                                                           applicationVersion));
-                        } else {
-                            application = application.withChange(Change.of(applicationVersion));
-                        }
+                        // Note that in case of an ongoing upgrade this may result in both the upgrade and application
+                        // change being deployed together
+                        application = application.withChange(application.change().with(applicationVersion));
                     }
                     else { // postpone
                         applications().store(application.withOutstandingChange(Change.of(applicationVersion)));
