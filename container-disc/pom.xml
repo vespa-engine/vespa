@@ -186,6 +186,7 @@
                 docprocs-jar-with-dependencies.jar,
                 jdisc_http_service-jar-with-dependencies.jar,
                 vespaclient-container-plugin-jar-with-dependencies.jar,
+                vespa-athenz-jar-with-dependencies.jar,
                 simplemetrics-jar-with-dependencies.jar,
                 defaults-jar-with-dependencies.jar,
                 component-jar-with-dependencies.jar,

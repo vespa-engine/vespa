@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.container.jdisc.athenz.impl;
+package com.yahoo.vespa.hosted.athenz.identityprovider;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
@@ -9,21 +9,11 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
+import com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
+import java.io.File;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -63,9 +53,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     static final String METRICS_UPDATER_TAG = "metrics-updater";
 
 
-    private final AtomicReference<AthenzCredentials> credentials = new AtomicReference<>();
+    private volatile AthenzCredentials credentials;
     private final AtomicReference<Throwable> lastThrowable = new AtomicReference<>();
-    private final CountDownLatch credentialsRetrievedSignal = new CountDownLatch(1);
     private final AthenzCredentialsService athenzCredentialsService;
     private final Scheduler scheduler;
     private final Clock clock;
@@ -97,26 +86,17 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.clock = clock;
         this.domain = config.domain();
         this.service = config.service();
-        scheduler.submit(new RegisterInstanceTask());
-        scheduler.schedule(new TimeoutInitialWaitTask(), INITIAL_WAIT_NTOKEN);
-
         metricUpdater = new CertificateExpiryMetricUpdater(metric);
+        registerInstance();
     }
 
-    @Override
-    public String getNToken() {
+    private void registerInstance() {
         try {
-            credentialsRetrievedSignal.await();
-            AthenzCredentials credentialsSnapshot = credentials.get();
-            if (credentialsSnapshot == null) {
-                throw new AthenzIdentityProviderException("Could not retrieve Athenz credentials", lastThrowable.get());
-            }
-            if (isExpired(credentialsSnapshot)) {
-                throw new AthenzIdentityProviderException("Athenz credentials are expired", lastThrowable.get());
-            }
-            return credentialsSnapshot.getNToken();
-        } catch (InterruptedException e) {
-            throw new AthenzIdentityProviderException("Failed to register instance credentials", lastThrowable.get());
+            credentials = athenzCredentialsService.registerInstance();
+            scheduler.schedule(new UpdateCredentialsTask(), UPDATE_PERIOD);
+            scheduler.submit(metricUpdater);
+        } catch (Throwable t) {
+            throw new AthenzIdentityProviderException("Could not retrieve Athenz credentials", t);
         }
     }
 
@@ -131,49 +111,13 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     @Override
-    public SSLContext getSslContext() {
-        try {
-            SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-            sslContext.init(createKeyManagersWithServiceCertificate(),
-                        createTrustManagersWithAthenzCa(),
-                        null);
-            return sslContext;
-        } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private KeyManager[] createKeyManagersWithServiceCertificate() {
-        try {
-            credentialsRetrievedSignal.await();
-            KeyStore keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(null);
-            keyStore.setKeyEntry("instance-key",
-                                 credentials.get().getKeyPair().getPrivate(),
-                                 new char[0],
-                                 new Certificate[]{credentials.get().getCertificate()});
-            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            keyManagerFactory.init(keyStore, new char[0]);
-            return keyManagerFactory.getKeyManagers();
-        } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException | CertificateException | IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new AthenzIdentityProviderException("Failed to register instance credentials", lastThrowable.get());
-        }
-    }
-
-    private static TrustManager[] createTrustManagersWithAthenzCa() {
-        try {
-            KeyStore trustStore = KeyStore.getInstance("JKS");
-            try (FileInputStream in = new FileInputStream(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks"))) {
-                trustStore.load(in, null);
-            }
-            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            trustManagerFactory.init(trustStore);
-            return trustManagerFactory.getTrustManagers();
-        } catch (CertificateException | IOException | KeyStoreException | NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+    public SSLContext getIdentitySslContext() {
+        return new AthenzSslContextBuilder()
+                .withIdentityCertificate(new AthenzIdentityCertificate(
+                        credentials.getCertificate(),
+                        credentials.getKeyPair().getPrivate()))
+                .withTrustStore(new File(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks")), "JKS")
+                .build();
     }
 
     @Override
@@ -189,56 +133,19 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         return credentials.getCreatedAt().plus(EXPIRES_AFTER).minus(EXPIRATION_MARGIN);
     }
 
-    private class RegisterInstanceTask implements RunnableWithTag {
-
-        private final Duration backoffDelay;
-
-        RegisterInstanceTask() {
-            this(INITIAL_BACKOFF_DELAY);
-        }
-
-        RegisterInstanceTask(Duration backoffDelay) {
-            this.backoffDelay = backoffDelay;
-        }
-
-        @Override
-        public void run() {
-            try {
-                credentials.set(athenzCredentialsService.registerInstance());
-                credentialsRetrievedSignal.countDown();
-                scheduler.schedule(new UpdateCredentialsTask(), UPDATE_PERIOD);
-                scheduler.submit(metricUpdater);
-            } catch (Throwable t) {
-                log.log(LogLevel.ERROR, "Failed to register instance: " + t.getMessage(), t);
-                lastThrowable.set(t);
-                Duration nextBackoffDelay = backoffDelay.multipliedBy(BACKOFF_DELAY_MULTIPLIER);
-                if (nextBackoffDelay.compareTo(MAX_REGISTER_BACKOFF_DELAY) > 0) {
-                    nextBackoffDelay = MAX_REGISTER_BACKOFF_DELAY;
-                }
-                scheduler.schedule(new RegisterInstanceTask(nextBackoffDelay), backoffDelay);
-            }
-        }
-
-        @Override
-        public String tag() {
-            return REGISTER_INSTANCE_TAG;
-        }
-    }
-
     private class UpdateCredentialsTask implements RunnableWithTag {
         @Override
         public void run() {
-            AthenzCredentials currentCredentials = credentials.get();
             try {
-                AthenzCredentials newCredentials = isExpired(currentCredentials)
+                AthenzCredentials newCredentials = isExpired(credentials)
                         ? athenzCredentialsService.registerInstance()
-                        : athenzCredentialsService.updateCredentials(currentCredentials);
-                credentials.set(newCredentials);
+                        : athenzCredentialsService.updateCredentials(credentials);
+                credentials = newCredentials;
                 scheduler.schedule(new UpdateCredentialsTask(), UPDATE_PERIOD);
             } catch (Throwable t) {
                 log.log(LogLevel.WARNING, "Failed to update credentials: " + t.getMessage(), t);
                 lastThrowable.set(t);
-                Duration timeToExpiration = Duration.between(clock.instant(), getExpirationTime(currentCredentials));
+                Duration timeToExpiration = Duration.between(clock.instant(), getExpirationTime(credentials));
                 // NOTE: Update period might be after timeToExpiration, still we do not want to DDoS Athenz.
                 Duration updatePeriod =
                         timeToExpiration.compareTo(UPDATE_PERIOD) > 0 ? UPDATE_PERIOD : REDUCED_UPDATE_PERIOD;
@@ -261,7 +168,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
         @Override
         public void run() {
-            Instant expirationTime = getExpirationTime(credentials.get());
+            Instant expirationTime = getExpirationTime(credentials);
             Duration remainingLifetime = Duration.between(clock.instant(), expirationTime);
             metric.set(CERTIFICATE_EXPIRY_METRIC_NAME, remainingLifetime.getSeconds(), null);
             scheduler.schedule(this, CERTIFICATE_EXPIRY_METRIC_UPDATE_PERIOD);
@@ -270,18 +177,6 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         @Override
         public String tag() {
             return METRICS_UPDATER_TAG;
-        }
-    }
-
-    private class TimeoutInitialWaitTask implements RunnableWithTag {
-        @Override
-        public void run() {
-            credentialsRetrievedSignal.countDown();
-        }
-
-        @Override
-        public String tag() {
-            return TIMEOUT_INITIAL_WAIT_TAG;
         }
     }
 
