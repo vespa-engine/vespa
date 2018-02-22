@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -38,7 +37,7 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentQueue;
+import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
@@ -462,7 +461,7 @@ public class ControllerTest {
         Application app1 = tester.createApplication("app1", "tenant1", project1, 1L);
         Application app2 = tester.createApplication("app2", "tenant2", project2, 1L);
         Application app3 = tester.createApplication("app3", "tenant3", project3, 1L);
-        DeploymentQueue deploymentQueue = tester.controller().applications().deploymentTrigger().deploymentQueue();
+        BuildSystem buildSystem = tester.controller().applications().deploymentTrigger().buildSystem();
 
         // all applications: system-test completes successfully
         tester.jobCompletion(component).application(app1).uploadArtifact(applicationPackage).submit();
@@ -475,7 +474,7 @@ public class ControllerTest {
         tester.deployAndNotify(app3, applicationPackage, true, systemTest);
 
         // all applications: staging test jobs queued
-        assertEquals(3, deploymentQueue.jobs().size());
+        assertEquals(3, buildSystem.jobs().size());
 
         // app1: staging-test job fails with out of capacity and is added to the front of the queue
         tester.deploy(stagingTest, app1, applicationPackage);
@@ -483,8 +482,8 @@ public class ControllerTest {
               .application(app1)
               .error(JobError.outOfCapacity)
               .submit();
-        assertEquals(stagingTest.jobName(), deploymentQueue.jobs().get(0).jobName());
-        assertEquals(project1, deploymentQueue.jobs().get(0).projectId());
+        assertEquals(stagingTest.jobName(), buildSystem.jobs().get(0).jobName());
+        assertEquals(project1, buildSystem.jobs().get(0).projectId());
 
         // app2 and app3: Completes deployment
         tester.deployAndNotify(app2, applicationPackage, true, stagingTest);
@@ -499,9 +498,9 @@ public class ControllerTest {
         tester.jobCompletion(component).application(app1).buildNumber(43).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
         tester.deploy(stagingTest, app1, applicationPackage);
-        assertEquals(1, deploymentQueue.takeJobsToRun().size());
+        assertEquals(1, buildSystem.takeJobsToRun().size());
         tester.jobCompletion(stagingTest).application(app1).error(JobError.outOfCapacity).submit();
-        assertTrue("No jobs queued", deploymentQueue.jobs().isEmpty());
+        assertTrue("No jobs queued", buildSystem.jobs().isEmpty());
 
         // app2 and app3: New change triggers system-test jobs
         // Provide a changed application package, too, or the deployment is a no-op.
@@ -511,18 +510,26 @@ public class ControllerTest {
         tester.jobCompletion(component).application(app3).buildNumber(43).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app3, applicationPackage2, true, systemTest);
 
-        assertEquals(2, deploymentQueue.jobs().size());
+        assertEquals(2, buildSystem.jobs().size());
 
-        // app1: 4 hours pass in total, staging-test job for app1 is re-queued by periodic trigger mechanism and added at the
+        // app1: 4 hours pass in total, staging-test job is re-queued by periodic trigger mechanism and added at the
         // back of the queue
         tester.clock().advance(Duration.ofHours(3));
         tester.clock().advance(Duration.ofMinutes(50));
         tester.readyJobTrigger().maintain();
 
-        assertEquals(Collections.singletonList(new BuildService.BuildJob(project2, stagingTest.jobName())), deploymentQueue.takeJobsToRun());
-        assertEquals(Collections.singletonList(new BuildService.BuildJob(project3, stagingTest.jobName())), deploymentQueue.takeJobsToRun());
-        assertEquals(Collections.singletonList(new BuildService.BuildJob(project1, stagingTest.jobName())), deploymentQueue.takeJobsToRun());
-        assertEquals(Collections.emptyList(), deploymentQueue.takeJobsToRun());
+        List<com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob> nextJobs = buildSystem.takeJobsToRun();
+        assertEquals(2, nextJobs.size());
+        assertEquals(stagingTest.jobName(), nextJobs.get(0).jobName());
+        assertEquals(project2, nextJobs.get(0).projectId());
+        assertEquals(stagingTest.jobName(), nextJobs.get(1).jobName());
+        assertEquals(project3, nextJobs.get(1).projectId());
+
+        // And finally the requeued job for app1
+        nextJobs = buildSystem.takeJobsToRun();
+        assertEquals(1, nextJobs.size());
+        assertEquals(stagingTest.jobName(), nextJobs.get(0).jobName());
+        assertEquals(project1, nextJobs.get(0).projectId());
     }
 
     private void assertStatus(JobStatus expectedStatus, ApplicationId id, Controller controller) {
@@ -623,7 +630,7 @@ public class ControllerTest {
 
         // Test environments pass
         tester.deploy(DeploymentJobs.JobType.systemTest, application, applicationPackage);
-        tester.deploymentQueue().takeJobsToRun();
+        tester.buildSystem().takeJobsToRun();
         tester.clock().advance(Duration.ofMinutes(10));
         tester.jobCompletion(systemTest).application(application).submit();
 
