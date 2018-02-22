@@ -41,7 +41,12 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>testutil</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
 
         <!-- compile -->
         <dependency>
