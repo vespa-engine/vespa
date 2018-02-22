@@ -15,15 +15,14 @@ import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.Statistics;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
-import com.github.dockerjava.core.RemoteApiVersion;
 import com.github.dockerjava.core.async.ResultCallbackTemplate;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
@@ -34,7 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.URI;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,13 +56,11 @@ public class DockerImpl implements Docker {
 
     public static final String DOCKER_CUSTOM_MACVLAN_NETWORK_NAME = "vespa-macvlan";
     static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
-
-    private final int SECONDS_TO_WAIT_BEFORE_KILLING;
-    private final boolean fallbackTo123OnErrors;
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
+
     private final DockerConfig config;
-    private final boolean inProduction;
-    private Optional<DockerImageGarbageCollector> dockerImageGC = Optional.empty();
+    private final Optional<DockerImageGarbageCollector> dockerImageGC;
+    private final int secondsToWaitBeforeKilling;
     private CounterWrapper numberOfDockerDaemonFails;
     private boolean started = false;
 
@@ -76,41 +72,25 @@ public class DockerImpl implements Docker {
     DockerClient dockerClient;
 
     @Inject
-    public DockerImpl(final DockerConfig config, MetricReceiverWrapper metricReceiver) {
-        this(config,
-                true, /* fallback to 1.23 on errors */
-                metricReceiver,
-                !config.isRunningLocally());
-    }
-
-    private DockerImpl(final DockerConfig config,
-                       boolean fallbackTo123OnErrors,
-                       MetricReceiverWrapper metricReceiverWrapper,
-                       boolean inProduction) {
+    public DockerImpl(DockerConfig config, MetricReceiverWrapper metricReceiverWrapper) {
         this.config = config;
-        this.fallbackTo123OnErrors = fallbackTo123OnErrors;
-        this.inProduction = inProduction;
-        if (config == null) {
-            this.SECONDS_TO_WAIT_BEFORE_KILLING = 10;
-        } else {
-            SECONDS_TO_WAIT_BEFORE_KILLING = config.secondsToWaitBeforeKillingContainer();
-        }
-        if (metricReceiverWrapper != null) {
-            setMetrics(metricReceiverWrapper);
-        }
+
+        secondsToWaitBeforeKilling = Optional.ofNullable(config)
+                .map(DockerConfig::secondsToWaitBeforeKillingContainer)
+                .orElse(10);
+
+        dockerImageGC = Optional.ofNullable(config)
+                .map(DockerConfig::imageGCMinTimeToLiveMinutes)
+                .map(Duration::ofMinutes)
+                .map(DockerImageGarbageCollector::new);
+
+        Optional.ofNullable(metricReceiverWrapper).ifPresent(this::setMetrics);
     }
 
     // For testing
     DockerImpl(final DockerClient dockerClient) {
-        this(null, false, null, false);
+        this(null, null);
         this.dockerClient = dockerClient;
-    }
-
-    // For testing
-    DockerImpl(final DockerConfig config,
-               boolean fallbackTo123OnErrors,
-               MetricReceiverWrapper metricReceiverWrapper) {
-        this(config, fallbackTo123OnErrors, metricReceiverWrapper, false);
     }
 
     @Override
@@ -119,20 +99,13 @@ public class DockerImpl implements Docker {
         started = true;
 
         if (config != null) {
-            if (dockerClient == null) {
-                dockerClient = initDockerConnection();
-            }
-            if (inProduction) {
-                Duration minAgeToDelete = Duration.ofMinutes(config.imageGCMinTimeToLiveMinutes());
-                dockerImageGC = Optional.of(new DockerImageGarbageCollector(minAgeToDelete));
+            dockerClient = createDockerClient(config);
 
-
-                if (!config.networkNATed()) {
-                    try {
-                        setupDockerNetworkIfNeeded();
-                    } catch (Exception e) {
-                        throw new DockerException("Could not setup docker network", e);
-                    }
+            if (!config.networkNATed()) {
+                try {
+                    setupDockerNetworkIfNeeded();
+                } catch (Exception e) {
+                    throw new DockerException("Could not setup docker network", e);
                 }
             }
         }
@@ -141,21 +114,6 @@ public class DockerImpl implements Docker {
     @Override
     public boolean networkNPTed() {
         return config.networkNATed();
-    }
-
-    static DefaultDockerClientConfig.Builder buildDockerClientConfig(DockerConfig config) {
-        DefaultDockerClientConfig.Builder dockerConfigBuilder = new DefaultDockerClientConfig.Builder()
-                .withDockerHost(config.uri());
-
-        if (URI.create(config.uri()).getScheme().equals("tcp") && !config.caCertPath().isEmpty()) {
-            // In current version of docker-java (3.0.2), withDockerTlsVerify() only effect is when using it together
-            // with withDockerCertPath(), where setting withDockerTlsVerify() must be set to true, otherwise the
-            // cert path parameter will be ignored.
-            // withDockerTlsVerify() has no effect when used with withCustomSslConfig()
-            dockerConfigBuilder.withCustomSslConfig(new VespaSSLConfig(config));
-        }
-
-        return dockerConfigBuilder;
     }
 
     private void setupDockerNetworkIfNeeded() throws IOException {
@@ -366,7 +324,7 @@ public class DockerImpl implements Docker {
     @Override
     public void stopContainer(final ContainerName containerName) {
         try {
-            dockerClient.stopContainerCmd(containerName.asString()).withTimeout(SECONDS_TO_WAIT_BEFORE_KILLING).exec();
+            dockerClient.stopContainerCmd(containerName.asString()).withTimeout(secondsToWaitBeforeKilling).exec();
         } catch (NotModifiedException ignored) {
             // If is already stopped, ignore
         } catch (RuntimeException e) {
@@ -545,36 +503,18 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private DockerClient initDockerConnection() {
+    private static DockerClient createDockerClient(DockerConfig config) {
         JerseyDockerCmdExecFactory dockerFactory = new JerseyDockerCmdExecFactory()
                 .withMaxPerRouteConnections(config.maxPerRouteConnections())
                 .withMaxTotalConnections(config.maxTotalConnections())
                 .withConnectTimeout(config.connectTimeoutMillis())
                 .withReadTimeout(config.readTimeoutMillis());
-        RemoteApiVersion remoteApiVersion;
-        try {
-            remoteApiVersion = RemoteApiVersion.parseConfig(DockerClientImpl.getInstance(
-                    buildDockerClientConfig(config).build())
-                    .withDockerCmdExecFactory(dockerFactory).versionCmd().exec().getApiVersion());
-            logger.info("Found version of remote docker API: " + remoteApiVersion);
-            // From version 1.24 a field was removed which causes trouble with the current docker java code.
-            // When this is fixed, we can remove this and do not specify version.
-            if (remoteApiVersion.isGreaterOrEqual(RemoteApiVersion.VERSION_1_24)) {
-                remoteApiVersion = RemoteApiVersion.VERSION_1_23;
-                logger.info("Found version 1.24 or newer of remote API, using 1.23.");
-            }
-        } catch (Exception e) {
-            if (!fallbackTo123OnErrors) {
-                throw e;
-            }
-            logger.log(LogLevel.ERROR, "Failed when trying to figure out remote API version of docker, using 1.23", e);
-            remoteApiVersion = RemoteApiVersion.VERSION_1_23;
-        }
 
-        return DockerClientImpl.getInstance(
-                buildDockerClientConfig(config)
-                        .withApiVersion(remoteApiVersion)
-                        .build())
+        DockerClientConfig dockerClientConfig = new DefaultDockerClientConfig.Builder()
+                .withDockerHost(config.uri())
+                .build();
+
+        return DockerClientImpl.getInstance(dockerClientConfig)
                 .withDockerCmdExecFactory(dockerFactory);
     }
 
