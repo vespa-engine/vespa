@@ -2,6 +2,7 @@
 
 #include "bouncer.h"
 #include "bouncer_metrics.h"
+#include <vespa/storage/common/cluster_state_bundle.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/config/subscription/configuri.h>
@@ -289,14 +290,15 @@ Bouncer::handleNewState()
 {
     vespalib::LockGuard lock(_lock);
     _nodeState = *_component.getStateUpdater().getReportedNodeState();
-    _clusterState = &_component.getStateUpdater().getSystemState()
-                        ->getClusterState();
+    const auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
+    const auto &clusterState = *clusterStateBundle->getBaselineClusterState();
+    _clusterState = &clusterState.getClusterState();
     if (_config->useWantedStateIfPossible) {
-            // If current node state is more strict than our own reported state,
-            // set node state to our current state
-        lib::NodeState currState = _component.getStateUpdater().getSystemState()
-                ->getNodeState(lib::Node(_component.getNodeType(),
-                                         _component.getIndex()));
+        // If current node state is more strict than our own reported state,
+        // set node state to our current state
+        lib::NodeState currState = clusterState.
+                getNodeState(lib::Node(_component.getNodeType(),
+                                       _component.getIndex()));
         if (_nodeState.getState().maySetWantedStateForThisNodeState(
                     currState.getState()))
         {

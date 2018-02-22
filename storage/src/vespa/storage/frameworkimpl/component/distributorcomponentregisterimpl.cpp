@@ -2,6 +2,7 @@
 #include "distributorcomponentregisterimpl.h"
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/storage/common/cluster_state_bundle.h>
 
 namespace storage {
 
@@ -16,7 +17,8 @@ DistributorComponentRegisterImpl::~DistributorComponentRegisterImpl() {
 void
 DistributorComponentRegisterImpl::handleNewState()
 {
-    _clusterState = *getNodeStateUpdater().getSystemState();
+    auto clusterStateBundle = getNodeStateUpdater().getClusterStateBundle();
+    _clusterState = *clusterStateBundle->getBaselineClusterState();
 }
 
 void
@@ -70,8 +72,9 @@ void
 DistributorComponentRegisterImpl::setNodeStateUpdater(NodeStateUpdater& updater)
 {
     StorageComponentRegisterImpl::setNodeStateUpdater(updater);
-    if (updater.getSystemState().get() != 0) {
-        _clusterState = *updater.getSystemState();
+    auto clusterStateBundle = updater.getClusterStateBundle();
+    if (clusterStateBundle) {
+        _clusterState = *clusterStateBundle->getBaselineClusterState();
     }
     updater.addStateListener(*this);
 }

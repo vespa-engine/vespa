@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mergethrottler.h"
+#include <vespa/storage/common/cluster_state_bundle.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/messagebus/message.h>
@@ -712,7 +713,7 @@ MergeThrottler::handleMessageDown(
     if (msg->getType() == api::MessageType::MERGEBUCKET) {
         auto& mergeCmd = static_cast<const api::MergeBucketCommand&>(*msg);
 
-        uint32_t ourVersion = _component.getStateUpdater().getSystemState()->getVersion();
+        uint32_t ourVersion = _component.getStateUpdater().getClusterStateBundle()->getVersion();
 
         if (mergeCmd.getClusterStateVersion() > ourVersion) {
             LOG(debug, "Merge %s with newer cluster state than us arrived",

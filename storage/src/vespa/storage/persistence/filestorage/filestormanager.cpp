@@ -6,6 +6,7 @@
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
+#include <vespa/storage/common/cluster_state_bundle.h>
 #include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
@@ -574,7 +575,7 @@ FileStorManager::onMergeBucket(const shared_ptr<api::MergeBucketCommand>& cmd)
                     vespalib::make_string(
                             "Trying to perform merge %s whose bucket belongs on target disk %d, which is down. Cluster state version of command is %d, our system state version is %d",
                             cmd->toString().c_str(), entry->disk, cmd->getClusterStateVersion(),
-                            _component.getStateUpdater().getSystemState()->getVersion()));
+                            _component.getStateUpdater().getClusterStateBundle()->getVersion()));
             LOGBT(debug, cmd->getBucketId().toString(), "%s", code.getMessage().c_str());
             api::MergeBucketReply::SP reply(new api::MergeBucketReply(*cmd));
             reply->setResult(code);
@@ -965,7 +966,8 @@ namespace {
 void
 FileStorManager::updateState()
 {
-    lib::ClusterState::CSP state(_component.getStateUpdater().getSystemState());
+    auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
+    lib::ClusterState::CSP state(clusterStateBundle->getBaselineClusterState());
     lib::Node node(_component.getNodeType(), _component.getIndex());
     bool nodeUp = state->getNodeState(node).getState().oneOf("uir");
 
