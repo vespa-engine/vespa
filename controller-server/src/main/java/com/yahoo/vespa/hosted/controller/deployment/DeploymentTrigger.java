@@ -86,8 +86,12 @@ public class DeploymentTrigger {
             if (report.success()) {
                 if (report.jobType() == JobType.component) {
                     if (acceptNewApplicationVersionNow(application)) {
-                        // Set this as the change we are doing, unless we are already pushing a platform change
-                        if ( ! ( application.change().platform().isPresent())) {
+                        // If there's an ongoing upgrade, we allow the upgrade and new application package to be
+                        // deployed together
+                        if (application.change().platform().isPresent()) {
+                            application = application.withChange(Change.of(application.change().platform().get(),
+                                                                           applicationVersion));
+                        } else {
                             application = application.withChange(Change.of(applicationVersion));
                         }
                     }

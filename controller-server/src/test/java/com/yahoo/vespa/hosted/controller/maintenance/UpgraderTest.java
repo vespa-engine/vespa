@@ -842,4 +842,53 @@ public class UpgraderTest {
         assertTrue("All jobs consumed", tester.deploymentQueue().jobs().isEmpty());
     }
 
+    @Test
+    public void testAllowApplicationChangeDuringFailingUpgrade() {
+        DeploymentTester tester = new DeploymentTester();
+        Version version = Version.fromString("5.0");
+        tester.updateVersionStatus(version);
+
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+
+        Application app = tester.createAndDeploy("app1", 1, applicationPackage);
+
+        // New version is released
+        version = Version.fromString("5.1");
+        tester.updateVersionStatus(version);
+        tester.upgrader().maintain();
+
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+
+        // Production job fails and exhausts retries, new application changes are now accepted
+        tester.deployAndNotify(app, applicationPackage, false, productionUsWest1);
+        tester.clock().advance(Duration.ofHours(1));
+        tester.deployAndNotify(app, applicationPackage, false, productionUsWest1);
+
+        // New application change
+        tester.jobCompletion(component).application(app).buildNumber(43).uploadArtifact(applicationPackage).submit();
+        String applicationVersion = "1.0.43-commit1";
+
+        // Application change recorded together with ongoing upgrade
+        app = tester.application(app.id());
+        assertTrue("Change contains both upgrade and application change",
+                   app.change().platform().get().equals(version) &&
+                   app.change().application().get().id().equals(applicationVersion));
+
+        // Deployment completes
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
+        assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
+
+        app = tester.application(app.id());
+        for (Deployment deployment : app.deployments().values()) {
+            assertEquals(version, deployment.version());
+            assertEquals(applicationVersion, deployment.applicationVersion().id());
+        }
+    }
+
 }
