@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Collections;
@@ -15,7 +16,7 @@ import java.util.Set;
  */
 public class MapContext extends Context {
 
-    private Map<String, Value> bindings = new HashMap<>();
+    private Map<String, Value> bindings = new HashMap<>(); // TODO: Change String to Reference
 
     private boolean frozen = false;
 
@@ -42,8 +43,8 @@ public class MapContext extends Context {
 
     /** Returns the type of the given value key, or null if it is not bound. */
     @Override
-    public TensorType getType(String key) {
-        Value value = bindings.get(key);
+    public TensorType getType(Reference key) {
+        Value value = bindings.get(key.toString());
         if (value == null) return null;
         return value.type();
     }

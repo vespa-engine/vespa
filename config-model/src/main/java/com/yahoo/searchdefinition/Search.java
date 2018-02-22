@@ -199,9 +199,7 @@ public class Search implements Serializable, ImmutableSearch {
     @Override
     public ImmutableSDField getField(String name) {
         ImmutableSDField field = getConcreteField(name);
-        if (field != null) {
-            return field;
-        }
+        if (field != null) return field;
         return allImportedFields()
                 .filter(f -> f.getName().equals(name))
                 .findFirst()
@@ -248,8 +246,6 @@ public class Search implements Serializable, ImmutableSearch {
      * Returns a list of all the fields of this search definition, that is all fields in all documents, in the documents
      * they inherit, and all extra fields. The caller receives ownership to the list - subsequent changes to it will not
      * impact this
-     *
-     * @return the list of fields in this searchdefinition
      */
     public List<SDField> allConcreteFields() {
         List<SDField> allFields = new ArrayList<>();
