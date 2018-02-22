@@ -2,7 +2,7 @@
 
 #include "bouncer.h"
 #include "bouncer_metrics.h"
-#include <vespa/storage/common/cluster_state_bundle.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/config/subscription/configuri.h>

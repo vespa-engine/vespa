@@ -33,7 +33,7 @@ namespace metrics {
 
 namespace storage {
 
-class ClusterStateBundle;
+namespace lib { class ClusterStateBundle; }
 
 class StateManager : public NodeStateUpdater,
                      public StorageLink,
@@ -50,6 +50,7 @@ class StateManager : public NodeStateUpdater,
     std::atomic<bool> _notifyingListeners;
     std::shared_ptr<lib::NodeState> _nodeState;
     std::shared_ptr<lib::NodeState> _nextNodeState;
+    using ClusterStateBundle = lib::ClusterStateBundle;
     std::shared_ptr<const ClusterStateBundle> _systemState;
     std::shared_ptr<const ClusterStateBundle> _nextSystemState;
     std::list<StateListener*> _stateListeners;

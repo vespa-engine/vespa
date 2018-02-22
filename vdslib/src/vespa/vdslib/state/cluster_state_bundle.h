@@ -4,9 +4,9 @@
 
 #include <vespa/document/bucket/bucketspace.h>
 
-namespace storage {
+namespace storage::lib {
 
-namespace lib { class ClusterState; }
+class ClusterState;
 
 /**
  * Class representing the baseline cluster state and the derived cluster
@@ -14,7 +14,6 @@ namespace lib { class ClusterState; }
  */
 class ClusterStateBundle
 {
-    using ClusterState = lib::ClusterState;
     std::shared_ptr<const ClusterState> _baselineClusterState;
 public:
     explicit ClusterStateBundle(const ClusterState &baselineClusterState);

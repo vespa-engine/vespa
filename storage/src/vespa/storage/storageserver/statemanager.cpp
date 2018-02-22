@@ -9,7 +9,7 @@
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
-#include <vespa/storage/common/cluster_state_bundle.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -192,7 +192,7 @@ StateManager::getCurrentNodeState() const
         (_systemState->getBaselineClusterState()->getNodeState(thisNode()));
 }
 
-std::shared_ptr<const ClusterStateBundle>
+std::shared_ptr<const lib::ClusterStateBundle>
 StateManager::getClusterStateBundle() const
 {
     vespalib::LockGuard lock(_stateLock);
