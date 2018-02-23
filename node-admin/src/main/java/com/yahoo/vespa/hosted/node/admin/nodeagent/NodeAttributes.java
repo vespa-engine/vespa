@@ -6,7 +6,7 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import java.util.Objects;
 
 
-// It somewhat sucks that this class almost duplicates a binding class used by NodeRepositoryImpl,
+// It somewhat sucks that this class almost duplicates a binding class used by RealNodeRepository,
 // but using the binding class here would be a layer violation, and would also tie this logic to
 // serialization-related dependencies it needs not have.
 public class NodeAttributes {
