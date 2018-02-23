@@ -1,9 +1,6 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=vespa.hosted.dockerapi
 
-caCertPath string default = ""
-clientCertPath string default = ""
-clientKeyPath string default = ""
 uri string default = "unix:///host/var/run/docker.sock"
 
 secondsToWaitBeforeKillingContainer int default = 10

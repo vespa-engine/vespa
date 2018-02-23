@@ -33,8 +33,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
-
 /**
  * Class that wraps the Docker class and have some tools related to running programs in docker.
  *
