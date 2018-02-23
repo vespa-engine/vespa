@@ -5,6 +5,43 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".queryperf");
 
+namespace {
+
+struct MyLogTask : vespalib::Executor::Task {
+    uint32_t queueLen;
+    uint32_t activeCnt;
+    uint32_t queryCnt;
+    uint32_t dropCnt;
+    uint32_t timeoutCnt;
+    double avgQueryTime;
+    MyLogTask(uint32_t queueLen_in,
+              uint32_t activeCnt_in,
+              uint32_t queryCnt_in,
+              uint32_t dropCnt_in,
+              uint32_t timeoutCnt_in,
+              double avgQueryTime_in)
+        : queueLen(queueLen_in),
+          activeCnt(activeCnt_in),
+          queryCnt(queryCnt_in),
+          dropCnt(dropCnt_in),
+          timeoutCnt(timeoutCnt_in),
+          avgQueryTime(avgQueryTime_in)
+    {
+    }
+    void run() override {
+        EV_VALUE("queued_queries",   queueLen);
+        EV_VALUE("active_queries",   activeCnt);
+        EV_COUNT("queries",          queryCnt);
+        EV_COUNT("dropped_queries",  dropCnt);
+        EV_COUNT("timedout_queries", timeoutCnt);
+        if (avgQueryTime > 0.0) {
+            EV_VALUE("query_eval_time_avg_s", avgQueryTime);
+        }
+    }
+};
+
+} // namespace <unnamed>
+
 FastS_QueryPerf::FastS_QueryPerf()
     : queueLen(0),
       activeCnt(0),
@@ -28,19 +65,20 @@ FastS_QueryPerf::reset()
     timeoutCnt = 0;
 }
 
-void
-FastS_QueryPerf::log()
+vespalib::Executor::Task::UP
+FastS_QueryPerf::make_log_task()
 {
-    EV_VALUE("queued_queries",   queueLen);
-    EV_VALUE("active_queries",   activeCnt);
-    EV_COUNT("queries",          queryCnt);
-    EV_COUNT("dropped_queries",  dropCnt);
-    EV_COUNT("timedout_queries", timeoutCnt);
+    double avgQueryTime = 0.0;
     if (queryCnt > _lastQueryCnt) {
-        double avgQueryTime = (queryTime - _lastQueryTime)
-                              / ((double)(queryCnt - _lastQueryCnt));
-        EV_VALUE("query_eval_time_avg_s", avgQueryTime);
+        avgQueryTime = (queryTime - _lastQueryTime)
+                       / ((double)(queryCnt - _lastQueryCnt));
     }
     _lastQueryCnt  = queryCnt;
     _lastQueryTime = queryTime;
+    return std::make_unique<MyLogTask>(queueLen,
+                                       activeCnt,
+                                       queryCnt,
+                                       dropCnt,
+                                       timeoutCnt,
+                                       avgQueryTime);
 }
