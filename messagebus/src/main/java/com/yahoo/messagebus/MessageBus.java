@@ -163,17 +163,6 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         return metrics;
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            if (destroy()) {
-                log.log(LogLevel.WARNING, "MessageBus destroyed by finalizer, please review application shutdown logic.");
-            }
-        } finally {
-            super.finalize();
-        }
-    }
-
     /**
      * <p>Sets the destroyed flag to true. The very first time this method is
      * called, it cleans up all its dependencies. Even if you retain a reference
