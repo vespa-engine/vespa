@@ -255,8 +255,7 @@ struct StateCheckersTest : public CppUnit::TestFixture,
         document::BucketId bid(17, 0);
         addNodesToBucketDB(bid, params._bucketInfo);
         setRedundancy(params._redundancy);
-        _distributor->enableClusterState(
-                lib::ClusterState(params._clusterState));
+        enableDistributorClusterState(params._clusterState);
         NodeMaintenanceStatsTracker statsTracker;
         StateChecker::Context c(
                 getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
