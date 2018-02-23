@@ -14,20 +14,23 @@ public class ContentNodeStats {
     private Map<String, BucketSpaceStats> bucketSpaces = new HashMap<>();
 
     public static class BucketSpaceStats {
+        private boolean invalid;
         private long bucketsTotal;
         private long bucketsPending;
 
         private BucketSpaceStats() {
+            this.invalid = true;
             this.bucketsTotal = 0;
             this.bucketsPending = 0;
         }
 
         private BucketSpaceStats(long bucketsTotal, long bucketsPending) {
+            this.invalid = false;
             this.bucketsTotal = bucketsTotal;
             this.bucketsPending = bucketsPending;
         }
 
-        public static BucketSpaceStats empty() {
+        public static BucketSpaceStats invalid() {
             return new BucketSpaceStats();
         }
 
@@ -43,7 +46,16 @@ public class ContentNodeStats {
             return bucketsPending;
         }
 
+        public boolean mayHaveBucketsPending() {
+            return (bucketsPending > 0) || invalid;
+        }
+
+        public boolean valid() {
+            return !invalid;
+        }
+
         public void merge(BucketSpaceStats rhs, int factor) {
+            this.invalid |= rhs.invalid;
             this.bucketsTotal += (factor * rhs.bucketsTotal);
             this.bucketsPending += (factor * rhs.bucketsPending);
         }
@@ -76,7 +88,7 @@ public class ContentNodeStats {
                         BucketSpaceStats.of(stats.getBucketStats().getTotal(),
                                 stats.getBucketStats().getPending()));
             } else {
-                this.bucketSpaces.put(stats.getName(), BucketSpaceStats.empty());
+                this.bucketSpaces.put(stats.getName(), BucketSpaceStats.invalid());
             }
         }
     }

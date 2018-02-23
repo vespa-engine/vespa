@@ -21,7 +21,7 @@ public class ClusterStatsAggregatorTest {
             return add(nodeIndex, bucketSpace, ContentNodeStats.BucketSpaceStats.of(bucketsTotal, bucketsPending));
         }
         public StatsBuilder add(int nodeIndex, String bucketSpace) {
-            return add(nodeIndex, bucketSpace, ContentNodeStats.BucketSpaceStats.empty());
+            return add(nodeIndex, bucketSpace, ContentNodeStats.BucketSpaceStats.invalid());
         }
         public StatsBuilder add(int nodeIndex, String bucketSpace, ContentNodeStats.BucketSpaceStats bucketSpaceStats) {
             Map<String, ContentNodeStats.BucketSpaceStats> contentNodeStats = stats.get(nodeIndex);
