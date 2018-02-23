@@ -125,6 +125,10 @@ public class ContentNodeStats {
         }
     }
 
+    public BucketSpaceStats getBucketSpace(String bucketSpace) {
+        return bucketSpaces.get(bucketSpace);
+    }
+
     public Map<String, BucketSpaceStats> getBucketSpaces() {
         return bucketSpaces;
     }
