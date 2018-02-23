@@ -233,6 +233,7 @@ private:
 
     void enableNextDistribution();
     void propagateDefaultDistribution(std::shared_ptr<const lib::Distribution>);
+    void propagateClusterStates();
 
     lib::ClusterState _clusterState;
 
