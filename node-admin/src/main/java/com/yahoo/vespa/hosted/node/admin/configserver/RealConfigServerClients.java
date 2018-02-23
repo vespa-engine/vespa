@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepositoryImpl;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.RealNodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorImpl;
 
@@ -27,7 +27,7 @@ public class RealConfigServerClients implements ConfigServerClients {
     }
 
     private RealConfigServerClients(ConfigServerApi configServerApi) {
-        this(new NodeRepositoryImpl(configServerApi), new OrchestratorImpl(configServerApi), Optional.of(configServerApi));
+        this(new RealNodeRepository(configServerApi), new OrchestratorImpl(configServerApi), Optional.of(configServerApi));
     }
 
     private RealConfigServerClients(NodeRepository nodeRepository, Orchestrator orchestrator,
