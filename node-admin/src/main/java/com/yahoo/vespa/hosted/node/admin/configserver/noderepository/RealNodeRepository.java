@@ -1,18 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
-import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
+import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
+import com.yahoo.vespa.hosted.node.admin.configserver.SslConfigServerApiImpl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetAclResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetNodesResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeMessageResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.UpdateNodeAttributesRequestBody;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.UpdateNodeAttributesResponse;
-import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -26,13 +28,17 @@ import java.util.stream.Collectors;
 /**
  * @author stiankri, dybis
  */
-public class NodeRepositoryImpl implements NodeRepository {
-    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(NodeRepositoryImpl.class);
+public class RealNodeRepository implements NodeRepository {
+    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(RealNodeRepository.class);
 
     private final ConfigServerApi configServerApi;
 
-    public NodeRepositoryImpl(ConfigServerApi configServerApi) {
+    public RealNodeRepository(ConfigServerApi configServerApi) {
         this.configServerApi = configServerApi;
+    }
+
+    public RealNodeRepository(Environment environment) {
+        this(new SslConfigServerApiImpl(environment));
     }
 
     @Override

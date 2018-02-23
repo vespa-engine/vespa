@@ -34,7 +34,7 @@ import static org.junit.Assert.fail;
  *
  * @author dybdahl
  */
-public class NodeRepositoryImplTest {
+public class RealNodeRepositoryTest {
     private JDisc container;
     private ConfigServerApiImpl configServerApi;
 
@@ -74,7 +74,7 @@ public class NodeRepositoryImplTest {
 
     private void waitForJdiscContainerToServe() throws InterruptedException {
         Instant start = Instant.now();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerApi);
+        NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         while (Instant.now().minusSeconds(120).isBefore(start)) {
             try {
                 nodeRepositoryApi.getContainersToRun("foobar");
@@ -96,7 +96,7 @@ public class NodeRepositoryImplTest {
     @Test
     public void testGetContainersToRunApi() throws InterruptedException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerApi);
+        NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String dockerHostHostname = "dockerhost1.yahoo.com";
 
         final List<ContainerNodeSpec> containersToRun = nodeRepositoryApi.getContainersToRun(dockerHostHostname);
@@ -115,7 +115,7 @@ public class NodeRepositoryImplTest {
     @Test
     public void testGetContainer() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerApi);
+        NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String hostname = "host4.yahoo.com";
         Optional<ContainerNodeSpec> nodeSpec = nodeRepositoryApi.getContainerNodeSpec(hostname);
         assertThat(nodeSpec.isPresent(), is(true));
@@ -125,7 +125,7 @@ public class NodeRepositoryImplTest {
     @Test
     public void testGetContainerForNonExistingNode() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerApi);
+        NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String hostname = "host-that-does-not-exist";
         Optional<ContainerNodeSpec> nodeSpec = nodeRepositoryApi.getContainerNodeSpec(hostname);
         assertFalse(nodeSpec.isPresent());
@@ -134,7 +134,7 @@ public class NodeRepositoryImplTest {
     @Test
     public void testUpdateNodeAttributes() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerApi);
+        NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String hostname = "host4.yahoo.com";
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
@@ -147,7 +147,7 @@ public class NodeRepositoryImplTest {
     @Test(expected = RuntimeException.class)
     public void testUpdateNodeAttributesWithBadValue() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerApi);
+        NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String hostname = "host4.yahoo.com";
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
@@ -159,7 +159,7 @@ public class NodeRepositoryImplTest {
 
     @Test
     public void testMarkAsReady() throws InterruptedException, IOException {
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerApi);
+        NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         waitForJdiscContainerToServe();
 
         nodeRepositoryApi.markAsDirty("host5.yahoo.com");
