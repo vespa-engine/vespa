@@ -165,19 +165,6 @@ public class ContentCluster {
         }
     }
 
-    public StorageNodeStats getStorageNodeStats(int storageNodeIndex) {
-        LatencyStats aggregatePutLatencyStats = new LatencyStats();
-        StorageNodeStats aggregateStats = new StorageNodeStats(aggregatePutLatencyStats);
-        for (DistributorNodeInfo distributor : clusterInfo.getDistributorNodeInfo()) {
-            StorageNodeStats statsFromDistributor = distributor.getStorageNodeStatsOrNull(storageNodeIndex);
-            if (statsFromDistributor != null) {
-                aggregateStats.add(statsFromDistributor);
-            }
-        }
-
-        return aggregateStats;
-    }
-
     /**
      * Checks if a node can be upgraded
      *

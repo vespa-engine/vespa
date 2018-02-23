@@ -16,31 +16,6 @@ public class StorageNodeStatsBridge {
 
     private StorageNodeStatsBridge() { }
 
-    public static StorageNodeStatsContainer traverseHostInfo(HostInfo hostInfo) {
-        StorageNodeStatsContainer container = new StorageNodeStatsContainer();
-        List<StorageNode> storageNodes = hostInfo.getDistributor().getStorageNodes();
-        for (StorageNode storageNode : storageNodes) {
-            Integer storageNodeIndex = storageNode.getIndex();
-            if (storageNodeIndex == null) {
-                continue;
-            }
-            StorageNode.OpsLatency opsLatency = storageNode.getOpsLatenciesOrNull();
-            if (opsLatency == null) {
-                continue;
-            }
-            StorageNode.Put putLatency = opsLatency.getPut();
-            Long putLatencyMsSum = putLatency.getLatencyMsSum();
-            Long putLatencyCount = putLatency.getCount();
-            if (putLatencyMsSum == null || putLatencyCount == null) {
-                continue;
-            }
-            LatencyStats putLatencyStats = new LatencyStats(putLatencyMsSum, putLatencyCount);
-            StorageNodeStats nodeStats = new StorageNodeStats(putLatencyStats);
-            container.put(storageNodeIndex, nodeStats);
-        }
-        return container;
-    }
-
     public static ContentClusterStats generate(Distributor distributor) {
         Map<Integer, ContentNodeStats> mapToNodeStats = new HashMap<>();
         for (StorageNode storageNode : distributor.getStorageNodes()) {
