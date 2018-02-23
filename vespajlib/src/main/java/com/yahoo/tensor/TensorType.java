@@ -214,7 +214,7 @@ public class TensorType {
         /** Returns a copy of this with the name set to the given name */
         public abstract Dimension withName(String name);
 
-        /** Returns true if this is an indexed bound or unboun type */
+        /** Returns true if this is an indexed bound or unbound type */
         public boolean isIndexed() { return type() == Type.indexedBound || type() == Type.indexedUnbound; }
 
         /**
@@ -259,6 +259,14 @@ public class TensorType {
 
         public static Dimension indexed(String name, long size) {
             return new IndexedBoundDimension(name, size);
+        }
+
+        public static Dimension indexed(String name) {
+            return new IndexedUnboundDimension(name);
+        }
+
+        public static Dimension mapped(String name) {
+            return new MappedDimension(name);
         }
 
     }
@@ -372,6 +380,15 @@ public class TensorType {
         public Builder(TensorType ... types) {
             for (TensorType type : types)
                 addDimensionsOf(type);
+        }
+
+        /**
+         * Creates a builder from the given dimensions.
+         */
+        public Builder(Iterable<Dimension> dimensions) {
+            for (TensorType.Dimension dimension : dimensions) {
+                dimension(dimension);
+            }
         }
 
         private static final boolean supportsMixedTypes = false;

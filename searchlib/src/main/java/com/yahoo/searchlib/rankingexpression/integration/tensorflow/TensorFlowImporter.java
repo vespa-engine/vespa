@@ -2,10 +2,20 @@
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
+import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.DimensionRenamer;
+import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.OperationMapper;
+import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.TensorConverter;
+import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.operations.TensorFlowOperation;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
-import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.functions.Rename;
+import com.yahoo.tensor.functions.TensorFunction;
 import com.yahoo.yolean.Exceptions;
 import org.tensorflow.SavedModelBundle;
+import org.tensorflow.Session;
 import org.tensorflow.framework.GraphDef;
 import org.tensorflow.framework.MetaGraphDef;
 import org.tensorflow.framework.NodeDef;
@@ -24,6 +34,7 @@ import java.util.stream.Collectors;
  * Converts a saved TensorFlow model into a ranking expression and set of constants.
  *
  * @author bratseth
+ * @author lesters
  */
 public class TensorFlowImporter {
 
@@ -57,101 +68,277 @@ public class TensorFlowImporter {
         }
     }
 
-    private TensorFlowModel importGraph(MetaGraphDef graph, SavedModelBundle model) {
-        TensorFlowModel result = new TensorFlowModel();
+    /**
+     * Imports the TensorFlow graph by first importing the tensor types, then
+     * finding a suitable set of dimensions names for each
+     * placeholder/constant/variable, then importing the expressions.
+     */
+    private static TensorFlowModel importGraph(MetaGraphDef graph, SavedModelBundle bundle) {
+        TensorFlowModel model = new TensorFlowModel();
+        OperationIndex index = new OperationIndex();
+
+        importSignatures(graph, model);
+        importNodes(graph, model, index);
+        findDimensionNames(model, index);
+        importExpressions(model, index, bundle);
+
+        // nodes with multiple outputs are calculated multiple times. consider adding macros for those.
+
+        reportWarnings(model, index);
+
+        return model;
+    }
+
+    private static void importSignatures(MetaGraphDef graph, TensorFlowModel model) {
         for (Map.Entry<String, SignatureDef> signatureEntry : graph.getSignatureDefMap().entrySet()) {
-            TensorFlowModel.Signature signature = result.signature(signatureEntry.getKey()); // Prefer key over "methodName"
+            String signatureName = signatureEntry.getKey();
+            TensorFlowModel.Signature signature = model.signature(signatureName);
 
-            importInputs(signatureEntry.getValue().getInputsMap(), signature);
-            for (Map.Entry<String, TensorInfo> output : signatureEntry.getValue().getOutputsMap().entrySet()) {
+            Map<String, TensorInfo> inputInfoMap = signatureEntry.getValue().getInputsMap();
+            for (Map.Entry<String, TensorInfo> input : inputInfoMap.entrySet()) {
+                String inputName = input.getKey();
+                signature.input(inputName, namePartOf(input.getValue().getName()));
+            }
+
+            Map<String, TensorInfo> outputInfoMap = signatureEntry.getValue().getOutputsMap();
+            for (Map.Entry<String, TensorInfo> output : outputInfoMap.entrySet()) {
                 String outputName = output.getKey();
+                signature.output(outputName, namePartOf(output.getValue().getName()));
+            }
+        }
+    }
+
+    private static boolean isSignatureInput(TensorFlowModel model, TensorFlowOperation operation) {
+        for (TensorFlowModel.Signature signature : model.signatures().values()) {
+            for (String inputName : signature.inputs().values()) {
+                if (inputName.equals(operation.node().getName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean isSignatureOutput(TensorFlowModel model, TensorFlowOperation operation) {
+        for (TensorFlowModel.Signature signature : model.signatures().values()) {
+            for (String outputName : signature.outputs().values()) {
+                if (outputName.equals(operation.node().getName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static void importNodes(MetaGraphDef graph, TensorFlowModel model, OperationIndex index) {
+        for (TensorFlowModel.Signature signature : model.signatures().values()) {
+            for (String outputName : signature.outputs().values()) {
+                importNode(outputName, graph.getGraphDef(), index);
+            }
+        }
+    }
+
+    private static TensorFlowOperation importNode(String name, GraphDef graph, OperationIndex index) {
+        if (index.alreadyImported(name)) {
+            return index.get(name);
+        }
+        NodeDef node = getTensorFlowNodeFromGraph(namePartOf(name), graph);
+        List<TensorFlowOperation> inputs = importNodeInputs(node, graph, index);
+        TensorFlowOperation operation = OperationMapper.get(node, inputs, portPartOf(name));
+        index.put(name, operation);
+
+        List<TensorFlowOperation> controlInputs = importControlInputs(node, graph, index);
+        if (controlInputs.size() > 0) {
+            operation.setControlInputs(controlInputs);
+        }
+
+        return operation;
+    }
+
+    private static List<TensorFlowOperation> importNodeInputs(NodeDef node, GraphDef graph, OperationIndex index) {
+        return node.getInputList().stream()
+                .filter(name -> ! isControlDependency(name))
+                .map(name -> importNode(name, graph, index))
+                .collect(Collectors.toList());
+    }
+
+    private static List<TensorFlowOperation> importControlInputs(NodeDef node, GraphDef graph, OperationIndex index) {
+        return node.getInputList().stream()
+                .filter(name -> isControlDependency(name))
+                .map(name -> importNode(name, graph, index))
+                .collect(Collectors.toList());
+    }
+
+    private static boolean isControlDependency(String name) {
+        return name.startsWith("^");
+    }
+
+    /** Find dimension names to avoid excessive renaming while evaluating the model. */
+    private static void findDimensionNames(TensorFlowModel model, OperationIndex index) {
+        DimensionRenamer renamer = new DimensionRenamer();
+        for (TensorFlowModel.Signature signature : model.signatures().values()) {
+            for (String output : signature.outputs().values()) {
+                addDimensionNameConstraints(index.get(output), renamer);
+            }
+        }
+        renamer.solve();
+        for (TensorFlowModel.Signature signature : model.signatures().values()) {
+            for (String output : signature.outputs().values()) {
+                renameDimensions(index.get(output), renamer);
+            }
+        }
+    }
+
+    private static void addDimensionNameConstraints(TensorFlowOperation operation, DimensionRenamer renamer) {
+        if (operation.type().isPresent()) {
+            operation.inputs().forEach(input -> addDimensionNameConstraints(input, renamer));
+            operation.addDimensionNameConstraints(renamer);
+        }
+    }
+
+    private static void renameDimensions(TensorFlowOperation operation, DimensionRenamer renamer) {
+        if (operation.type().isPresent()) {
+            operation.inputs().forEach(input -> renameDimensions(input, renamer));
+            operation.renameDimensions(renamer);
+        }
+    }
+
+    private static void importExpressions(TensorFlowModel model, OperationIndex index, SavedModelBundle bundle) {
+        for (TensorFlowModel.Signature signature : model.signatures().values()) {
+            for (String outputName : signature.outputs().values()) {
                 try {
-                    NodeDef node = getNode(namePartOf(output.getValue().getName()), graph.getGraphDef());
-                    Parameters params = createParameters(graph.getGraphDef(), model, result, signature, node, "");
-
-                    // Commonly, there are multiple paths through a TensorFlow graph, for instance for
-                    // training and testing/evaluation. Examples are dropout and batch norm. For Vespa
-                    // we are not concerned with training paths, so we can ignore non-supported operations
-                    // as long as they are on a path that will not be evaluated run time. Operations
-                    // that fail import will not have a value present in the optionals. However, the
-                    // final output node must have value present. It is an error if it does not.
-
-                    Optional<TypedTensorFunction> outputFunction = importNode(params);
-                    if (!outputFunction.isPresent()) {
-                        throw new IllegalArgumentException(signature.importWarnings().stream().collect(Collectors.joining("\n")));
+                    Optional<TensorFunction> function = importExpression(index.get(outputName), model, bundle);
+                    if (!function.isPresent()) {
+                        signature.skippedOutput(outputName, "No valid output function could be found.");
                     }
-                    signature.output(outputName, namePartOf(output.getValue().getName()));
                 }
                 catch (IllegalArgumentException e) {
                     signature.skippedOutput(outputName, Exceptions.toMessageString(e));
                 }
             }
         }
-        return result;
     }
 
-    private void importInputs(Map<String, TensorInfo> inputInfoMap, TensorFlowModel.Signature signature) {
-        inputInfoMap.forEach((key, value) -> {
-            String argumentName = namePartOf(value.getName());
-            TensorType argumentType = AttrValueConverter.toVespaTensorType(value.getTensorShape());
-            // Arguments are (Placeholder) nodes, so not local to the signature:
-            signature.owner().argument(argumentName, argumentType);
-            signature.input(key, argumentName);
-        });
-    }
-
-    /** Recursively convert a graph of TensorFlow nodes into a Vespa tensor function expression tree */
-    private Optional<TypedTensorFunction> importNode(Parameters params) {
-        String nodeName = params.node().getName();
-        if (params.imported().containsKey(nodeName)) {
-            return Optional.of(params.imported().get(nodeName));
-        }
-
-        Optional<TypedTensorFunction> function = OperationMapper.map(params);
-        if ( ! function.isPresent()) {
+    private static Optional<TensorFunction> importExpression(TensorFlowOperation operation, TensorFlowModel model, SavedModelBundle bundle) {
+        if (!operation.type().isPresent()) {
             return Optional.empty();
         }
-        if ( ! controlDependenciesArePresent(params)) {
-            return Optional.empty();
+        if (operation.isConstant()) {
+            return importConstant(model, operation, bundle);
         }
-        params.imported().put(nodeName, function.get());
 
-        try {
-            // We add all intermediate nodes imported as separate expressions. Only those referenced in a signature output
-            // will be used. We parse the TensorFunction here to convert it to a RankingExpression tree
-            params.result().expression(nodeName,
-                    new RankingExpression(nodeName, function.get().function().toString()));
-            return function;
+        importInputExpressions(operation, model, bundle);
+        importRankingExpression(model, operation);
+        importInputExpression(model, operation);
+        importMacroExpression(model, operation);
+
+        return operation.function();
+    }
+
+    private static void importInputExpressions(TensorFlowOperation operation, TensorFlowModel model, SavedModelBundle bundle) {
+        operation.inputs().forEach(input -> importExpression(input, model, bundle));
+    }
+
+    private static void importMacroExpression(TensorFlowModel model, TensorFlowOperation operation) {
+        if (operation.macro().isPresent()) {
+            model.macro(operation.vespaName(), operation.macro().get());
         }
-        catch (ParseException e) {
-            throw new RuntimeException("Tensorflow function " + function.get().function() +
-                                       " cannot be parsed as a ranking expression", e);
+    }
+
+    private static Optional<TensorFunction> importConstant(TensorFlowModel model, TensorFlowOperation operation, SavedModelBundle bundle) {
+        String name = operation.vespaName();
+        if (model.largeConstants().containsKey(name) || model.smallConstants().containsKey(name)) {
+            return operation.function();
+        }
+
+        Tensor tensor;
+        if (operation.getConstantValue().isPresent()) {
+            Value value = operation.getConstantValue().get();
+            if ( ! (value instanceof TensorValue)) {
+                return operation.function(); // scalar values are inserted directly into the expression
+            }
+            tensor = value.asTensor();
+        } else {
+            Session.Runner fetched = bundle.session().runner().fetch(operation.node().getName());
+            List<org.tensorflow.Tensor<?>> importedTensors = fetched.run();
+            if (importedTensors.size() != 1) {
+                throw new IllegalStateException("Expected 1 tensor from fetching " + operation.node().getName() + ", but got " +
+                        importedTensors.size());
+            }
+            // Here we use the type from the operation, which will have correct dimension names after name resolving
+            tensor = TensorConverter.toVespaTensor(importedTensors.get(0), operation.type().get());
+            operation.setConstantValue(new TensorValue(tensor));
+        }
+
+        if (tensor.type().rank() == 0 || tensor.size() <= 1) {
+            model.smallConstant(operation.vespaName(), tensor);
+        } else {
+            model.largeConstant(operation.vespaName(), tensor);
+        }
+        return operation.function();
+    }
+
+    private static void importRankingExpression(TensorFlowModel model, TensorFlowOperation operation) {
+        if (operation.function().isPresent()) {
+            String name = operation.node().getName();
+            if (!model.expressions().containsKey(operation.node().getName())) {
+                TensorFunction function = operation.function().get();
+
+                // Make sure output adheres to standard naming convention
+                if (isSignatureOutput(model, operation)) {
+                    OrderedTensorType operationType = operation.type().get();
+                    OrderedTensorType standardNamingType = OrderedTensorType.fromTensorFlowType(operation.node());
+                    if ( ! operationType.equals(standardNamingType)) {
+                        List<String> renameFrom = operationType.dimensionNames();
+                        List<String> renameTo = standardNamingType.dimensionNames();
+                        function = new Rename(function, renameFrom, renameTo);
+                    }
+                }
+
+                try {
+                    // We add all intermediate nodes imported as separate expressions. Only
+                    // those referenced  in a signature output will be used. We parse the
+                    // TensorFunction here to convert it to a RankingExpression tree.
+                    model.expression(name, new RankingExpression(name, function.toString()));
+                }
+                catch (ParseException e) {
+                    throw new RuntimeException("Tensorflow function " + function +
+                            " cannot be parsed as a ranking expression", e);
+                }
+            }
         }
     }
 
-    private boolean controlDependenciesArePresent(Parameters params) {
-        return params.node().getInputList().stream()
-                .filter(TensorFlowImporter::isControlDependency)
-                .map(nodeName -> importNode(params.copy(getNode(namePartOf(nodeName), params.graph()), indexPartOf(nodeName))))
-                .allMatch(Optional::isPresent);
+    private static void importInputExpression(TensorFlowModel model, TensorFlowOperation operation) {
+        if (operation.isInput() && isSignatureInput(model, operation)) {
+            // All inputs must have dimensions with standard naming convention: d0, d1, ...
+            OrderedTensorType standardNamingConvention = OrderedTensorType.fromTensorFlowType(operation.node());
+            model.argument(operation.node().getName(), standardNamingConvention.type());
+            model.requiredMacro(operation.vespaName(), standardNamingConvention.type());
+        }
     }
 
-    private static boolean isControlDependency(String nodeName) {
-        return nodeName.startsWith("^");
+    private static void reportWarnings(TensorFlowModel model, OperationIndex index) {
+        for (TensorFlowModel.Signature signature : model.signatures().values()) {
+            for (String output : signature.outputs().values()) {
+                reportWarnings(index.get(output), signature);
+            }
+        }
     }
 
-    private List<Optional<TypedTensorFunction>> importArguments(Parameters params) {
-        return params.node().getInputList().stream()
-                .filter(nodeName -> !isControlDependency(nodeName))
-                .map(nodeName -> importNode(params.copy(getNode(namePartOf(nodeName), params.graph()), indexPartOf(nodeName))))
-                .collect(Collectors.toList());
+    private static void reportWarnings(TensorFlowOperation operation, TensorFlowModel.Signature signature) {
+        for (String warning : operation.warnings()) {
+            signature.importWarning(warning);
+        }
     }
 
-    private NodeDef getNode(String name, GraphDef graph) {
-        return graph.getNodeList().stream()
-                                  .filter(node -> node.getName().equals(name))
-                                  .findFirst()
-                                  .orElseThrow(() -> new IllegalArgumentException("Could not find node '" + name + "'"));
+    private static NodeDef getTensorFlowNodeFromGraph(String name, GraphDef graph) {
+        for (NodeDef node : graph.getNodeList()) {
+            if (node.getName().equals(name)) {
+                return node;
+            }
+        }
+        throw new IllegalArgumentException("Could not find node '" + name + "'");
     }
 
     /**
@@ -164,89 +351,20 @@ public class TensorFlowImporter {
     }
 
     /**
-     * This return the index part. Indexes are used for nodes with
+     * This return the output port part. Indexes are used for nodes with
      * multiple outputs.
      */
-    private static String indexPartOf(String name) {
+    private static int portPartOf(String name) {
         int i = name.indexOf(":");
-        return i < 0 ? "" : name.substring(i + 1);
+        return i < 0 ? 0 : Integer.parseInt(name.substring(i + 1));
     }
 
 
-    private Parameters createParameters(GraphDef graph,
-                                        SavedModelBundle model,
-                                        TensorFlowModel result,
-                                        TensorFlowModel.Signature signature,
-                                        NodeDef node,
-                                        String port) {
-        return new Parameters(this, graph, model, result, signature, new HashMap<>(), node, port);
-    }
-
-    /** Parameter object to hold important data while importing */
-    static final class Parameters {
-
-        private final TensorFlowImporter owner;
-        private final GraphDef graph;
-        private final SavedModelBundle model;
-        private final TensorFlowModel result;
-        private final TensorFlowModel.Signature signature;
-        private final Map<String, TypedTensorFunction> imported;
-        private final NodeDef node;
-        private final String port;
-
-        private Parameters(TensorFlowImporter owner,
-                           GraphDef graph,
-                           SavedModelBundle model,
-                           TensorFlowModel result,
-                           TensorFlowModel.Signature signature,
-                           Map<String, TypedTensorFunction> imported,
-                           NodeDef node,
-                           String port) {
-            this.owner = owner;
-            this.graph = graph;
-            this.model = model;
-            this.result = result;
-            this.signature = signature;
-            this.imported = imported;
-            this.node = node;
-            this.port = port;
-        }
-
-        GraphDef graph() {
-            return this.graph;
-        }
-
-        SavedModelBundle model() {
-            return this.model;
-        }
-
-        TensorFlowModel result() {
-            return this.result;
-        }
-
-        TensorFlowModel.Signature signature() {
-            return this.signature;
-        }
-
-        Map<String, TypedTensorFunction> imported() {
-            return this.imported;
-        }
-
-        NodeDef node() {
-            return node;
-        }
-
-        String port() {
-            return port;
-        }
-
-        Parameters copy(NodeDef node, String port) {
-            return new Parameters(this.owner, this.graph, this.model, this.result, this.signature, this.imported, node, port);
-        }
-
-        List<Optional<TypedTensorFunction>> inputs() {
-            return owner.importArguments(this);
-        }
+    private static class OperationIndex {
+        private final Map<String, TensorFlowOperation> index = new HashMap<>();
+        public TensorFlowOperation put(String key, TensorFlowOperation operation) { return index.put(key, operation); }
+        public TensorFlowOperation get(String key) { return index.get(key); }
+        public boolean alreadyImported(String key) { return index.containsKey(key); }
     }
 
 }

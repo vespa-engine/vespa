@@ -251,7 +251,7 @@ public class Join extends PrimitiveTensorFunction {
         int[] aToIndexes = mapIndexes(a.type(), joinedType);
         int[] bToIndexes = mapIndexes(b.type(), joinedType);
         joinTo(a, b, joinedType, joinedSize, aToIndexes, bToIndexes, false, builder);
-        joinTo(b, a, joinedType, joinedSize, bToIndexes, aToIndexes, true, builder);
+//        joinTo(b, a, joinedType, joinedSize, bToIndexes, aToIndexes, true, builder);
         return builder.build();
     }
 
