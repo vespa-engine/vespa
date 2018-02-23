@@ -223,17 +223,6 @@ public class RPCNetwork implements Network, MethodHandler {
     }
 
     @Override
-    protected void finalize() throws Throwable {
-        try {
-            if (destroy()) {
-                log.log(LogLevel.WARNING, "RPCNetwork destroyed by finalizer, please review application shutdown logic.");
-            }
-        } finally {
-            super.finalize();
-        }
-    }
-
-    @Override
     public void send(Message msg, List<RoutingNode> recipients) {
         SendContext ctx = new SendContext(this, msg, recipients);
         double timeout = ctx.msg.getTimeRemainingNow() / 1000.0;

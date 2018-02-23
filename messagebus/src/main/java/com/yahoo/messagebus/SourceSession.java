@@ -54,17 +54,6 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
         mbus.register(this);
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            if (destroy()) {
-                log.log(LogLevel.WARNING, "SourceSession destroyed by finalizer, please review application shutdown logic.");
-            }
-        } finally {
-            super.finalize();
-        }
-    }
-
     /**
      * Sets the destroyed flag to true. The very first time this method is
      * called, it cleans up all its dependencies.  Even if you retain a
