@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.restapi.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.yahoo.container.jaxrs.annotation.Component;
-import com.yahoo.vespa.hosted.controller.api.integration.security.KeyService;
+import com.yahoo.container.jdisc.Ckms;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -24,20 +24,20 @@ import javax.ws.rs.core.UriBuilder;
 public class StatusPageResource implements com.yahoo.vespa.hosted.controller.api.statuspage.StatusPageResource {
 
     private final Client client;
-    private final KeyService keyService;
+    private final Ckms ckms;
 
     @Inject
-    public StatusPageResource(@Component KeyService keyService) {
-        this(keyService, ClientBuilder.newClient());
+    public StatusPageResource(@Component Ckms ckms) {
+        this(ckms, ClientBuilder.newClient());
     }
 
-    protected StatusPageResource(KeyService keyService, Client client) {
-        this.keyService = keyService;
+    protected StatusPageResource(Ckms ckms, Client client) {
+        this.ckms = ckms;
         this.client = client;
     }
 
     protected UriBuilder statusPageURL(String page, String since) {
-        String[] secrets = keyService.getSecret("vespa_hosted.controller.statuspage_api_key").split(":");
+        String[] secrets = ckms.getSecret("vespa_hosted.controller.statuspage_api_key").split(":");
         UriBuilder uriBuilder = UriBuilder.fromUri("https://" + secrets[0] + ".statuspage.io/api/v2/" + page + ".json?api_key=" + secrets[1]);
         if (since != null) {
             uriBuilder.queryParam("since", since);
