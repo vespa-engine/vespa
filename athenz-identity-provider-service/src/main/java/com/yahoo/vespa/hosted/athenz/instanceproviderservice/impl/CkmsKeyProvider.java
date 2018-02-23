@@ -1,10 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
 import com.google.inject.Inject;
 import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.jdisc.http.SecretStore;
+import com.yahoo.container.jdisc.Ckms;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 
@@ -18,19 +18,20 @@ import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.g
 
 /**
  * @author mortent
+ * @author bjorncs
  */
 @SuppressWarnings("unused") //  Injected component
-public class SecretStoreKeyProvider implements KeyProvider {
+public class CkmsKeyProvider implements KeyProvider {
 
-    private final SecretStore secretStore;
+    private final Ckms ckms;
     private final String secretName;
     private final Map<Integer, KeyPair> secrets;
 
     @Inject
-    public SecretStoreKeyProvider(SecretStore secretStore,
-                                  Zone zone,
-                                  AthenzProviderServiceConfig config) {
-        this.secretStore = secretStore;
+    public CkmsKeyProvider(Ckms ckms,
+                           Zone zone,
+                           AthenzProviderServiceConfig config) {
+        this.ckms = ckms;
         this.secretName = getZoneConfig(config, zone).secretName();
         this.secrets = new HashMap<>();
     }
@@ -59,7 +60,7 @@ public class SecretStoreKeyProvider implements KeyProvider {
 
     // TODO: Consider moving to cryptoutils
     private KeyPair readKeyPair(int version) {
-        PrivateKey privateKey = Crypto.loadPrivateKey(secretStore.getSecret(secretName, version));
+        PrivateKey privateKey = Crypto.loadPrivateKey(ckms.getSecret(secretName, version));
         PublicKey publicKey = Crypto.extractPublicKey(privateKey);
         return new KeyPair(publicKey, privateKey);
     }
