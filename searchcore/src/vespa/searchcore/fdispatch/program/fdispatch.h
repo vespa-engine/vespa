@@ -11,6 +11,7 @@
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/vespalib/net/simple_component_config_producer.h>
 #include <vespa/vespalib/util/random.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 class FastS_NodeManager;
 class FastS_fdispatch_RPC;
@@ -62,6 +63,7 @@ private:
     Fdispatch(const Fdispatch &);
     Fdispatch& operator=(const Fdispatch &);
 
+    vespalib::ThreadStackExecutor           _executor;
     std::unique_ptr<FastOS_ThreadPool>      _mypool;
     std::unique_ptr<EngineAdapter>          _engineAdapter;
     std::unique_ptr<TransportServer>        _transportServer;

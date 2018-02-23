@@ -8,6 +8,7 @@
 #include <vespa/searchcore/fdispatch/common/queryperf.h>
 #include <vespa/vespalib/net/simple_component_config_producer.h>
 #include <vespa/config/subscription/configuri.h>
+#include <vespa/vespalib/util/executor.h>
 #include <mutex>
 
 using vespa::config::search::core::PartitionsConfig;
@@ -92,7 +93,7 @@ public:
      * log query performance. This method should only be invoked from
      * the FNET thread.
      **/
-    void logPerformance();
+    void logPerformance(vespalib::Executor &executor);
 
     void CheckEvents(FastS_TimeKeeper *timeKeeper); // invoked by FNET thread
 };
