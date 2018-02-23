@@ -20,7 +20,7 @@ import java.util.TreeMap;
 
 import static org.mockito.Mockito.mock;
 
-class ClusterFixture {
+public class ClusterFixture {
     public final ContentCluster cluster;
     public final Distribution distribution;
     public final FakeTimer timer;
@@ -28,7 +28,7 @@ class ClusterFixture {
     public final StateChangeHandler nodeStateChangeHandler;
     public final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
 
-    ClusterFixture(ContentCluster cluster, Distribution distribution) {
+    public ClusterFixture(ContentCluster cluster, Distribution distribution) {
         this.cluster = cluster;
         this.distribution = distribution;
         this.timer = new FakeTimer();
@@ -37,13 +37,13 @@ class ClusterFixture {
         this.params.cluster(this.cluster);
     }
 
-    StateChangeHandler createNodeStateChangeHandlerForCluster() {
+    public StateChangeHandler createNodeStateChangeHandlerForCluster() {
         final int controllerIndex = 0;
         MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), controllerIndex);
         return new StateChangeHandler(timer, eventLog, metricUpdater);
     }
 
-    ClusterFixture bringEntireClusterUp() {
+    public ClusterFixture bringEntireClusterUp() {
         cluster.clusterInfo().getConfiguredNodes().forEach((idx, node) -> {
             reportStorageNodeState(idx, State.UP);
             reportDistributorNodeState(idx, State.UP);
@@ -51,7 +51,7 @@ class ClusterFixture {
         return this;
     }
 
-    ClusterFixture markEntireClusterDown() {
+    public ClusterFixture markEntireClusterDown() {
         cluster.clusterInfo().getConfiguredNodes().forEach((idx, node) -> {
             reportStorageNodeState(idx, State.DOWN);
             reportDistributorNodeState(idx, State.DOWN);
@@ -69,7 +69,7 @@ class ClusterFixture {
         nodeInfo.setReportedState(nodeState, timer.getCurrentTimeInMillis());
     }
 
-    ClusterFixture reportStorageNodeState(final int index, State state, String description) {
+    public ClusterFixture reportStorageNodeState(final int index, State state, String description) {
         final Node node = new Node(NodeType.STORAGE, index);
         final NodeState nodeState = new NodeState(NodeType.STORAGE, state);
         nodeState.setDescription(description);
@@ -77,23 +77,23 @@ class ClusterFixture {
         return this;
     }
 
-    ClusterFixture reportStorageNodeState(final int index, State state) {
+    public ClusterFixture reportStorageNodeState(final int index, State state) {
         return reportStorageNodeState(index, state, "mockdesc");
     }
 
-    ClusterFixture reportStorageNodeState(final int index, NodeState nodeState) {
+    public ClusterFixture reportStorageNodeState(final int index, NodeState nodeState) {
         doReportNodeState(new Node(NodeType.STORAGE, index), nodeState);
         return this;
     }
 
-    ClusterFixture reportDistributorNodeState(final int index, State state) {
+    public ClusterFixture reportDistributorNodeState(final int index, State state) {
         final Node node = new Node(NodeType.DISTRIBUTOR, index);
         final NodeState nodeState = new NodeState(NodeType.DISTRIBUTOR, state);
         doReportNodeState(node, nodeState);
         return this;
     }
 
-    ClusterFixture reportDistributorNodeState(final int index, NodeState nodeState) {
+    public ClusterFixture reportDistributorNodeState(final int index, NodeState nodeState) {
         doReportNodeState(new Node(NodeType.DISTRIBUTOR, index), nodeState);
         return this;
     }
@@ -108,18 +108,18 @@ class ClusterFixture {
         nodeStateChangeHandler.proposeNewNodeState(stateBefore, nodeInfo, nodeState);
     }
 
-    ClusterFixture proposeStorageNodeWantedState(final int index, State state, String description) {
+    public ClusterFixture proposeStorageNodeWantedState(final int index, State state, String description) {
         final Node node = new Node(NodeType.STORAGE, index);
         final NodeState nodeState = new NodeState(NodeType.STORAGE, state);
         doProposeWantedState(node, nodeState, description);
         return this;
     }
 
-    ClusterFixture proposeStorageNodeWantedState(final int index, State state) {
+    public ClusterFixture proposeStorageNodeWantedState(final int index, State state) {
         return proposeStorageNodeWantedState(index, state, "mockdesc");
     }
 
-    ClusterFixture proposeDistributorWantedState(final int index, State state) {
+    public ClusterFixture proposeDistributorWantedState(final int index, State state) {
         final ClusterState stateBefore = rawGeneratedClusterState();
         final Node node = new Node(NodeType.DISTRIBUTOR, index);
         final NodeState nodeState = new NodeState(NodeType.DISTRIBUTOR, state);
@@ -131,12 +131,12 @@ class ClusterFixture {
         return this;
     }
 
-    ClusterFixture disableAutoClusterTakedown() {
+    public ClusterFixture disableAutoClusterTakedown() {
         setMinNodesUp(0, 0, 0.0, 0.0);
         return this;
     }
 
-    ClusterFixture setMinNodesUp(int minDistNodes, int minStorNodes, double minDistRatio, double minStorRatio) {
+    public ClusterFixture setMinNodesUp(int minDistNodes, int minStorNodes, double minDistRatio, double minStorRatio) {
         params.minStorageNodesUp(minStorNodes)
               .minDistributorNodesUp(minDistNodes)
               .minRatioOfStorageNodesUp(minStorRatio)
@@ -144,32 +144,32 @@ class ClusterFixture {
         return this;
     }
 
-    ClusterFixture setMinNodeRatioPerGroup(double upRatio) {
+    public ClusterFixture setMinNodeRatioPerGroup(double upRatio) {
         params.minNodeRatioPerGroup(upRatio);
         return this;
     }
 
-    ClusterFixture assignDummyRpcAddresses() {
+    public ClusterFixture assignDummyRpcAddresses() {
         cluster.getNodeInfo().forEach(ni -> ni.setRpcAddress("tcp/localhost:0"));
         return this;
     }
 
-    static Map<NodeType, Integer> buildTransitionTimeMap(int distributorTransitionTime, int storageTransitionTime) {
+    static public  Map<NodeType, Integer> buildTransitionTimeMap(int distributorTransitionTime, int storageTransitionTime) {
         Map<NodeType, Integer> maxTransitionTime = new TreeMap<>();
         maxTransitionTime.put(NodeType.DISTRIBUTOR, distributorTransitionTime);
         maxTransitionTime.put(NodeType.STORAGE, storageTransitionTime);
         return maxTransitionTime;
     }
 
-    void disableTransientMaintenanceModeOnDown() {
+    public void disableTransientMaintenanceModeOnDown() {
         this.params.transitionTimes(0);
     }
 
-    void enableTransientMaintenanceModeOnDown(final int transitionTimeMs) {
+    public void enableTransientMaintenanceModeOnDown(final int transitionTimeMs) {
         this.params.transitionTimes(transitionTimeMs);
     }
 
-    ClusterFixture markNodeAsConfigRetired(int nodeIndex) {
+    public ClusterFixture markNodeAsConfigRetired(int nodeIndex) {
         Set<ConfiguredNode> configuredNodes = new HashSet<>(cluster.getConfiguredNodes().values());
         configuredNodes.remove(new ConfiguredNode(nodeIndex, false));
         configuredNodes.add(new ConfiguredNode(nodeIndex, true));
@@ -177,24 +177,24 @@ class ClusterFixture {
         return this;
     }
 
-    AnnotatedClusterState annotatedGeneratedClusterState() {
+    public AnnotatedClusterState annotatedGeneratedClusterState() {
         params.currentTimeInMilllis(timer.getCurrentTimeInMillis());
         return ClusterStateGenerator.generatedStateFrom(params);
     }
 
-    ClusterState rawGeneratedClusterState() {
+    public ClusterState rawGeneratedClusterState() {
         return annotatedGeneratedClusterState().getClusterState();
     }
 
-    String generatedClusterState() {
+    public String generatedClusterState() {
         return annotatedGeneratedClusterState().getClusterState().toString();
     }
 
-    String verboseGeneratedClusterState() {
+    public String verboseGeneratedClusterState() {
         return annotatedGeneratedClusterState().getClusterState().toString(true);
     }
 
-    static ClusterFixture forFlatCluster(int nodeCount) {
+    public static ClusterFixture forFlatCluster(int nodeCount) {
         Collection<ConfiguredNode> nodes = DistributionBuilder.buildConfiguredNodes(nodeCount);
 
         Distribution distribution = DistributionBuilder.forFlatCluster(nodeCount);
@@ -203,7 +203,7 @@ class ClusterFixture {
         return new ClusterFixture(cluster, distribution);
     }
 
-    static ClusterFixture forHierarchicCluster(DistributionBuilder.GroupBuilder root) {
+    public static ClusterFixture forHierarchicCluster(DistributionBuilder.GroupBuilder root) {
         List<ConfiguredNode> nodes = DistributionBuilder.buildConfiguredNodes(root.totalNodeCount());
         Distribution distribution = DistributionBuilder.forHierarchicCluster(root);
         ContentCluster cluster = new ContentCluster("foo", nodes, distribution, 0, 0.0);
@@ -211,19 +211,19 @@ class ClusterFixture {
         return new ClusterFixture(cluster, distribution);
     }
 
-    ClusterStateGenerator.Params generatorParams() {
+    public ClusterStateGenerator.Params generatorParams() {
         return new ClusterStateGenerator.Params().cluster(cluster);
     }
 
-    ContentCluster cluster() {
+    public ContentCluster cluster() {
         return this.cluster;
     }
 
-    static Node storageNode(int index) {
+    public static Node storageNode(int index) {
         return new Node(NodeType.STORAGE, index);
     }
 
-    static Node distributorNode(int index) {
+    public static Node distributorNode(int index) {
         return new Node(NodeType.DISTRIBUTOR, index);
     }
 }

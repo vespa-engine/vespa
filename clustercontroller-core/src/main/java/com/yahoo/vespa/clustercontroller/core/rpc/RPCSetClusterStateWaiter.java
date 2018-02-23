@@ -30,7 +30,8 @@ public class RPCSetClusterStateWaiter implements RequestWaiter {
     public SetClusterStateRequest.Reply getReply(Request req) {
         NodeInfo info = request.getNodeInfo();
 
-        if (req.methodName().equals("setsystemstate2")) {
+        if (req.methodName().equals(RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_METHOD_NAME)
+                || req.methodName().equals(RPCCommunicator.LEGACY_SET_SYSTEM_STATE2_RPC_METHOD_NAME)) {
             if (req.isError() && req.errorCode() == ErrorCode.NO_SUCH_METHOD) {
                 if (info.notifyNoSuchMethodError(req.methodName(), timer)) {
                     return new SetClusterStateRequest.Reply(Communicator.TRANSIENT_ERROR, "Trying lower version");
@@ -39,7 +40,7 @@ public class RPCSetClusterStateWaiter implements RequestWaiter {
             if (req.isError()) {
                 return new SetClusterStateRequest.Reply(req.errorCode(), req.errorMessage());
             } else if (!req.checkReturnTypes("")) {
-                return new SetClusterStateRequest.Reply(ErrorCode.BAD_REPLY, "Got setsystemstate2 response with invalid return types from " + info);
+                return new SetClusterStateRequest.Reply(ErrorCode.BAD_REPLY, "Got RPC response with invalid return types from " + info);
             }
         } else {
             return new SetClusterStateRequest.Reply(ErrorCode.BAD_REPLY, "Unknown method " + req.methodName());

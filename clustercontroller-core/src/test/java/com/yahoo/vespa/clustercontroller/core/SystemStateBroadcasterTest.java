@@ -7,7 +7,6 @@ import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListen
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
 import org.junit.Test;
 
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.mockito.Matchers.any;
@@ -63,29 +62,10 @@ public class SystemStateBroadcasterTest {
         return Stream.of(nodes).map(c::getNodeInfo);
     }
 
-    private static class StateMapping {
-        final String bucketSpace;
-        final ClusterState state;
-
-        StateMapping(String bucketSpace, ClusterState state) {
-            this.bucketSpace = bucketSpace;
-            this.state = state;
-        }
-    }
-
-    private static StateMapping mapping(String bucketSpace, String state) {
-        return new StateMapping(bucketSpace, ClusterState.stateFromString(state));
-    }
-
-    private static ClusterStateBundle makeBundle(String baselineState, StateMapping... bucketSpaceStates) {
-        return ClusterStateBundle.of(AnnotatedClusterState.withoutAnnotations(ClusterState.stateFromString(baselineState)),
-                Stream.of(bucketSpaceStates).collect(Collectors.toMap(sm -> sm.bucketSpace, sm -> sm.state)));
-    }
-
     @Test
     public void always_publish_baseline_cluster_state() {
         Fixture f = new Fixture();
-        ClusterStateBundle stateBundle = makeBundle("distributor:2 storage:2");
+        ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:2");
         ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
         f.broadcaster.handleNewClusterStates(stateBundle);
         f.broadcaster.broadcastNewState(dbContextFrom(cf.cluster()), f.mockCommunicator);
@@ -95,7 +75,7 @@ public class SystemStateBroadcasterTest {
     @Test
     public void non_observed_startup_timestamps_are_published_per_node_for_baseline_state() {
         Fixture f = new Fixture();
-        ClusterStateBundle stateBundle = makeBundle("distributor:2 storage:2");
+        ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:2");
         ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
         f.simulateNodePartitionedAwaySilently(cf);
         f.broadcaster.handleNewClusterStates(stateBundle);
@@ -105,16 +85,16 @@ public class SystemStateBroadcasterTest {
             // Only distributor 0 should observe startup timestamps
             verify(f.mockCommunicator).setSystemState(eq(stateBundle), eq(nodeInfo), any());
         });
-        ClusterStateBundle expectedDistr0Bundle = makeBundle("distributor:2 storage:2 .0.t:600 .1.t:700");
+        ClusterStateBundle expectedDistr0Bundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:2 .0.t:600 .1.t:700");
         verify(f.mockCommunicator).setSystemState(eq(expectedDistr0Bundle), eq(cf.cluster().getNodeInfo(Node.ofDistributor(0))), any());
     }
 
     @Test
     public void bucket_space_states_are_published_verbatim_when_no_additional_timestamps_needed() {
         Fixture f = new Fixture();
-        ClusterStateBundle stateBundle = makeBundle("distributor:2 storage:2",
-                mapping("default", "distributor:2 storage:2 .0.s:d"),
-                mapping("upsidedown", "distributor:2 .0.s:d storage:2"));
+        ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:2",
+                StateMapping.of("default", "distributor:2 storage:2 .0.s:d"),
+                StateMapping.of("upsidedown", "distributor:2 .0.s:d storage:2"));
         ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
         f.broadcaster.handleNewClusterStates(stateBundle);
         f.broadcaster.broadcastNewState(dbContextFrom(cf.cluster()), f.mockCommunicator);
@@ -125,9 +105,9 @@ public class SystemStateBroadcasterTest {
     @Test
     public void non_observed_startup_timestamps_are_published_per_bucket_space_state() {
         Fixture f = new Fixture();
-        ClusterStateBundle stateBundle = makeBundle("distributor:2 storage:2",
-                mapping("default", "distributor:2 storage:2 .0.s:d"),
-                mapping("upsidedown", "distributor:2 .0.s:d storage:2"));
+        ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:2",
+                StateMapping.of("default", "distributor:2 storage:2 .0.s:d"),
+                StateMapping.of("upsidedown", "distributor:2 .0.s:d storage:2"));
         ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
         f.simulateNodePartitionedAwaySilently(cf);
         f.broadcaster.handleNewClusterStates(stateBundle);
@@ -137,9 +117,9 @@ public class SystemStateBroadcasterTest {
             // Only distributor 0 should observe startup timestamps
             verify(f.mockCommunicator).setSystemState(eq(stateBundle), eq(nodeInfo), any());
         });
-        ClusterStateBundle expectedDistr0Bundle = makeBundle("distributor:2 storage:2 .0.t:600 .1.t:700",
-                mapping("default", "distributor:2 storage:2 .0.s:d .0.t:600 .1.t:700"),
-                mapping("upsidedown", "distributor:2 .0.s:d storage:2 .0.t:600 .1.t:700"));
+        ClusterStateBundle expectedDistr0Bundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:2 .0.t:600 .1.t:700",
+                StateMapping.of("default", "distributor:2 storage:2 .0.s:d .0.t:600 .1.t:700"),
+                StateMapping.of("upsidedown", "distributor:2 .0.s:d storage:2 .0.t:600 .1.t:700"));
         verify(f.mockCommunicator).setSystemState(eq(expectedDistr0Bundle), eq(cf.cluster().getNodeInfo(Node.ofDistributor(0))), any());
     }
 }
