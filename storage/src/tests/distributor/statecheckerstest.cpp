@@ -784,7 +784,7 @@ StateCheckersTest::testSynchronizeAndMove(const std::string& bucketInfo,
     SynchronizeAndMoveStateChecker checker;
     setRedundancy(redundancy);
 
-    _distributor->enableClusterState(lib::ClusterState(clusterState));
+    enableDistributorClusterState(clusterState);
     NodeMaintenanceStatsTracker statsTracker;
     StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     return testStateChecker(checker, c, false, blocker, includePriority);
@@ -977,7 +977,7 @@ StateCheckersTest::testDeleteExtraCopies(
     setRedundancy(redundancy);
 
     if (!clusterState.empty()) {
-        _distributor->enableClusterState(lib::ClusterState(clusterState));
+        enableDistributorClusterState(clusterState);
     }
     DeleteExtraCopiesStateChecker checker;
     NodeMaintenanceStatsTracker statsTracker;

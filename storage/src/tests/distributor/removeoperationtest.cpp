@@ -46,7 +46,7 @@ public:
 
         docId = document::DocumentId(document::DocIdString("test", "uri"));
         bucketId = getExternalOperationHandler().getBucketId(docId);
-        _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:4"));
+        enableDistributorClusterState("distributor:1 storage:4");
     };
 
     void tearDown() override {
@@ -189,8 +189,7 @@ RemoveOperationTest::testMultipleCopies()
 void
 RemoveOperationTest::canSendRemoveWhenAllReplicaNodesRetired()
 {
-    _distributor->enableClusterState(
-            lib::ClusterState("distributor:1 storage:1 .0.s:r"));
+    enableDistributorClusterState("distributor:1 storage:1 .0.s:r");
     addNodesToBucketDB(bucketId, "0=123");
     sendRemove();
 

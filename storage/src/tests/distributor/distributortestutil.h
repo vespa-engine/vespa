@@ -191,6 +191,8 @@ protected:
         }
     };
     MessageSenderImpl _messageSender;
+
+    void enableDistributorClusterState(vespalib::stringref state);
 };
 
 }

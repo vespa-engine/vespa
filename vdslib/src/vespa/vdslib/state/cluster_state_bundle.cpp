@@ -31,4 +31,10 @@ ClusterStateBundle::getVersion() const
     return _baselineClusterState->getVersion();
 }
 
+bool
+ClusterStateBundle::operator==(const ClusterStateBundle &rhs) const
+{
+    return *_baselineClusterState == *rhs._baselineClusterState;
+}
+
 }

@@ -40,7 +40,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(StatOperationTest);
 void
 StatOperationTest::testBucketInfo()
 {
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
 
     addNodesToBucketDB(document::BucketId(16, 5),
                        "0=4/2/100,1=4/2/100");

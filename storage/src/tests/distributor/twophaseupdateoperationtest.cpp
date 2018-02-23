@@ -579,7 +579,7 @@ TwoPhaseUpdateOperationTest::testFastPathInconsistentTimestampsPutNotStarted()
             sender.getLastCommand(true));
     checkMessageSettingsPropagatedTo(sender.commands.back());
 
-    _distributor->enableClusterState(lib::ClusterState("storage:0 distributor:1"));
+    enableDistributorClusterState("storage:0 distributor:1");
     CPPUNIT_ASSERT(sender.replies.empty());
     replyToGet(*cb, sender, 2, 110);
 
@@ -992,8 +992,7 @@ TwoPhaseUpdateOperationTest::testUpdateFailsIfOwnershipChangesBetweenGetAndPut()
     // this new state, the distributor no longer owns the bucket in question
     // and the operation should thus be failed. We must not try to send Puts
     // to a bucket we no longer own.
-    _distributor->enableClusterState(
-            lib::ClusterState("storage:2 distributor:1 .0.s:d"));
+    enableDistributorClusterState("storage:2 distributor:1 .0.s:d");
     getBucketDatabase().clear();
     replyToGet(*cb, sender, 0, 70);
     replyToGet(*cb, sender, 1, 70);

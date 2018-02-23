@@ -256,8 +256,7 @@ Distributor_Test::testRecoveryModeOnClusterStateChange()
 {
     setupDistributor(Redundancy(1), NodeCount(2),
                      "storage:1 .0.s:d distributor:1");
-    _distributor->enableClusterState(
-            lib::ClusterState("storage:1 distributor:1"));
+    enableDistributorClusterState("storage:1 distributor:1");
 
     CPPUNIT_ASSERT(_distributor->isInRecoveryMode());
     for (uint32_t i = 0; i < 3; ++i) {
@@ -270,7 +269,7 @@ Distributor_Test::testRecoveryModeOnClusterStateChange()
     tick();
     CPPUNIT_ASSERT(!_distributor->isInRecoveryMode());
 
-    _distributor->enableClusterState(lib::ClusterState("storage:2 distributor:1"));
+    enableDistributorClusterState("storage:2 distributor:1");
     CPPUNIT_ASSERT(_distributor->isInRecoveryMode());
 }
 
@@ -339,7 +338,7 @@ Distributor_Test::testContainsTimeStatement()
 void
 Distributor_Test::testUpdateBucketDatabase()
 {
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:3"));
+    enableDistributorClusterState("distributor:1 storage:3");
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
