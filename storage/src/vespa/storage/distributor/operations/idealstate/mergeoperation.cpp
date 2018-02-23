@@ -113,7 +113,7 @@ MergeOperation::onStart(DistributorMessageSender& sender)
         return;
     }
 
-    const lib::ClusterState& clusterState(_manager->getDistributorComponent().getClusterState());
+    const lib::ClusterState& clusterState(_bucketSpace->getClusterState());
     std::vector<std::unique_ptr<BucketCopy> > newCopies;
     std::vector<MergeMetaData> nodes;
 

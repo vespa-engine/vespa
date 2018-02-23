@@ -116,12 +116,13 @@ BucketDBUpdater::removeSuperfluousBuckets(
 {
     for (auto &elem : _distributorComponent.getBucketSpaceRepo()) {
         const auto &newDistribution(elem.second->getDistribution());
+        const auto &oldClusterState(elem.second->getClusterState());
         auto &bucketDb(elem.second->getBucketDatabase());
 
         // Remove all buckets not belonging to this distributor, or
         // being on storage nodes that are no longer up.
         NodeRemover proc(
-                _distributorComponent.getClusterState(),
+                oldClusterState,
                 newState,
                 _distributorComponent.getBucketIdFactory(),
                 _distributorComponent.getIndex(),

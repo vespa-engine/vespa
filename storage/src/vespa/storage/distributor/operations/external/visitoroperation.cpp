@@ -232,7 +232,7 @@ private:
 void
 VisitorOperation::verifyDistributorsAreAvailable()
 {
-    const lib::ClusterState& clusterState = _owner.getClusterState();
+    const lib::ClusterState& clusterState = _bucketSpace.getClusterState();
     if (clusterState.getNodeCount(lib::NodeType::DISTRIBUTOR) == 0) {
         vespalib::string err(vespalib::make_string(
             "No distributors available when processing visitor '%s'",
@@ -246,7 +246,7 @@ void
 VisitorOperation::verifyVisitorDistributionBitCount(
         const document::BucketId& bid)
 {
-    const lib::ClusterState& clusterState = _owner.getClusterState();
+    const lib::ClusterState& clusterState = _bucketSpace.getClusterState();
     if (_msg->getDocumentSelection().length() == 0
         && bid.getUsedBits() != clusterState.getDistributionBitCount())
     {
@@ -786,7 +786,7 @@ VisitorOperation::startNewVisitors(DistributorMessageSender& sender)
 void
 VisitorOperation::initializeActiveNodes()
 {
-    const lib::ClusterState& clusterState(_owner.getClusterState());
+    const lib::ClusterState& clusterState(_bucketSpace.getClusterState());
 
     uint32_t storageNodeCount = clusterState.getNodeCount(lib::NodeType::STORAGE);
     if (storageNodeCount > _activeNodes.size()) {

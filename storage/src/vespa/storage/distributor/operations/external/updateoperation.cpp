@@ -34,7 +34,7 @@ UpdateOperation::UpdateOperation(DistributorComponent& manager,
 bool
 UpdateOperation::anyStorageNodesAvailable() const
 {
-    const auto& clusterState(_manager.getClusterState());
+    const auto& clusterState(_bucketSpace.getClusterState());
     const auto storageNodeCount(
             clusterState.getNodeCount(lib::NodeType::STORAGE));
 

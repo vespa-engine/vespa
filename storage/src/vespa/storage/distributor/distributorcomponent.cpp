@@ -51,7 +51,7 @@ DistributorComponent::getIdealNodes(const document::Bucket &bucket) const
 {
     auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
     return bucketSpace.getDistribution().getIdealStorageNodes(
-            getClusterState(),
+            bucketSpace.getClusterState(),
             bucket.getBucketId(),
             _distributor.getStorageNodeUpStates());
 }
@@ -89,7 +89,7 @@ DistributorComponent::checkOwnershipInPendingAndCurrentState(
 {
     auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
     return checkOwnershipInPendingAndGivenState(
-            bucketSpace.getDistribution(), getClusterState(), bucket);
+            bucketSpace.getDistribution(), bucketSpace.getClusterState(), bucket);
 }
 
 bool
@@ -126,7 +126,7 @@ bool
 DistributorComponent::ownsBucketInCurrentState(const document::Bucket &bucket) const
 {
     auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return ownsBucketInState(bucketSpace.getDistribution(), getClusterState(), bucket);
+    return ownsBucketInState(bucketSpace.getDistribution(), bucketSpace.getClusterState(), bucket);
 }
 
 api::StorageMessageAddress
@@ -260,7 +260,7 @@ DistributorComponent::updateBucketDatabase(
     // Ensure that we're not trying to bring any zombie copies into the
     // bucket database (i.e. copies on nodes that are actually down).
     std::vector<uint16_t> downNodes(
-            enumerateDownNodes(getClusterState(), bucket, changedNodes));
+            enumerateDownNodes(bucketSpace.getClusterState(), bucket, changedNodes));
     // Optimize for common case where we don't have to create a new
     // bucket copy vector
     if (downNodes.empty()) {
