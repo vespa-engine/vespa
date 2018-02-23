@@ -737,7 +737,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // TODO: Propagate all filters
         Optional<Hostname> hostname = Optional.ofNullable(request.getProperty("hostname")).map(Hostname::new);
-
+        controller.applications().restart(deploymentId, hostname);
 
         // TODO: Change to return JSON
         return new StringResponse("Requested restart of " + path(TenantResource.API_PATH, tenantName,
