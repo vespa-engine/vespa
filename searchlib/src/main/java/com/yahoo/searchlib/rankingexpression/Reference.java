@@ -4,6 +4,7 @@ package com.yahoo.searchlib.rankingexpression;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
+import com.yahoo.searchlib.rankingexpression.rule.NameNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -69,6 +70,37 @@ public class Reference extends TypeContext.Name {
         if (argument.endsWith("'") || argument.endsWith("\""))
             argument = argument.substring(0, argument.length() - 1);
         return Optional.of(simple(featureName, argument));
+    }
+
+    /**
+     * A <i>simple feature reference</i> is a reference with a single identifier argument
+     * (and an optional output).
+     */
+    public boolean isSimple() {
+        return simpleArgument().isPresent();
+    }
+
+    /**
+     * If the arguments of this contains a single argument which is an identifier, it is returned.
+     * Otherwise null is returned.
+     */
+    public Optional<String> simpleArgument() {
+        if (arguments.expressions().size() != 1) return Optional.empty();
+        ExpressionNode argument = arguments.expressions().get(0);
+
+        if (argument instanceof ReferenceNode) {
+            ReferenceNode refArgument = (ReferenceNode) argument;
+
+            if ( ! refArgument.reference().isIdentifier()) return Optional.empty();
+
+            return Optional.of(refArgument.getName());
+        }
+        else if (argument instanceof NameNode) {
+            return Optional.of(((NameNode) argument).getValue());
+        }
+        else {
+            return Optional.empty();
+        }
     }
 
     /**

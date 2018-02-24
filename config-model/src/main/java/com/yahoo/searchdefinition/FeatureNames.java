@@ -31,6 +31,13 @@ public class FeatureNames {
         return Reference.simple("query", quoteIfNecessary(propertyName));
     }
 
+    /** Returns true if the given reference is an attribute, constant or query feature */
+    public static boolean isSimpleFeature(Reference reference) {
+        if ( ! reference.isSimple()) return false;
+        String name = reference.name();
+        return name.equals("attribute") || name.equals("constant") || name.equals("query");
+    }
+
     /**
      * Returns the single argument of the given feature name, without any quotes,
      * or empty if it is not a valid query, attribute or constant feature name

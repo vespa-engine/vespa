@@ -68,9 +68,9 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         }
 
         // A reference to an attribute, query or constant feature?
-        if (isSimpleFeature(reference)) {
+        if (FeatureNames.isSimpleFeature(reference)) {
             // The argument may be a local identifier bound to the actual value
-            String argument = simpleArgument(reference.arguments()).get();
+            String argument = reference.simpleArgument().get();
             reference = Reference.simple(reference.name(), bindings.getOrDefault(argument, argument));
             return featureTypes.getOrDefault(reference, defaultTypeOf(reference));
         }
@@ -97,7 +97,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
      * Returns the default type for this simple feature, or nullif it does not have a default
      */
     public TensorType defaultTypeOf(Reference reference) {
-        if ( ! isSimpleFeature(reference))
+        if ( ! FeatureNames.isSimpleFeature(reference))
             throw new IllegalArgumentException("This can only be called for simple references, not " + reference);
         if (reference.name().equals("query")) // we do not require all query features to be declared, only non-doubles
             return TensorType.empty;
@@ -112,43 +112,6 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         if ( ! reference.arguments().isEmpty()) return Optional.empty();
         if ( reference.output() != null) return Optional.empty();
         return Optional.ofNullable(bindings.get(reference.name()));
-    }
-
-    /**
-     * Return whether the reference (discarding the output) is a simple feature
-     * ("attribute(name)", "constant(name)" or "query(name)").
-     * We disregard the output because all outputs under a simple feature have the same type.
-     */
-    // TODO: Move simpleness without knowing the names to Reference, move the name-knowing to FeatureNames
-    public static boolean isSimpleFeature(Reference reference) {
-        Optional<String> argument = simpleArgument(reference.arguments());
-        if ( ! argument.isPresent()) return false;
-        return reference.name().equals("attribute") ||
-               reference.name().equals("constant") ||
-               reference.name().equals("query");
-    }
-
-    /**
-     * If these arguments contains one simple argument string, it is returned.
-     * Otherwise null is returned.
-     */
-    private static Optional<String> simpleArgument(Arguments arguments) {
-        if (arguments.expressions().size() != 1) return Optional.empty();
-        ExpressionNode argument = arguments.expressions().get(0);
-
-        if (argument instanceof ReferenceNode) {
-            ReferenceNode refArgument = (ReferenceNode) argument;
-
-            if ( ! refArgument.reference().isIdentifier()) return Optional.empty();
-
-            return Optional.of(refArgument.getName());
-        }
-        else if (argument instanceof NameNode) {
-            return Optional.of(((NameNode) argument).getValue());
-        }
-        else {
-            return Optional.empty();
-        }
     }
 
     private Optional<ExpressionFunction> functionInvocation(Reference reference) {
@@ -171,7 +134,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             throw new IllegalArgumentException(reference.name() + " must have one or two arguments");
 
         ExpressionNode arg0 = reference.arguments().expressions().get(0);
-        if ( ! ( arg0 instanceof ReferenceNode) || ! isSimpleFeature(((ReferenceNode)arg0).reference()))
+        if ( ! ( arg0 instanceof ReferenceNode) || ! FeatureNames.isSimpleFeature(((ReferenceNode)arg0).reference()))
             throw new IllegalArgumentException("The first argument of " + reference.name() +
                                                " must be a simple feature, not " + arg0);
 

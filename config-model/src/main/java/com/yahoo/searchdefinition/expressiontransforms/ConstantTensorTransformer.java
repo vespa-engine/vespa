@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.expressiontransforms;
 
+import com.yahoo.searchdefinition.FeatureNames;
 import com.yahoo.searchdefinition.MapEvaluationTypeContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -35,7 +36,7 @@ public class ConstantTensorTransformer extends ExpressionTransformer<RankProfile
     }
 
     private ExpressionNode transformFeature(ReferenceNode node, RankProfileTransformContext context) {
-        if ( ! node.getArguments().isEmpty() && ! MapEvaluationTypeContext.isSimpleFeature(node.reference())) {
+        if ( ! node.getArguments().isEmpty() && ! FeatureNames.isSimpleFeature(node.reference())) {
             return transformArguments(node, context);
         } else {
             return transformConstantReference(node, context);
