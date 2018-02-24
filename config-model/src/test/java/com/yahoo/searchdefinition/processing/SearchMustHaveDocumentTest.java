@@ -20,7 +20,6 @@ public class SearchMustHaveDocumentTest {
             SearchBuilder.buildFromFile("src/test/examples/invalid_sd_missing_document.sd");
             fail("SD without document");
         } catch (IllegalArgumentException e) {
-            System.out.println(e.getMessage());
             if (!e.getMessage()
                   .contains("For search 'imageconfig': A search specification must have an equally named document inside of it.")) {
                 throw e;

@@ -18,6 +18,7 @@ import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.functions.Reduce;
 
 import java.util.List;
@@ -40,51 +41,35 @@ public class TensorTransformer extends ExpressionTransformer<RankProfileTransfor
             node = transformChildren((CompositeNode) node, context);
         }
         if (node instanceof FunctionNode) {
-            node = transformFunctionNode((FunctionNode) node, context.rankProfile());
+            node = transformFunctionNode((FunctionNode) node, context);
         }
         return node;
     }
 
-    private ExpressionNode transformFunctionNode(FunctionNode node, RankProfile profile) {
+    private ExpressionNode transformFunctionNode(FunctionNode node, RankProfileTransformContext context) {
         switch (node.getFunction()) {
             case min:
             case max:
-                return transformMaxAndMinFunctionNode(node, profile);
+                return transformMaxAndMinFunctionNode(node, context);
         }
         return node;
     }
 
     /**
-     * Transforms max and min functions if it can be proven that the first
-     * argument resolves to a tensor and the second argument is a valid
-     * dimension in the tensor. If these do not hold, the node will not
-     * be transformed.
-     *
-     * The test for whether or not the first argument resolves to a tensor
-     * is to evaluate that expression. All values used in the expression
-     * is bound to a context with dummy values with enough information to
-     * deduce tensor types.
-     *
-     * There is currently no guarantee that all cases will be found. For
-     * instance, if-statements are problematic.
+     * Transforms max and min functions if the first
+     * argument returns a tensor type and the second argument is a valid
+     * dimension in the tensor.
      */
-    private ExpressionNode transformMaxAndMinFunctionNode(FunctionNode node, RankProfile profile) {
+    private ExpressionNode transformMaxAndMinFunctionNode(FunctionNode node, RankProfileTransformContext context) {
         if (node.children().size() != 2) {
             return node;
         }
         ExpressionNode arg1 = node.children().get(0);
         Optional<String> dimension = dimensionName(node.children().get(1));
         if (dimension.isPresent()) {
-            try {
-                Context context = buildContext(arg1, profile);
-                Value value = arg1.evaluate(context);
-                if (isTensorWithDimension(value, dimension.get())) {
-                    return replaceMaxAndMinFunction(node);
-                }
-            } catch (IllegalArgumentException e) {
-                // Thrown from evaluate if some variables are not bound, for
-                // instance for a backend rank feature. Means we don't have
-                // enough information to replace expression.
+            TensorType type = arg1.type(context.rankProfile().typeContext(context.queryProfiles()));
+            if (type.dimension(dimension.get()).isPresent()) {
+                return replaceMaxAndMinFunction(node);
             }
         }
         return node;
@@ -95,13 +80,6 @@ public class TensorTransformer extends ExpressionTransformer<RankProfileTransfor
             return Optional.of(((ReferenceNode) arg).getName());
         }
         return Optional.empty();
-    }
-
-    private boolean isTensorWithDimension(Value value, String dimension) {
-        if (value instanceof TensorValue)
-            return value.asTensor().type().dimensionNames().contains(dimension);
-        else
-            return false;
     }
 
     private ExpressionNode replaceMaxAndMinFunction(FunctionNode node) {

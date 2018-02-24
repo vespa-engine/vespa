@@ -249,7 +249,6 @@ public class VespaModelTestCase {
         DeployState deployState = builder.deployLogger(logger).applicationPackage(app).build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         Validation.validate(model, true, deployState);
-        System.out.println(logger.msgs);
         assertFalse(logger.msgs.isEmpty());
     }
 

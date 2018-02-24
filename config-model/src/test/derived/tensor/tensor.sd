@@ -20,7 +20,7 @@ search tensor {
   rank-profile profile1 {
 
     first-phase {
-      expression: map(attribute(f4),f(x)(x*x)) + reduce(random(x[2],y[3]), count) * rename(attribute(f4), (x, y), (y, x))
+      expression: sum(map(attribute(f4),f(x)(x*x)) + reduce(random(x[2],y[3]), count) * rename(attribute(f4), (x, y), (y, x)))
     }
   
   }
@@ -36,7 +36,7 @@ search tensor {
   rank-profile profile3 {
 
     first-phase {
-      expression: tensor(i[10])(i) * attribute(f4)
+      expression: sum(tensor(i[10])(i) * attribute(f4))
     }
 
   }

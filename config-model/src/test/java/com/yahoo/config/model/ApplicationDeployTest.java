@@ -96,7 +96,6 @@ public class ApplicationDeployTest {
         Map<String, Bundle.DefEntry> defEntriesByName =
                 defEntries2map(components.get(0).getDefEntries());
         assertEquals(5, defEntriesByName.size());
-        System.out.println(defEntriesByName);
 
         Bundle.DefEntry def1 = defEntriesByName.get("test-namespace");
         assertNotNull(def1);

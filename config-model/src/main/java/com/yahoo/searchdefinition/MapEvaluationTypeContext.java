@@ -54,6 +54,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     @Override
     public TensorType getType(Reference reference) {
+        // A reference to a macro argument?
         Optional<String> binding = boundIdentifier(reference);
         if (binding.isPresent()) {
             try {
@@ -66,6 +67,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             }
         }
 
+        // A reference to an attribute, query or constant feature?
         if (isSimpleFeature(reference)) {
             // The argument may be a local identifier bound to the actual value
             String argument = simpleArgument(reference.arguments()).get();
@@ -73,9 +75,16 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             return featureTypes.getOrDefault(reference, defaultTypeOf(reference));
         }
 
+        // A reference to a function?
         Optional<ExpressionFunction> function = functionInvocation(reference);
         if (function.isPresent()) {
             return function.get().getBody().type(this.withBindings(bind(function.get().arguments(), reference.arguments())));
+        }
+
+        // A reference to a feature which returns a tensor?
+        Optional<TensorType> featureTensorType = tensorFeatureType(reference);
+        if (featureTensorType.isPresent()) {
+            return featureTensorType.get();
         }
 
         // We do not know what this is - since we do not have complete knowledge abut the match features
@@ -110,7 +119,8 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
      * ("attribute(name)", "constant(name)" or "query(name)").
      * We disregard the output because all outputs under a simple feature have the same type.
      */
-    private boolean isSimpleFeature(Reference reference) {
+    // TODO: Move simpleness without knowing the names to Reference, move the name-knowing to FeatureNames
+    public static boolean isSimpleFeature(Reference reference) {
         Optional<String> argument = simpleArgument(reference.arguments());
         if ( ! argument.isPresent()) return false;
         return reference.name().equals("attribute") ||
@@ -122,16 +132,23 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
      * If these arguments contains one simple argument string, it is returned.
      * Otherwise null is returned.
      */
-    private Optional<String> simpleArgument(Arguments arguments) {
+    private static Optional<String> simpleArgument(Arguments arguments) {
         if (arguments.expressions().size() != 1) return Optional.empty();
         ExpressionNode argument = arguments.expressions().get(0);
 
-        if ( ! (argument instanceof ReferenceNode)) return Optional.empty();
-        ReferenceNode refArgument = (ReferenceNode)argument;
+        if (argument instanceof ReferenceNode) {
+            ReferenceNode refArgument = (ReferenceNode) argument;
 
-        if ( ! refArgument.reference().isIdentifier()) return Optional.empty();
+            if ( ! refArgument.reference().isIdentifier()) return Optional.empty();
 
-        return Optional.of(refArgument.getName());
+            return Optional.of(refArgument.getName());
+        }
+        else if (argument instanceof NameNode) {
+            return Optional.of(((NameNode) argument).getValue());
+        }
+        else {
+            return Optional.empty();
+        }
     }
 
     private Optional<ExpressionFunction> functionInvocation(Reference reference) {
@@ -140,6 +157,38 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         if (function == null) return Optional.empty();
         if (function.arguments().size() != reference.arguments().size()) return Optional.empty();
         return Optional.of(function);
+    }
+
+    /**
+     * There are two features which returns the (non-empty) tensor type: tensorFromLabels and tensorFromWeightedSet.
+     * This returns the type of those features if this is a reference to either of them, or empty otherwise.
+     */
+    private Optional<TensorType> tensorFeatureType(Reference reference) {
+        if ( ! reference.name().equals("tensorFromLabels") && ! reference.name().equals("tensorFromWeightedSet"))
+            return Optional.empty();
+
+        if (reference.arguments().size() != 1 && reference.arguments().size() != 2)
+            throw new IllegalArgumentException(reference.name() + " must have one or two arguments");
+
+        ExpressionNode arg0 = reference.arguments().expressions().get(0);
+        if ( ! ( arg0 instanceof ReferenceNode) || ! isSimpleFeature(((ReferenceNode)arg0).reference()))
+            throw new IllegalArgumentException("The first argument of " + reference.name() +
+                                               " must be a simple feature, not " + arg0);
+
+        String dimension;
+        if (reference.arguments().size() > 1) {
+            ExpressionNode arg1 = reference.arguments().expressions().get(1);
+            if ( ( ! (arg1 instanceof ReferenceNode) || ! (((ReferenceNode)arg1).reference().isIdentifier()))
+                 &&
+                 ( ! (arg1 instanceof NameNode)))
+                throw new IllegalArgumentException("The second argument of " + reference.name() +
+                                                   " must be a dimension name, not " + arg1);
+            dimension = reference.arguments().expressions().get(1).toString();
+        }
+        else { // default
+            dimension = ((ReferenceNode)arg0).reference().arguments().expressions().get(0).toString();
+        }
+        return Optional.of(new TensorType.Builder().mapped(dimension).build());
     }
 
     /** Binds the given list of formal arguments to their actual values */

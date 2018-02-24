@@ -16,7 +16,6 @@ import java.util.List;
 /**
  * A node referring either to a value in the context or to a named ranking expression (function aka macro).
  *
- * @author simon
  * @author bratseth
  */
 public final class ReferenceNode extends CompositeNode {
@@ -64,11 +63,13 @@ public final class ReferenceNode extends CompositeNode {
 
     @Override
     public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
+        // A reference to a macro argument?
         if (reference.isIdentifier() && context.getBinding(getName()) != null) {
             // a bound identifier: replace by the value it is bound to
             return context.getBinding(getName());
         }
 
+        // A reference to a function?
         ExpressionFunction function = context.getFunction(getName());
         if (function != null && function.arguments().size() == getArguments().size() && getOutput() == null) {
             // a function reference: replace by the referenced function wrapped in rankingExpression
@@ -84,7 +85,7 @@ public final class ReferenceNode extends CompositeNode {
             return "rankingExpression(" + instance.getName() + ")";
         }
 
-        // not resolved in this context: output as-is
+        // Not resolved in this context: output as-is
         return reference.toString(context, path, parent);
     }
 

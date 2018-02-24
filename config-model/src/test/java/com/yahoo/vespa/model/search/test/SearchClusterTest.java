@@ -136,7 +136,6 @@ public class SearchClusterTest {
         QrSearchersConfig.Builder builder = new QrSearchersConfig.Builder();
         cluster1.getConfig(builder);
         QrSearchersConfig config = new QrSearchersConfig(builder);
-        System.out.println(config);
 
         assertThat(config.searchcluster().size(), is(2));
         int normalId = 0;
@@ -147,14 +146,12 @@ public class SearchClusterTest {
         ClusterConfig.Builder clusterConfigBuilder = new ClusterConfig.Builder();
         model.getConfig(clusterConfigBuilder, "j1/searchchains/chain/normal/component/com.yahoo.prelude.cluster.ClusterSearcher");
         ClusterConfig clusterConfig = new ClusterConfig(clusterConfigBuilder);
-        System.out.println(clusterConfig);
         assertThat(clusterConfig.clusterId(), is(normalId));
         assertThat(clusterConfig.clusterName(), is("normal"));
 
         ClusterConfig.Builder clusterConfigBuilder2 = new ClusterConfig.Builder();
         model.getConfig(clusterConfigBuilder2, "j2/searchchains/chain/xbulk/component/com.yahoo.prelude.cluster.ClusterSearcher");
         ClusterConfig clusterConfig2 = new ClusterConfig(clusterConfigBuilder2);
-        System.out.println(clusterConfig2);
         assertThat(clusterConfig2.clusterId(), is(bulkId));
         assertThat(clusterConfig2.clusterName(), is("xbulk"));
     }

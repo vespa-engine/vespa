@@ -32,8 +32,7 @@ public class SearchDefinitionsParsingTestCase extends SearchDefinitionTestCase {
         try {
             SearchBuilder.buildFromFile("src/test/examples/invalid_sd_construct.sd");
         } catch (ParseException e) {
-            System.out.println(e.getMessage());
-            if (!e.getMessage().contains("at line 5, column 36.")) {
+            if ( ! e.getMessage().contains("at line 5, column 36.")) {
                 throw e;
             }
         }

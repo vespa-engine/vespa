@@ -220,7 +220,6 @@ public class AdminTestCase {
 
         StatisticsComponent stat = null;
         for (Component component : qrCluster.getAllComponents()) {
-            System.out.println(component.getClassId().getName());
             if (component.getClassId().getName().contains("com.yahoo.statistics.StatisticsImpl")) {
                 stat = (StatisticsComponent) component;
                 break;

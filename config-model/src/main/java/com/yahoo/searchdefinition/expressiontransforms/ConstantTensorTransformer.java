@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.expressiontransforms;
 
+import com.yahoo.searchdefinition.MapEvaluationTypeContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
@@ -34,7 +35,7 @@ public class ConstantTensorTransformer extends ExpressionTransformer<RankProfile
     }
 
     private ExpressionNode transformFeature(ReferenceNode node, RankProfileTransformContext context) {
-        if ( ! node.getArguments().isEmpty()) {
+        if ( ! node.getArguments().isEmpty() && ! MapEvaluationTypeContext.isSimpleFeature(node.reference())) {
             return transformArguments(node, context);
         } else {
             return transformConstantReference(node, context);
@@ -60,7 +61,9 @@ public class ConstantTensorTransformer extends ExpressionTransformer<RankProfile
         String tensorType = tensorValue.asTensor().type().toString();
         context.rankPropertiesOutput().put(featureName + ".value", tensorValue.toString());
         context.rankPropertiesOutput().put(featureName + ".type", tensorType);
-        return new ReferenceNode("constant", Arrays.asList(new NameNode(node.getName())), null);
+        System.out.println("==== turning " + node + " into " + new ReferenceNode(CONSTANT, Arrays.asList(new NameNode(node.getName())), null)); // TODO: Remove
+        // TODO: This allows us to reference constant "a" as "a" instead of "constant(a)", but we shouldn't allow that
+        return new ReferenceNode(CONSTANT, Arrays.asList(new NameNode(node.getName())), null);
     }
 
 }

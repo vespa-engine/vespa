@@ -15,8 +15,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author lulf
- * @since 5.20
+ * @author Ulf Lilleengen
  */
 public class RankProfileRegistryTest {
     private static final String TESTDIR = "src/test/cfg/search/data/v2/inherited_rankprofiles";
@@ -26,10 +25,7 @@ public class RankProfileRegistryTest {
         TestRoot root = new TestDriver().buildModel(FilesApplicationPackage.fromFile(new File(TESTDIR)));
         RankProfilesConfig left = root.getConfig(RankProfilesConfig.class, "inherit/search/cluster.inherit/left");
         RankProfilesConfig right = root.getConfig(RankProfilesConfig.class, "inherit/search/cluster.inherit/right");
-        System.out.println(left);
         assertThat(left.rankprofile().size(), is(3));
-        System.out.println("\n\n");
-        System.out.println(right);
         assertThat(right.rankprofile().size(), is(2));
     }
 
@@ -37,7 +33,7 @@ public class RankProfileRegistryTest {
     public void testRankProfileDuplicateNameIsIllegal() {
         Search search = new Search("foo", null);
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
-        final RankProfile barRankProfile = new RankProfile("bar", search, rankProfileRegistry);
+        RankProfile barRankProfile = new RankProfile("bar", search, rankProfileRegistry);
         rankProfileRegistry.addRankProfile(barRankProfile);
         rankProfileRegistry.addRankProfile(barRankProfile);
     }
@@ -49,10 +45,11 @@ public class RankProfileRegistryTest {
 
         for (String rankProfileName : RankProfileRegistry.overridableRankProfileNames) {
             assertNull(rankProfileRegistry.getRankProfile(search, rankProfileName).getMacros().get("foo"));
-            final RankProfile rankProfileWithAddedMacro = new RankProfile(rankProfileName, search, rankProfileRegistry);
+            RankProfile rankProfileWithAddedMacro = new RankProfile(rankProfileName, search, rankProfileRegistry);
             rankProfileWithAddedMacro.addMacro("foo", true);
             rankProfileRegistry.addRankProfile(rankProfileWithAddedMacro);
             assertNotNull(rankProfileRegistry.getRankProfile(search, rankProfileName).getMacros().get("foo"));
         }
     }
+
 }
