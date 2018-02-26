@@ -70,7 +70,7 @@ RemoveOperation::onStart(DistributorMessageSender& sender)
             "Remove document %s failed since no available nodes found. "
             "System state is %s",
             _msg->getDocumentId().toString().c_str(),
-            _manager.getClusterState().toString().c_str());
+            _bucketSpace.getClusterState().toString().c_str());
 
         _tracker.fail(sender, api::ReturnCode(api::ReturnCode::OK));
     } else {

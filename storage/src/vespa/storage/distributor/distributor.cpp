@@ -107,6 +107,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
     _bucketDBStatusDelegate.registerStatusPage();
     hostInfoReporterRegistrar.registerReporter(&_hostInfoReporter);
     propagateDefaultDistribution(_component.getDistribution());
+    propagateClusterStates();
 };
 
 Distributor::~Distributor()
@@ -336,6 +337,7 @@ Distributor::enableClusterState(const lib::ClusterState& state)
 {
     lib::ClusterState oldState = _clusterState;
     _clusterState = state;
+    propagateClusterStates();
 
     lib::Node myNode(lib::NodeType::DISTRIBUTOR, _component.getIndex());
 
@@ -530,6 +532,15 @@ Distributor::propagateDefaultDistribution(
     _bucketSpaceRepo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
     auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
     _bucketSpaceRepo->get(document::FixedBucketSpaces::global_space()).setDistribution(std::move(global_distr));
+}
+
+void
+Distributor::propagateClusterStates()
+{
+    auto clusterState = std::make_shared<lib::ClusterState>(_clusterState);
+    for (auto &iter : *_bucketSpaceRepo) {
+        iter.second->setClusterState(clusterState);
+    }
 }
 
 void

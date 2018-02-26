@@ -105,8 +105,7 @@ struct StateCheckersTest : public CppUnit::TestFixture,
         std::vector<uint16_t> idealNodes(
                 distributorBucketSpace
                 .getDistribution().getIdealStorageNodes(
-                        getIdealStateManager().getDistributorComponent()
-                                .getClusterState(),
+                        distributorBucketSpace.getClusterState(),
                         bucket,
                         "ui"));
         CPPUNIT_ASSERT_EQUAL(expected, idealNodes);
@@ -256,8 +255,7 @@ struct StateCheckersTest : public CppUnit::TestFixture,
         document::BucketId bid(17, 0);
         addNodesToBucketDB(bid, params._bucketInfo);
         setRedundancy(params._redundancy);
-        _distributor->enableClusterState(
-                lib::ClusterState(params._clusterState));
+        enableDistributorClusterState(params._clusterState);
         NodeMaintenanceStatsTracker statsTracker;
         StateChecker::Context c(
                 getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
@@ -996,7 +994,7 @@ StateCheckersTest::testDeleteExtraCopies()
         std::vector<uint16_t> idealNodes(
                 distributorBucketSpace
                 .getDistribution().getIdealStorageNodes(
-                        getIdealStateManager().getDistributorComponent().getClusterState(),
+                        distributorBucketSpace.getClusterState(),
                         document::BucketId(17, 0),
                         "ui"));
         std::vector<uint16_t> wanted;

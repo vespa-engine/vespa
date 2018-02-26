@@ -65,7 +65,7 @@ StateChecker::Context::Context(const DistributorComponent& c,
                                const document::Bucket &bucket_)
     : bucket(bucket_),
       siblingBucket(c.getSibling(bucket.getBucketId())),
-      systemState(c.getClusterState()),
+      systemState(distributorBucketSpace.getClusterState()),
       distributorConfig(c.getDistributor().getConfig()),
       distribution(distributorBucketSpace.getDistribution()),
       gcTimeCalculator(c.getDistributor().getBucketIdHasher(),
