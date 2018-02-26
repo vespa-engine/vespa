@@ -120,7 +120,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
         Cursor cursor = slime.setObject();
         cursor.setString("version", version.versionNumber().toString());
         cursor.setString("sha", version.releaseCommit());
-        cursor.setLong("date", version.releasedAt().toEpochMilli());
+        cursor.setLong("date", version.committedAt().toEpochMilli());
         return new SlimeJsonResponse(slime);
         
     }
