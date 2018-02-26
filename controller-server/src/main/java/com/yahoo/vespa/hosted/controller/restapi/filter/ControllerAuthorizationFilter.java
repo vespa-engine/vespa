@@ -112,8 +112,7 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     private static boolean isWhiteListedOperation(Path path, Method method) {
         return path.matches("/screwdriver/v1/jobsToRun") || // TODO EOL'ed API, remove this once api is gone
                 path.matches("/application/v4/user") && method == PUT  || // Create user tenant
-                path.matches("/application/v4/tenant/{tenant}") && method == POST ||  // Create tenant
-                path.matches("/screwdriver/v1/jobreport"); // TODO To be migrated to application/v4
+                path.matches("/application/v4/tenant/{tenant}") && method == POST; // Create tenant
     }
 
     private static boolean isHostedOperatorOperation(Path path, Method method) {
