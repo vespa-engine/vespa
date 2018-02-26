@@ -59,7 +59,7 @@ public class DeploymentQueue {
         for (JobType jobType : JobType.values())
             locked(jobType, queue ->
                     queue.stream()
-                            .limit(isCapacityConstrained(jobType) ? 1 : 1 << 30)
+                            .limit(isCapacityConstrained(jobType) ? 1 : Long.MAX_VALUE)
                             .peek(id -> toBuildJob(id, jobType).ifPresent(builder::add))
                             .forEach(queue::remove));
 

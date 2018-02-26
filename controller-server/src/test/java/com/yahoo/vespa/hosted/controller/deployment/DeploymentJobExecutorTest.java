@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author jvenstad
  */
-public class DeploymentTriggererTest {
+public class DeploymentJobExecutorTest {
 
     @Test
     public void testMaintenance() {
@@ -36,11 +36,11 @@ public class DeploymentTriggererTest {
         ArrayList<BuildJob> buildJobs = new ArrayList<>();
         BuildService buildService = buildJob -> buildJob.projectId() == project2 ? false : buildJobs.add(buildJob);
 
-        DeploymentTriggerer triggerer = new DeploymentTriggerer(tester.controller(),
-                                                                Duration.ofDays(1),
-                                                                jobControl,
-                                                                buildService,
-                                                                Runnable::run);
+        DeploymentJobExecutor triggerer = new DeploymentJobExecutor(tester.controller(),
+                                                                    Duration.ofDays(1),
+                                                                    jobControl,
+                                                                    buildService,
+                                                                    Runnable::run);
 
         triggerer.maintain();
         assertEquals("No jobs are triggered initially.",
