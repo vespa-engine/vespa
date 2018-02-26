@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
@@ -39,6 +40,7 @@ public class Environment {
 
     private static final String ENVIRONMENT = "ENVIRONMENT";
     private static final String REGION = "REGION";
+    private static final String SYSTEM = "SYSTEM";
     private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
     private static final String COREDUMP_FEED_ENDPOINT = "COREDUMP_FEED_ENDPOINT";
 
@@ -46,6 +48,7 @@ public class Environment {
     private final List<URI> configServerURIs;
     private final String environment;
     private final String region;
+    private final String system;
     private final String parentHostHostname;
     private final InetAddressResolver inetAddressResolver;
     private final PathResolver pathResolver;
@@ -62,8 +65,11 @@ public class Environment {
 
     public Environment(ConfigServerConfig configServerConfig) {
         this(configServerConfig,
+             // TODO: Are these three ever set? Does not look like they are. How can this work then?
              getEnvironmentVariable(ENVIRONMENT),
              getEnvironmentVariable(REGION),
+             getEnvironmentVariable(SYSTEM),
+
              new PathResolver(),
              Optional.of(getEnvironmentVariable(COREDUMP_FEED_ENDPOINT)),
              NodeType.host);
@@ -72,12 +78,14 @@ public class Environment {
     public Environment(ConfigServerConfig configServerConfig,
                        String hostedEnvironment,
                        String hostedRegion,
+                       String hostedSystem,
                        PathResolver pathResolver,
                        Optional<String> coreDumpFeedEndpoint,
                        NodeType nodeType) {
         this(configServerConfig,
                 hostedEnvironment,
                 hostedRegion,
+                hostedSystem,
                 Defaults.getDefaults().vespaHostname(),
                 new InetAddressResolver(),
                 pathResolver,
@@ -104,6 +112,7 @@ public class Environment {
     public Environment(ConfigServerConfig configServerConfig,
                        String environment,
                        String region,
+                       String system,
                        String parentHostHostname,
                        InetAddressResolver inetAddressResolver,
                        PathResolver pathResolver,
@@ -120,6 +129,7 @@ public class Environment {
                 configServerConfig.port());
         this.environment = environment;
         this.region = region;
+        this.system = system;
         this.parentHostHostname = parentHostHostname;
         this.inetAddressResolver = inetAddressResolver;
         this.pathResolver = pathResolver;
@@ -135,12 +145,14 @@ public class Environment {
 
     public List<URI> getConfigServerUris() { return configServerURIs; }
 
-    public String getEnvironment() {
-        return environment;
-    }
+    public String getEnvironment() { return environment; }
 
     public String getRegion() {
         return region;
+    }
+
+    public String getSystem() {
+        return system;
     }
 
     public String getParentHostHostname() {
@@ -167,7 +179,7 @@ public class Environment {
 
     private static List<String> getLogstashNodesFromEnvironment() {
         String logstashNodes = System.getenv(LOGSTASH_NODES);
-        if(Strings.isNullOrEmpty(logstashNodes)) {
+        if (Strings.isNullOrEmpty(logstashNodes)) {
             return Collections.emptyList();
         }
         return Arrays.asList(logstashNodes.split("[,\\s]+"));
@@ -271,6 +283,7 @@ public class Environment {
         ConfigServerConfig configServerConfig = new ConfigServerConfig(new ConfigServerConfig.Builder());
         private String environment;
         private String region;
+        private String system;
         private String parentHostHostname;
         private InetAddressResolver inetAddressResolver;
         private PathResolver pathResolver;
@@ -293,6 +306,11 @@ public class Environment {
 
         public Builder region(String region) {
             this.region = region;
+            return this;
+        }
+
+        public Builder system(String system) {
+            this.system = system;
             return this;
         }
 
@@ -342,14 +360,22 @@ public class Environment {
         }
 
         public Environment build() {
-            return new Environment(configServerConfig, environment, region, parentHostHostname,
-                    Optional.ofNullable(inetAddressResolver).orElseGet(InetAddressResolver::new),
-                    Optional.ofNullable(pathResolver).orElseGet(PathResolver::new),
-                    logstashNodes, feedEndpoint,
-                    Optional.ofNullable(keyStoreOptions),
-                    Optional.ofNullable(trustStoreOptions),
-                    Optional.ofNullable(athenzIdentity),
-                    nodeType);
+            Objects.requireNonNull(environment, "environment cannot be null");
+            Objects.requireNonNull(region, "region cannot be null");
+            Objects.requireNonNull(system, "system cannot be null");
+            return new Environment(configServerConfig,
+                                   environment,
+                                   region,
+                                   system,
+                                   parentHostHostname,
+                                   Optional.ofNullable(inetAddressResolver).orElseGet(InetAddressResolver::new),
+                                   Optional.ofNullable(pathResolver).orElseGet(PathResolver::new),
+                                   logstashNodes,
+                                   feedEndpoint,
+                                   Optional.ofNullable(keyStoreOptions),
+                                   Optional.ofNullable(trustStoreOptions),
+                                   Optional.ofNullable(athenzIdentity),
+                                   nodeType);
         }
     }
 }
