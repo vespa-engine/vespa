@@ -2,6 +2,7 @@
 
 #include "clusterinformation.h"
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
 
 namespace storage::distributor {
@@ -9,7 +10,7 @@ namespace storage::distributor {
 uint16_t
 ClusterInformation::getStorageNodeCount() const
 {
-    return getClusterState().getNodeCount(lib::NodeType::STORAGE);
+    return getClusterStateBundle().getBaselineClusterState()->getNodeCount(lib::NodeType::STORAGE);
 }
 
 }

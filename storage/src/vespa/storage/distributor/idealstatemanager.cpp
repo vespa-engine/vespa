@@ -68,9 +68,10 @@ bool
 IdealStateManager::iAmUp() const
 {
     Node node(NodeType::DISTRIBUTOR, _distributorComponent.getIndex());
-    const lib::State &nodeState = _distributorComponent.getClusterState()
-                    .getNodeState(node).getState();
-    const lib::State &clusterState = _distributorComponent.getClusterState().getClusterState();
+    // Assume that derived cluster states agree on distributor node being up
+    const auto &state = *_distributorComponent.getClusterStateBundle().getBaselineClusterState();
+    const lib::State &nodeState = state.getNodeState(node).getState();
+    const lib::State &clusterState = state.getClusterState();
 
     return (nodeState == lib::State::UP && clusterState == lib::State::UP);
 }
@@ -278,7 +279,7 @@ void IdealStateManager::dump_bucket_space_db_status(document::BucketSpace bucket
 
 void IdealStateManager::getBucketStatus(std::ostream& out) const {
     LOG(debug, "Dumping bucket database valid at cluster state version %u",
-        _distributorComponent.getDistributor().getClusterState().getVersion());
+        _distributorComponent.getDistributor().getClusterStateBundle().getVersion());
 
     for (auto& space : _bucketSpaceRepo) {
         dump_bucket_space_db_status(space.first, out);

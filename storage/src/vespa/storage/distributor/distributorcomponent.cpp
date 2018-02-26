@@ -3,6 +3,7 @@
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
 
@@ -40,10 +41,10 @@ DistributorComponent::sendUp(const api::StorageMessage::SP& msg)
     _distributor.getMessageSender().sendUp(msg);
 }
 
-const lib::ClusterState&
-DistributorComponent::getClusterState() const
+const lib::ClusterStateBundle&
+DistributorComponent::getClusterStateBundle() const
 {
-    return _distributor.getClusterState();
+    return _distributor.getClusterStateBundle();
 };
 
 std::vector<uint16_t>
@@ -305,9 +306,9 @@ DistributorComponent::getBucketId(const document::DocumentId& docId) const
 }
 
 bool
-DistributorComponent::storageNodeIsUp(uint32_t nodeIndex) const
+DistributorComponent::storageNodeIsUp(document::BucketSpace bucketSpace, uint32_t nodeIndex) const
 {
-    const lib::NodeState& ns = getClusterState().getNodeState(
+    const lib::NodeState& ns = getClusterStateBundle().getDerivedClusterState(bucketSpace)->getNodeState(
             lib::Node(lib::NodeType::STORAGE, nodeIndex));
 
     return ns.getState().oneOf(_distributor.getStorageNodeUpStates());

@@ -8,6 +8,7 @@
 #include <vespa/document/bucket/bucket.h>
 
 namespace storage::api { class MergeBucketReply; }
+namespace storage::lib { class ClusterStateBundle; }
 namespace storage {
    class DistributorConfiguration;
    class DistributorMetricSet;
@@ -21,7 +22,7 @@ class DistributorInterface : public DistributorMessageSender
 public:
     virtual PendingMessageTracker& getPendingMessageTracker() = 0;
     virtual DistributorMetricSet& getMetrics() = 0;
-    virtual void enableClusterState(const lib::ClusterState& state) = 0;
+    virtual void enableClusterStateBundle(const lib::ClusterStateBundle& state) = 0;
     virtual BucketOwnership checkOwnershipInPendingState(const document::Bucket &bucket) const = 0;
     virtual void notifyDistributionChangeEnabled() = 0;
 
@@ -43,9 +44,9 @@ public:
     virtual void checkBucketForSplit(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e, uint8_t pri) = 0;
 
     /**
-     * @return Returns the current cluster state.
+     * @return Returns the current cluster state bundle.
      */
-    virtual const lib::ClusterState& getClusterState() const = 0;
+    virtual const lib::ClusterStateBundle& getClusterStateBundle() const = 0;
 
     /**
      * Returns true if the node is currently initializing.
