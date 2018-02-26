@@ -16,11 +16,14 @@ public class StringSettingsOnNonStringFields extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
+        if ( ! validate) return;
+
         for (SDField field : search.allConcreteFields()) {
-            if (!doCheck(field)) continue;
+            if ( ! doCheck(field)) continue;
             if (field.getMatching().isTypeUserSet()) {
-                warn(search, field, "Matching type "+field.getMatching().getType()+" is only allowed for string fields.");
+                warn(search, field, "Matching type " + field.getMatching().getType() +
+                                    " is only allowed for string fields.");
             }
             if (field.getRanking().isLiteral()) {
                 warn(search, field, "Rank type literal only applies to string fields");

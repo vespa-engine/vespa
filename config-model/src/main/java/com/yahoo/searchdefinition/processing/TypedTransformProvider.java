@@ -9,7 +9,7 @@ import com.yahoo.vespa.indexinglanguage.ValueTransformProvider;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public abstract class TypedTransformProvider extends ValueTransformProvider {
 
@@ -27,23 +27,23 @@ public abstract class TypedTransformProvider extends ValueTransformProvider {
             String fieldName = ((OutputExpression)exp).getFieldName();
             if (exp instanceof AttributeExpression) {
                 Attribute attribute = search.getAttribute(fieldName);
-                if (attribute == null) {
+                if (attribute == null)
                     throw new IllegalArgumentException("Attribute '" + fieldName + "' not found.");
-                }
                 fieldType = attribute.getDataType();
-            } else if (exp instanceof IndexExpression) {
+            }
+            else if (exp instanceof IndexExpression) {
                 Field field = search.getConcreteField(fieldName);
-                if (field == null) {
+                if (field == null)
                     throw new IllegalArgumentException("Index field '" + fieldName + "' not found.");
-                }
                 fieldType = field.getDataType();
-            } else if (exp instanceof SummaryExpression) {
+            }
+            else if (exp instanceof SummaryExpression) {
                 Field field = search.getSummaryField(fieldName);
-                if (field == null) {
+                if (field == null)
                     throw new IllegalArgumentException("Summary field '" + fieldName + "' not found.");
-                }
                 fieldType = field.getDataType();
-            } else {
+            }
+            else {
                 throw new UnsupportedOperationException();
             }
         }
@@ -58,4 +58,5 @@ public abstract class TypedTransformProvider extends ValueTransformProvider {
     protected abstract boolean requiresTransform(Expression exp, DataType fieldType);
 
     protected abstract Expression newTransform(DataType fieldType);
+
 }

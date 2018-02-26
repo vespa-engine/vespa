@@ -10,8 +10,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
  * Adds field sets for 1) fields defined inside document type 2) fields inside search but outside document
- * @author vegardh
- *
+ * @author Vegard Havdal
  */
 public class BuiltInFieldSets extends Processor {
 
@@ -24,7 +23,7 @@ public class BuiltInFieldSets extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         addDocumentFieldSet();
         addSearchFieldSet();
         // "Hook" the field sets on search onto the document types, since we will include them

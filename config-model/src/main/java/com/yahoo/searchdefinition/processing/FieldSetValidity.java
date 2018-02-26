@@ -24,7 +24,9 @@ public class FieldSetValidity extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
+        if ( ! validate) return;
+
         for (FieldSet fieldSet : search.fieldSets().userFieldSets().values()) {
             checkFieldNames(search, fieldSet);
             checkMatching(search, fieldSet);
@@ -51,7 +53,7 @@ public class FieldSetValidity extends Processor {
             if (fsMatching==null) {
                 fsMatching = fieldMatching;
             } else {
-                if (fsMatching!=null && !fsMatching.equals(fieldMatching)) {
+                if ( ! fsMatching.equals(fieldMatching)) {
                     warn(search, field.asField(),
                             "The matching settings for the fields in " + fieldSet + " are inconsistent " +
                                     "(explicitly or because of field type). This may lead to recall and ranking issues.");
@@ -69,7 +71,7 @@ public class FieldSetValidity extends Processor {
             if (fsNorm==null) {
                 fsNorm = fieldNorm;
             } else {
-                if (fsNorm!=null && !fsNorm.equals(fieldNorm)) {
+                if ( ! fsNorm.equals(fieldNorm)) {
                     warn(search, field.asField(),
                             "The normalization settings for the fields in " + fieldSet + " are inconsistent " +
                                     "(explicitly or because of field type). This may lead to recall and ranking issues.");
@@ -87,7 +89,7 @@ public class FieldSetValidity extends Processor {
             if (fsStemming==null) {
                 fsStemming = fieldStemming;
             } else {
-                if (fsStemming!=null && !fsStemming.equals(fieldStemming)) {
+                if ( ! fsStemming.equals(fieldStemming)) {
                     warn(search, field.asField(),
                             "The stemming settings for the fields in the fieldset '"+fieldSet.getName()+
                                     "' are inconsistent (explicitly or because of field type). " +

@@ -26,13 +26,32 @@ public class SummaryConsistency extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         for (DocumentSummary summary : search.getSummaries().values()) {
             if (summary.getName().equals("default")) continue;
+
             for (SummaryField summaryField : summary.getSummaryFields() ) {
-                assertConsistency(summaryField, search);
+                assertConsistency(summaryField, search, validate);
                 makeAttributeTransformIfAppropriate(summaryField, search);
             }
+        }
+    }
+
+    private void assertConsistency(SummaryField summaryField, Search search, boolean validate) {
+        // Compare to default:
+        SummaryField existingDefault = search.getSummary("default").getSummaryField(summaryField.getName());
+        if (existingDefault != null) {
+            if (validate)
+                assertConsistentTypes(existingDefault, summaryField);
+            makeConsistentWithDefaultOrThrow(existingDefault, summaryField);
+        }
+        else {
+            // If no default, compare to whichever definition of the field
+            SummaryField existing = search.getExplicitSummaryField(summaryField.getName());
+            if (existing == null) return;
+            if (validate)
+                assertConsistentTypes(existing, summaryField);
+            makeConsistentOrThrow(existing, summaryField, search);
         }
     }
 
@@ -42,21 +61,6 @@ public class SummaryConsistency extends Processor {
         Attribute attribute = search.getAttribute(summaryField.getSingleSource());
         if (attribute == null) return;
         summaryField.setTransform(SummaryTransform.ATTRIBUTE);
-    }
-
-    private void assertConsistency(SummaryField summaryField, Search search) {
-        SummaryField existingDefault = search.getSummary("default").getSummaryField(summaryField.getName()); // Compare to default
-        if (existingDefault != null) {
-            assertConsistentTypes(existingDefault, summaryField);
-            makeConsistentWithDefaultOrThrow(existingDefault, summaryField);
-        }
-        else {
-            // If no default, compare to whichever definition of the field
-            SummaryField existing = search.getExplicitSummaryField(summaryField.getName());
-            if (existing == null) return;
-            assertConsistentTypes(existing, summaryField);
-            makeConsistentOrThrow(existing, summaryField, search);
-        }
     }
 
     private void assertConsistentTypes(SummaryField existing, SummaryField seen) {
@@ -90,6 +94,7 @@ public class SummaryConsistency extends Processor {
             assertEqualTransform(field1,field2);
         }
     }
+
     private void makeConsistentWithDefaultOrThrow(SummaryField defaultField, SummaryField newField) {
         if (newField.getTransform().equals(SummaryTransform.NONE)) {
             newField.setTransform(defaultField.getTransform());
@@ -99,12 +104,11 @@ public class SummaryConsistency extends Processor {
         }
     }
 
-
     private void assertEqualTransform(SummaryField field1, SummaryField field2) {
         if ( ! field2.getTransform().equals(field1.getTransform())) {
-            throw new IllegalArgumentException("Conflicting summary transforms. " + field2 +" is already defined as " +
-                                       field1 + ". A field with the same name " +
-                                       "can not have different transforms in different summary classes");
+            throw new IllegalArgumentException("Conflicting summary transforms. " + field2 + " is already defined as " +
+                                               field1 + ". A field with the same name " +
+                                               "can not have different transforms in different summary classes");
         }
     }
 

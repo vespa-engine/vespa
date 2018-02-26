@@ -8,6 +8,7 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
  * @author Einar M R Rosenvinge
  */
 public class FieldOperationApplierForSearch extends FieldOperationApplier {
+
     @Override
     public void process(SDDocumentType sdoc) {
         //Do nothing
@@ -18,4 +19,5 @@ public class FieldOperationApplierForSearch extends FieldOperationApplier {
             apply(field);
         }
     }
+
 }

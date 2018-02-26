@@ -76,7 +76,7 @@ public class SummaryMapTestCase extends SearchDefinitionTestCase {
         String fieldName = "location";
         SDField field = document.addField(fieldName, PositionDataType.INSTANCE);
         field.parseIndexingScript("{ attribute | summary }");
-        Processing.process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles());
+        Processing.process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true);
         SummaryMap summaryMap = new SummaryMap(search, new Summaries(search, new BaseDeployLogger()));
 
         Iterator transforms = summaryMap.resultTransformIterator();

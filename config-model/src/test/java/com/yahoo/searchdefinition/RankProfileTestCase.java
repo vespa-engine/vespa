@@ -141,7 +141,7 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
                 "  rank-profile p1 {}\n" +
                 "  rank-profile p2 {}\n" +
                 "}");
-        builder.build(new BaseDeployLogger());
+        builder.build(true, new BaseDeployLogger());
         Search search = builder.getSearch();
 
         assertEquals(4, registry.allRankProfiles().size());

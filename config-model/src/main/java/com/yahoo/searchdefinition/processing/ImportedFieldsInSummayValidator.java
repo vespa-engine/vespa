@@ -20,13 +20,14 @@ import java.util.Map;
  */
 public class ImportedFieldsInSummayValidator extends Processor {
 
-
     public ImportedFieldsInSummayValidator(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
+        if ( ! validate) return;
+
         if (search.importedFields().isPresent()) {
             validateDocumentSummaries(search.getSummaries());
         }
@@ -48,15 +49,15 @@ public class ImportedFieldsInSummayValidator extends Processor {
     }
 
     private void validateImportedSummaryField(DocumentSummary summary, SummaryField field, ImportedField importedField) {
-        if (field.getDataType().equals(DataType.PREDICATE) &&
-                importedField.targetField().getDataType().equals(DataType.PREDICATE)) {
+        if (field.getDataType().equals(DataType.PREDICATE)
+            && importedField.targetField().getDataType().equals(DataType.PREDICATE)) {
             fail(summary, field, "Is of type predicate. Not supported in document summaries");
         }
     }
 
     private void fail(DocumentSummary summary, SummaryField importedField, String msg) {
         throw new IllegalArgumentException("For search '" + search.getName() + "', document summary '" + summary.getName() +
-                "', imported summary field '" + importedField.getName() + "': " + msg);
+                                           "', imported summary field '" + importedField.getName() + "': " + msg);
     }
 }
 

@@ -20,7 +20,7 @@ public class AttributeProperties extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         for (SDField field : search.allConcreteFields()) {
             String fieldName = field.getName();
 
@@ -41,7 +41,7 @@ public class AttributeProperties extends Processor {
                         }
                     }
                 }
-                if (!created) {
+                if (validate && !created) {
                     throw new IllegalArgumentException("Attribute '" + attribute.getName() + "' in field '" +
                                                        field.getName() + "' is not created by the indexing statement");
                 }
@@ -57,7 +57,7 @@ public class AttributeProperties extends Processor {
      * @return true if the attribute has been created by this field, else false
      */
     static boolean attributeCreated(SDField field, String attributeName) {
-        if (!field.doesAttributing()) {
+        if ( ! field.doesAttributing()) {
             return false;
         }
         for (Attribute attribute : field.getAttributes().values()) {
@@ -67,4 +67,5 @@ public class AttributeProperties extends Processor {
         }
         return false;
     }
+
 }

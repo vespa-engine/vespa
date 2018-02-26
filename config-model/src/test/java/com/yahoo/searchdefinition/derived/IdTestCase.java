@@ -31,7 +31,7 @@ public class IdTestCase extends AbstractExportingTestCase {
         uri.parseIndexingScript("{ summary | index }");
         document.addField(uri);
 
-        Processing.process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles());
+        Processing.process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true);
 
         assertNull(document.getField("uri"));
         assertNull(document.getField("Uri"));
@@ -42,4 +42,5 @@ public class IdTestCase extends AbstractExportingTestCase {
     public void testCompleteDeriving() throws Exception {
         assertCorrectDeriving("id");
     }
+
 }

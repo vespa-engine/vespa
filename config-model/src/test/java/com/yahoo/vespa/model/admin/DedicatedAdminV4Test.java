@@ -25,7 +25,7 @@ import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.VESP
 import static org.junit.Assert.*;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @author bratseth
  */
 public class DedicatedAdminV4Test {
@@ -204,7 +204,7 @@ public class DedicatedAdminV4Test {
         return new VespaModel(new NullConfigModelRegistry(),
                               new DeployState.Builder().applicationPackage(app).modelHostProvisioner(
                                       new InMemoryProvisioner(Hosts.readFrom(app.getHosts()), true))
-                                                       .build());
+                                                       .build(true));
     }
 
 }

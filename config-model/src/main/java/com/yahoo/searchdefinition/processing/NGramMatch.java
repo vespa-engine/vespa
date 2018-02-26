@@ -26,23 +26,23 @@ public class NGramMatch extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         for (SDField field : search.allConcreteFields()) {
             if (field.getMatching().getType().equals(Matching.Type.GRAM))
-                implementGramMatch(search, field);
-            else if (field.getMatching().getGramSize()>=0)
+                implementGramMatch(search, field, validate);
+            else if (validate && field.getMatching().getGramSize() >= 0)
                 throw new IllegalArgumentException("gram-size can only be set when the matching mode is 'gram'");
         }
     }
 
-    private void implementGramMatch(Search search, SDField field) {
-        if (field.doesAttributing())
+    private void implementGramMatch(Search search, SDField field, boolean validate) {
+        if (validate && field.doesAttributing())
             throw new IllegalArgumentException("gram matching is not supported with attributes, use 'index' not 'attribute' in indexing");
 
         int n = field.getMatching().getGramSize();
-        if (n<0)
+        if (n < 0)
             n=DEFAULT_GRAM_SIZE; // not set - use default gram size
-        if (n==0)
+        if (validate && n == 0)
             throw new IllegalArgumentException("Illegal gram size in " + field + ": Must be at least 1");
         field.getNormalizing().inferCodepoint();
         field.setStemming(Stemming.NONE); // not compatible with stemming and normalizing
@@ -72,5 +72,7 @@ public class NGramMatch extends Processor {
             }
             return exp;
         }
+
     }
+
 }

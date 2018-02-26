@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 @SuppressWarnings({ "UnusedDeclaration" })
 public abstract class ExpressionConverter implements Cloneable {
@@ -133,4 +133,5 @@ public abstract class ExpressionConverter implements Cloneable {
     protected abstract boolean shouldConvert(Expression exp);
 
     protected abstract Expression doConvert(Expression exp);
+
 }

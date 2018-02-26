@@ -111,7 +111,7 @@ public class VespaModelTester {
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(appPkg)
                 .modelHostProvisioner(provisioner)
-                .properties((new DeployProperties.Builder()).hostedVespa(hosted).build()).build();
+                .properties((new DeployProperties.Builder()).hostedVespa(hosted).build()).build(true);
         return modelCreatorWithMockPkg.create(false, deployState, configModelRegistry);
     }
 

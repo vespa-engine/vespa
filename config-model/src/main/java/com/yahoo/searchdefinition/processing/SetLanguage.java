@@ -24,7 +24,7 @@ public class SetLanguage extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         List<String> textFieldsWithoutLanguage = new ArrayList<>();
 
         for (SDField field : search.allConcreteFields()) {
@@ -37,10 +37,10 @@ public class SetLanguage extends Processor {
                     fieldString.append(fieldName).append(" ");
                 }
                 warn(search, field, "Field '" + field.getName() + "' sets the language for this document, " +
-                        "and should be defined as the first field in the searchdefinition." +
-                        "Preceding text fields that will not have their language set: " +
-                        fieldString.toString() +
-                        " (This warning is omitted for any subsequent fields that also do set_language.)");
+                                    "and should be defined as the first field in the searchdefinition." +
+                                    "Preceding text fields that will not have their language set: " +
+                                    fieldString.toString() +
+                                    " (This warning is omitted for any subsequent fields that also do set_language.)");
                 return;
             }
         }

@@ -30,7 +30,7 @@ public class UnprocessingSearchBuilder extends SearchBuilder {
     }
 
     @Override
-    public void process(Search search, DeployLogger deployLogger, QueryProfiles queryProfiles) {
+    public void process(Search search, DeployLogger deployLogger, QueryProfiles queryProfiles, boolean validate) {
         // empty
     }
 
@@ -40,4 +40,5 @@ public class UnprocessingSearchBuilder extends SearchBuilder {
         builder.build();
         return builder.getSearch();
     }
+
 }

@@ -27,7 +27,7 @@ public class AddAttributeTransformToSummaryOfImportedFields extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         search.allImportedFields()
                 .flatMap(this::getSummaryFieldsForImportedField)
                 .forEach(AddAttributeTransformToSummaryOfImportedFields::setAttributeTransform);

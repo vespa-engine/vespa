@@ -25,7 +25,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  *
  * <p>This must be done after other summary processors.</p>
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class MakeDefaultSummaryTheSuperSet extends Processor {
 
@@ -34,7 +34,7 @@ public class MakeDefaultSummaryTheSuperSet extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         DocumentSummary defaultSummary=search.getSummary("default");
         for (SummaryField summaryField : search.getUniqueNamedSummaryFields().values() ) {
             if (defaultSummary.getSummaryField(summaryField.getName()) != null) continue;

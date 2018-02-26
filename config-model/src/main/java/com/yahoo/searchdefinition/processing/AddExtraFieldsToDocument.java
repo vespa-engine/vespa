@@ -26,19 +26,19 @@ public class AddExtraFieldsToDocument extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         SDDocumentType document = search.getDocument();
         if (document != null) {
             for (Field field : search.extraFieldList()) {
-                addSdField(search, document, (SDField)field);
+                addSdField(search, document, (SDField)field, validate);
             }
             for (SummaryField field : search.getSummary("default").getSummaryFields()) {
-                addSummaryField(search, document, field);
+                addSummaryField(search, document, field, validate);
             }
         }
     }
 
-    private void addSdField(Search search, SDDocumentType document, SDField field) {
+    private void addSdField(Search search, SDDocumentType document, SDField field, boolean validate) {
         if (field.getIndexToCount() == 0 && field.getAttributes().isEmpty()) {
             return;
         }
@@ -48,15 +48,15 @@ public class AddExtraFieldsToDocument extends Processor {
                 if (atr.getCollectionType().equals(Attribute.CollectionType.ARRAY)) {
                     type = DataType.getArray(type);
                 }
-                addField(search, document, new SDField(document, atr.getName(), type));
+                addField(search, document, new SDField(document, atr.getName(), type), validate);
             } else if (!atr.getName().equals(field.getName())) {
-                addField(search, document, new SDField(document, atr.getName(), atr.getDataType()));
+                addField(search, document, new SDField(document, atr.getName(), atr.getDataType()), validate);
             }
         }
-        addField(search, document, field);
+        addField(search, document, field, validate);
     }
 
-    private void addSummaryField(Search search, SDDocumentType document, SummaryField field) {
+    private void addSummaryField(Search search, SDDocumentType document, SummaryField field, boolean validate) {
         Field docField = document.getField(field.getName());
         if (docField == null) {
             ImmutableSDField existingField = search.getField(field.getName());
@@ -68,13 +68,15 @@ public class AddExtraFieldsToDocument extends Processor {
                 document.addField(existingField.asField());
             }
         } else if (!docField.getDataType().equals(field.getDataType())) {
-            throw newProcessException(search, field, "Summary field has conflicting type.");
+            if (validate)
+                throw newProcessException(search, field, "Summary field has conflicting type.");
         }
     }
 
-    private void addField(Search search, SDDocumentType document, Field field) {
+    private void addField(Search search, SDDocumentType document, Field field, boolean validate) {
         if (document.getField(field.getName()) != null) {
-            throw newProcessException(search, field, "Field shadows another.");
+            if (validate)
+                throw newProcessException(search, field, "Field shadows another.");
         }
         document.addField(field);
     }

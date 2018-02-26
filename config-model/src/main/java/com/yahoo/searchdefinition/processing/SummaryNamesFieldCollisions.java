@@ -17,8 +17,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  * Verifies that equally named summary fields in different summary classes don't use different fields for source.
  * The summarymap config doesn't model this.
  *
- * @author vegardh
- *
+ * @author Vegard Havdal
  */
 public class SummaryNamesFieldCollisions extends Processor {
 
@@ -27,7 +26,9 @@ public class SummaryNamesFieldCollisions extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
+        if ( ! validate) return;
+
         Map<String, Pair<String, String>> fieldToClassAndSource = new HashMap<>();
         for (DocumentSummary summary : search.getSummaries().values()) {
             if ("default".equals(summary.getName())) continue;
@@ -38,12 +39,14 @@ public class SummaryNamesFieldCollisions extends Processor {
                     if (prevClassAndSource!=null) {
                         String prevClass = prevClassAndSource.getFirst();
                         String prevSource = prevClassAndSource.getSecond();
-                        if (!prevClass.equals(summary.getName())) {
-                            if (!prevSource.equals(source.getName())) {
-                                throw new IllegalArgumentException("For search '"+search.getName()+"', summary class '"+summary.getName()+"'," +
-                                		" summary field '"+summaryField.getName()+"':" +
-                                		" Can not use source '"+source.getName()+"' for this summary field, an equally named field in summary class '" +
-                                        prevClass + "' uses a different source: '"+prevSource+"'.");
+                        if ( ! prevClass.equals(summary.getName())) {
+                            if ( ! prevSource.equals(source.getName())) {
+                                throw new IllegalArgumentException("For search '"+ search.getName() +
+                                                                   "', summary class '" + summary.getName()+"'," +
+                                		                           " summary field '" + summaryField.getName() + "':" +
+                                		                           " Can not use source '" + source.getName() +
+                                                                   "' for this summary field, an equally named field in summary class '" +
+                                                                   prevClass + "' uses a different source: '"+prevSource+"'.");
                             }
                         }
                     } else {

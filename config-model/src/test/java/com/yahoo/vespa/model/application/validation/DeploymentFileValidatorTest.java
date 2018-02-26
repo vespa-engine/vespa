@@ -56,7 +56,7 @@ public class DeploymentFileValidatorTest {
                 .build();
         DeployState.Builder builder = new DeployState.Builder().applicationPackage(app);
         try {
-            final DeployState deployState = builder.build();
+            final DeployState deployState = builder.build(true);
             VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
             new DeploymentFileValidator().validate(model, deployState);
             fail("Did not get expected exception");
@@ -64,4 +64,5 @@ public class DeploymentFileValidatorTest {
             assertThat(e.getMessage(), containsString("specified in deployment.xml does not match any container cluster id"));
         }
     }
+
 }

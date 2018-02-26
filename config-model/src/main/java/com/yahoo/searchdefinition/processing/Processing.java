@@ -32,7 +32,6 @@ public class Processing {
                 SetLanguage::new,
                 UriHack::new,
                 LiteralBoost::new,
-                IndexTo2FieldSet::new,
                 TagType::new,
                 IndexingInputs::new,
                 OptimizeIlscript::new,
@@ -76,7 +75,7 @@ public class Processing {
                 ImportedFieldsInSummayValidator::new,
                 FastAccessValidator::new,
                 ReservedMacroNames::new,
-                //RankingExpressionTypeValidator::new,
+                RankingExpressionTypeValidator::new,
 
                 // These should be last.
                 IndexingValidation::new,
@@ -95,11 +94,12 @@ public class Processing {
     public static void process(Search search,
                                DeployLogger deployLogger,
                                RankProfileRegistry rankProfileRegistry,
-                               QueryProfiles queryProfiles) {
+                               QueryProfiles queryProfiles,
+                               boolean validate) {
         search.process();
         factories.stream()
                 .map(factory -> factory.create(search, deployLogger, rankProfileRegistry, queryProfiles))
-                .forEach(Processor::process);
+                .forEach(processor -> processor.process(validate));
     }
 
     @FunctionalInterface

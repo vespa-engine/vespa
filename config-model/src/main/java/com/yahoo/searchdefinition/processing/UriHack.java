@@ -16,14 +16,19 @@ import java.util.List;
  * @author baldersheim
  */
 public class UriHack extends Processor {
+
     private static final List<String> URL_SUFFIX =
             Arrays.asList("scheme", "host", "port", "path", "query", "fragment", "hostname");
-    public UriHack(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+
+    public UriHack(Search search,
+                   DeployLogger deployLogger,
+                   RankProfileRegistry rankProfileRegistry,
+                   QueryProfiles queryProfiles) {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         for (SDField field : search.allConcreteFields()) {
             if (field.doesIndexing()) {
                 DataType fieldType = field.getDataType();
@@ -43,10 +48,12 @@ public class UriHack extends Processor {
         DataType generatedType = DataType.STRING;
         if (uriField.getDataType() instanceof ArrayDataType) {
             generatedType = new ArrayDataType(DataType.STRING);
-        } else if (uriField.getDataType() instanceof WeightedSetDataType) {
+        }
+        else if (uriField.getDataType() instanceof WeightedSetDataType) {
             WeightedSetDataType wdt = (WeightedSetDataType) uriField.getDataType();
             generatedType = new WeightedSetDataType(DataType.STRING, wdt.createIfNonExistent(), wdt.removeIfZero());
         }
+
         for (String suffix : URL_SUFFIX) {
             String partName = uriName + "." + suffix;
             // I wonder if this is explicit in qrs or implicit in backend?

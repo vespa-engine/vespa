@@ -19,19 +19,22 @@ import static org.junit.Assert.fail;
  * @author hmusum
  */
 public class AttributePropertiesTestCase extends SearchDefinitionTestCase {
+
     @Test
     public void testInvalidAttributeProperties() throws IOException, ParseException {
         try {
             Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/attributeproperties1.sd");
-            new AttributeProperties(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process();
+            new AttributeProperties(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true);
             fail("attribute property should not be set");
         } catch (RuntimeException e) {
             // empty
         }
     }
+
     @Test
     public void testValidAttributeProperties() throws IOException, ParseException {
         Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/attributeproperties2.sd");
-        new AttributeProperties(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process();
+        new AttributeProperties(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true);
     }
+
 }

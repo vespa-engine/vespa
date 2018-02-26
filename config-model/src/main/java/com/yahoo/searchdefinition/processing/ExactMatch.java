@@ -26,7 +26,7 @@ public class ExactMatch extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         for (SDField field : search.allConcreteFields()) {
             Matching.Type matching = field.getMatching().getType();
             if (matching.equals(Matching.Type.EXACT) || matching.equals(Matching.Type.WORD)) {
@@ -56,8 +56,7 @@ public class ExactMatch extends Processor {
             }
             field.addQueryCommand("exact " + exactTerminator);
 
-            // The following part illustrates how nice it would have been with canonical
-            // representation of indices
+            // The following part illustrates how nice it would have been with canonical representation of indices
             if (field.doesIndexing()) {
                 exactMatchSettingsForField(field);
             }
@@ -92,5 +91,6 @@ public class ExactMatch extends Processor {
             return exp;
         }
     }
+
 }
 

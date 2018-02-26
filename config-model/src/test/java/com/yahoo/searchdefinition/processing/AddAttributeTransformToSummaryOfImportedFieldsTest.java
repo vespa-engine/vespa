@@ -36,7 +36,7 @@ public class AddAttributeTransformToSummaryOfImportedFieldsTest {
 
         AddAttributeTransformToSummaryOfImportedFields processor = new AddAttributeTransformToSummaryOfImportedFields(
                 search,null,null,null);
-        processor.process();
+        processor.process(true);
         SummaryField summaryField = search.getSummaries().get(SUMMARY_NAME).getSummaryField(IMPORTED_FIELD_NAME);
         SummaryTransform actualTransform = summaryField.getTransform();
         assertEquals(SummaryTransform.ATTRIBUTE, actualTransform);

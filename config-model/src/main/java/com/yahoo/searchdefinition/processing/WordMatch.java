@@ -25,14 +25,14 @@ public class WordMatch extends Processor {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
-    public void process() {
+    public void process(boolean validate) {
         for (SDField field : search.allConcreteFields()) {
-            if (!field.getMatching().getType().equals(Matching.Type.WORD)) {
-                continue;
-            }
+            if ( ! field.getMatching().getType().equals(Matching.Type.WORD)) continue;
+
             field.setStemming(Stemming.NONE);
             field.getNormalizing().inferLowercase();
             field.addQueryCommand("word");
         }
     }
+
 }

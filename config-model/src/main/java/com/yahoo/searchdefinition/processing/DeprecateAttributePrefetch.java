@@ -15,7 +15,9 @@ public class DeprecateAttributePrefetch extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
+        if ( ! validate) return;
+
         for (SDField field : search.allConcreteFields()) {
             for (Attribute a : field.getAttributes().values()) {
                 if (Boolean.TRUE.equals(a.getPrefetchValue())) {

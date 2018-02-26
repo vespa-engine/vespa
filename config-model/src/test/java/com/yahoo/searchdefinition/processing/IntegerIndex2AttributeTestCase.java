@@ -23,7 +23,7 @@ public class IntegerIndex2AttributeTestCase extends SearchDefinitionTestCase {
     public void testIntegerIndex2Attribute() throws IOException, ParseException {
         Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/integerindex2attribute.sd");
         search.process();
-        new IntegerIndex2Attribute(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process();
+        new IntegerIndex2Attribute(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true);
 
         SDField f;
         f = search.getConcreteField("s1");
@@ -55,4 +55,5 @@ public class IntegerIndex2AttributeTestCase extends SearchDefinitionTestCase {
         assertEquals(f.getAttributes().size(), 1);
         assertTrue( ! f.existsIndex("ai2"));
     }
+
 }

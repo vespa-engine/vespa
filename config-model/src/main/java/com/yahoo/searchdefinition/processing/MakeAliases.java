@@ -15,8 +15,8 @@ import java.util.Map;
 
 /**
  * Takes the aliases set on field by parser and sets them on correct Index or Attribute
- * @author vegardh
  *
+ * @author vegardh
  */
 public class MakeAliases extends Processor {
 
@@ -25,21 +25,21 @@ public class MakeAliases extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         List<String> usedAliases = new ArrayList<>();
         for (SDField field : search.allConcreteFields()) {
             for (Map.Entry<String, String> e : field.getAliasToName().entrySet()) {
                 String alias = e.getKey();
                 String name = e.getValue();
-                String errMsg = "For search '"+search.getName()+"': alias '"+alias+"' ";
-                if (search.existsIndex(alias)) {
-                    throw new IllegalArgumentException(errMsg+"is illegal since it is the name of an index.");
+                String errMsg = "For search '" + search.getName() + "': alias '" + alias + "' ";
+                if (validate && search.existsIndex(alias)) {
+                    throw new IllegalArgumentException(errMsg + "is illegal since it is the name of an index.");
                 }
-                if (search.getAttribute(alias)!=null) {
-                    throw new IllegalArgumentException(errMsg+"is illegal since it is the name of an attribute.");
+                if (validate && search.getAttribute(alias) != null) {
+                    throw new IllegalArgumentException(errMsg + "is illegal since it is the name of an attribute.");
                 }
-                if (usedAliases.contains(alias)) {
-                    throw new IllegalArgumentException(errMsg+"specified more than once.");
+                if (validate && usedAliases.contains(alias)) {
+                    throw new IllegalArgumentException(errMsg + "specified more than once.");
                 }
                 usedAliases.add(alias);
 
@@ -47,7 +47,7 @@ public class MakeAliases extends Processor {
                 Attribute attribute = field.getAttributes().get(name);
                 if (index != null) {
                     index.addAlias(alias); // alias will be for index in this case, since it is the one used in a search
-                } else if (attribute != null && !field.doesIndexing()) {
+                } else if (attribute != null && ! field.doesIndexing()) {
                     attribute.getAliases().add(alias);
                 } else {
                     index = new Index(name);
@@ -57,4 +57,5 @@ public class MakeAliases extends Processor {
             }
         }
     }
+
 }
