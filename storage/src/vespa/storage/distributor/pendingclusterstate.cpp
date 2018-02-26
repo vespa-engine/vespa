@@ -33,7 +33,7 @@ PendingClusterState::PendingClusterState(
     : _cmd(newStateCmd),
       _requestedNodes(newStateCmd->getSystemState().getNodeCount(lib::NodeType::STORAGE)),
       _prevClusterStateBundle(clusterInfo->getClusterStateBundle()),
-      _newClusterStateBundle(newStateCmd->getSystemState()),
+      _newClusterStateBundle(newStateCmd->getClusterStateBundle()),
       _clock(clock),
       _clusterInfo(clusterInfo),
       _creationTimestamp(creationTimestamp),
