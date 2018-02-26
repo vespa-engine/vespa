@@ -48,7 +48,7 @@ DistributorTestUtil::setupDistributor(int redundancy,
     config.ensurePrimaryPersisted = requirePrimaryToBeWritten;
     auto distribution = std::make_shared<lib::Distribution>(config);
     _node->getComponentRegister().setDistribution(distribution);
-    _distributor->enableClusterState(lib::ClusterState(systemState));
+    enableDistributorClusterState(systemState);
     // This is for all intents and purposes a hack to avoid having the
     // distributor treat setting the distribution explicitly as a signal that
     // it should send RequestBucketInfo to all configured nodes.
@@ -384,6 +384,12 @@ DistributorTestUtil::getBucketSpaces() const
         res.push_back(repo.first);
     }
     return res;
+}
+
+void
+DistributorTestUtil::enableDistributorClusterState(vespalib::stringref state)
+{
+    _distributor->enableClusterState(lib::ClusterState(state));
 }
 
 }

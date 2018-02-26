@@ -896,7 +896,7 @@ void
 BucketDBUpdaterTest::testNodeDown()
 {
     setStorageNodes(3);
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:3"));
+    enableDistributorClusterState("distributor:1 storage:3");
 
     for (int i=1; i<100; i++) {
         addIdealNodes(document::BucketId(16, i));
@@ -913,7 +913,7 @@ void
 BucketDBUpdaterTest::testStorageNodeInMaintenanceClearsBucketsForNode()
 {
     setStorageNodes(3);
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:3"));
+    enableDistributorClusterState("distributor:1 storage:3");
 
     for (int i=1; i<100; i++) {
         addIdealNodes(document::BucketId(16, i));
@@ -1173,7 +1173,7 @@ BucketDBUpdaterTest::testRecheckNode()
 void
 BucketDBUpdaterTest::testNotifyBucketChange()
 {
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
 
     addNodesToBucketDB(document::BucketId(16, 1), "0=1234");
     _sender.replies.clear();
@@ -1243,7 +1243,7 @@ BucketDBUpdaterTest::testNotifyBucketChange()
 void
 BucketDBUpdaterTest::testNotifyBucketChangeFromNodeDown()
 {
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
 
     addNodesToBucketDB(document::BucketId(16, 1), "1=1234");
 
@@ -1258,7 +1258,7 @@ BucketDBUpdaterTest::testNotifyBucketChangeFromNodeDown()
     }
     // Enable here to avoid having request bucket info be silently swallowed
     // (sendRequestBucketInfo drops message if node is down).
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:2 .0.s:d"));
+    enableDistributorClusterState("distributor:1 storage:2 .0.s:d");
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
@@ -1346,7 +1346,7 @@ BucketDBUpdaterTest::testNotifyChangeWithPendingStateQueuesBucketInfoRequests()
 void
 BucketDBUpdaterTest::testMergeReply()
 {
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:3"));
+    enableDistributorClusterState("distributor:1 storage:3");
 
     addNodesToBucketDB(document::BucketId(16, 1234),
                       "0=1234,1=1234,2=1234");
@@ -1393,7 +1393,7 @@ BucketDBUpdaterTest::testMergeReply()
 void
 BucketDBUpdaterTest::testMergeReplyNodeDown()
 {
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:3"));
+    enableDistributorClusterState("distributor:1 storage:3");
     std::vector<api::MergeBucketCommand::Node> nodes;
 
     addNodesToBucketDB(document::BucketId(16, 1234), "0=1234,1=1234,2=1234");
@@ -1440,7 +1440,7 @@ BucketDBUpdaterTest::testMergeReplyNodeDown()
 void
 BucketDBUpdaterTest::testMergeReplyNodeDownAfterRequestSent()
 {
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:3"));
+    enableDistributorClusterState("distributor:1 storage:3");
     std::vector<api::MergeBucketCommand::Node> nodes;
 
     addNodesToBucketDB(document::BucketId(16, 1234), "0=1234,1=1234,2=1234");
@@ -1488,7 +1488,7 @@ BucketDBUpdaterTest::testMergeReplyNodeDownAfterRequestSent()
 void
 BucketDBUpdaterTest::testFlush()
 {
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:3"));
+    enableDistributorClusterState("distributor:1 storage:3");
     _sender.clear();
 
     addNodesToBucketDB(document::BucketId(16, 1234), "0=1234,1=1234,2=1234");

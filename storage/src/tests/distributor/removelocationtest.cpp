@@ -54,7 +54,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(RemoveLocationOperationTest);
 void
 RemoveLocationOperationTest::testSimple()
 {
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:3"));
+    enableDistributorClusterState("distributor:1 storage:3");
 
     addNodesToBucketDB(document::BucketId(34, 0x000001234), "0=1,1=1");
     addNodesToBucketDB(document::BucketId(34, 0x100001234), "0=1,2=1");

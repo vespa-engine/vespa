@@ -644,7 +644,7 @@ PutOperationTest::testDoNotResurrectDownedNodesInBucketDB()
     CPPUNIT_ASSERT_EQUAL(std::string("Put => 1,Put => 0"),
                          _sender.getCommands(true));
 
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:2 .1.s:d"));
+    enableDistributorClusterState("distributor:1 storage:2 .1.s:d");
     addNodesToBucketDB(bId, "0=1/2/3/t"); // This will actually remove node #1.
 
     sendReply(0, api::ReturnCode::OK, api::BucketInfo(9,9,9));

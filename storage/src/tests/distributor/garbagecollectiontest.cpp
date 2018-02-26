@@ -37,7 +37,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(GarbageCollectionOperationTest);
 void
 GarbageCollectionOperationTest::testSimple()
 {
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
     addNodesToBucketDB(document::BucketId(16, 1), "0=250/50/300,1=250/50/300");
     getConfig().setGarbageCollection("music.date < 34", 3600);
 

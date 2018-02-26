@@ -21,6 +21,7 @@ public:
     const std::shared_ptr<const ClusterState> &getBaselineClusterState() const;
     const std::shared_ptr<const ClusterState> &getDerivedClusterState(document::BucketSpace bucketSpace) const;
     uint32_t getVersion() const;
+    bool operator==(const ClusterStateBundle &rhs) const;
 };
 
 }

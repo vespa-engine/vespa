@@ -48,7 +48,7 @@ RemoveBucketOperationTest::testSimple()
                        "1=10/100/1/t,"
                        "2=10/100/1/t");
     setRedundancy(1);
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:3"));
+    enableDistributorClusterState("distributor:1 storage:3");
 
     RemoveBucketOperation op("storage",
                              BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
@@ -85,7 +85,7 @@ RemoveBucketOperationTest::testBucketInfoMismatchFailure()
             new lib::Distribution(
                 lib::Distribution::getDefaultDistributionConfig(1, 10))));
 
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
 
     RemoveBucketOperation op("storage",
                              BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
@@ -126,7 +126,7 @@ RemoveBucketOperationTest::testFailWithInvalidBucketInfo()
             new lib::Distribution(
                 lib::Distribution::getDefaultDistributionConfig(1, 10))));
 
-    _distributor->enableClusterState(lib::ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
 
     RemoveBucketOperation op("storage",
                              BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),

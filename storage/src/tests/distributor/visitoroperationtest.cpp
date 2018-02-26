@@ -257,7 +257,7 @@ VisitorOperationTest::testParameterForwarding()
 void
 VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
 {
-    _distributor->enableClusterState(ClusterState(clusterState));
+    enableDistributorClusterState(clusterState);
 
     // Create bucket in bucketdb
     document::BucketId id(uint64_t(0x400000000000007b));
@@ -326,7 +326,7 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
 void
 VisitorOperationTest::testShutdown()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
 
     // Create bucket in bucketdb
     document::BucketId id(uint64_t(0x400000000000007b));
@@ -362,7 +362,7 @@ VisitorOperationTest::testShutdown()
 void
 VisitorOperationTest::testNoBucket()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
 
     // Send create visitor
     api::CreateVisitorCommand::SP msg(new api::CreateVisitorCommand(
@@ -378,7 +378,7 @@ VisitorOperationTest::testNoBucket()
 void
 VisitorOperationTest::testOnlySuperBucketAndProgressAllowed()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
 
     // Send create visitor
     api::CreateVisitorCommand::SP msg(new api::CreateVisitorCommand(
@@ -406,7 +406,7 @@ VisitorOperationTest::testNoResendAfterTimeoutPassed()
 {
     document::BucketId id(uint64_t(0x400000000000007b));
 
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
 
     auto op = createOpWithDefaultConfig(
@@ -431,7 +431,7 @@ VisitorOperationTest::testNoResendAfterTimeoutPassed()
 void
 VisitorOperationTest::testDistributorNotReady()
 {
-    _distributor->enableClusterState(ClusterState("distributor:0 storage:0"));
+    enableDistributorClusterState("distributor:0 storage:0");
     document::BucketId id(uint64_t(0x400000000000007b));
     CPPUNIT_ASSERT_EQUAL(
             std::string(
@@ -447,7 +447,7 @@ VisitorOperationTest::testDistributorNotReady()
 void
 VisitorOperationTest::testInvalidOrderDocSelection()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
     document::BucketId id(0x400000000000007b);
     addNodesToBucketDB(id, "0=1/1/1/t");
 
@@ -473,7 +473,7 @@ void
 VisitorOperationTest::testNonExistingBucket()
 {
     document::BucketId id(uint64_t(0x400000000000007b));
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
     CPPUNIT_ASSERT_EQUAL(
             std::string("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
                         "ReturnCode(NONE)"),
@@ -488,7 +488,7 @@ VisitorOperationTest::testUserSingleBucket()
 {
     document::BucketId id(uint64_t(0x400000000000007b));
     document::BucketId userid(uint64_t(0x800000000000007b));
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
 
     addNodesToBucketDB(id, "0=1/1/1/t");
 
@@ -549,7 +549,7 @@ VisitorOperationTest::runVisitor(document::BucketId id,
 void
 VisitorOperationTest::testUserInconsistentlySplitBucket()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
 
     // Not containing (19, 0x40001)
     addNodesToBucketDB(document::BucketId(17, 0x0), "0=1/1/1/t");
@@ -596,7 +596,7 @@ VisitorOperationTest::testUserInconsistentlySplitBucket()
 void
 VisitorOperationTest::testBucketRemovedWhileVisitorPending()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
 
     // Create bucket in bucketdb
     document::BucketId id(uint64_t(0x400000000000007b));
@@ -626,7 +626,7 @@ VisitorOperationTest::testBucketRemovedWhileVisitorPending()
 void
 VisitorOperationTest::testEmptyBucketsVisitedWhenVisitingRemoves()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
     document::BucketId id(uint64_t(0x400000000000007b));
     addNodesToBucketDB(id, "0=0/0/0/1/2/t");
 
@@ -649,7 +649,7 @@ VisitorOperationTest::testEmptyBucketsVisitedWhenVisitingRemoves()
 void
 VisitorOperationTest::testResendToOtherStorageNodeOnFailure()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
     document::BucketId id(uint64_t(0x400000000000007b));
 
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
@@ -676,7 +676,7 @@ VisitorOperationTest::testResendToOtherStorageNodeOnFailure()
 void
 VisitorOperationTest::testTimeoutOnlyAfterReplyFromAllStorageNodes()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
 
     // Contained in (16, 0x1)
     addNodesToBucketDB(document::BucketId(17, 0x00001), "0=1/1/1/t");
@@ -717,7 +717,7 @@ VisitorOperationTest::testTimeoutOnlyAfterReplyFromAllStorageNodes()
 void
 VisitorOperationTest::testTimeoutDoesNotOverrideCriticalError()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
     addNodesToBucketDB(document::BucketId(17, 0x00001), "0=1/1/1/t");
     addNodesToBucketDB(document::BucketId(17, 0x10001), "1=1/1/1/t");
 
@@ -799,7 +799,7 @@ VisitorOperationTest::testVisitorAbortedIfNodeIsMarkedAsDown()
 void
 VisitorOperationTest::testBucketHighBitCount()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1 bits:16"));
+    enableDistributorClusterState("distributor:1 storage:1 bits:16");
 
     document::BucketId id(18, 0x0);
     addNodesToBucketDB(id, "0=1/1/1/t");
@@ -830,7 +830,7 @@ VisitorOperationTest::testBucketHighBitCount()
 void
 VisitorOperationTest::testBucketLowBitCount()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1 bits:16"));
+    enableDistributorClusterState("distributor:1 storage:1 bits:16");
 
     document::BucketId id(1, 0x0);
     addNodesToBucketDB(id, "0=1/1/1/t");
@@ -862,7 +862,7 @@ VisitorOperationTest::testBucketLowBitCount()
 void
 VisitorOperationTest::testParallelVisitorsToOneStorageNode()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
 
     // Create buckets in bucketdb
     for (int i=0; i<32; i++) {
@@ -944,7 +944,7 @@ VisitorOperationTest::testParallelVisitorsToOneStorageNode()
 void
 VisitorOperationTest::testParallelVisitorsResendOnlyFailing()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
 
     // Create buckets in bucketdb
     for (int i=0; i<32; i++) {
@@ -988,7 +988,7 @@ VisitorOperationTest::testParallelVisitorsResendOnlyFailing()
 void
 VisitorOperationTest::testParallelVisitorsToOneStorageNodeOneSuperBucket()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
 
     // Create buckets in bucketdb
     for (int i=0; i<8; i++) {
@@ -1026,7 +1026,7 @@ VisitorOperationTest::testParallelVisitorsToOneStorageNodeOneSuperBucket()
 void
 VisitorOperationTest::testVisitWhenOneBucketCopyIsInvalid()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
 
     document::BucketId id(16, 0);
 
@@ -1043,7 +1043,7 @@ VisitorOperationTest::testVisitWhenOneBucketCopyIsInvalid()
 void
 VisitorOperationTest::testVisitingWhenAllBucketsAreInvalid()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
 
     document::BucketId id(16, 0);
 
@@ -1060,7 +1060,7 @@ VisitorOperationTest::testVisitingWhenAllBucketsAreInvalid()
 void
 VisitorOperationTest::testInconsistencyHandling()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
 
     document::BucketId id(16, 0);
 
@@ -1131,8 +1131,7 @@ VisitorOperationTest::testVisitIdealNode()
 void
 VisitorOperationTest::testNoResendingOnCriticalFailure()
 {
-    ClusterState state("distributor:1 storage:3");
-    _distributor->enableClusterState(state);
+    enableDistributorClusterState("distributor:1 storage:3");
 
     // Create buckets in bucketdb
     for (int i=0; i<32; i++ ) {
@@ -1160,8 +1159,7 @@ VisitorOperationTest::testNoResendingOnCriticalFailure()
 void
 VisitorOperationTest::testFailureOnAllNodes()
 {
-    ClusterState state("distributor:1 storage:3");
-    _distributor->enableClusterState(state);
+    enableDistributorClusterState("distributor:1 storage:3");
 
     // Create buckets in bucketdb
     for (int i=0; i<32; i++ ) {
@@ -1250,7 +1248,7 @@ VisitorOperationTest::testVisitOrder()
 void
 VisitorOperationTest::testVisitInChunks()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
 
     for (int i = 0; i < 9; ++i) {
         addNodesToBucketDB(document::BucketId(30, i << 16), "0=1/1/1/t");
@@ -1472,7 +1470,7 @@ VisitorOperationTest::doOrderedVisitor(document::BucketId startBucket)
 void
 VisitorOperationTest::testUserVisitorOrder()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
 
     // Create buckets in bucketdb
     std::vector<document::BucketId> buckets;
@@ -1501,7 +1499,7 @@ VisitorOperationTest::testUserVisitorOrder()
 void
 VisitorOperationTest::testUserVisitorOrderSplitPastOrderBits()
 {
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
 
     // Create buckets in bucketdb
     std::vector<document::BucketId> buckets;
@@ -1532,8 +1530,7 @@ VisitorOperationTest::testUserVisitorOrderSplitPastOrderBits()
 std::unique_ptr<VisitorOperation>
 VisitorOperationTest::startOperationWith2StorageNodeVisitors(bool inconsistent)
 {
-    ClusterState state("distributor:1 storage:3");
-    _distributor->enableClusterState(state);
+    enableDistributorClusterState("distributor:1 storage:3");
 
     addNodesToBucketDB(document::BucketId(17, 1), "0=1/1/1/t");
     addNodesToBucketDB(document::BucketId(17, 1 << 16 | 1),
@@ -1603,7 +1600,7 @@ void
 VisitorOperationTest::testQueueTimeoutIsFactorOfTotalTimeout()
 {
     document::BucketId id(uint64_t(0x400000000000007b));
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
 
     auto op = createOpWithDefaultConfig(
@@ -1622,7 +1619,7 @@ VisitorOperationTest::do_visitor_roundtrip_with_statistics(
         const api::ReturnCode& result)
 {
     document::BucketId id(0x400000000000007bULL);
-    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
     addNodesToBucketDB(id, "0=1/1/1/t");
 
     auto op = createOpWithDefaultConfig(

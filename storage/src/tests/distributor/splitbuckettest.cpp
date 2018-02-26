@@ -69,8 +69,7 @@ SplitOperationTest::SplitOperationTest()
 void
 SplitOperationTest::testSimple()
 {
-    _distributor->enableClusterState(
-            lib::ClusterState("distributor:1 storage:1"));
+    enableDistributorClusterState("distributor:1 storage:1");
 
     insertBucketInfo(document::BucketId(16, 1), 0, 0xabc, 1000,
                      tooLargeBucketSize, 250);
@@ -151,8 +150,7 @@ SplitOperationTest::testMultiNodeFailure()
         getBucketDatabase().update(entry);
     }
 
-    _distributor->enableClusterState(
-            lib::ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
 
 
     SplitOperation op("storage",
@@ -241,8 +239,7 @@ SplitOperationTest::testMultiNodeFailure()
 void
 SplitOperationTest::testCopyTrustedStatusNotCarriedOverAfterSplit()
 {
-    _distributor->enableClusterState(
-            lib::ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
 
     document::BucketId sourceBucket(16, 1);
     /*
@@ -312,8 +309,7 @@ SplitOperationTest::testOperationBlockedByPendingJoin()
     clock.setAbsoluteTimeInSeconds(1);
     PendingMessageTracker tracker(compReg);
 
-    _distributor->enableClusterState(
-            lib::ClusterState("distributor:1 storage:2"));
+    enableDistributorClusterState("distributor:1 storage:2");
 
     document::BucketId joinTarget(2, 1);
     std::vector<document::BucketId> joinSources = {
