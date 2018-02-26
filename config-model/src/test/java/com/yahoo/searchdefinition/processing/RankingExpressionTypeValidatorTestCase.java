@@ -8,6 +8,7 @@ import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Map;
@@ -22,6 +23,7 @@ import static org.junit.Assert.fail;
  */
 public class RankingExpressionTypeValidatorTestCase {
 
+    @Ignore
     @Test
     public void tensorFirstPhaseMustProduceDouble() throws Exception {
         try {
@@ -49,6 +51,7 @@ public class RankingExpressionTypeValidatorTestCase {
         }
     }
 
+    @Ignore
     @Test
     public void tensorSecondPhaseMustProduceDouble() throws Exception {
         try {
@@ -79,6 +82,7 @@ public class RankingExpressionTypeValidatorTestCase {
         }
     }
 
+    @Ignore
     @Test
     public void tensorConditionsMustHaveTypeCompatibleBranches() throws Exception {
         try {
@@ -109,6 +113,7 @@ public class RankingExpressionTypeValidatorTestCase {
         }
     }
 
+    @Ignore
     @Test
     public void testMacroInvocationTypes() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
@@ -143,6 +148,7 @@ public class RankingExpressionTypeValidatorTestCase {
                      summaryFeatures(profile).get("macro1(b)").type(profile.typeContext(builder.getQueryProfileRegistry())));
     }
 
+    @Ignore
     @Test
     public void testTensorMacroInvocationTypes_Nested() throws Exception {
         SearchBuilder builder = new SearchBuilder();
@@ -185,6 +191,7 @@ public class RankingExpressionTypeValidatorTestCase {
                      summaryFeatures(profile).get("return_b").type(profile.typeContext(builder.getQueryProfileRegistry())));
     }
 
+    @Ignore
     @Test
     public void importedFieldsAreAvailable() throws Exception {
         SearchBuilder builder = new SearchBuilder();
@@ -215,6 +222,7 @@ public class RankingExpressionTypeValidatorTestCase {
         builder.build();
     }
 
+    @Ignore
     @Test
     public void undeclaredQueryFeaturesAreAccepted() throws Exception {
         SearchBuilder builder = new SearchBuilder();

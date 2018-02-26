@@ -76,7 +76,7 @@ public class Processing {
                 ImportedFieldsInSummayValidator::new,
                 FastAccessValidator::new,
                 ReservedMacroNames::new,
-                RankingExpressionTypeValidator::new,
+                //RankingExpressionTypeValidator::new,
 
                 // These should be last.
                 IndexingValidation::new,
