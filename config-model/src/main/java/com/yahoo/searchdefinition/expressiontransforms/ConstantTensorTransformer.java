@@ -62,7 +62,6 @@ public class ConstantTensorTransformer extends ExpressionTransformer<RankProfile
         String tensorType = tensorValue.asTensor().type().toString();
         context.rankPropertiesOutput().put(featureName + ".value", tensorValue.toString());
         context.rankPropertiesOutput().put(featureName + ".type", tensorType);
-        System.out.println("==== turning " + node + " into " + new ReferenceNode(CONSTANT, Arrays.asList(new NameNode(node.getName())), null)); // TODO: Remove
         // TODO: This allows us to reference constant "a" as "a" instead of "constant(a)", but we shouldn't allow that
         return new ReferenceNode(CONSTANT, Arrays.asList(new NameNode(node.getName())), null);
     }
