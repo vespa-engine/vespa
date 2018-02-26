@@ -242,6 +242,34 @@ public class VersionStatusTest {
         assertEquals("5.3", versions.get(2).versionNumber().toString());
     }
 
+    @Test
+    public void testConfidenceOverride() {
+        DeploymentTester tester = new DeploymentTester();
+        Version version0 = new Version("5.0");
+        tester.upgradeSystem(version0);
+
+        // Create and deploy application on current version
+        Application app = tester.createAndDeploy("app", 1, "canary");
+        tester.updateVersionStatus();
+        assertEquals(Confidence.high, confidence(tester.controller(), version0));
+
+        // Override confidence
+        tester.upgrader().overrideConfidence(version0, Confidence.broken);
+        tester.updateVersionStatus();
+        assertEquals(Confidence.broken, confidence(tester.controller(), version0));
+
+        // New version is released and application upgrades
+        Version version1 = new Version("5.1");
+        tester.upgradeSystem(version1);
+        tester.completeUpgrade(app, version1, "canary");
+        tester.updateVersionStatus();
+        assertEquals(Confidence.high, confidence(tester.controller(), version1));
+
+        // Stale override was removed
+        assertFalse("Stale override removed", tester.controller().curator().readConfidenceOverrides()
+                                                    .keySet().contains(version0));
+    }
+
     private Confidence confidence(Controller controller, Version version) {
         return controller.versionStatus().versions().stream()
                 .filter(v -> v.statistics().version().equals(version))

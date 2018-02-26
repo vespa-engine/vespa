@@ -35,10 +35,12 @@ import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.net.URI;
 import java.time.Clock;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 /**
@@ -208,10 +210,21 @@ public class Controller extends AbstractComponent {
                      " to " + printableVersion(newStatus.systemVersion()));
         }
         curator.writeVersionStatus(newStatus);
+        // Removes confidence overrides for versions that no longer exist in the system
+        removeConfidenceOverride(version -> newStatus.versions().stream()
+                                                     .noneMatch(vespaVersion -> vespaVersion.versionNumber()
+                                                                                            .equals(version)));
     }
     
     /** Returns the latest known version status. Calling this is free but the status may be slightly out of date. */
     public VersionStatus versionStatus() { return curator.readVersionStatus(); }
+
+    /** Remove confidence override for versions matching given filter */
+    public void removeConfidenceOverride(Predicate<Version> filter) {
+        Map<Version, VespaVersion.Confidence> overrides = new LinkedHashMap<>(curator().readConfidenceOverrides());
+        overrides.keySet().removeIf(filter);
+        curator.writeConfidenceOverrides(overrides);
+    }
     
     /** Returns the current system version: The controller should drive towards running all applications on this version */
     public Version systemVersion() {
@@ -244,7 +257,7 @@ public class Controller extends AbstractComponent {
         return nodeRepositoryClient;
     }
 
-    private String printableVersion(Optional<VespaVersion> vespaVersion) {
+    private static String printableVersion(Optional<VespaVersion> vespaVersion) {
         return vespaVersion.map(v -> v.versionNumber().toFullString()).orElse("Unknown");
     }
 

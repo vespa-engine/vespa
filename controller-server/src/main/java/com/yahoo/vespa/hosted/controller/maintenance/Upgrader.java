@@ -9,11 +9,14 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,12 +45,12 @@ public class Upgrader extends Maintainer {
     public void maintain() {
         // Determine target versions for each upgrade policy
         Optional<Version> canaryTarget = controller().versionStatus().systemVersion().map(VespaVersion::versionNumber);
-        Optional<Version> defaultTarget = newestVersionWithConfidence(VespaVersion.Confidence.normal);
-        Optional<Version> conservativeTarget = newestVersionWithConfidence(VespaVersion.Confidence.high);
+        Optional<Version> defaultTarget = newestVersionWithConfidence(Confidence.normal);
+        Optional<Version> conservativeTarget = newestVersionWithConfidence(Confidence.high);
 
         // Cancel upgrades to broken targets (let other ongoing upgrades complete to avoid starvation
         for (VespaVersion version : controller().versionStatus().versions()) {
-            if (version.confidence() == VespaVersion.Confidence.broken)
+            if (version.confidence() == Confidence.broken)
                 cancelUpgradesOf(applications().without(UpgradePolicy.canary).upgradingTo(version.versionNumber()),
                                  version.versionNumber() + " is broken");
         }
@@ -67,7 +70,7 @@ public class Upgrader extends Maintainer {
         conservativeTarget.ifPresent(target -> upgrade(applications().with(UpgradePolicy.conservative), target));
     }
 
-    private Optional<Version> newestVersionWithConfidence(VespaVersion.Confidence confidence) {
+    private Optional<Version> newestVersionWithConfidence(Confidence confidence) {
         return reversed(controller().versionStatus().versions()).stream()
                                                                 .filter(v -> v.confidence().equalOrHigherThan(confidence))
                                                                 .findFirst()
@@ -124,4 +127,20 @@ public class Upgrader extends Maintainer {
         curator.writeUpgradesPerMinute(n);
     }
 
+    /** Override confidence for given version. This will cause the computed confidence to be ignored */
+    public void overrideConfidence(Version version, Confidence confidence) {
+        Map<Version, Confidence> overrides = new LinkedHashMap<>(curator.readConfidenceOverrides());
+        overrides.put(version, confidence);
+        curator.writeConfidenceOverrides(overrides);
+    }
+
+    /** Returns all confidence overrides */
+    public Map<Version, Confidence> confidenceOverrides() {
+        return curator.readConfidenceOverrides();
+    }
+
+    /** Remove confidence override for given version */
+    public void removeConfidenceOverride(Version version) {
+        controller().removeConfidenceOverride(v -> v.equals(version));
+    }
 }
