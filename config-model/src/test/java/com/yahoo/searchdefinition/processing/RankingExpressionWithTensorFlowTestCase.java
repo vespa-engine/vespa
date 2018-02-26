@@ -112,7 +112,7 @@ public class RankingExpressionWithTensorFlowTestCase {
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir,
                                                                               queryProfile,
                                                                               queryProfileType);
-        RankProfileSearchFixture search = fixtureWith("query(mytensor) * attribute(mytensor) * constant(mytensor)",
+        RankProfileSearchFixture search = fixtureWith("sum(query(mytensor) * attribute(mytensor) * constant(mytensor),d2)",
                                                       "tensorflow('mnist_softmax/saved')",
                                                       "constant mytensor { file: ignored\ntype: tensor(d0[7],d1[784]) }",
                                                       "field mytensor type tensor(d0[],d1[784]) { indexing: attribute }",
@@ -327,7 +327,7 @@ public class RankingExpressionWithTensorFlowTestCase {
                            new StoringApplicationPackage(applicationDir));
     }
 
-    private RankProfileSearchFixture fixtureWith(String placeholderExpression,
+    private RankProfileSearchFixture fixtureWith(String macroExpression,
                                                  String firstPhaseExpression,
                                                  String constant,
                                                  String field,
@@ -339,7 +339,7 @@ public class RankingExpressionWithTensorFlowTestCase {
                     application.getQueryProfiles(),
                     "  rank-profile my_profile {\n" +
                     "    macro " + macroName + "() {\n" +
-                    "      expression: " + placeholderExpression +
+                    "      expression: " + macroExpression +
                     "    }\n" +
                     "    first-phase {\n" +
                     "      expression: " + firstPhaseExpression +

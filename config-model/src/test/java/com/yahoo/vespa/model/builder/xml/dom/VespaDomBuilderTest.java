@@ -116,10 +116,9 @@ public class VespaDomBuilderTest {
     }
 
     @Test
-    public void testHostSystem() throws IOException, SAXException {
+    public void testHostSystem() {
         VespaModel model = createModel(hosts, services);
         HostSystem hostSystem = model.getHostSystem();
-        System.out.println(hostSystem);
         assertThat(hostSystem.getHosts().size(), is(1));
         HostResource host = hostSystem.getHosts().get(0);
         assertThat(host, is(hostSystem.getHostByHostname(host.getHostname())));

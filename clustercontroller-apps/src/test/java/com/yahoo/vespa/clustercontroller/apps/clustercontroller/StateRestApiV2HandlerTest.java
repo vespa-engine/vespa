@@ -3,16 +3,16 @@ package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.ClusterControllerStateRestAPI;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
-public class StateRestApiV2HandlerTest extends TestCase {
+import static org.junit.Assert.assertEquals;
 
+public class StateRestApiV2HandlerTest {
+
+    @Test
     public void testNoMatchingSockets() {
         ClusterController controller = new ClusterController();
         ClusterInfoConfig config = new ClusterInfoConfig(
@@ -21,6 +21,7 @@ public class StateRestApiV2HandlerTest extends TestCase {
         new StateRestApiV2Handler(controller, config, StateRestApiV2Handler.testOnlyContext());
     }
 
+    @Test
     public void testMappingOfIndexToClusterControllers() {
         ClusterInfoConfig.Builder builder = new ClusterInfoConfig.Builder()
                 .clusterId("cluster-id")

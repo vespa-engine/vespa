@@ -112,7 +112,7 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
     }
 
     @Test
-    public void requireThatMaxAndMinWithTensoresReturnedFromMacrosAreReplaced() throws ParseException {
+    public void requireThatMaxAndMinWithTensorsReturnedFromMacrosAreReplaced() throws ParseException {
         assertTransformedExpression("reduce(rankingExpression(returns_tensor),max,x)",
                                     "max(returns_tensor,x)");
         assertTransformedExpression("reduce(rankingExpression(wraps_returns_tensor),max,x)",
@@ -123,17 +123,16 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
                                     "max(returns_tensor_with_arg(attribute(tensor_field_1)),x)");
     }
 
-
     private void assertTransformedExpression(String expected, String original) throws ParseException {
         for (Pair<String, String> rankPropertyExpression : buildSearch(original)) {
             String rankProperty = rankPropertyExpression.getFirst();
-            if (rankProperty.equals("rankingExpression(firstphase).rankingScript")) {
+            if (rankProperty.equals("rankingExpression(testexpression).rankingScript")) {
                 String rankExpression = censorBindingHash(rankPropertyExpression.getSecond().replace(" ",""));
                 assertEquals(expected, rankExpression);
                 return;
             }
         }
-        fail("No 'rankingExpression(firstphase).rankingScript' property produced");
+        fail("No 'rankingExpression(testexpression).rankingScript' property produced");
     }
 
     private List<Pair<String, String>> buildSearch(String expression) throws ParseException {
@@ -193,7 +192,7 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
                 "        macro tensor_inheriting() {\n" +
                 "            expression: base_tensor\n" +
                 "        }\n" +
-                "        first-phase {\n" +
+                "        macro testexpression() {\n" +
                 "            expression: " + expression + "\n" +
                 "        }\n" +
                 "    }\n" +

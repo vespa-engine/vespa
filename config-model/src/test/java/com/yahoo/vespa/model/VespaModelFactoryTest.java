@@ -41,7 +41,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class VespaModelFactoryTest {
 
@@ -143,7 +143,6 @@ public class VespaModelFactoryTest {
         assertThat(hostInfo.getHostname(), is(hostName));
         assertTrue("Routing service should run on host " + hostName,
                    hostInfo.getServices().stream()
-                           .peek(s -> System.out.println(s.getConfigId()))
                            .map(ServiceInfo::getConfigId)
                            .anyMatch(configId -> configId.contains(routingClusterName)));
     }
