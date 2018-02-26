@@ -6,12 +6,17 @@ import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.util.Map;
 
-public class ClusterControllerClusterConfigurerTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+public class ClusterControllerClusterConfigurerTest {
+
+    @Test
     public void testSimple() throws Exception {
         ClusterController controller = new ClusterController();
         StorDistributionConfig.Builder distributionConfig = new StorDistributionConfig.Builder();
