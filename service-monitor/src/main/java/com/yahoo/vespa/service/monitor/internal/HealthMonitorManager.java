@@ -15,7 +15,7 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
  */
 public class HealthMonitorManager implements MonitorManager {
     @Inject
-    HealthMonitorManager() {}
+    public HealthMonitorManager() {}
 
     @Override
     public void applicationActivated(SuperModel superModel, ApplicationInfo application) {
