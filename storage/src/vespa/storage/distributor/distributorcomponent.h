@@ -68,10 +68,10 @@ public:
     bool ownsBucketInCurrentState(const document::Bucket &bucket) const;
 
     /**
-     * Returns a reference to the current system state. Valid until the next
-     * time the distributor main thread processes its message queue.
+     * Returns a reference to the current cluster state bundle. Valid until the
+     * next time the distributor main thread processes its message queue.
      */
-    const lib::ClusterState& getClusterState() const;
+    const lib::ClusterStateBundle& getClusterStateBundle() const;
 
     /**
      * Returns the ideal nodes for the given bucket.
@@ -86,7 +86,7 @@ public:
     /**
      * Returns true if the given storage node is in an "up state".
      */
-    bool storageNodeIsUp(uint32_t nodeIndex) const;
+    bool storageNodeIsUp(document::BucketSpace bucketSpace, uint32_t nodeIndex) const;
 
     /**
      * Verifies that the given command has been received at the

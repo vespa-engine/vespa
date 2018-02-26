@@ -63,6 +63,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
     : StorageLink("distributor"),
       DistributorInterface(),
       framework::StatusReporter("distributor", "Distributor"),
+      _clusterStateBundle(lib::ClusterState()),
       _compReg(compReg),
       _component(compReg, "distributor"),
       _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
@@ -332,17 +333,24 @@ Distributor::handleMessage(const std::shared_ptr<api::StorageMessage>& msg)
     return false;
 }
 
-void
-Distributor::enableClusterState(const lib::ClusterState& state)
+const lib::ClusterStateBundle&
+Distributor::getClusterStateBundle() const
 {
-    lib::ClusterState oldState = _clusterState;
-    _clusterState = state;
+    return _clusterStateBundle;
+}
+
+void
+Distributor::enableClusterStateBundle(const lib::ClusterStateBundle& state)
+{
+    lib::ClusterStateBundle oldState = _clusterStateBundle;
+    _clusterStateBundle = state;
     propagateClusterStates();
 
     lib::Node myNode(lib::NodeType::DISTRIBUTOR, _component.getIndex());
+    const auto &baselineState = *_clusterStateBundle.getBaselineClusterState();
 
     if (!_doneInitializing &&
-        getClusterState().getNodeState(myNode).getState() == lib::State::UP)
+        baselineState.getNodeState(myNode).getState() == lib::State::UP)
     {
         scanAllBuckets();
         _doneInitializing = true;
@@ -352,8 +360,8 @@ Distributor::enableClusterState(const lib::ClusterState& state)
     }
 
     // Clear all active messages on nodes that are down.
-    for (uint16_t i = 0; i < state.getNodeCount(lib::NodeType::STORAGE); ++i) {
-        if (!state.getNodeState(lib::Node(lib::NodeType::STORAGE, i)).getState()
+    for (uint16_t i = 0; i < baselineState.getNodeCount(lib::NodeType::STORAGE); ++i) {
+        if (!baselineState.getNodeState(lib::Node(lib::NodeType::STORAGE, i)).getState()
                 .oneOf(getStorageNodeUpStates()))
         {
             std::vector<uint64_t> msgIds(
@@ -537,9 +545,8 @@ Distributor::propagateDefaultDistribution(
 void
 Distributor::propagateClusterStates()
 {
-    auto clusterState = std::make_shared<lib::ClusterState>(_clusterState);
     for (auto &iter : *_bucketSpaceRepo) {
-        iter.second->setClusterState(clusterState);
+        iter.second->setClusterState(_clusterStateBundle.getDerivedClusterState(iter.first));
     }
 }
 

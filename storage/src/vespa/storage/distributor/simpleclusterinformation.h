@@ -11,10 +11,10 @@ class SimpleClusterInformation : public ClusterInformation
 {
 public:
     SimpleClusterInformation(uint16_t myIndex,
-                             const lib::ClusterState& clusterState,
+                             const lib::ClusterStateBundle& clusterStateBundle,
                              const char* storageUpStates)
         : _myIndex(myIndex),
-          _clusterState(clusterState),
+          _clusterStateBundle(clusterStateBundle),
           _storageUpStates(storageUpStates)
     {}
 
@@ -22,8 +22,8 @@ public:
         return _myIndex;
     }
 
-    const lib::ClusterState& getClusterState() const override {
-        return _clusterState;
+    const lib::ClusterStateBundle& getClusterStateBundle() const override {
+        return _clusterStateBundle;
     }
 
     const char* getStorageUpStates() const override {
@@ -32,7 +32,7 @@ public:
 
 private:
     uint16_t _myIndex;
-    lib::ClusterState _clusterState;
+    lib::ClusterStateBundle _clusterStateBundle;
     const char* _storageUpStates;
 };
 

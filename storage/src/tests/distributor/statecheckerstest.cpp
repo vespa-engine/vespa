@@ -93,7 +93,7 @@ struct StateCheckersTest : public CppUnit::TestFixture,
     void statsUpdatedWhenMergingDueToOutOfSyncCopies();
 
     void enableClusterState(const lib::ClusterState& systemState) {
-        _distributor->enableClusterState(systemState);
+        _distributor->enableClusterStateBundle(lib::ClusterStateBundle(systemState));
     }
 
     void insertJoinableBuckets();

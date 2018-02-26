@@ -8,6 +8,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vespalib/util/xmlserializable.h>
 #include "outdated_nodes_map.h"
 #include <unordered_map>
@@ -107,11 +108,8 @@ public:
         return _cmd;
     }
 
-    const lib::ClusterState& getNewClusterState() const {
-        return _newClusterState;
-    }
-    const lib::ClusterState& getPrevClusterState() const {
-        return _prevClusterState;
+    const lib::ClusterStateBundle& getNewClusterStateBundle() const {
+        return _newClusterStateBundle;
     }
 
     /**
@@ -184,7 +182,13 @@ private:
     bool clusterIsDown() const;
     bool iAmDown() const;
 
-    bool storageNodeUpInNewState(uint16_t node) const;
+    bool storageNodeUpInNewState(document::BucketSpace bucketSpace, uint16_t node) const;
+    std::string getNewClusterStateBundleString() const {
+        return _newClusterStateBundle.getBaselineClusterState()->toString();
+    }
+    std::string getPrevClusterStateBundleString() const {
+        return _prevClusterStateBundle.getBaselineClusterState()->toString();
+    }
 
     std::shared_ptr<api::SetSystemStateCommand> _cmd;
 
@@ -192,8 +196,8 @@ private:
     std::vector<bool> _requestedNodes;
     std::deque<std::pair<framework::MilliSecTime, BucketSpaceAndNode> > _delayedRequests;
 
-    lib::ClusterState _prevClusterState;
-    lib::ClusterState _newClusterState;
+    lib::ClusterStateBundle _prevClusterStateBundle;
+    lib::ClusterStateBundle _newClusterStateBundle;
 
     const framework::Clock& _clock;
     ClusterInformation::CSP _clusterInfo;
