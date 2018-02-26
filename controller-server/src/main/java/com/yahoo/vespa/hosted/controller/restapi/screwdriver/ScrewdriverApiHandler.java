@@ -5,26 +5,18 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.slime.Cursor;
-import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
-import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
-import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
@@ -82,9 +74,6 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
 
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
-        if (path.matches("/screwdriver/v1/jobreport")) {
-            return notifyJobCompletion(request);
-        }
         if (path.matches("/screwdriver/v1/trigger/tenant/{tenant}/application/{application}")) {
             return trigger(request, path.get("tenant"), path.get("application"));
         }
@@ -145,52 +134,6 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
             buildJobObject.setString("jobName", buildJob.jobName());
         }
         return new SlimeJsonResponse(slime);
-    }
-
-    /**
-     * @deprecated Method migrated to application v4 - this method will be removed soon.
-     */
-    @Deprecated
-    private HttpResponse notifyJobCompletion(HttpRequest request) {
-        controller.applications().notifyJobCompletion(toJobReport(toSlime(request.getData()).get()));
-        return new StringResponse("ok");
-    }
-
-    private Slime toSlime(InputStream jsonStream) {
-        try {
-            byte[] jsonBytes = IOUtils.readBytes(jsonStream, 1000 * 1000);
-            return SlimeUtils.jsonToSlime(jsonBytes);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private JobReport toJobReport(Inspector report) {
-        Optional<JobError> jobError = Optional.empty();
-        if (report.field("jobError").valid()) {
-            jobError = Optional.of(JobError.valueOf(report.field("jobError").asString()));
-        }
-        return new JobReport(
-                ApplicationId.from(
-                        report.field("tenant").asString(),
-                        report.field("application").asString(),
-                        report.field("instance").asString()),
-                JobType.fromJobName(report.field("jobName").asString()),
-                report.field("projectId").asLong(),
-                report.field("buildNumber").asLong(),
-                toSourceRevision(report.field("sourceRevision")),
-                jobError
-        );
-    }
-
-    private static Optional<SourceRevision> toSourceRevision(Inspector object) {
-        if (!object.field("repository").valid() ||
-            !object.field("branch").valid() ||
-            !object.field("commit").valid()) {
-            return Optional.empty();
-        }
-        return Optional.of(new SourceRevision(object.field("repository").asString(), object.field("branch").asString(),
-                                              object.field("commit").asString()));
     }
 
     private static String asString(InputStream in) {

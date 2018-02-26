@@ -2,13 +2,19 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.application.container.handler.Request;
+import com.yahoo.application.container.handler.Response;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
@@ -21,15 +27,18 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -57,6 +66,11 @@ import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
@@ -80,6 +94,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private static final UserId USER_ID = new UserId("myuser");
     private static final UserId HOSTED_VESPA_OPERATOR = new UserId("johnoperator");
     private static final NToken N_TOKEN = new NToken("dummy");
+    private static final ZoneId TEST_ZONE = ZoneId.from(Environment.test, RegionName.from("us-east-1"));
+    private static final ZoneId STAGING_ZONE = ZoneId.from(Environment.staging, RegionName.from("us-east-3"));
 
     @Test
     public void testApplicationApi() throws Exception {
@@ -770,6 +786,128 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .screwdriverIdentity(screwdriverId),
                               new File("deploy-result.json"));
 
+    }
+
+    @Test
+    public void testJobStatusReporting() throws Exception {
+        ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
+        addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
+        tester.containerTester().updateSystemVersion();
+        long projectId = 1;
+        Application app = tester.createApplication();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("corp-us-east-1")
+                .build();
+
+        Version vespaVersion = new Version("6.1"); // system version from mock config server client
+
+        BuildJob job = new BuildJob(this::notifyCompletion, tester.artifactRepository())
+                .application(app)
+                .projectId(projectId);
+        job.type(DeploymentJobs.JobType.component).uploadArtifact(applicationPackage).submit();
+        tester.deploy(app, applicationPackage, TEST_ZONE, projectId);
+        job.type(DeploymentJobs.JobType.systemTest).submit();
+
+        // Notifying about unknown job fails
+        Request request = request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
+                .data(asJson(job.type(DeploymentJobs.JobType.productionUsEast3).report()))
+                .userIdentity(HOSTED_VESPA_OPERATOR)
+                .get();
+        tester.containerTester().assertResponse(request, new File("jobreport-unexpected-completion.json"), 400);
+
+        // ... and assert it was recorded
+        JobStatus recordedStatus =
+                tester.controller().applications().get(app.id()).get().deploymentJobs().jobStatus().get(DeploymentJobs.JobType.component);
+
+        assertNotNull("Status was recorded", recordedStatus);
+        assertTrue(recordedStatus.isSuccess());
+        assertEquals(vespaVersion, recordedStatus.lastCompleted().get().version());
+
+        recordedStatus =
+                tester.controller().applications().get(app.id()).get().deploymentJobs().jobStatus().get(DeploymentJobs.JobType.productionApNortheast2);
+        assertNull("Status of never-triggered jobs is empty", recordedStatus);
+
+        Response response;
+
+        response = container.handleRequest(request("/screwdriver/v1/jobsToRun", GET).get());
+        assertTrue("Response contains system-test", response.getBodyAsString().contains(DeploymentJobs.JobType.systemTest.jobName()));
+        assertTrue("Response contains staging-test", response.getBodyAsString().contains(DeploymentJobs.JobType.stagingTest.jobName()));
+        assertEquals("Response contains only two items", 2, SlimeUtils.jsonToSlime(response.getBody()).get().entries());
+
+        // Check that GET didn't affect the enqueued jobs.
+        response = container.handleRequest(request("/screwdriver/v1/jobsToRun", DELETE).get());
+        assertTrue("Response contains system-test", response.getBodyAsString().contains(DeploymentJobs.JobType.systemTest.jobName()));
+        assertTrue("Response contains staging-test", response.getBodyAsString().contains(DeploymentJobs.JobType.stagingTest.jobName()));
+        assertEquals("Response contains only two items", 2, SlimeUtils.jsonToSlime(response.getBody()).get().entries());
+
+        Thread.sleep(50); // ????
+        // Check that the *first* DELETE has removed the enqueued jobs.
+        assertResponse(request("/screwdriver/v1/jobsToRun", DELETE).get(), 200, "[]");
+    }
+
+    @Test
+    public void testJobStatusReportingOutOfCapacity() {
+        ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
+        tester.containerTester().updateSystemVersion();
+
+        long projectId = 1;
+        Application app = tester.createApplication();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("corp-us-east-1")
+                .build();
+
+        // Report job failing with out of capacity
+        BuildJob job = new BuildJob(this::notifyCompletion, tester.artifactRepository())
+                .application(app)
+                .projectId(projectId);
+        job.type(DeploymentJobs.JobType.component).uploadArtifact(applicationPackage).submit();
+
+        tester.deploy(app, applicationPackage, TEST_ZONE, projectId);
+        job.type(DeploymentJobs.JobType.systemTest).submit();
+        tester.deploy(app, applicationPackage, STAGING_ZONE, projectId);
+        job.type(DeploymentJobs.JobType.stagingTest).error(DeploymentJobs.JobError.outOfCapacity).submit();
+
+        // Appropriate error is recorded
+        JobStatus jobStatus = tester.controller().applications().get(app.id())
+                .get()
+                .deploymentJobs()
+                .jobStatus()
+                .get(DeploymentJobs.JobType.stagingTest);
+        assertFalse(jobStatus.isSuccess());
+        assertEquals(DeploymentJobs.JobError.outOfCapacity, jobStatus.jobError().get());
+    }
+
+    private void notifyCompletion(DeploymentJobs.JobReport report) {
+        assertResponse(request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
+                               .userIdentity(HOSTED_VESPA_OPERATOR)
+                               .data(asJson(report))
+                               .get(),
+                       200, "{\"message\":\"ok\"}");
+    }
+
+    private static byte[] asJson(DeploymentJobs.JobReport report) {
+        Slime slime = new Slime();
+        Cursor cursor = slime.setObject();
+        cursor.setLong("projectId", report.projectId());
+        cursor.setString("jobName", report.jobType().jobName());
+        cursor.setLong("buildNumber", report.buildNumber());
+        report.jobError().ifPresent(jobError -> cursor.setString("jobError", jobError.name()));
+        report.sourceRevision().ifPresent(sr -> {
+            Cursor sourceRevision = cursor.setObject("sourceRevision");
+            sourceRevision.setString("repository", sr.repository());
+            sourceRevision.setString("branch", sr.branch());
+            sourceRevision.setString("commit", sr.commit());
+        });
+        cursor.setString("tenant", report.applicationId().tenant().value());
+        cursor.setString("application", report.applicationId().application().value());
+        cursor.setString("instance", report.applicationId().instance().value());
+        try {
+            return SlimeUtils.toJsonBytes(slime);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private HttpEntity createApplicationDeployData(ApplicationPackage applicationPackage, Optional<Long> screwdriverJobId) {
