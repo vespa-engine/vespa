@@ -41,7 +41,5 @@ public interface CloudConfigOptions {
     Optional<String> defaultContentFlavor();
     Optional<Boolean> useVespaVersionInRequest();
     Optional<Integer> numParallelTenantLoaders();
-    Optional<String> dockerRegistry();
-    Optional<String> dockerVespaBaseImage();
     Optional<String> loadBalancerAddress();
 }
