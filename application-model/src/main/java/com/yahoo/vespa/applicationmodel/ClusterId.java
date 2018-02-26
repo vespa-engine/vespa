@@ -9,6 +9,10 @@ import java.util.Objects;
  * @author bjorncs
  */
 public class ClusterId {
+    // Common cluster IDs
+    public static final ClusterId ADMIN = new ClusterId("admin");
+    public static final ClusterId NODE_ADMIN = new ClusterId("node-admin");
+    public static final ClusterId ROUTING = new ClusterId("routing");
 
     private final String id;
 

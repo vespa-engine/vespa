@@ -9,6 +9,9 @@ import java.util.Objects;
  * @author bjorncs
  */
 public class ServiceType {
+    // Common service types.
+    public static final ServiceType CONTAINER = new ServiceType("container");
+    public static final ServiceType SLOBROK = new ServiceType("slobrok");
 
     private final String id;
 
