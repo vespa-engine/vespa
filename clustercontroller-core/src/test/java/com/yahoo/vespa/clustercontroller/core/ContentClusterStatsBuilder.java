@@ -15,6 +15,10 @@ public class ContentClusterStatsBuilder {
         return add(nodeIndex, bucketSpace, ContentNodeStats.BucketSpaceStats.of(bucketsTotal, bucketsPending));
     }
 
+    public ContentClusterStatsBuilder addInvalid(int nodeIndex, String bucketSpace, long bucketsTotal, long bucketsPending) {
+        return add(nodeIndex, bucketSpace, ContentNodeStats.BucketSpaceStats.invalid(bucketsTotal, bucketsPending));
+    }
+
     public ContentClusterStatsBuilder add(int nodeIndex, String bucketSpace) {
         return add(nodeIndex, bucketSpace, ContentNodeStats.BucketSpaceStats.invalid());
     }

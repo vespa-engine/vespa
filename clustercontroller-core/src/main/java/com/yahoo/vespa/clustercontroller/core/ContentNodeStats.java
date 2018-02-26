@@ -14,18 +14,18 @@ public class ContentNodeStats {
     private Map<String, BucketSpaceStats> bucketSpaces = new HashMap<>();
 
     public static class BucketSpaceStats {
-        private boolean invalid;
+        private int invalidCount;
         private long bucketsTotal;
         private long bucketsPending;
 
         private BucketSpaceStats() {
-            this.invalid = true;
+            this.invalidCount = 1;
             this.bucketsTotal = 0;
             this.bucketsPending = 0;
         }
 
-        private BucketSpaceStats(long bucketsTotal, long bucketsPending) {
-            this.invalid = false;
+        private BucketSpaceStats(long bucketsTotal, long bucketsPending, boolean invalid) {
+            this.invalidCount = (invalid ? 1 : 0);
             this.bucketsTotal = bucketsTotal;
             this.bucketsPending = bucketsPending;
         }
@@ -34,8 +34,16 @@ public class ContentNodeStats {
             return new BucketSpaceStats();
         }
 
+        public static BucketSpaceStats invalid(long bucketsTotal, long bucketsPending) {
+            return new BucketSpaceStats(bucketsTotal, bucketsPending, true);
+        }
+
         public static BucketSpaceStats of(long bucketsTotal, long bucketsPending) {
-            return new BucketSpaceStats(bucketsTotal, bucketsPending);
+            return new BucketSpaceStats(bucketsTotal, bucketsPending, false);
+        }
+
+        public static BucketSpaceStats empty() {
+            return new BucketSpaceStats(0, 0, false);
         }
 
         public long getBucketsTotal() {
@@ -47,15 +55,15 @@ public class ContentNodeStats {
         }
 
         public boolean mayHaveBucketsPending() {
-            return (bucketsPending > 0) || invalid;
+            return (bucketsPending > 0) || (invalidCount > 0);
         }
 
         public boolean valid() {
-            return !invalid;
+            return invalidCount == 0;
         }
 
         public void merge(BucketSpaceStats rhs, int factor) {
-            this.invalid |= rhs.invalid;
+            this.invalidCount += (factor * rhs.invalidCount);
             this.bucketsTotal += (factor * rhs.bucketsTotal);
             this.bucketsPending += (factor * rhs.bucketsPending);
         }
@@ -65,18 +73,19 @@ public class ContentNodeStats {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             BucketSpaceStats that = (BucketSpaceStats) o;
-            return bucketsTotal == that.bucketsTotal &&
+            return invalidCount == that.invalidCount &&
+                    bucketsTotal == that.bucketsTotal &&
                     bucketsPending == that.bucketsPending;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(bucketsTotal, bucketsPending);
+            return Objects.hash(invalidCount, bucketsTotal, bucketsPending);
         }
 
         @Override
         public String toString() {
-            return "{bucketsTotal=" + bucketsTotal + ", bucketsPending=" + bucketsPending + "}";
+            return "{bucketsTotal=" + bucketsTotal + ", bucketsPending=" + bucketsPending + ", invalidCount=" + invalidCount + "}";
         }
     }
 
@@ -116,7 +125,7 @@ public class ContentNodeStats {
         for (Map.Entry<String, BucketSpaceStats> entry : stats.bucketSpaces.entrySet()) {
             BucketSpaceStats statsToUpdate = bucketSpaces.get(entry.getKey());
             if (statsToUpdate == null && factor == 1) {
-                statsToUpdate = new BucketSpaceStats();
+                statsToUpdate = BucketSpaceStats.empty();
                 bucketSpaces.put(entry.getKey(), statsToUpdate);
             }
             if (statsToUpdate != null) {

@@ -11,25 +11,44 @@ import static org.junit.Assert.assertTrue;
 public class ContentNodeStatsTest {
 
     @Test
-    public void valid_bucket_space_stats_can_be_invalid_after_merge() {
+    public void bucket_space_stats_can_transition_from_valid_to_invalid() {
         BucketSpaceStats stats = BucketSpaceStats.of(5,1);
         assertTrue(stats.valid());
 
         stats.merge(BucketSpaceStats.invalid(), 1);
         assertFalse(stats.valid());
-        assertEquals(5, stats.getBucketsTotal());
-        assertEquals(1, stats.getBucketsPending());
+        assertEquals(BucketSpaceStats.invalid(5, 1), stats);
     }
 
     @Test
-    public void invalid_bucket_space_stats_is_still_invalid_after_merge() {
+    public void bucket_space_stats_can_transition_from_invalid_to_valid() {
         BucketSpaceStats stats = BucketSpaceStats.invalid();
         assertFalse(stats.valid());
 
         stats.merge(BucketSpaceStats.of(5, 1), 1);
         assertFalse(stats.valid());
-        assertEquals(5, stats.getBucketsTotal());
-        assertEquals(1, stats.getBucketsPending());
+        stats.merge(BucketSpaceStats.invalid(), -1);
+        assertTrue(stats.valid());
+        assertEquals(BucketSpaceStats.of(5, 1), stats);
+    }
+
+    @Test
+    public void bucket_space_stats_tracks_multiple_layers_of_invalid() {
+        BucketSpaceStats stats = BucketSpaceStats.invalid();
+        stats.merge(BucketSpaceStats.invalid(), 1);
+        assertFalse(stats.valid());
+        stats.merge(BucketSpaceStats.invalid(), 1);
+        assertFalse(stats.valid());
+        stats.merge(BucketSpaceStats.of(5, 1), 1);
+        assertFalse(stats.valid());
+
+        stats.merge(BucketSpaceStats.invalid(), -1);
+        assertFalse(stats.valid());
+        stats.merge(BucketSpaceStats.invalid(), -1);
+        assertFalse(stats.valid());
+        stats.merge(BucketSpaceStats.invalid(), -1);
+        assertTrue(stats.valid());
+        assertEquals(BucketSpaceStats.of(5, 1), stats);
     }
 
     @Test
@@ -46,4 +65,5 @@ public class ContentNodeStatsTest {
     public void valid_bucket_space_stats_may_have_no_pending_buckets() {
         assertFalse(BucketSpaceStats.of(5, 0).mayHaveBucketsPending());
     }
+
 }

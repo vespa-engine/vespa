@@ -75,7 +75,7 @@ public class ClusterStatsAggregatorTest {
         f.verify(new ContentClusterStatsBuilder().add(3, "default"));
 
         f.update(2, new ContentClusterStatsBuilder().add(3, "default", 10, 1));
-        f.verify(new ContentClusterStatsBuilder().add(3, "default", 10, 1));
+        f.verify(new ContentClusterStatsBuilder().addInvalid(3, "default", 10, 1));
 
         f.update(1, new ContentClusterStatsBuilder().add(3, "default", 11, 2));
         f.verify(new ContentClusterStatsBuilder().add(3, "default", 10 + 11, 1 + 2));
