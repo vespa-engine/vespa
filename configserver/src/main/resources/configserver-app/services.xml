@@ -53,6 +53,7 @@
     <preprocess:include file='hosted-vespa/scoreboard.xml' required='false' />
     <preprocess:include file='controller/container.xml' required='false' />
     <component id="com.yahoo.vespa.service.monitor.internal.SlobrokMonitorManagerImpl" bundle="service-monitor" />
+    <component id="com.yahoo.vespa.service.monitor.internal.HealthMonitorManager" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.monitor.internal.ServiceMonitorImpl" bundle="service-monitor" />
     <component id="com.yahoo.vespa.orchestrator.ServiceMonitorInstanceLookupService" bundle="orchestrator" />
     <component id="com.yahoo.vespa.orchestrator.status.ZookeeperStatusService" bundle="orchestrator" />
