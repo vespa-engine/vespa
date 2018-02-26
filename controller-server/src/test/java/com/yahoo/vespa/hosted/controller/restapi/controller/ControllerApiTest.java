@@ -47,7 +47,7 @@ public class ControllerApiTest extends ControllerContainerTest {
 
         // Get current configuration
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/jobs/upgrader", new byte[0], Request.Method.GET),
-                              "{\"upgradesPerMinute\":0.5,\"ignoreConfidence\":false}",
+                              "{\"upgradesPerMinute\":0.5}",
                               200);
 
         // Set invalid configuration
@@ -66,13 +66,7 @@ public class ControllerApiTest extends ControllerContainerTest {
         // Patch configuration
         tester.assertResponse(
                 hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"upgradesPerMinute\":42.0}", Request.Method.PATCH),
-                "{\"upgradesPerMinute\":42.0,\"ignoreConfidence\":false}",
-                200);
-
-        // Patch configuration
-        tester.assertResponse(
-                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"ignoreConfidence\":true}", Request.Method.PATCH),
-                "{\"upgradesPerMinute\":42.0,\"ignoreConfidence\":true}",
+                "{\"upgradesPerMinute\":42.0}",
                 200);
     }
 

@@ -164,20 +164,6 @@ public class CuratorDb {
         transaction.commit();
     }
 
-    public boolean readIgnoreConfidence() {
-        Optional<byte[]> value = curator.getData(ignoreConfidencePath());
-        if (! value.isPresent() || value.get().length == 0) {
-            return false; // Default if value has never been written
-        }
-        return ByteBuffer.wrap(value.get()).getInt() == 1;
-    }
-
-    public void writeIgnoreConfidence(boolean value) {
-        NestedTransaction transaction = new NestedTransaction();
-        curator.set(ignoreConfidencePath(), ByteBuffer.allocate(Integer.BYTES).putInt(value ? 1 : 0).array());
-        transaction.commit();
-    }
-
     public void writeVersionStatus(VersionStatus status) {
         VersionStatusSerializer serializer = new VersionStatusSerializer();
         NestedTransaction transaction = new NestedTransaction();
@@ -262,10 +248,6 @@ public class CuratorDb {
 
     private Path upgradesPerMinutePath() {
         return root.append("upgrader").append("upgradesPerMinute");
-    }
-
-    private Path ignoreConfidencePath() {
-        return root.append("upgrader").append("ignoreConfidence");
     }
 
     private Path versionStatusPath() { return root.append("versionStatus"); }

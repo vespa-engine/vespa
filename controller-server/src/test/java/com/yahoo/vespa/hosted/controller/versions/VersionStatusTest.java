@@ -242,47 +242,6 @@ public class VersionStatusTest {
         assertEquals("5.3", versions.get(2).versionNumber().toString());
     }
 
-    @Test
-    public void testIgnoreConfidence() {
-        DeploymentTester tester = new DeploymentTester();
-
-        Version version0 = new Version("5.0");
-        tester.upgradeSystem(version0);
-
-        // Setup applications - all running on version0
-        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
-        Application default0 = tester.createAndDeploy("default0", 3, "default");
-        Application default1 = tester.createAndDeploy("default1", 4, "default");
-        Application default2 = tester.createAndDeploy("default2", 5, "default");
-        Application default3 = tester.createAndDeploy("default3", 6, "default");
-        Application default4 = tester.createAndDeploy("default4", 7, "default");
-
-        // New version is released
-        Version version1 = new Version("5.1");
-        tester.upgradeSystem(version1);
-
-        // All canaries upgrade successfully, 1 default apps ok, 3 default apps fail
-        tester.completeUpgrade(canary0, version1, "canary");
-        tester.completeUpgrade(canary1, version1, "canary");
-        tester.upgradeSystem(version1);
-        tester.completeUpgrade(default0, version1, "default");
-        tester.completeUpgradeWithError(default1, version1, "default", stagingTest);
-        tester.completeUpgradeWithError(default2, version1, "default", stagingTest);
-        tester.completeUpgradeWithError(default3, version1, "default", stagingTest);
-        tester.completeUpgradeWithError(default4, version1, "default", stagingTest);
-        tester.updateVersionStatus();
-        assertEquals("Canaries have upgraded, 1 of 4 default apps failing: Broken",
-                     Confidence.broken, confidence(tester.controller(), version1));
-
-        // Same as above, but ignore confidence calculations, will force normal confidence
-        tester.controllerTester().curator().writeIgnoreConfidence(true);
-        tester.updateVersionStatus();
-        assertEquals("Canaries have upgraded, 1 of 4 default apps failing, but confidence ignored: Low",
-                     Confidence.normal, confidence(tester.controller(), version1));
-        tester.controllerTester().curator().writeIgnoreConfidence(false);
-    }
-
     private Confidence confidence(Controller controller, Version version) {
         return controller.versionStatus().versions().stream()
                 .filter(v -> v.statistics().version().equals(version))

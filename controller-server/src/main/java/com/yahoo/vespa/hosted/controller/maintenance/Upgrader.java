@@ -124,18 +124,4 @@ public class Upgrader extends Maintainer {
         curator.writeUpgradesPerMinute(n);
     }
 
-    /**
-     * Returns whether to ignore confidence calculations when upgrading
-     */
-    public boolean ignoreConfidence() {
-        return curator.readIgnoreConfidence();
-    }
-
-    /**
-     * Controls whether to ignore confidence calculations or not
-     */
-    public void ignoreConfidence(boolean value) {
-        curator.writeIgnoreConfidence(value);
-    }
-
 }

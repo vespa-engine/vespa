@@ -100,15 +100,12 @@ public class ControllerApiHandler extends LoggingRequestHandler {
 
     private HttpResponse configureUpgrader(HttpRequest request) {
         String upgradesPerMinuteField = "upgradesPerMinute";
-        String ignoreConfidenceField = "ignoreConfidence";
 
         byte[] jsonBytes = toJsonBytes(request.getData());
         Inspector inspect = SlimeUtils.jsonToSlime(jsonBytes).get();
         Upgrader upgrader = maintenance.upgrader();
         if (inspect.field(upgradesPerMinuteField).valid()) {
             upgrader.setUpgradesPerMinute(inspect.field(upgradesPerMinuteField).asDouble());
-        } else if (inspect.field(ignoreConfidenceField).valid()) {
-            upgrader.ignoreConfidence(inspect.field(ignoreConfidenceField).asBool());
         } else {
             return ErrorResponse.badRequest("Unable to configure upgrader with data in request: '" +
                                                     Utf8.toString(jsonBytes) + "'");

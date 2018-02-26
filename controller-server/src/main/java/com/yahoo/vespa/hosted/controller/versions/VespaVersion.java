@@ -6,7 +6,6 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
-import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -57,7 +56,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
             return Confidence.broken;
 
         // 'broken' if 4 non-canary was broken by this, and that is at least 10% of all
-        if (nonCanaryApplicationsBroken(statistics.version(), failingOnThis, productionOnThis, controller.curator()))
+        if (nonCanaryApplicationsBroken(statistics.version(), failingOnThis, productionOnThis))
             return Confidence.broken;
 
         // 'low' unless all canary applications are upgraded
@@ -143,12 +142,11 @@ public class VespaVersion implements Comparable<VespaVersion> {
 
     private static boolean nonCanaryApplicationsBroken(Version version,
                                                        ApplicationList failingOnThis,
-                                                       ApplicationList productionOnThis,
-                                                       CuratorDb curator) {
+                                                       ApplicationList productionOnThis) {
         ApplicationList failingNonCanaries = failingOnThis.without(UpgradePolicy.canary).startedFailingOn(version);
         ApplicationList productionNonCanaries = productionOnThis.without(UpgradePolicy.canary);
 
-        if (productionNonCanaries.size() + failingNonCanaries.size() == 0 || curator.readIgnoreConfidence()) return false;
+        if (productionNonCanaries.size() + failingNonCanaries.size() == 0) return false;
 
         // 'broken' if 4 non-canary was broken by this, and that is at least 10% of all
         int brokenByThisVersion = failingNonCanaries.size();
