@@ -7,10 +7,8 @@ import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Version;
 import com.yahoo.test.ManualClock;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,11 +24,8 @@ import static org.junit.Assert.fail;
  */
 public class HostedDeployTest {
 
-    private static final String dockerRegistry = "foo.com:4443";
-    private static final String dockerVespaBaseImage = "/vespa/ci";
-
     @Test
-    public void testRedeployWithVersion() throws InterruptedException, IOException {
+    public void testRedeployWithVersion() {
         DeployTester tester = new DeployTester("src/test/apps/hosted/", createConfigserverConfig());
         tester.deployApp("myApp", "4.5.6", Instant.now());
 
@@ -42,7 +37,7 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testRedeploy() throws InterruptedException, IOException {
+    public void testRedeploy() {
         DeployTester tester = new DeployTester("src/test/apps/hosted/", createConfigserverConfig());
         tester.deployApp("myApp", Instant.now());
 
@@ -53,7 +48,7 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testDeployMultipleVersions() throws InterruptedException, IOException {
+    public void testDeployMultipleVersions() {
         ManualClock clock = new ManualClock("2016-10-09T00:00:00");
         List<ModelFactory> modelFactories = new ArrayList<>();
         modelFactories.add(DeployTester.createModelFactory(Version.fromString("6.1.0"), clock));
@@ -65,7 +60,7 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testRedeployAfterExpiredValidationOverride() throws InterruptedException, IOException {
+    public void testRedeployAfterExpiredValidationOverride() {
         // Old version of model fails, but application disables loading old models until 2016-10-10, so deployment works
         ManualClock clock = new ManualClock("2016-10-09T00:00:00");
         List<ModelFactory> modelFactories = new ArrayList<>();
@@ -104,33 +99,10 @@ public class HostedDeployTest {
         }
     }
 
-    @Test
-    @Ignore //WIP
-    public void testDeployWithDockerImage() throws InterruptedException, IOException {
-        final String vespaVersion = "6.51.1";
-        DeployTester tester = new DeployTester("src/test/apps/hosted/", createConfigserverConfig());
-        ApplicationId applicationId = tester.deployApp("myApp", vespaVersion, Instant.now());
-        assertAllocatedHosts(vespaVersion, tester, applicationId);
-
-        System.out.println("Redeploy");
-        Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
-        assertTrue(deployment.isPresent());
-        deployment.get().prepare();
-        deployment.get().activate();
-        //assertAllocatedHosts(vespaVersion, tester, applicationId);
-    }
-
-    private void assertAllocatedHosts(String vespaVersion, DeployTester tester, ApplicationId applicationId) {
-        tester.getAllocatedHostsOf(applicationId).getHosts().stream()
-              .forEach(h -> assertEquals(vespaVersion, h.membership().get().cluster().vespaVersion()));
-    }
-
     private static ConfigserverConfig createConfigserverConfig() {
         return new ConfigserverConfig(new ConfigserverConfig.Builder()
                                               .configServerDBDir(Files.createTempDir().getAbsolutePath())
                                               .configDefinitionsDir(Files.createTempDir().getAbsolutePath())
-                                              .dockerRegistry(dockerRegistry)
-                                              .dockerVespaBaseImage(dockerVespaBaseImage)
                                               .hostedVespa(true)
                                               .multitenant(true));
     }

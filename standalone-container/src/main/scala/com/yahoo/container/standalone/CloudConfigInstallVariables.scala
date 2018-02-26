@@ -36,8 +36,6 @@ class CloudConfigInstallVariables extends CloudConfigOptions {
   override val useVespaVersionInRequest = optionalInstallVar[java.lang.Boolean]("use_vespa_version_in_request")
   override val hostedVespa = optionalInstallVar[java.lang.Boolean]("hosted_vespa")
   override val numParallelTenantLoaders = optionalInstallVar[java.lang.Integer]("num_parallel_tenant_loaders")
-  override val dockerRegistry = optionalInstallVar[java.lang.String]("docker_registry")
-  override val dockerVespaBaseImage = optionalInstallVar[java.lang.String]("docker_vespa_base_image")
   override val loadBalancerAddress = optionalInstallVar[java.lang.String]("load_balancer_address")
 }
 
