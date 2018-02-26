@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 /**
  * Various utilities for getting values from node-admin's environment. Immutable.
  *
- * @author bakksjo
+ * @author Øyvind Bakksjø
  * @author hmusum
  */
 public class Environment {
@@ -42,6 +42,7 @@ public class Environment {
     private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
     private static final String COREDUMP_FEED_ENDPOINT = "COREDUMP_FEED_ENDPOINT";
 
+    private final List<String> configServerHostNames;
     private final List<URI> configServerURIs;
     private final String environment;
     private final String region;
@@ -74,11 +75,7 @@ public class Environment {
                        PathResolver pathResolver,
                        Optional<String> coreDumpFeedEndpoint,
                        NodeType nodeType) {
-        this(createConfigServerUris(
-                configServerConfig.scheme(),
-                configServerConfig.hosts(),
-                configServerConfig.port()),
-
+        this(configServerConfig,
                 hostedEnvironment,
                 hostedRegion,
                 Defaults.getDefaults().vespaHostname(),
@@ -104,7 +101,7 @@ public class Environment {
         );
     }
 
-    public Environment(List<URI> configServerURIs,
+    public Environment(ConfigServerConfig configServerConfig,
                        String environment,
                        String region,
                        String parentHostHostname,
@@ -116,7 +113,11 @@ public class Environment {
                        Optional<KeyStoreOptions> trustStoreOptions,
                        Optional<AthenzIdentity> athenzIdentity,
                        NodeType nodeType) {
-        this.configServerURIs = configServerURIs;
+        this.configServerHostNames = configServerConfig.hosts();
+        this.configServerURIs = createConfigServerUris(
+                configServerConfig.scheme(),
+                configServerConfig.hosts(),
+                configServerConfig.port());
         this.environment = environment;
         this.region = region;
         this.parentHostHostname = parentHostHostname;
@@ -129,6 +130,8 @@ public class Environment {
         this.athenzIdentity = athenzIdentity;
         this.nodeType = nodeType;
     }
+
+    public List<String> getConfigServerHostNames() { return configServerHostNames; }
 
     public List<URI> getConfigServerUris() { return configServerURIs; }
 
@@ -265,7 +268,7 @@ public class Environment {
     public NodeType getNodeType() { return nodeType; }
 
     public static class Builder {
-        private List<URI> configServerURIs = Collections.emptyList();
+        ConfigServerConfig configServerConfig = new ConfigServerConfig(new ConfigServerConfig.Builder());
         private String environment;
         private String region;
         private String parentHostHostname;
@@ -278,8 +281,8 @@ public class Environment {
         private AthenzIdentity athenzIdentity;
         private NodeType nodeType = NodeType.tenant;
 
-        public Builder configServerUris(List<URI> uris) {
-            configServerURIs = uris;
+        public Builder configServerConfig(ConfigServerConfig configServerConfig) {
+            this.configServerConfig = configServerConfig;
             return this;
         }
 
@@ -339,7 +342,7 @@ public class Environment {
         }
 
         public Environment build() {
-            return new Environment(configServerURIs, environment, region, parentHostHostname,
+            return new Environment(configServerConfig, environment, region, parentHostHostname,
                     Optional.ofNullable(inetAddressResolver).orElseGet(InetAddressResolver::new),
                     Optional.ofNullable(pathResolver).orElseGet(PathResolver::new),
                     logstashNodes, feedEndpoint,
