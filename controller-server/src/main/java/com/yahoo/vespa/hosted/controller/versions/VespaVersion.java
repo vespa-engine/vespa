@@ -25,18 +25,18 @@ import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 public class VespaVersion implements Comparable<VespaVersion> {
     
     private final String releaseCommit;
-    private final Instant releasedAt;
+    private final Instant committedAt;
     private final boolean isCurrentSystemVersion;
     private final DeploymentStatistics statistics;
     private final ImmutableSet<String> configServerHostnames;
     private final Confidence confidence;
 
-    public VespaVersion(DeploymentStatistics statistics, String releaseCommit, Instant releasedAt,
+    public VespaVersion(DeploymentStatistics statistics, String releaseCommit, Instant committedAt,
                         boolean isCurrentSystemVersion, Collection<String> configServerHostnames,
                         Confidence confidence) {
         this.statistics = statistics;
         this.releaseCommit = releaseCommit;
-        this.releasedAt = releasedAt;
+        this.committedAt = committedAt;
         this.isCurrentSystemVersion = isCurrentSystemVersion;
         this.configServerHostnames = ImmutableSet.copyOf(configServerHostnames);
         this.confidence = confidence;
@@ -79,7 +79,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
     public String releaseCommit() { return releaseCommit; }
     
     /** Returns the time of the release commit */
-    public Instant releasedAt() { return releasedAt; }
+    public Instant committedAt() { return committedAt; }
     
     /** Statistics about deployment of this version */
     public DeploymentStatistics statistics() { return statistics; }

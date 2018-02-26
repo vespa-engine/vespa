@@ -177,7 +177,7 @@ public class VersionStatus {
                                               Collection<String> configServerHostnames,
                                               Controller controller) {
         GitSha gitSha = controller.gitHub().getCommit(VESPA_REPO_OWNER, VESPA_REPO, statistics.version().toFullString());
-        Instant releasedAt = Instant.ofEpochMilli(gitSha.commit.author.date.getTime()); // commitedAt ...
+        Instant committedAt = Instant.ofEpochMilli(gitSha.commit.author.date.getTime());
         VespaVersion.Confidence confidence;
         // Always compute confidence for system version
         if (isSystemVersion) {
@@ -188,7 +188,7 @@ public class VersionStatus {
                     .orElse(VespaVersion.confidenceFrom(statistics, controller));
         }
         return new VespaVersion(statistics,
-                                gitSha.sha, releasedAt,
+                                gitSha.sha, committedAt,
                                 isSystemVersion,
                                 configServerHostnames,
                                 confidence
