@@ -20,7 +20,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
-import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentQueue;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -109,15 +109,10 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
         assertEquals("Response contains only two items", 2, SlimeUtils.jsonToSlime(response.getBody()).get().entries());
 
         // Check that GET didn't affect the enqueued jobs.
-        response = container.handleRequest(new Request("http://localhost:8080/screwdriver/v1/jobsToRun", "", Request.Method.DELETE));
+        response = container.handleRequest(new Request("http://localhost:8080/screwdriver/v1/jobsToRun", "", Request.Method.GET));
         assertTrue("Response contains system-test", response.getBodyAsString().contains(JobType.systemTest.jobName()));
         assertTrue("Response contains staging-test", response.getBodyAsString().contains(JobType.stagingTest.jobName()));
         assertEquals("Response contains only two items", 2, SlimeUtils.jsonToSlime(response.getBody()).get().entries());
-
-        Thread.sleep(50);
-        // Check that the *first* DELETE has removed the enqueued jobs.
-        assertResponse(new Request("http://localhost:8080/screwdriver/v1/jobsToRun", "", Request.Method.DELETE),
-                200, "[]");
     }
 
     @Test
@@ -156,7 +151,7 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
     @Test
     public void testTriggerJobForApplication() {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
-        BuildSystem buildSystem = tester.controller().applications().deploymentTrigger().buildSystem();
+        DeploymentQueue deploymentQueue = tester.controller().applications().deploymentTrigger().deploymentQueue();
         tester.containerTester().updateSystemVersion();
 
         Application app = tester.createApplication();
@@ -180,19 +175,19 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
                                    new byte[0], Request.Method.POST),
                        200, "{\"message\":\"Triggered component for tenant1.application1\"}");
 
-        assertFalse(buildSystem.jobs().isEmpty());
-        assertEquals(JobType.component.jobName(), buildSystem.jobs().get(0).jobName());
-        assertEquals(1L, buildSystem.jobs().get(0).projectId());
-        buildSystem.takeJobsToRun();
+        assertFalse(deploymentQueue.jobs().isEmpty());
+        assertEquals(JobType.component.jobName(), deploymentQueue.jobs().get(0).jobName());
+        assertEquals(1L, deploymentQueue.jobs().get(0).projectId());
+        deploymentQueue.takeJobsToRun();
 
         // Triggers specific job when given
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +
                                    app.id().tenant().value() + "/application/" + app.id().application().value(),
                                    "staging-test".getBytes(StandardCharsets.UTF_8), Request.Method.POST),
                        200, "{\"message\":\"Triggered staging-test for tenant1.application1\"}");
-        assertFalse(buildSystem.jobs().isEmpty());
-        assertEquals(JobType.stagingTest.jobName(), buildSystem.jobs().get(0).jobName());
-        assertEquals(1L, buildSystem.jobs().get(0).projectId());
+        assertFalse(deploymentQueue.jobs().isEmpty());
+        assertEquals(JobType.stagingTest.jobName(), deploymentQueue.jobs().get(0).jobName());
+        assertEquals(1L, deploymentQueue.jobs().get(0).projectId());
     }
 
     private void notifyCompletion(DeploymentJobs.JobReport report) {
