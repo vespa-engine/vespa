@@ -52,3 +52,6 @@ loadBalancerAddress string default=""
 
 # File distribution
 disableFiledistributor bool default=true
+
+# Node admin
+nodeAdminInContainer bool default=true

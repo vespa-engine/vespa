@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostLivenessTracker;
@@ -57,12 +58,14 @@ public class NodeFailer extends Maintainer {
     private final Instant constructionTime;
     private final ThrottlePolicy throttlePolicy;
     private final Metric metric;
+    private final ConfigserverConfig configserverConfig;
 
     public NodeFailer(Deployer deployer, HostLivenessTracker hostLivenessTracker,
                       ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
                       Duration downTimeLimit, Clock clock, Orchestrator orchestrator,
                       ThrottlePolicy throttlePolicy, Metric metric,
-                      JobControl jobControl) {
+                      JobControl jobControl,
+                      ConfigserverConfig configserverConfig) {
         // check ping status every five minutes, but at least twice as often as the down time limit
         super(nodeRepository, min(downTimeLimit.dividedBy(2), Duration.ofMinutes(5)), jobControl);
         this.deployer = deployer;
@@ -74,6 +77,7 @@ public class NodeFailer extends Maintainer {
         this.constructionTime = clock.instant();
         this.throttlePolicy = throttlePolicy;
         this.metric = metric;
+        this.configserverConfig = configserverConfig;
     }
 
     @Override
@@ -126,7 +130,7 @@ public class NodeFailer extends Maintainer {
 
         Map<Node, String> nodesByFailureReason = new HashMap<>();
         for (Node node : nodeRepository().getNodes(Node.State.ready)) {
-            if (! hasNodeRequestedConfigAfter(node, oldestAcceptableRequestTime)) {
+            if (expectConfigRequests(node) && ! hasNodeRequestedConfigAfter(node, oldestAcceptableRequestTime)) {
                 nodesByFailureReason.put(node, "Not receiving config requests from node");
             } else if (node.status().hardwareFailureDescription().isPresent()) {
                 nodesByFailureReason.put(node, "Node has hardware failure");
@@ -135,6 +139,10 @@ public class NodeFailer extends Maintainer {
             }
         }
         return nodesByFailureReason;
+    }
+
+    private boolean expectConfigRequests(Node node) {
+        return !node.type().isDockerHost() || configserverConfig.nodeAdminInContainer();
     }
 
     private boolean hasNodeRequestedConfigAfter(Node node, Instant instant) {
