@@ -103,7 +103,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
             application = controller.applications().deploymentTrigger().triggerAllowParallel(
                     jobType, application, true, true,
                     "Triggered from screwdriver/v1"
-            );
+                                                                                            );
             controller.applications().store(application);
         });
 

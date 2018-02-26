@@ -19,20 +19,20 @@ import java.util.logging.Logger;
  *
  * @author jvenstad
  */
-public class DeploymentTriggerer extends Maintainer {
+public class DeploymentJobExecutor extends Maintainer {
 
-    private static final Logger log = Logger.getLogger(DeploymentTriggerer.class.getName());
-    static final int triggeringRetries = 5;
+    private static final Logger log = Logger.getLogger(DeploymentJobExecutor.class.getName());
+    private static final int triggeringRetries = 5;
 
     private final BuildService buildService;
     private final Executor executor;
 
-    public DeploymentTriggerer(Controller controller, Duration triggeringInterval, JobControl jobControl, BuildService buildService) {
+    public DeploymentJobExecutor(Controller controller, Duration triggeringInterval, JobControl jobControl, BuildService buildService) {
         this(controller, triggeringInterval, jobControl, buildService, Executors.newFixedThreadPool(20));
     }
 
-    DeploymentTriggerer(Controller controller, Duration triggeringInterval, JobControl jobControl,
-                        BuildService buildService, Executor executor) {
+    DeploymentJobExecutor(Controller controller, Duration triggeringInterval, JobControl jobControl,
+                          BuildService buildService, Executor executor) {
         super(controller, triggeringInterval, jobControl);
         this.buildService = buildService;
         this.executor = executor;

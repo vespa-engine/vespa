@@ -882,7 +882,7 @@ public class UpgraderTest {
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
-        assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
+        assertTrue("All jobs consumed", tester.deploymentQueue().jobs().isEmpty());
 
         app = tester.application(app.id());
         for (Deployment deployment : app.deployments().values()) {

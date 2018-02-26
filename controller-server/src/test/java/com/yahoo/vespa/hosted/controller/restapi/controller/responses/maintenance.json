@@ -16,10 +16,10 @@
       "name": "DeploymentIssueReporter"
     },
     {
-      "name": "DeploymentMetricsMaintainer"
+      "name": "DeploymentJobExecutor"
     },
     {
-      "name": "DeploymentTriggerer"
+      "name": "DeploymentMetricsMaintainer"
     },
     {
       "name": "DnsMaintainer"
