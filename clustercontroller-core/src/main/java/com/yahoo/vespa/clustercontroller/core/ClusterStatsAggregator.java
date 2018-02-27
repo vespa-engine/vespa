@@ -59,7 +59,7 @@ public class ClusterStatsAggregator {
         AggregatedStatsMergePendingChecker checker = new AggregatedStatsMergePendingChecker(aggregatedStats);
         for (Iterator<ContentNodeStats> itr = aggregatedStats.iterator(); itr.hasNext(); ) {
             ContentNodeStats stats = itr.next();
-            if (checker.hasMergesPending(FixedBucketSpaces.globalSpace(), stats.getNodeIndex())) {
+            if (checker.mayHaveMergesPending(FixedBucketSpaces.globalSpace(), stats.getNodeIndex())) {
                 return true;
             }
         }

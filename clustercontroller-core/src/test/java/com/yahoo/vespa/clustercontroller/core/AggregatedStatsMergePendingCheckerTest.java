@@ -27,7 +27,7 @@ public class AggregatedStatsMergePendingCheckerTest {
         }
 
         public boolean hasMergesPending(String bucketSpace, int contentNodeIndex) {
-            return checker.hasMergesPending(bucketSpace, contentNodeIndex);
+            return checker.mayHaveMergesPending(bucketSpace, contentNodeIndex);
         }
 
     }

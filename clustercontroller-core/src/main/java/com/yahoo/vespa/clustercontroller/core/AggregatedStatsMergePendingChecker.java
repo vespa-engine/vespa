@@ -15,7 +15,7 @@ public class AggregatedStatsMergePendingChecker implements MergePendingChecker {
     }
 
     @Override
-    public boolean hasMergesPending(String bucketSpace, int contentNodeIndex) {
+    public boolean mayHaveMergesPending(String bucketSpace, int contentNodeIndex) {
         ContentNodeStats nodeStats = clusterStats.getContentNode(contentNodeIndex);
         if (nodeStats != null) {
             ContentNodeStats.BucketSpaceStats bucketSpaceStats = nodeStats.getBucketSpace(bucketSpace);

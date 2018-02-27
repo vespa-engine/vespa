@@ -61,6 +61,6 @@ public class MaintenanceWhenPendingGlobalMerges implements ClusterStateDeriver {
     }
 
     private boolean hasMergesNotDone(String bucketSpace, int nodeIndex) {
-        return mergePendingChecker.hasMergesPending(bucketSpace, nodeIndex);
+        return mergePendingChecker.mayHaveMergesPending(bucketSpace, nodeIndex);
     }
 }
