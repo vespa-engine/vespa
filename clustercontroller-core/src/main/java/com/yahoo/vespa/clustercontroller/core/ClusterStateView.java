@@ -112,6 +112,10 @@ public class ClusterStateView {
                 StorageNodeStatsBridge.generate(hostInfo.getDistributor()));
     }
 
+    public ClusterStatsAggregator getStatsAggregator() {
+        return statsAggregator;
+    }
+
     public String toString() {
         return clusterState.toString();
     }

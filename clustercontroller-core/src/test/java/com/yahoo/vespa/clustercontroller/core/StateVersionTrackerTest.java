@@ -6,6 +6,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import org.junit.Test;
 
 import java.text.ParseException;
@@ -17,6 +18,8 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class StateVersionTrackerTest {
 
@@ -265,6 +268,54 @@ public class StateVersionTrackerTest {
         // Changing state in default space marks as sufficiently changed
         versionTracker.updateLatestCandidateStateBundle(baselineBundle(true));
         assertTrue(versionTracker.candidateChangedEnoughFromCurrentToWarrantPublish());
+    }
+
+    @Test
+    public void buckets_pending_state_is_tracked_between_cluster_states() {
+        final StateVersionTracker tracker = createWithMockedMetrics();
+        final NodeInfo distributorNode = mock(DistributorNodeInfo.class);
+        when(distributorNode.isDistributor()).thenReturn(true);
+        assertFalse(tracker.bucketSpaceMergeCompletionStateHasChanged());
+
+        tracker.updateLatestCandidateStateBundle(ClusterStateBundle
+                .ofBaselineOnly(stateWithoutAnnotations("distributor:1 storage:1")));
+        tracker.promoteCandidateToVersionedState(1234);
+        assertFalse(tracker.bucketSpaceMergeCompletionStateHasChanged());
+
+        // Give 'global' bucket space no buckets pending, which is the same as previous stats
+        tracker.handleUpdatedHostInfo(distributorNode, createHostInfo(0));
+        assertFalse(tracker.bucketSpaceMergeCompletionStateHasChanged());
+
+        // Give 'global' bucket space buckets pending, which is different from previous stats
+        tracker.handleUpdatedHostInfo(distributorNode, createHostInfo(1));
+        assertTrue(tracker.bucketSpaceMergeCompletionStateHasChanged());
+
+        tracker.updateLatestCandidateStateBundle(ClusterStateBundle
+                .ofBaselineOnly(stateWithoutAnnotations("distributor:1 storage:1")));
+        assertFalse(tracker.bucketSpaceMergeCompletionStateHasChanged());
+    }
+
+    private HostInfo createHostInfo(long bucketsPending) {
+        return HostInfo.createHostInfo(
+                "{\n" +
+                "\"cluster-state-version\": 2,\n" +
+                "\"distributor\": {\n" +
+                "  \"storage-nodes\": [\n" +
+                "    {\n" +
+                "      \"node-index\": 0,\n" +
+                "      \"bucket-spaces\": [\n" +
+                "        {\n" +
+                "          \"name\": \"global\"\n," +
+                "          \"buckets\": {\n" +
+                "            \"total\": 5,\n" +
+                "            \"pending\": " + bucketsPending + "\n" +
+                "          }\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}\n" +
+                "}");
     }
 
 }

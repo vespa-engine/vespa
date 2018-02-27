@@ -17,8 +17,12 @@ public class ClusterStatsBucketsPendingState {
         this.prevMayHaveBucketsPending = false;
     }
 
-    public void updateAggregator(ClusterStatsAggregator newAggregator) {
+    public void syncBucketsPendingFlag() {
         prevMayHaveBucketsPending = aggregator.mayHaveBucketsPendingInGlobalSpace();
+    }
+
+    public void updateAggregator(ClusterStatsAggregator newAggregator) {
+        syncBucketsPendingFlag();
         aggregator = newAggregator;
     }
 
