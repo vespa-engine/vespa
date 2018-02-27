@@ -7,6 +7,8 @@ import org.junit.Test;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author hakonhall
@@ -25,6 +27,12 @@ public class ClusterStatsAggregatorTest {
         }
         public void verify(ContentClusterStatsBuilder expectedStats) {
             assertEquals(expectedStats.build(), aggregator.getAggregatedStats());
+        }
+        public boolean hasUpdatesFromAllDistributors() {
+            return aggregator.hasUpdatesFromAllDistributors();
+        }
+        public boolean mayHaveBucketsPendingInGlobalSpace() {
+            return aggregator.mayHaveBucketsPendingInGlobalSpace();
         }
     }
 
@@ -107,6 +115,43 @@ public class ClusterStatsAggregatorTest {
         f.update(downDistributorIndex, new ContentClusterStatsBuilder()
                 .add(3, "default", 7, 3));
         f.verify(new ContentClusterStatsBuilder().add(3));
+    }
+
+    @Test
+    public void aggregator_tracks_when_it_has_updates_from_all_distributors() {
+        Fixture f = new Fixture(distributorNodes(1, 2), contentNodes(3));
+        assertFalse(f.hasUpdatesFromAllDistributors());
+        f.update(1, new ContentClusterStatsBuilder().add(3, "default"));
+        assertFalse(f.hasUpdatesFromAllDistributors());
+        f.update(1, new ContentClusterStatsBuilder().add(3, "default", 10, 1));
+        assertFalse(f.hasUpdatesFromAllDistributors());
+        f.update(2, new ContentClusterStatsBuilder().add(3, "default"));
+        assertTrue(f.hasUpdatesFromAllDistributors());
+    }
+
+    @Test
+    public void cluster_without_updates_from_all_distributors_may_have_buckets_pending() {
+        Fixture f = new Fixture(distributorNodes(1), contentNodes(3, 4));
+        assertTrue(f.mayHaveBucketsPendingInGlobalSpace());
+    }
+
+    @Test
+    public void cluster_may_have_buckets_pending_in_global_space_if_one_node_has_buckets_pending() {
+        Fixture f = new Fixture(distributorNodes(1), contentNodes(3, 4));
+        f.update(1, new ContentClusterStatsBuilder()
+                .add(3, "global", 10, 0)
+                .add(4, "global", 11, 1));
+        assertTrue(f.mayHaveBucketsPendingInGlobalSpace());
+    }
+
+    @Test
+    public void cluster_does_not_have_buckets_pending_in_global_space_if_no_nodes_have_buckets_pending() {
+        Fixture f = new Fixture(distributorNodes(1), contentNodes(3, 4));
+        f.update(1, new ContentClusterStatsBuilder()
+                .add(3, "global", 10, 0)
+                .add(4, "global", 11, 0)
+                .add(4, "default", 12, 1));
+        assertFalse(f.mayHaveBucketsPendingInGlobalSpace());
     }
 
 }
