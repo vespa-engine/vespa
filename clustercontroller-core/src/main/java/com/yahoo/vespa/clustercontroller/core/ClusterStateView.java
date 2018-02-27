@@ -84,7 +84,7 @@ public class ClusterStateView {
 
     public ClusterState getClusterState() { return clusterState; }
 
-    public void handleUpdatedHostInfo(Map<Integer, String> hostnames, NodeInfo node, HostInfo hostInfo) {
+    public void handleUpdatedHostInfo(NodeInfo node, HostInfo hostInfo) {
         if ( ! node.isDistributor()) return;
 
         final int hostVersion;

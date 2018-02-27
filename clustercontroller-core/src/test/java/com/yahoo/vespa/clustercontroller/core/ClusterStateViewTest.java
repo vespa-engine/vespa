@@ -6,8 +6,6 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNodeStatsBridge;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -18,7 +16,6 @@ import static org.mockito.Mockito.*;
  * @since 5.34
  */
 public class ClusterStateViewTest {
-    final Map<Integer, String> hostnames = new HashMap<>();
     final NodeInfo nodeInfo = mock(NodeInfo.class);
     final Node node = mock(Node.class);
     final ClusterStatsAggregator statsAggregator = mock(ClusterStatsAggregator.class);
@@ -33,7 +30,7 @@ public class ClusterStateViewTest {
     public void testWrongNodeType() {
         when(nodeInfo.isDistributor()).thenReturn(false);
 
-        clusterStateView.handleUpdatedHostInfo(hostnames, nodeInfo, createHostInfo("101"));
+        clusterStateView.handleUpdatedHostInfo(nodeInfo, createHostInfo("101"));
 
         verify(statsAggregator, never()).updateForDistributor(anyInt(), any());
     }
@@ -45,7 +42,7 @@ public class ClusterStateViewTest {
         when(nodeInfo.isDistributor()).thenReturn(true);
         when(clusterState.getVersion()).thenReturn(101);
 
-        clusterStateView.handleUpdatedHostInfo(hostnames, nodeInfo, createHostInfo("22"));
+        clusterStateView.handleUpdatedHostInfo(nodeInfo, createHostInfo("22"));
 
         verify(statsAggregator, never()).updateForDistributor(anyInt(), any());
     }
@@ -55,7 +52,7 @@ public class ClusterStateViewTest {
         when(nodeInfo.isDistributor()).thenReturn(true);
         when(clusterState.getVersion()).thenReturn(101);
 
-        clusterStateView.handleUpdatedHostInfo(hostnames, nodeInfo, createHostInfo("22"));
+        clusterStateView.handleUpdatedHostInfo(nodeInfo, createHostInfo("22"));
 
         verify(statsAggregator, never()).updateForDistributor(anyInt(), any());
     }
@@ -77,7 +74,7 @@ public class ClusterStateViewTest {
         when(nodeInfo.getNodeIndex()).thenReturn(3);
         when(clusterState.getVersion()).thenReturn(101);
 
-        clusterStateView.handleUpdatedHostInfo(hostnames, nodeInfo, hostInfo);
+        clusterStateView.handleUpdatedHostInfo(nodeInfo, hostInfo);
 
         verify(statsAggregator).updateForDistributor(3, StorageNodeStatsBridge.generate(hostInfo.getDistributor()));
     }
