@@ -824,7 +824,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     }
 
     private ClusterStateDeriver createBucketSpaceStateDeriver() {
-        return new MaintenanceWhenPendingGlobalMerges((space, index) -> false); // TODO wire with stats aggregator
+        return new MaintenanceWhenPendingGlobalMerges(stateVersionTracker.createMergePendingChecker());
     }
 
     /**

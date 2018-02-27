@@ -73,6 +73,7 @@ public class ClusterControllerClusterConfigurer {
         options.distributionBits = config.ideal_distribution_bits();
         options.minNodeRatioPerGroup = config.min_node_ratio_per_group();
         options.setMaxDeferredTaskVersionWaitTime(Duration.ofMillis((int)(config.max_deferred_task_version_wait_time_sec() * 1000)));
+        options.enableMultipleBucketSpaces = config.enable_multiple_bucket_spaces();
     }
 
     private void configure(SlobroksConfig config) {

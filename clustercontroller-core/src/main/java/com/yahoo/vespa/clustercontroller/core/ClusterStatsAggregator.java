@@ -56,7 +56,7 @@ public class ClusterStatsAggregator {
         if (!hasUpdatesFromAllDistributors()) {
             return true;
         }
-        AggregatedStatsMergePendingChecker checker = new AggregatedStatsMergePendingChecker(aggregatedStats);
+        MergePendingChecker checker = createMergePendingChecker();
         for (Iterator<ContentNodeStats> itr = aggregatedStats.iterator(); itr.hasNext(); ) {
             ContentNodeStats stats = itr.next();
             if (checker.mayHaveMergesPending(FixedBucketSpaces.globalSpace(), stats.getNodeIndex())) {
@@ -64,6 +64,10 @@ public class ClusterStatsAggregator {
             }
         }
         return false;
+    }
+
+    MergePendingChecker createMergePendingChecker() {
+        return new AggregatedStatsMergePendingChecker(aggregatedStats);
     }
 
     /**
