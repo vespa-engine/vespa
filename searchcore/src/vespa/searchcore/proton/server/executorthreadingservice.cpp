@@ -13,7 +13,7 @@ ExecutorThreadingService::ExecutorThreadingService(uint32_t threads,
 
     : _masterExecutor(1, stackSize),
       _indexExecutor(1, stackSize, taskLimit),
-      _summaryExecutor(1, stackSize),
+      _summaryExecutor(1, stackSize, taskLimit),
       _masterService(_masterExecutor),
       _indexService(_indexExecutor),
       _summaryService(_summaryExecutor),
@@ -62,6 +62,7 @@ void
 ExecutorThreadingService::setTaskLimit(uint32_t taskLimit)
 {
     _indexExecutor.setTaskLimit(taskLimit);
+    _summaryExecutor.setTaskLimit(taskLimit);
     _indexFieldInverter.setTaskLimit(taskLimit);
     _indexFieldWriter.setTaskLimit(taskLimit);
     _attributeFieldWriter.setTaskLimit(taskLimit);

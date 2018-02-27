@@ -18,7 +18,7 @@ class ExecutorThreadingService : public searchcorespi::index::IThreadingService
 private:
     vespalib::ThreadStackExecutor _masterExecutor;
     vespalib::BlockingThreadStackExecutor _indexExecutor;
-    vespalib::ThreadStackExecutor _summaryExecutor;
+    vespalib::BlockingThreadStackExecutor _summaryExecutor;
     ExecutorThreadService _masterService;
     ExecutorThreadService _indexService;
     ExecutorThreadService _summaryService;
