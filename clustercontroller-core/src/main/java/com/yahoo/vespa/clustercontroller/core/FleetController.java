@@ -325,7 +325,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     @Override
     public void handleUpdatedHostInfo(NodeInfo nodeInfo, HostInfo newHostInfo) {
         verifyInControllerThread();
-        stateVersionTracker.handleUpdatedHostInfo(stateChangeHandler.getHostnames(), nodeInfo, newHostInfo);
+        stateVersionTracker.handleUpdatedHostInfo(nodeInfo, newHostInfo);
     }
 
     @Override

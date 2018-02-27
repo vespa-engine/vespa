@@ -7,7 +7,6 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Keeps track of the active cluster state and handles the transition edges between
@@ -33,12 +32,14 @@ public class StateVersionTracker {
     private ClusterStateBundle currentClusterState = latestCandidateState;
 
     private ClusterStateView clusterStateView;
+    private ClusterStatsChangeTracker clusterStatsChangeTracker;
 
     private final LinkedList<ClusterStateHistoryEntry> clusterStateHistory = new LinkedList<>();
     private int maxHistoryEntryCount = 50;
 
     StateVersionTracker() {
         clusterStateView = ClusterStateView.create(currentUnversionedState.getBaselineClusterState());
+        clusterStatsChangeTracker = new ClusterStatsChangeTracker(clusterStateView.getStatsAggregator());
     }
 
     void setVersionRetrievedFromZooKeeper(final int version) {
@@ -84,6 +85,7 @@ public class StateVersionTracker {
     public void updateLatestCandidateStateBundle(final ClusterStateBundle candidateBundle) {
         assert(latestCandidateState.getBaselineClusterState().getVersion() == 0);
         latestCandidateState = candidateBundle;
+        clusterStatsChangeTracker.syncBucketsPendingFlag();
     }
 
     /**
@@ -122,6 +124,7 @@ public class StateVersionTracker {
                 newStateBundle.getBaselineClusterState().getDistributionBitCount());
         // TODO should this take place in updateLatestCandidateStateBundle instead? I.e. does it require a consolidated state?
         clusterStateView = ClusterStateView.create(currentClusterState.getBaselineClusterState());
+        clusterStatsChangeTracker.updateAggregator(clusterStateView.getStatsAggregator());
     }
 
     private void recordCurrentStateInHistoryAtTime(final long currentTimeMs) {
@@ -132,13 +135,13 @@ public class StateVersionTracker {
         }
     }
 
-    void handleUpdatedHostInfo(final Map<Integer, String> hostnames, final NodeInfo node, final HostInfo hostInfo) {
+    void handleUpdatedHostInfo(final NodeInfo node, final HostInfo hostInfo) {
         // TODO the wiring here isn't unit tested. Need mockable integration points.
-        clusterStateView.handleUpdatedHostInfo(hostnames, node, hostInfo);
+        clusterStateView.handleUpdatedHostInfo(node, hostInfo);
     }
 
     boolean bucketSpaceMergeCompletionStateHasChanged() {
-        return false; // TODO wire changes in merge info
+        return clusterStatsChangeTracker.statsHaveChanged();
     }
 
     /*

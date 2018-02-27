@@ -8,6 +8,6 @@ package com.yahoo.vespa.clustercontroller.core;
  */
 public interface MergePendingChecker {
 
-    boolean hasMergesPending(String bucketSpace, int contentNodeIndex);
+    boolean mayHaveMergesPending(String bucketSpace, int contentNodeIndex);
 
 }

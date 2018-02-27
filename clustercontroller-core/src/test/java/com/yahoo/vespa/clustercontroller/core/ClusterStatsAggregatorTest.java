@@ -7,6 +7,8 @@ import org.junit.Test;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author hakonhall
@@ -14,47 +16,23 @@ import static org.junit.Assert.assertEquals;
  */
 public class ClusterStatsAggregatorTest {
 
-    private static class StatsBuilder {
-        private final Map<Integer, Map<String, ContentNodeStats.BucketSpaceStats> > stats = new HashMap<>();
-
-        public StatsBuilder add(int nodeIndex, String bucketSpace, long bucketsTotal, long bucketsPending) {
-            return add(nodeIndex, bucketSpace, ContentNodeStats.BucketSpaceStats.of(bucketsTotal, bucketsPending));
-        }
-        public StatsBuilder add(int nodeIndex, String bucketSpace) {
-            return add(nodeIndex, bucketSpace, ContentNodeStats.BucketSpaceStats.empty());
-        }
-        public StatsBuilder add(int nodeIndex, String bucketSpace, ContentNodeStats.BucketSpaceStats bucketSpaceStats) {
-            Map<String, ContentNodeStats.BucketSpaceStats> contentNodeStats = stats.get(nodeIndex);
-            if (contentNodeStats == null) {
-                contentNodeStats = new HashMap<>();
-                stats.put(nodeIndex, contentNodeStats);
-            }
-            contentNodeStats.put(bucketSpace, bucketSpaceStats);
-            return this;
-        }
-        public StatsBuilder add(int nodeIndex) {
-            stats.put(nodeIndex, new HashMap<>());
-            return this;
-        }
-        public ContentClusterStats build() {
-            Map<Integer, ContentNodeStats> nodeToStatsMap = new HashMap<>();
-            stats.forEach((nodeIndex, bucketSpaces) ->
-                    nodeToStatsMap.put(nodeIndex, new ContentNodeStats(nodeIndex, bucketSpaces)));
-            return new ContentClusterStats(nodeToStatsMap);
-        }
-    }
-
     private static class Fixture {
         private ClusterStatsAggregator aggregator;
         public Fixture(Set<Integer> distributorNodes,
                 Set<Integer> contentNodes) {
             aggregator = new ClusterStatsAggregator(distributorNodes, contentNodes);
         }
-        public void update(int distributorIndex, StatsBuilder clusterStats) {
+        public void update(int distributorIndex, ContentClusterStatsBuilder clusterStats) {
             aggregator.updateForDistributor(distributorIndex, clusterStats.build());
         }
-        public void verify(StatsBuilder expectedStats) {
+        public void verify(ContentClusterStatsBuilder expectedStats) {
             assertEquals(expectedStats.build(), aggregator.getAggregatedStats());
+        }
+        public boolean hasUpdatesFromAllDistributors() {
+            return aggregator.hasUpdatesFromAllDistributors();
+        }
+        public boolean mayHaveBucketsPendingInGlobalSpace() {
+            return aggregator.mayHaveBucketsPendingInGlobalSpace();
         }
     }
 
@@ -69,7 +47,7 @@ public class ClusterStatsAggregatorTest {
     @Test
     public void aggregator_handles_updates_to_single_distributor_and_content_node() {
         Fixture f = new Fixture(distributorNodes(1), contentNodes(3));
-        StatsBuilder stats = new StatsBuilder()
+        ContentClusterStatsBuilder stats = new ContentClusterStatsBuilder()
                 .add(3, "default", 10, 1)
                 .add(3, "global", 11, 2);
         f.update(1, stats);
@@ -80,17 +58,17 @@ public class ClusterStatsAggregatorTest {
     public void aggregator_handles_updates_to_multiple_distributors_and_content_nodes() {
         Fixture f = new Fixture(distributorNodes(1, 2), contentNodes(3, 4));
 
-        f.update(1, new StatsBuilder()
+        f.update(1, new ContentClusterStatsBuilder()
                 .add(3, "default", 10, 1)
                 .add(3, "global", 11, 2)
                 .add(4, "default", 12, 3)
                 .add(4, "global", 13, 4));
-        f.update(2, new StatsBuilder()
+        f.update(2, new ContentClusterStatsBuilder()
                 .add(3, "default", 14, 5)
                 .add(3, "global", 15, 6)
                 .add(4, "default", 16, 7)
                 .add(4, "global", 17, 8));
-        f.verify(new StatsBuilder()
+        f.verify(new ContentClusterStatsBuilder()
                 .add(3, "default", 10 + 14, 1 + 5)
                 .add(3, "global", 11 + 15, 2 + 6)
                 .add(4, "default", 12 + 16, 3 + 7)
@@ -101,29 +79,29 @@ public class ClusterStatsAggregatorTest {
     public void aggregator_handles_multiple_updates_from_same_distributor() {
         Fixture f = new Fixture(distributorNodes(1, 2), contentNodes(3));
 
-        f.update(1, new StatsBuilder().add(3, "default"));
-        f.verify(new StatsBuilder().add(3, "default"));
+        f.update(1, new ContentClusterStatsBuilder().add(3, "default"));
+        f.verify(new ContentClusterStatsBuilder().add(3, "default"));
 
-        f.update(2, new StatsBuilder().add(3, "default", 10, 1));
-        f.verify(new StatsBuilder().add(3, "default", 10, 1));
+        f.update(2, new ContentClusterStatsBuilder().add(3, "default", 10, 1));
+        f.verify(new ContentClusterStatsBuilder().addInvalid(3, "default", 10, 1));
 
-        f.update(1, new StatsBuilder().add(3, "default", 11, 2));
-        f.verify(new StatsBuilder().add(3, "default", 10 + 11, 1 + 2));
+        f.update(1, new ContentClusterStatsBuilder().add(3, "default", 11, 2));
+        f.verify(new ContentClusterStatsBuilder().add(3, "default", 10 + 11, 1 + 2));
 
-        f.update(2, new StatsBuilder().add(3, "default", 15, 6));
-        f.verify(new StatsBuilder().add(3, "default", 11 + 15, 2 + 6));
+        f.update(2, new ContentClusterStatsBuilder().add(3, "default", 15, 6));
+        f.verify(new ContentClusterStatsBuilder().add(3, "default", 11 + 15, 2 + 6));
 
-        f.update(1, new StatsBuilder().add(3, "default", 16, 7));
-        f.verify(new StatsBuilder().add(3, "default", 15 + 16, 6 + 7));
+        f.update(1, new ContentClusterStatsBuilder().add(3, "default", 16, 7));
+        f.verify(new ContentClusterStatsBuilder().add(3, "default", 15 + 16, 6 + 7));
 
-        f.update(2, new StatsBuilder().add(3, "default", 12, 3));
-        f.verify(new StatsBuilder().add(3, "default", 16 + 12, 7 + 3));
+        f.update(2, new ContentClusterStatsBuilder().add(3, "default", 12, 3));
+        f.verify(new ContentClusterStatsBuilder().add(3, "default", 16 + 12, 7 + 3));
     }
 
     @Test
     public void aggregator_handles_more_content_nodes_that_distributors() {
         Fixture f = new Fixture(distributorNodes(1), contentNodes(3, 4));
-        StatsBuilder stats = new StatsBuilder()
+        ContentClusterStatsBuilder stats = new ContentClusterStatsBuilder()
                 .add(3, "default", 10, 1)
                 .add(4, "default", 11, 2);
         f.update(1, stats);
@@ -134,9 +112,46 @@ public class ClusterStatsAggregatorTest {
     public void aggregator_ignores_updates_to_unknown_distributor() {
         Fixture f = new Fixture(distributorNodes(1), contentNodes(3));
         final int downDistributorIndex = 2;
-        f.update(downDistributorIndex, new StatsBuilder()
+        f.update(downDistributorIndex, new ContentClusterStatsBuilder()
                 .add(3, "default", 7, 3));
-        f.verify(new StatsBuilder().add(3));
+        f.verify(new ContentClusterStatsBuilder().add(3));
+    }
+
+    @Test
+    public void aggregator_tracks_when_it_has_updates_from_all_distributors() {
+        Fixture f = new Fixture(distributorNodes(1, 2), contentNodes(3));
+        assertFalse(f.hasUpdatesFromAllDistributors());
+        f.update(1, new ContentClusterStatsBuilder().add(3, "default"));
+        assertFalse(f.hasUpdatesFromAllDistributors());
+        f.update(1, new ContentClusterStatsBuilder().add(3, "default", 10, 1));
+        assertFalse(f.hasUpdatesFromAllDistributors());
+        f.update(2, new ContentClusterStatsBuilder().add(3, "default"));
+        assertTrue(f.hasUpdatesFromAllDistributors());
+    }
+
+    @Test
+    public void cluster_without_updates_from_all_distributors_may_have_buckets_pending() {
+        Fixture f = new Fixture(distributorNodes(1), contentNodes(3, 4));
+        assertTrue(f.mayHaveBucketsPendingInGlobalSpace());
+    }
+
+    @Test
+    public void cluster_may_have_buckets_pending_in_global_space_if_one_node_has_buckets_pending() {
+        Fixture f = new Fixture(distributorNodes(1), contentNodes(3, 4));
+        f.update(1, new ContentClusterStatsBuilder()
+                .add(3, "global", 10, 0)
+                .add(4, "global", 11, 1));
+        assertTrue(f.mayHaveBucketsPendingInGlobalSpace());
+    }
+
+    @Test
+    public void cluster_does_not_have_buckets_pending_in_global_space_if_no_nodes_have_buckets_pending() {
+        Fixture f = new Fixture(distributorNodes(1), contentNodes(3, 4));
+        f.update(1, new ContentClusterStatsBuilder()
+                .add(3, "global", 10, 0)
+                .add(4, "global", 11, 0)
+                .add(4, "default", 12, 1));
+        assertFalse(f.mayHaveBucketsPendingInGlobalSpace());
     }
 
 }

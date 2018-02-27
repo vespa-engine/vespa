@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import com.yahoo.document.FixedBucketSpaces;
+
+import java.util.*;
 
 /**
  * Class that stores content cluster stats (with bucket space stats per node) for
@@ -27,6 +27,7 @@ import java.util.Set;
 public class ClusterStatsAggregator {
 
     private final Set<Integer> distributors;
+    private final Set<Integer> nonUpdatedDistributors;
 
     // Maps the distributor node index to a map of content node index to the
     // content node's stats.
@@ -39,11 +40,30 @@ public class ClusterStatsAggregator {
 
     ClusterStatsAggregator(Set<Integer> distributors, Set<Integer> storageNodes) {
         this.distributors = distributors;
+        nonUpdatedDistributors = new HashSet<>(distributors);
         aggregatedStats = new ContentClusterStats(storageNodes);
     }
 
     ContentClusterStats getAggregatedStats() {
         return aggregatedStats;
+    }
+
+    boolean hasUpdatesFromAllDistributors() {
+        return nonUpdatedDistributors.isEmpty();
+    }
+
+    boolean mayHaveBucketsPendingInGlobalSpace() {
+        if (!hasUpdatesFromAllDistributors()) {
+            return true;
+        }
+        AggregatedStatsMergePendingChecker checker = new AggregatedStatsMergePendingChecker(aggregatedStats);
+        for (Iterator<ContentNodeStats> itr = aggregatedStats.iterator(); itr.hasNext(); ) {
+            ContentNodeStats stats = itr.next();
+            if (checker.mayHaveMergesPending(FixedBucketSpaces.globalSpace(), stats.getNodeIndex())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -53,6 +73,7 @@ public class ClusterStatsAggregator {
         if (!distributors.contains(distributorIndex)) {
             return;
         }
+        nonUpdatedDistributors.remove(distributorIndex);
         addStatsFromDistributor(distributorIndex, clusterStats);
     }
 
