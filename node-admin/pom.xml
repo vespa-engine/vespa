@@ -96,7 +96,7 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>vespa-athenz</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
