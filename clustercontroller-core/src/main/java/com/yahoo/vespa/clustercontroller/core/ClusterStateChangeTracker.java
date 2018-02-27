@@ -2,17 +2,17 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 /**
- * Class tracking whether we have changes in buckets pending state in the 'global' bucket space.
+ * Class tracking whether we have changes in current and previous cluster stats.
  *
- * The state is considered changed if the previous and current cluster stats differs in whether
+ * The state is considered changed if the current and previous cluster stats differs in whether
  * they may have buckets pending in the 'global' bucket space. This signals that the ClusterStateBundle should be recomputed.
  */
-public class ClusterStatsBucketsPendingState {
+public class ClusterStateChangeTracker {
 
     private ClusterStatsAggregator aggregator;
     private boolean prevMayHaveBucketsPending;
 
-    public ClusterStatsBucketsPendingState(ClusterStatsAggregator aggregator) {
+    public ClusterStateChangeTracker(ClusterStatsAggregator aggregator) {
         this.aggregator = aggregator;
         this.prevMayHaveBucketsPending = false;
     }

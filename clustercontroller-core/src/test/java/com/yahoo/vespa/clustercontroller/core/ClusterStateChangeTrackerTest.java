@@ -7,15 +7,15 @@ import org.junit.Test;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class ClusterStatsBucketsPendingStateTest {
+public class ClusterStateChangeTrackerTest {
 
     private static class Fixture {
         private ClusterStatsAggregator aggregator;
-        private ClusterStatsBucketsPendingState state;
+        private ClusterStateChangeTracker state;
 
         public Fixture() {
             aggregator = new ClusterStatsAggregator(Sets.newHashSet(1), Sets.newHashSet(2));
-            state = new ClusterStatsBucketsPendingState(aggregator);
+            state = new ClusterStateChangeTracker(aggregator);
         }
 
         public void setBucketsPendingStats() {
