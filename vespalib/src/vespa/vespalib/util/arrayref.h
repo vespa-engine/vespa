@@ -46,4 +46,10 @@ private:
     size_t   _sz;
 };
 
+// const-cast for array references; use with care
+template <typename T>
+ArrayRef<T> unconstify(const ConstArrayRef<T> &ref) {
+    return ArrayRef<T>(const_cast<T*>(&ref[0]), ref.size());
+}
+
 }
