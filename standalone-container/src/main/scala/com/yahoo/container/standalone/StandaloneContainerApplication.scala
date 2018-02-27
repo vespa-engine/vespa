@@ -164,7 +164,7 @@ object StandaloneContainerApplication {
       fileRegistry(fileRegistry).
       deployLogger(logger).
       configDefinitionRepo(configDefinitionRepo).
-      build()
+      build(true)
 
     val root = VespaModel.createIncomplete(deployState)
     val vespaRoot = new ApplicationConfigProducerRoot(root,
