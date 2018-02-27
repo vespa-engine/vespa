@@ -26,7 +26,7 @@ public class AggregatedStatsMergePendingCheckerTest {
                     .add(1, "default"));
         }
 
-        public boolean hasMergesPending(String bucketSpace, int contentNodeIndex) {
+        public boolean mayHaveMergesPending(String bucketSpace, int contentNodeIndex) {
             return checker.mayHaveMergesPending(bucketSpace, contentNodeIndex);
         }
 
@@ -35,31 +35,31 @@ public class AggregatedStatsMergePendingCheckerTest {
     @Test
     public void unknown_content_node_has_no_merges_pending() {
         Fixture f = Fixture.fromBucketStats(1);
-        assertFalse(f.hasMergesPending("default", 2));
+        assertFalse(f.mayHaveMergesPending("default", 2));
     }
 
     @Test
     public void unknown_bucket_space_has_no_merges_pending() {
         Fixture f = Fixture.fromBucketStats(1);
-        assertFalse(f.hasMergesPending("global", 1));
+        assertFalse(f.mayHaveMergesPending("global", 1));
     }
 
     @Test
     public void valid_bucket_space_stats_can_have_no_merges_pending() {
         Fixture f = Fixture.fromBucketStats(0);
-        assertFalse(f.hasMergesPending("default", 1));
+        assertFalse(f.mayHaveMergesPending("default", 1));
     }
 
     @Test
     public void valid_bucket_space_stats_can_have_merges_pending() {
         Fixture f = Fixture.fromBucketStats(1);
-        assertTrue(f.hasMergesPending("default", 1));
+        assertTrue(f.mayHaveMergesPending("default", 1));
     }
 
     @Test
     public void invalid_bucket_space_stats_has_merges_pending() {
         Fixture f = Fixture.fromInvalidBucketStats();
-        assertTrue(f.hasMergesPending("default", 1));
+        assertTrue(f.mayHaveMergesPending("default", 1));
     }
 
 }
