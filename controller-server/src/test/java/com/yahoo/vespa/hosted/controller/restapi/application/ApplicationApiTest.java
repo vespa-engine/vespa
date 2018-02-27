@@ -836,14 +836,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
         assertEquals("Response contains only two items", 2, SlimeUtils.jsonToSlime(response.getBody()).get().entries());
 
         // Check that GET didn't affect the enqueued jobs.
-        response = container.handleRequest(request("/screwdriver/v1/jobsToRun", DELETE).get());
+        response = container.handleRequest(request("/screwdriver/v1/jobsToRun", GET).get());
         assertTrue("Response contains system-test", response.getBodyAsString().contains(DeploymentJobs.JobType.systemTest.jobName()));
         assertTrue("Response contains staging-test", response.getBodyAsString().contains(DeploymentJobs.JobType.stagingTest.jobName()));
         assertEquals("Response contains only two items", 2, SlimeUtils.jsonToSlime(response.getBody()).get().entries());
 
-        Thread.sleep(50); // ????
-        // Check that the *first* DELETE has removed the enqueued jobs.
-        assertResponse(request("/screwdriver/v1/jobsToRun", DELETE).get(), 200, "[]");
     }
 
     @Test

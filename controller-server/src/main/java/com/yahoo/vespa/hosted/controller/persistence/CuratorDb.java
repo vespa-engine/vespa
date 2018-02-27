@@ -126,33 +126,29 @@ public class CuratorDb {
     }
 
     public void writeInactiveJobs(Set<String> inactiveJobs) {
-        NestedTransaction transaction = new NestedTransaction();
         curator.set(inactiveJobsPath(), stringSetSerializer.toJson(inactiveJobs));
-        transaction.commit();
     }
 
     public Deque<ApplicationId> readJobQueue(DeploymentJobs.JobType jobType) {
         try {
             Optional<byte[]> data = curator.getData(jobQueuePath(jobType));
-            if (! data.isPresent() || data.get().length == 0) return new ArrayDeque<>(); // job queue has never been written
+            if ( ! data.isPresent() || data.get().length == 0) return new ArrayDeque<>(); // job queue has never been written
             return jobQueueSerializer.fromJson(data.get());
         }
         catch (RuntimeException e) {
-            log.log(Level.WARNING, "Error reading job queue, deleting inactive state");
-            writeInactiveJobs(Collections.emptySet());
+            log.log(Level.WARNING, "Error reading job queue of type '" + jobType.jobName() + "'; deleting it.");
+            writeJobQueue(jobType, Collections::emptyIterator);
             return new ArrayDeque<>();
         }
     }
 
-    public void writeJobQueue(DeploymentJobs.JobType jobType, Deque<ApplicationId> queue) {
-        NestedTransaction transaction = new NestedTransaction();
+    public void writeJobQueue(DeploymentJobs.JobType jobType, Iterable<ApplicationId> queue) {
         curator.set(jobQueuePath(jobType), jobQueueSerializer.toJson(queue));
-        transaction.commit();
     }
 
     public double readUpgradesPerMinute() {
         Optional<byte[]> n = curator.getData(upgradesPerMinutePath());
-        if (!n.isPresent() || n.get().length == 0) {
+        if ( ! n.isPresent() || n.get().length == 0) {
             return 0.5; // Default if value has never been written
         }
         return ByteBuffer.wrap(n.get()).getDouble();
@@ -162,25 +158,21 @@ public class CuratorDb {
         if (n < 0) {
             throw new IllegalArgumentException("Upgrades per minute must be >= 0");
         }
-        NestedTransaction transaction = new NestedTransaction();
         curator.set(upgradesPerMinutePath(), ByteBuffer.allocate(Double.BYTES).putDouble(n).array());
-        transaction.commit();
     }
-
+  
     public void writeVersionStatus(VersionStatus status) {
         VersionStatusSerializer serializer = new VersionStatusSerializer();
-        NestedTransaction transaction = new NestedTransaction();
         try {
             curator.set(versionStatusPath(), SlimeUtils.toJsonBytes(serializer.toSlime(status)));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to serialize version status", e);
         }
-        transaction.commit();
     }
 
     public VersionStatus readVersionStatus() {
         Optional<byte[]> data = curator.getData(versionStatusPath());
-        if (!data.isPresent() || data.get().length == 0) {
+        if ( ! data.isPresent() || data.get().length == 0) {
             return VersionStatus.empty(); // Default if status has never been written
         }
         VersionStatusSerializer serializer = new VersionStatusSerializer();

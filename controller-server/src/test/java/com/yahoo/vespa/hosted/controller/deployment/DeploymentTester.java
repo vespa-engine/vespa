@@ -68,7 +68,7 @@ public class DeploymentTester {
 
     public ApplicationController applications() { return tester.controller().applications(); }
 
-    public BuildSystem buildSystem() { return tester.controller().applications().deploymentTrigger().buildSystem(); }
+    public DeploymentQueue deploymentQueue() { return tester.controller().applications().deploymentTrigger().deploymentQueue(); }
 
     public DeploymentTrigger deploymentTrigger() { return tester.controller().applications().deploymentTrigger(); }
 
@@ -267,24 +267,20 @@ public class DeploymentTester {
         }
         if (expectOnlyTheseJobs)
             assertEquals(jobs.length, countJobsOf(application));
-        buildSystem().removeJobs(application.id());
+        deploymentQueue().removeJobs(application.id());
     }
 
     private BuildService.BuildJob findJob(Application application, JobType jobType) {
-        for (BuildService.BuildJob job : buildSystem().jobs()) {
-            if (job.projectId() == application.deploymentJobs().projectId().get() &&
-                job.jobName().equals(jobType.jobName())) {
+        for (BuildService.BuildJob job : deploymentQueue().jobs())
+            if (job.projectId() == application.deploymentJobs().projectId().get() && job.jobName().equals(jobType.jobName()))
                 return job;
-            }
-        }
         throw new IllegalArgumentException(jobType + " is not scheduled for " + application);
     }
 
     private int countJobsOf(Application application) {
-        return (int) buildSystem().jobs().stream()
-                                         .filter(job -> job.projectId() == application.deploymentJobs()
-                                                                                      .projectId().get())
-                                         .count();
+        return (int) deploymentQueue().jobs().stream()
+                .filter(job -> job.projectId() == application.deploymentJobs().projectId().get())
+                .count();
     }
 
     private void notifyJobCompletion(DeploymentJobs.JobReport report) {
