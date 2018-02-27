@@ -88,13 +88,13 @@ public class VespaModelFactory implements ModelFactory {
 
     @Override
     public Model createModel(ModelContext modelContext) {
-        return buildModel(createDeployState(modelContext));
+        return buildModel(createDeployState(modelContext, false));
     }
 
     @Override
     public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
         validateXml(modelContext, ignoreValidationErrors);
-        DeployState deployState = createDeployState(modelContext);
+        DeployState deployState = createDeployState(modelContext, true);
         VespaModel model = buildModel(deployState);
         List<ConfigChangeAction> changeActions = validateModel(model, deployState, ignoreValidationErrors);
         return new ModelCreateResult(model, changeActions);
@@ -126,7 +126,7 @@ public class VespaModelFactory implements ModelFactory {
         }
     }
 
-    private DeployState createDeployState(ModelContext modelContext) {
+    private DeployState createDeployState(ModelContext modelContext, boolean validate) {
         DeployState.Builder builder = new DeployState.Builder()
             .applicationPackage(modelContext.applicationPackage())
             .deployLogger(modelContext.deployLogger())
@@ -140,7 +140,7 @@ public class VespaModelFactory implements ModelFactory {
             .now(clock.instant())
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion());
         modelContext.previousModel().ifPresent(builder::previousModel);
-        return builder.build();
+        return builder.build(validate);
     }
 
     private DeployProperties createDeployProperties(ModelContext.Properties properties) {

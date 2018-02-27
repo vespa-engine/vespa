@@ -31,7 +31,7 @@ public class LiteralBoost extends Processor {
 
     /** Adds extra search fields and indices to express literal boosts */
     @Override
-    public void process() {
+    public void process(boolean validate) {
         checkRankModifierRankType(search);
         addLiteralBoostsToFields(search);
         reduceFieldLiteralBoosts(search);
@@ -71,8 +71,8 @@ public class LiteralBoost extends Processor {
 
     private void reduceFieldLiteralBoost(SDField field,Search search) {
         SDField literalField = addField(search, field, "literal",
-                "{ input " + field.getName() + " | tokenize | index " + field.getName() + "_literal; }",
-                "literal-boost");
+                                        "{ input " + field.getName() + " | tokenize | index " + field.getName() + "_literal; }",
+                                        "literal-boost");
         literalField.setWeight(field.getWeight() + field.getLiteralBoost());
     }
 

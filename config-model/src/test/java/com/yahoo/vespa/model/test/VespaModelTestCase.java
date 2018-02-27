@@ -246,14 +246,14 @@ public class VespaModelTestCase {
                 .withHosts(simpleHosts)
                 .withServices(services)
                 .build();
-        DeployState deployState = builder.deployLogger(logger).applicationPackage(app).build();
+        DeployState deployState = builder.deployLogger(logger).applicationPackage(app).build(true);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         Validation.validate(model, true, deployState);
         assertFalse(logger.msgs.isEmpty());
     }
 
     @Test
-    public void testNoAdmin() throws IOException, SAXException {
+    public void testNoAdmin() {
         VespaModel model = CommonVespaModelSetup.createVespaModelWithMusic(
                 simpleHosts,
                 "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
@@ -283,7 +283,7 @@ public class VespaModelTestCase {
                         .configServerSpecs(Arrays.asList(new Configserver.Spec("cfghost", 1234, 1235, 1236)))
                         .multitenant(true)
                         .build())
-                .build();
+                .build(true);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         AllocatedHosts info = model.allocatedHosts();
         assertEquals("Admin version 3 is ignored, and there are no other hosts to borrow for admin services", 0, info.getHosts().size());
@@ -302,9 +302,9 @@ public class VespaModelTestCase {
     public void testPermanentServices() throws IOException, SAXException {
         ApplicationPackage app = MockApplicationPackage.createEmpty();
         DeployState.Builder builder = new DeployState.Builder().applicationPackage(app);
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), builder.build());
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), builder.build(true));
         assertThat(model.getContainerClusters().size(), is(0));
-        model = new VespaModel(new NullConfigModelRegistry(), builder.permanentApplicationPackage(Optional.of(FilesApplicationPackage.fromFile(new File(TESTDIR, "app_permanent")))).build());
+        model = new VespaModel(new NullConfigModelRegistry(), builder.permanentApplicationPackage(Optional.of(FilesApplicationPackage.fromFile(new File(TESTDIR, "app_permanent")))).build(true));
         assertThat(model.getContainerClusters().size(), is(1));
     }
 

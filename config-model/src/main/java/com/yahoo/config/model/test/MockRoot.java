@@ -57,7 +57,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
     }
 
     public MockRoot(String rootConfigId, ApplicationPackage applicationPackage) {
-        this(rootConfigId, new DeployState.Builder().applicationPackage(applicationPackage).build());
+        this(rootConfigId, new DeployState.Builder().applicationPackage(applicationPackage).build(true));
     }
 
     public MockRoot(String rootConfigId, DeployState deployState) {

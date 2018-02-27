@@ -22,10 +22,12 @@ public class IndexingValues extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
+        if ( ! validate) return;
+
         for (Field field : search.getDocument().fieldSet()) {
             SDField sdField = (SDField)field;
-            if (!sdField.isExtraField()) {
+            if ( ! sdField.isExtraField()) {
                 new RequireThatDocumentFieldsAreImmutable(field).convert(sdField.getIndexingScript());
             }
         }

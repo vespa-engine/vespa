@@ -196,7 +196,7 @@ public class SearchBuilder {
      * @throws IllegalStateException Thrown if this method has already been called.
      */
     public void build() {
-        build(new BaseDeployLogger());
+        build(true, new BaseDeployLogger());
     }
 
     /**
@@ -206,7 +206,7 @@ public class SearchBuilder {
      * @throws IllegalStateException Thrown if this method has already been called.
      * @param deployLogger The logger to use during build
      */
-    public void build(DeployLogger deployLogger) {
+    public void build(boolean validate, DeployLogger deployLogger) {
         if (isBuilt) throw new IllegalStateException("Model already built");
 
         List<Search> built = new ArrayList<>();
@@ -227,20 +227,20 @@ public class SearchBuilder {
         DocumentReferenceResolver resolver = new DocumentReferenceResolver(searchList);
         sdocs.forEach(resolver::resolveReferences);
 
-        DocumentGraphValidator validator = new DocumentGraphValidator();
-        validator.validateDocumentGraph(sdocs);
+        if (validate)
+            new DocumentGraphValidator().validateDocumentGraph(sdocs);
 
         DocumentModelBuilder builder = new DocumentModelBuilder(model);
         for (Search search : new SearchOrderer().order(searchList)) {
             new FieldOperationApplierForSearch().process(search);
             // These two needed for a couple of old unit tests, ideally these are just read from app
-            process(search, deployLogger, new QueryProfiles(queryProfileRegistry));
+            process(search, deployLogger, new QueryProfiles(queryProfileRegistry), validate);
             built.add(search);
         }
         builder.addToModel(searchList);
-        if ( ! builder.valid() ) {
+
+        if ( validate && ! builder.valid() )
             throw new IllegalArgumentException("Impossible to build a correct model.");
-        }
         searchList = built;
         isBuilt = true;
     }
@@ -249,8 +249,8 @@ public class SearchBuilder {
      * Processes and returns the given {@link Search} object. This method has been factored out of the {@link
      * #build()} method so that subclasses can choose not to build anything.
      */
-    protected void process(Search search, DeployLogger deployLogger, QueryProfiles queryProfiles) {
-        Processing.process(search, deployLogger, rankProfileRegistry, queryProfiles);
+    protected void process(Search search, DeployLogger deployLogger, QueryProfiles queryProfiles, boolean validate) {
+        Processing.process(search, deployLogger, rankProfileRegistry, queryProfiles, validate);
     }
 
     /**
@@ -344,7 +344,7 @@ public class SearchBuilder {
                                                   rankProfileRegistry,
                                                   queryprofileRegistry);
         builder.importFile(fileName);
-        builder.build(deployLogger);
+        builder.build(true, deployLogger);
         return builder;
     }
 
@@ -360,7 +360,7 @@ public class SearchBuilder {
         for (Iterator<Path> i = Files.list(new File(dir).toPath()).filter(p -> p.getFileName().toString().endsWith(".sd")).iterator(); i.hasNext(); ) {
             builder.importFile(i.next());
         }
-        builder.build(new BaseDeployLogger());
+        builder.build(true, new BaseDeployLogger());
         return builder;
     }
 

@@ -20,7 +20,7 @@ import java.util.concurrent.*;
 
 /**
  * Implements clustering (failover and load balancing) over a set of client
- * connections to a homogenous cluster of nodes. Searchers which wants to make
+ * connections to a homogenuos cluster of nodes. Searchers which wants to make
  * clustered connections to some service should use this.
  * <p>
  * This replaces the usual searcher methods by ones which have the same contract

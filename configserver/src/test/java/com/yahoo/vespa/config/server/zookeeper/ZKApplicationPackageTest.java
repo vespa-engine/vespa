@@ -46,7 +46,7 @@ public class ZKApplicationPackageTest extends TestWithCurator {
         assertTrue(Pattern.compile(".*<slobroks>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getServices())).matches());
         assertTrue(Pattern.compile(".*<alias>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getHosts())).matches());
         assertTrue(Pattern.compile(".*<slobroks>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getFile(Path.fromString("services.xml")).createReader())).matches());
-        DeployState deployState = new DeployState.Builder().applicationPackage(zkApp).build();
+        DeployState deployState = new DeployState.Builder().applicationPackage(zkApp).build(true);
         assertEquals(deployState.getSearchDefinitions().size(), 5);
         assertEquals(zkApp.searchDefinitionContents().size(), 5);
         assertEquals(IOUtils.readAll(zkApp.getRankingExpression("foo.expression")), "foo()+1\n");

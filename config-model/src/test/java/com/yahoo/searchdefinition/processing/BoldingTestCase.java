@@ -14,20 +14,23 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 /**
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias M\u00F8lster Lidal</a>
+ * @author Mathias Mølster Lidal
  */
 public class BoldingTestCase extends SearchDefinitionTestCase {
+
     @Test
     public void testBoldingNonString() throws IOException, ParseException {
         try {
             Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/processing/boldnonstring.sd");
-            new Bolding(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process();
+            new Bolding(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("'bolding: on' for non-text field"));
         }
     }
+
 }
 
 

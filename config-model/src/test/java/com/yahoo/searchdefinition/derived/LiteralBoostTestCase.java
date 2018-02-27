@@ -40,7 +40,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         rankProfileRegistry.addRankProfile(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
-        Processing.process(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles());
+        Processing.process(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(), true);
         DerivedConfiguration derived=new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry());
 
         // Check attribute fields
@@ -106,4 +106,5 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
                                      "clear_state | guard { input body | tokenize | index body_literal; }"),
                        search);
     }
+
 }

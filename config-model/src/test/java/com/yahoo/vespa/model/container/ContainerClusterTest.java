@@ -78,7 +78,7 @@ public class ContainerClusterTest {
     public void requreThatWeCanGetTheZoneConfig() {
         DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(true).build())
                                                      .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region")))
-                                                     .build();
+                                                     .build(true);
         MockRoot root = new MockRoot("foo", state);
         ContainerCluster cluster = new ContainerCluster(root, "container0", "container1");
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
@@ -107,7 +107,7 @@ public class ContainerClusterTest {
     }
     private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster, 
                                                     Optional<Integer> memoryPercentage, Optional<ContainerClusterVerifier> extraComponents) {
-        DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(isHosted).build()).build();
+        DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(isHosted).build()).build(true);
         MockRoot root = new MockRoot("foo", state);
 
         ContainerCluster cluster = extraComponents.isPresent()
@@ -255,7 +255,7 @@ public class ContainerClusterTest {
 
     @Test
     public void requireThatRoutingProviderIsDisabledForNonHosted() {
-        DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(false).build()).build();
+        DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(false).build()).build(true);
         MockRoot root = new MockRoot("foo", state);
         ContainerCluster cluster = new ContainerCluster(root, "container0", "container1");
         RoutingProviderConfig.Builder builder = new RoutingProviderConfig.Builder();

@@ -28,7 +28,9 @@ public class ValidateFieldTypes extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
+        if ( ! validate) return;
+
         String searchName = search.getName();
         Map<String, DataType> seenFields = new HashMap<>();
         search.allFields().forEach(field -> {

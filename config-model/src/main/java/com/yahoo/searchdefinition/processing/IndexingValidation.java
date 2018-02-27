@@ -25,7 +25,9 @@ public class IndexingValidation extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
+        if ( ! validate) return;
+
         VerificationContext context = new VerificationContext(new MyAdapter(search));
         for (SDField field : search.allConcreteFields()) {
             ScriptExpression script = field.getIndexingScript();
@@ -122,8 +124,8 @@ public class IndexingValidation extends Processor {
             } else {
                 throw new UnsupportedOperationException();
             }
-            if (!fieldType.isAssignableFrom(valueType) &&
-                !fieldType.isAssignableFrom(createCompatType(valueType))) {
+            if ( ! fieldType.isAssignableFrom(valueType) &&
+                 ! fieldType.isAssignableFrom(createCompatType(valueType))) {
                 throw new VerificationException(exp, "Can not assign " + valueType.getName() + " to " + fieldDesc +
                                                      " '" + fieldName + "' which is " + fieldType.getName() + ".");
             }

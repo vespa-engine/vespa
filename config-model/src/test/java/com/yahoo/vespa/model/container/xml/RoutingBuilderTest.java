@@ -67,7 +67,7 @@ public class RoutingBuilderTest extends ContainerModelBuilderTestBase {
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .zone(new Zone(Environment.prod, RegionName.from(region)))
-                .build();
+                .build(true);
 
         root = new MockRoot("root", deployState);
         createModel(root, deployState, clusterElem);

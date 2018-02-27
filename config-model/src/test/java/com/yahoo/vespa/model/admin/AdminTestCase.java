@@ -149,7 +149,7 @@ public class AdminTestCase {
                         zone(new Zone(Environment.dev, RegionName.from("baz"))).
                 applicationId(new ApplicationId.Builder().
                         tenant("quux").
-                        applicationName("foo").instanceName("bim").build()).build()).build();
+                        applicationName("foo").instanceName("bim").build()).build()).build(true);
         TestRoot root = new TestDriver().buildModel(state);
         String localhost = HostName.getLocalhost();
         SentinelConfig config = root.getConfig(SentinelConfig.class, "hosts/" + localhost);
@@ -310,7 +310,7 @@ public class AdminTestCase {
                                 zone(new Zone(Environment.dev, RegionName.from("baz"))).
                                 applicationId(new ApplicationId.Builder().
                                         tenant("quux").
-                                        applicationName("foo").instanceName("bim").build()).build()).build();
+                                        applicationName("foo").instanceName("bim").build()).build()).build(true);
         TestRoot root = new TestDriver().buildModel(state);
         String localhost = HostName.getLocalhost();
         SentinelConfig sentinelConfig = root.getConfig(SentinelConfig.class, "hosts/" + localhost);

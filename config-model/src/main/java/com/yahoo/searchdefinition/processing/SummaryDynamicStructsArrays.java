@@ -16,8 +16,8 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  * An SD field explicitly says summary:dynamic , but the field is wset, array or struct.
  * If there is an explicitly defined summary class, saying dynamic in one of its summary
  * fields is always legal.
- * @author vegardh
  *
+ * @author Vegard Havdal
  */
 public class SummaryDynamicStructsArrays extends Processor {
 
@@ -26,16 +26,18 @@ public class SummaryDynamicStructsArrays extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
+        if ( ! validate) return;
+
         for (SDField field : search.allConcreteFields()) {
             DataType type = field.getDataType();
-            if (type instanceof ArrayDataType || type instanceof WeightedSetDataType
-                    || type instanceof StructDataType) {
+            if (type instanceof ArrayDataType || type instanceof WeightedSetDataType || type instanceof StructDataType) {
                 for (SummaryField sField : field.getSummaryFields()) {
                     if (sField.getTransform().equals(SummaryTransform.DYNAMICTEASER)) {
                         throw new IllegalArgumentException("For field '"+field.getName()+"': dynamic summary is illegal " +
-                                        "for fields of type struct, array or weighted set. Use an explicit summary class with explicit summary fields sourcing from" +
-                                        " the array/struct/weighted set.");
+                                                           "for fields of type struct, array or weighted set. Use an " +
+                                                           "explicit summary class with explicit summary fields sourcing" +
+                                                           " from the array/struct/weighted set.");
                     }
                 }
             }

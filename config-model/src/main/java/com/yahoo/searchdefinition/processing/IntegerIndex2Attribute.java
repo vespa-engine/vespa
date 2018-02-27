@@ -30,17 +30,18 @@ public class IntegerIndex2Attribute extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         for (SDField field : search.allConcreteFields()) {
             if (field.doesIndexing() && field.getDataType().getPrimitiveType() instanceof NumericDataType) {
-                // Avoid changing for example RISE fields
-                if (field.getIndex(field.getName()) != null && !(field.getIndex(field.getName()).getType().equals(Index.Type.VESPA))) continue;
+                if (field.getIndex(field.getName()) != null
+                    && ! (field.getIndex(field.getName()).getType().equals(Index.Type.VESPA))) continue;
                 ScriptExpression script = field.getIndexingScript();
                 Set<String> attributeNames = new HashSet<>();
                 new MyVisitor(attributeNames).visit(script);
                 field.setIndexingScript((ScriptExpression)new MyConverter(attributeNames).convert(script));
-                warn(search, field, "Changed to attribute because numerical indexes (field has type "+field.getDataType().getName()+") is not currently supported." +
-                		" Index-only settings may fail. Ignore this warning for streaming search.");
+                warn(search, field, "Changed to attribute because numerical indexes (field has type " +
+                                    field.getDataType().getName() + ") is not currently supported." +
+                		            " Index-only settings may fail. Ignore this warning for streaming search.");
             }
         }
     }
@@ -83,4 +84,5 @@ public class IntegerIndex2Attribute extends Processor {
             return new AttributeExpression(indexName);
         }
     }
+
 }

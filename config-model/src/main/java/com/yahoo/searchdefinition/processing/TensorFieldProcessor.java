@@ -22,7 +22,9 @@ public class TensorFieldProcessor extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
+        if ( ! validate) return;
+
         for (SDField field : search.allConcreteFields()) {
             if ( field.getDataType() instanceof TensorDataType ) {
                 warnUseOfTensorFieldAsAttribute(field);

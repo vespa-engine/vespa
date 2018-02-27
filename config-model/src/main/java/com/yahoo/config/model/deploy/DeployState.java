@@ -70,11 +70,11 @@ public class DeployState implements ConfigDefinitionStore {
     private final HostProvisioner provisioner;
 
     public static DeployState createTestState() {
-        return new Builder().build();
+        return new Builder().build(true);
     }
 
     public static DeployState createTestState(ApplicationPackage applicationPackage) {
-        return new Builder().applicationPackage(applicationPackage).build();
+        return new Builder().applicationPackage(applicationPackage).build(true);
     }
 
     private DeployState(ApplicationPackage applicationPackage, SearchDocumentModel searchDocumentModel, RankProfileRegistry rankProfileRegistry,
@@ -288,11 +288,11 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
-        public DeployState build() {
+        public DeployState build(boolean validate) {
             RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
             QueryProfiles queryProfiles = new QueryProfilesBuilder().build(applicationPackage);
             SemanticRules semanticRules = new SemanticRuleBuilder().build(applicationPackage);
-            SearchDocumentModel searchDocumentModel = createSearchDocumentModel(rankProfileRegistry, logger, queryProfiles);
+            SearchDocumentModel searchDocumentModel = createSearchDocumentModel(rankProfileRegistry, logger, queryProfiles, validate);
             return new DeployState(applicationPackage, searchDocumentModel, rankProfileRegistry, fileRegistry, logger, hostProvisioner,
                                    properties, permanentApplicationPackage, configDefinitionRepo, previousModel, rotations,
                                    zone, queryProfiles, semanticRules, now, wantedNodeVespaVersion);
@@ -300,7 +300,8 @@ public class DeployState implements ConfigDefinitionStore {
 
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
                                                               DeployLogger logger,
-                                                              QueryProfiles queryProfiles) {
+                                                              QueryProfiles queryProfiles,
+                                                              boolean validate) {
             Collection<NamedReader> readers = applicationPackage.getSearchDefinitions();
             Map<String, String> names = new LinkedHashMap<>();
             SearchBuilder builder = new SearchBuilder(applicationPackage, rankProfileRegistry, queryProfiles.getRegistry());
@@ -323,7 +324,7 @@ public class DeployState implements ConfigDefinitionStore {
                     closeIgnoreException(reader.getReader());
                 }
             }
-            builder.build(logger);
+            builder.build(validate, logger);
             return SearchDocumentModel.fromBuilderAndNames(builder, names);
         }
 

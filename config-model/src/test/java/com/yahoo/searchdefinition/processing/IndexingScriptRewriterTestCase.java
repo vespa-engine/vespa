@@ -26,7 +26,7 @@ import static com.yahoo.searchdefinition.processing.AssertIndexingScript.assertI
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class IndexingScriptRewriterTestCase extends SearchDefinitionTestCase {
 
@@ -155,7 +155,7 @@ public class IndexingScriptRewriterTestCase extends SearchDefinitionTestCase {
         sdoc.addField(unprocessedField);
         Search search = new Search("test", null);
         search.addDocument(sdoc);
-        Processing.process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles());
+        Processing.process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true);
         return unprocessedField.getIndexingScript();
     }
 
@@ -193,4 +193,5 @@ public class IndexingScriptRewriterTestCase extends SearchDefinitionTestCase {
         summaryField.addSource(field.getName());
         return summaryField;
     }
+
 }

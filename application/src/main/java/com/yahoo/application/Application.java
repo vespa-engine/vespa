@@ -112,7 +112,7 @@ public final class Application implements AutoCloseable {
                     .applicationPackage(FilesApplicationPackage.fromFile(path.toFile(), 
                                                                          /* Include source files */ true))
                     .deployLogger((level, s) -> { })
-                    .build();
+                    .build(true);
             return new VespaModel(new NullConfigModelRegistry(), deployState);
         } catch (IOException | SAXException e) {
             throw new IllegalArgumentException("Error creating application from '" + path + "'", e);

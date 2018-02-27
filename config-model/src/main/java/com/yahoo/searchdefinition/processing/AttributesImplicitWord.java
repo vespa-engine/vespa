@@ -14,8 +14,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  * Fields that derive to attribute(s) and no indices should use the WORD indexing form,
  * in a feeble attempt to match the most peoples expectations as closely as possible.
  *
- * @author vegardh
- *
+ * @author Vegard Havdal
  */
 public class AttributesImplicitWord extends Processor {
 
@@ -24,7 +23,7 @@ public class AttributesImplicitWord extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         for (SDField field : search.allConcreteFields()) {
             if (fieldImplicitlyWordMatch(field)) {
                 field.getMatching().setType(Matching.Type.WORD);

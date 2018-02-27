@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
  * @author hakonhall
  */
 public class StorageNodeTest {
+
     private StorDevicesConfig getConfig(boolean useVdsEngine) {
         String vdsConfig = useVdsEngine ? "    <engine>" +
                 "      <vds/>" +
@@ -53,21 +54,22 @@ public class StorageNodeTest {
                 .applicationPackage(appPkg)
                 .modelHostProvisioner(provisioner)
                 .properties(properties)
-                .build();
+                .build(true);
         VespaModel model = modelCreator.create(true, deployState);
         return model.getConfig(StorDevicesConfig.class, "zoo/storage/0");
     }
 
     @Test
-    public void verifyDiskPathConfigIsSetForVds() throws Exception {
+    public void verifyDiskPathConfigIsSetForVds() {
         StorDevicesConfig config = getConfig(true);
         assertEquals(1, config.disk_path().size());
         assertEquals(Defaults.getDefaults().underVespaHome("var/db/vespa/vds/zoo/storage/0/disks/d0"), config.disk_path(0));
     }
 
     @Test
-    public void verifyDiskPathConfigIsNotSetForNonHosted() throws Exception {
+    public void verifyDiskPathConfigIsNotSetForNonHosted() {
         StorDevicesConfig config = getConfig(false);
         assertEquals(0, config.disk_path().size());
     }
+
 }

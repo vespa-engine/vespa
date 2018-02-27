@@ -122,7 +122,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      *        to instantiate config models
      */
     public VespaModel(ApplicationPackage app, ConfigModelRegistry configModelRegistry) throws IOException, SAXException {
-        this(configModelRegistry, new DeployState.Builder().applicationPackage(app).build());
+        this(configModelRegistry, new DeployState.Builder().applicationPackage(app).build(true));
     }
 
     /**

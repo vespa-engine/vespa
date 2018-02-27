@@ -34,36 +34,35 @@ public class TextMatch extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         for (SDField field : search.allConcreteFields()) {
-            if (field.getMatching().getType() != Matching.Type.TEXT) {
-                continue;
-            }
+            if (field.getMatching().getType() != Matching.Type.TEXT) continue;
+
             ScriptExpression script = field.getIndexingScript();
-            if (script == null) {
-                continue;
-            }
+            if (script == null) continue;
+
             DataType fieldType = field.getDataType();
             if (fieldType instanceof CollectionDataType) {
                 fieldType = ((CollectionDataType)fieldType).getNestedType();
             }
-            if (fieldType != DataType.STRING) {
-                continue;
-            }
+            if (fieldType != DataType.STRING) continue;
+
             Set<String> dynamicSummary = new TreeSet<>();
             Set<String> staticSummary = new TreeSet<>();
-            new IndexingOutputs(search, deployLogger, rankProfileRegistry, queryProfiles).findSummaryTo(search, field, dynamicSummary, staticSummary);
+            new IndexingOutputs(search, deployLogger, rankProfileRegistry, queryProfiles).findSummaryTo(search,
+                                                                                                        field,
+                                                                                                        dynamicSummary,
+                                                                                                        staticSummary);
             MyVisitor visitor = new MyVisitor(dynamicSummary);
             visitor.visit(script);
-            if (!visitor.requiresTokenize) {
-                continue;
-            }
+            if ( ! visitor.requiresTokenize) continue;
+
             ExpressionConverter converter = new MyStringTokenizer(search, findAnnotatorConfig(search, field));
             field.setIndexingScript((ScriptExpression)converter.convert(script));
         }
     }
 
-    private static AnnotatorConfig findAnnotatorConfig(Search search, SDField field) {
+    private AnnotatorConfig findAnnotatorConfig(Search search, SDField field) {
         AnnotatorConfig ret = new AnnotatorConfig();
         Stemming activeStemming = field.getStemming();
         if (activeStemming == null) {
@@ -97,6 +96,7 @@ public class TextMatch extends Processor {
                 requiresTokenize = true;
             }
         }
+
     }
 
     private static class MyStringTokenizer extends TypedTransformProvider {
@@ -121,5 +121,7 @@ public class TextMatch extends Processor {
             }
             return exp;
         }
+
     }
+
 }

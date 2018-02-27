@@ -32,8 +32,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
- * @author lulf
- * @since 5.12
+ * @author Ulf Lilleengen
  */
 public class DeployStateTest {
 
@@ -42,7 +41,7 @@ public class DeployStateTest {
         DeployState.Builder builder = new DeployState.Builder();
         HostProvisioner provisioner = new InMemoryProvisioner(true, "foo.yahoo.com");
         builder.modelHostProvisioner(provisioner);
-        DeployState state = builder.build();
+        DeployState state = builder.build(true);
         assertThat(state.getProvisioner(), is(provisioner));
     }
 
@@ -51,7 +50,7 @@ public class DeployStateTest {
         DeployState.Builder builder = new DeployState.Builder();
         ApplicationPackage app = MockApplicationPackage.createEmpty();
         builder.permanentApplicationPackage(Optional.of(app));
-        DeployState state = builder.build();
+        DeployState state = builder.build(true);
         assertThat(state.getPermanentApplicationPackage().get(), is(app));
     }
 
@@ -59,20 +58,20 @@ public class DeployStateTest {
     public void testPreviousModelIsProvided() throws IOException, SAXException {
         VespaModel prevModel = new VespaModel(MockApplicationPackage.createEmpty());
         DeployState.Builder builder = new DeployState.Builder();
-        assertThat(builder.previousModel(prevModel).build().getPreviousModel().get(), is(prevModel));
+        assertThat(builder.previousModel(prevModel).build(true).getPreviousModel().get(), is(prevModel));
     }
 
     @Test
     public void testProperties() {
         DeployState.Builder builder = new DeployState.Builder();
-        DeployState state = builder.build();
+        DeployState state = builder.build(true);
         assertThat(state.getProperties().applicationId(), is(ApplicationId.defaultId()));
         ApplicationId customId = new ApplicationId.Builder()
                                  .tenant("bar")
                                  .applicationName("foo").instanceName("quux").build();
         DeployProperties properties = new DeployProperties.Builder().applicationId(customId).build();
         builder.properties(properties);
-        state = builder.build();
+        state = builder.build(true);
         assertThat(state.getProperties().applicationId(), is(customId));
     }
 
@@ -113,11 +112,11 @@ public class DeployStateTest {
     @Test
     public void testRotations() {
         Set<Rotation> rotations = new HashSet<>();
-        assertThat(new DeployState.Builder().rotations(rotations).build().getRotations().size(), is(0));
+        assertThat(new DeployState.Builder().rotations(rotations).build(true).getRotations().size(), is(0));
         for (String name : new String[]{"rotation-001.vespa.a02.yahoodns.net", "rotation-002.vespa.a02.yahoodns.net"}) {
             rotations.add(new Rotation(name));
         }
-        assertThat(new DeployState.Builder().rotations(rotations).build().getRotations(), equalTo(rotations));
+        assertThat(new DeployState.Builder().rotations(rotations).build(true).getRotations(), equalTo(rotations));
     }
 
     private DeployState createDeployState(ApplicationPackage app, Map<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> defs) {
@@ -128,7 +127,7 @@ public class DeployStateTest {
                 return defs;
             }
         });
-        return builder.build();
+        return builder.build(true);
     }
 
 }

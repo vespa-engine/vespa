@@ -15,12 +15,15 @@ import java.util.stream.Collectors;
  * @author bjorncs
  */
 public class FastAccessValidator extends Processor {
+
     public FastAccessValidator(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
+        if ( ! validate) return;
+
         String invalidAttributes = search.allFields()
                 .flatMap(field -> field.getAttributes().values().stream())
                 .filter(FastAccessValidator::isIncompatibleAttribute)
@@ -50,4 +53,5 @@ public class FastAccessValidator extends Processor {
                 return false;
         }
     }
+
 }

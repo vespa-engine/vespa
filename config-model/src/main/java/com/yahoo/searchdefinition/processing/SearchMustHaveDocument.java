@@ -9,8 +9,8 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 /**
  * A search must have a document definition of the same name inside of it, otherwise crashes may occur as late as
  * during feeding
- * @author vegardh
  *
+ * @author Vegard Havdal
  */
 public class SearchMustHaveDocument extends Processor {
 
@@ -19,10 +19,12 @@ public class SearchMustHaveDocument extends Processor {
     }
 
     @Override
-    public void process() {
-        if (search.getDocument()==null) {
-            throw new IllegalArgumentException("For search '" + search.getName() + "': A search specification must have an equally named document inside of it.");
-        }
+    public void process(boolean validate) {
+        if ( ! validate) return;
+
+        if (search.getDocument() == null)
+            throw new IllegalArgumentException("For search '" + search.getName() +
+                                               "': A search specification must have an equally named document inside of it.");
     }
 
 }

@@ -21,15 +21,15 @@ public class ImplicitSummaryFields extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         for (DocumentSummary docsum : search.getSummaries().values()) {
-            addField(docsum, new SummaryField("rankfeatures", DataType.STRING, SummaryTransform.RANKFEATURES));
-            addField(docsum, new SummaryField("summaryfeatures", DataType.STRING, SummaryTransform.SUMMARYFEATURES));
+            addField(docsum, new SummaryField("rankfeatures", DataType.STRING, SummaryTransform.RANKFEATURES), validate);
+            addField(docsum, new SummaryField("summaryfeatures", DataType.STRING, SummaryTransform.SUMMARYFEATURES), validate);
         }
     }
 
-    private void addField(DocumentSummary docsum, SummaryField field) {
-        if (docsum.getSummaryField(field.getName()) != null) {
+    private void addField(DocumentSummary docsum, SummaryField field, boolean validate) {
+        if (validate && docsum.getSummaryField(field.getName()) != null) {
             throw new IllegalStateException("Summary class '" + docsum.getName() + "' uses reserved field name '" +
                                             field.getName() + "'.");
         }

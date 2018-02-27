@@ -30,13 +30,16 @@ public abstract class Processor {
 
     /**
      * Base constructor
+     *
      * @param search the search to process
      * @param deployLogger Logger du use when logging deploy output.
      * @param rankProfileRegistry Registry with all rank profiles, used for lookup and insertion.
      * @param queryProfiles The query profiles contained in the application this search is part of.
      */
-    public Processor(Search search, DeployLogger deployLogger,
-                     RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+    public Processor(Search search,
+                     DeployLogger deployLogger,
+                     RankProfileRegistry rankProfileRegistry,
+                     QueryProfiles queryProfiles) {
         this.search = search;
         this.deployLogger = deployLogger;
         this.rankProfileRegistry = rankProfileRegistry;
@@ -46,8 +49,12 @@ public abstract class Processor {
     /**
      * Processes the input search definition by <b>modifying</b> the input search and its documents, and returns the
      * input search definition.
+     *
+     * @param validate true to throw exceptions on validation errors, false to make the best possible effort
+     *                 at completing processing without throwing an exception.
+     *                 If we are not validating, emitting warnings have no effect and can (but must not) be skipped.
      */
-    public abstract void process();
+    public abstract void process(boolean validate);
 
     /**
      * Convenience method for adding a no-strings-attached implementation field for a regular field

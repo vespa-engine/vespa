@@ -38,12 +38,12 @@ public class VespaModelCreatorWithMockPkg {
     }
 
     public VespaModel create() {
-        DeployState deployState = new DeployState.Builder().applicationPackage(appPkg).build();
+        DeployState deployState = new DeployState.Builder().applicationPackage(appPkg).build(true);
         return create(true, deployState);
     }
 
     public VespaModel create(DeployState.Builder deployStateBuilder) {
-        return create(true, deployStateBuilder.applicationPackage(appPkg).build());
+        return create(true, deployStateBuilder.applicationPackage(appPkg).build(true));
     }
 
     public VespaModel create(boolean validate, DeployState deployState) {

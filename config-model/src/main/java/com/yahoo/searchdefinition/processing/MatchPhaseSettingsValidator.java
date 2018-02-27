@@ -20,7 +20,9 @@ public class MatchPhaseSettingsValidator extends Processor {
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
+        if ( ! validate) return;
+
         for (RankProfile rankProfile : rankProfileRegistry.localRankProfiles(search)) {
             RankProfile.MatchPhaseSettings settings = rankProfile.getMatchPhaseSettings();
             if (settings != null) {
@@ -31,8 +33,9 @@ public class MatchPhaseSettingsValidator extends Processor {
 
     private void validateMatchPhaseSettings(RankProfile rankProfile, RankProfile.MatchPhaseSettings settings) {
         String attributeName = settings.getAttribute();
-        new AttributeValidator(search.getName(), rankProfile.getName(),
-                search.getAttribute(attributeName), attributeName).validate();
+        new AttributeValidator(search.getName(),
+                               rankProfile.getName(),
+                               search.getAttribute(attributeName), attributeName).validate();
     }
 
     public static class AttributeValidator {
@@ -66,13 +69,13 @@ public class MatchPhaseSettingsValidator extends Processor {
                  attribute.getType().equals(Attribute.Type.STRING) ||
                  attribute.getType().equals(Attribute.Type.PREDICATE))
             {
-                failValidation("must be single value numeric, but it is '"
-                        + attribute.getDataType().getName() + "'");
+                failValidation("must be single value numeric, but it is '" +
+                               attribute.getDataType().getName() + "'");
             }
         }
 
         protected void validateThatAttributeIsFastSearch() {
-            if (!attribute.isFastSearch()) {
+            if ( ! attribute.isFastSearch()) {
                 failValidation("must be fast-search, but it is not");
             }
         }
@@ -88,5 +91,7 @@ public class MatchPhaseSettingsValidator extends Processor {
                     "', rank-profile '" + rankProfileName +
                     "': " + getValidationType() + " attribute '" + attributeName + "' ";
         }
+
     }
+
 }

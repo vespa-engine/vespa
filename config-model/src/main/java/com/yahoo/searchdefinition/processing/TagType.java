@@ -17,28 +17,29 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class TagType extends Processor {
 
-    public TagType(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+    public TagType(Search search,
+                   DeployLogger deployLogger,
+                   RankProfileRegistry rankProfileRegistry,
+                   QueryProfiles queryProfiles) {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
-    public void process() {
+    public void process(boolean validate) {
         for (SDField field : search.allConcreteFields()) {
-            if (field.getDataType() instanceof WeightedSetDataType && ((WeightedSetDataType)field.getDataType()).isTag()) {
+            if (field.getDataType() instanceof WeightedSetDataType && ((WeightedSetDataType)field.getDataType()).isTag())
                 implementTagType(field);
-            }
         }
     }
 
     private void implementTagType(SDField field) {
-        field.setDataType(DataType.getWeightedSet(DataType.STRING,true,true));
+        field.setDataType(DataType.getWeightedSet(DataType.STRING, true, true));
         // Don't set matching and ranking if this field is not attribute nor index
         if (!field.doesIndexing() && !field.doesAttributing()) return;
         Matching m = field.getMatching();
-        if (!m.isTypeUserSet()) {
+        if ( ! m.isTypeUserSet())
             m.setType(Matching.Type.WORD);
-        }
-        if (field.getRankType()==null || field.getRankType()== RankType.DEFAULT)
+        if (field.getRankType() == null || field.getRankType() == RankType.DEFAULT)
             field.setRankType((RankType.TAGS));
     }
 

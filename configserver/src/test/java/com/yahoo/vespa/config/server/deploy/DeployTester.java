@@ -236,7 +236,7 @@ public class DeployTester {
             try {
                 Instant now = LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
                 ApplicationPackage application = new MockApplicationPackage.Builder().withEmptyHosts().withEmptyServices().build();
-                DeployState deployState = new DeployState.Builder().applicationPackage(application).now(now).build();
+                DeployState deployState = new DeployState.Builder().applicationPackage(application).now(now).build(true);
                 return new VespaModel(deployState);
             } catch (Exception e) {
                 throw new RuntimeException(e);
