@@ -59,7 +59,11 @@ public class DockerTester implements AutoCloseable {
 
         Environment environment = new Environment.Builder()
                 .inetAddressResolver(inetAddressResolver)
-                .pathResolver(new PathResolver(pathToVespaHome, Paths.get("/tmp"), Paths.get("/tmp"))).build();
+                .region("us-east-1")
+                .environment("prod")
+                .system("main")
+                .pathResolver(new PathResolver(pathToVespaHome, Paths.get("/tmp"), Paths.get("/tmp")))
+                .build();
         Clock clock = Clock.systemUTC();
         DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, null);
         StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(dockerOperations, null, environment, callOrderVerifier, clock);

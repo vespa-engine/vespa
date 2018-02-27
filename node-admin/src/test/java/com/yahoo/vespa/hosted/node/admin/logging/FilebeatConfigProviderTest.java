@@ -25,6 +25,7 @@ public class FilebeatConfigProviderTest {
     private static final String instance = "default";
     private static final String environment = "prod";
     private static final String region = "us-north-1";
+    private static final String system = "main";
     private static final List<String> logstashNodes = ImmutableList.of("logstash1", "logstash2");
 
     @Test
@@ -43,6 +44,7 @@ public class FilebeatConfigProviderTest {
         Environment env = new Environment.Builder()
                 .environment(environment)
                 .region(region)
+                .system(system)
                 .build();
 
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(env);
@@ -81,6 +83,7 @@ public class FilebeatConfigProviderTest {
         Environment environment = new Environment.Builder()
                 .environment(FilebeatConfigProviderTest.environment)
                 .region(region)
+                .system(system)
                 .logstashNodes(ImmutableList.of("unquoted", "\"quoted\""))
                 .build();
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
@@ -104,6 +107,7 @@ public class FilebeatConfigProviderTest {
         return new Environment.Builder()
                 .environment(environment)
                 .region(region)
+                .system(system)
                 .logstashNodes(logstashNodes)
                 .build();
     }

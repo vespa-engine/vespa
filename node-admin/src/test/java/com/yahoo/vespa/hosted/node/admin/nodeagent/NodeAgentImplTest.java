@@ -81,6 +81,7 @@ public class NodeAgentImplTest {
     private final Environment environment = new Environment.Builder()
             .environment("dev")
             .region("us-east-1")
+            .system("main")
             .parentHostHostname("parent.host.name.yahoo.com")
             .inetAddressResolver(new InetAddressResolver())
             .pathResolver(pathResolver).build();
