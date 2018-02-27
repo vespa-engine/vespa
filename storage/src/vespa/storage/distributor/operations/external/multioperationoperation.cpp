@@ -119,7 +119,7 @@ MultiOperationOperation::onStart(DistributorMessageSender& sender)
     // Don't do anything if all nodes are down.
     bool up = false;
     for (uint16_t i = 0; i < systemState.getNodeCount(lib::NodeType::STORAGE); i++) {
-        if (_manager.storageNodeIsUp(i)) {
+        if (_manager.storageNodeIsUp(_msg->getBucket().getBucketSpace(), i)) {
             up = true;
             break;
         }

@@ -3,6 +3,7 @@ package com.yahoo.vespa.service.monitor.internal;
 
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.SuperModel;
+import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
@@ -19,7 +20,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SlobrokMonitorManagerImplImplTest {
+public class SlobrokMonitorManagerImplTest {
     // IntelliJ complains if parametrized type is specified, Maven complains if not specified.
     @SuppressWarnings("unchecked")
     private final Supplier<SlobrokMonitor> slobrokMonitorFactory = mock(Supplier.class);
@@ -29,6 +30,7 @@ public class SlobrokMonitorManagerImplImplTest {
     private final SlobrokMonitor slobrokMonitor = mock(SlobrokMonitor.class);
     private final SuperModel superModel = mock(SuperModel.class);
     private final ApplicationInfo application = mock(ApplicationInfo.class);
+    private final ClusterId clusterId = new ClusterId("cluster-id");
 
     @Before
     public void setup() {
@@ -70,8 +72,8 @@ public class SlobrokMonitorManagerImplImplTest {
     private ServiceStatus getStatus(String serviceType) {
         return slobrokMonitorManager.getStatus(
                 application.getApplicationId(),
-                new ServiceType(serviceType),
-                new ConfigId("config.id"));
+                clusterId,
+                new ServiceType(serviceType), new ConfigId("config.id"));
     }
 
     @Test

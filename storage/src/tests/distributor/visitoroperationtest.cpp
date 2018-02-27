@@ -1095,7 +1095,7 @@ void
 VisitorOperationTest::testVisitIdealNode()
 {
     ClusterState state("distributor:1 storage:3");
-    _distributor->enableClusterState(state);
+    _distributor->enableClusterStateBundle(lib::ClusterStateBundle(state));
 
     // Create buckets in bucketdb
     for (int i=0; i<32; i++ ) {

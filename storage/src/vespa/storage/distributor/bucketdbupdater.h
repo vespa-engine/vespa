@@ -152,11 +152,11 @@ private:
 
     void updateState(const lib::ClusterState& oldState, const lib::ClusterState& newState);
 
-    void removeSuperfluousBuckets(const lib::ClusterState& newState);
+    void removeSuperfluousBuckets(const lib::ClusterStateBundle& newState);
 
     void replyToPreviousPendingClusterStateIfAny();
 
-    void enableCurrentClusterStateInDistributor();
+    void enableCurrentClusterStateBundleInDistributor();
     void addCurrentStateToClusterStateHistory();
     void enqueueRecheckUntilPendingStateEnabled(uint16_t node, const document::Bucket&);
     void sendAllQueuedBucketRechecks();

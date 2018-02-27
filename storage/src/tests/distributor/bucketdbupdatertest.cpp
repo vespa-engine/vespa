@@ -183,15 +183,16 @@ protected:
     bool bucketExistsThatHasNode(int bucketCount, uint16_t node) const;
 
     ClusterInformation::CSP createClusterInfo(const std::string& clusterStateString) {
-        auto clusterState = std::make_shared<lib::ClusterState>(clusterStateString);
+        lib::ClusterState baselineClusterState(clusterStateString);
+        lib::ClusterStateBundle clusterStateBundle(baselineClusterState);
         ClusterInformation::CSP clusterInfo(
                 new SimpleClusterInformation(
                         getBucketDBUpdater().getDistributorComponent().getIndex(),
-                        *clusterState,
+                        clusterStateBundle,
                         "ui"));
         auto &repo = getBucketSpaceRepo();
         for (auto &elem : repo) {
-            elem.second->setClusterState(clusterState);
+            elem.second->setClusterState(clusterStateBundle.getDerivedClusterState(elem.first));
         }
         return clusterInfo;
     }

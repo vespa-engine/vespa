@@ -309,7 +309,7 @@ public class ControllerTest {
         for (int i = 0; i < versions.size(); i++) {
             VespaVersion c = versions.get(i);
             if (c.isCurrentSystemVersion())
-                versions.set(i, new VespaVersion(c.statistics(), c.releaseCommit(), c.releasedAt(),
+                versions.set(i, new VespaVersion(c.statistics(), c.releaseCommit(), c.committedAt(),
                                                  false, c.configServerHostnames(),
                                                  c.confidence()));
         }

@@ -84,7 +84,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
             versionObject.setString("version", version.versionNumber().toString());
             versionObject.setString("confidence", version.confidence().name());
             versionObject.setString("commit", version.releaseCommit());
-            versionObject.setLong("date", version.releasedAt().toEpochMilli());
+            versionObject.setLong("date", version.committedAt().toEpochMilli());
             versionObject.setBool("controllerVersion", version.isSelfVersion());
             versionObject.setBool("systemVersion", version.isCurrentSystemVersion());
 

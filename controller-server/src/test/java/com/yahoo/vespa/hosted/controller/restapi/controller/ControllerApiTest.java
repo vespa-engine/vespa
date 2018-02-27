@@ -47,32 +47,43 @@ public class ControllerApiTest extends ControllerContainerTest {
 
         // Get current configuration
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/jobs/upgrader", new byte[0], Request.Method.GET),
-                              "{\"upgradesPerMinute\":0.5,\"ignoreConfidence\":false}",
+                              "{\"upgradesPerMinute\":0.5,\"confidenceOverrides\":[]}",
                               200);
 
         // Set invalid configuration
-        ;
         tester.assertResponse(
                 hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"upgradesPerMinute\":-1}", Request.Method.PATCH),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Upgrades per minute must be >= 0\"}",
                 400);
 
-        // Unrecognized field
+        // Ignores unrecognized field
         tester.assertResponse(
-                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader","{\"foo\":bar}", Request.Method.PATCH),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Unable to configure upgrader with data in request: '{\\\"foo\\\":bar}'\"}",
+                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader","{\"foo\":\"bar\"}", Request.Method.PATCH),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No such modifiable field(s)\"}",
                 400);
 
-        // Patch configuration
+        // Set upgrades per minute
         tester.assertResponse(
                 hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"upgradesPerMinute\":42.0}", Request.Method.PATCH),
-                "{\"upgradesPerMinute\":42.0,\"ignoreConfidence\":false}",
+                "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[]}",
                 200);
 
-        // Patch configuration
+        // Override confidence
         tester.assertResponse(
-                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"ignoreConfidence\":true}", Request.Method.PATCH),
-                "{\"upgradesPerMinute\":42.0,\"ignoreConfidence\":true}",
+                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.42", "broken", Request.Method.POST),
+                "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[{\"6.42\":\"broken\"}]}",
+                200);
+
+        // Override confidence for another version
+        tester.assertResponse(
+                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.43", "broken", Request.Method.POST),
+                "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[{\"6.42\":\"broken\"},{\"6.43\":\"broken\"}]}",
+                200);
+
+        // Remove first override
+        tester.assertResponse(
+                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.42", "", Request.Method.DELETE),
+                "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[{\"6.43\":\"broken\"}]}",
                 200);
     }
 

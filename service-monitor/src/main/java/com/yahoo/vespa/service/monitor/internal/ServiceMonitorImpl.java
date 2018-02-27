@@ -15,42 +15,41 @@ import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class ServiceMonitorImpl implements ServiceMonitor {
-    private static final Logger logger = Logger.getLogger(ServiceMonitorImpl.class.getName());
-
-    private final Zone zone;
-    private final List<String> configServerHosts;
     private final ServiceModelCache serviceModelCache;
 
     @Inject
     public ServiceMonitorImpl(SuperModelProvider superModelProvider,
                               ConfigserverConfig configserverConfig,
                               SlobrokMonitorManagerImpl slobrokMonitorManager,
+                              HealthMonitorManager healthMonitorManager,
                               Metric metric,
                               Timer timer) {
-        this.zone = superModelProvider.getZone();
-        this.configServerHosts = toConfigServerList(configserverConfig);
+        Zone zone = superModelProvider.getZone();
+        List<String> configServerHosts = toConfigServerList(configserverConfig);
         ServiceMonitorMetrics metrics = new ServiceMonitorMetrics(metric, timer);
 
-        SuperModelListenerImpl superModelListener = new SuperModelListenerImpl(
+        UnionMonitorManager monitorManager = new UnionMonitorManager(
                 slobrokMonitorManager,
+                healthMonitorManager,
+                configserverConfig);
+
+        SuperModelListenerImpl superModelListener = new SuperModelListenerImpl(
+                monitorManager,
                 metrics,
                 new ModelGenerator(),
                 zone,
                 configServerHosts);
         superModelListener.start(superModelProvider);
-        serviceModelCache = new ServiceModelCache(
-                () -> superModelListener.get(),
-                timer);
+        serviceModelCache = new ServiceModelCache(superModelListener, timer);
     }
 
     private List<String> toConfigServerList(ConfigserverConfig configserverConfig) {
         if (configserverConfig.multitenant()) {
             return configserverConfig.zookeeperserver().stream()
-                    .map(server -> server.hostname())
+                    .map(ConfigserverConfig.Zookeeperserver::hostname)
                     .collect(Collectors.toList());
         }
 
