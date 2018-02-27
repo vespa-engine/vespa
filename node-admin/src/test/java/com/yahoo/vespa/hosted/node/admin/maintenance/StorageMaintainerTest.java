@@ -34,7 +34,11 @@ import static org.mockito.Mockito.when;
 public class StorageMaintainerTest {
     private final ManualClock clock = new ManualClock();
     private final Environment environment = new Environment.Builder()
-            .pathResolver(new PathResolver()).build();
+            .region("us-east-1")
+            .environment("prod")
+            .system("main")
+            .pathResolver(new PathResolver())
+            .build();
     private final DockerOperations docker = mock(DockerOperations.class);
     private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
     private final StorageMaintainer storageMaintainer = new StorageMaintainer(docker, processExecuter,
