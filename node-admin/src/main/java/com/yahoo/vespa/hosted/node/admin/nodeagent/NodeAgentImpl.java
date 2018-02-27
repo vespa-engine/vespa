@@ -105,8 +105,6 @@ public class NodeAgentImpl implements NodeAgent {
 
     private ContainerState containerState = UNKNOWN;
 
-    // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
-    private NodeAttributes lastAttributesSet = null;
     private ContainerNodeSpec lastNodeSpec = null;
     private CpuUsageReporter lastCpuMetric = new CpuUsageReporter();
 
@@ -230,7 +228,13 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void updateNodeRepoWithCurrentAttributes(final ContainerNodeSpec nodeSpec) {
-        final NodeAttributes nodeAttributes = new NodeAttributes()
+        final NodeAttributes currentNodeAttributes = new NodeAttributes()
+                .withRestartGeneration(nodeSpec.currentRestartGeneration.orElse(null))
+                .withRebootGeneration(nodeSpec.currentRebootGeneration.orElse(0L))
+                .withDockerImage(nodeSpec.currentDockerImage.orElse(new DockerImage("")))
+                .withVespaVersion(nodeSpec.vespaVersion.orElse(""));
+
+        final NodeAttributes wantedNodeAttributes = new NodeAttributes()
                 .withRestartGeneration(nodeSpec.wantedRestartGeneration.orElse(null))
                 // update reboot gen with wanted gen if set, we ignore reboot for Docker nodes but
                 // want the two to be equal in node repo
@@ -238,18 +242,16 @@ public class NodeAgentImpl implements NodeAgent {
                 .withDockerImage(nodeSpec.wantedDockerImage.filter(node -> containerState != ABSENT).orElse(new DockerImage("")))
                 .withVespaVersion(nodeSpec.wantedVespaVersion.filter(node -> containerState != ABSENT).orElse(""));
 
-        publishStateToNodeRepoIfChanged(nodeAttributes);
+        publishStateToNodeRepoIfChanged(currentNodeAttributes, wantedNodeAttributes);
     }
 
-    private void publishStateToNodeRepoIfChanged(NodeAttributes currentAttributes) {
-        // TODO: We should only update if the new current values do not match the node repo's current values
-        if (!currentAttributes.equals(lastAttributesSet)) {
+    private void publishStateToNodeRepoIfChanged(NodeAttributes currentAttributes, NodeAttributes wantedAttributes) {
+        if (!currentAttributes.equals(wantedAttributes)) {
             logger.info("Publishing new set of attributes to node repo: "
-                    + lastAttributesSet + " -> " + currentAttributes);
+                    + currentAttributes + " -> " + wantedAttributes);
             addDebugMessage("Publishing new set of attributes to node repo: {" +
-                    lastAttributesSet + "} -> {" + currentAttributes + "}");
-            nodeRepository.updateNodeAttributes(hostname, currentAttributes);
-            lastAttributesSet = currentAttributes;
+                    currentAttributes + "} -> {" + wantedAttributes + "}");
+            nodeRepository.updateNodeAttributes(hostname, wantedAttributes);
         }
     }
 

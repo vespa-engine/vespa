@@ -124,14 +124,6 @@ public class NodeAgentImplTest {
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository);
         // TODO: Verify this isn't run unless 1st time
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName));
-        // TODO: This should not happen when nothing is changed. Now it happens 1st time through.
-        inOrder.verify(nodeRepository).updateNodeAttributes(
-                hostName,
-                new NodeAttributes()
-                        .withRestartGeneration(restartGeneration)
-                        .withRebootGeneration(rebootGeneration)
-                        .withDockerImage(dockerImage)
-                        .withVespaVersion(vespaVersion));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
@@ -319,12 +311,7 @@ public class NodeAgentImplTest {
 
         verify(dockerOperations, never()).removeContainer(any(), any());
         verify(orchestrator, never()).resume(any(String.class));
-        verify(nodeRepository).updateNodeAttributes(
-                hostName, new NodeAttributes()
-                        .withRestartGeneration(restartGeneration)
-                        .withRebootGeneration(rebootGeneration)
-                        .withDockerImage(dockerImage)
-                        .withVespaVersion(vespaVersion));
+        verify(nodeRepository, never()).updateNodeAttributes(eq(hostName), any());
     }
 
     @Test
@@ -352,12 +339,7 @@ public class NodeAgentImplTest {
         verify(dockerOperations, never()).createContainer(eq(containerName), eq(nodeSpec));
         verify(dockerOperations, never()).startContainer(eq(containerName), eq(nodeSpec));
         verify(orchestrator, never()).resume(any(String.class));
-        verify(nodeRepository).updateNodeAttributes(
-                hostName, new NodeAttributes()
-                        .withRestartGeneration(restartGeneration)
-                        .withRebootGeneration(rebootGeneration)
-                        .withDockerImage(new DockerImage(""))
-                        .withVespaVersion(""));
+        verify(nodeRepository, never()).updateNodeAttributes(eq(hostName), any());
     }
 
     @Test
@@ -386,12 +368,7 @@ public class NodeAgentImplTest {
         inOrder.verify(dockerOperations, never()).removeContainer(any(), any());
 
         verify(orchestrator, never()).resume(any(String.class));
-        verify(nodeRepository).updateNodeAttributes(
-                hostName, new NodeAttributes()
-                        .withRestartGeneration(restartGeneration)
-                        .withRebootGeneration(rebootGeneration)
-                        .withDockerImage(dockerImage)
-                        .withVespaVersion(vespaVersion));
+        verify(nodeRepository, never()).updateNodeAttributes(eq(hostName), any());
     }
 
     @Test
@@ -414,12 +391,7 @@ public class NodeAgentImplTest {
 
         nodeAgent.converge();
 
-        verify(nodeRepository).updateNodeAttributes(
-                hostName, new NodeAttributes()
-                        .withRestartGeneration(restartGeneration)
-                        .withRebootGeneration(rebootGeneration)
-                        .withDockerImage(new DockerImage(""))
-                        .withVespaVersion(""));
+        verify(nodeRepository, never()).updateNodeAttributes(eq(hostName), any());
     }
 
     private void nodeRunningContainerIsTakenDownAndCleanedAndRecycled(Node.State nodeState, Optional<Long> wantedRestartGeneration) {
