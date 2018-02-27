@@ -19,8 +19,7 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
     private final ConfigSet set;
     private final ConfigKey<T> subKey;
 
-    ConfigSetSubscription(ConfigKey<T> key,
-            ConfigSubscriber subscriber, ConfigSource cset) {
+    ConfigSetSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource cset) {
         super(key, subscriber);
         if (!(cset instanceof ConfigSet)) throw new IllegalArgumentException("Source is not a ConfigSet: "+cset);
         this.set=(ConfigSet) cset;
@@ -43,7 +42,7 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
                 return true;
             }
             if (!myInstance.equals(configState.getConfig())) {
-                setConfigIfChangedIncGen(myInstance);
+                setConfigIncGen(myInstance);
                 return true;
             }
             sleep();
