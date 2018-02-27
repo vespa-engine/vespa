@@ -32,14 +32,14 @@ public class StateVersionTracker {
     private ClusterStateBundle currentClusterState = latestCandidateState;
 
     private ClusterStateView clusterStateView;
-    private ClusterStateChangeTracker clusterStateChangeTracker;
+    private ClusterStatsChangeTracker clusterStatsChangeTracker;
 
     private final LinkedList<ClusterStateHistoryEntry> clusterStateHistory = new LinkedList<>();
     private int maxHistoryEntryCount = 50;
 
     StateVersionTracker() {
         clusterStateView = ClusterStateView.create(currentUnversionedState.getBaselineClusterState());
-        clusterStateChangeTracker = new ClusterStateChangeTracker(clusterStateView.getStatsAggregator());
+        clusterStatsChangeTracker = new ClusterStatsChangeTracker(clusterStateView.getStatsAggregator());
     }
 
     void setVersionRetrievedFromZooKeeper(final int version) {
@@ -85,7 +85,7 @@ public class StateVersionTracker {
     public void updateLatestCandidateStateBundle(final ClusterStateBundle candidateBundle) {
         assert(latestCandidateState.getBaselineClusterState().getVersion() == 0);
         latestCandidateState = candidateBundle;
-        clusterStateChangeTracker.syncBucketsPendingFlag();
+        clusterStatsChangeTracker.syncBucketsPendingFlag();
     }
 
     /**
@@ -124,7 +124,7 @@ public class StateVersionTracker {
                 newStateBundle.getBaselineClusterState().getDistributionBitCount());
         // TODO should this take place in updateLatestCandidateStateBundle instead? I.e. does it require a consolidated state?
         clusterStateView = ClusterStateView.create(currentClusterState.getBaselineClusterState());
-        clusterStateChangeTracker.updateAggregator(clusterStateView.getStatsAggregator());
+        clusterStatsChangeTracker.updateAggregator(clusterStateView.getStatsAggregator());
     }
 
     private void recordCurrentStateInHistoryAtTime(final long currentTimeMs) {
@@ -141,7 +141,7 @@ public class StateVersionTracker {
     }
 
     boolean bucketSpaceMergeCompletionStateHasChanged() {
-        return clusterStateChangeTracker.stateHasChanged();
+        return clusterStatsChangeTracker.statsHaveChanged();
     }
 
     /*

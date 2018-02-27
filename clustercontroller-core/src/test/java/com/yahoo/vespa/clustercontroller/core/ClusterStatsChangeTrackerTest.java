@@ -7,15 +7,15 @@ import org.junit.Test;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class ClusterStateChangeTrackerTest {
+public class ClusterStatsChangeTrackerTest {
 
     private static class Fixture {
         private ClusterStatsAggregator aggregator;
-        private ClusterStateChangeTracker state;
+        private ClusterStatsChangeTracker tracker;
 
         public Fixture() {
             aggregator = new ClusterStatsAggregator(Sets.newHashSet(1), Sets.newHashSet(2));
-            state = new ClusterStateChangeTracker(aggregator);
+            tracker = new ClusterStatsChangeTracker(aggregator);
         }
 
         public void setBucketsPendingStats() {
@@ -33,36 +33,36 @@ public class ClusterStateChangeTrackerTest {
 
         public void updateAggregator() {
             aggregator = new ClusterStatsAggregator(Sets.newHashSet(1), Sets.newHashSet(2));
-            state.updateAggregator(aggregator);
+            tracker.updateAggregator(aggregator);
         }
 
-        public boolean stateHasChanged() {
-            return state.stateHasChanged();
+        public boolean statsHaveChanged() {
+            return tracker.statsHaveChanged();
         }
 
     }
 
     @Test
-    public void state_has_not_changed_if_not_all_distributors_are_updated() {
+    public void stats_have_not_changed_if_not_all_distributors_are_updated() {
         Fixture f = new Fixture();
-        assertFalse(f.stateHasChanged());
+        assertFalse(f.statsHaveChanged());
     }
 
     @Test
-    public void state_has_changed_if_previous_buckets_pending_stats_are_different_from_current() {
+    public void stats_have_changed_if_previous_buckets_pending_stats_are_different_from_current() {
         Fixture f = new Fixture();
 
         f.setInSyncStats();
-        assertFalse(f.stateHasChanged());
+        assertFalse(f.statsHaveChanged());
         f.setBucketsPendingStats();
-        assertTrue(f.stateHasChanged());
+        assertTrue(f.statsHaveChanged());
 
         f.updateAggregator(); // previous stats may now have buckets pending
 
         f.setInSyncStats();
-        assertTrue(f.stateHasChanged());
+        assertTrue(f.statsHaveChanged());
         f.setBucketsPendingStats();
-        assertFalse(f.stateHasChanged());
+        assertFalse(f.statsHaveChanged());
     }
 
 }
