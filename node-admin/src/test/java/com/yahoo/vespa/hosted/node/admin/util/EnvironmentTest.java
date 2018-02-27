@@ -16,7 +16,12 @@ import static org.junit.Assert.assertEquals;
  * @author freva
  */
 public class EnvironmentTest {
-    private final Environment environment = new Environment.Builder().pathResolver(new PathResolver()).build();
+    private final Environment environment = new Environment.Builder()
+            .region("us-east-1")
+            .environment("prod")
+            .system("main")
+            .pathResolver(new PathResolver())
+            .build();
 
     @Test
     public void testPathInNodeToPathInNodeAdminAndHost() {

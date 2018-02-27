@@ -46,5 +46,5 @@ payloadCompressionType enum { UNCOMPRESSED, LZ4 } default=LZ4
 # Athenz config
 loadBalancerAddress string default=""
 
-# File distribution
-disableFiledistributor bool default=true
+# Node admin
+nodeAdminInContainer bool default=true

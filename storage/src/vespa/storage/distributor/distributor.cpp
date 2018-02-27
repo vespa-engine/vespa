@@ -63,6 +63,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
     : StorageLink("distributor"),
       DistributorInterface(),
       framework::StatusReporter("distributor", "Distributor"),
+      _clusterStateBundle(lib::ClusterState()),
       _compReg(compReg),
       _component(compReg, "distributor"),
       _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
@@ -107,6 +108,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
     _bucketDBStatusDelegate.registerStatusPage();
     hostInfoReporterRegistrar.registerReporter(&_hostInfoReporter);
     propagateDefaultDistribution(_component.getDistribution());
+    propagateClusterStates();
 };
 
 Distributor::~Distributor()
@@ -331,16 +333,24 @@ Distributor::handleMessage(const std::shared_ptr<api::StorageMessage>& msg)
     return false;
 }
 
-void
-Distributor::enableClusterState(const lib::ClusterState& state)
+const lib::ClusterStateBundle&
+Distributor::getClusterStateBundle() const
 {
-    lib::ClusterState oldState = _clusterState;
-    _clusterState = state;
+    return _clusterStateBundle;
+}
+
+void
+Distributor::enableClusterStateBundle(const lib::ClusterStateBundle& state)
+{
+    lib::ClusterStateBundle oldState = _clusterStateBundle;
+    _clusterStateBundle = state;
+    propagateClusterStates();
 
     lib::Node myNode(lib::NodeType::DISTRIBUTOR, _component.getIndex());
+    const auto &baselineState = *_clusterStateBundle.getBaselineClusterState();
 
     if (!_doneInitializing &&
-        getClusterState().getNodeState(myNode).getState() == lib::State::UP)
+        baselineState.getNodeState(myNode).getState() == lib::State::UP)
     {
         scanAllBuckets();
         _doneInitializing = true;
@@ -350,8 +360,8 @@ Distributor::enableClusterState(const lib::ClusterState& state)
     }
 
     // Clear all active messages on nodes that are down.
-    for (uint16_t i = 0; i < state.getNodeCount(lib::NodeType::STORAGE); ++i) {
-        if (!state.getNodeState(lib::Node(lib::NodeType::STORAGE, i)).getState()
+    for (uint16_t i = 0; i < baselineState.getNodeCount(lib::NodeType::STORAGE); ++i) {
+        if (!baselineState.getNodeState(lib::Node(lib::NodeType::STORAGE, i)).getState()
                 .oneOf(getStorageNodeUpStates()))
         {
             std::vector<uint64_t> msgIds(
@@ -530,6 +540,14 @@ Distributor::propagateDefaultDistribution(
     _bucketSpaceRepo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
     auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
     _bucketSpaceRepo->get(document::FixedBucketSpaces::global_space()).setDistribution(std::move(global_distr));
+}
+
+void
+Distributor::propagateClusterStates()
+{
+    for (auto &iter : *_bucketSpaceRepo) {
+        iter.second->setClusterState(_clusterStateBundle.getDerivedClusterState(iter.first));
+    }
 }
 
 void

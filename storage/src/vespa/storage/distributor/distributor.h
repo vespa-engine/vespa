@@ -78,7 +78,7 @@ public:
      * Enables a new cluster state. Called after the bucket db updater has
      * retrieved all bucket info related to the change.
      */
-    void enableClusterState(const lib::ClusterState& clusterState) override;
+    void enableClusterStateBundle(const lib::ClusterStateBundle& clusterStateBundle) override;
 
     /**
      * Invoked when a pending cluster state for a distribution (config)
@@ -114,9 +114,7 @@ public:
      */
     void checkBucketForSplit(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e, uint8_t priority) override;
 
-    const lib::ClusterState& getClusterState() const override {
-        return _clusterState;
-    }
+    const lib::ClusterStateBundle& getClusterStateBundle() const override;
 
     /**
      * @return Returns the states in which the distributors consider
@@ -233,8 +231,9 @@ private:
 
     void enableNextDistribution();
     void propagateDefaultDistribution(std::shared_ptr<const lib::Distribution>);
+    void propagateClusterStates();
 
-    lib::ClusterState _clusterState;
+    lib::ClusterStateBundle _clusterStateBundle;
 
     DistributorComponentRegister& _compReg;
     storage::DistributorComponent _component;

@@ -96,7 +96,7 @@ RemoveLocationOperation::onStart(DistributorMessageSender& sender)
             "Remove location %s failed since no available nodes found. "
             "System state is %s",
             _msg->toString().c_str(),
-            _manager.getClusterState().toString().c_str());
+            _bucketSpace.getClusterState().toString().c_str());
 
         _tracker.fail(sender, api::ReturnCode(api::ReturnCode::OK));
     } else {

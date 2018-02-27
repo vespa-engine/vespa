@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -70,19 +71,29 @@ public class NodeFailTester {
     private final Orchestrator orchestrator;
     private final NodeRepositoryProvisioner provisioner;
     private final Curator curator;
+    private final ConfigserverConfig configserverConfig;
 
     private NodeFailTester() {
+        this(new ConfigserverConfig(new ConfigserverConfig.Builder()));
+    }
+
+    private NodeFailTester(ConfigserverConfig configserverConfig) {
         clock = new ManualClock();
         curator = new MockCurator();
         nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, new MockNameResolver().mockAnyLookup(),
-                                            new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
+                new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
         provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
         hostLivenessTracker = new TestHostLivenessTracker(clock);
         orchestrator = new OrchestratorMock();
+        this.configserverConfig = configserverConfig;
     }
-    
+
     public static NodeFailTester withTwoApplications() {
-        NodeFailTester tester = new NodeFailTester();
+        return withTwoApplications(new ConfigserverConfig(new ConfigserverConfig.Builder()));
+    }
+
+    public static NodeFailTester withTwoApplications(ConfigserverConfig configserverConfig) {
+        NodeFailTester tester = new NodeFailTester(configserverConfig);
         
         tester.createReadyNodes(16);
         tester.createHostNodes(3);
@@ -184,7 +195,7 @@ public class NodeFailTester {
     }
 
     public NodeFailer createFailer() {
-        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour, clock, orchestrator, NodeFailer.ThrottlePolicy.hosted, metric, new JobControl(nodeRepository.database()));
+        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour, clock, orchestrator, NodeFailer.ThrottlePolicy.hosted, metric, new JobControl(nodeRepository.database()), configserverConfig);
     }
 
     public void allNodesMakeAConfigRequestExcept(Node ... deadNodeArray) {

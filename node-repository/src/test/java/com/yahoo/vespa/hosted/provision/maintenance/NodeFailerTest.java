@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
@@ -191,6 +192,53 @@ public class NodeFailerTest {
         assertEquals( 1, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
         assertEquals(otherNodes.get(1), tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).get(0));
         assertEquals( 4, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+    }
+
+    @Test
+    public void docker_host_failed_without_config_requests() {
+        NodeFailTester tester = NodeFailTester.withTwoApplications();
+
+        // For a day all nodes work so nothing happens
+        for (int minutes = 0, interval = 30; minutes < 24 * 60; minutes += interval) {
+            tester.clock.advance(Duration.ofMinutes(interval));
+            tester.allNodesMakeAConfigRequestExcept();
+            tester.failer.run();
+            assertEquals( 3, tester.nodeRepository.getNodes(NodeType.host, Node.State.ready).size());
+            assertEquals( 0, tester.nodeRepository.getNodes(NodeType.host, Node.State.failed).size());
+        }
+
+
+        // Two ready nodes and a ready docker node die, but only 2 of those are failed out
+        tester.clock.advance(Duration.ofMinutes(180));
+        Node dockerHost = tester.nodeRepository.getNodes(NodeType.host, Node.State.ready).iterator().next();
+        tester.allNodesMakeAConfigRequestExcept(dockerHost);
+        tester.failer.run();
+        assertEquals( 2, tester.nodeRepository.getNodes(NodeType.host, Node.State.ready).size());
+        assertEquals( 1, tester.nodeRepository.getNodes(NodeType.host, Node.State.failed).size());
+    }
+
+    @Test
+    public void not_failed_without_config_requests_if_node_admin_on_host() {
+        NodeFailTester tester = NodeFailTester.withTwoApplications(
+                new ConfigserverConfig(new ConfigserverConfig.Builder().nodeAdminInContainer(false)));
+
+        // For a day all nodes work so nothing happens
+        for (int minutes = 0, interval = 30; minutes < 24 * 60; minutes += interval) {
+            tester.clock.advance(Duration.ofMinutes(interval));
+            tester.allNodesMakeAConfigRequestExcept();
+            tester.failer.run();
+            assertEquals( 3, tester.nodeRepository.getNodes(NodeType.host, Node.State.ready).size());
+            assertEquals( 0, tester.nodeRepository.getNodes(NodeType.host, Node.State.failed).size());
+        }
+
+
+        // Two ready nodes and a ready docker node die, but only 2 of those are failed out
+        tester.clock.advance(Duration.ofMinutes(180));
+        Node dockerHost = tester.nodeRepository.getNodes(NodeType.host, Node.State.ready).iterator().next();
+        tester.allNodesMakeAConfigRequestExcept(dockerHost);
+        tester.failer.run();
+        assertEquals( 3, tester.nodeRepository.getNodes(NodeType.host, Node.State.ready).size());
+        assertEquals( 0, tester.nodeRepository.getNodes(NodeType.host, Node.State.failed).size());
     }
 
     @Test

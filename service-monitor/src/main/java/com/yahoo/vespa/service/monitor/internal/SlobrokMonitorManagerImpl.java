@@ -8,10 +8,11 @@ import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.service.monitor.SlobrokMonitorManager;
+import com.yahoo.vespa.service.monitor.SlobrokApi;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +20,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-public class SlobrokMonitorManagerImpl implements SuperModelListener, SlobrokMonitorManager {
+public class SlobrokMonitorManagerImpl implements SuperModelListener, SlobrokApi, MonitorManager {
     private static final Logger logger =
             Logger.getLogger(SlobrokMonitorManagerImpl.class.getName());
 
@@ -30,7 +31,7 @@ public class SlobrokMonitorManagerImpl implements SuperModelListener, SlobrokMon
 
     @Inject
     public SlobrokMonitorManagerImpl() {
-        this(() -> new SlobrokMonitor());
+        this(SlobrokMonitor::new);
     }
 
     SlobrokMonitorManagerImpl(Supplier<SlobrokMonitor> slobrokMonitorFactory) {
@@ -74,7 +75,7 @@ public class SlobrokMonitorManagerImpl implements SuperModelListener, SlobrokMon
 
     @Override
     public ServiceStatus getStatus(ApplicationId applicationId,
-                                   ServiceType serviceType,
+                                   ClusterId clusterId, ServiceType serviceType,
                                    ConfigId configId) {
         Optional<String> slobrokServiceName = findSlobrokServiceName(serviceType, configId);
         if (slobrokServiceName.isPresent()) {

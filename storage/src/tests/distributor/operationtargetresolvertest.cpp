@@ -153,7 +153,7 @@ OperationTargetResolverTest::getInstances(const BucketId& id,
     auto &bucketSpaceRepo(getExternalOperationHandler().getBucketSpaceRepo());
     auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
     idealNodeCalc.setDistribution(distributorBucketSpace.getDistribution());
-    idealNodeCalc.setClusterState(getExternalOperationHandler().getClusterState());
+    idealNodeCalc.setClusterState(distributorBucketSpace.getClusterState());
     OperationTargetResolverImpl resolver(
             distributorBucketSpace.getBucketDatabase(), idealNodeCalc, 16,
             distributorBucketSpace.getDistribution().getRedundancy(),
@@ -190,7 +190,7 @@ OperationTargetResolverTest::testMultipleNodes()
 
         lib::IdealNodeCalculatorImpl idealNodeCalc;
         idealNodeCalc.setDistribution(distributorBucketSpace.getDistribution());
-        idealNodeCalc.setClusterState(getExternalOperationHandler().getClusterState());
+        idealNodeCalc.setClusterState(distributorBucketSpace.getClusterState());
         lib::IdealNodeList idealNodes(
                 idealNodeCalc.getIdealStorageNodes(BucketId(16, i)));
         uint16_t expectedNode = idealNodes[0].getIndex();

@@ -310,11 +310,8 @@ public class DockerOperationsImpl implements DockerOperations {
     private String createContainerEnvironmentSettings(Environment environment, ContainerNodeSpec nodeSpec) {
         ObjectMapper objectMapper = new ObjectMapper();
 
-        String configServers = environment.getConfigServerUris().stream()
-                .map(URI::getHost)
-                .collect(Collectors.joining(","));
         ContainerEnvironmentSettings settings = new ContainerEnvironmentSettings();
-        settings.set("configServerAddresses", configServers);
+        settings.set("configServerAddresses", environment.getConfigServerHostNames());
         settings.set("nodeType", nodeSpec.nodeType);
 
         try {

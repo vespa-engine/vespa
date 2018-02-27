@@ -83,7 +83,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
             if ( ! version.configServerHostnames().isEmpty())
                 version = new VespaVersion(version.statistics(), 
                                            version.releaseCommit(), 
-                                           version.releasedAt(), 
+                                           version.committedAt(),
                                            version.isCurrentSystemVersion(), 
                                            ImmutableSet.of("config1.test", "config2.test"),
                                            VespaVersion.confidenceFrom(version.statistics(), controller)

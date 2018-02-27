@@ -29,7 +29,7 @@ PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClus
       _missingEntries(),
       _clusterInfo(std::move(clusterInfo)),
       _outdatedNodes(newClusterState.getNodeCount(NodeType::STORAGE)),
-      _prevClusterState(_clusterInfo->getClusterState()),
+      _prevClusterState(distributorBucketSpace.getClusterState()),
       _newClusterState(newClusterState),
       _creationTimestamp(creationTimestamp),
       _pendingClusterState(pendingClusterState),

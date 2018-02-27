@@ -31,7 +31,7 @@ public class VersionStatusSerializer {
 
     // VespaVersion fields
     private static final String releaseCommitField = "releaseCommit";
-    private static final String releasedAtField = "releasedAt";
+    private static final String committedAtField = "releasedAt";
     private static final String isCurrentSystemVersionField = "isCurrentSystemVersion";
     private static final String deploymentStatisticsField = "deploymentStatistics";
     private static final String confidenceField = "confidence";
@@ -61,7 +61,7 @@ public class VersionStatusSerializer {
 
     private void vespaVersionToSlime(VespaVersion version, Cursor object) {
         object.setString(releaseCommitField, version.releaseCommit());
-        object.setLong(releasedAtField, version.releasedAt().toEpochMilli());
+        object.setLong(committedAtField, version.committedAt().toEpochMilli());
         object.setBool(isCurrentSystemVersionField, version.isCurrentSystemVersion());
         deploymentStatisticsToSlime(version.statistics(), object.setObject(deploymentStatisticsField));
         object.setString(confidenceField, version.confidence().name());
@@ -92,7 +92,7 @@ public class VersionStatusSerializer {
     private VespaVersion vespaVersionFromSlime(Inspector object) {
         return new VespaVersion(deploymentStatisticsFromSlime(object.field(deploymentStatisticsField)),
                                 object.field(releaseCommitField).asString(),
-                                Instant.ofEpochMilli(object.field(releasedAtField).asLong()),
+                                Instant.ofEpochMilli(object.field(committedAtField).asLong()),
                                 object.field(isCurrentSystemVersionField).asBool(),
                                 configServersFromSlime(object.field(configServersField)),
                                 VespaVersion.Confidence.valueOf(object.field(confidenceField).asString())

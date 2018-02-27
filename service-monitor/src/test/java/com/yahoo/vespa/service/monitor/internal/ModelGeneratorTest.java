@@ -44,7 +44,7 @@ public class ModelGeneratorTest {
                 .collect(Collectors.toList());
 
         SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
-        when(slobrokMonitorManager.getStatus(any(), any(), any()))
+        when(slobrokMonitorManager.getStatus(any(), any(), any(), any()))
                 .thenReturn(ServiceStatus.UP);
 
         ServiceModel serviceModel =
@@ -88,7 +88,7 @@ public class ModelGeneratorTest {
         List<String> configServerHosts = Collections.emptyList();
 
         SlobrokMonitorManagerImpl slobrokMonitorManager = mock(SlobrokMonitorManagerImpl.class);
-        when(slobrokMonitorManager.getStatus(any(), any(), any()))
+        when(slobrokMonitorManager.getStatus(any(), any(), any(), any()))
                 .thenReturn(ServiceStatus.UP);
 
         ServiceModel serviceModel =

@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.controller;
 
+import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Inspector;
-import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
@@ -14,11 +14,13 @@ import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Scanner;
 import java.util.logging.Level;
 
 /**
@@ -67,15 +69,15 @@ public class ControllerApiHandler extends LoggingRequestHandler {
 
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
-        if (path.matches("/controller/v1/maintenance/inactive/{jobName}")) 
-            return setActive(path.get("jobName"), false);
+        if (path.matches("/controller/v1/maintenance/inactive/{jobName}")) return setActive(path.get("jobName"), false);
+        if (path.matches("/controller/v1/jobs/upgrader/confidence/{version}")) return overrideConfidence(request, path.get("version"));
         return notFound(path);
     }
 
     private HttpResponse delete(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
-        if (path.matches("/controller/v1/maintenance/inactive/{jobName}"))
-            return setActive(path.get("jobName"), true);
+        if (path.matches("/controller/v1/maintenance/inactive/{jobName}")) return setActive(path.get("jobName"), true);
+        if (path.matches("/controller/v1/jobs/upgrader/confidence/{version}")) return removeConfidenceOverride(path.get("version"));
         return notFound(path);
     }
 
@@ -100,24 +102,41 @@ public class ControllerApiHandler extends LoggingRequestHandler {
 
     private HttpResponse configureUpgrader(HttpRequest request) {
         String upgradesPerMinuteField = "upgradesPerMinute";
-        String ignoreConfidenceField = "ignoreConfidence";
+        String confidenceOverrideField = "confidenceOverride";
 
         byte[] jsonBytes = toJsonBytes(request.getData());
         Inspector inspect = SlimeUtils.jsonToSlime(jsonBytes).get();
         Upgrader upgrader = maintenance.upgrader();
+
         if (inspect.field(upgradesPerMinuteField).valid()) {
             upgrader.setUpgradesPerMinute(inspect.field(upgradesPerMinuteField).asDouble());
-        } else if (inspect.field(ignoreConfidenceField).valid()) {
-            upgrader.ignoreConfidence(inspect.field(ignoreConfidenceField).asBool());
         } else {
-            return ErrorResponse.badRequest("Unable to configure upgrader with data in request: '" +
-                                                    Utf8.toString(jsonBytes) + "'");
+            return ErrorResponse.badRequest("No such modifiable field(s)");
         }
 
         return new UpgraderResponse(maintenance.upgrader());
     }
 
-    private byte[] toJsonBytes(InputStream jsonStream) {
+    private HttpResponse removeConfidenceOverride(String version) {
+        maintenance.upgrader().removeConfidenceOverride(Version.fromString(version));
+        return new UpgraderResponse(maintenance.upgrader());
+    }
+
+    private HttpResponse overrideConfidence(HttpRequest request, String version) {
+        Confidence confidence = Confidence.valueOf(asString(request.getData()));
+        maintenance.upgrader().overrideConfidence(Version.fromString(version), confidence);
+        return new UpgraderResponse(maintenance.upgrader());
+    }
+
+    private static String asString(InputStream in) {
+        Scanner scanner = new Scanner(in).useDelimiter("\\A");
+        if (scanner.hasNext()) {
+            return scanner.next();
+        }
+        return "";
+    }
+
+    private static byte[] toJsonBytes(InputStream jsonStream) {
         try {
             return IOUtils.readBytes(jsonStream, 1000 * 1000);
         } catch (IOException e) {

@@ -240,7 +240,7 @@ DistributorTestUtil::removeFromBucketDB(const document::BucketId& id)
 void
 DistributorTestUtil::addIdealNodes(const document::BucketId& id)
 {
-    addIdealNodes(getExternalOperationHandler().getClusterState(), id);
+    addIdealNodes(*getExternalOperationHandler().getClusterStateBundle().getBaselineClusterState(), id);
 }
 
 void
@@ -389,7 +389,7 @@ DistributorTestUtil::getBucketSpaces() const
 void
 DistributorTestUtil::enableDistributorClusterState(vespalib::stringref state)
 {
-    _distributor->enableClusterState(lib::ClusterState(state));
+    _distributor->enableClusterStateBundle(lib::ClusterStateBundle(lib::ClusterState(state)));
 }
 
 }

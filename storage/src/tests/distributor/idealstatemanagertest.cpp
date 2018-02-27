@@ -49,7 +49,7 @@ public:
     void testBlockCheckForAllOperationsToSpecificBucket();
 
     void setSystemState(const lib::ClusterState& systemState) {
-        _distributor->enableClusterState(systemState);
+        _distributor->enableClusterStateBundle(lib::ClusterStateBundle(systemState));
     }
 
     CPPUNIT_TEST_SUITE(IdealStateManagerTest);

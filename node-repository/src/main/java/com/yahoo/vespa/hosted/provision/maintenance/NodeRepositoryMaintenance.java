@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
@@ -53,17 +54,20 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     @Inject
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Curator curator,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor, 
-                                     Zone zone, Orchestrator orchestrator, Metric metric) {
-        this(nodeRepository, deployer, curator, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(), orchestrator, metric);
+                                     Zone zone, Orchestrator orchestrator, Metric metric,
+                                     ConfigserverConfig configserverConfig) {
+        this(nodeRepository, deployer, curator, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
+                orchestrator, metric, configserverConfig);
     }
 
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Curator curator,
-                                     HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor, 
-                                     Zone zone, Clock clock, Orchestrator orchestrator, Metric metric) {
+                                     HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
+                                     Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
+                                     ConfigserverConfig configserverConfig) {
         DefaultTimes defaults = new DefaultTimes(zone.environment());
         jobControl = new JobControl(nodeRepository.database());
 
-        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv("throttle_policy").orElse(defaults.throttlePolicy), metric, jobControl);
+        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv("throttle_policy").orElse(defaults.throttlePolicy), metric, jobControl, configserverConfig);
         periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, nodeRepository, durationFromEnv("periodic_redeploy_interval").orElse(defaults.periodicRedeployInterval), jobControl);
         operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, nodeRepository, clock, durationFromEnv("operator_change_redeploy_interval").orElse(defaults.operatorChangeRedeployInterval), jobControl);
         zooKeeperAccessMaintainer = new ZooKeeperAccessMaintainer(nodeRepository, curator, durationFromEnv("zookeeper_access_maintenance_interval").orElse(defaults.zooKeeperAccessMaintenanceInterval), jobControl);
