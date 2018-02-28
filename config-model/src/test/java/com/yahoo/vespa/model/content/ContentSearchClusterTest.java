@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.core.BucketspacesConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -138,6 +139,15 @@ public class ContentSearchClusterTest {
         return new BucketspacesConfig(builder);
     }
 
+    private static FleetcontrollerConfig getFleetcontrollerConfig(ContentCluster cluster) {
+        FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
+        cluster.getConfig(builder);
+        builder.cluster_name("unknown");
+        builder.index(0);
+        builder.zookeeper_server("unknown");
+        return new FleetcontrollerConfig(builder);
+    }
+
     private static void assertDocumentType(String expName, String expBucketSpace, BucketspacesConfig.Documenttype docType) {
         assertEquals(expName, docType.name());
         assertEquals(expBucketSpace, docType.bucketspace());
@@ -155,11 +165,17 @@ public class ContentSearchClusterTest {
 
     @Test
     public void require_that_multiple_bucket_spaces_can_be_enabled() throws Exception {
-        BucketspacesConfig config = getBucketspacesConfig(createClusterWithMultipleBucketSpacesEnabled());
-        assertEquals(2, config.documenttype().size());
-        assertDocumentType("global", "global", config.documenttype(0));
-        assertDocumentType("regular", "default", config.documenttype(1));
-        assertTrue(config.enable_multiple_bucket_spaces());
+        ContentCluster cluster = createClusterWithMultipleBucketSpacesEnabled();
+        {
+            BucketspacesConfig config = getBucketspacesConfig(cluster);
+            assertEquals(2, config.documenttype().size());
+            assertDocumentType("global", "global", config.documenttype(0));
+            assertDocumentType("regular", "default", config.documenttype(1));
+            assertTrue(config.enable_multiple_bucket_spaces());
+        }
+        {
+            assertTrue(getFleetcontrollerConfig(cluster).enable_multiple_bucket_spaces());
+        }
     }
 
 }

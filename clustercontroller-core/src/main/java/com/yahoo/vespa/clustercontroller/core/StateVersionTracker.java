@@ -144,6 +144,10 @@ public class StateVersionTracker {
         return clusterStatsChangeTracker.statsHaveChanged();
     }
 
+    MergePendingChecker createMergePendingChecker() {
+        return clusterStateView.getStatsAggregator().createMergePendingChecker();
+    }
+
     /*
     TODO test and implement
       - derived default space down-condition can only _keep_ a node in maintenance (down), not transition it from up -> maintenance
