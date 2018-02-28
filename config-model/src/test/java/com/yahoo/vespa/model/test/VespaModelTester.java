@@ -12,6 +12,7 @@ import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
@@ -43,6 +44,7 @@ public class VespaModelTester {
 
     private boolean hosted = true;
     private Map<String, Collection<Host>> hostsByFlavor = new HashMap<>();
+    private ApplicationId applicationId = ApplicationId.defaultId();
 
     public VespaModelTester() {
         this(new NullConfigModelRegistry());
@@ -84,6 +86,11 @@ public class VespaModelTester {
     /** Sets whether this sets up a model for a hosted system. Default: true */
     public void setHosted(boolean hosted) { this.hosted = hosted; }
 
+    /** Sets the tenant, application name, and instance name of the model being built. */
+    public void setApplicationId(String tenant, String applicationName, String instanceName) {
+        applicationId = ApplicationId.from(tenant, applicationName, instanceName);
+    }
+
     /** Creates a model which uses 0 as start index and fails on out of capacity */
     public VespaModel createModel(String services, String ... retiredHostNames) {
         return createModel(services, true, retiredHostNames);
@@ -108,11 +115,16 @@ public class VespaModelTester {
                                       new InMemoryProvisioner(hostsByFlavor, failOnOutOfCapacity, startIndexForClusters, retiredHostNames) :
                                       new SingleNodeProvisioner();
 
+        DeployProperties properties = new DeployProperties.Builder()
+                .hostedVespa(hosted)
+                .applicationId(applicationId)
+                .build();
+
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(appPkg)
                 .modelHostProvisioner(provisioner)
-                .properties((new DeployProperties.Builder()).hostedVespa(hosted).build()).build(true);
+                .properties(properties)
+                .build(true);
         return modelCreatorWithMockPkg.create(false, deployState, configModelRegistry);
     }
-
 }
