@@ -12,7 +12,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class MaintenancehenPendingGlobalMergesTest {
+public class MaintenanceWhenPendingGlobalMergesTest {
 
     private static class Fixture {
         public MergePendingChecker mockPendingChecker = mock(MergePendingChecker.class);

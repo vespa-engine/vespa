@@ -8,6 +8,7 @@ import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.distribution.Group;
 import com.yahoo.vdslib.state.*;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
+import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -205,7 +206,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     }
 
     public int getLatestVersion() {
-        return 2;
+        return RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_VERSION;
     }
 
     public String getSlobrokAddress() {
@@ -375,21 +376,23 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     public boolean notifyNoSuchMethodError(String methodName, Timer timer) {
         if (methodName.equals("getnodestate3")) {
             if (version > 1) {
-                log.log(LogLevel.DEBUG, "Node " + toString() + " does not support " + methodName + " call. Setting version to 1.");
-                version = 1;
-                nextAttemptTime = 0;
-                adjustedVersionTime = timer.getCurrentTimeInMillis();
+                downgradeToRpcVersion(1, methodName, timer);
                 return true;
             } else if (timer.getCurrentTimeInMillis() - 2000 < adjustedVersionTime) {
                 log.log(LogLevel.DEBUG, "Node " + toString() + " does not support " + methodName + " call. Version already at 1 and was recently adjusted, so ignoring it.");
                 return true;
             }
-        } else if (methodName.equals("getnodestate2") || methodName.equals("setsystemstate2")) {
+        } else if (methodName.equals(RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_METHOD_NAME)) {
+            if (version == RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_VERSION) {
+                downgradeToRpcVersion(RPCCommunicator.LEGACY_SET_SYSTEM_STATE2_RPC_VERSION, methodName, timer);
+                return true;
+            } else if (timer.getCurrentTimeInMillis() - 2000 < adjustedVersionTime) {
+                log.log(LogLevel.DEBUG, () -> "Node " + toString() + " does not support " + methodName + " call. Version already downgraded, so ignoring it.");
+                return true;
+            }
+        } else if (methodName.equals("getnodestate2") || methodName.equals(RPCCommunicator.LEGACY_SET_SYSTEM_STATE2_RPC_METHOD_NAME)) {
             if (version > 0) {
-                log.log(LogLevel.DEBUG, "Node " + toString() + " does not support " + methodName + " call. Setting version to 0.");
-                version = 0;
-                nextAttemptTime = 0;
-                adjustedVersionTime = timer.getCurrentTimeInMillis();
+                downgradeToRpcVersion(0, methodName, timer);
                 return true;
             } else if (timer.getCurrentTimeInMillis() - 2000 < adjustedVersionTime) {
                 log.log(LogLevel.DEBUG, "Node " + toString() + " does not support " + methodName + " call. Version already at 0 and was recently adjusted, so ignoring it.");
@@ -398,6 +401,14 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         }
         log.log(LogLevel.WARNING, "Node " + toString() + " does not support " + methodName + " which it should.");
         return false;
+    }
+
+    private void downgradeToRpcVersion(int newVersion, String methodName, Timer timer) {
+        log.log(LogLevel.DEBUG, () -> String.format("Node %s does not support %s call. Downgrading to version %d.",
+                toString(), methodName, newVersion));
+        version = newVersion;
+        nextAttemptTime = 0;
+        adjustedVersionTime = timer.getCurrentTimeInMillis();
     }
 
     public Target getConnection() {

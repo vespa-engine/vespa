@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.compress.CompressionType;
+import com.yahoo.compress.Compressor;
 import com.yahoo.jrt.*;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.slobrok.api.BackOffPolicy;
@@ -8,6 +10,10 @@ import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vdslib.state.*;
+import com.yahoo.vespa.clustercontroller.core.rpc.EncodedClusterStateBundle;
+import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
+import com.yahoo.vespa.clustercontroller.core.rpc.RPCUtil;
+import com.yahoo.vespa.clustercontroller.core.rpc.SlimeClusterStateBundleCodec;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -345,6 +351,14 @@ public class DummyVdsNode {
                 supervisor.addMethod(m);
             }
         }
+        if (stateCommunicationVersion >= RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_VERSION) {
+            m = new Method(RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_METHOD_NAME, "bix", "", this, "rpc_setDistributionStates");
+            m.methodDesc("Set distribution states for cluster and bucket spaces");
+            m.paramDesc(0, "compressionType", "Compression type for payload");
+            m.paramDesc(1, "uncompressedSize", "Uncompressed size of payload");
+            m.paramDesc(2, "payload", "Slime format payload");
+            supervisor.addMethod(m);
+        }
     }
 
     public void rpc_storageConnect(Request req) {
@@ -497,6 +511,27 @@ public class DummyVdsNode {
             log.log(LogLevel.DEBUG, "Dummy node " + this + ": Got new system state " + newState);
         } catch (Exception e) {
             log.log(LogLevel.ERROR, "Dummy node " + this + ": An error occured when answering setsystemstate request: " + e.getMessage());
+            e.printStackTrace(System.err);
+            req.setError(ErrorCode.METHOD_FAILED, e.getMessage());
+        }
+    }
+
+    public void rpc_setDistributionStates(Request req) {
+        try {
+            if (shouldFailSetSystemStateRequests()) {
+                req.setError(ErrorCode.GENERAL_ERROR, "Dummy node configured to fail setDistributionStates() calls");
+                return;
+            }
+            ClusterStateBundle stateBundle = RPCUtil.decodeStateBundleFromSetDistributionStatesRequest(req);
+            ClusterState newState = stateBundle.getBaselineClusterState();
+            synchronized(timer) {
+                updateStartTimestamps(newState);
+                systemState.add(0, newState);
+                timer.notifyAll();
+            }
+            log.log(LogLevel.DEBUG, "Dummy node " + this + ": Got new cluster state " + newState);
+        } catch (Exception e) {
+            log.log(LogLevel.ERROR, "Dummy node " + this + ": An error occured when answering setdistributionstates request: " + e.getMessage());
             e.printStackTrace(System.err);
             req.setError(ErrorCode.METHOD_FAILED, e.getMessage());
         }

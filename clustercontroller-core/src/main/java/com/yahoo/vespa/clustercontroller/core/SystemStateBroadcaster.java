@@ -59,8 +59,8 @@ public class SystemStateBroadcaster {
                 int version = req.getSystemStateVersion();
 
                 if (req.getReply().isError()) {
+                    info.setSystemStateVersionAcknowledged(version, false);
                     if (req.getReply().getReturnCode() != Communicator.TRANSIENT_ERROR) {
-                        info.setSystemStateVersionAcknowledged(version, false);
                         if (info.getNewestSystemStateVersionSent() == version) {
                             reportNodeError(nodeOk, info,
                                     "Got error response " + req.getReply().getReturnCode() + ": " + req.getReply().getReturnMessage()

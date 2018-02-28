@@ -17,8 +17,9 @@ public class DistributionBitCountTest extends FleetControllerTest {
 
     private void setUpSystem(String testName) throws Exception {
         List<ConfiguredNode> configuredNodes = new ArrayList<>();
-        for (int i = 0 ; i < 10; i++)
+        for (int i = 0 ; i < 10; i++) {
             configuredNodes.add(new ConfiguredNode(i, false));
+        }
         FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
         options.distributionBits = 17;
         setUpFleetController(false, options);
