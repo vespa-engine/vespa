@@ -26,8 +26,8 @@ class Tensor;
 
 /**
  * Interface used to describe a tensor function as a tree of nodes
- * with information about operation sequencing and intermediate result
- * types. Each node in the tree describes a single tensor
+ * with information about operation sequencing and intermediate
+ * results. Each node in the tree describes a single tensor
  * operation. This is the intermediate representation of a tensor
  * function.
  *
@@ -38,10 +38,14 @@ class Tensor;
  *
  * The generic tree will then be optimized (in-place, bottom-up) where
  * sub-expressions may be replaced with optimized
- * implementation-specific alternatives.
+ * implementation-specific alternatives. Note that multiple nodes in
+ * the original representation can be replaced with a single
+ * specialized node in the optimized tree.
  *
  * This leaves us with a mixed-mode tree with some generic and some
- * specialized nodes, that may be evaluated recursively.
+ * specialized nodes. This tree will then be compiled into a sequence
+ * of instructions (each node will map to a single instruction) and
+ * evaluated in the context of an interpreted function.
  **/
 struct TensorFunction
 {
@@ -65,6 +69,7 @@ struct TensorFunction
         void set(const TensorFunction &child) const { ptr = &child; }
     };
     virtual const ValueType &result_type() const = 0;
+    virtual bool result_is_mutable() const { return false; }
 
     /**
      * Push references to all children (NB: implementation must use
