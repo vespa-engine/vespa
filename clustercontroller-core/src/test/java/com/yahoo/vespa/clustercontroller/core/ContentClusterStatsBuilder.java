@@ -9,7 +9,7 @@ import java.util.Map;
  */
 public class ContentClusterStatsBuilder {
 
-    private final Map<Integer, Map<String, ContentNodeStats.BucketSpaceStats>> stats = new HashMap<>();
+    private final Map<Integer, ContentNodeStatsBuilder> stats = new HashMap<>();
 
     public ContentClusterStatsBuilder add(int nodeIndex, String bucketSpace, long bucketsTotal, long bucketsPending) {
         return add(nodeIndex, bucketSpace, ContentNodeStats.BucketSpaceStats.of(bucketsTotal, bucketsPending));
@@ -24,24 +24,24 @@ public class ContentClusterStatsBuilder {
     }
 
     public ContentClusterStatsBuilder add(int nodeIndex, String bucketSpace, ContentNodeStats.BucketSpaceStats bucketSpaceStats) {
-        Map<String, ContentNodeStats.BucketSpaceStats> contentNodeStats = stats.get(nodeIndex);
-        if (contentNodeStats == null) {
-            contentNodeStats = new HashMap<>();
-            stats.put(nodeIndex, contentNodeStats);
+        ContentNodeStatsBuilder nodeStatsBuilder = stats.get(nodeIndex);
+        if (nodeStatsBuilder == null) {
+            nodeStatsBuilder = new ContentNodeStatsBuilder(nodeIndex);
+            stats.put(nodeIndex, nodeStatsBuilder);
         }
-        contentNodeStats.put(bucketSpace, bucketSpaceStats);
+        nodeStatsBuilder.add(bucketSpace, bucketSpaceStats);
         return this;
     }
 
     public ContentClusterStatsBuilder add(int nodeIndex) {
-        stats.put(nodeIndex, new HashMap<>());
+        stats.put(nodeIndex, new ContentNodeStatsBuilder(nodeIndex));
         return this;
     }
 
     public ContentClusterStats build() {
         Map<Integer, ContentNodeStats> nodeToStatsMap = new HashMap<>();
-        stats.forEach((nodeIndex, bucketSpaces) ->
-                nodeToStatsMap.put(nodeIndex, new ContentNodeStats(nodeIndex, bucketSpaces)));
+        stats.forEach((nodeIndex, nodeStatsBuilder) ->
+                nodeToStatsMap.put(nodeIndex, nodeStatsBuilder.build()));
         return new ContentClusterStats(nodeToStatsMap);
     }
 }

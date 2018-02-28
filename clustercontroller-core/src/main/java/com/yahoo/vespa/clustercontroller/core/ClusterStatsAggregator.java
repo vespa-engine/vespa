@@ -27,6 +27,7 @@ import java.util.*;
 public class ClusterStatsAggregator {
 
     private final Set<Integer> distributors;
+    private final Set<Integer> storageNodes;
     private final Set<Integer> nonUpdatedDistributors;
 
     // Maps the distributor node index to a map of content node index to the
@@ -40,12 +41,24 @@ public class ClusterStatsAggregator {
 
     ClusterStatsAggregator(Set<Integer> distributors, Set<Integer> storageNodes) {
         this.distributors = distributors;
+        this.storageNodes = storageNodes;
         nonUpdatedDistributors = new HashSet<>(distributors);
         aggregatedStats = new ContentClusterStats(storageNodes);
     }
 
-    ContentClusterStats getAggregatedStats() {
+    public ContentClusterStats getAggregatedStats() {
         return aggregatedStats;
+    }
+
+    public ContentNodeStats getAggregatedStatsForDistributor(int distributorIndex) {
+        ContentNodeStats result = new ContentNodeStats(distributorIndex);
+        ContentClusterStats distributorStats = distributorToStats.get(distributorIndex);
+        if (distributorStats != null) {
+            for (Iterator<ContentNodeStats> itr = distributorStats.iterator(); itr.hasNext(); ) {
+                result.add(itr.next());
+            }
+        }
+        return result;
     }
 
     boolean hasUpdatesFromAllDistributors() {

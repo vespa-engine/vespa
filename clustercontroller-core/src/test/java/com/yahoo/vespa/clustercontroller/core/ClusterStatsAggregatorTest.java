@@ -18,21 +18,47 @@ public class ClusterStatsAggregatorTest {
 
     private static class Fixture {
         private ClusterStatsAggregator aggregator;
+
         public Fixture(Set<Integer> distributorNodes,
                 Set<Integer> contentNodes) {
             aggregator = new ClusterStatsAggregator(distributorNodes, contentNodes);
         }
+
         public void update(int distributorIndex, ContentClusterStatsBuilder clusterStats) {
             aggregator.updateForDistributor(distributorIndex, clusterStats.build());
         }
+
         public void verify(ContentClusterStatsBuilder expectedStats) {
             assertEquals(expectedStats.build(), aggregator.getAggregatedStats());
         }
+
+        public void verify(int distributorIndex, ContentNodeStatsBuilder expectedStats) {
+            assertEquals(expectedStats.build(), aggregator.getAggregatedStatsForDistributor(distributorIndex));
+        }
+
         public boolean hasUpdatesFromAllDistributors() {
             return aggregator.hasUpdatesFromAllDistributors();
         }
+
         public boolean mayHaveBucketsPendingInGlobalSpace() {
             return aggregator.mayHaveBucketsPendingInGlobalSpace();
+        }
+    }
+
+    private static class FourNodesFixture extends Fixture {
+        public FourNodesFixture() {
+            super(distributorNodes(1, 2), contentNodes(3, 4));
+
+            update(1, new ContentClusterStatsBuilder()
+                    .add(3, "default", 10, 1)
+                    .add(3, "global", 11, 2)
+                    .add(4, "default", 12, 3)
+                    .add(4, "global", 13, 4));
+            update(2, new ContentClusterStatsBuilder()
+                    .add(3, "default", 14, 5)
+                    .add(3, "global", 15, 6)
+                    .add(4, "default", 16, 7)
+                    .add(4, "global", 17, 8));
         }
     }
 
@@ -56,18 +82,8 @@ public class ClusterStatsAggregatorTest {
 
     @Test
     public void aggregator_handles_updates_to_multiple_distributors_and_content_nodes() {
-        Fixture f = new Fixture(distributorNodes(1, 2), contentNodes(3, 4));
+        Fixture f = new FourNodesFixture();
 
-        f.update(1, new ContentClusterStatsBuilder()
-                .add(3, "default", 10, 1)
-                .add(3, "global", 11, 2)
-                .add(4, "default", 12, 3)
-                .add(4, "global", 13, 4));
-        f.update(2, new ContentClusterStatsBuilder()
-                .add(3, "default", 14, 5)
-                .add(3, "global", 15, 6)
-                .add(4, "default", 16, 7)
-                .add(4, "global", 17, 8));
         f.verify(new ContentClusterStatsBuilder()
                 .add(3, "default", 10 + 14, 1 + 5)
                 .add(3, "global", 11 + 15, 2 + 6)
@@ -152,6 +168,19 @@ public class ClusterStatsAggregatorTest {
                 .add(4, "global", 11, 0)
                 .add(4, "default", 12, 1));
         assertFalse(f.mayHaveBucketsPendingInGlobalSpace());
+    }
+
+    @Test
+    public void aggregator_can_provide_aggregated_stats_per_distributor() {
+        Fixture f = new FourNodesFixture();
+
+        f.verify(1, new ContentNodeStatsBuilder(1)
+                .add("default", 10 + 12, 1 + 3)
+                .add("global", 11 + 13, 2 + 4));
+
+        f.verify(2, new ContentNodeStatsBuilder(2)
+                .add("default", 14 + 16, 5 + 7)
+                .add("global", 15 + 17, 6 + 8));
     }
 
 }
