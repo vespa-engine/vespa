@@ -168,7 +168,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     fastos::TimeStamp visibilityDelay = loaded_config->getMaintenanceConfigSP()->getVisibilityDelay();
     _visibility.setVisibilityDelay(visibilityDelay);
     if (_visibility.getVisibilityDelay() > 0) {
-        _writeService.setTaskLimit(_writeServiceConfig.semiUnboundTaskLimit());
+        _writeService.setTaskLimit(_writeServiceConfig.semiUnboundTaskLimit(), _writeServiceConfig.defaultTaskLimit());
     }
 }
 
@@ -413,9 +413,9 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         _visibility.setVisibilityDelay(visibilityDelay);
     }
     if (_visibility.getVisibilityDelay() > 0) {
-        _writeService.setTaskLimit(_writeServiceConfig.semiUnboundTaskLimit());
+        _writeService.setTaskLimit(_writeServiceConfig.semiUnboundTaskLimit(), _writeServiceConfig.defaultTaskLimit());
     } else {
-        _writeService.setTaskLimit(_writeServiceConfig.defaultTaskLimit());
+        _writeService.setTaskLimit(_writeServiceConfig.defaultTaskLimit(), _writeServiceConfig.defaultTaskLimit());
     }
     if (params.shouldSubDbsChange() || hasVisibilityDelayChanged) {
         applySubDBConfig(*configSnapshot, serialNum, params);

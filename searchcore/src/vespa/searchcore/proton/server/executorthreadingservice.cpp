@@ -59,19 +59,13 @@ ExecutorThreadingService::shutdown()
 }
 
 void
-ExecutorThreadingService::setTaskLimit(uint32_t taskLimit)
+ExecutorThreadingService::setTaskLimit(uint32_t taskLimit, uint32_t summaryTaskLimit)
 {
     _indexExecutor.setTaskLimit(taskLimit);
-    _summaryExecutor.setTaskLimit(taskLimit);
+    _summaryExecutor.setTaskLimit(summaryTaskLimit);
     _indexFieldInverter.setTaskLimit(taskLimit);
     _indexFieldWriter.setTaskLimit(taskLimit);
     _attributeFieldWriter.setTaskLimit(taskLimit);
-}
-
-void
-ExecutorThreadingService::setUnboundTaskLimit()
-{
-    setTaskLimit(std::numeric_limits<uint32_t>::max());
 }
 
 } // namespace proton
