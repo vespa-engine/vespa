@@ -38,7 +38,7 @@ public class IdentityDocumentGenerator {
         this.nodeRepository = nodeRepository;
         this.zone = zone;
         this.keyProvider = keyProvider;
-        this.dnsSuffix = config.certDnsSuffix();
+        this.dnsSuffix = zoneConfig.certDnsSuffix();
         this.providerService = zoneConfig.serviceName();
         this.ztsUrl = config.ztsUrl();
         this.providerDomain = zoneConfig.domain();

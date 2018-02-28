@@ -13,14 +13,14 @@ zones{}.secretName                        string
 # Secret version
 zones{}.secretVersion                     int
 
-# Athenz principal authority header name
-athenzPrincipalHeaderName                 string        default="Athenz-Principal-Auth"
+# Certificate DNS suffix
+zones{}.certDnsSuffix                     string
 
 # Athenz ZTS server url
 ztsUrl                                    string
 
-# Certificate DNS suffix
-certDnsSuffix                             string
-
 # Path to Athenz CA JKS trust store
 athenzCaTrustStore                        string
+
+# Period between certificate updates
+updatePeriodDays                          int  default=5
