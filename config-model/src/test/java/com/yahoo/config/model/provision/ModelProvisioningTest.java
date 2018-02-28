@@ -1,46 +1,57 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
-import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
-
-import java.io.StringReader;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.deploy.DeployProperties;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
+import com.yahoo.vespa.model.content.StorageNode;
+import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.search.Dispatch;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.test.VespaModelTester;
+import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
+import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.content.StorageNode;
-import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
-import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
+import java.io.StringReader;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.yahoo.config.model.test.TestUtil.joinLines;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.collection.IsIn.isIn;
+import static org.hamcrest.core.Every.everyItem;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test cases for provisioning nodes to entire vespamodels
@@ -733,6 +744,52 @@ public class ModelProvisioningTest {
         assertEquals("default01", model.getAdmin().getSlobroks().get(3).getHostName());
         assertEquals("Included in addition because it is retired", "default02", model.getAdmin().getSlobroks().get(4).getHostName());
         assertEquals("Included in addition because it is retired", "default03", model.getAdmin().getSlobroks().get(5).getHostName());
+    }
+
+    @Test
+    public void testSlobroksAreSpreadOverAllContainerClustersExceptNodeAdmin() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                        "<services>" +
+                        "  <admin version='4.0'/>" +
+                        "  <container version='1.0' id='routing'>" +
+                        "     <nodes count='10'/>" +
+                        "  </container>" +
+                        "  <container version='1.0' id='node-admin'>" +
+                        "     <nodes count='3'/>" +
+                        "  </container>" +
+                        "</services>";
+
+        int numberOfHosts = 13;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        tester.setApplicationId("hosted-vespa", "routing", "default");
+        VespaModel model = tester.createModel(services, true);
+        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+
+        Set<String> routingHosts = getClusterHostnames(model, "routing");
+        assertEquals(10, routingHosts.size());
+
+        Set<String> nodeAdminHosts = getClusterHostnames(model, "node-admin");
+        assertEquals(3, nodeAdminHosts.size());
+
+        Set<String> slobrokHosts = model.getAdmin().getSlobroks().stream()
+                .map(AbstractService::getHostName)
+                .collect(Collectors.toSet());
+        assertEquals(3, slobrokHosts.size());
+
+        assertThat(slobrokHosts, everyItem(isIn(routingHosts)));
+        assertThat(slobrokHosts, everyItem(not(isIn(nodeAdminHosts))));
+    }
+
+    private Set<String> getClusterHostnames(VespaModel model, String clusterId) {
+        return model.getHosts().stream()
+                .filter(host -> host.getServices().stream()
+                        .anyMatch(serviceInfo -> Objects.equals(
+                                serviceInfo.getProperty("clustername"),
+                                Optional.of(clusterId))))
+                .map(HostInfo::getHostname)
+                .collect(Collectors.toSet());
     }
 
     @Test
