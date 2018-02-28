@@ -130,7 +130,7 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.wantedRestartGeneration),
                 Optional.ofNullable(node.currentRestartGeneration),
                 Optional.ofNullable(node.wantedRebootGeneration),
-                Optional.ofNullable(node.currentRestartGeneration),
+                Optional.ofNullable(node.currentRebootGeneration),
                 node.minCpuCores,
                 node.minMainMemoryAvailableGb,
                 node.minDiskAvailableGb,
