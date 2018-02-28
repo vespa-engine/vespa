@@ -33,7 +33,7 @@ public class ContainerData {
 
     private final Path destinationPathOnHost;
 
-    public ContainerData(Environment environment, ContainerName containerName) {
+    private ContainerData(Environment environment, ContainerName containerName) {
         this.destinationPathOnHost = environment.pathInHostFromPathInNode(containerName, ContainerData.containerDataPath);
     }
 
