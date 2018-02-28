@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
@@ -17,6 +18,7 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
+import com.yahoo.vespa.hosted.node.admin.containerdata.ConfigServerContainerData;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
@@ -256,6 +258,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void startContainer(ContainerNodeSpec nodeSpec) {
+        createContainerData(nodeSpec);
         dockerOperations.createContainer(containerName, nodeSpec);
         dockerOperations.startContainer(containerName, nodeSpec);
         aclMaintainer.run();
@@ -676,5 +679,12 @@ public class NodeAgentImpl implements NodeAgent {
     private void orchestratorSuspendNode() {
         logger.info("Ask Orchestrator for permission to suspend node " + hostname);
         orchestrator.suspend(hostname);
+    }
+
+    private void createContainerData(ContainerNodeSpec nodeSpec) {
+        if (nodeSpec.nodeType.equals(NodeType.config.name())) {
+            logger.info("Creating files needed by config server");
+            new ConfigServerContainerData(environment, nodeSpec.hostname).create();
+        }
     }
 }

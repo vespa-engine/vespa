@@ -12,6 +12,8 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.containerdata.ConfigServerContainerData;
+import com.yahoo.vespa.hosted.node.admin.containerdata.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
@@ -55,7 +57,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * @author bakksjo
+ * @author Øyvind Bakksjø
  */
 public class NodeAgentImplTest {
     private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofSeconds(30);
@@ -624,6 +626,59 @@ public class NodeAgentImplTest {
         assertEquals(Collections.emptySet(), actualMetrics);
     }
 
+    @Test
+    public void testRunningConfigServer() throws IOException {
+        final long rebootGeneration = 0;
+        final ContainerNodeSpec nodeSpec = nodeSpecBuilder
+                .nodeType("config")
+                .wantedDockerImage(dockerImage)
+                .nodeState(Node.State.active)
+                .wantedVespaVersion(vespaVersion)
+                .build();
+
+        System.out.println(nodeSpec);
+
+        NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
+
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+        Path tempDirectory = Files.createTempDirectory("foo");
+        when(pathResolver.getApplicationStoragePathForHost()).thenReturn(tempDirectory);
+        when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
+        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(201326592000L));
+
+        nodeAgent.converge();
+
+        verify(dockerOperations, never()).removeContainer(any(), any());
+        verify(orchestrator, never()).suspend(any(String.class));
+
+        final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository, aclMaintainer);
+        inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(dockerImage));
+        inOrder.verify(dockerOperations, times(1)).createContainer(eq(containerName), eq(nodeSpec));
+        inOrder.verify(dockerOperations, times(1)).startContainer(eq(containerName), eq(nodeSpec));
+        inOrder.verify(aclMaintainer, times(1)).run();
+        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName));
+        inOrder.verify(nodeRepository).updateNodeAttributes(
+                hostName, new NodeAttributes()
+                        .withRebootGeneration(rebootGeneration)
+                        .withDockerImage(dockerImage)
+                        .withVespaVersion(vespaVersion));
+        inOrder.verify(orchestrator).resume(hostName);
+
+        // Files written in createContainerData()
+        assertFileExists(containerName, tempDirectory, "node-repository-config.xml");
+        assertFileExists(containerName, tempDirectory, "configserver-config.xml");
+    }
+
+    private void assertFileExists(ContainerName containerName, Path tempDirectory, String filename) {
+        File file = tempDirectory
+                .resolve(containerName.asString())
+                .resolve(Paths.get("/").relativize(ContainerData.containerDataPath))
+                .resolve(ConfigServerContainerData.configServerAppDir)
+                .resolve(filename)
+                .toAbsolutePath()
+                .toFile();
+        assertTrue("File " + file + " does not exist", file.exists());
+    }
 
     private NodeAgentImpl makeNodeAgent(DockerImage dockerImage, boolean isRunning) {
         Optional<Container> container = dockerImage != null ?
