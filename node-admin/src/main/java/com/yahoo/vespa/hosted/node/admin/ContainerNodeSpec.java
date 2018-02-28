@@ -32,6 +32,7 @@ public class ContainerNodeSpec {
     public final Optional<Long> wantedRebootGeneration;
     public final Optional<Long> currentRebootGeneration;
 
+    public final Optional<Boolean> allowedToBeDown;
     public final Optional<Owner> owner;
     public final Optional<Membership> membership;
 
@@ -54,6 +55,7 @@ public class ContainerNodeSpec {
             final String nodeCanonicalFlavor,
             final Optional<String> wantedVespaVersion,
             final Optional<String> vespaVersion,
+            final Optional<Boolean> allowedToBeDown,
             final Optional<Owner> owner,
             final Optional<Membership> membership,
             final Optional<Long> wantedRestartGeneration,
@@ -70,6 +72,9 @@ public class ContainerNodeSpec {
         Objects.requireNonNull(nodeState);
         Objects.requireNonNull(nodeType);
         Objects.requireNonNull(nodeFlavor);
+        Objects.requireNonNull(allowedToBeDown);
+        Objects.requireNonNull(owner);
+        Objects.requireNonNull(membership);
         Objects.requireNonNull(minCpuCores);
         Objects.requireNonNull(minMainMemoryAvailableGb);
         Objects.requireNonNull(minDiskAvailableGb);
@@ -85,6 +90,7 @@ public class ContainerNodeSpec {
         this.nodeCanonicalFlavor = nodeCanonicalFlavor;
         this.wantedVespaVersion = wantedVespaVersion;
         this.vespaVersion = vespaVersion;
+        this.allowedToBeDown = allowedToBeDown;
         this.owner = owner;
         this.membership = membership;
         this.wantedRestartGeneration = wantedRestartGeneration;
@@ -115,6 +121,7 @@ public class ContainerNodeSpec {
                 Objects.equals(nodeCanonicalFlavor, that.nodeCanonicalFlavor) &&
                 Objects.equals(wantedVespaVersion, that.wantedVespaVersion) &&
                 Objects.equals(vespaVersion, that.vespaVersion) &&
+                Objects.equals(allowedToBeDown, that.allowedToBeDown) &&
                 Objects.equals(owner, that.owner) &&
                 Objects.equals(membership, that.membership) &&
                 Objects.equals(wantedRestartGeneration, that.wantedRestartGeneration) &&
@@ -141,6 +148,7 @@ public class ContainerNodeSpec {
                 nodeCanonicalFlavor,
                 wantedVespaVersion,
                 vespaVersion,
+                allowedToBeDown,
                 owner,
                 membership,
                 wantedRestartGeneration,
@@ -162,13 +170,14 @@ public class ContainerNodeSpec {
                 + " wantedDockerImage=" + wantedDockerImage
                 + " currentDockerImage=" + currentDockerImage
                 + " nodeState=" + nodeState
-                + " nodeType = " + nodeType
-                + " nodeFlavor = " + nodeFlavor
-                + " nodeCanonicalFlavor = " + nodeCanonicalFlavor
-                + " wantedVespaVersion = " + wantedVespaVersion
-                + " vespaVersion = " + vespaVersion
-                + " owner = " + owner
-                + " membership = " + membership
+                + " nodeType=" + nodeType
+                + " nodeFlavor=" + nodeFlavor
+                + " nodeCanonicalFlavor=" + nodeCanonicalFlavor
+                + " wantedVespaVersion=" + wantedVespaVersion
+                + " vespaVersion=" + vespaVersion
+                + " allowedToBeDown=" + allowedToBeDown
+                + " owner=" + owner
+                + " membership=" + membership
                 + " minCpuCores=" + minCpuCores
                 + " wantedRestartGeneration=" + wantedRestartGeneration
                 + " currentRestartGeneration=" + currentRestartGeneration
@@ -286,6 +295,7 @@ public class ContainerNodeSpec {
         private String nodeCanonicalFlavor;
         private Optional<String> wantedVespaVersion = Optional.empty();
         private Optional<String> vespaVersion = Optional.empty();
+        private Optional<Boolean> allowedToBeDown = Optional.empty();
         private Optional<Owner> owner = Optional.empty();
         private Optional<Membership> membership = Optional.empty();
         private Optional<Long> wantedRestartGeneration = Optional.empty();
@@ -370,6 +380,11 @@ public class ContainerNodeSpec {
             return this;
         }
 
+        public Builder allowedToBeDown(boolean allowedToBeDown) {
+            this.allowedToBeDown = Optional.of(allowedToBeDown);
+            return this;
+        }
+
         public Builder owner(Owner owner) {
             this.owner = Optional.of(owner);
             return this;
@@ -433,7 +448,7 @@ public class ContainerNodeSpec {
         public ContainerNodeSpec build() {
             return new ContainerNodeSpec(hostname, wantedDockerImage, currentDockerImage, nodeState, nodeType,
                                          nodeFlavor, nodeCanonicalFlavor,
-                                         wantedVespaVersion, vespaVersion, owner, membership,
+                                         wantedVespaVersion, vespaVersion, allowedToBeDown, owner, membership,
                                          wantedRestartGeneration, currentRestartGeneration,
                                          wantedRebootGeneration, currentRebootGeneration,
                                          minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb,
