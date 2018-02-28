@@ -124,6 +124,7 @@ public class RealNodeRepository implements NodeRepository {
                 node.nodeCanonicalFlavor,
                 Optional.ofNullable(node.wantedVespaVersion),
                 Optional.ofNullable(node.vespaVersion),
+                Optional.ofNullable(node.allowedToBeDown),
                 Optional.ofNullable(owner),
                 Optional.ofNullable(membership),
                 Optional.ofNullable(node.wantedRestartGeneration),

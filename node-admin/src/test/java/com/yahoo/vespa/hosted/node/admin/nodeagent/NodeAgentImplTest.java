@@ -567,6 +567,7 @@ public class NodeAgentImplTest {
                 .owner(owner)
                 .membership(membership)
                 .minMainMemoryAvailableGb(2)
+                .allowedToBeDown(true)
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);

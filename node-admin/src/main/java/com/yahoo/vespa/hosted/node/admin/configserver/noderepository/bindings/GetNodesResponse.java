@@ -35,6 +35,7 @@ public class GetNodesResponse {
         public final String nodeCanonicalFlavor;
         public final String wantedVespaVersion;
         public final String vespaVersion;
+        public final Boolean allowedToBeDown;
         public final Owner owner;
         public final Membership membership;
         public final Long wantedRestartGeneration;
@@ -58,6 +59,7 @@ public class GetNodesResponse {
                     @JsonProperty("canonicalFlavor") String nodeCanonicalFlavor,
                     @JsonProperty("wantedVespaVersion") String wantedVespaVersion,
                     @JsonProperty("vespaVersion") String vespaVersion,
+                    @JsonProperty("allowedToBeDown") Boolean allowedToBeDown,
                     @JsonProperty("owner") Owner owner,
                     @JsonProperty("membership") Membership membership,
                     @JsonProperty("restartGeneration") Long wantedRestartGeneration,
@@ -79,6 +81,7 @@ public class GetNodesResponse {
             this.nodeCanonicalFlavor = nodeCanonicalFlavor;
             this.wantedVespaVersion = wantedVespaVersion;
             this.vespaVersion = vespaVersion;
+            this.allowedToBeDown = allowedToBeDown;
             this.owner = owner;
             this.membership = membership;
             this.wantedRestartGeneration = wantedRestartGeneration;
@@ -103,6 +106,7 @@ public class GetNodesResponse {
                     + " nodeFlavor = " + nodeFlavor
                     + " wantedVespaVersion = " + wantedVespaVersion
                     + " vespaVersion = " + vespaVersion
+                    + " allowedToBeDown = " + allowedToBeDown
                     + " owner = " + owner
                     + " membership = " + membership
                     + " wantedRestartGeneration = " + wantedRestartGeneration

@@ -531,6 +531,8 @@ public class NodeAgentImpl implements NodeAgent {
                 .add("role", "tenants")
                 .add("state", nodeSpec.nodeState.toString())
                 .add("parentHostname", environment.getParentHostHostname());
+        nodeSpec.allowedToBeDown.ifPresent(allowed ->
+                dimensionsBuilder.add("orchestratorState", allowed ? "ALLOWED_TO_BE_DOWN" : "NO_REMARKS"));
         Dimensions dimensions = dimensionsBuilder.build();
 
         Docker.ContainerStats stats = containerStats.get();
