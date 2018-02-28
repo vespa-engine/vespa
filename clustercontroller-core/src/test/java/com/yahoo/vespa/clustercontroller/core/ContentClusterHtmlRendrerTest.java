@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.google.common.collect.Sets;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRendrer;
@@ -48,12 +49,14 @@ public class ContentClusterHtmlRendrerTest {
             distributorNodeInfoByIndex.put(x, nodeInfo);
         }
         storageNodeInfoByIndex.put(2, new StorageNodeInfo(contentCluster, 2, false, "storage" + 2, null));
+        ClusterStatsAggregator statsAggregator = new ClusterStatsAggregator(Sets.newHashSet(2), Sets.newHashSet(2));
 
         table.renderNodes(
                 storageNodeInfoByIndex,
                 distributorNodeInfoByIndex,
                 new FakeTimer(),
                 state,
+                statsAggregator,
                 10,
                 eventLog,
                 "pathPrefix",

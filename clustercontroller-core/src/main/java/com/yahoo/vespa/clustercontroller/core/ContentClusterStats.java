@@ -29,11 +29,11 @@ public class ContentClusterStats implements Iterable<ContentNodeStats> {
         return mapToNodeStats.values().iterator();
     }
 
-    ContentNodeStats getContentNode(Integer index) {
+    public ContentNodeStats getContentNode(Integer index) {
         return mapToNodeStats.get(index);
     }
 
-    int size() {
+    public int size() {
         return mapToNodeStats.size();
     }
 
