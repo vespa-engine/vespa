@@ -42,6 +42,7 @@ public class DeploymentJobExecutor extends Maintainer {
     protected void maintain() {
         controller().applications().deploymentTrigger().deploymentQueue().takeJobsToRun()
                 .forEach(buildJob -> executor.execute(() -> {
+                    log.log(Level.INFO, "Attempting to trigger " + buildJob + " in Screwdriver.");
                     for (int i = 0; i < triggeringRetries; i++)
                         if (buildService.trigger(buildJob))
                             return;
