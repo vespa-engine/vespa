@@ -52,6 +52,7 @@ declare -a modules=(
   jdisc_http_service
   simplemetrics
   standalone-container
+  vespa-athenz
   vespaclient-container-plugin
   zkfacade
 )
