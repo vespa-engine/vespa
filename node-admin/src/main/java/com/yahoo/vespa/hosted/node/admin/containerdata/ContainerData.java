@@ -3,6 +3,9 @@ package com.yahoo.vespa.hosted.node.admin.containerdata;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.component.Environment;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,30 +33,31 @@ public class ContainerData {
 
     private final Path destinationPathOnHost;
 
-    public ContainerData(Path destinationPathOnHost) {
-        this.destinationPathOnHost = destinationPathOnHost;
-        try {
-            cleanup(destinationPathOnHost);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public ContainerData(Environment environment, ContainerName containerName) {
+        this.destinationPathOnHost = environment.pathInHostFromPathInNode(containerName, ContainerData.containerDataPath);
     }
 
-    public void addFile(Path pathInContainer, String data) {
-        Path path = destinationPathOnHost.resolve(pathInContainer);
+    public static ContainerData createCleanContainerData(Environment environment, ContainerName containerName) {
+        ContainerData containerData = new ContainerData(environment, containerName);
+        IOExceptionUtil.uncheck(containerData::cleanup);
+        return containerData;
+    }
+
+
+    public void addFile(Path relativePathInContainer, String data) {
+        if (relativePathInContainer.isAbsolute())
+            throw new IllegalArgumentException("Path must be relative to root: " + relativePathInContainer);
+
+        Path path = destinationPathOnHost.resolve(relativePathInContainer);
         if (!path.toFile().exists()) {
-            try {
-                Files.createDirectories(path.getParent());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            IOExceptionUtil.uncheck(() -> Files.createDirectories(path.getParent()));
         }
         IOUtils.writeFile(path.toFile(), Utf8.toBytes(data));
     }
 
-    private void cleanup(Path path) throws IOException {
-        log.log(LogLevel.INFO, "Cleaning up " + path.toAbsolutePath());
-        recursiveDelete(path);
+    private void cleanup() throws IOException {
+        log.log(LogLevel.INFO, "Cleaning up " + destinationPathOnHost.toAbsolutePath());
+        recursiveDelete(destinationPathOnHost);
     }
 
 

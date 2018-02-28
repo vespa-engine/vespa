@@ -19,9 +19,8 @@ public class ConfigServerContainerData {
     }
 
     public void create() {
-        ContainerData containerData = new ContainerData(environment.pathInHostFromPathInNode(
-                ContainerName.fromHostname(configServerNodeHostName),
-                ContainerData.containerDataPath));
+        ContainerData containerData = ContainerData.createCleanContainerData(
+                environment, ContainerName.fromHostname(configServerNodeHostName));
         containerData.addFile(getPath("configserver-config.xml"), createConfigServerConfigXml());
         containerData.addFile(getPath("node-repository-config.xml"), createNodeRepoConfigXml());
     }
