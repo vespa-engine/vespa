@@ -6,6 +6,10 @@ import com.yahoo.vdslib.state.ClusterState;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Helper functions for constructing a ClusterStateBundle for a baseline state and zero or more
+ * explicit bucket space states.
+ */
 public class ClusterStateBundleUtil {
 
     public static ClusterStateBundle makeBundle(String baselineState, StateMapping... bucketSpaceStates) {

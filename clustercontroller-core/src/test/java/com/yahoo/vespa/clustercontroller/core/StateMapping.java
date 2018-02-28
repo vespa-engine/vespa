@@ -3,6 +3,10 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.ClusterState;
 
+/**
+ * Tuple representing a mapping from a named bucket space to the derived ClusterState
+ * for that space.
+ */
 public class StateMapping {
 
     final String bucketSpace;

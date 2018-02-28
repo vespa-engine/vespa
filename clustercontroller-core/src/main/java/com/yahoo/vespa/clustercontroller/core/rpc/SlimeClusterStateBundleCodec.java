@@ -11,6 +11,14 @@ import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Implementation of ClusterStateBundleCodec which uses structured Slime binary encoding
+ * to implement (de-)serialization of ClusterStateBundle instances. Encoding format is
+ * intentionally extensible so that we may add other information to it later.
+ *
+ * LZ4 compression is transparently applied during encoding and decompression is
+ * subsequently applied during decoding.
+ */
 public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec {
 
     private static final Compressor compressor = new Compressor(CompressionType.LZ4, 3, 0.90, 1024);
