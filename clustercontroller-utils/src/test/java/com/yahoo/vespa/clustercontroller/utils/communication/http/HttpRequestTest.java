@@ -1,9 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.communication.http;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class HttpRequestTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+
+public class HttpRequestTest {
 
     private HttpRequest createRequest() {
         return new HttpRequest()
@@ -16,6 +20,7 @@ public class HttpRequestTest extends TestCase {
                 .setTimeout(25);
     }
 
+    @Test
     public void testEquality() {
         assertEquals(createRequest(), createRequest());
         assertNotSame(createRequest(), createRequest().setHost("localhost"));
@@ -25,6 +30,7 @@ public class HttpRequestTest extends TestCase {
         assertNotSame(createRequest(), createRequest().setHttpOperation(HttpRequest.HttpOp.DELETE));
     }
 
+    @Test
     public void testVerifyComplete() {
         // To be a complete request, an HTTP request must include:
         //  - A path
@@ -42,6 +48,7 @@ public class HttpRequestTest extends TestCase {
         new HttpRequest().setHttpOperation(HttpRequest.HttpOp.GET).setPath("/bar").verifyComplete();
     }
 
+    @Test
     public void testMerge() {
         {
             HttpRequest base = new HttpRequest()
@@ -84,16 +91,19 @@ public class HttpRequestTest extends TestCase {
         }
     }
 
+    @Test
     public void testNonExistingHeader() {
         assertEquals("foo", new HttpRequest().getHeader("asd", "foo"));
         assertEquals("foo", new HttpRequest().addHttpHeader("bar", "foo").getHeader("asd", "foo"));
     }
 
+    @Test
     public void testOption() {
         assertEquals("bar", new HttpRequest().addUrlOption("foo", "bar").getOption("foo", "foo"));
         assertEquals("foo", new HttpRequest().getOption("asd", "foo"));
     }
 
+    @Test
     public void testToString() {
         assertEquals("GET? http://localhost:8080/",
                      new HttpRequest()
@@ -113,9 +123,11 @@ public class HttpRequestTest extends TestCase {
                         .toString(true));
     }
 
+    @Test
     public void testNothingButGetCoverage() {
         assertEquals(false, new HttpRequest().equals(new Object()));
         new HttpRequest().getHeaders();
         new HttpRequest().setUrlOptions(new HttpRequest().getUrlOptions());
     }
+
 }

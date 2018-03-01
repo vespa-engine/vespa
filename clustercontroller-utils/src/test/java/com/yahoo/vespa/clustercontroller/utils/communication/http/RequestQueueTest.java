@@ -4,11 +4,14 @@ package com.yahoo.vespa.clustercontroller.utils.communication.http;
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncCallback;
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperation;
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperationImpl;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.util.LinkedList;
 
-public class RequestQueueTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+
+public class RequestQueueTest {
+
     public static class Request {
         public final HttpRequest request;
         public final AsyncOperationImpl<HttpResult> result;
@@ -33,6 +36,7 @@ public class RequestQueueTest extends TestCase {
         public void close() {}
     };
 
+    @Test
     public void testNormalUsage() {
         TestClient client = new TestClient();
         RequestQueue<HttpResult> queue = new RequestQueue<>(client, 4);
@@ -82,6 +86,7 @@ public class RequestQueueTest extends TestCase {
         }
     }
 
+    @Test
     public void testWaitUntilEmpty() throws Exception {
         TestClient client = new TestClient();
         RequestQueue<HttpResult> queue = new RequestQueue<>(client, 4);
@@ -105,4 +110,5 @@ public class RequestQueueTest extends TestCase {
         }
         assertEquals(1, result.size());
     }
+
 }

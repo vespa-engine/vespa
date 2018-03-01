@@ -1,9 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.communication.http.writer;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class HttpWriterTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class HttpWriterTest {
+
     private static String defaultTitle = "My Title";
     private static String defaultHeader = "<html>\n"
                                         + "  <head>\n"
@@ -14,16 +18,20 @@ public class HttpWriterTest extends TestCase {
     private static String defaultFooter = "  </body>\n"
                                         + "</html>\n";
 
-
+    @Test
     public void testStructure() {
         HttpWriter writer = new HttpWriter();
         String header = defaultHeader.replace(defaultTitle, "Untitled page");
         assertEquals(header + defaultFooter, writer.toString());
     }
+
+    @Test
     public void testTitle() {
         HttpWriter writer = new HttpWriter().addTitle(defaultTitle);
         assertEquals(defaultHeader + defaultFooter, writer.toString());
     }
+
+    @Test
     public void testParagraph() {
         String paragraph = "This is a paragraph";
         String paragraph2 = "More text";
@@ -36,6 +44,8 @@ public class HttpWriterTest extends TestCase {
                        + "    </p>\n";
         assertEquals(defaultHeader + content + defaultFooter, writer.toString());
     }
+
+    @Test
     public void testLink() {
         String name = "My link";
         String link = "/foo/bar?hmm";
@@ -43,6 +53,8 @@ public class HttpWriterTest extends TestCase {
         String content = "    <a href=\"" + link + "\">" + name + "</a>\n";
         assertEquals(defaultHeader + content + defaultFooter, writer.toString());
     }
+
+    @Test
     public void testErrors() {
         try{
             HttpWriter writer = new HttpWriter().addTitle(defaultTitle);
@@ -57,4 +69,5 @@ public class HttpWriterTest extends TestCase {
         } catch (IllegalStateException e) {
         }
     }
+
 }

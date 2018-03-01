@@ -1,16 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.communication.http;
 
-import junit.framework.TestCase;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.Test;
 
-public class JsonHttpResultTest extends TestCase {
+import static org.junit.Assert.assertEquals;
 
+public class JsonHttpResultTest {
+
+    @Test
     public void testCopyConstructor() {
         assertEquals("{}", new JsonHttpResult(new HttpResult()).getJson().toString());
     }
 
+    @Test
     public void testOutput() {
         assertEquals("HTTP 200/OK\n"
                    + "\n"
@@ -22,6 +26,7 @@ public class JsonHttpResultTest extends TestCase {
                 new JsonHttpResult(new HttpResult().setContent("{ \"foo\" : }")).toString(true));
     }
 
+    @Test
     public void testNonJsonOutput() {
         JsonHttpResult result = new JsonHttpResult();
         result.setContent("Foo");
@@ -30,6 +35,7 @@ public class JsonHttpResultTest extends TestCase {
         assertEquals("Foo", sb.toString());
     }
 
+    @Test
     public void testInvalidJsonOutput() {
         JsonHttpResult result = new JsonHttpResult();
         result.setJson(new JSONObject() {
@@ -42,4 +48,5 @@ public class JsonHttpResultTest extends TestCase {
         result.printContent(sb);
         assertEquals("JSON: {}", sb.toString());
     }
+
 }

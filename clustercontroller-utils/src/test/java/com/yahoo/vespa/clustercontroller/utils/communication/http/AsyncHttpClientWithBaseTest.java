@@ -3,10 +3,15 @@ package com.yahoo.vespa.clustercontroller.utils.communication.http;
 
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperation;
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperationImpl;
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class AsyncHttpClientWithBaseTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 
+public class AsyncHttpClientWithBaseTest {
+
+    @Test
     public void testOverride() {
         class HttpClient implements AsyncHttpClient<HttpResult> {
             HttpRequest lastRequest;
@@ -39,11 +44,13 @@ public class AsyncHttpClientWithBaseTest extends TestCase {
         base.close();
     }
 
+    @Test
     public void testClientMustBeSet() {
-        try{
-            new AsyncHttpClientWithBase<HttpResult>(null);
+        try {
+            new AsyncHttpClientWithBase<>(null);
             assertTrue(false);
         } catch (IllegalArgumentException e) {
         }
     }
+
 }

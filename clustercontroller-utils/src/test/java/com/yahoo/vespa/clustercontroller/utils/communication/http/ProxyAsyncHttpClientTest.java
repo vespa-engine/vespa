@@ -1,11 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.communication.http;
 
-import junit.framework.TestCase;
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.Test;
 
-public class ProxyAsyncHttpClientTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+public class ProxyAsyncHttpClientTest {
+
+    @Test
     public void testSimple() throws Exception {
         // Can't really test much here, but verifies that the code runs.
         DummyAsyncHttpClient dummy = new DummyAsyncHttpClient(
@@ -28,6 +32,7 @@ public class ProxyAsyncHttpClientTest extends TestCase {
                      dummy.lastRequest);
     }
 
+    @Test
     public void testNoAndEmptyPath() throws Exception {
         DummyAsyncHttpClient dummy = new DummyAsyncHttpClient(
                 new HttpResult().setContent(new JSONObject().put("bar", 42)));
@@ -40,4 +45,5 @@ public class ProxyAsyncHttpClientTest extends TestCase {
         }
         client.execute(new HttpRequest().setHost("local").setPath(""));
     }
+
 }
