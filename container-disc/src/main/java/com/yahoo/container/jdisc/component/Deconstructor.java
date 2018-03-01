@@ -83,7 +83,11 @@ public class Deconstructor implements ComponentDeconstructor {
                 catch (InterruptedException exception) {
                     log.log(WARNING, "Randomized wait before dying disrupted. Dying now.");
                 }
-                com.yahoo.protect.Process.logAndDie("Error when deconstructing " + component, e);
+                com.yahoo.protect.Process.logAndDie("Shutting down due to error when deconstructing " +
+                                                    component, e);
+            }
+            catch (Throwable e) {
+                log.log(WARNING, "Non-error not exception throwable thrown when deconstructing " + component, e);
             }
         }
     }
