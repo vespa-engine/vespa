@@ -7,6 +7,7 @@ import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
 
+import java.security.SecureRandom;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -60,6 +61,11 @@ public class Deconstructor implements ComponentDeconstructor {
             this.component = component;
         }
 
+        /** Returns a random value which will be different across identical containers invoking this at the same time */
+        private long random() {
+            return new SecureRandom().nextLong();
+        }
+
         public void run() {
             log.info("Starting deconstruction of " + component);
             try {
@@ -72,7 +78,7 @@ public class Deconstructor implements ComponentDeconstructor {
             catch (Error e) {
                 try {
                     // Randomize restart over 10 minutes to avoid simultaneous cluster restarts
-                    Thread.sleep((long) (new Random(System.nanoTime()).nextDouble() * 1000 * 60 * 10));
+                    Thread.sleep(random() * 1000 * 60 * 10);
                 }
                 catch (InterruptedException exception) {
                     log.log(WARNING, "Randomized wait before dying disrupted. Dying now.");
