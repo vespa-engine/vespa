@@ -69,7 +69,7 @@ public final class SecurityRequestFilterChain extends AbstractResource implement
         }
     }
 
-    /** Returns an unmodifiable viuew of the filters in this */
+    /** Returns an unmodifiable view of the filters in this */
     public List<SecurityRequestFilter> getFilters() {
         return Collections.unmodifiableList(filters);
     }
