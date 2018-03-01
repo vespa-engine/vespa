@@ -2,28 +2,38 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreConfigurator;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreContext;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.AthenzCertificateClient;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.getZoneConfig;
@@ -31,44 +41,76 @@ import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.g
 /**
  * @author bjorncs
  */
-// TODO Cache certificate on disk
 @SuppressWarnings("unused") // Component injected into Jetty connector factory
 public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements SslKeyStoreConfigurator {
     private static final Logger log = Logger.getLogger(AthenzSslKeyStoreConfigurator.class.getName());
-    // TODO Make expiry and update frequency configurable parameters
-    private static final Duration CERTIFICATE_EXPIRY_TIME = Duration.ofDays(30);
-    private static final Duration CERTIFICATE_UPDATE_PERIOD = Duration.ofDays(7);
     private static final String CERTIFICATE_ALIAS = "athenz";
     private static final String CERTIFICATE_PASSWORD = "athenz";
+    private static final Duration EXPIRATION_MARGIN = Duration.ofHours(6);
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final AthenzCertificateClient certificateClient;
     private final KeyProvider keyProvider;
     private final AthenzProviderServiceConfig.Zones zoneConfig;
-    private final AtomicBoolean alreadyConfigured = new AtomicBoolean();
+    private final Duration updatePeriod;
+    private final Path keystoreCachePath;
     private volatile KeyStore currentKeyStore;
 
     @Inject
     public AthenzSslKeyStoreConfigurator(KeyProvider keyProvider,
                                          AthenzProviderServiceConfig config,
-                                         Zone zone) {
+                                         Zone zone,
+                                         ConfigserverConfig configserverConfig) {
         AthenzProviderServiceConfig.Zones zoneConfig = getZoneConfig(config, zone);
-        this.certificateClient = new AthenzCertificateClient(config, zoneConfig);
+        Path keystoreCachePath = createKeystoreCachePath(configserverConfig);
+        AthenzCertificateClient certificateClient = new AthenzCertificateClient(config, zoneConfig);
+        Duration updatePeriod = Duration.ofDays(config.updatePeriodDays());
+        this.certificateClient = certificateClient;
         this.keyProvider = keyProvider;
         this.zoneConfig = zoneConfig;
-        this.currentKeyStore = downloadCertificate(keyProvider, certificateClient, zoneConfig);
+        this.currentKeyStore = initializeKeystore(keyProvider, certificateClient, zoneConfig, keystoreCachePath, updatePeriod);
+        this.updatePeriod = updatePeriod;
+        this.keystoreCachePath = keystoreCachePath;
+    }
+
+    private static KeyStore initializeKeystore(KeyProvider keyProvider,
+                                               AthenzCertificateClient certificateClient,
+                                               AthenzProviderServiceConfig.Zones zoneConfig,
+                                               Path keystoreCachePath,
+                                               Duration updatePeriod) {
+        return tryReadKeystoreFile(keystoreCachePath.toFile(), updatePeriod)
+                .orElseGet(() -> downloadCertificate(keyProvider, certificateClient, zoneConfig, keystoreCachePath));
+    }
+
+    private static Optional<KeyStore> tryReadKeystoreFile(File certificateFile, Duration updatePeriod) {
+        try {
+            if (!certificateFile.exists()) return Optional.empty();
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+            try (InputStream in = new BufferedInputStream(new FileInputStream(certificateFile))) {
+                keyStore.load(in, new char[0]);
+            }
+            Instant minimumExpiration = Instant.now().plus(updatePeriod).plus(EXPIRATION_MARGIN);
+            boolean isExpired = getKeyStoreExpiry(keyStore).isBefore(minimumExpiration);
+            if (isExpired) return Optional.empty();
+            return Optional.of(keyStore);
+        } catch (IOException | GeneralSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Path createKeystoreCachePath(ConfigserverConfig configserverConfig) {
+        return Paths.get(
+                Defaults.getDefaults().underVespaHome(configserverConfig.configServerDBDir()),
+                "server-x509-athenz-cert.jks");
     }
 
     @Override
     public void configure(SslKeyStoreContext sslKeyStoreContext) {
-        if (alreadyConfigured.getAndSet(true)) { // For debugging purpose of SslKeyStoreConfigurator interface
-            throw new IllegalStateException("Already configured. configure() can only be called once.");
-        }
         sslKeyStoreContext.updateKeyStore(currentKeyStore, CERTIFICATE_PASSWORD);
         scheduler.scheduleAtFixedRate(new AthenzCertificateUpdater(sslKeyStoreContext),
-                                      CERTIFICATE_UPDATE_PERIOD.toMinutes()/*initial delay*/,
-                                      CERTIFICATE_UPDATE_PERIOD.toMinutes(),
-                                      TimeUnit.MINUTES);
+                                      updatePeriod.toDays()/*initial delay*/,
+                                      updatePeriod.toDays(),
+                                      TimeUnit.DAYS);
     }
 
     @Override
@@ -82,35 +124,41 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
     }
 
     Instant getKeyStoreExpiry() throws KeyStoreException {
-        X509Certificate certificate = (X509Certificate) currentKeyStore.getCertificate(CERTIFICATE_ALIAS);
+        return getKeyStoreExpiry(currentKeyStore);
+    }
+
+    private static Instant getKeyStoreExpiry(KeyStore keyStore) throws KeyStoreException {
+        X509Certificate certificate = (X509Certificate) keyStore.getCertificate(CERTIFICATE_ALIAS);
         return certificate.getNotAfter().toInstant();
     }
 
-
     private static KeyStore downloadCertificate(KeyProvider keyProvider,
                                                 AthenzCertificateClient certificateClient,
-                                                AthenzProviderServiceConfig.Zones zoneConfig) {
+                                                AthenzProviderServiceConfig.Zones zoneConfig,
+                                                Path keystoreCachePath) {
         try {
             PrivateKey privateKey = keyProvider.getPrivateKey(zoneConfig.secretVersion());
-            X509Certificate certificate = certificateClient.updateCertificate(privateKey, CERTIFICATE_EXPIRY_TIME);
-            verifyActualExpiry(certificate);
+            X509Certificate certificate = certificateClient.updateCertificate(privateKey);
+            Instant expirationTime = certificate.getNotAfter().toInstant();
+            Duration expiry = Duration.between(certificate.getNotBefore().toInstant(), expirationTime);
+            log.log(LogLevel.INFO, String.format("Got Athenz x509 certificate with expiry %s (expires %s)", expiry, expirationTime));
 
             KeyStore keyStore = KeyStore.getInstance("JKS");
             keyStore.load(null);
             keyStore.setKeyEntry(
                     CERTIFICATE_ALIAS, privateKey, CERTIFICATE_PASSWORD.toCharArray(), new Certificate[]{certificate});
+            writeKeystore(keyStore, keystoreCachePath);
             return keyStore;
-        } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException e) {
+        } catch (IOException | GeneralSecurityException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static void verifyActualExpiry(X509Certificate certificate) {
-        Duration actualExpiry =
-                Duration.between(certificate.getNotBefore().toInstant(),  certificate.getNotAfter().toInstant());
-        if (CERTIFICATE_EXPIRY_TIME.compareTo(actualExpiry) > 0) {
-            log.log(LogLevel.WARNING,
-                    String.format("Expected expiry %s, got %s", CERTIFICATE_EXPIRY_TIME, actualExpiry));
+    private static void writeKeystore(KeyStore keyStore, Path keystoreCachePath) {
+        try (OutputStream out = new BufferedOutputStream(new FileOutputStream(keystoreCachePath.toFile()))) {
+            keyStore.store(out, new char[0]);
+        } catch (IOException | GeneralSecurityException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -126,7 +174,7 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
         public void run() {
             try {
                 log.log(LogLevel.INFO, "Updating Athenz certificate from ZTS");
-                currentKeyStore = downloadCertificate(keyProvider, certificateClient, zoneConfig);
+                currentKeyStore = downloadCertificate(keyProvider, certificateClient, zoneConfig, keystoreCachePath);
                 sslKeyStoreContext.updateKeyStore(currentKeyStore, CERTIFICATE_PASSWORD);
                 log.log(LogLevel.INFO, "Athenz certificate reload successfully completed");
             } catch (Throwable e) {

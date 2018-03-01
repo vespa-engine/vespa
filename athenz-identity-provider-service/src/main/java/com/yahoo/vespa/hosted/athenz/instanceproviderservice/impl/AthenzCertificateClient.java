@@ -29,7 +29,7 @@ public class AthenzCertificateClient {
         this.zoneConfig = zoneConfig;
     }
 
-    public X509Certificate updateCertificate(PrivateKey privateKey, TemporalAmount expiryTime) {
+    public X509Certificate updateCertificate(PrivateKey privateKey) {
         SimpleServiceIdentityProvider identityProvider = new SimpleServiceIdentityProvider(
                 authority, zoneConfig.domain(), zoneConfig.serviceName(),
                 privateKey, Integer.toString(zoneConfig.secretVersion()), TimeUnit.MINUTES.toSeconds(10));
@@ -38,7 +38,7 @@ public class AthenzCertificateClient {
         InstanceRefreshRequest req =
                 ZTSClient.generateInstanceRefreshRequest(
                         zoneConfig.domain(), zoneConfig.serviceName(), privateKey,
-                        config.certDnsSuffix(), (int)expiryTime.get(ChronoUnit.SECONDS));
+                        config.certDnsSuffix(), /*expiryTime*/0);
         String pemEncoded = ztsClient.postInstanceRefreshRequest(zoneConfig.domain(), zoneConfig.serviceName(), req)
                 .getCertificate();
         return Crypto.loadX509Certificate(pemEncoded);

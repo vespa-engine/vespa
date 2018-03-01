@@ -24,3 +24,6 @@ certDnsSuffix                             string
 
 # Path to Athenz CA JKS trust store
 athenzCaTrustStore                        string
+
+# Period between certificate updates
+updatePeriodDays                          int  default=1
