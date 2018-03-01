@@ -2,34 +2,25 @@
 package com.yahoo.vespa.athenz.identityprovider;
 
 import com.yahoo.container.core.identity.IdentityConfig;
-import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.athenz.identityprovider.AthenzIdentityProviderImpl.RunnableWithTag;
-import com.yahoo.vespa.athenz.identityprovider.AthenzIdentityProviderImpl.Scheduler;
 import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.PriorityQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
+import java.util.Date;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
 
-import static com.yahoo.vespa.athenz.identityprovider.AthenzIdentityProviderImpl.METRICS_UPDATER_TAG;
-import static com.yahoo.vespa.athenz.identityprovider.AthenzIdentityProviderImpl.REDUCED_UPDATE_PERIOD;
-import static com.yahoo.vespa.athenz.identityprovider.AthenzIdentityProviderImpl.UPDATE_CREDENTIALS_TAG;
-import static com.yahoo.vespa.athenz.identityprovider.AthenzIdentityProviderImpl.UPDATE_PERIOD;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -38,72 +29,79 @@ import static org.mockito.Mockito.when;
  */
 public class AthenzIdentityProviderImplTest {
 
-    private static final Metric DUMMY_METRIC = new Metric() {
-        @Override
-        public void set(String s, Number number, Context context) {
-        }
-
-        @Override
-        public void add(String s, Number number, Context context) {
-        }
-
-        @Override
-        public Context createContext(Map<String, ?> stringMap) {
-            return null;
-        }
-    };
+    public static final Duration certificateValidity = Duration.ofDays(30);
 
     private static final IdentityConfig IDENTITY_CONFIG =
             new IdentityConfig(new IdentityConfig.Builder()
                                        .service("tenantService").domain("tenantDomain").loadBalancerAddress("cfg"));
 
-    @Test (expected = AthenzIdentityProviderException.class)
+    @Test(expected = AthenzIdentityProviderException.class)
     public void component_creation_fails_when_credentials_not_found() {
         AthenzCredentialsService credentialService = mock(AthenzCredentialsService.class);
         when(credentialService.registerInstance())
                 .thenThrow(new RuntimeException("athenz unavailable"));
 
-        ManualClock clock = new ManualClock(Instant.EPOCH);
-        MockScheduler scheduler = new MockScheduler(clock);
-        AthenzIdentityProvider identityProvider =
-                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, DUMMY_METRIC, credentialService, scheduler, clock);
+        new AthenzIdentityProviderImpl(IDENTITY_CONFIG, mock(Metric.class), credentialService, mock(ScheduledExecutorService.class), new ManualClock(Instant.EPOCH));
     }
 
     @Test
-    public void failed_credentials_updates_will_schedule_retries() {
+    public void metrics_updated_on_refresh() {
         IdentityDocumentService identityDocumentService = mock(IdentityDocumentService.class);
         AthenzService athenzService = mock(AthenzService.class);
         ManualClock clock = new ManualClock(Instant.EPOCH);
-        MockScheduler scheduler = new MockScheduler(clock);
-        X509Certificate x509Certificate = mock(X509Certificate.class);
+        Metric metric = mock(Metric.class);
 
         when(identityDocumentService.getSignedIdentityDocument()).thenReturn(getIdentityDocument());
-        when(athenzService.sendInstanceRegisterRequest(any(), any())).thenReturn(
-                new InstanceIdentity(null, "TOKEN"));
+        when(athenzService.sendInstanceRegisterRequest(any(), any())).then(new Answer<InstanceIdentity>() {
+            @Override
+            public InstanceIdentity answer(InvocationOnMock invocationOnMock) throws Throwable {
+                return new InstanceIdentity(getCertificate(getExpirationSupplier(clock)), "TOKEN");
+            }
+        });
+
         when(athenzService.sendInstanceRefreshRequest(anyString(), anyString(), anyString(),
                                                       anyString(), any(), any(), any(), any()))
                 .thenThrow(new RuntimeException("#1"))
                 .thenThrow(new RuntimeException("#2"))
-                .thenThrow(new RuntimeException("#3"))
-                .thenReturn(new InstanceIdentity(null, "TOKEN"));
+                .thenReturn(new InstanceIdentity(getCertificate(getExpirationSupplier(clock)), "TOKEN"));
+
         AthenzCredentialsService credentialService =
                 new AthenzCredentialsService(IDENTITY_CONFIG, identityDocumentService, athenzService, clock);
 
-        AthenzIdentityProvider identityProvider =
-                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, DUMMY_METRIC, credentialService, scheduler, clock);
+        AthenzIdentityProviderImpl identityProvider =
+                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, metric, credentialService, mock(ScheduledExecutorService.class), clock);
 
-        List<MockScheduler.CompletedTask> expectedTasks =
-                Arrays.asList(
-                        new MockScheduler.CompletedTask(UPDATE_CREDENTIALS_TAG, UPDATE_PERIOD),
-                        new MockScheduler.CompletedTask(UPDATE_CREDENTIALS_TAG, UPDATE_PERIOD),
-                        new MockScheduler.CompletedTask(UPDATE_CREDENTIALS_TAG, REDUCED_UPDATE_PERIOD),
-                        new MockScheduler.CompletedTask(UPDATE_CREDENTIALS_TAG, REDUCED_UPDATE_PERIOD),
-                        new MockScheduler.CompletedTask(UPDATE_CREDENTIALS_TAG, UPDATE_PERIOD));
-        AtomicInteger counter = new AtomicInteger(0);
-        List<MockScheduler.CompletedTask> completedTasks =
-                scheduler.runAllTasks(task -> !task.tag().equals(METRICS_UPDATER_TAG) &&
-                                              counter.getAndIncrement() < expectedTasks.size());
-        assertEquals(expectedTasks, completedTasks);
+        identityProvider.reportMetrics();
+        verify(metric).set(eq(AthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.getSeconds()), any());
+
+        // Advance 1 day, refresh fails, cert is 1 day old
+        clock.advance(Duration.ofDays(1));
+        identityProvider.refreshCertificate();
+        identityProvider.reportMetrics();
+        verify(metric).set(eq(AthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.minus(Duration.ofDays(1)).getSeconds()), any());
+
+        // Advance 1 more day, refresh fails, cert is 2 days old
+        clock.advance(Duration.ofDays(1));
+        identityProvider.refreshCertificate();
+        identityProvider.reportMetrics();
+        verify(metric).set(eq(AthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.minus(Duration.ofDays(2)).getSeconds()), any());
+
+        // Advance 1 more day, refresh succeds, cert is new
+        clock.advance(Duration.ofDays(1));
+        identityProvider.refreshCertificate();
+        identityProvider.reportMetrics();
+        verify(metric).set(eq(AthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.getSeconds()), any());
+
+    }
+
+    private Supplier<Date> getExpirationSupplier(ManualClock clock) {
+        return () -> new Date(clock.instant().plus(certificateValidity).toEpochMilli());
+    }
+
+    private X509Certificate getCertificate(Supplier<Date> expiry) {
+        X509Certificate x509Certificate = mock(X509Certificate.class);
+        when(x509Certificate.getNotAfter()).thenReturn(expiry.get());
+        return x509Certificate;
     }
 
     private static String getIdentityDocument() {
@@ -118,83 +116,5 @@ public class AthenzIdentityProviderImplTest {
                "  \"document-version\": 1\n" +
                "}";
 
-    }
-
-    private static class MockScheduler implements Scheduler {
-
-        private final PriorityQueue<DelayedTask> tasks = new PriorityQueue<>();
-        private final ManualClock clock;
-
-        MockScheduler(ManualClock clock) {
-            this.clock = clock;
-        }
-
-        @Override
-        public void schedule(RunnableWithTag task, Duration delay) {
-            tasks.offer(new DelayedTask(task, delay, clock.instant().plus(delay)));
-        }
-
-        List<CompletedTask> runAllTasks(Predicate<RunnableWithTag> filter) {
-            List<CompletedTask> completedTasks = new ArrayList<>();
-            while (!tasks.isEmpty()) {
-                DelayedTask task = tasks.poll();
-                RunnableWithTag runnable = task.runnableWithTag;
-                if (filter.test(runnable)) {
-                    clock.setInstant(task.startTime);
-                    runnable.run();
-                    completedTasks.add(new CompletedTask(runnable.tag(), task.delay));
-                }
-            }
-            return completedTasks;
-        }
-
-        private static class DelayedTask implements Comparable<DelayedTask> {
-            final RunnableWithTag runnableWithTag;
-            final Duration delay;
-            final Instant startTime;
-
-            DelayedTask(RunnableWithTag runnableWithTag, Duration delay, Instant startTime) {
-                this.runnableWithTag = runnableWithTag;
-                this.delay = delay;
-                this.startTime = startTime;
-            }
-
-            @Override
-            public int compareTo(DelayedTask other) {
-                return this.startTime.compareTo(other.startTime);
-            }
-        }
-
-        private static class CompletedTask {
-            final String tag;
-            final Duration delay;
-
-            CompletedTask(String tag, Duration delay) {
-                this.tag = tag;
-                this.delay = delay;
-            }
-
-            @Override
-            public boolean equals(Object o) {
-                if (this == o) return true;
-                if (o == null || getClass() != o.getClass()) return false;
-                CompletedTask that = (CompletedTask) o;
-                return Objects.equals(tag, that.tag) &&
-                       Objects.equals(delay, that.delay);
-            }
-
-            @Override
-            public int hashCode() {
-                return Objects.hash(tag, delay);
-            }
-
-            @Override
-            public String toString() {
-                return "CompletedTask{" +
-                       "tag='" + tag + '\'' +
-                       ", delay=" + delay +
-                       '}';
-            }
-        }
     }
 }

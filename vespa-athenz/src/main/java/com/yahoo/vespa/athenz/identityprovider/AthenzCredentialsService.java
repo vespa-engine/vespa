@@ -79,7 +79,7 @@ class AthenzCredentialsService {
                                                          SignedIdentityDocument identityDocument) {
         X509Certificate certificate = instanceIdentity.getX509Certificate();
         String serviceToken = instanceIdentity.getServiceToken();
-        return new AthenzCredentials(serviceToken, certificate, keyPair, identityDocument, clock.instant());
+        return new AthenzCredentials(serviceToken, certificate, keyPair, identityDocument);
     }
 
     private static SignedIdentityDocument parseSignedIdentityDocument(String rawDocument) {
