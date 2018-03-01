@@ -69,12 +69,17 @@
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpcore</artifactId>
                 </exclusion>
-
                 <exclusion>
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpclient</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.10</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>net.jpountz.lz4</groupId>
@@ -83,16 +88,16 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <!-- We explicitly specify the version of httpcore to be used by 
-            docker-java so the dependency is declared closer to the root of maven and 
+            <!-- We explicitly specify the version of httpcore to be used by
+            docker-java so the dependency is declared closer to the root of maven and
             more likely be the version that is finally being used. -->
             <version>4.4.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-             <!-- We explicitly specify the version of httpclient to be used by 
-            docker-java so the dependency is declared closer to the root of maven and 
+             <!-- We explicitly specify the version of httpclient to be used by
+            docker-java so the dependency is declared closer to the root of maven and
             more likely be the version that is finally being used. -->
             <version>4.5</version>
         </dependency>

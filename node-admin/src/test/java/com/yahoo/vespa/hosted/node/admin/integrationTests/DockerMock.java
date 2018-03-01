@@ -6,9 +6,9 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.DockerRegistryCredentialsSupplier;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 
-import java.io.File;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,11 +56,6 @@ public class DockerMock implements Docker {
         synchronized (monitor) {
             callOrderVerifier.add("Connecting " + containerName + " to network: " + networkName);
         }
-    }
-
-    @Override
-    public void copyArchiveToContainer(String sourcePath, ContainerName destinationContainer, String destinationPath) {
-
     }
 
     @Override
@@ -135,11 +130,6 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public void buildImage(File dockerfile, DockerImage dockerImage) {
-
-    }
-
-    @Override
     public void deleteUnusedDockerImages() {
 
     }
@@ -172,6 +162,11 @@ public class DockerMock implements Docker {
     @Override
     public String getGlobalIPv6Address(ContainerName name) {
         return "2001:db8:1:2:0:242:ac13:2";
+    }
+
+    @Override
+    public void setDockerRegistryCredentialsSupplier(DockerRegistryCredentialsSupplier dockerRegistryCredentialsSupplier) {
+
     }
 
     public static class StartContainerCommandMock implements CreateContainerCommand {

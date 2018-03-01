@@ -8,9 +8,11 @@ import com.github.dockerjava.api.command.InspectContainerCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.InspectImageResponse;
+import com.github.dockerjava.api.command.PullImageCmd;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
+import com.github.dockerjava.api.model.AuthConfig;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.Statistics;
@@ -66,6 +68,8 @@ public class DockerImpl implements Docker {
     private final Object monitor = new Object();
     @GuardedBy("monitor")
     private final Set<DockerImage> scheduledPulls = new HashSet<>();
+
+    private volatile Optional<DockerRegistryCredentialsSupplier> dockerRegistryCredentialsSupplier = Optional.empty();
 
     private DockerClient dockerClient;
 
@@ -150,7 +154,17 @@ public class DockerImpl implements Docker {
                 if (imageIsDownloaded(image)) return false;
 
                 scheduledPulls.add(image);
-                dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
+                PullImageCmd pullImageCmd = dockerClient.pullImageCmd(image.asString());
+
+                dockerRegistryCredentialsSupplier
+                        .flatMap(credentialsSupplier -> credentialsSupplier.getCredentials(image))
+                        .map(credentials -> new AuthConfig()
+                                .withRegistryAddress(credentials.registry.toString())
+                                .withUsername(credentials.username)
+                                .withPassword(credentials.password))
+                        .ifPresent(pullImageCmd::withAuthConfig);
+
+                pullImageCmd.exec(new ImagePullCallback(image));
                 return true;
             }
         } catch (RuntimeException e) {
@@ -362,6 +376,11 @@ public class DockerImpl implements Docker {
     public String getGlobalIPv6Address(ContainerName name) {
         InspectContainerCmd cmd = dockerClient.inspectContainerCmd(name.asString());
         return cmd.exec().getNetworkSettings().getGlobalIPv6Address();
+    }
+
+    @Override
+    public void setDockerRegistryCredentialsSupplier(DockerRegistryCredentialsSupplier dockerRegistryCredentialsSupplier) {
+        this.dockerRegistryCredentialsSupplier = Optional.of(dockerRegistryCredentialsSupplier);
     }
 
     private Stream<Container> asContainer(String container) {
