@@ -80,7 +80,7 @@ public class Deconstructor implements ComponentDeconstructor {
                 try {
                     // Randomize restart over 10 minutes to avoid simultaneous cluster restarts
                     long randomSleepSeconds = random() * 60 * 10;
-                    log.log(LogLevel.FATAL, "Error when deconstructing " + component + " Will sleep for " +
+                    log.log(LogLevel.FATAL, "Error when deconstructing " + component + ". Will sleep for " +
                                             randomSleepSeconds + " seconds then restart", e);
                     Thread.sleep(randomSleepSeconds * 1000);
                 }
