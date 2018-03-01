@@ -78,6 +78,10 @@ public class StateVersionTracker {
         return currentClusterState.getBaselineClusterState();
     }
 
+    public ClusterStatsAggregator getAggregatedClusterStats() {
+        return clusterStateView.getStatsAggregator();
+    }
+
     public ClusterStateBundle getVersionedClusterStateBundle() {
         return currentClusterState;
     }

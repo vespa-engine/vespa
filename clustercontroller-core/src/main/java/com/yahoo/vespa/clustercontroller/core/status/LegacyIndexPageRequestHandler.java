@@ -65,6 +65,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
                     content,
                     timer,
                     stateVersionTracker.getVersionedClusterState(),
+                    stateVersionTracker.getAggregatedClusterStats(),
                     data.getOptions().storageDistribution,
                     data.getOptions(),
                     eventLog

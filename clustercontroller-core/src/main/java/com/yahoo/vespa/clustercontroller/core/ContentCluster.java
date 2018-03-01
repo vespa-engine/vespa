@@ -46,6 +46,7 @@ public class ContentCluster {
             final StringBuilder sb,
             final Timer timer,
             final ClusterState state,
+            final ClusterStatsAggregator statsAggregator,
             final Distribution distribution,
             final FleetControllerOptions options,
             final EventLog eventLog) {
@@ -71,6 +72,7 @@ public class ContentCluster {
                     distributorNodeInfoByIndex,
                     timer,
                     state,
+                    statsAggregator,
                     options.maxPrematureCrashes,
                     eventLog,
                     clusterName,
