@@ -3,7 +3,6 @@ package com.yahoo.vespa.athenz.identityprovider;
 
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
-import java.time.Instant;
 
 /**
  * @author bjorncs
@@ -14,18 +13,15 @@ class AthenzCredentials {
     private final X509Certificate certificate;
     private final KeyPair keyPair;
     private final SignedIdentityDocument identityDocument;
-    private final Instant createdAt;
 
     AthenzCredentials(String nToken,
                       X509Certificate certificate,
                       KeyPair keyPair,
-                      SignedIdentityDocument identityDocument,
-                      Instant createdAt) {
+                      SignedIdentityDocument identityDocument) {
         this.nToken = nToken;
         this.certificate = certificate;
         this.keyPair = keyPair;
         this.identityDocument = identityDocument;
-        this.createdAt = createdAt;
     }
 
     String getNToken() {
@@ -44,8 +40,5 @@ class AthenzCredentials {
         return identityDocument;
     }
 
-    Instant getCreatedAt() {
-        return createdAt;
-    }
 
 }
