@@ -70,4 +70,9 @@ public class DeploymentQueueTest {
                      deploymentQueue.takeJobsToRun());
     }
 
+    @Test
+    public void testLegacyDeserialisation() {
+        new JobQueueSerializer().fromJson("[\"tenant:app:default\", \"tenant:papp:default\"]".getBytes());
+    }
+
 }

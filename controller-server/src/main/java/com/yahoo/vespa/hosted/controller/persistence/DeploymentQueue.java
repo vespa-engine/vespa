@@ -11,9 +11,12 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Stores a queue for each type of job, and offers jobs from each of these to a periodic
@@ -112,8 +115,8 @@ public class DeploymentQueue {
         private final boolean retry;
 
         Triggering(ApplicationId applicationId, Instant at, boolean forced, boolean applicationVersionUpgrade, boolean retry) {
-            this.applicationId = applicationId;
-            this.at = at;
+            this.applicationId = requireNonNull(applicationId);
+            this.at = requireNonNull(at);
             this.forced = forced;
             this.applicationVersionUpgrade = applicationVersionUpgrade;
             this.retry = retry;
@@ -125,13 +128,27 @@ public class DeploymentQueue {
         boolean applicationVersionUpgrade() { return applicationVersionUpgrade; }
         boolean retry() { return retry; }
 
-
         @Override
         public int compareTo(Triggering o) {
             if (forced && ! o.forced) return -1;
             if (applicationVersionUpgrade && ! o.applicationVersionUpgrade) return -1;
             if (retry && ! o.retry) return -1;
             return at.compareTo(o.at);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if ( ! (o instanceof Triggering)) return false;
+
+            Triggering that = (Triggering) o;
+
+            return applicationId.equals(that.applicationId);
+        }
+
+        @Override
+        public int hashCode() {
+            return applicationId.hashCode();
         }
 
     }
