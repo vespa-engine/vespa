@@ -90,7 +90,7 @@ flush.memory.conservative.lowwatermarkfactor double default=0.9
 ## The prepare for restart flush strategy will choose a set of components to flush
 ## such that the cost of flushing these + the cost of replaying the transaction log
 ## is as low as possible.
-flush.preparerestart.replaycost double default=2.0
+flush.preparerestart.replaycost double default=8.0
 
 ## The cost of replaying an operation when replaying the transaction log.
 ##
@@ -99,12 +99,12 @@ flush.preparerestart.replaycost double default=2.0
 ##
 ## The default value is chosen based on the following example:
 ## Assume we can replay 9 MB/s and this corresponds to 24000 ops/s.
-## replayoperationcost = (bytes to replay) * replaycost / (operations to replay) = 9 MB * 2.0 / 24000 = 750
+## replayoperationcost = (bytes to replay) * replaycost / (operations to replay) = 9 MB * 8.0 / 24000 = 3000
 ##
 ## The prepare for restart flush strategy will choose a set of components to flush
 ## such that the cost of flushing these + the cost of replaying the transaction log
 ## is as low as possible.
-flush.preparerestart.replayoperationcost double default=750.0
+flush.preparerestart.replayoperationcost double default=3000.0
 
 ## The cost of writing a byte when flushing components to disk.
 ##
