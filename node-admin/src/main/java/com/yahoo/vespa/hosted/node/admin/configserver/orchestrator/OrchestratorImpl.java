@@ -2,13 +2,12 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.orchestrator;
 
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
-
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
 import com.yahoo.vespa.orchestrator.restapi.HostSuspensionApi;
-import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -56,10 +55,10 @@ public class OrchestratorImpl implements Orchestrator {
     public void suspend(String parentHostName, List<String> hostNames) {
         final BatchOperationResult batchOperationResult;
         try {
-            batchOperationResult = configServerApi.put(
-                    ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                    Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
-                    BatchOperationResult.class);
+            String params = String.join("&hostname=", hostNames);
+            String url = String.format("%s/%s?hostname=%s", ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
+                                       parentHostName, params);
+            batchOperationResult = configServerApi.put(url, Optional.empty(), BatchOperationResult.class);
         } catch (HttpException e) {
             throw new OrchestratorException("Failed to batch suspend for " +
                     parentHostName + ": " + e.toString());
