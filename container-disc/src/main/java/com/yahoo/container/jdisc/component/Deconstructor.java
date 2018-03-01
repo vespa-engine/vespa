@@ -6,7 +6,9 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
+import com.yahoo.log.LogLevel;
 
+import java.security.SecureRandom;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -20,6 +22,7 @@ import static java.util.logging.Level.WARNING;
 * @author gv
 */
 public class Deconstructor implements ComponentDeconstructor {
+
     private static final Logger log = Logger.getLogger(Deconstructor.class.getName());
 
     private final ScheduledExecutorService executor =
@@ -52,10 +55,16 @@ public class Deconstructor implements ComponentDeconstructor {
     }
 
     private static class DestructComponentTask implements Runnable {
+
         private final AbstractComponent component;
 
         DestructComponentTask(AbstractComponent component) {
             this.component = component;
+        }
+
+        /** Returns a random value which will be different across identical containers invoking this at the same time */
+        private long random() {
+            return new SecureRandom().nextLong();
         }
 
         public void run() {
@@ -63,16 +72,27 @@ public class Deconstructor implements ComponentDeconstructor {
             try {
                 component.deconstruct();
                 log.info("Finished deconstructing " + component);
-            } catch (Error e) {
-                try {
-                    Thread.sleep((long) (new Random(System.nanoTime()).nextDouble() * 180 * 1000));
-                } catch (InterruptedException exception) { }
-                com.yahoo.protect.Process.logAndDie("Error when deconstructing " + component, e);
-            } catch (Exception e) {
+            }
+            catch (Exception | NoClassDefFoundError e) { // May get class not found due to it being already unloaded
                 log.log(WARNING, "Exception thrown when deconstructing " + component, e);
-            } catch (Throwable t) {
-                log.log(WARNING, "Unexpected Throwable thrown when deconstructing " + component, t);
+            }
+            catch (Error e) {
+                try {
+                    // Randomize restart over 10 minutes to avoid simultaneous cluster restarts
+                    long randomSleepSeconds = random() * 60 * 10;
+                    log.log(LogLevel.FATAL, "Error when deconstructing " + component + ". Will sleep for " +
+                                            randomSleepSeconds + " seconds then restart", e);
+                    Thread.sleep(randomSleepSeconds * 1000);
+                }
+                catch (InterruptedException exception) {
+                    log.log(WARNING, "Randomized wait before dying disrupted. Dying now.");
+                }
+                com.yahoo.protect.Process.logAndDie("Shutting down due to error when deconstructing " + component);
+            }
+            catch (Throwable e) {
+                log.log(WARNING, "Non-error not exception throwable thrown when deconstructing " + component, e);
             }
         }
     }
+
 }
