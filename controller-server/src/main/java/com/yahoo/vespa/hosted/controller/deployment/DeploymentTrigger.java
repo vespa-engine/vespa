@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.controller.persistence.DeploymentQueue;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -345,13 +346,21 @@ public class DeploymentTrigger {
         log.info(String.format("Triggering %s for %s, %s: %s", jobType, application,
                                application.change().isPresent() ? "deploying " + application.change() : "restarted deployment",
                                reason));
-        deploymentQueue.addJob(application.id(), jobType, first);
+
+        ApplicationVersion targetApplicationVersion = application.deployApplicationVersionFor(jobType, controller, false)
+                                                        .orElse(ApplicationVersion.unknown);
+        boolean isApplicationVersionUpgrade = Optional.ofNullable(application.deploymentJobs().jobStatus().get(jobType))
+                .flatMap(JobStatus::lastSuccess)
+                .map(JobStatus.JobRun::applicationVersion)
+                .filter(version -> version.compareTo(targetApplicationVersion) < 0)
+                .isPresent();
+
+        deploymentQueue.addJob(application.id(), jobType, force, isApplicationVersionUpgrade, first);
         return application.withJobTriggering(jobType,
                                              application.change(),
                                              clock.instant(),
                                              application.deployVersionFor(jobType, controller),
-                                             application.deployApplicationVersionFor(jobType, controller, false)
-                                                        .orElse(ApplicationVersion.unknown),
+                                             targetApplicationVersion,
                                              reason);
     }
 

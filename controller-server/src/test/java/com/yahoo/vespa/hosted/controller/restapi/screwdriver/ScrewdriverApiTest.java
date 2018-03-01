@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.screwdriver;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentQueue;
+import com.yahoo.vespa.hosted.controller.persistence.DeploymentQueue;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;

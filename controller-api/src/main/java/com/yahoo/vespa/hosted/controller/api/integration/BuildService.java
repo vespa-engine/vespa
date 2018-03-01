@@ -15,7 +15,6 @@ public interface BuildService {
      */
     boolean trigger(BuildJob buildJob);
 
-
     class BuildJob {
 
         private final long projectId;

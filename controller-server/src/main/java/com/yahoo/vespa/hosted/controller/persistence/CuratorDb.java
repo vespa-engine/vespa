@@ -19,6 +19,7 @@ import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
@@ -129,20 +130,20 @@ public class CuratorDb {
         curator.set(inactiveJobsPath(), stringSetSerializer.toJson(inactiveJobs));
     }
 
-    public Deque<ApplicationId> readJobQueue(DeploymentJobs.JobType jobType) {
+    List<DeploymentQueue.Triggering> readJobQueue(DeploymentJobs.JobType jobType) {
         try {
             Optional<byte[]> data = curator.getData(jobQueuePath(jobType));
-            if ( ! data.isPresent() || data.get().length == 0) return new ArrayDeque<>(); // job queue has never been written
+            if ( ! data.isPresent() || data.get().length == 0) return new ArrayList<>(); // job queue has never been written
             return jobQueueSerializer.fromJson(data.get());
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Error reading job queue of type '" + jobType.jobName() + "'; deleting it.");
             writeJobQueue(jobType, Collections::emptyIterator);
-            return new ArrayDeque<>();
+            return new ArrayList<>();
         }
     }
 
-    public void writeJobQueue(DeploymentJobs.JobType jobType, Iterable<ApplicationId> queue) {
+    void writeJobQueue(DeploymentJobs.JobType jobType, Iterable<DeploymentQueue.Triggering> queue) {
         curator.set(jobQueuePath(jobType), jobQueueSerializer.toJson(queue));
     }
 
