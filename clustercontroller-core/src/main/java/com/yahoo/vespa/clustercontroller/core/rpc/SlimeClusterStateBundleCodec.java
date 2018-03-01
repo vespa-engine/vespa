@@ -48,9 +48,9 @@ public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec {
         ClusterState baseline = ClusterState.stateFromString(states.field("baseline").asString());
 
         Inspector spaces = states.field("spaces");
-        Map<String, ClusterState> derivedStates = new HashMap<>();
+        Map<String, AnnotatedClusterState> derivedStates = new HashMap<>();
         spaces.traverse(((ObjectTraverser)(key, value) -> {
-            derivedStates.put(key, ClusterState.stateFromString(value.asString()));
+            derivedStates.put(key, AnnotatedClusterState.withoutAnnotations(ClusterState.stateFromString(value.asString())));
         }));
 
         return ClusterStateBundle.of(AnnotatedClusterState.withoutAnnotations(baseline), derivedStates);

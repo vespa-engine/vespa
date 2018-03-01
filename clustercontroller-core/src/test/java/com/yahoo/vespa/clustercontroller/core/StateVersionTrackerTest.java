@@ -246,9 +246,9 @@ public class StateVersionTrackerTest {
                 .builder(AnnotatedClusterState.withoutAnnotations(stateOf("distributor:1 storage:1")))
                 .bucketSpaces("default")
                 .stateDeriver((state, space) -> {
-                    ClusterState derived = state.clone();
+                    AnnotatedClusterState derived = state.clone();
                     if (alteredDefaultState) {
-                        derived.setNodeState(Node.ofStorage(0), new NodeState(NodeType.STORAGE, State.DOWN));
+                        derived.getClusterState().setNodeState(Node.ofStorage(0), new NodeState(NodeType.STORAGE, State.DOWN));
                     }
                     return derived;
                 })

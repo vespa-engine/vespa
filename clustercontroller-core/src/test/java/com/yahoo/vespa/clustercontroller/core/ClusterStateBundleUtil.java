@@ -14,7 +14,8 @@ public class ClusterStateBundleUtil {
 
     public static ClusterStateBundle makeBundle(String baselineState, StateMapping... bucketSpaceStates) {
         return ClusterStateBundle.of(AnnotatedClusterState.withoutAnnotations(ClusterState.stateFromString(baselineState)),
-                Stream.of(bucketSpaceStates).collect(Collectors.toMap(sm -> sm.bucketSpace, sm -> sm.state)));
+                Stream.of(bucketSpaceStates).collect(Collectors.toMap(sm -> sm.bucketSpace,
+                        sm -> AnnotatedClusterState.withoutAnnotations(sm.state))));
     }
 
 }

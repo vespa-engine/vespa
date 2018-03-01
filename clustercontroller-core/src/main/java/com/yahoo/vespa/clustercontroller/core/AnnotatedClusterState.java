@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-public class AnnotatedClusterState {
+public class AnnotatedClusterState implements Cloneable {
 
     private final ClusterState clusterState;
     private final Map<Node, NodeStateReason> nodeStateReasons;
@@ -46,6 +46,16 @@ public class AnnotatedClusterState {
 
     public Optional<ClusterStateReason> getClusterStateReason() {
         return clusterStateReason;
+    }
+
+    public AnnotatedClusterState clone() {
+        return cloneWithClusterState(clusterState.clone());
+    }
+
+    public AnnotatedClusterState cloneWithClusterState(ClusterState newClusterState) {
+        return new AnnotatedClusterState(newClusterState,
+                getClusterStateReason(),
+                getNodeStateReasons());
     }
 
     @Override

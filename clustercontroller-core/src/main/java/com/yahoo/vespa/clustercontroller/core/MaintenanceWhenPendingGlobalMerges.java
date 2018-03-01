@@ -28,17 +28,16 @@ public class MaintenanceWhenPendingGlobalMerges implements ClusterStateDeriver {
     }
 
     @Override
-    public ClusterState derivedFrom(ClusterState baselineState, String bucketSpace) {
-        ClusterState derivedState = baselineState.clone();
+    public AnnotatedClusterState derivedFrom(AnnotatedClusterState baselineState, String bucketSpace) {
+        AnnotatedClusterState derivedState = baselineState.clone();
         if (!bucketSpace.equals(bucketSpaceToDerive)) {
             return derivedState;
         }
-        Set<Integer> incompleteNodeIndices = nodesWithMergesNotDone(baselineState);
+        Set<Integer> incompleteNodeIndices = nodesWithMergesNotDone(baselineState.getClusterState());
         if (incompleteNodeIndices.isEmpty()) {
             return derivedState; // Nothing to do
         }
-        incompleteNodeIndices.forEach(nodeIndex -> derivedState.setNodeState(Node.ofStorage(nodeIndex),
-                new NodeState(NodeType.STORAGE, State.MAINTENANCE)));
+        incompleteNodeIndices.forEach(nodeIndex -> setNodeInMaintenance(derivedState, nodeIndex));
         return derivedState;
     }
 
@@ -54,6 +53,11 @@ public class MaintenanceWhenPendingGlobalMerges implements ClusterStateDeriver {
             }
         }
         return incompleteNodes;
+    }
+
+    private void setNodeInMaintenance(AnnotatedClusterState derivedState, int nodeIndex) {
+        derivedState.getClusterState().setNodeState(Node.ofStorage(nodeIndex),
+                new NodeState(NodeType.STORAGE, State.MAINTENANCE));
     }
 
     private boolean contentNodeIsAvailable(ClusterState state, int nodeIndex) {
