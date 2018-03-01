@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ * @author hakonhall
+ */
 @Path(HostSuspensionApi.PATH_PREFIX)
 public class HostSuspensionResource implements HostSuspensionApi {
 
@@ -47,26 +50,28 @@ public class HostSuspensionResource implements HostSuspensionApi {
             log.log(LogLevel.DEBUG, message);
             throw createWebApplicationException(message, Response.Status.BAD_REQUEST);
         }
+        return suspendAll(parentHostnameString, hostnamesAsStrings);
+    }
 
+    @Override
+    public BatchOperationResult suspendAll(String parentHostnameString, List<String> hostnamesAsStrings) {
         HostName parentHostname = new HostName(parentHostnameString);
-        List<HostName> hostNames = hostnamesAsStrings.stream().map(HostName::new).collect(Collectors.toList());
-
+        List<HostName> hostnames = hostnamesAsStrings.stream().map(HostName::new).collect(Collectors.toList());
         try {
-            orchestrator.suspendAll(parentHostname, hostNames);
+            orchestrator.suspendAll(parentHostname, hostnames);
         } catch (BatchHostStateChangeDeniedException e) {
-            log.log(LogLevel.DEBUG, "Failed to suspend nodes " + hostNames + " with parent host " + parentHostname, e);
+            log.log(LogLevel.DEBUG, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
             throw createWebApplicationException(e.getMessage(), Response.Status.CONFLICT);
         } catch (BatchHostNameNotFoundException e) {
-            log.log(LogLevel.DEBUG, "Failed to suspend nodes " + hostNames + " with parent host " + parentHostname, e);
+            log.log(LogLevel.DEBUG, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
             // Note that we're returning BAD_REQUEST instead of NOT_FOUND because the resource identified
             // by the URL path was found. It's one of the hostnames in the request it failed to find.
             throw createWebApplicationException(e.getMessage(), Response.Status.BAD_REQUEST);
         } catch (BatchInternalErrorException e) {
-            log.log(LogLevel.DEBUG, "Failed to suspend nodes " + hostNames + " with parent host " + parentHostname, e);
+            log.log(LogLevel.DEBUG, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
             throw createWebApplicationException(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
-
-        log.log(LogLevel.DEBUG, "Suspended " + hostNames + " with parent " + parentHostname);
+        log.log(LogLevel.DEBUG, "Suspended " + hostnames + " with parent " + parentHostname);
         return BatchOperationResult.successResult();
     }
 

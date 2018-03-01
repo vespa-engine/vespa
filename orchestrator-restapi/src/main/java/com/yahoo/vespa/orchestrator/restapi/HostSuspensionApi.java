@@ -6,9 +6,16 @@ import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
 
+/**
+ * @author hakonhall
+ */
 public interface HostSuspensionApi {
     /**
      * Path prefix for this api. Resources implementing this API should use this with a @Path annotation.
@@ -27,5 +34,13 @@ public interface HostSuspensionApi {
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Deprecated // TODO: Remove after 2018-04-01
     BatchOperationResult suspendAll(BatchHostSuspendRequest request);
+
+    @PUT
+    @Path("/{hostname}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    BatchOperationResult suspendAll(@PathParam("hostname") String parentHostname,
+                                    @QueryParam("hostname") List<String> hostnames);
 }

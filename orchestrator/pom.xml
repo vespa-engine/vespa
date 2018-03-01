@@ -131,6 +131,16 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <arg>-Xlint:all</arg>
+            <arg>-Xlint:-deprecation</arg>
+            <arg>-Xlint:-serial</arg>
+	    <arg>-Xlint:-varargs</arg>
+            <arg>-Xlint:-try</arg>
+            <arg>-Werror</arg>
+          </compilerArgs>
+        </configuration>
       </plugin>
     </plugins>
   </build>
