@@ -6,6 +6,7 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
+import com.yahoo.log.LogLevel;
 
 import java.security.SecureRandom;
 import java.util.Random;
@@ -78,13 +79,15 @@ public class Deconstructor implements ComponentDeconstructor {
             catch (Error e) {
                 try {
                     // Randomize restart over 10 minutes to avoid simultaneous cluster restarts
-                    Thread.sleep(random() * 1000 * 60 * 10);
+                    long randomSleepSeconds = random() * 60 * 10;
+                    log.log(LogLevel.FATAL, "Error when deconstructing " + component + " Will sleep for " +
+                                            randomSleepSeconds + " seconds then restart", e);
+                    Thread.sleep(randomSleepSeconds * 1000);
                 }
                 catch (InterruptedException exception) {
                     log.log(WARNING, "Randomized wait before dying disrupted. Dying now.");
                 }
-                com.yahoo.protect.Process.logAndDie("Shutting down due to error when deconstructing " +
-                                                    component, e);
+                com.yahoo.protect.Process.logAndDie("Shutting down due to error when deconstructing " + component);
             }
             catch (Throwable e) {
                 log.log(WARNING, "Non-error not exception throwable thrown when deconstructing " + component, e);
