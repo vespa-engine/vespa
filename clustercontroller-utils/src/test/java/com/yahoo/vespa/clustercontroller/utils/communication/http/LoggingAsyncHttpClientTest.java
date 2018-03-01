@@ -3,12 +3,15 @@ package com.yahoo.vespa.clustercontroller.utils.communication.http;
 
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperation;
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperationImpl;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class LoggingAsyncHttpClientTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+
+public class LoggingAsyncHttpClientTest {
+
     class HttpClient implements AsyncHttpClient<HttpResult> {
         AsyncOperationImpl<HttpResult> lastOp;
         @Override
@@ -20,11 +23,13 @@ public class LoggingAsyncHttpClientTest extends TestCase {
         }
     }
 
-    public void testWithoutDebugLog() throws Exception {
+    @Test
+    public void testWithoutDebugLog() {
         doRequests();
     }
 
-    public void testWithDebugLog() throws Exception {
+    @Test
+    public void testWithDebugLog() {
         Logger log = Logger.getLogger(LoggingAsyncHttpClient.class.getName());
         log.setLevel(Level.FINE);
         doRequests();
@@ -45,6 +50,6 @@ public class LoggingAsyncHttpClientTest extends TestCase {
             client.lastOp.setFailure(new Exception("foo"));
             assertEquals("foo", op.getCause().getMessage());
         }
-
     }
+
 }

@@ -3,11 +3,16 @@ package com.yahoo.vespa.clustercontroller.utils.communication.http;
 
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperation;
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperationImpl;
-import junit.framework.TestCase;
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.Test;
 
-public class JsonAsyncHttpClientTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
+public class JsonAsyncHttpClientTest {
+
+    @Test
     public void testJSONInJSONOut() throws Exception {
         DummyAsyncHttpClient dummy = new DummyAsyncHttpClient(
                 new HttpResult().setContent(new JSONObject().put("bar", 42)));
@@ -27,6 +32,7 @@ public class JsonAsyncHttpClientTest extends TestCase {
         client.close();
     }
 
+    @Test
     public void testStringInJSONOut() throws Exception {
         DummyAsyncHttpClient dummy = new DummyAsyncHttpClient(
                 new HttpResult().setContent(new JSONObject().put("bar", 42).toString()));
@@ -40,6 +46,7 @@ public class JsonAsyncHttpClientTest extends TestCase {
         assertEquals(new JSONObject().put("bar", 42).toString(), result.getResult().getJson().toString());
     }
 
+    @Test
     public void testIllegalJsonIn() throws Exception {
         DummyAsyncHttpClient dummy = new DummyAsyncHttpClient(
                 new HttpResult().setContent(new JSONObject().put("bar", 42)));
@@ -56,6 +63,7 @@ public class JsonAsyncHttpClientTest extends TestCase {
         }
     }
 
+    @Test
     public void testIllegalJSONOut() throws Exception {
         DummyAsyncHttpClient dummy = new DummyAsyncHttpClient(
                 new HttpResult().setContent("my illegal json"));
@@ -69,7 +77,8 @@ public class JsonAsyncHttpClientTest extends TestCase {
         assertEquals("{\"error\":\"Invalid JSON in output: A JSONObject text must begin with '{' at character 1 of my illegal json\",\"output\":\"my illegal json\"}", result.getResult().getJson().toString());
     }
 
-    public void testEmptyReply() throws Exception {
+    @Test
+    public void testEmptyReply() {
         class Client implements AsyncHttpClient<HttpResult> {
             AsyncOperationImpl<HttpResult> lastOp;
             @Override
@@ -87,6 +96,7 @@ public class JsonAsyncHttpClientTest extends TestCase {
         assertNull(op.getResult());
     }
 
+    @Test
     public void testNotVerifyingJson() throws Exception {
         DummyAsyncHttpClient dummy = new DummyAsyncHttpClient(
                 new HttpResult().setContent(new JSONObject().put("bar", 42)));
@@ -105,4 +115,5 @@ public class JsonAsyncHttpClientTest extends TestCase {
         result.toString();
         client.close();
     }
+
 }

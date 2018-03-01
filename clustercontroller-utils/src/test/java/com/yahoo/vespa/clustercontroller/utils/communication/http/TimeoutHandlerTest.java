@@ -5,14 +5,19 @@ import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperatio
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperationImpl;
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncUtils;
 import com.yahoo.vespa.clustercontroller.utils.test.FakeClock;
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class TimeoutHandlerTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class TimeoutHandlerTest {
 
     public class TestClient implements AsyncHttpClient<HttpResult> {
         AsyncOperationImpl<HttpResult> lastOp;
@@ -29,6 +34,7 @@ public class TimeoutHandlerTest extends TestCase {
     private FakeClock clock;
     private TimeoutHandler<HttpResult> handler;
 
+    @Before
     public void setUp() {
         executor = new ThreadPoolExecutor(10, 100, 100, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1000));
         clock = new FakeClock();
@@ -36,11 +42,13 @@ public class TimeoutHandlerTest extends TestCase {
         handler = new TimeoutHandler<>(executor, clock, client);
     }
 
+    @After
     public void tearDown() {
         handler.close();
         executor.shutdown();
     }
 
+    @Test
     public void testTimeout() {
         AsyncOperation<HttpResult> op = handler.execute(new HttpRequest().setTimeout(1000));
         assertFalse(op.isDone());
@@ -59,6 +67,7 @@ public class TimeoutHandlerTest extends TestCase {
         assertTrue(op.getCause().getMessage(), op.getCause().getMessage().contains("Operation timeout"));
     }
 
+    @Test
     public void testNoTimeout() {
         AsyncOperation<HttpResult> op = handler.execute(new HttpRequest().setTimeout(1000));
         clock.adjust(999);
@@ -70,6 +79,7 @@ public class TimeoutHandlerTest extends TestCase {
         assertEquals("foo", op.getResult().getContent());
     }
 
+    @Test
     public void testNoTimeoutFailing() {
         AsyncOperation<HttpResult> op = handler.execute(new HttpRequest().setTimeout(1000));
         clock.adjust(999);
@@ -81,6 +91,7 @@ public class TimeoutHandlerTest extends TestCase {
         assertEquals("foo", op.getCause().getMessage());
     }
 
+    @Test
     public void testProvokeCompletedOpPurgeInTimeoutList() {
         AsyncOperation<HttpResult> op1 = handler.execute(new HttpRequest().setTimeout(1000));
         AsyncOperationImpl<HttpResult> op1Internal = client.lastOp;
@@ -97,6 +108,7 @@ public class TimeoutHandlerTest extends TestCase {
         assertEquals(false, op2.isSuccess());
     }
 
+    @Test
     public void testNothingButGetCoverage() {
         AsyncOperation<HttpResult> op = handler.execute(new HttpRequest().setTimeout(1000));
         op.getProgress();
@@ -111,4 +123,5 @@ public class TimeoutHandlerTest extends TestCase {
         client.lastOp.setResult(new HttpResult().setContent("foo"));
         AsyncUtils.waitFor(op);
     }
+
 }

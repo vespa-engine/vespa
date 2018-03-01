@@ -1,14 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.communication.async;
 
-import junit.framework.TestCase;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.LinkedList;
 
-public class AsyncTest extends TestCase {
+import static org.junit.Assert.*;
 
+public class AsyncTest {
+
+    @Test
     public void testListeners() {
         AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test");
         class Listener implements AsyncCallback<String> {
@@ -28,16 +29,17 @@ public class AsyncTest extends TestCase {
         op.unregister(l1);
         op.setResult("foo");
         op.register(l4);
-            // Listener that is unregistered is not called
+        // Listener that is unregistered is not called
         assertEquals(false, l1.called);
-            // Listener that is registered is called
+        // Listener that is registered is called
         assertEquals(true, l2.called);
-            // Multiple listeners supported
+        // Multiple listeners supported
         assertEquals(true, l3.called);
-            // Listener called directly when registered after result is set
+        // Listener called directly when registered after result is set
         assertEquals(true, l4.called);
     }
 
+    @Test
     public void testMultipleResultSetters() {
         {
             AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test");
@@ -62,6 +64,7 @@ public class AsyncTest extends TestCase {
         }
     }
 
+    @Test
     public void testPartialResultOnFailure() {
         AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test");
         op.setFailure(new Exception("bar"), "foo");
@@ -70,6 +73,7 @@ public class AsyncTest extends TestCase {
         assertEquals("bar", op.getCause().getMessage());
     }
 
+    @Test
     public void testListenImpl() {
         class ListenImpl extends AsyncOperationListenImpl<String> {
             public ListenImpl(AsyncOperation<String> op) {
@@ -93,6 +97,7 @@ public class AsyncTest extends TestCase {
         assertEquals(1, l1.calls);
     }
 
+    @Test
     public void testRedirectedOperation() {
         {
             final AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test", "desc");
@@ -141,6 +146,7 @@ public class AsyncTest extends TestCase {
         }
     }
 
+    @Test
     public void testRedirectOnSuccessOperation() {
         {
             final AsyncOperationImpl<Integer> target = new AsyncOperationImpl<>("foo");
@@ -236,6 +242,7 @@ public class AsyncTest extends TestCase {
         }
     }
 
+    @Test
     public void testStressCompletionAndRegisterToDetectRace() throws Exception {
         int iterations = 1000;
         Object monitor = new Object();
@@ -247,7 +254,7 @@ public class AsyncTest extends TestCase {
             t1.start();
             t2.start();
             for (int i=0; i<iterations; ++i) {
-                final AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test");
+                AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test");
                 synchronized (monitor) {
                     completer.op = op;
                     listener.op = op;
@@ -263,23 +270,8 @@ public class AsyncTest extends TestCase {
             t1.join();
             t2.join();
         }
-        /*
-        System.out.println("Done with " + iterations + " iterations. "
-                        + "Registered prior " + listener.priorReg + " times. "
-                        + "Unset " + listener.unset + " times. ");
-        // */
         assertEquals(0, listener.unset);
         assertEquals(iterations, listener.counter);
     }
 
-    public void ignoreTestExceptionOnCallback() throws Exception {
-        AsyncOperationImpl<String> impl = new AsyncOperationImpl<>("foo");
-        impl.register(new AsyncCallback<String>() {
-            @Override
-            public void done(AsyncOperation<String> op) {
-                throw new RuntimeException("Foo");
-            }
-        });
-        impl.setResult(null);
-    }
 }
