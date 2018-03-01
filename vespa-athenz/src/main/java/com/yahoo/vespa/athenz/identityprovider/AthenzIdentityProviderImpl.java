@@ -42,7 +42,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private volatile AthenzCredentials credentials;
     private final Metric metric;
     private final AthenzCredentialsService athenzCredentialsService;
-    private final Scheduler scheduler;
+    private final ScheduledExecutorService scheduler;
     private final Clock clock;
     private final String domain;
     private final String service;
@@ -55,7 +55,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
                                           new IdentityDocumentService(config.loadBalancerAddress()),
                                           new AthenzService(),
                                           Clock.systemUTC()),
-             new ThreadPoolScheduler(),
+             new ScheduledThreadPoolExecutor(1),
              Clock.systemUTC());
     }
 
@@ -63,7 +63,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     AthenzIdentityProviderImpl(IdentityConfig config,
                                Metric metric,
                                AthenzCredentialsService athenzCredentialsService,
-                               Scheduler scheduler,
+                               ScheduledExecutorService scheduler,
                                Clock clock) {
         this.metric = metric;
         this.athenzCredentialsService = athenzCredentialsService;
@@ -77,8 +77,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private void registerInstance() {
         try {
             credentials = athenzCredentialsService.registerInstance();
-            scheduler.scheduleAtFixedRate(new CertificateExpiryMetricUpdater(), Duration.ofMinutes(0), Duration.ofMinutes(5));
-            scheduler.scheduleAtFixedRate(new UpdateCredentialsTask(), UPDATE_PERIOD, UPDATE_PERIOD);
+            scheduler.scheduleAtFixedRate(this::refreshCertificate, 0, 5, TimeUnit.MINUTES);
+            scheduler.scheduleAtFixedRate(this::reportMetrics, UPDATE_PERIOD.toMinutes(), UPDATE_PERIOD.toMinutes(), TimeUnit.MINUTES);
         } catch (Throwable t) {
             throw new AthenzIdentityProviderException("Could not retrieve Athenz credentials", t);
         }
@@ -106,7 +106,12 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     @Override
     public void deconstruct() {
-        scheduler.shutdown(AWAIT_TERMINTATION_TIMEOUT);
+        try {
+            scheduler.shutdownNow();
+            scheduler.awaitTermination(AWAIT_TERMINTATION_TIMEOUT.getSeconds(), TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private boolean isExpired(AthenzCredentials credentials) {
@@ -136,44 +141,6 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         } catch (Throwable t) {
             log.log(LogLevel.WARNING, "Failed to update metrics: " + t.getMessage(), t);
         }
-    }
-
-    private class UpdateCredentialsTask implements Runnable {
-        @Override
-        public void run() {
-            refreshCertificate();
-        }
-    }
-
-    private class CertificateExpiryMetricUpdater implements Runnable {
-        @Override
-        public void run() {
-            reportMetrics();
-        }
-    }
-
-    private static class ThreadPoolScheduler implements Scheduler {
-        private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-
-        @Override
-        public void scheduleAtFixedRate(Runnable runnable, Duration initialDelay, Duration period) {
-            executor.scheduleAtFixedRate(runnable, initialDelay.getSeconds(), period.getSeconds(), TimeUnit.SECONDS);
-        }
-
-        @Override
-        public void shutdown(Duration timeout) {
-            try {
-                executor.shutdownNow();
-                executor.awaitTermination(timeout.getSeconds(), TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    public interface Scheduler {
-        void scheduleAtFixedRate(Runnable runnable, Duration initialDelay, Duration period);
-        void shutdown(Duration timeout);
     }
 }
 

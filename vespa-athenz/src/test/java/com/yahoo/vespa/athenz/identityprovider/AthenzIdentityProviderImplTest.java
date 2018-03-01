@@ -2,11 +2,9 @@
 package com.yahoo.vespa.athenz.identityprovider;
 
 import com.yahoo.container.core.identity.IdentityConfig;
-import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.athenz.identityprovider.AthenzIdentityProviderImpl.Scheduler;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -15,6 +13,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
 import static org.mockito.Matchers.any;
@@ -42,7 +41,7 @@ public class AthenzIdentityProviderImplTest {
         when(credentialService.registerInstance())
                 .thenThrow(new RuntimeException("athenz unavailable"));
 
-        new AthenzIdentityProviderImpl(IDENTITY_CONFIG, mock(Metric.class), credentialService, mock(Scheduler.class), new ManualClock(Instant.EPOCH));
+        new AthenzIdentityProviderImpl(IDENTITY_CONFIG, mock(Metric.class), credentialService, mock(ScheduledExecutorService.class), new ManualClock(Instant.EPOCH));
     }
 
     @Test
@@ -70,7 +69,7 @@ public class AthenzIdentityProviderImplTest {
                 new AthenzCredentialsService(IDENTITY_CONFIG, identityDocumentService, athenzService, clock);
 
         AthenzIdentityProviderImpl identityProvider =
-                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, metric, credentialService, mock(Scheduler.class), clock);
+                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, metric, credentialService, mock(ScheduledExecutorService.class), clock);
 
         identityProvider.reportMetrics();
         verify(metric).set(eq(AthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.getSeconds()), any());
