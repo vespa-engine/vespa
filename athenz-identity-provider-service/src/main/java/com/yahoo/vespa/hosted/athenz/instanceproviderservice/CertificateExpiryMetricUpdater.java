@@ -59,7 +59,7 @@ public class CertificateExpiryMetricUpdater extends AbstractComponent {
         Instant now = Instant.now();
 
         try {
-            Duration keyStoreExpiry = Duration.between(now, keyStoreConfigurator.getKeyStoreExpiry());
+            Duration keyStoreExpiry = Duration.between(now, keyStoreConfigurator.getCertificateExpiry());
             metric.set(ATHENZ_CONFIGSERVER_CERT_METRIC_NAME, keyStoreExpiry.getSeconds(), null);
         } catch (KeyStoreException e) {
             logger.log(Level.WARNING, "Failed to update key store expiry metric", e);
