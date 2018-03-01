@@ -90,11 +90,12 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
                 keyStore.load(in, new char[0]);
             }
             Instant minimumExpiration = Instant.now().plus(updatePeriod).plus(EXPIRATION_MARGIN);
-            boolean isExpired = getKeyStoreExpiry(keyStore).isBefore(minimumExpiration);
+            boolean isExpired = getCertificateExpiry(keyStore).isBefore(minimumExpiration);
             if (isExpired) return Optional.empty();
             return Optional.of(keyStore);
         } catch (IOException | GeneralSecurityException e) {
-            throw new RuntimeException(e);
+            log.log(LogLevel.ERROR, "Failed to read keystore from disk: " + e.getMessage(), e);
+            return Optional.empty();
         }
     }
 
@@ -123,11 +124,11 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
         }
     }
 
-    Instant getKeyStoreExpiry() throws KeyStoreException {
-        return getKeyStoreExpiry(currentKeyStore);
+    Instant getCertificateExpiry() throws KeyStoreException {
+        return getCertificateExpiry(currentKeyStore);
     }
 
-    private static Instant getKeyStoreExpiry(KeyStore keyStore) throws KeyStoreException {
+    private static Instant getCertificateExpiry(KeyStore keyStore) throws KeyStoreException {
         X509Certificate certificate = (X509Certificate) keyStore.getCertificate(CERTIFICATE_ALIAS);
         return certificate.getNotAfter().toInstant();
     }
@@ -147,18 +148,18 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
             keyStore.load(null);
             keyStore.setKeyEntry(
                     CERTIFICATE_ALIAS, privateKey, CERTIFICATE_PASSWORD.toCharArray(), new Certificate[]{certificate});
-            writeKeystore(keyStore, keystoreCachePath);
+            tryWriteKeystore(keyStore, keystoreCachePath);
             return keyStore;
         } catch (IOException | GeneralSecurityException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static void writeKeystore(KeyStore keyStore, Path keystoreCachePath) {
+    private static void tryWriteKeystore(KeyStore keyStore, Path keystoreCachePath) {
         try (OutputStream out = new BufferedOutputStream(new FileOutputStream(keystoreCachePath.toFile()))) {
             keyStore.store(out, new char[0]);
         } catch (IOException | GeneralSecurityException e) {
-            throw new RuntimeException(e);
+            log.log(LogLevel.ERROR, "Failed to write keystore to disk: " + e.getMessage(), e);
         }
     }
 
