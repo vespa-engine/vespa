@@ -232,6 +232,7 @@ public class YApacheLogTestCase {
         AccessLogConfig.Builder builder = new AccessLogConfig.Builder().
                 fileHandler(new AccessLogConfig.FileHandler.Builder().
                         pattern("yapachetest2/access").
+                        compressOnRotation(false).
                         rotateScheme(AccessLogConfig.FileHandler.RotateScheme.Enum.SEQUENCE));
 
         AccessLogConfig config = new AccessLogConfig(builder);
