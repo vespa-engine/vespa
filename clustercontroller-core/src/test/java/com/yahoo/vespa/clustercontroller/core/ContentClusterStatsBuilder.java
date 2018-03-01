@@ -26,7 +26,7 @@ public class ContentClusterStatsBuilder {
     public ContentClusterStatsBuilder add(int nodeIndex, String bucketSpace, ContentNodeStats.BucketSpaceStats bucketSpaceStats) {
         ContentNodeStatsBuilder nodeStatsBuilder = stats.get(nodeIndex);
         if (nodeStatsBuilder == null) {
-            nodeStatsBuilder = new ContentNodeStatsBuilder(nodeIndex);
+            nodeStatsBuilder = ContentNodeStatsBuilder.forNode(nodeIndex);
             stats.put(nodeIndex, nodeStatsBuilder);
         }
         nodeStatsBuilder.add(bucketSpace, bucketSpaceStats);
@@ -34,7 +34,7 @@ public class ContentClusterStatsBuilder {
     }
 
     public ContentClusterStatsBuilder add(int nodeIndex) {
-        stats.put(nodeIndex, new ContentNodeStatsBuilder(nodeIndex));
+        stats.put(nodeIndex, ContentNodeStatsBuilder.forNode(nodeIndex));
         return this;
     }
 

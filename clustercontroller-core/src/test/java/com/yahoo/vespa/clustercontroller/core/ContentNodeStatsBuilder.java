@@ -8,8 +8,12 @@ public class ContentNodeStatsBuilder {
     private final int nodeIndex;
     private final Map<String, ContentNodeStats.BucketSpaceStats> stats = new HashMap<>();
 
-    public ContentNodeStatsBuilder(int nodeIndex) {
+    private ContentNodeStatsBuilder(int nodeIndex) {
         this.nodeIndex = nodeIndex;
+    }
+
+    public static ContentNodeStatsBuilder forNode(int nodeIndex) {
+        return new ContentNodeStatsBuilder(nodeIndex);
     }
 
     public ContentNodeStatsBuilder add(String bucketSpace, long bucketsTotal, long bucketsPending) {

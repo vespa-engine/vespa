@@ -316,7 +316,7 @@ public class VdsClusterHtmlRendrer {
         private static void addBucketsPending(HtmlTable.Row row, ContentNodeStats.BucketSpaceStats bucketSpaceStats) {
             if (bucketSpaceStats != null) {
                 long bucketsPending = bucketSpaceStats.getBucketsPending();
-                String cellValue = "" + bucketsPending;
+                String cellValue = String.valueOf(bucketsPending);
                 if (!bucketSpaceStats.valid()) {
                     cellValue += "?";
                 }

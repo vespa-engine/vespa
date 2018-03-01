@@ -174,11 +174,11 @@ public class ClusterStatsAggregatorTest {
     public void aggregator_can_provide_aggregated_stats_per_distributor() {
         Fixture f = new FourNodesFixture();
 
-        f.verify(1, new ContentNodeStatsBuilder(1)
+        f.verify(1, ContentNodeStatsBuilder.forNode(1)
                 .add("default", 10 + 12, 1 + 3)
                 .add("global", 11 + 13, 2 + 4));
 
-        f.verify(2, new ContentNodeStatsBuilder(2)
+        f.verify(2, ContentNodeStatsBuilder.forNode(2)
                 .add("default", 14 + 16, 5 + 7)
                 .add("global", 15 + 17, 6 + 8));
     }
