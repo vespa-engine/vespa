@@ -348,14 +348,9 @@ public class DeploymentTrigger {
                                reason));
 
         ApplicationVersion targetApplicationVersion = application.deployApplicationVersionFor(jobType, controller, false)
-                                                        .orElse(ApplicationVersion.unknown);
-        boolean isApplicationVersionUpgrade = Optional.ofNullable(application.deploymentJobs().jobStatus().get(jobType))
-                .flatMap(JobStatus::lastSuccess)
-                .map(JobStatus.JobRun::applicationVersion)
-                .filter(version -> version.compareTo(targetApplicationVersion) < 0)
-                .isPresent();
+                .orElse(ApplicationVersion.unknown);
 
-        deploymentQueue.addJob(application.id(), jobType, force, isApplicationVersionUpgrade, first);
+        deploymentQueue.addJob(application.id(), jobType, force, targetIsUpgradeFor(application, jobType, targetApplicationVersion), first);
         return application.withJobTriggering(jobType,
                                              application.change(),
                                              clock.instant(),
@@ -435,6 +430,13 @@ public class DeploymentTrigger {
         Optional<JobStatus.JobRun> lastSuccessfulRun = status.lastSuccess();
         if ( ! lastSuccessfulRun.isPresent()) return false;
         return lastSuccessfulRun.get().version().equals(version);
+    }
+
+    private boolean targetIsUpgradeFor(Application application, JobType jobType, ApplicationVersion version) {
+        JobStatus status = application.deploymentJobs().jobStatus().get(jobType);
+        if (status == null || ! status.lastSuccess().isPresent()) return true;
+
+        return status.lastSuccess().get().applicationVersion().compareTo(version) < 0;
     }
 
 }
