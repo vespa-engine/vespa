@@ -26,10 +26,10 @@ vespa_define_module(
     src/tests/gp/ponder_nov2017
     src/tests/tensor/dense_dot_product_function
     src/tests/tensor/dense_fast_rename_function
+    src/tests/tensor/dense_inplace_map_function
     src/tests/tensor/dense_tensor_address_combiner
     src/tests/tensor/dense_tensor_builder
     src/tests/tensor/dense_xw_product_function
-    src/tests/tensor/vector_from_doubles_function
     src/tests/tensor/sparse_tensor_builder
     src/tests/tensor/tensor_address
     src/tests/tensor/tensor_conformance
@@ -37,6 +37,7 @@ vespa_define_module(
     src/tests/tensor/tensor_performance
     src/tests/tensor/tensor_serialization
     src/tests/tensor/tensor_slime_serialization
+    src/tests/tensor/vector_from_doubles_function
 
     LIBS
     src/vespa/eval
