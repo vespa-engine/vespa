@@ -54,10 +54,17 @@ public class Authorizer implements BiPredicate<Principal, URI> {
 
     /** Returns whether principal can access node identified by hostname */
     private boolean canAccess(String hostname, Principal principal) {
+        // Ignore potential path traversal. Node repository happily passes arguments unsanitized all the way down to
+        // curator...
+        if (hostname.chars().allMatch(c -> c == '.')) {
+            return false;
+        }
+
         // Node can always access itself
         if (principal.getName().equals(hostname)) {
             return true;
         }
+
         // Parent node can access its children
         return nodeRepository.getNode(hostname)
                              .flatMap(Node::parentHostname)

@@ -69,6 +69,9 @@ public class AuthorizerTest {
         assertFalse(authorized("node1", "/nodes/v2/node/node2"));
         assertFalse(authorized("node1", "/nodes/v2/state/dirty/"));
         assertFalse(authorized("node1", "/nodes/v2/state/dirty/node2"));
+        // Path traversal fails gracefully
+        assertFalse(authorized("node1", "/nodes/v2/node/."));
+        assertFalse(authorized("node1", "/nodes/v2/node/.."));
         assertFalse(authorized("node1", "/nodes/v2/acl/node2"));
         assertFalse(authorized("node1", "/nodes/v2/node/?parentHost=node2"));
         // Node resource always takes precedence over filter
