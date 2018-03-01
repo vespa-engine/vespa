@@ -3,8 +3,13 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
 import org.junit.Test;
 
+import java.util.*;
+
+import static com.yahoo.vespa.clustercontroller.core.NodeStateReason.MAY_HAVE_MERGES_PENDING;
+import static com.yahoo.vespa.clustercontroller.core.NodeStateReason.NODE_TOO_UNSTABLE;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyInt;
@@ -31,6 +36,29 @@ public class MaintenanceWhenPendingGlobalMergesTest {
         return AnnotatedClusterState.withoutAnnotations(ClusterState.stateFromString(stateStr));
     }
 
+    private static class AnnotatedClusterStateBuilder {
+        private ClusterState clusterState;
+        private Map<Node, NodeStateReason> nodeStateReasons = new HashMap<>();
+
+        private AnnotatedClusterStateBuilder(String stateStr) {
+            clusterState = ClusterState.stateFromString(stateStr);
+        }
+
+        public static AnnotatedClusterStateBuilder ofState(String stateStr) {
+            return new AnnotatedClusterStateBuilder(stateStr);
+        }
+
+        public AnnotatedClusterStateBuilder reason(NodeStateReason reason, Integer... nodeIndices) {
+            Arrays.stream(nodeIndices).forEach(nodeIndex -> nodeStateReasons.put(Node.ofStorage(nodeIndex), reason));
+            return this;
+        }
+
+        public AnnotatedClusterState build() {
+            return new AnnotatedClusterState(clusterState, Optional.empty(), nodeStateReasons);
+        }
+
+    }
+
     @Test
     public void no_nodes_set_to_maintenance_in_global_bucket_space_state() {
         Fixture f = new Fixture();
@@ -45,7 +73,8 @@ public class MaintenanceWhenPendingGlobalMergesTest {
         when(f.mockPendingChecker.mayHaveMergesPending(globalSpace(), 1)).thenReturn(true);
         when(f.mockPendingChecker.mayHaveMergesPending(globalSpace(), 3)).thenReturn(true);
         AnnotatedClusterState derived = f.deriver.derivedFrom(stateFromString("distributor:5 storage:5"), defaultSpace());
-        assertThat(derived, equalTo(stateFromString("distributor:5 storage:5 .1.s:m .3.s:m")));
+        assertThat(derived, equalTo(AnnotatedClusterStateBuilder.ofState("distributor:5 storage:5 .1.s:m .3.s:m")
+                .reason(MAY_HAVE_MERGES_PENDING, 1, 3).build()));
     }
 
     @Test
@@ -69,7 +98,20 @@ public class MaintenanceWhenPendingGlobalMergesTest {
         when(f.mockPendingChecker.mayHaveMergesPending(eq(globalSpace()), anyInt())).thenReturn(true);
         AnnotatedClusterState derived = f.deriver.derivedFrom(stateFromString("distributor:5 storage:5 .1.s:m .2.s:r .3.s:i .4.s:d"), defaultSpace());
         // TODO reconsider role of retired here... It should not have merges pending towards it in the general case, but may be out of sync
-        assertThat(derived, equalTo(stateFromString("distributor:5 storage:5 .0.s:m .1.s:m .2.s:m .3.s:m .4.s:d")));
+        assertThat(derived, equalTo(AnnotatedClusterStateBuilder.ofState("distributor:5 storage:5 .0.s:m .1.s:m .2.s:m .3.s:m .4.s:d")
+                .reason(MAY_HAVE_MERGES_PENDING, 0, 2, 3).build()));
+    }
+
+    @Test
+    public void node_state_reasons_are_used_as_baseline_in_default_bucket_space_state() {
+        Fixture f = new Fixture();
+        when(f.mockPendingChecker.mayHaveMergesPending(globalSpace(), 1)).thenReturn(true);
+        when(f.mockPendingChecker.mayHaveMergesPending(globalSpace(), 3)).thenReturn(true);
+        AnnotatedClusterState derived = f.deriver.derivedFrom(AnnotatedClusterStateBuilder.ofState("distributor:5 storage:5")
+                .reason(NODE_TOO_UNSTABLE, 1, 2).build(), defaultSpace());
+        assertThat(derived, equalTo(AnnotatedClusterStateBuilder.ofState("distributor:5 storage:5 .1.s:m .3.s:m")
+                .reason(MAY_HAVE_MERGES_PENDING, 1, 3)
+                .reason(NODE_TOO_UNSTABLE, 2).build()));
     }
 
 }
