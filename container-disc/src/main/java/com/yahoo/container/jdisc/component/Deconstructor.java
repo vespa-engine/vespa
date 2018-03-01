@@ -20,6 +20,7 @@ import static java.util.logging.Level.WARNING;
 * @author gv
 */
 public class Deconstructor implements ComponentDeconstructor {
+
     private static final Logger log = Logger.getLogger(Deconstructor.class.getName());
 
     private final ScheduledExecutorService executor =
@@ -52,6 +53,7 @@ public class Deconstructor implements ComponentDeconstructor {
     }
 
     private static class DestructComponentTask implements Runnable {
+
         private final AbstractComponent component;
 
         DestructComponentTask(AbstractComponent component) {
@@ -69,10 +71,15 @@ public class Deconstructor implements ComponentDeconstructor {
             }
             catch (Error e) {
                 try {
-                    Thread.sleep((long) (new Random(System.nanoTime()).nextDouble() * 180 * 1000));
-                } catch (InterruptedException exception) { }
+                    // Randomize restart over 10 minutes to avoid simultaneous cluster restarts
+                    Thread.sleep((long) (new Random(System.nanoTime()).nextDouble() * 1000 * 60 * 10));
+                }
+                catch (InterruptedException exception) {
+                    log.log(WARNING, "Randomized wait before dying disrupted. Dying now.");
+                }
                 com.yahoo.protect.Process.logAndDie("Error when deconstructing " + component, e);
             }
         }
     }
+
 }
