@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
-import java.io.File;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
@@ -61,8 +60,6 @@ public interface Docker {
 
     void connectContainerToNetwork(ContainerName containerName, String networkName);
 
-    void copyArchiveToContainer(String sourcePath, ContainerName destinationContainer, String destinationPath);
-
     List<Container> getAllContainersManagedBy(String manager);
 
     List<ContainerName> listAllContainersManagedBy(String manager);
@@ -80,15 +77,13 @@ public interface Docker {
 
     void deleteImage(DockerImage dockerImage);
 
-    void buildImage(File dockerfile, DockerImage dockerImage);
-
     /**
      * Deletes the local images that are currently not in use by any container and not recently used.
      */
     void deleteUnusedDockerImages();
 
     /**
-     * Execute a command in docker container as "yahoo". Will block until the command is finished.
+     * Execute a command in docker container as $VESPA_USER. Will block until the command is finished.
      *
      * @param containerName The name of the container
      * @param command The command with arguments to run.

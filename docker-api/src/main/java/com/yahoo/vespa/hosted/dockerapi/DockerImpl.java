@@ -18,18 +18,17 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.core.async.ResultCallbackTemplate;
-import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -68,8 +67,7 @@ public class DockerImpl implements Docker {
     @GuardedBy("monitor")
     private final Set<DockerImage> scheduledPulls = new HashSet<>();
 
-    // Exposed for testing.
-    DockerClient dockerClient;
+    private DockerClient dockerClient;
 
     @Inject
     public DockerImpl(DockerConfig config, MetricReceiverWrapper metricReceiverWrapper) {
@@ -142,18 +140,6 @@ public class DockerImpl implements Docker {
                 .withIpam(ipam)
                 .withOptions(dockerNetworkOptions)
                 .exec();
-    }
-
-    @Override
-    public void copyArchiveToContainer(String sourcePath, ContainerName destinationContainer, String destinationPath) {
-        try {
-            dockerClient.copyArchiveToContainerCmd(destinationContainer.asString())
-                    .withHostResource(sourcePath).withRemotePath(destinationPath).exec();
-        } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
-            throw new DockerException("Failed to copy container " + sourcePath + " to " +
-                    destinationContainer + ":" + destinationPath, e);
-        }
     }
 
     @Override
@@ -434,17 +420,6 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public void buildImage(File dockerfile, DockerImage image) {
-        try {
-            dockerClient.buildImageCmd(dockerfile).withTags(Collections.singleton(image.asString()))
-                    .exec(new BuildImageResultCallback()).awaitImageId();
-        } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
-            throw new DockerException("Failed to build image " + image.asString(), e);
-        }
-    }
-
-    @Override
     public void deleteUnusedDockerImages() {
         if (!dockerImageGC.isPresent()) return;
 
@@ -464,7 +439,7 @@ public class DockerImpl implements Docker {
         @Override
         public void onError(Throwable throwable) {
             removeScheduledPoll(dockerImage);
-            throw new DockerClientException("Could not download image: " + dockerImage);
+            logger.log(LogLevel.ERROR, "Could not download image " + dockerImage.asString(), throwable);
         }
 
 
