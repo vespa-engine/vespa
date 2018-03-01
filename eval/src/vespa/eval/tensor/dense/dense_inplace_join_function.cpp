@@ -50,7 +50,7 @@ void my_inplace_right_join_op(eval::InterpretedFunction::State &state, uint64_t 
     ArrayRef<double> right_cells = getMutableCells(rhs);
     auto lhs_iter = left_cells.cbegin();
     for (double &cell: right_cells) {
-        cell = function(cell, *lhs_iter);
+        cell = function(*lhs_iter, cell);
         ++lhs_iter;
     }
     assert(lhs_iter == left_cells.cend());

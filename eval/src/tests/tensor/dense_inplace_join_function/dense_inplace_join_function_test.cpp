@@ -26,7 +26,7 @@ EvalFixture::ParamRepo make_params() {
         .add("x5", spec({x(5)}, N()))
         .add_mutable("_d_A", spec(17.0))
         .add_mutable("_d_B", spec(42.0))
-        .add_mutable("_x5", spec({x(5)}, N()))
+        .add_mutable("_x5", spec({x(5)}, Seq({9, 8, 7, 6, 5})))
         .add_mutable("_x5_A", spec({x(5)}, Seq({10, 11, 12, 13, 14})))
         .add_mutable("_x5_B", spec({x(5)}, Seq({16, 18, 20, 22, 24})))
         .add_mutable("_x5_C", spec({x(5)}, Seq({30, 35, 40, 45, 50})))
@@ -68,6 +68,7 @@ void verify_not_optimized(const vespalib::string &expr) {
 
 TEST("require that mutable dense concrete tensors are optimized") {
     TEST_DO(verify_left_optimized("_x5_A+_x5_B", 1));
+    TEST_DO(verify_left_optimized("_x5y3+_x5y3", 1));
     TEST_DO(verify_left_optimized("_x5_A-_x5_B", 1));
     TEST_DO(verify_left_optimized("_x5-x5", 1));
     TEST_DO(verify_right_optimized("x5-_x5", 1));
