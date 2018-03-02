@@ -4,16 +4,16 @@ package com.yahoo.container.logging.test;
 import java.util.Date;
 
 import com.yahoo.container.logging.LogFormatter;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:travisb@yahoo-inc.com">Bob Travis</a>
+ * @author Bob Travis
  */
-public class LogFormatterTestCase extends junit.framework.TestCase {
+public class LogFormatterTestCase {
 
-    public LogFormatterTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testIt() {
         java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"));
         @SuppressWarnings("deprecation")

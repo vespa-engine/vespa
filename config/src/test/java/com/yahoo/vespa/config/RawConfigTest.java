@@ -11,16 +11,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNull;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 /**
  * @author hmusum
- * @since 5.1.9
+
  */
 public class RawConfigTest {
 
@@ -35,19 +32,19 @@ public class RawConfigTest {
     public void basic() {
         RawConfig config = new RawConfig(key, defMd5);
         assertEquals(config.getKey(), key);
-        assertThat(config.getDefMd5(), is(defMd5));
-        assertThat(config.getName(), is("foo"));
-        assertThat(config.getDefNamespace(), is("bar"));
-        assertThat(config.getConfigId(), is("id"));
+        assertEquals(defMd5, config.getDefMd5());
+        assertEquals("foo", config.getName());
+        assertEquals("bar", config.getDefNamespace());
+        assertEquals("id", config.getConfigId());
 
-        assertThat(config.isError(), is(false));
+        assertFalse(config.isError());
 
         // Copy constructor
         RawConfig copiedConfig = new RawConfig(config);
-        assertThat(copiedConfig, is(config));
+        assertEquals(config, copiedConfig);
 
-        assertThat(config.toString(), is("bar.foo," + defMd5 + ",id,,0,null"));
-        assertThat(config.getVespaVersion(), is(Optional.empty()));
+        assertEquals("bar.foo," + defMd5 + ",id,,0,null", config.toString());
+        assertEquals(Optional.empty(), config.getVespaVersion());
     }
 
     @Test

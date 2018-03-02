@@ -13,9 +13,7 @@ import org.w3c.dom.Element;
 
 import java.util.Collection;
 
-import static junit.framework.TestCase.assertEquals;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
@@ -51,7 +49,7 @@ public class ProcessingChainsTest extends DomBuilderTest {
         assertEquals(1, defaultChain.getInnerComponents().size());
 
         Collection<ChainedComponent<?>> outerProcessors = processingChains.getComponentGroup().getComponents();
-        assertThat(outerProcessors.size(), is(1));
+        assertEquals(1, outerProcessors.size());
         assertEquals("processor1", outerProcessors.iterator().next().getComponentId().toString());
 
         Collection<Processor> innerProcessors = defaultChain.getInnerComponents();
@@ -61,12 +59,11 @@ public class ProcessingChainsTest extends DomBuilderTest {
     @Test
     public void require_that_processors_have_correct_class() {
         ChainedComponent<?> processor1 = processingChains.getComponentGroup().getComponents().iterator().next();
-        assertThat(processor1.model.bundleInstantiationSpec.classId.stringValue(),
-                   is("com.yahoo.test.Processor1"));
+        assertEquals("com.yahoo.test.Processor1", processor1.model.bundleInstantiationSpec.classId.stringValue());
 
         ProcessingChain defaultChain = processingChains.allChains().getComponent("default");
         Processor processor2 = defaultChain.getInnerComponents().iterator().next();
-        assertThat(processor2.model.bundleInstantiationSpec.classId.stringValue(),
-                   is("com.yahoo.test.Processor2"));
+        assertEquals("com.yahoo.test.Processor2", processor2.model.bundleInstantiationSpec.classId.stringValue());
     }
+
 }

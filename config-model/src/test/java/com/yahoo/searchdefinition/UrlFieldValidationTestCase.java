@@ -5,8 +5,8 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
-import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth

@@ -11,15 +11,13 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 /**
  * Test of DomFederationSearcherBuilder.
+ *
  * @author tonytv
  */
 public class DomFederationSearcherBuilderTest extends DomBuilderTest {
@@ -74,4 +72,5 @@ public class DomFederationSearcherBuilderTest extends DomBuilderTest {
         searcher.getConfig(builder);
         assertThat(new FederationConfig(builder).targetSelector(), is(targetSelectorId));
     }
+
 }

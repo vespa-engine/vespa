@@ -11,7 +11,7 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
-import static junit.framework.TestCase.*;
+import static org.junit.Assert.*;
 
 
 /**

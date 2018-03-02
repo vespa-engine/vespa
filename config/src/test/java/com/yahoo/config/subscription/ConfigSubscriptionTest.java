@@ -15,19 +15,14 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.List;
 
-import static junit.framework.TestCase.fail;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
- * @author hmusum, lulf
- * @since 5.1
+ * @author hmusum
+ * @author Ulf Lillengen
  */
 public class ConfigSubscriptionTest {
+
     @Test
     public void testEquals() {
         ConfigSubscriber sub = new ConfigSubscriber();
@@ -38,12 +33,12 @@ public class ConfigSubscriptionTest {
                 sub, new RawSource(payload), new TimingValues());
         ConfigSubscription<SimpletypesConfig> c = ConfigSubscription.get(new ConfigKey<>(SimpletypesConfig.class, "test2"),
                 sub, new RawSource(payload), new TimingValues());
-        assertThat(a, is(b));
-        assertThat(a, is(a));
-        assertThat(b, is(b));
-        assertThat(c, is(c));
-        assertThat(a, is(not(c)));
-        assertThat(b, is(not(c)));
+        assertEquals(b, a);
+        assertEquals(a, a);
+        assertEquals(b, b);
+        assertEquals(c, c);
+        assertNotEquals(c, a);
+        assertNotEquals(c, b);
 
         ConfigSubscriber subscriber = new ConfigSubscriber();
         ConfigSet configSet = new ConfigSet();
@@ -73,12 +68,12 @@ public class ConfigSubscriptionTest {
         ConfigHandle<SimpletypesConfig> handle = sub.subscribe(SimpletypesConfig.class, "raw:boolval true", 10000);
         assertNotNull(handle);
         sub.nextConfig();
-        assertThat(handle.getConfig().boolval(), is(true));
+        assertTrue(handle.getConfig().boolval());
         //assertTrue(sub.getSource() instanceof RawSource);
     }
 
-    // Test that subscription is closed and subscriptionHandles is empty if we get an exception (only the last is possible to
-    // test right now).
+    // Test that subscription is closed and subscriptionHandles is empty if we get an exception
+    // (only the last is possible to test right now).
     @Test
     @Ignore
     public void testSubscribeWithException() {
@@ -88,7 +83,7 @@ public class ConfigSubscriptionTest {
             sub.subscribe(SimpletypesConfig.class, "configid", configSourceSet, new TimingValues().setSubscribeTimeout(100));
             fail();
         } catch (ConfigurationRuntimeException e) {
-            assertThat(sub.getSubscriptionHandles().size(), is(0));
+            assertEquals(0, sub.getSubscriptionHandles().size());
         }
     }
 
@@ -97,4 +92,5 @@ public class ConfigSubscriptionTest {
             return subscriptionHandles;
         }
     }
+
 }

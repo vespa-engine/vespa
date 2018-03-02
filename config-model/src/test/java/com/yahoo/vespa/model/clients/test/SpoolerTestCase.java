@@ -5,14 +5,18 @@ import com.yahoo.vespa.config.content.spooler.SpoolerConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.CommonVespaModelSetup;
 import com.yahoo.vespaclient.config.FeederConfig;
+import org.junit.Test;
 
 import java.util.*;
 
-/**
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
- */
-public class SpoolerTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
 
+/**
+ * @author Thomas Gundersen
+ */
+public class SpoolerTestCase {
+
+    @Test
     public void testSimple() throws Exception {
         VespaModel model = createModel("src/test/cfg/clients/simpleconfig.v2.docprocv3");
 
@@ -38,6 +42,7 @@ public class SpoolerTestCase extends junit.framework.TestCase {
         testFeederConfigBuilder(model, spoolerIndex, feederBuilder);
     }
 
+    @Test
     public void testAdvanced() throws Exception {
         VespaModel model = createModel("src/test/cfg/clients/advancedconfig.v2");
 
@@ -117,7 +122,7 @@ public class SpoolerTestCase extends junit.framework.TestCase {
         SpoolerConfig.Builder b = new SpoolerConfig.Builder();
         model.getConfig(b, id);
         SpoolerConfig config = new SpoolerConfig(b);
-        final SpoolerConfig expectedConfig = new SpoolerConfig(expected);
+        SpoolerConfig expectedConfig = new SpoolerConfig(expected);
         assertEquals(expectedConfig, config);
     }
 
@@ -129,11 +134,12 @@ public class SpoolerTestCase extends junit.framework.TestCase {
         FeederConfig.Builder b = new FeederConfig.Builder();
         model.getConfig(b, id);
         FeederConfig config = new FeederConfig(b);
-        final FeederConfig expectedConfig = new FeederConfig(expected);
+        FeederConfig expectedConfig = new FeederConfig(expected);
         assertEquals(expectedConfig, config);
     }
 
     private VespaModel createModel(String configFile) throws Exception {
         return CommonVespaModelSetup.createVespaModelWithMusic(configFile);
     }
+
 }

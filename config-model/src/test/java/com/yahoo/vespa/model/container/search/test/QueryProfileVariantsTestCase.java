@@ -5,41 +5,49 @@ import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
+import org.junit.Test;
+
 import java.io.IOException;
 
 import static helpers.CompareConfigTestHelper.assertSerializedConfigFileEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
  */
-public class QueryProfileVariantsTestCase extends junit.framework.TestCase {
+public class QueryProfileVariantsTestCase {
 
     private final String root = "src/test/java/com/yahoo/vespa/model/container/search/test/";
 
+    @Test
     public void testConfigCreation() throws IOException {
         QueryProfileRegistry registry = new QueryProfileXMLReader().read(root + "queryprofilevariants");
         QueryProfiles profiles = new QueryProfiles(registry);
         assertSerializedConfigFileEquals(root + "query-profile-variants-configuration.cfg", profiles.getConfig().toString());
     }
 
+    @Test
     public void testConfigCreation2() throws IOException {
         QueryProfileRegistry registry = new QueryProfileXMLReader().read("src/test/java/com/yahoo/vespa/model/container/search/test/queryprofilevariants2");
         QueryProfiles profiles = new QueryProfiles(registry);
         assertSerializedConfigFileEquals(root + "query-profile-variants2-configuration.cfg", profiles.getConfig().toString());
     }
 
+    @Test
     public void testConfigCreationNewsBESimple() throws IOException {
         QueryProfileRegistry registry = new QueryProfileXMLReader().read(root + "newsbesimple");
         QueryProfiles profiles = new QueryProfiles(registry);
         assertSerializedConfigFileEquals(root + "newsbe-query-profiles-simple.cfg", profiles.getConfig().toString());
     }
 
+    @Test
     public void testConfigCreationNewsFESimple() throws IOException {
         QueryProfileRegistry registry = new QueryProfileXMLReader().read(root + "newsfesimple");
         QueryProfiles profiles = new QueryProfiles(registry);
         assertSerializedConfigFileEquals(root + "newsfe-query-profiles-simple.cfg", profiles.getConfig().toString());
     }
 
+    @Test
     public void testVariantsOfExplicitCompound() throws IOException {
         QueryProfileRegistry registry = new QueryProfileRegistry();
 
@@ -59,6 +67,7 @@ public class QueryProfileVariantsTestCase extends junit.framework.TestCase {
         assertSerializedConfigFileEquals(root + "variants-of-explicit-compound.cfg", profiles.getConfig().toString());
     }
 
+    @Test
     public void testVariantsOfExplicitCompoundWithVariantReference() throws IOException {
         QueryProfileRegistry registry = new QueryProfileRegistry();
 
@@ -84,6 +93,7 @@ public class QueryProfileVariantsTestCase extends junit.framework.TestCase {
     }
 
     /** For comparison with the above */
+    @Test
     public void testExplicitReferenceOverride() throws IOException {
         QueryProfileRegistry registry = new QueryProfileRegistry();
 

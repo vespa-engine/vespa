@@ -15,7 +15,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static junit.framework.TestCase.assertSame;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author geirst
@@ -57,7 +57,7 @@ public class DocumentModelBuilderReferenceTypeTestCase extends SearchDefinitionT
         NewDocumentType campaignType = model.getDocumentManager().getDocumentType("campaign");
         NewDocumentType adType = model.getDocumentManager().getDocumentType("ad");
         ReferenceDataType campaignRefType = (ReferenceDataType) adType.getField("campaign_ref").getDataType();
-        assertSame(campaignRefType.getTargetType(), campaignType);
+        assertEquals(campaignRefType.getTargetType(), campaignType);
     }
 
     private static String TEST_FOLDER = "src/test/configmodel/types/references/";

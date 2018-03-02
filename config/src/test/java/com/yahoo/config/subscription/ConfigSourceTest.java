@@ -9,15 +9,14 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 
-import static junit.framework.TestCase.fail;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class ConfigSourceTest {
+
     @Test(expected = IllegalArgumentException.class)
     public void require_that_FileSource_throws_exception_on_invalid_file() {
         new FileSource(new File("invalid"));
@@ -39,7 +38,9 @@ public class ConfigSourceTest {
             ConfigGetter.getConfig(SimpletypesConfig.class, "dir:" + tmpDir, dirSource);
             fail();
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), is("Could not find a config file for '" + SimpletypesConfig.getDefName() + "' in '" + folder + "/'"));
+            assertEquals("Could not find a config file for '" + SimpletypesConfig.getDefName() + "' in '" + folder + "/'",
+                         e.getMessage());
         }
     }
+
 }

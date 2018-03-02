@@ -18,15 +18,12 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createCluster;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createClusterXml;
 import static com.yahoo.vespa.model.search.utils.DispatchUtils.assertEngine;
 import static com.yahoo.vespa.model.search.utils.DispatchUtils.getDataset;
+import static org.junit.Assert.*;
 
 
 /**
@@ -296,4 +293,5 @@ public class IndexedHierarchicDistributionTest {
         // The active one should be indexed anyhow. Setting up no ready copies
         getTwoGroupsCluster(4, 0, "2|*");
     }
+
 }

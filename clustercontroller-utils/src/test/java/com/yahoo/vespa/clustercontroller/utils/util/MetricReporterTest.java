@@ -1,12 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.util;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.util.Map;
 import java.util.TreeMap;
 
-public class MetricReporterTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+
+public class MetricReporterTest {
+
     static class MetricReporterMock implements MetricReporter {
         StringBuilder sb = new StringBuilder();
 
@@ -30,6 +33,7 @@ public class MetricReporterTest extends TestCase {
         }
     };
 
+    @Test
     public void testNoMetricReporter() {
         NoMetricReporter reporter = new NoMetricReporter();
         reporter.add("foo", 3, null);
@@ -37,6 +41,7 @@ public class MetricReporterTest extends TestCase {
         reporter.createContext(null);
     }
 
+    @Test
     public void testPrefix() {
         MetricReporterMock mock = new MetricReporterMock();
         ComponentMetricReporter c = new ComponentMetricReporter(mock, "prefix");
@@ -51,6 +56,7 @@ public class MetricReporterTest extends TestCase {
 
     }
 
+    @Test
     public void testWithContext() {
         MetricReporterMock mock = new MetricReporterMock();
         ComponentMetricReporter c = new ComponentMetricReporter(mock, "prefix");
@@ -68,6 +74,7 @@ public class MetricReporterTest extends TestCase {
                 "set(prefixbar, 1)\n", mock.sb.toString());
     }
 
+    @Test
     public void testDefaultContext() {
         MetricReporterMock mock = new MetricReporterMock();
         ComponentMetricReporter c = new ComponentMetricReporter(mock, "prefix");
@@ -79,6 +86,7 @@ public class MetricReporterTest extends TestCase {
                 "add(prefixfoo, 2)\n", mock.sb.toString());
     }
 
+    @Test
     public void testContextOverlap() {
         MetricReporterMock mock = new MetricReporterMock();
         ComponentMetricReporter c = new ComponentMetricReporter(mock, "prefix");

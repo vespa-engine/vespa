@@ -17,21 +17,25 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static helpers.CompareConfigTestHelper.assertSerializedConfigFileEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests generation of config from query profiles (XML reading is tested elsewhere)
  *
  * @author bratseth
  */
-public class QueryProfilesTestCase extends junit.framework.TestCase {
+public class QueryProfilesTestCase {
 
     private final static String root="src/test/java/com/yahoo/vespa/model/container/search/test/";
 
+    @Test
     public void testEmpty() throws IOException {
         QueryProfileRegistry reg = new QueryProfileRegistry();
         assertConfig("empty.cfg", reg);
     }
 
+    @Test
     public void testQueryProfiles() throws IOException {
         final boolean mandatory=true;
         final boolean overridable=true;

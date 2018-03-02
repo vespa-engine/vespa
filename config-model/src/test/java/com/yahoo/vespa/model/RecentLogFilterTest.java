@@ -8,9 +8,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
-
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author hmusum

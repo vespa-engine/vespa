@@ -1,13 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
+import org.junit.Test;
+
 import java.net.URI;
+
+import static org.junit.Assert.assertEquals;
 
 
 /**
  * @author frodelu
  */
-public class JSONLogTestCase extends junit.framework.TestCase {
+public class JSONLogTestCase {
 
     private static String ipAddress = "152.200.54.243";
     private static final String EMPTY_REFERRER = "";
@@ -35,6 +39,7 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         return URI.create("http://localhost?query=" + query);
     }
 
+    @Test
     public void test_json_log_entry() throws Exception {
         AccessLogEntry entry = newAccessLogEntry("test");
 
@@ -60,7 +65,8 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         assertEquals(expectedOutput, new JSONFormatter(entry).format());
     }
 
-    public void test_with_keyvalues() throws Exception {
+    @Test
+    public void test_with_keyvalues() {
         AccessLogEntry entry = newAccessLogEntry("test");
         entry.addKeyValue("singlevalue", "value1");
         entry.addKeyValue("multivalue", "value2");
@@ -92,6 +98,7 @@ public class JSONLogTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void test_with_remoteaddrport() throws Exception {
         AccessLogEntry entry = newAccessLogEntry("test");
 
@@ -147,6 +154,7 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         assertEquals(expectedOutput, new JSONFormatter(entry).format());
     }
 
+    @Test
     public void test_remote_address_same_as_ip_address() throws Exception {
         AccessLogEntry entry = newAccessLogEntry("test");
         AccessLogEntry entrywithremote = newAccessLogEntry("test");
@@ -155,7 +163,8 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         assertEquals(new JSONFormatter(entry).format(), new JSONFormatter(entrywithremote).format());
     }
 
-    public void test_useragent_with_quotes() throws Exception {
+    @Test
+    public void test_useragent_with_quotes() {
         final AccessLogEntry entry = new AccessLogEntry();
         entry.setRawQuery("query=test");
         entry.setRawPath("");
