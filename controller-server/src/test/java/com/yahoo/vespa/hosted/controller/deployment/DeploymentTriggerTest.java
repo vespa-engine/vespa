@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
+import com.yahoo.vespa.hosted.controller.persistence.DeploymentQueue;
 import org.junit.Test;
 
 import java.time.Duration;

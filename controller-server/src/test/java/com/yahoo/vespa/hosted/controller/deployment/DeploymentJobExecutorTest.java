@@ -48,14 +48,14 @@ public class DeploymentJobExecutorTest {
                      buildJobs);
 
         // Trigger jobs in capacity constrained environment
-        tester.deploymentQueue().addJob(app1, DeploymentJobs.JobType.systemTest, false);
-        tester.deploymentQueue().addJob(app2, DeploymentJobs.JobType.systemTest, false);
-        tester.deploymentQueue().addJob(app3, DeploymentJobs.JobType.systemTest, false);
+        tester.deploymentQueue().addJob(app1, DeploymentJobs.JobType.systemTest, false, false, false);
+        tester.deploymentQueue().addJob(app2, DeploymentJobs.JobType.systemTest, false, false, false);
+        tester.deploymentQueue().addJob(app3, DeploymentJobs.JobType.systemTest, false, false, false);
 
         // Trigger jobs in non-capacity constrained environment
-        tester.deploymentQueue().addJob(app1, DeploymentJobs.JobType.productionUsWest1, false);
-        tester.deploymentQueue().addJob(app2, DeploymentJobs.JobType.productionUsWest1, false);
-        tester.deploymentQueue().addJob(app3, DeploymentJobs.JobType.productionUsWest1, false);
+        tester.deploymentQueue().addJob(app1, DeploymentJobs.JobType.productionUsWest1, false, false, false);
+        tester.deploymentQueue().addJob(app2, DeploymentJobs.JobType.productionUsWest1, false, false, false);
+        tester.deploymentQueue().addJob(app3, DeploymentJobs.JobType.productionUsWest1, false, false, false);
 
         triggerer.maintain();
         assertEquals("One system test job and all production jobs not for app2 are triggered after one maintenance run.",

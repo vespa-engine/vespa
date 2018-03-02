@@ -90,7 +90,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
             // Since this is a manual operation we likely want it to trigger as soon as possible so we add it at to the
             // front of the queue
             application = controller.applications().deploymentTrigger().triggerAllowParallel(
-                    jobType, application, true, true,
+                    jobType, application, false, true,
                     "Triggered from screwdriver/v1"
             );
             controller.applications().store(application);
