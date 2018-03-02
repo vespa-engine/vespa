@@ -21,7 +21,6 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMoc
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.Policy;
-import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostRequest;
@@ -56,7 +55,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * @author hakonhall
+ */
 public class HostResourceTest {
+
     private static final int SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS = 0;
     private static final TenantId TENANT_ID = new TenantId("tenantId");
     private static final ApplicationInstanceId APPLICATION_INSTANCE_ID = new ApplicationInstanceId("applicationId");
@@ -110,20 +113,20 @@ public class HostResourceTest {
         public void grantSuspensionRequest(
                 ApplicationInstance applicationInstance,
                 HostName hostName,
-                MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
+                MutableStatusRegistry hostStatusService) {
 
         }
 
         @Override
-        public void grantSuspensionRequest(ApplicationApi applicationApi) throws HostStateChangeDeniedException {
+        public void grantSuspensionRequest(ApplicationApi applicationApi) {
         }
 
         @Override
-        public void releaseSuspensionGrant(ApplicationApi application) throws HostStateChangeDeniedException {
+        public void releaseSuspensionGrant(ApplicationApi application) {
         }
 
         @Override
-        public void acquirePermissionToRemove(ApplicationApi applicationApi) throws HostStateChangeDeniedException {
+        public void acquirePermissionToRemove(ApplicationApi applicationApi) {
         }
 
         @Override
@@ -151,7 +154,7 @@ public class HostResourceTest {
     private final UriInfo uriInfo = mock(UriInfo.class);
 
     @Test
-    public void returns_200_on_success() throws Exception {
+    public void returns_200_on_success() {
         HostResource hostResource =
                 new HostResource(alwaysAllowOrchestrator, uriInfo);
 
@@ -163,25 +166,23 @@ public class HostResourceTest {
     }
 
     @Test
-    public void returns_200_on_success_batch() throws Exception {
+    public void returns_200_on_success_batch() {
         HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysAllowOrchestrator);
-        BatchHostSuspendRequest request =
-                new BatchHostSuspendRequest("parentHostname", Arrays.asList("hostname1", "hostname2"));
-        BatchOperationResult response = hostSuspensionResource.suspendAll(request);
+        BatchOperationResult response = hostSuspensionResource.suspendAll("parentHostname",
+                                                                          Arrays.asList("hostname1", "hostname2"));
         assertThat(response.success());
     }
 
     @Test
-    public void returns_200_empty_batch() throws Exception {
+    public void returns_200_empty_batch() {
         HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysAllowOrchestrator);
-        BatchHostSuspendRequest request =
-                new BatchHostSuspendRequest("parentHostname", Collections.emptyList());
-        BatchOperationResult response = hostSuspensionResource.suspendAll(request);
+        BatchOperationResult response = hostSuspensionResource.suspendAll("parentHostname",
+                                                                          Collections.emptyList());;
         assertThat(response.success());
     }
 
     @Test
-    public void throws_404_when_host_unknown() throws Exception {
+    public void throws_404_when_host_unknown() {
         try {
             HostResource hostResource =
                     new HostResource(hostNotFoundOrchestrator, uriInfo);
@@ -196,12 +197,10 @@ public class HostResourceTest {
     // This is so because the hostname is part of the URL path for single-host, while the
     // hostnames are part of the request body for multi-host.
     @Test
-    public void throws_400_when_host_unknown_for_batch() throws Exception {
+    public void throws_400_when_host_unknown_for_batch() {
         try {
             HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(hostNotFoundOrchestrator);
-            BatchHostSuspendRequest request =
-                    new BatchHostSuspendRequest("parentHostname", Arrays.asList("hostname1", "hostname2"));
-            hostSuspensionResource.suspendAll(request);
+            hostSuspensionResource.suspendAll("parentHostname", Arrays.asList("hostname1", "hostname2"));
             fail();
         } catch (WebApplicationException w) {
             assertThat(w.getResponse().getStatus()).isEqualTo(400);
@@ -249,7 +248,7 @@ public class HostResourceTest {
     }
 
     @Test
-    public void throws_409_when_request_rejected_by_policies() throws Exception {
+    public void throws_409_when_request_rejected_by_policies() {
         final OrchestratorImpl alwaysRejectResolver = new OrchestratorImpl(
                 new AlwaysFailPolicy(),
                 new ClusterControllerClientFactoryMock(),
@@ -266,7 +265,7 @@ public class HostResourceTest {
     }
 
     @Test
-    public void throws_409_when_request_rejected_by_policies_for_batch() throws Exception {
+    public void throws_409_when_request_rejected_by_policies_for_batch() {
         final OrchestratorImpl alwaysRejectResolver = new OrchestratorImpl(
                 new AlwaysFailPolicy(),
                 new ClusterControllerClientFactoryMock(),
@@ -276,9 +275,7 @@ public class HostResourceTest {
 
         try {
             HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysRejectResolver);
-            BatchHostSuspendRequest request =
-                    new BatchHostSuspendRequest("parentHostname", Arrays.asList("hostname1", "hostname2"));
-            hostSuspensionResource.suspendAll(request);
+            hostSuspensionResource.suspendAll("parentHostname", Arrays.asList("hostname1", "hostname2"));
             fail();
         } catch (WebApplicationException w) {
             assertThat(w.getResponse().getStatus()).isEqualTo(409);
