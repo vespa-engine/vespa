@@ -15,11 +15,16 @@ public:
     using join_fun_t = ::vespalib::eval::tensor_function::join_fun_t;
 private:
     join_fun_t _function;
-    bool _left_is_mutable;
+    bool _write_left;
 public:
-    DenseInplaceJoinFunction(const eval::tensor_function::Join &orig, bool left_is_mutable);
+    DenseInplaceJoinFunction(const eval::ValueType &result_type,
+                             const TensorFunction &lhs,
+                             const TensorFunction &rhs,
+                             join_fun_t function_in,
+                             bool write_left_in);
     ~DenseInplaceJoinFunction();
     join_fun_t function() const { return _function; }
+    bool write_left() const { return _write_left; }
     bool result_is_mutable() const override { return true; }
     eval::InterpretedFunction::Instruction compile_self(Stash &stash) const override;
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
