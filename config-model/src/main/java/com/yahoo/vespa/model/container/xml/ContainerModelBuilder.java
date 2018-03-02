@@ -75,6 +75,7 @@ import java.util.stream.Collectors;
 
 /**
  * @author Tony Vaagenes
+ * @author gjoranv
  */
 public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
