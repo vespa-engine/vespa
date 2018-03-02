@@ -591,11 +591,7 @@ public class ClusterSearcher extends Searcher {
 
     @Override
     public void deconstruct() {
-        try {
-            monitor.shutdown();
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        monitor.shutdown();
     }
 
     ExecutorService getExecutor() {
