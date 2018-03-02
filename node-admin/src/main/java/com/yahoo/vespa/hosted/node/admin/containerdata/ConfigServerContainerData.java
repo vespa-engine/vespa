@@ -35,8 +35,14 @@ public class ConfigServerContainerData {
                 "  <environment>" + environment.getEnvironment() + "</environment>\n" +
                 "  <region>" + environment.getRegion() + "</region>\n" +
                 "  <hostedVespa>true</hostedVespa>\n" +
-                "  <defaultFlavor>t2.xlarge</defaultFlavor>\n" + // TODO: Avoid hardcoding
+                "  <multitenant>true</multitenant>\n" +
+                "  <useVespaVersionInRequest>true</useVespaVersionInRequest>\n" +
+                // TODO: Avoid hardcoding of default flavor
+                "  <defaultFlavor>t2.xlarge</defaultFlavor>\n" +
                 createZookeeperServers() +
+                "  <zookeeper>\n" +
+                "    <barrierTimeout>1200</barrierTimeout>\n" +
+                "  </zookeeper>\n" +
                 "  <serverId>" + configServerNodeHostName + "</serverId>\n" +
                 "  <nodeAdminInContainer>false</nodeAdminInContainer>\n" +
                 "</config>\n";
