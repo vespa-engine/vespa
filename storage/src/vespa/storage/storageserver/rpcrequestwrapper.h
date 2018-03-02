@@ -12,12 +12,13 @@ namespace storage {
  **/
 class RPCRequestWrapper {
 public:
-    enum {
+    enum ErrorCode {
         ERR_HANDLE_NOT_CONNECTED = 75000, // > 0xffff
         ERR_HANDLE_GONE          = 75001,
         ERR_REQUEST_DELETED      = 75002,
         ERR_HANDLE_DISABLED      = 75003,
-        ERR_NODE_SHUTTING_DOWN   = 75004
+        ERR_NODE_SHUTTING_DOWN   = 75004,
+        ERR_BAD_REQUEST          = 75005
     };
 
     RPCRequestWrapper(FRT_RPCRequest *req);
