@@ -65,7 +65,7 @@ public final class Process {
                     throw new ShutdownError("Shutdown requested, but failed to shut down");
                 }
             } else {
-                log.log(Level.WARNING, "Shutdown already in progress. Will just till we die then.");
+                log.log(Level.WARNING, "Shutdown already in progress. Will just let death come upon us normally.");
             }
         }
     }
