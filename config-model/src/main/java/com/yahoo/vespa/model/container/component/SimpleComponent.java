@@ -17,7 +17,7 @@ public class SimpleComponent extends Component<AbstractConfigProducer<?>, Compon
         super(model);
     }
 
-    // @Convenience // For a component that uses the class name as id.
+    // For a component that uses the class name as id, and resides in the container-disc bundle.
     public SimpleComponent(String className) {
         this(new ComponentModel(BundleInstantiationSpecification.getFromStrings(className, null, null)));
     }
