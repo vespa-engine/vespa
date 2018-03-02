@@ -43,6 +43,8 @@ public:
 
     ~DenseXWProductFunction() {}
 
+    bool result_is_mutable() const override { return true; }
+
     size_t vectorSize() const { return _vectorSize; }
     size_t resultSize() const { return _resultSize; }
 
