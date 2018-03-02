@@ -37,6 +37,7 @@ public class ClusterMonitor implements Runnable, Freezable {
 
     /** A map from Node to corresponding MonitoredNode */
     private final Map<VespaBackEndSearcher, NodeMonitor> nodeMonitors = new java.util.IdentityHashMap<>();
+
     private ScheduledFuture<?>  future;
 
     private boolean isFrozen = false;
@@ -96,19 +97,29 @@ public class ClusterMonitor implements Runnable, Freezable {
 
     private void updateVipStatus() {
         if ( ! vipStatus.isPresent()) return;
+        if ( ! hasInformationAboutAllNodes()) return;
         
-        boolean hasWorkingNodesWithDocumentsOnline = false;
-        for (NodeMonitor node : nodeMonitors.values()) {
-            if (node.isWorking() && node.searchNodesOnline()) {
-                hasWorkingNodesWithDocumentsOnline = true;
-                break;
-            }
-        }
-        if (hasWorkingNodesWithDocumentsOnline) {
+        if (hasWorkingNodesWithDocumentsOnline()) {
             vipStatus.get().addToRotation(this);
         } else {
             vipStatus.get().removeFromRotation(this);
         }
+    }
+
+    private boolean hasInformationAboutAllNodes() {
+        for (NodeMonitor monitor : nodeMonitors.values()) {
+            if ( ! monitor.statusIsKnown())
+                return false;
+        }
+        return true;
+    }
+
+    private boolean hasWorkingNodesWithDocumentsOnline() {
+        for (NodeMonitor node : nodeMonitors.values()) {
+            if (node.isWorking() && node.searchNodesOnline())
+                return true;
+        }
+        return false;
     }
 
     /**
@@ -130,7 +141,7 @@ public class ClusterMonitor implements Runnable, Freezable {
         }
     }
 
-    public void shutdown() throws InterruptedException {
+    public void shutdown() {
         if (future != null) {
             future.cancel(true);
         }

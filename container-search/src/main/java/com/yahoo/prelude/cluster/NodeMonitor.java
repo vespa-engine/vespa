@@ -52,7 +52,7 @@ public class NodeMonitor {
     }
 
     // Whether or not dispatch has ever responded successfully
-    private boolean atStartUp = true;
+    private boolean statusIsKnown = false;
 
     public VespaBackEndSearcher getNode() {
         return node;
@@ -88,23 +88,26 @@ public class NodeMonitor {
         this.searchNodesOnline = searchNodesOnline;
         if (! isWorking)
             setWorking(true, "Responds correctly");
-        atStartUp = false;
+        statusIsKnown = true;
     }
 
     /** Changes the state of this node if required */
     private void setWorking(boolean working, String explanation) {
         if (isWorking == working) return; // Old news
 
-        if (working && ! atStartUp)
-            log.info("Putting " + node + " in service: " + explanation);
-        else if (! atStartUp)
-            log.info("Taking " + node + " out of service: " + explanation);
+        if (statusIsKnown) {
+            if (working)
+                log.info("Putting " + node + " in service: " + explanation);
+            else
+                log.info("Taking " + node + " out of service: " + explanation);
+        }
 
         isWorking = working;
     }
 
-    boolean searchNodesOnline() {
-        return searchNodesOnline;
-    }
+    boolean searchNodesOnline() { return searchNodesOnline; }
+
+    /** Returns true if we have had enough time to determine the status of this node since creating the monitor */
+    boolean statusIsKnown() { return statusIsKnown; }
 
 }
