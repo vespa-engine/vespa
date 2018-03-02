@@ -3,7 +3,6 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.vdslib.state.ClusterState;
-import com.yahoo.vdslib.state.Node;
 import org.junit.Test;
 
 import java.util.*;
@@ -36,27 +35,16 @@ public class MaintenanceWhenPendingGlobalMergesTest {
         return AnnotatedClusterState.withoutAnnotations(ClusterState.stateFromString(stateStr));
     }
 
-    private static class AnnotatedClusterStateBuilder {
-        private ClusterState clusterState;
-        private Map<Node, NodeStateReason> nodeStateReasons = new HashMap<>();
-
-        private AnnotatedClusterStateBuilder(String stateStr) {
-            clusterState = ClusterState.stateFromString(stateStr);
-        }
+    private static class AnnotatedClusterStateBuilder extends AnnotatedClusterState.Builder {
 
         public static AnnotatedClusterStateBuilder ofState(String stateStr) {
-            return new AnnotatedClusterStateBuilder(stateStr);
+            return (AnnotatedClusterStateBuilder) new AnnotatedClusterStateBuilder().clusterState(stateStr);
         }
 
         public AnnotatedClusterStateBuilder reason(NodeStateReason reason, Integer... nodeIndices) {
-            Arrays.stream(nodeIndices).forEach(nodeIndex -> nodeStateReasons.put(Node.ofStorage(nodeIndex), reason));
+            Arrays.stream(nodeIndices).forEach(nodeIndex -> storageNodeReason(nodeIndex, reason));
             return this;
         }
-
-        public AnnotatedClusterState build() {
-            return new AnnotatedClusterState(clusterState, Optional.empty(), nodeStateReasons);
-        }
-
     }
 
     @Test

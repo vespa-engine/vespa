@@ -202,8 +202,8 @@ public class GroupAutoTakedownTest {
 
         final List<Event> events = EventDiffCalculator.computeEventDiff(EventDiffCalculator.params()
                 .cluster(fixture.cluster)
-                .fromState(fixture.annotatedGeneratedClusterState())
-                .toState(annotatedStateAfterStorageTransition(fixture, 5, State.DOWN)));
+                .fromState(ClusterStateBundle.ofBaselineOnly(fixture.annotatedGeneratedClusterState()))
+                .toState(ClusterStateBundle.ofBaselineOnly(annotatedStateAfterStorageTransition(fixture, 5, State.DOWN))));
 
         assertThat(events, hasItem(allOf(
                 nodeEventWithDescription("Group node availability is below configured threshold"),
@@ -220,8 +220,8 @@ public class GroupAutoTakedownTest {
 
         final List<Event> events = EventDiffCalculator.computeEventDiff(EventDiffCalculator.params()
                 .cluster(fixture.cluster)
-                .fromState(fixture.annotatedGeneratedClusterState())
-                .toState(annotatedStateAfterStorageTransition(fixture, 5, State.UP)));
+                .fromState(ClusterStateBundle.ofBaselineOnly(fixture.annotatedGeneratedClusterState()))
+                .toState(ClusterStateBundle.ofBaselineOnly(annotatedStateAfterStorageTransition(fixture, 5, State.UP))));
 
         assertThat(events, hasItem(allOf(
                 nodeEventWithDescription("Group node availability has been restored"),
