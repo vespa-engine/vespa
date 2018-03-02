@@ -113,7 +113,9 @@ class ComponentNode(componentId: ComponentId,
   private def initId(component: AnyRef) = {
     def checkAndSetId(c: AbstractComponent) {
       if (c.hasInitializedId && c.getId != componentId )
-        throw new IllegalStateException("Component with id '" + componentId + "' has set a conflicting component id: '" + c.getId + "'")
+        throw new IllegalStateException(
+          s"Component with id '$componentId' is trying to set its component id explicitly: '${c.getId}'. " +
+            "This is not allowed, so please remove any call to super() in your component's constructor.")
 
       c.initId(componentId)
     }
