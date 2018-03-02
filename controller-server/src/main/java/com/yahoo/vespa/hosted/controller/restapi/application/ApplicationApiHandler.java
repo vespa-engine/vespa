@@ -89,6 +89,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -374,6 +375,19 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             job.firstFailing().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("firstFailing")));
             job.lastSuccess().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastSuccess")));
         }
+
+        // Change blockers
+        Cursor changeBlockers = object.setArray("changeBlockers");
+        application.deploymentSpec().changeBlocker().forEach(changeBlocker -> {
+            Cursor changeBlockerObject = changeBlockers.addObject();
+            changeBlockerObject.setBool("versions", changeBlocker.blocksVersions());
+            changeBlockerObject.setBool("revisions", changeBlocker.blocksRevisions());
+            changeBlockerObject.setString("timeZone", changeBlocker.window().zone().getId());
+            Cursor days = changeBlockerObject.setArray("days");
+            changeBlocker.window().days().stream().map(DayOfWeek::getValue).forEach(days::addLong);
+            Cursor hours = changeBlockerObject.setArray("hours");
+            changeBlocker.window().hours().forEach(hours::addLong);
+        });
 
         // Compile version. The version that should be used when building an application
         object.setString("compileVersion", application.oldestDeployedVersion().orElse(controller.systemVersion()).toFullString());
