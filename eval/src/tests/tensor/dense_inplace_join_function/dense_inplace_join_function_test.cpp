@@ -38,7 +38,6 @@ EvalFixture::ParamRepo make_params() {
         .add("con_x5_A", spec({x(5)}, seq))
         .add("con_x5_B", spec({x(5)}, seq))
         .add("con_x5_C", spec({x(5)}, seq))
-        .add("con_y3_A", spec({y(3)}, seq))
         .add("con_x5y3_A", spec({x(5),y(3)}, seq))
         .add("con_x5y3_B", spec({x(5),y(3)}, seq))
         .add_mutable("mut_dbl_A", spec(1.5))
@@ -143,10 +142,6 @@ TEST("require that scalar values are not optimized") {
 
 TEST("require that mapped tensors are not optimized") {
     TEST_DO(verify_not_optimized("mut_x_sparse+mut_x_sparse"));
-}
-
-TEST("require that output from xw product can be optimized") {
-    TEST_DO(verify_optimized("reduce(con_x5_A*con_x5y3_B,sum,x)+con_y3_A", 1, -1));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
