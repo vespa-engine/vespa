@@ -113,4 +113,10 @@ EvalFixture::get_param(size_t idx) const
     return _engine.to_spec(*(_param_values[idx]));
 }
 
+size_t
+EvalFixture::num_params() const
+{
+    return _param_values.size();
+}
+
 } // namespace vespalib::eval::test

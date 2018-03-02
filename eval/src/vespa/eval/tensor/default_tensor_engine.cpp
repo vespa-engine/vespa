@@ -10,6 +10,7 @@
 #include "dense/dense_dot_product_function.h"
 #include "dense/dense_xw_product_function.h"
 #include "dense/dense_fast_rename_function.h"
+#include "dense/dense_inplace_join_function.h"
 #include "dense/dense_inplace_map_function.h"
 #include "dense/vector_from_doubles_function.h"
 #include <vespa/eval/eval/value.h>
@@ -225,6 +226,7 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
         child.set(DenseXWProductFunction::optimize(child.get(), stash));
         child.set(DenseFastRenameFunction::optimize(child.get(), stash));
         child.set(DenseInplaceMapFunction::optimize(child.get(), stash));
+        child.set(DenseInplaceJoinFunction::optimize(child.get(), stash));
         nodes.pop_back();
     }
     return root.get();
