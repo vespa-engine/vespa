@@ -158,6 +158,7 @@ public final class ContainerCluster
     private ContainerSearch containerSearch;
     private ContainerDocproc containerDocproc;
     private ContainerDocumentApi containerDocumentApi;
+    private SecretStore secretStore;
 
     private MbusParams mbusParams;
 
@@ -484,6 +485,14 @@ public final class ContainerCluster
     // Returns all servlets, including rest-api/jersey servlets.
     public Collection<Servlet> getAllServlets() {
         return allServlets().collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public void setSecretStore(SecretStore secretStore) {
+        this.secretStore = secretStore;
+    }
+
+    public Optional<SecretStore> getSecretStore() {
+        return Optional.ofNullable(secretStore);
     }
 
     public Map<ComponentId, Component<?, ?>> getComponentsMap() {

@@ -44,6 +44,7 @@ import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.IdentityProvider;
+import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
@@ -147,8 +148,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         DocumentFactoryBuilder.buildDocumentFactories(cluster, spec);
 
         addConfiguredComponents(cluster, spec);
+        addSecretStore(cluster, spec);
         addHandlers(cluster, spec);
-
         addRestApis(spec, cluster);
         addServlets(spec, cluster);
         addProcessing(spec, cluster);
@@ -172,6 +173,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addLegacyFilters(spec, cluster);  // TODO: Remove for Vespa 7
 
         addAthensCopperArgos(cluster, context);  // Must be added after nodes.
+    }
+
+    private void addSecretStore(ContainerCluster cluster, Element spec) {
+        Element secretStoreElement = XML.getChild(spec, "secret-store");
+        if (secretStoreElement != null) {
+            SecretStore secretStore = new SecretStore();
+            for (Element group : XML.getChildren(secretStoreElement, "group")) {
+                secretStore.addGroup(group.getAttribute("name"), group.getAttribute("environment"));
+            }
+            cluster.setSecretStore(secretStore);
+        }
     }
 
     private void addAthensCopperArgos(ContainerCluster cluster, ConfigModelContext context) {
