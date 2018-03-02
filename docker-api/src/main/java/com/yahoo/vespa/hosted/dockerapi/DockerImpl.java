@@ -8,9 +8,11 @@ import com.github.dockerjava.api.command.InspectContainerCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.InspectImageResponse;
+import com.github.dockerjava.api.command.PullImageCmd;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
+import com.github.dockerjava.api.model.AuthConfig;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.Statistics;
@@ -18,18 +20,17 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.core.async.ResultCallbackTemplate;
-import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -68,8 +69,9 @@ public class DockerImpl implements Docker {
     @GuardedBy("monitor")
     private final Set<DockerImage> scheduledPulls = new HashSet<>();
 
-    // Exposed for testing.
-    DockerClient dockerClient;
+    private volatile Optional<DockerRegistryCredentialsSupplier> dockerRegistryCredentialsSupplier = Optional.empty();
+
+    private DockerClient dockerClient;
 
     @Inject
     public DockerImpl(DockerConfig config, MetricReceiverWrapper metricReceiverWrapper) {
@@ -145,18 +147,6 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public void copyArchiveToContainer(String sourcePath, ContainerName destinationContainer, String destinationPath) {
-        try {
-            dockerClient.copyArchiveToContainerCmd(destinationContainer.asString())
-                    .withHostResource(sourcePath).withRemotePath(destinationPath).exec();
-        } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
-            throw new DockerException("Failed to copy container " + sourcePath + " to " +
-                    destinationContainer + ":" + destinationPath, e);
-        }
-    }
-
-    @Override
     public boolean pullImageAsyncIfNeeded(final DockerImage image) {
         try {
             synchronized (monitor) {
@@ -164,7 +154,17 @@ public class DockerImpl implements Docker {
                 if (imageIsDownloaded(image)) return false;
 
                 scheduledPulls.add(image);
-                dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
+                PullImageCmd pullImageCmd = dockerClient.pullImageCmd(image.asString());
+
+                dockerRegistryCredentialsSupplier
+                        .flatMap(credentialsSupplier -> credentialsSupplier.getCredentials(image))
+                        .map(credentials -> new AuthConfig()
+                                .withRegistryAddress(credentials.registry.toString())
+                                .withUsername(credentials.username)
+                                .withPassword(credentials.password))
+                        .ifPresent(pullImageCmd::withAuthConfig);
+
+                pullImageCmd.exec(new ImagePullCallback(image));
                 return true;
             }
         } catch (RuntimeException e) {
@@ -378,6 +378,11 @@ public class DockerImpl implements Docker {
         return cmd.exec().getNetworkSettings().getGlobalIPv6Address();
     }
 
+    @Override
+    public void setDockerRegistryCredentialsSupplier(DockerRegistryCredentialsSupplier dockerRegistryCredentialsSupplier) {
+        this.dockerRegistryCredentialsSupplier = Optional.of(dockerRegistryCredentialsSupplier);
+    }
+
     private Stream<Container> asContainer(String container) {
         return inspectContainerCmd(container)
                 .map(response ->
@@ -434,17 +439,6 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public void buildImage(File dockerfile, DockerImage image) {
-        try {
-            dockerClient.buildImageCmd(dockerfile).withTags(Collections.singleton(image.asString()))
-                    .exec(new BuildImageResultCallback()).awaitImageId();
-        } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
-            throw new DockerException("Failed to build image " + image.asString(), e);
-        }
-    }
-
-    @Override
     public void deleteUnusedDockerImages() {
         if (!dockerImageGC.isPresent()) return;
 
@@ -464,7 +458,7 @@ public class DockerImpl implements Docker {
         @Override
         public void onError(Throwable throwable) {
             removeScheduledPoll(dockerImage);
-            throw new DockerClientException("Could not download image: " + dockerImage);
+            logger.log(LogLevel.ERROR, "Could not download image " + dockerImage.asString(), throwable);
         }
 
 
