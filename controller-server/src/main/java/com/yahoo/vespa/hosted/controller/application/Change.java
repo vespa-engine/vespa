@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.StringJoiner;
 
 /**
  * The changes to an application we currently wish to complete deploying.
@@ -79,15 +80,11 @@ public final class Change {
 
     @Override
     public String toString() {
-        String platformString = platform.map(v -> "upgrade to " + v).orElse(null);
-        String applicationString = application.map(v -> "application change to " + v).orElse(null);
-        if (platformString != null && applicationString != null)
-            return platformString + " and " + applicationString;
-        if (platformString != null)
-            return platformString;
-        if (applicationString != null)
-            return applicationString;
-        return "no change";
+        StringJoiner changes = new StringJoiner(" and ");
+        platform.ifPresent(version -> changes.add("upgrade to " + version.toString()));
+        application.ifPresent(version -> changes.add("application change to " + version.id()));
+        changes.setEmptyValue("no change");
+        return changes.toString();
     }
 
     public static Change of(ApplicationVersion applicationVersion) {
