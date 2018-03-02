@@ -182,8 +182,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
                     addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getRotations(), deploymentSpec);
                 });
-
-        //TODO: overview handler, see DomQrserverClusterBuilder
     }
 
     private void addRotationProperties(ContainerCluster cluster, Zone zone, Set<Rotation> rotations, DeploymentSpec spec) {
