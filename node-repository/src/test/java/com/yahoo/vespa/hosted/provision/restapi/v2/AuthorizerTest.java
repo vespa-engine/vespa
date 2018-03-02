@@ -1,14 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -23,12 +33,30 @@ public class AuthorizerTest {
 
     @Before
     public void before() {
-        nodeRepository = new MockNodeRepository(new MockCurator(), new MockNodeFlavors());
+        NodeFlavors flavors = new MockNodeFlavors();
+        nodeRepository = new MockNodeRepository(new MockCurator(), flavors);
         authorizer = new Authorizer(SystemName.main, nodeRepository);
+        { // Populate with nodes used in this test. Note that only nodes requiring node repository lookup are added here
+            Set<String> ipAddresses = new HashSet<>(Arrays.asList("127.0.0.1", "::1"));
+            Flavor flavor = flavors.getFlavorOrThrow("default");
+            List<Node> nodes = new ArrayList<>();
+            nodes.add(nodeRepository.createNode("host1", "host1", ipAddresses,
+                                                Optional.empty(), flavor, NodeType.host));
+            nodes.add(nodeRepository.createNode("child1-1", "child1-1", ipAddresses,
+                                                Optional.of("host1"), flavor, NodeType.tenant));
+            nodes.add(nodeRepository.createNode("child1-2", "child1-2", ipAddresses,
+                                                Optional.of("host1"), flavor, NodeType.tenant));
+
+            nodes.add(nodeRepository.createNode("host2", "host2", ipAddresses,
+                                                Optional.empty(), flavor, NodeType.host));
+            nodes.add(nodeRepository.createNode("child2-1", "child2-1", ipAddresses,
+                                                Optional.of("host1.tld"), flavor, NodeType.tenant));
+            nodeRepository.addNodes(nodes);
+        }
     }
 
     @Test
-    public void authorization() {
+    public void nodes_authorization() {
         // Empty principal
         assertFalse(authorized("", ""));
         assertFalse(authorized("", "/"));
@@ -41,6 +69,9 @@ public class AuthorizerTest {
         assertFalse(authorized("node1", "/nodes/v2/node/node2"));
         assertFalse(authorized("node1", "/nodes/v2/state/dirty/"));
         assertFalse(authorized("node1", "/nodes/v2/state/dirty/node2"));
+        // Path traversal fails gracefully
+        assertFalse(authorized("node1", "/nodes/v2/node/."));
+        assertFalse(authorized("node1", "/nodes/v2/node/.."));
         assertFalse(authorized("node1", "/nodes/v2/acl/node2"));
         assertFalse(authorized("node1", "/nodes/v2/node/?parentHost=node2"));
         // Node resource always takes precedence over filter
@@ -55,11 +86,11 @@ public class AuthorizerTest {
         assertTrue(authorized("node1", "/nodes/v2/node/?parentHost=node1"));
 
         // Host node can access itself and its children
-        assertFalse(authorized("dockerhost1.yahoo.com", "/nodes/v2/node/host5.yahoo.com"));
-        assertFalse(authorized("dockerhost1.yahoo.com", "/nodes/v2/command/reboot?hostname=host5.yahoo.com"));
-        assertTrue(authorized("dockerhost1.yahoo.com", "/nodes/v2/node/dockerhost1.yahoo.com"));
-        assertTrue(authorized("dockerhost1.yahoo.com", "/nodes/v2/node/host4.yahoo.com"));
-        assertTrue(authorized("dockerhost1.yahoo.com", "/nodes/v2/command/reboot?hostname=host4.yahoo.com"));
+        assertFalse(authorized("host1", "/nodes/v2/node/child2-1"));
+        assertFalse(authorized("host1", "/nodes/v2/command/reboot?hostname=child2-1"));
+        assertTrue(authorized("host1", "/nodes/v2/node/host1"));
+        assertTrue(authorized("host1", "/nodes/v2/node/child1-1"));
+        assertTrue(authorized("host1", "/nodes/v2/command/reboot?hostname=child1-1"));
 
         // Trusted services can access everything in their own system
         assertFalse(authorized("vespa.vespa.cd.hosting", "/")); // Wrong system
@@ -67,6 +98,30 @@ public class AuthorizerTest {
         assertTrue(authorized("vespa.vespa.hosting", "/"));
         assertTrue(authorized("vespa.vespa.hosting", "/nodes/v2/node/"));
         assertTrue(authorized("vespa.vespa.hosting", "/nodes/v2/node/node1"));
+    }
+
+    @Test
+    public void orchestrator_authorization() {
+        // Node can only access its own resources
+        assertFalse(authorized("node1", "/orchestrator/v1/hosts"));
+        assertFalse(authorized("node1", "/orchestrator/v1/hosts/"));
+        assertFalse(authorized("node1", "/orchestrator/v1/hosts/node2"));
+        assertFalse(authorized("node1", "/orchestrator/v1/hosts/node2/suspended"));
+
+        // Node can suspend itself
+        assertTrue(authorized("node1", "/orchestrator/v1/hosts/node1"));
+        assertTrue(authorized("node1", "/orchestrator/v1/hosts/node1/suspended"));
+
+        // Host node can suspend itself and its children
+        assertFalse(authorized("host1", "/orchestrator/v1/hosts/child2-1/suspended"));
+        assertFalse(authorized("host1", "/orchestrator/v1/suspensions/hosts/host1?hostname=child2-1"));
+        // All given hostnames must be children
+        assertFalse(authorized("host1", "/orchestrator/v1/suspensions/hosts/host1?hostname=child1-1&hostname=child2-1"));
+        assertTrue(authorized("host1", "/orchestrator/v1/hosts/host1/suspended"));
+        assertTrue(authorized("host1", "/orchestrator/v1/hosts/child1-1/suspended"));
+        assertTrue(authorized("host1", "/orchestrator/v1/suspensions/hosts/host1?hostname=child1-1"));
+        // Multiple children
+        assertTrue(authorized("host1", "/orchestrator/v1/suspensions/hosts/host1?hostname=child1-1&hostname=child1-2"));
     }
 
     private boolean authorized(String principal, String path) {
