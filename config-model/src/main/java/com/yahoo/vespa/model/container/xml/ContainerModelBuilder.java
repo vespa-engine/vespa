@@ -171,8 +171,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addServerProviders(spec, cluster);
         addLegacyFilters(spec, cluster);  // TODO: Remove for Vespa 7
 
-        // Athenz copper argos
-        // NOTE: Must be done after addNodes()
+        addAthensCopperArgos(cluster, context);  // Must be added after nodes.
+    }
+
+    private void addAthensCopperArgos(ContainerCluster cluster, ConfigModelContext context) {
         app.getDeployment().map(DeploymentSpec::fromXml)
                 .ifPresent(deploymentSpec -> {
                     addIdentityProvider(cluster,
