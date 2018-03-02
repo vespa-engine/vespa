@@ -21,25 +21,49 @@ using namespace vespalib::eval::tensor_function;
 
 const TensorEngine &prod_engine = DefaultTensorEngine::ref();
 
+struct SimpleSequence : public Sequence {
+    int _step, _bias;
+    SimpleSequence(int step, int bias) : _step(step), _bias(bias) {}
+    double operator[](size_t i) const override { return ((_step * i) + _bias) & 0xffff; }
+    ~SimpleSequence() {}
+};
+struct SequenceGenerator {
+    int step, bias;
+    SequenceGenerator() : step(0), bias(0) {}
+    SimpleSequence next() {
+       step += 17;
+       bias += 42;
+       return SimpleSequence(step, bias);
+    }
+} seqGen;
+
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("x5", spec({x(5)}, N()))
-        .add_mutable("_d_A", spec(17.0))
-        .add_mutable("_d_B", spec(42.0))
-        .add_mutable("_x5", spec({x(5)}, Seq({9, 8, 7, 6, 5})))
-        .add_mutable("_x5_A", spec({x(5)}, Seq({10, 11, 12, 13, 14})))
-        .add_mutable("_x5_B", spec({x(5)}, Seq({16, 18, 20, 22, 24})))
-        .add_mutable("_x5_C", spec({x(5)}, Seq({30, 35, 40, 45, 50})))
-        .add_mutable("_x5y3", spec({x(5),y(3)}, N()))
-        .add_mutable("_x5_u", spec({x(5)}, N()), "tensor(x[])")
-        .add_mutable("_x_m", spec({x({"a", "b", "c"})}, N()));
+        .add("con_dbl_A", spec(1.5))
+        .add("con_dbl_B", spec(2.5))
+        .add("con_dbl_C", spec(3.5))
+        .add("con_vec_A", spec({x(5)}, seqGen.next()))
+        .add("con_vec_B", spec({x(5)}, seqGen.next()))
+        .add("con_vec_C", spec({x(5)}, seqGen.next()))
+        .add("con_x5y3_A", spec({x(5),y(3)}, seqGen.next()))
+        .add_mutable("mut_dbl_A", spec(4.5))
+        .add_mutable("mut_dbl_B", spec(5.5))
+        .add_mutable("mut_dbl_C", spec(6.5))
+        .add_mutable("mut_vec_A", spec({x(5)}, seqGen.next()))
+        .add_mutable("mut_vec_B", spec({x(5)}, seqGen.next()))
+        .add_mutable("mut_vec_C", spec({x(5)}, seqGen.next()))
+        .add_mutable("mut_x5y3_A", spec({x(5),y(3)}, seqGen.next()))
+        .add_mutable("mut_x5y3_B", spec({x(5),y(3)}, seqGen.next()))
+        .add_mutable("mut_x5y3_C", spec({x(5),y(3)}, seqGen.next()))
+        .add_mutable("mut_vec_unbound", spec({x(5)}, seqGen.next()), "tensor(x[])")
+        .add_mutable("mut_vec_sparse", spec({x({"a", "b", "c"})}, seqGen.next()));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
-void verify_left_optimized(const vespalib::string &expr, size_t cnt) {
+void verify_optimized(const vespalib::string &expr, size_t cnt, size_t param_idx) {
     EvalFixture fixture(prod_engine, expr, param_repo, true, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-    EXPECT_EQUAL(fixture.get_param(0), fixture.result());
+    EXPECT_EQUAL(fixture.get_param(param_idx), fixture.result());
     auto info = fixture.find_all<DenseInplaceJoinFunction>();
     ASSERT_EQUAL(info.size(), cnt);
     for (size_t i = 0; i < cnt; ++i) {
@@ -47,15 +71,16 @@ void verify_left_optimized(const vespalib::string &expr, size_t cnt) {
     }
 }
 
+void verify_left_optimized(const vespalib::string &expr, size_t cnt) {
+    verify_optimized(expr, cnt, 0);
+}
+
 void verify_right_optimized(const vespalib::string &expr, size_t cnt) {
-    EvalFixture fixture(prod_engine, expr, param_repo, true, true);
-    EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-    EXPECT_EQUAL(fixture.get_param(1), fixture.result());
-    auto info = fixture.find_all<DenseInplaceJoinFunction>();
-    ASSERT_EQUAL(info.size(), cnt);
-    for (size_t i = 0; i < cnt; ++i) {
-        EXPECT_TRUE(info[i]->result_is_mutable());
-    }
+    verify_optimized(expr, cnt, 1);
+}
+
+void verify_right2_optimized(const vespalib::string &expr, size_t cnt) {
+    verify_optimized(expr, cnt, 2);
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
@@ -67,33 +92,49 @@ void verify_not_optimized(const vespalib::string &expr) {
 }
 
 TEST("require that mutable dense concrete tensors are optimized") {
-    TEST_DO(verify_left_optimized("_x5_A+_x5_B", 1));
-    TEST_DO(verify_left_optimized("_x5y3+_x5y3", 1));
-    TEST_DO(verify_left_optimized("_x5_A-_x5_B", 1));
-    TEST_DO(verify_left_optimized("_x5-x5", 1));
-    TEST_DO(verify_right_optimized("x5-_x5", 1));
+    TEST_DO(verify_left_optimized("mut_vec_A-mut_vec_B", 1));
+    TEST_DO(verify_left_optimized("mut_x5y3_A-mut_x5y3_B", 1));
+    TEST_DO(verify_left_optimized("mut_vec_A-mut_vec_B", 1));
+    TEST_DO(verify_left_optimized("mut_vec_A-con_vec_A", 1));
+    TEST_DO(verify_right_optimized("con_vec_A-mut_vec_A", 1));
+    TEST_DO(verify_right_optimized("con_x5y3_A-mut_x5y3_A", 1));
+}
+
+TEST("require that join(tensor,scalar) operations are not optimized (yet)") {
+    TEST_DO(verify_not_optimized("mut_vec_A-mut_dbl_A"));
+    TEST_DO(verify_not_optimized("mut_vec_A-con_dbl_A"));
+    TEST_DO(verify_not_optimized("mut_dbl_A-mut_vec_A"));
+    TEST_DO(verify_not_optimized("con_dbl_A-mut_vec_A"));
+    TEST_DO(verify_not_optimized("mut_x5y3_A-mut_dbl_A"));
+    TEST_DO(verify_not_optimized("mut_x5y3_A-con_dbl_A"));
+    TEST_DO(verify_not_optimized("mut_dbl_A-mut_x5y3_A"));
+    TEST_DO(verify_not_optimized("con_dbl_A-mut_x5y3_A"));
 }
 
 TEST("require that inplace join operations can be chained") {
-    TEST_DO(verify_left_optimized("_x5_C-(_x5_B-_x5_A)", 2));
+    TEST_DO(verify_left_optimized("mut_vec_A-(mut_vec_B-mut_vec_C)", 2));
+    TEST_DO(verify_left_optimized("(mut_vec_A-con_vec_B)-con_vec_C", 2));
+    TEST_DO(verify_right_optimized("con_vec_A-(mut_vec_B-con_vec_C)", 2));
+    TEST_DO(verify_right2_optimized("con_vec_A-(con_vec_B-mut_vec_C)", 2));
 }
 
 TEST("require that abstract tensors are not optimized") {
-    TEST_DO(verify_not_optimized("_x5_u+_x5"));
-    TEST_DO(verify_not_optimized("_x5_u+_x5_u"));
+    TEST_DO(verify_not_optimized("mut_vec_unbound+mut_vec_A"));
+    TEST_DO(verify_not_optimized("mut_vec_A+mut_vec_unbound"));
+    TEST_DO(verify_not_optimized("mut_vec_unbound+mut_vec_unbound"));
 }
 
 TEST("require that non-mutable tensors are not optimized") {
-    TEST_DO(verify_not_optimized("x5+x5"));
+    TEST_DO(verify_not_optimized("con_vec_A+con_vec_B"));
 }
 
 TEST("require that scalar values are not optimized") {
-    TEST_DO(verify_not_optimized("_d_A+_d_B"));
-    TEST_DO(verify_not_optimized("join(_d_A,_d_B,f(x,y)(x+y))"));
+    TEST_DO(verify_not_optimized("mut_dbl_A+mut_dbl_B"));
+    TEST_DO(verify_not_optimized("join(mut_dbl_A,mut_dbl_B,f(x,y)(x+y))"));
 }
 
 TEST("require that mapped tensors are not optimized") {
-    TEST_DO(verify_not_optimized("_x_m+_x_m"));
+    TEST_DO(verify_not_optimized("mut_vec_sparse+mut_vec_sparse"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
