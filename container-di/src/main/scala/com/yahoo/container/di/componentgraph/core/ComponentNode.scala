@@ -13,9 +13,6 @@ import com.yahoo.container.di.componentgraph.core.Node.equalEdges
 import com.yahoo.container.di.{ConfigKeyT, JavaAnnotation, createKey, makeClassCovariant, preserveStackTrace, removeStackTrace}
 import com.yahoo.vespa.config.ConfigKey
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future, TimeoutException}
 import scala.language.postfixOps
 
 /**
@@ -116,7 +113,7 @@ class ComponentNode(componentId: ComponentId,
   private def initId(component: AnyRef) = {
     def checkAndSetId(c: AbstractComponent) {
       if (c.hasInitializedId && c.getId != componentId )
-        throw new IllegalStateException("Component with id '" + componentId + "' has set a bogus component id: '" + c.getId + "'")
+        throw new IllegalStateException("Component with id '" + componentId + "' has set a conflicting component id: '" + c.getId + "'")
 
       c.initId(componentId)
     }
