@@ -19,13 +19,12 @@ public class TestUtils {
                         .serviceName(service)
                         .secretVersion(0)
                         .domain(domain)
+                        .certDnsSuffix(dnsSuffix)
                         .secretName("s3cr3t");
         return new AthenzProviderServiceConfig(
                 new AthenzProviderServiceConfig.Builder()
                         .zones(ImmutableMap.of(zone.environment().value() + "." + zone.region().value(), zoneConfig))
-                        .certDnsSuffix(dnsSuffix)
                         .ztsUrl("localhost/zts")
-                        .athenzPrincipalHeaderName("Athenz-Principal-Auth")
                         .athenzCaTrustStore("/dummy/path/to/athenz-ca.jks"));
     }
 
