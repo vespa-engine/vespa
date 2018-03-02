@@ -3,6 +3,7 @@ package com.yahoo.protect;
 
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,6 +14,9 @@ import java.util.logging.Logger;
  * @author Steinar Knutsen
  */
 public final class Process {
+
+    private static final AtomicBoolean alreadyShuttingDown = new AtomicBoolean(false);
+    private static final AtomicBoolean busyDumpingThreads = new AtomicBoolean(false);
 
     private static final Logger log = Logger.getLogger(Process.class.getName());
 
@@ -41,44 +45,55 @@ public final class Process {
      *                   log with level info before shutting down
      */
     public static void logAndDie(String message, Throwable thrown, boolean dumpThreads) {
+        boolean shutDownInProgress = alreadyShuttingDown.getAndSet(true);
         try {
+            if (thrown != null) {
+                log.log(Level.SEVERE, message, thrown);
+            } else {
+                log.log(Level.SEVERE, message);
+            }
+            log.log(Level.INFO, "About to shut down.");
             if (dumpThreads) {
-                log.log(Level.INFO, "About to shut down.");
                 dumpThreads();
             }
-            if (thrown != null)
-                log.log(Level.SEVERE, message, thrown);
-            else
-                log.log(Level.SEVERE, message);
         } finally {
-            try {
-                Runtime.getRuntime().halt(1);
-            }
-            catch (Throwable t) {
-                log.log(Level.SEVERE, "Runtime.halt rejected. Throwing an error.");
-                throw new ShutdownError("Shutdown requested, but failed to shut down");
+            if ( ! shutDownInProgress ) {
+                try {
+                    Runtime.getRuntime().halt(1);
+                } catch (Throwable t) {
+                    log.log(Level.SEVERE, "Runtime.halt rejected. Throwing an error.");
+                    throw new ShutdownError("Shutdown requested, but failed to shut down");
+                }
+            } else {
+                log.log(Level.WARNING, "Shutdown already in progress. Will just let death come upon us normally.");
             }
         }
     }
 
 
     public static void dumpThreads() {
-        try {
-            log.log(Level.INFO, "Commencing full thread dump for diagnosis.");
-            Map<Thread, StackTraceElement[]> allStackTraces = Thread.getAllStackTraces();
-            for (Map.Entry<Thread, StackTraceElement[]> e : allStackTraces.entrySet()) {
-                Thread t = e.getKey();
-                StackTraceElement[] stack = e.getValue();
-                StringBuilder forOneThread = new StringBuilder();
-                forOneThread.append("Stack for thread: ").append(t.getName()).append(": ");
-                for (StackTraceElement s : stack) {
-                    forOneThread.append('\n').append(s.toString());
+        boolean alreadyDumpingThreads = busyDumpingThreads.getAndSet(true);
+        if ( ! alreadyDumpingThreads ) {
+            try {
+                log.log(Level.INFO, "Commencing full thread dump for diagnosis.");
+                Map<Thread, StackTraceElement[]> allStackTraces = Thread.getAllStackTraces();
+                for (Map.Entry<Thread, StackTraceElement[]> e : allStackTraces.entrySet()) {
+                    Thread t = e.getKey();
+                    StackTraceElement[] stack = e.getValue();
+                    StringBuilder forOneThread = new StringBuilder();
+                    forOneThread.append("Stack for thread: ").append(t.getName()).append(": ");
+                    for (StackTraceElement s : stack) {
+                        forOneThread.append('\n').append(s.toString());
+                    }
+                    log.log(Level.INFO, forOneThread.toString());
                 }
-                log.log(Level.INFO, forOneThread.toString());
+                log.log(Level.INFO, "End of diagnostic thread dump.");
+            } catch (Exception e) {
+                // just give up...
             }
-            log.log(Level.INFO, "End of diagnostic thread dump.");
-        } catch (Exception e) {
-            // just give up...
+            busyDumpingThreads.set(false);
+        } else {
+            log.log(Level.WARNING, "Thread dump already in progress. Skipping it.");
         }
     }
 
