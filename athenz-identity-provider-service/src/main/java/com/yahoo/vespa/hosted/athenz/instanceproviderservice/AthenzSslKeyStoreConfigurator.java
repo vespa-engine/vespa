@@ -5,7 +5,6 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreConfigurator;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreContext;
 import com.yahoo.log.LogLevel;
@@ -58,14 +57,13 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
     private volatile KeyStore currentKeyStore;
 
     @Inject
-    public AthenzSslKeyStoreConfigurator(AthenzIdentityProvider bootstrapIdentity,
-                                         KeyProvider keyProvider,
+    public AthenzSslKeyStoreConfigurator(KeyProvider keyProvider,
                                          AthenzProviderServiceConfig config,
                                          Zone zone,
                                          ConfigserverConfig configserverConfig) {
         AthenzProviderServiceConfig.Zones zoneConfig = getZoneConfig(config, zone);
         Path keystoreCachePath = createKeystoreCachePath(configserverConfig);
-        AthenzCertificateClient certificateClient = new AthenzCertificateClient(bootstrapIdentity, config, zoneConfig);
+        AthenzCertificateClient certificateClient = new AthenzCertificateClient(config, zoneConfig);
         Duration updatePeriod = Duration.ofDays(config.updatePeriodDays());
         this.certificateClient = certificateClient;
         this.keyProvider = keyProvider;
