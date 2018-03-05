@@ -131,7 +131,8 @@ void assertOptimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_engine, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     auto info = fixture.find_all<DenseDotProductFunction>();
-    EXPECT_EQUAL(info.size(), 1u);
+    ASSERT_EQUAL(info.size(), 1u);
+    EXPECT_TRUE(info[0]->result_is_mutable());
 }
 
 void assertNotOptimized(const vespalib::string &expr) {
