@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Writes zookeeper config and starts zookeeper server.
@@ -131,6 +132,8 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
         System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
         String[] args = new String[]{getDefaults().underVespaHome(config.zooKeeperConfigFile())};
         log.log(LogLevel.DEBUG, "Starting ZooKeeper server with config: " + args[0]);
+        log.log(LogLevel.INFO, "Trying to establish ZooKeeper quorum (from " +
+                config.server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toList()) + ")");
         org.apache.zookeeper.server.quorum.QuorumPeerMain.main(args);
     }
 
