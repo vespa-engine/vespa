@@ -51,19 +51,24 @@ public class AuthorizerTest {
                                                 Optional.empty(), flavor, NodeType.host));
             nodes.add(nodeRepository.createNode("child2-1", "child2-1", ipAddresses,
                                                 Optional.of("host1.tld"), flavor, NodeType.tenant));
+
+            nodes.add(nodeRepository.createNode("proxy1", "proxy1", ipAddresses, Optional.empty(),
+                                                flavor, NodeType.proxy));
             nodeRepository.addNodes(nodes);
         }
     }
 
     @Test
-    public void nodes_authorization() {
-        // Empty principal
+    public void root_authorization() {
         assertFalse(authorized("", ""));
         assertFalse(authorized("", "/"));
-
-        // Node can only access its own resources
         assertFalse(authorized("node1", ""));
         assertFalse(authorized("node1", "/"));
+    }
+
+    @Test
+    public void nodes_authorization() {
+        // Node can only access its own resources
         assertFalse(authorized("node1", "/nodes/v2/node"));
         assertFalse(authorized("node1", "/nodes/v2/node/"));
         assertFalse(authorized("node1", "/nodes/v2/node/node2"));
@@ -122,6 +127,13 @@ public class AuthorizerTest {
         assertTrue(authorized("host1", "/orchestrator/v1/suspensions/hosts/host1?hostname=child1-1"));
         // Multiple children
         assertTrue(authorized("host1", "/orchestrator/v1/suspensions/hosts/host1?hostname=child1-1&hostname=child1-2"));
+    }
+
+    @Test
+    public void routing_authorization() {
+        // Node of proxy type can access routing resource
+        assertFalse(authorized("node1", "/routing/v1/status"));
+        assertTrue(authorized("proxy1", "/routing/v1/status"));
     }
 
     private boolean authorized(String principal, String path) {

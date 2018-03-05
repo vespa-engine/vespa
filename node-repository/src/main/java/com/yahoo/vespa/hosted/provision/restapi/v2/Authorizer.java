@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -45,36 +46,40 @@ public class Authorizer implements BiPredicate<Principal, URI> {
         }
 
         // Nodes can only access its own resources
-        if (canAccess(hostnamesFrom(uri), principal)) {
+        if (canAccess(hostnamesFrom(uri), principal, this::isSelfOrParent)) {
+            return true;
+        }
+
+        // Nodes of a specific type can access whitelisted resources
+        if (canAccess(nodeTypesFrom(uri), principal, this::isNodeType)) {
             return true;
         }
 
         return false;
     }
 
-    /** Returns whether principal can access node identified by hostname */
-    private boolean canAccess(String hostname, Principal principal) {
-        // Ignore potential path traversal. Node repository happily passes arguments unsanitized all the way down to
-        // curator...
-        if (hostname.chars().allMatch(c -> c == '.')) {
-            return false;
-        }
-
+    /** Returns whether principal is the node itself or the parent of the node */
+    private boolean isSelfOrParent(String hostname, Principal principal) {
         // Node can always access itself
         if (principal.getName().equals(hostname)) {
             return true;
         }
 
         // Parent node can access its children
-        return nodeRepository.getNode(hostname)
-                             .flatMap(Node::parentHostname)
-                             .map(parentHostname -> principal.getName().equals(parentHostname))
-                             .orElse(false);
+        return getNode(hostname).flatMap(Node::parentHostname)
+                                .map(parentHostname -> principal.getName().equals(parentHostname))
+                                .orElse(false);
     }
 
-    /** Returns whether principal can access all nodes identified by given hostnames */
-    private boolean canAccess(List<String> hostnames, Principal principal) {
-        return !hostnames.isEmpty() && hostnames.stream().allMatch(hostname -> canAccess(hostname, principal));
+    /** Returns whether principal is a node of the given node type */
+    private boolean isNodeType(NodeType type, Principal principal) {
+        return getNode(principal.getName()).map(node -> node.type() == type)
+                                           .orElse(false);
+    }
+
+    /** Returns whether principal can access all given resources */
+    private <T> boolean canAccess(List<T> resources, Principal principal, BiPredicate<T, Principal> predicate) {
+        return !resources.isEmpty() && resources.stream().allMatch(resource -> predicate.test(resource, principal));
     }
 
     /** Trusted service name for this system */
@@ -83,6 +88,15 @@ public class Authorizer implements BiPredicate<Principal, URI> {
             return "vespa.vespa." + system.name() + ".hosting";
         }
         return "vespa.vespa.hosting";
+    }
+
+    private Optional<Node> getNode(String hostname) {
+        // Ignore potential path traversal. Node repository happily passes arguments unsanitized all the way down to
+        // curator...
+        if (hostname.chars().allMatch(c -> c == '.')) {
+            return Optional.empty();
+        }
+        return nodeRepository.getNode(hostname);
     }
 
     /** Returns hostnames contained in query parameters of given URI */
@@ -117,6 +131,14 @@ public class Authorizer implements BiPredicate<Principal, URI> {
         if (isChildOf("/nodes/v2/command/", uri.getPath()) ||
             "/nodes/v2/node/".equals(uri.getPath())) {
             return hostnamesFromQuery(uri);
+        }
+        return Collections.emptyList();
+    }
+
+    /** Returns node types which can access given URI */
+    private static List<NodeType> nodeTypesFrom(URI uri) {
+        if (isChildOf("/routing/v1/", uri.getPath())) {
+            return Collections.singletonList(NodeType.proxy);
         }
         return Collections.emptyList();
     }
