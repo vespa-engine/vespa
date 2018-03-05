@@ -50,6 +50,8 @@ public class FileDownloader {
         try {
             return getFutureFile(fileReference).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            log.log(LogLevel.INFO, "Failed downloading file, removing from download queue");
+            fileReferenceDownloader.failedDownloading(fileReference);
             return Optional.empty();
         }
     }
