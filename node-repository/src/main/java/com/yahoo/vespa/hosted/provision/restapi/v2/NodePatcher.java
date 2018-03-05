@@ -49,7 +49,7 @@ public class NodePatcher {
             inspector = SlimeUtils.jsonToSlime(IOUtils.readBytes(json, 1000 * 1000)).get();
             this.node = node;
             this.nodeRepository = nodeRepository;
-            this.children = node.type() == NodeType.host ?
+            this.children = node.type().isDockerHost() ?
                     nodeRepository.getChildNodes(node.hostname()) :
                     Collections.emptyList();
         }

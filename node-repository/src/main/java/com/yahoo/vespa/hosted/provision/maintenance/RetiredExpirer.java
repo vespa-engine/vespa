@@ -86,14 +86,14 @@ public class RetiredExpirer extends Maintainer {
 
     /**
      * Checks if the node can be removed:
-     * if the node is {@link NodeType#host}, it will only be removed if it has no children,
+     * if the node is a docker host, it will only be removed if it has no children,
      * or all its children are parked or failed
      * Otherwise, a removal is allowed if either of these are true:
      * - The node has been in state {@link History.Event.Type#retired} for longer than {@link #retiredExpiry}
      * - Orchestrator allows it
      */
     private boolean canRemove(Node node) {
-        if (node.type() == NodeType.host) {
+        if (node.type().isDockerHost()) {
             return nodeRepository()
                     .getChildNodes(node.hostname()).stream()
                     .allMatch(child -> child.state() == Node.State.parked || child.state() == Node.State.failed);

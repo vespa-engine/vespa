@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -93,7 +92,7 @@ public class FailedExpirer extends Maintainer {
         List<Node> nodesToRecycle = new ArrayList<>();
         for (Node candidate : nodes) {
             if (hasHardwareIssue(candidate)) {
-                List<String> unparkedChildren = candidate.type() != NodeType.host ? Collections.emptyList() :
+                List<String> unparkedChildren = !candidate.type().isDockerHost() ? Collections.emptyList() :
                         nodeRepository.getChildNodes(candidate.hostname()).stream()
                                 .filter(node -> node.state() != Node.State.parked)
                                 .map(Node::hostname)

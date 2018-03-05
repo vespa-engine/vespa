@@ -297,7 +297,7 @@ public class NodeFailer extends Maintainer {
                 throttlePolicy.minimumAllowedToFail);
 
         boolean throttle = allowedFailedNodes < recentlyFailedNodes ||
-                (allowedFailedNodes == recentlyFailedNodes && node.type() != NodeType.host);
+                (allowedFailedNodes == recentlyFailedNodes && !node.type().isDockerHost());
         if (throttle) {
             log.info(String.format("Want to fail node %s, but throttling is in effect: %s", node.hostname(),
                                    throttlePolicy.toHumanReadableString()));
