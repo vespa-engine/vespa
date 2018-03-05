@@ -83,7 +83,7 @@ RPCSendV2::getReturnSpec() const {
 namespace {
 class OutputBuf : public vespalib::Output {
 public:
-    OutputBuf(size_t estimatedSize) : _buf(estimatedSize) { }
+    explicit OutputBuf(size_t estimatedSize) : _buf(estimatedSize) { }
     DataBuffer & getBuf() { return _buf; }
 private:
     vespalib::WritableMemory reserve(size_t bytes) override {
@@ -131,7 +131,9 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
 
     args.AddInt8(type);
     args.AddInt32(toCompress.size());
-    args.AddData(buf.stealBuffer(), buf.getDataLen());
+    const auto bufferLength = buf.getDataLen();
+    assert(bufferLength <= INT32_MAX);
+    args.AddData(buf.stealBuffer(), bufferLength);
 }
 
 namespace {
@@ -256,7 +258,9 @@ RPCSendV2::createResponse(FRT_Values & ret, const string & version, Reply & repl
 
     ret.AddInt8(type);
     ret.AddInt32(toCompress.size());
-    ret.AddData(buf.stealBuffer(), buf.getDataLen());
+    const auto bufferLength = buf.getDataLen();
+    assert(bufferLength <= INT32_MAX);
+    ret.AddData(buf.stealBuffer(), bufferLength);
 
 }
 
