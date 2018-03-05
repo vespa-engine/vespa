@@ -58,7 +58,7 @@ void transposedProduct(const DenseXWProductFunction::Self &self,
 }
 
 template <bool commonDimensionInnermost>
-void my_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
     DenseXWProductFunction::Self *self = (DenseXWProductFunction::Self *)(param);
 
     CellsRef vectorCells = getCellsRef(state.peek(1));
@@ -129,7 +129,7 @@ eval::InterpretedFunction::Instruction
 DenseXWProductFunction::compile_self(Stash &stash) const
 {
     Self &self = stash.create<Self>(result_type(), _vectorSize, _resultSize);
-    auto op = _commonDimensionInnermost ? my_op<true> : my_op<false>;
+    auto op = _commonDimensionInnermost ? my_xw_product_op<true> : my_xw_product_op<false>;
     return eval::InterpretedFunction::Instruction(op, (uint64_t)(&self));
 }
 
