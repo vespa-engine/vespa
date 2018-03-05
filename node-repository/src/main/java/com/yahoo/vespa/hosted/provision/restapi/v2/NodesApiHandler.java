@@ -234,6 +234,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
             case "tenant" : return NodeType.tenant;
             case "host" : return NodeType.host;
             case "proxy" : return NodeType.proxy;
+            case "proxyhost" : return NodeType.proxyhost;
+            case "config" : return NodeType.config;
+            case "confighost" : return NodeType.confighost;
             default: throw new IllegalArgumentException("Unknown node type '" + object.asString() + "'");
         }
     }

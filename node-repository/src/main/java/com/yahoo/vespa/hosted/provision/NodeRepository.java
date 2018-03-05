@@ -506,7 +506,7 @@ public class NodeRepository extends AbstractComponent {
 
     private List<Node> removeRecursively(Node node, boolean force) {
         try (Mutex lock = lockUnallocated()) {
-            List<Node> removed = node.type() != NodeType.host ?
+            List<Node> removed = !node.type().isDockerHost() ?
                     new ArrayList<>() :
                     getChildNodes(node.hostname()).stream()
                             .filter(child -> force || verifyRemovalIsAllowed(child, true))
