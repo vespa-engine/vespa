@@ -38,8 +38,7 @@ bool isConcreteDenseTensor(const ValueType &type) {
 DenseInplaceMapFunction::DenseInplaceMapFunction(const eval::ValueType &result_type,
                                                  const eval::TensorFunction &child,
                                                  map_fun_t function_in)
-    : eval::tensor_function::Op1(result_type, child),
-      _function(function_in)
+    : eval::tensor_function::Map(result_type, child, function_in)
 {
 }
 
@@ -50,7 +49,7 @@ DenseInplaceMapFunction::~DenseInplaceMapFunction()
 eval::InterpretedFunction::Instruction
 DenseInplaceMapFunction::compile_self(Stash &) const
 {
-    return eval::InterpretedFunction::Instruction(my_inplace_map_op, (uint64_t)_function);
+    return eval::InterpretedFunction::Instruction(my_inplace_map_op, (uint64_t)function());
 }
 
 const TensorFunction &

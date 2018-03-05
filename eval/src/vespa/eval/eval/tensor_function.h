@@ -208,7 +208,7 @@ public:
         map_fun_t function_in)
         : Op1(result_type_in, child_in), _function(function_in) {}
     map_fun_t function() const { return _function; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(Stash &stash) const override;
 };
 
 //-----------------------------------------------------------------------------
