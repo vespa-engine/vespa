@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
  * @author freva
  */
 public class OrchestratorImplTest {
+
     private static final String hostName = "host123.yahoo.com";
 
     private final ConfigServerApiImpl configServerApi = mock(ConfigServerApiImpl.class);
@@ -112,15 +113,14 @@ public class OrchestratorImplTest {
         orchestrator.suspend(hostName);
     }
 
-
     @Test
     public void testBatchSuspendCall() {
         String parentHostName = "host1.test.yahoo.com";
         List<String> hostNames = Arrays.asList("a1.host1.test.yahoo.com", "a2.host1.test.yahoo.com");
 
         when(configServerApi.put(
-                OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
+                "/orchestrator/v1/suspensions/hosts/host1.test.yahoo.com?hostname=a1.host1.test.yahoo.com&hostname=a2.host1.test.yahoo.com",
+                Optional.empty(),
                 BatchOperationResult.class
         )).thenReturn(BatchOperationResult.successResult());
 
@@ -134,8 +134,8 @@ public class OrchestratorImplTest {
         String failureReason = "Failed to suspend";
 
         when(configServerApi.put(
-                OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
+                "/orchestrator/v1/suspensions/hosts/host1.test.yahoo.com?hostname=a1.host1.test.yahoo.com&hostname=a2.host1.test.yahoo.com",
+                Optional.empty(),
                 BatchOperationResult.class
         )).thenReturn(new BatchOperationResult(failureReason));
 
@@ -156,4 +156,5 @@ public class OrchestratorImplTest {
 
         orchestrator.suspend(parentHostName, hostNames);
     }
+
 }
