@@ -55,7 +55,7 @@ struct NodeData {
     }
 };
 
-ClusterState::ClusterState(const vespalib::stringref & serialized)
+ClusterState::ClusterState(const vespalib::string& serialized)
     : Printable(),
       _version(0),
       _clusterState(&State::UP),
