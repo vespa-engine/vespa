@@ -82,8 +82,6 @@ public class TensorFlowImporter {
         findDimensionNames(model, index);
         importExpressions(model, index, bundle);
 
-        // nodes with multiple outputs are calculated multiple times. consider adding macros for those.
-
         reportWarnings(model, index);
 
         return model;
@@ -241,7 +239,14 @@ public class TensorFlowImporter {
 
     private static void importMacroExpression(TensorFlowModel model, TensorFlowOperation operation) {
         if (operation.macro().isPresent()) {
-            model.macro(operation.vespaName(), operation.macro().get());
+            TensorFunction function = operation.macro().get();
+            try {
+                model.macro(operation.macroName(), new RankingExpression(operation.macroName(), function.toString()));
+            }
+            catch (ParseException e) {
+                throw new RuntimeException("Tensorflow function " + function +
+                        " cannot be parsed as a ranking expression", e);
+            }
         }
     }
 

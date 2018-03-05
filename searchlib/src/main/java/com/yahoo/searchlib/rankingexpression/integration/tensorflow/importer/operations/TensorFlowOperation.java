@@ -8,6 +8,7 @@ import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.Ord
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
+import com.yahoo.tensor.evaluation.VariableTensor;
 import com.yahoo.tensor.functions.TensorFunction;
 import org.tensorflow.framework.NodeDef;
 
@@ -28,6 +29,8 @@ import java.util.function.Function;
  */
 public abstract class TensorFlowOperation {
 
+    protected final static String MACRO_PREFIX = "tf_macro_";
+
     protected final NodeDef node;
     protected final int port;
     protected final List<TensorFlowOperation> inputs;
@@ -36,6 +39,7 @@ public abstract class TensorFlowOperation {
 
     protected OrderedTensorType type;
     protected TensorFunction function;
+    protected TensorFunction macro = null;
 
     private Value constantValue = null;
     private List<TensorFlowOperation> controlInputs = Collections.emptyList();
@@ -65,6 +69,9 @@ public abstract class TensorFlowOperation {
             if (isConstant()) {
                 ExpressionNode constant = new ReferenceNode("constant(\"" + vespaName() + "\")");
                 function = new TensorFunctionNode.TensorFunctionExpressionNode(constant);
+            } else if (outputs.size() > 1) {
+                macro = lazyGetFunction();
+                function = new VariableTensor(macroName(), type.type());
             } else {
                 function = lazyGetFunction();
             }
@@ -82,7 +89,7 @@ public abstract class TensorFlowOperation {
     public List<TensorFlowOperation> outputs() { return Collections.unmodifiableList(outputs); }
 
     /** Returns a Vespa ranking expression that should be added as a macro */
-    public Optional<RankingExpression> macro() { return Optional.empty(); }
+    public Optional<TensorFunction> macro() { return Optional.ofNullable(macro); }
 
     /** Add dimension name constraints for this operation */
     public void addDimensionNameConstraints(DimensionRenamer renamer) { }
@@ -110,6 +117,9 @@ public abstract class TensorFlowOperation {
 
     /** Retrieve the valid Vespa name of this node */
     public String vespaName() { return node.getName() != null ? node.getName().replace('/', '_') : null; }
+
+    /** Retrieve the valid Vespa name of this node if it is a macro */
+    public String macroName() { return vespaName() != null ? MACRO_PREFIX + vespaName() : null; }
 
     /** Retrieve the list of warnings produced during its lifetime */
     public List<String> warnings() { return Collections.unmodifiableList(importWarnings); }
