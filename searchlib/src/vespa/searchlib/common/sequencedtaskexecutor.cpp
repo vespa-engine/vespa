@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sequencedtaskexecutor.h"
+#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 using vespalib::BlockingThreadStackExecutor;
@@ -67,5 +68,17 @@ SequencedTaskExecutor::sync()
     }
 }
 
+SequencedTaskExecutor::Stats
+SequencedTaskExecutor::getStats()
+{
+    Stats accumulatedStats;
+    for (auto &executor : _executors) {
+        Stats stats = executor->getStats();
+        accumulatedStats.maxPendingTasks += stats.maxPendingTasks;
+        accumulatedStats.acceptedTasks += stats.acceptedTasks;
+        accumulatedStats.rejectedTasks += stats.rejectedTasks;
+    }
+    return accumulatedStats;
+}
 
 } // namespace search

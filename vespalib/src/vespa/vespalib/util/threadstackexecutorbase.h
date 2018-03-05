@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include "executor_stats.h"
 
 class FastOS_ThreadPool;
 
@@ -39,12 +40,7 @@ public:
      * Internal stats that we want to observe externally. Note that
      * all stats are reset each time they are observed.
      **/
-    struct Stats {
-        size_t maxPendingTasks;
-        size_t acceptedTasks;
-        size_t rejectedTasks;
-        Stats() : maxPendingTasks(0), acceptedTasks(0), rejectedTasks(0) {}
-    };
+    using Stats = ExecutorStats;
 
     using init_fun_t = std::function<int(Runnable&)>;
 

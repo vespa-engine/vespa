@@ -3,12 +3,13 @@
 
 #include "isequencedtaskexecutor.h"
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vector>
 
 namespace vespalib
 {
 
-class ThreadStackExecutorBase;
+class ExecutorStats;
+class BlockingThreadStackExecutor;
 
 }
 
@@ -21,6 +22,7 @@ namespace search
  */
 class SequencedTaskExecutor : public ISequencedTaskExecutor
 {
+    using Stats = vespalib::ExecutorStats;
     std::vector<std::shared_ptr<vespalib::BlockingThreadStackExecutor>> _executors;
     vespalib::hash_map<size_t, size_t> _ids;
 public:
@@ -37,6 +39,8 @@ public:
     virtual void executeTask(uint32_t executorId, vespalib::Executor::Task::UP task) override;
 
     virtual void sync() override;
+
+    Stats getStats();
 };
 
 } // namespace search

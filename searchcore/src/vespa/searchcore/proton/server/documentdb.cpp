@@ -11,6 +11,7 @@
 #include "maintenance_jobs_injector.h"
 #include "reconfig_params.h"
 #include "bootstrapconfig.h"
+#include "executor_threading_service_stats.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
@@ -1222,19 +1223,20 @@ DocumentDB::updateMetrics(DocumentDBMetricsCollection &metrics)
         return;
     }
     
-    updateLegacyMetrics(metrics.getLegacyMetrics());
+    ExecutorThreadingServiceStats threadingServiceStats = _writeService.getStats();
+    updateLegacyMetrics(metrics.getLegacyMetrics(), threadingServiceStats);
     updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats());
     updateAttributeMetrics(metrics, _subDBs);
-    updateMetrics(metrics.getTaggedMetrics());
+    updateMetrics(metrics.getTaggedMetrics(), threadingServiceStats);
 }
 
 void
-DocumentDB::updateLegacyMetrics(LegacyDocumentDBMetrics &metrics)
+DocumentDB::updateLegacyMetrics(LegacyDocumentDBMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats)
 {
     updateMatchingMetrics(metrics.matching, *_subDBs.getReadySubDB());
-    metrics.executor.update(_writeService.getMasterExecutor().getStats());
-    metrics.summaryExecutor.update(_writeService.getSummaryExecutor().getStats());
-    metrics.indexExecutor.update(_writeService.getIndexExecutor().getStats());
+    metrics.executor.update(threadingServiceStats.getMasterExecutorStats());
+    metrics.summaryExecutor.update(threadingServiceStats.getSummaryExecutorStats());
+    metrics.indexExecutor.update(threadingServiceStats.getIndexExecutorStats());
     metrics.sessionManager.update(_sessionManager->getGroupingStats());
     updateDocstoreMetrics(metrics.docstore, _subDBs, _lastDocStoreCacheStats);
     metrics.numDocs.set(getNumDocs());
@@ -1268,7 +1270,7 @@ updateMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics)
 }
 
 void
-DocumentDB::updateMetrics(DocumentDBTaggedMetrics &metrics)
+DocumentDB::updateMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &)
 {
     _jobTrackers.updateMetrics(metrics.job);
 

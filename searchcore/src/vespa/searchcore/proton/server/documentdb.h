@@ -43,6 +43,7 @@ namespace proton {
 class IDocumentDBOwner;
 class MetricsWireService;
 class StatusReport;
+class ExecutorThreadingServiceStats;
 
 namespace matching { class SessionManager; }
 
@@ -198,8 +199,8 @@ private:
     virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
     void notifyAllBucketsChanged();
 
-    void updateLegacyMetrics(LegacyDocumentDBMetrics &metrics);
-    void updateMetrics(DocumentDBTaggedMetrics &metrics);
+    void updateLegacyMetrics(LegacyDocumentDBMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats);
+    void updateMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats);
     void updateMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics);
 
     /*
