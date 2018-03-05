@@ -4,11 +4,17 @@ package com.yahoo.fs4.test;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-import com.yahoo.fs4.*;
+import com.yahoo.fs4.BasicPacket;
+import com.yahoo.fs4.BufferTooSmallException;
+import com.yahoo.fs4.Packet;
+import com.yahoo.fs4.QueryPacket;
 import com.yahoo.search.Query;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests the Packet class.  Specifically made this unit test suite

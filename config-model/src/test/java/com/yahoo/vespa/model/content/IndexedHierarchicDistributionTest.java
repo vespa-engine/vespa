@@ -23,8 +23,10 @@ import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createClus
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createClusterXml;
 import static com.yahoo.vespa.model.search.utils.DispatchUtils.assertEngine;
 import static com.yahoo.vespa.model.search.utils.DispatchUtils.getDataset;
-import static org.junit.Assert.*;
-
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for hierarchic distribution in an indexed content cluster.
