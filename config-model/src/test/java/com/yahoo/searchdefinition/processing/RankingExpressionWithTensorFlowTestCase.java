@@ -262,40 +262,6 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testImportingFromStoredExpressionsWithSmallConstants() throws IOException {
-        final String expression = "join(reduce(join(join(join(constant(\"dnn_hidden2_Const\"), tf_macro_dnn_hidden2_add, f(a,b)(a * b)), tf_macro_dnn_hidden2_add, f(a,b)(max(a,b))), constant(\"dnn_outputs_weights_read\"), f(a,b)(a * b)), sum, d2), constant(\"dnn_outputs_bias_read\"), f(a,b)(a + b))";
-        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
-        RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
-                "tensorflow('mnist/saved')",
-                null,
-                null,
-                "input",
-                application);
-        search.assertFirstPhaseExpression(expression, "my_profile");
-        assertSmallConstant("dnn_hidden2_Const", TensorType.fromSpec("tensor(d0[1])"), search);
-
-        // At this point the expression is stored - copy application to another location which do not have a models dir
-        Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
-        try {
-            storedApplicationDirectory.toFile().mkdirs();
-            IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
-                    storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-            StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
-            RankProfileSearchFixture searchFromStored = fixtureWith("tensor(d0[2],d1[784])(0.0)",
-                    "tensorflow('mnist/saved')",
-                    null,
-                    null,
-                    "input",
-                    storedApplication);
-            searchFromStored.assertFirstPhaseExpression(expression, "my_profile");
-            assertSmallConstant("dnn_hidden2_Const", TensorType.fromSpec("tensor(d0[1])"), search);
-        }
-        finally {
-            IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
-        }
-    }
-
-    @Test
     public void testMacroGeneration() {
         final String expression = "join(reduce(join(join(join(constant(\"dnn_hidden2_Const\"), tf_macro_dnn_hidden2_add, f(a,b)(a * b)), tf_macro_dnn_hidden2_add, f(a,b)(max(a,b))), constant(\"dnn_outputs_weights_read\"), f(a,b)(a * b)), sum, d2), constant(\"dnn_outputs_bias_read\"), f(a,b)(a + b))";
         final String macroExpression1 = "join(reduce(join(rename(input, (d0, d1), (d0, d4)), constant(\"dnn_hidden1_weights_read\"), f(a,b)(a * b)), sum, d4), constant(\"dnn_hidden1_bias_read\"), f(a,b)(a + b))";
@@ -306,6 +272,47 @@ public class RankingExpressionWithTensorFlowTestCase {
         search.assertFirstPhaseExpression(expression, "my_profile");
         search.assertMacro(macroExpression1, "tf_macro_dnn_hidden1_add", "my_profile");
         search.assertMacro(macroExpression2, "tf_macro_dnn_hidden2_add", "my_profile");
+    }
+
+    @Test
+    public void testImportingFromStoredExpressionsWithSmallConstants() throws IOException {
+        final String expression = "join(reduce(join(join(join(constant(\"dnn_hidden2_Const\"), tf_macro_dnn_hidden2_add, f(a,b)(a * b)), tf_macro_dnn_hidden2_add, f(a,b)(max(a,b))), constant(\"dnn_outputs_weights_read\"), f(a,b)(a * b)), sum, d2), constant(\"dnn_outputs_bias_read\"), f(a,b)(a + b))";
+        final String macroExpression1 = "join(reduce(join(rename(input, (d0, d1), (d0, d4)), constant(\"dnn_hidden1_weights_read\"), f(a,b)(a * b)), sum, d4), constant(\"dnn_hidden1_bias_read\"), f(a,b)(a + b))";
+        final String macroExpression2 = "join(reduce(join(join(join(0.009999999776482582, tf_macro_dnn_hidden1_add, f(a,b)(a * b)), tf_macro_dnn_hidden1_add, f(a,b)(max(a,b))), constant(\"dnn_hidden2_weights_read\"), f(a,b)(a * b)), sum, d3), constant(\"dnn_hidden2_bias_read\"), f(a,b)(a + b))";
+
+        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
+        RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
+                "tensorflow('mnist/saved')",
+                null,
+                null,
+                "input",
+                application);
+        search.assertFirstPhaseExpression(expression, "my_profile");
+        assertSmallConstant("dnn_hidden2_Const", TensorType.fromSpec("tensor(d0[1])"), search);
+        search.assertMacro(macroExpression1, "tf_macro_dnn_hidden1_add", "my_profile");
+        search.assertMacro(macroExpression2, "tf_macro_dnn_hidden2_add", "my_profile");
+
+        // At this point the expression is stored - copy application to another location which do not have a models dir
+        Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
+        try {
+            storedApplicationDirectory.toFile().mkdirs();
+            IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
+                    storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+            StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
+            RankProfileSearchFixture searchFromStored = fixtureWith("tensor(d0[1],d1[784])(0.0)",
+                    "tensorflow('mnist/saved')",
+                    null,
+                    null,
+                    "input",
+                    storedApplication);
+            searchFromStored.assertFirstPhaseExpression(expression, "my_profile");
+            assertSmallConstant("dnn_hidden2_Const", TensorType.fromSpec("tensor(d0[1])"), search);
+            searchFromStored.assertMacro(macroExpression1, "tf_macro_dnn_hidden1_add", "my_profile");
+            searchFromStored.assertMacro(macroExpression2, "tf_macro_dnn_hidden2_add", "my_profile");
+        }
+        finally {
+            IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
+        }
     }
 
     private void assertSmallConstant(String name, TensorType type, RankProfileSearchFixture search) {
