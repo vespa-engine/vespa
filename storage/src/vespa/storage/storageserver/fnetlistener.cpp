@@ -9,8 +9,6 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <sstream>
 
-#include <iostream> // XXXXX
-
 #include <vespa/log/log.h>
 LOG_SETUP(".rpc.listener");
 
