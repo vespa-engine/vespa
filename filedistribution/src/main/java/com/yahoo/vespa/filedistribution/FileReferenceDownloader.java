@@ -100,6 +100,13 @@ public class FileReferenceDownloader {
         }
     }
 
+    void failedDownloading(FileReference fileReference) {
+        synchronized (downloads) {
+            downloadStatus.put(fileReference, 0.0);
+            downloads.remove(fileReference);
+        }
+    }
+
     private boolean startDownloadRpc(FileReference fileReference) {
         Connection connection = connectionPool.getCurrent();
         Request request = new Request("filedistribution.serveFile");

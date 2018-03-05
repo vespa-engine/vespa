@@ -161,14 +161,14 @@ public class FileDownloaderTest {
         File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
         assertFalse(fileReferenceFullPath.getAbsolutePath(), fileDownloader.getFile(fileReference).isPresent());
 
-        // Verify download status
+        // Getting file failed, verify download status and since there was an error is not downloading ATM
         assertDownloadStatus(fileDownloader, fileReference, 0.0);
+        assertFalse(fileDownloader.fileReferenceDownloader().isDownloading(fileReference));
 
         // Receives fileReference, should return and make it available to caller
         String filename = "abc.jar";
         receiveFile(fileReference, filename, FileReferenceData.Type.file, "some other content");
         Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
-
         assertTrue(downloadedFile.isPresent());
         File downloadedFileFullPath = new File(fileReferenceFullPath, filename);
         assertEquals(downloadedFileFullPath.getAbsolutePath(), downloadedFile.get().getAbsolutePath());
