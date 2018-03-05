@@ -95,7 +95,17 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     }
 
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
-        setConfig(jrtReq.getNewGeneration(), toConfigInstance(jrtReq) );
+        Exception badConfigE = null;
+        T configInstance = null;
+        try {
+            configInstance = toConfigInstance(jrtReq);
+        } catch (IllegalArgumentException e) {
+            badConfigE = e;
+        }
+        setConfig(jrtReq.getNewGeneration(), configInstance);
+        if (badConfigE != null) {
+            throw new IllegalArgumentException("Bad config from jrt", badConfigE);
+        }
     }
 
     /**
@@ -106,7 +116,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
      * @param jrtRequest a config request
      * @return an instance of a config class (subclass of ConfigInstance)
      */
-    T toConfigInstance(JRTClientConfigRequest jrtRequest) {
+    private T toConfigInstance(JRTClientConfigRequest jrtRequest) {
         Payload payload = jrtRequest.getNewPayload();
         ConfigPayload configPayload = ConfigPayload.fromUtf8Array(payload.withCompression(CompressionType.UNCOMPRESSED).getData());
         T configInstance = configPayload.toInstance(configClass, jrtRequest.getConfigKey().getConfigId());
