@@ -166,15 +166,15 @@ public class NodeAgentImpl implements NodeAgent {
     @Override
     public Map<String, Object> debugInfo() {
         Map<String, Object> debug = new LinkedHashMap<>();
-        debug.put("Hostname", hostname);
+        debug.put("hostname", hostname);
         debug.put("isFrozen", isFrozen);
         debug.put("wantFrozen", wantFrozen);
         debug.put("terminated", terminated);
         debug.put("workToDoNow", workToDoNow);
         synchronized (debugMessages) {
-            debug.put("History", new LinkedList<>(debugMessages));
+            debug.put("history", new LinkedList<>(debugMessages));
         }
-        debug.put("Node repo state", lastNodeSpec.nodeState.name());
+        debug.put("nodeRepoState", lastNodeSpec.nodeState.name());
         return debug;
     }
 
@@ -448,15 +448,14 @@ public class NodeAgentImpl implements NodeAgent {
 
         Optional<Container> container = getContainer();
         if (!nodeSpec.equals(lastNodeSpec)) {
-            addDebugMessage("Loading new node spec: " + nodeSpec.toString());
-            lastNodeSpec = nodeSpec;
-
             // Every time the node spec changes, we should clear the metrics for this container as the dimensions
             // will change and we will be reporting duplicate metrics.
-            // TODO: Should be retried if writing fails
             if (container.isPresent()) {
                 storageMaintainer.writeMetricsConfig(containerName, nodeSpec);
             }
+
+            addDebugMessage("Loading new node spec: " + nodeSpec.toString());
+            lastNodeSpec = nodeSpec;
         }
 
         switch (nodeSpec.nodeState) {
