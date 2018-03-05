@@ -42,7 +42,8 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private static final String MANAGER_NAME = "node-admin";
 
-    private static final String LOCAL_IPV6_PREFIX = "fd00::";
+    private static final String LOCAL_IPV6_PREFIX = "fd01::";
+    private static final String LOCAL_IPV4_PREFIX = "172.17.0.0";
     private static final String DOCKER_CUSTOM_BRIDGE_NETWORK_NAME = "vespa-bridge";
     
     private final Docker docker;
