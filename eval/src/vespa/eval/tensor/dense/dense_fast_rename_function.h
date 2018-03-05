@@ -17,6 +17,7 @@ public:
                             const eval::TensorFunction &child);
     ~DenseFastRenameFunction();
     eval::InterpretedFunction::Instruction compile_self(Stash &stash) const override;
+    bool result_is_mutable() const override { return child().result_is_mutable(); }
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };
 

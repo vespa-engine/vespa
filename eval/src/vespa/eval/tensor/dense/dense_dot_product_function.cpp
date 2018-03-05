@@ -24,7 +24,7 @@ CellsRef getCellsRef(const eval::Value &value) {
     return denseTensor.cellsRef();
 }
 
-void my_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_dot_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
     auto *hw_accelerator = (hwaccelrated::IAccelrated *)(param);
     DenseTensorView::CellsRef lhsCells = getCellsRef(state.peek(1));
     DenseTensorView::CellsRef rhsCells = getCellsRef(state.peek(0));
@@ -56,7 +56,7 @@ DenseDotProductFunction::DenseDotProductFunction(const eval::TensorFunction &lhs
 eval::InterpretedFunction::Instruction
 DenseDotProductFunction::compile_self(Stash &) const
 {
-    return eval::InterpretedFunction::Instruction(my_op, (uint64_t)(_hwAccelerator.get()));
+    return eval::InterpretedFunction::Instruction(my_dot_product_op, (uint64_t)(_hwAccelerator.get()));
 }
 
 const TensorFunction &

@@ -51,8 +51,7 @@ DenseInplaceJoinFunction::DenseInplaceJoinFunction(const ValueType &result_type,
                                                    const TensorFunction &rhs,
                                                    join_fun_t function_in,
                                                    bool write_left_in)
-    : eval::tensor_function::Op2(result_type, lhs, rhs),
-      _function(function_in),
+    : eval::tensor_function::Join(result_type, lhs, rhs, function_in),
       _write_left(write_left_in)
 {
 }
@@ -65,7 +64,7 @@ eval::InterpretedFunction::Instruction
 DenseInplaceJoinFunction::compile_self(Stash &) const
 {
     auto op = _write_left ? my_inplace_join_op<true> : my_inplace_join_op<false>;
-    return eval::InterpretedFunction::Instruction(op, (uint64_t)_function);
+    return eval::InterpretedFunction::Instruction(op, (uint64_t)function());
 }
 
 const TensorFunction &

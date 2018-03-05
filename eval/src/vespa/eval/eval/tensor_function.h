@@ -69,7 +69,7 @@ struct TensorFunction
         void set(const TensorFunction &child) const { ptr = &child; }
     };
     virtual const ValueType &result_type() const = 0;
-    virtual bool result_is_mutable() const { return false; }
+    virtual bool result_is_mutable() const = 0;
 
     /**
      * Push references to all children (NB: implementation must use
@@ -162,6 +162,7 @@ private:
     const Value &_value;
 public:
     ConstValue(const Value &value_in) : Leaf(value_in.type()), _value(value_in) {}
+    bool result_is_mutable() const override { return false; }
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
 };
 
@@ -175,6 +176,7 @@ public:
     Inject(const ValueType &result_type_in, size_t param_idx_in)
         : Leaf(result_type_in), _param_idx(param_idx_in) {}
     size_t param_idx() const { return _param_idx; }
+    bool result_is_mutable() const override { return false; }
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
 };
 
@@ -193,6 +195,7 @@ public:
         : Op1(result_type_in, child_in), _aggr(aggr_in), _dimensions(dimensions_in) {}
     Aggr aggr() const { return _aggr; }
     const std::vector<vespalib::string> &dimensions() const { return _dimensions; }
+    bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
 };
 
@@ -208,7 +211,8 @@ public:
         map_fun_t function_in)
         : Op1(result_type_in, child_in), _function(function_in) {}
     map_fun_t function() const { return _function; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    bool result_is_mutable() const override { return true; }
+    InterpretedFunction::Instruction compile_self(Stash &stash) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -224,7 +228,8 @@ public:
          join_fun_t function_in)
         : Op2(result_type_in, lhs_in, rhs_in), _function(function_in) {}
     join_fun_t function() const { return _function; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    bool result_is_mutable() const override { return true; }
+    InterpretedFunction::Instruction compile_self(Stash &stash) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -240,6 +245,7 @@ public:
            const vespalib::string &dimension_in)
         : Op2(result_type_in, lhs_in, rhs_in), _dimension(dimension_in) {}
     const vespalib::string &dimension() const { return _dimension; }
+    bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
 };
 
@@ -258,6 +264,7 @@ public:
         : Op1(result_type_in, child_in), _from(from_in), _to(to_in) {}
     const std::vector<vespalib::string> &from() const { return _from; }
     const std::vector<vespalib::string> &to() const { return _to; }
+    bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
 };
 
@@ -279,6 +286,10 @@ public:
     const TensorFunction &true_child() const { return _true_child.get(); }
     const TensorFunction &false_child() const { return _false_child.get(); }
     void push_children(std::vector<Child::CREF> &children) const final override;    
+    bool result_is_mutable() const override {
+        return (true_child().result_is_mutable() &&
+                false_child().result_is_mutable());
+    }
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
 };
 
