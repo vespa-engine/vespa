@@ -3,7 +3,6 @@ package com.yahoo.config.subscription.impl;
 
 import java.util.List;
 
-import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.log.LogLevel;
@@ -19,27 +18,22 @@ import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
  * @author vegardh
  *
  */
-@SuppressWarnings("rawtypes")
-public class GenericJRTConfigSubscription extends JRTConfigSubscription {
+public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfig> {
 
-    private RawConfig config;
     private final List<String> defContent;
 
-    @SuppressWarnings("unchecked")
-    public GenericJRTConfigSubscription(ConfigKey<?> key,
-                                        List<String> defContent,
-            ConfigSubscriber subscriber,
-            ConfigSource source,
-            TimingValues timingValues) {
+    public GenericJRTConfigSubscription(ConfigKey<RawConfig> key, List<String> defContent, ConfigSubscriber subscriber,
+                                        ConfigSource source, TimingValues timingValues)
+    {
         super(key, subscriber, source, timingValues);
         this.defContent = defContent;
     }
 
     @Override
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
-        this.config = RawConfig.createFromResponseParameters(jrtReq);
+        setConfig(jrtReq.getNewGeneration(), RawConfig.createFromResponseParameters(jrtReq) );
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "in setNewConfig, config=" + this.config);
+            log.log(LogLevel.DEBUG, "in setNewConfig, config=" + this.getConfigState().getConfig());
         }
     }
 
@@ -48,13 +42,15 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription {
     @Override
     void setGeneration(Long generation) {
         super.setGeneration(generation);
-        if (this.config != null) {
-            this.config.setGeneration(generation);
+        ConfigState<RawConfig> configState = getConfigState();
+
+        if (configState.getConfig() != null) {
+            configState.getConfig().setGeneration(generation);
         }
     }
 
     public RawConfig getRawConfig() {
-        return config;
+        return getConfigState().getConfig();
     }
 
     /**
@@ -65,10 +61,5 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription {
     @Override
     public DefContent getDefContent() {
         return (DefContent.fromList(defContent));
-    }
-
-    @Override
-    public ConfigInstance getConfig() {
-        return null;
     }
 }

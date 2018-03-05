@@ -49,7 +49,8 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     public boolean nextConfig(long timeoutMillis) {
         // These flags may have been left true from a previous call, since ConfigSubscriber's nextConfig
         // not necessarily returned true and reset the flags then
-        boolean gotNew = isGenerationChanged() || isConfigChanged() || hasException();
+        ConfigState<T> configState = getConfigState();
+        boolean gotNew = configState.isGenerationChanged() || configState.isConfigChanged() || hasException();
         // Return that now, if there's nothing in queue, so that ConfigSubscriber can move on to other subscriptions to check
         if (getReqQueue().peek()==null && gotNew) {
             return true;
@@ -60,7 +61,8 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         // there is a race here. However: the caller will handle it no matter what it gets from the queue here,
         // the important part is that local state on the subscription objects is preserved.
         if (!pollQueue(timeoutMillis)) return gotNew;
-        gotNew = isGenerationChanged() || isConfigChanged() || hasException();
+        configState = getConfigState();
+        gotNew = configState.isGenerationChanged() || configState.isConfigChanged() || hasException();
         return gotNew;
     }
 
@@ -83,20 +85,27 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             return false;
         }
         if (jrtReq.hasUpdatedGeneration()) {
-            //printStatus(jrtReq, "Updated generation or config");
-            setGeneration(jrtReq.getNewGeneration());
-            setGenerationChanged(true);
             if (jrtReq.hasUpdatedConfig()) {
-                // payload changed
                 setNewConfig(jrtReq);
-                setConfigChanged(true);
+            } else {
+                setGeneration(jrtReq.getNewGeneration());
             }
         }
         return true;
     }
 
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
-        setConfig(toConfigInstance(jrtReq));
+        Exception badConfigE = null;
+        T configInstance = null;
+        try {
+            configInstance = toConfigInstance(jrtReq);
+        } catch (IllegalArgumentException e) {
+            badConfigE = e;
+        }
+        setConfig(jrtReq.getNewGeneration(), configInstance);
+        if (badConfigE != null) {
+            throw new IllegalArgumentException("Bad config from jrt", badConfigE);
+        }
     }
 
     /**
@@ -107,7 +116,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
      * @param jrtRequest a config request
      * @return an instance of a config class (subclass of ConfigInstance)
      */
-    T toConfigInstance(JRTClientConfigRequest jrtRequest) {
+    private T toConfigInstance(JRTClientConfigRequest jrtRequest) {
         Payload payload = jrtRequest.getNewPayload();
         ConfigPayload configPayload = ConfigPayload.fromUtf8Array(payload.withCompression(CompressionType.UNCOMPRESSED).getData());
         T configInstance = configPayload.toInstance(configClass, jrtRequest.getConfigKey().getConfigId());

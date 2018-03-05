@@ -19,8 +19,7 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
     private final ConfigSet set;
     private final ConfigKey<T> subKey;
 
-    ConfigSetSubscription(ConfigKey<T> key,
-            ConfigSubscriber subscriber, ConfigSource cset) {
+    ConfigSetSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource cset) {
         super(key, subscriber);
         if (!(cset instanceof ConfigSet)) throw new IllegalArgumentException("Source is not a ConfigSet: "+cset);
         this.set=(ConfigSet) cset;
@@ -35,22 +34,19 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
     public boolean nextConfig(long timeout) {
         long end = System.currentTimeMillis() + timeout;
         do {
-            ConfigInstance myInstance = getNewInstance();
+            T myInstance = getNewInstance();
+            ConfigState<T> configState = getConfigState();
             // User forced reload
             if (checkReloaded()) {
-                updateInstance(myInstance);
+                setConfigIfChanged(myInstance);
                 return true;
             }
-            if (!myInstance.equals(config)) {
-                generation++;
-                updateInstance(myInstance);
+            if (!myInstance.equals(configState.getConfig())) {
+                setConfigIncGen(myInstance);
                 return true;
             }
             sleep();
         } while (System.currentTimeMillis() < end);
-        // These shouldn't be checked anywhere since we return false now, but setting them still
-        setGenerationChanged(false);
-        setConfigChanged(false);
         return false;
     }
 
@@ -62,25 +58,17 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void updateInstance(ConfigInstance myInstance) {
-        if (!myInstance.equals(config)) {
-            setConfigChanged(true);
-        }
-        setConfig((T) myInstance);
-        setGenerationChanged(true);
-    }
-
     @Override
     public boolean subscribe(long timeout) {
         return true;
     }
 
-    public ConfigInstance getNewInstance() {
+    @SuppressWarnings("unchecked")
+    private T getNewInstance() {
         try {
             ConfigInstance.Builder builder = set.get(subKey);
             Constructor<?> constructor = builder.getClass().getDeclaringClass().getConstructor(builder.getClass());
-            return (ConfigInstance) constructor.newInstance(builder);
+            return (T) constructor.newInstance(builder);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);

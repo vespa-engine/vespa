@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di
 
-import java.util.logging.Logger
+import java.util.logging.{Level, Logger}
 
 import com.yahoo.config.ConfigInstance
 import com.yahoo.config.subscription.{ConfigHandle, ConfigSource, ConfigSourceSet, ConfigSubscriber}
@@ -78,8 +78,8 @@ object CloudSubscriberFactory {
         } catch {
           case e: IllegalArgumentException =>
             numExceptions += 1
-            log.warning("Got exception from the config system (please ignore the exception if you just removed "
-                          + "a component from your application that used the mentioned config): " + e.getMessage)
+            log.log(Level.WARNING, "Got exception from the config system (please ignore the exception if you just removed "
+                          + "a component from your application that used the mentioned config): ", e)
             if (numExceptions >= 5)
               throw new IllegalArgumentException("Failed retrieving the next config generation.", e)
         }

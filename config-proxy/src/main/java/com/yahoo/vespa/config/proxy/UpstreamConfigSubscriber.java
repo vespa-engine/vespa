@@ -7,6 +7,7 @@ import com.yahoo.config.subscription.impl.GenericConfigHandle;
 import com.yahoo.config.subscription.impl.GenericConfigSubscriber;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
@@ -30,12 +31,10 @@ public class UpstreamConfigSubscriber implements Subscriber {
     private GenericConfigSubscriber subscriber;
     private GenericConfigHandle handle;
 
-    UpstreamConfigSubscriber(RawConfig config,
-                             ClientUpdater clientUpdater,
-                             ConfigSource configSourceSet,
-                             TimingValues timingValues,
-                             Map<ConfigSourceSet, JRTConfigRequester> requesterPool,
-                             MemoryCache memoryCache) {
+    UpstreamConfigSubscriber(RawConfig config, ClientUpdater clientUpdater, ConfigSource configSourceSet,
+                             TimingValues timingValues, Map<ConfigSourceSet, JRTConfigRequester> requesterPool,
+                             MemoryCache memoryCache)
+    {
         this.config = config;
         this.clientUpdater = clientUpdater;
         this.configSourceSet = configSourceSet;
@@ -46,7 +45,9 @@ public class UpstreamConfigSubscriber implements Subscriber {
 
     void subscribe() {
         subscriber = new GenericConfigSubscriber(requesterPool);
-        handle = subscriber.subscribe(config.getKey(), config.getDefContent(), configSourceSet, timingValues);
+        ConfigKey<?> key = config.getKey();
+        handle = subscriber.subscribe(new ConfigKey<RawConfig>(key.getName(), key.getConfigId(), key.getNamespace()),
+                                      config.getDefContent(), configSourceSet, timingValues);
     }
 
     @Override
