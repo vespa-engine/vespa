@@ -1,13 +1,18 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/threadstackexecutorbase.h>
+#include <cstddef>
+#include <vespa/vespalib/util/executor_stats.h>
 
 namespace proton {
 
+/*
+ * This class contains executor stats for the executors used by a
+ * document db.
+ */
 class ExecutorThreadingServiceStats {
 public:
-    using Stats = vespalib::ThreadStackExecutorBase::Stats;
+    using Stats = vespalib::ExecutorStats;
 
 private:
     Stats _masterExecutorStats;
