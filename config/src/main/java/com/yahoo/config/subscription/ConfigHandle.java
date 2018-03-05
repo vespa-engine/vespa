@@ -52,7 +52,7 @@ public class ConfigHandle<T extends ConfigInstance> {
      */
     public T getConfig() {
         // TODO throw if subscriber not frozen?
-        return sub.getConfig();
+        return sub.getConfigState().getConfig();
     }
 
     @Override
