@@ -224,7 +224,7 @@ public:
          join_fun_t function_in)
         : Op2(result_type_in, lhs_in, rhs_in), _function(function_in) {}
     join_fun_t function() const { return _function; }
-    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    InterpretedFunction::Instruction compile_self(Stash &stash) const override;
 };
 
 //-----------------------------------------------------------------------------
