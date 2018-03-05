@@ -6,12 +6,19 @@ import com.yahoo.vespa.model.container.Container;
 import org.junit.Test;
 
 import java.io.StringReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author hmusum
@@ -126,3 +133,4 @@ public class HostsXmlProvisionerTest {
         assertThat(hostSpec.hostname(), is("test1.yahoo.com"));
     }
 }
+

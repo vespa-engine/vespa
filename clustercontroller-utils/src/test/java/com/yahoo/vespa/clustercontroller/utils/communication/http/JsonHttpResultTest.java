@@ -17,12 +17,12 @@ public class JsonHttpResultTest {
     @Test
     public void testOutput() {
         assertEquals("HTTP 200/OK\n"
-                   + "\n"
-                   + "JSON: {\"foo\": 3}",
+                     + "\n"
+                     + "JSON: {\"foo\": 3}",
                      new JsonHttpResult(new HttpResult().setContent("{ \"foo\" : 3 }")).toString(true));
         assertEquals("HTTP 200/OK\n"
-                + "\n"
-                + "{ \"foo\" : }",
+                     + "\n"
+                     + "{ \"foo\" : }",
                 new JsonHttpResult(new HttpResult().setContent("{ \"foo\" : }")).toString(true));
     }
 

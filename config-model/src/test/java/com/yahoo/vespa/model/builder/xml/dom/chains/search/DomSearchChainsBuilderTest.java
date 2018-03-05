@@ -22,19 +22,21 @@ import java.util.List;
 
 import static com.yahoo.container.core.ChainsConfig.Chains;
 import static com.yahoo.container.core.ChainsConfig.Components;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.hamcrest.Matchers.containsString;
 
 /**
  * Test of Search chains builder.
+ *
  * @author tonytv
  */
 public class DomSearchChainsBuilderTest extends DomBuilderTest {
+
     private SearchChains searchChains;
 
     private static final Element element = parse(
@@ -201,4 +203,5 @@ public class DomSearchChainsBuilderTest extends DomBuilderTest {
     private SearchChain getSearchChain(String componentSpecification) {
         return searchChains.allChains().getComponent(new ComponentSpecification(componentSpecification));
     }
+
 }

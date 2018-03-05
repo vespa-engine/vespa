@@ -31,7 +31,6 @@ import org.junit.rules.ExpectedException;
 
 import java.util.List;
 
-import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 

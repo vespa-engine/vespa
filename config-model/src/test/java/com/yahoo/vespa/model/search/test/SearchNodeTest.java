@@ -16,10 +16,9 @@ import org.junit.Test;
 
 import java.util.Optional;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
-
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for search node.
@@ -79,4 +78,5 @@ public class SearchNodeTest {
         Assert.assertThat(node.getPreShutdownCommand().get(),
                 CoreMatchers.containsString("vespa-proton-cmd " + node.getRpcPort() + " prepareRestart"));
     }
+
 }

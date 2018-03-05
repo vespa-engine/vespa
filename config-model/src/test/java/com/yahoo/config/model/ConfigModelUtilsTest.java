@@ -7,13 +7,12 @@ import org.junit.Test;
 import java.io.File;
 import java.util.List;
 
-import static junit.framework.TestCase.fail;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class ConfigModelUtilsTest {
 
@@ -76,4 +75,5 @@ public class ConfigModelUtilsTest {
             assertThat(e.getMessage(), is("Error opening jar file 'invalid.jar'. Please check that this is a valid jar file"));
         }
     }
+
 }

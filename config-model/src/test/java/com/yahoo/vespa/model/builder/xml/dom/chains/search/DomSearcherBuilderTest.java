@@ -7,13 +7,13 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertEquals;
-
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author tonytv
  */
 public class DomSearcherBuilderTest extends DomBuilderTest {
+
     @Test
     public void ensureCorrectModel() {
         ChainedComponent<ChainedComponentModel> searcher = new DomSearcherBuilder().doBuild(root, parse(

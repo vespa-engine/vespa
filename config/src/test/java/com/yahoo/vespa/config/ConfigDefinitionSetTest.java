@@ -3,17 +3,14 @@ package com.yahoo.vespa.config;
 
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertNull;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
 
 /**
  * Class to hold config definitions and resolving requests for the correct definition
  *
  * @author hmusum
- * @since 2011-11-18
  */
 public class ConfigDefinitionSetTest {
 
@@ -29,10 +26,10 @@ public class ConfigDefinitionSetTest {
         configDefinitionSet.add(key2, def2);
         ConfigDefinitionKey key3 = new ConfigDefinitionKey(def3.getName(), def3.getNamespace());
         configDefinitionSet.add(key3, def3);
-        assertThat(configDefinitionSet.size(), is(3));
-        assertThat(configDefinitionSet.get(key1), is(def1));
-        assertThat(configDefinitionSet.get(key2), is(def2));
-        assertThat(configDefinitionSet.get(key3), is(def3));
+        assertEquals(3, configDefinitionSet.size());
+        assertEquals(def1, configDefinitionSet.get(key1));
+        assertEquals(def2, configDefinitionSet.get(key2));
+        assertEquals(def3, configDefinitionSet.get(key3));
 
         String str = configDefinitionSet.toString();
         assertTrue(str.contains("namespace1.foo"));
@@ -50,8 +47,9 @@ public class ConfigDefinitionSetTest {
         configDefinitionSet.add(new ConfigDefinitionKey(def2.getName(), def2.getNamespace()), def2);
 
         // fallback to default namespace
-        assertThat(configDefinitionSet.get(new ConfigDefinitionKey("foo", "namespace")), is(def1));
+        assertEquals(def1, configDefinitionSet.get(new ConfigDefinitionKey("foo", "namespace")));
         // Should not fallback to some other config with same name, but different namespace (not default namespace)
         assertNull(configDefinitionSet.get(new ConfigDefinitionKey("bar", "someothernamespace")));
     }
+
 }

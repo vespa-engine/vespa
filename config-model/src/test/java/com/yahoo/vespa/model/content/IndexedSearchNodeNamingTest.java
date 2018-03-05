@@ -12,10 +12,11 @@ import java.util.List;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createCluster;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createClusterXml;
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Unit tests for the naming of search nodes base dir and config ids in an indexed content cluster.
+ *
  * @author geirst
  */
 public class IndexedSearchNodeNamingTest {

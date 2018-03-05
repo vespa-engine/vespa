@@ -11,15 +11,16 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThat;
 
 /**
  * Test of DomFederationSearcherBuilder.
+ *
  * @author tonytv
  */
 public class DomFederationSearcherBuilderTest extends DomBuilderTest {
@@ -45,9 +46,7 @@ public class DomFederationSearcherBuilderTest extends DomBuilderTest {
         assertEquals(2, model.targets.size());
         assertTrue("source-set option was ignored", model.inheritDefaultSources);
 
-        assertThat(targetNames(model.targets),
-                hasItems("source1", "source2"));
-
+        assertThat(targetNames(model.targets), hasItems("source1", "source2"));
     }
 
     private List<String> targetNames(List<FederationSearcherModel.TargetSpec> targets) {
@@ -74,4 +73,5 @@ public class DomFederationSearcherBuilderTest extends DomBuilderTest {
         searcher.getConfig(builder);
         assertThat(new FederationConfig(builder).targetSelector(), is(targetSelectorId));
     }
+
 }

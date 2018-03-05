@@ -2,14 +2,21 @@
 package com.yahoo.vespa.model.test;
 
 import com.yahoo.vespa.model.PortsMeta;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests proper functioning of the PortsMeta.
  *
- *
  * @author Vidar Larsen
  */
-public class PortsMetaTestCase extends junit.framework.TestCase {
+public class PortsMetaTestCase {
+
+    @Test
     public void testRegister() throws Exception {
         PortsMeta pm = new PortsMeta();
         pm.on(0).tag("foo");
@@ -22,6 +29,8 @@ public class PortsMetaTestCase extends junit.framework.TestCase {
         assertFalse(pm.contains(0, "bar"));
         assertFalse(pm.contains(2, "anything"));
     }
+
+    @Test
     public void testAdminStatusApi() throws Exception {
         PortsMeta pm = new PortsMeta()
                 .on(0).tag("rpc").tag("nc").tag("admin").tag("status")

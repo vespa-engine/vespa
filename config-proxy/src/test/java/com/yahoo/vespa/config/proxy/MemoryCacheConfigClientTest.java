@@ -5,13 +5,12 @@ import org.junit.Test;
 
 import java.util.Collections;
 
-import static junit.framework.TestCase.assertNull;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
  * @author hmusum
- * @since 5.1.9
  */
 public class MemoryCacheConfigClientTest {
 
@@ -26,4 +25,5 @@ public class MemoryCacheConfigClientTest {
         assertThat(client.getActiveSourceConnection(), is("N/A"));
         assertThat(client.getSourceConnections(), is(Collections.singletonList("N/A")));
     }
+
 }

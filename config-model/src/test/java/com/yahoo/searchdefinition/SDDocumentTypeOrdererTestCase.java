@@ -13,12 +13,13 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class SDDocumentTypeOrdererTestCase {
+
     @Test
     public void testOrder() {
         List<SDDocumentType> types = new ArrayList<>();
@@ -73,4 +74,5 @@ public class SDDocumentTypeOrdererTestCase {
         assertEquals(f, app.processingOrder.get(5));
         assertEquals(g, app.processingOrder.get(6));
     }
+
 }

@@ -1,17 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.cache.test;
 
-import junit.framework.TestCase;
-
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.prelude.cache.Cache;
 import com.yahoo.prelude.cache.QueryCacheKey;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class CacheTestCase extends TestCase {
+public class CacheTestCase {
 
     private Result getSomeResult(Query q, String id) {
         Result r = new Result(q);
@@ -19,6 +24,7 @@ public class CacheTestCase extends TestCase {
         return r;
     }
 
+    @Test
     public void testBasicGet() {
         Cache<QueryCacheKey, Result> cache=new Cache<>(100*1024,3600, 100000, Statistics.nullImplementation);
         Query q = new Query("/std_xmls_a00?hits=5&offset=5&query=flowers+shop&tracelevel=4&objid=ffffffffffffffff");
@@ -37,6 +43,7 @@ public class CacheTestCase extends TestCase {
         assertEquals(cache.get(qk), r2);
     }
 
+    @Test
     public void testPutTooLarge() {
         byte[] tenKB = new byte[10*1024];
         for (int i = 0 ; i <10*1024 ; i++) {
@@ -52,6 +59,7 @@ public class CacheTestCase extends TestCase {
         assertEquals(cache.get("foo"), sevenKB);
     }
 
+    @Test
     public void testInvalidate() {
         byte[] tenKB = new byte[10*1024];
         for (int i = 0 ; i <10*1024 ; i++) {
@@ -68,6 +76,7 @@ public class CacheTestCase extends TestCase {
         assertEquals(cache.get("bar"), tenKB);
     }
 
+    @Test
     public void testInvalidateLRU() {
         Cache cache=new Cache(10*1024,3600, 100*1024, Statistics.nullImplementation); // 10 MB
         byte[] fiveKB = new byte[5*1024];
@@ -103,6 +112,7 @@ public class CacheTestCase extends TestCase {
         assertEquals(cache.get("four"), fourKB);
     }
 
+    @Test
     public void testPutSameKey() {
         Cache cache=new Cache(10*1024,3600, 100*1024, Statistics.nullImplementation); // 10 MB
         byte[] fiveKB = new byte[5*1024];
@@ -128,6 +138,7 @@ public class CacheTestCase extends TestCase {
         assertEquals(cache.get("two"), twoKB);
     }
 
+    @Test
     public void testExpire() throws InterruptedException {
         Cache cache=new Cache(10*1024,50, 10000, Statistics.nullImplementation); // 10 KB, 50ms expire
         boolean success = false;
@@ -151,6 +162,7 @@ public class CacheTestCase extends TestCase {
         assertNull(cache.get("hey"));
     }
 
+    @Test
     public void testInsertSame() {
         Cache cache=new Cache(100*1024,500, 100000, Statistics.nullImplementation); // 100 KB, .5 sec expire
         Query q =  new Query("/std_xmls_a00?hits=5&offset=5&query=flowers+shop&tracelevel=4&objid=ffffffffffffffff");
@@ -164,6 +176,7 @@ public class CacheTestCase extends TestCase {
         assertEquals(1, cache.size());
     }
 
+    @Test
     public void testMaxSize() {
         Cache cache=new Cache(20*1024,500, 3*1024, Statistics.nullImplementation);
         byte[] fourKB = new byte[4*1024];

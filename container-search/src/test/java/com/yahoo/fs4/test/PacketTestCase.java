@@ -4,21 +4,24 @@ package com.yahoo.fs4.test;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-import com.yahoo.fs4.*;
+import com.yahoo.fs4.BasicPacket;
+import com.yahoo.fs4.BufferTooSmallException;
+import com.yahoo.fs4.Packet;
+import com.yahoo.fs4.QueryPacket;
 import com.yahoo.search.Query;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.TestCase.*;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests the Packet class.  Specifically made this unit test suite
  * for checking that queries that are too large for the buffer
  * are handled gracefully.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class PacketTestCase {
 
@@ -222,4 +225,5 @@ public class PacketTestCase {
         buffer.flip();
         new MyBasicPacket().decode(buffer);
     }
+
 }

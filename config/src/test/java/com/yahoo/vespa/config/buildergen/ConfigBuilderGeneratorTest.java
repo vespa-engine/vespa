@@ -11,22 +11,19 @@ import com.yahoo.vespa.config.ConfigPayloadApplier;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URISyntaxException;
 
 import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
-import static junit.framework.TestCase.assertNotNull;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class ConfigBuilderGeneratorTest {
+
     @Test
-    public void require_that_custom_classes_can_be_generated() throws URISyntaxException, IOException, ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+    public void require_that_custom_classes_can_be_generated() throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         String[] schema = new String[] {
                 "namespace=foo.bar",
                 "intval int",
@@ -46,6 +43,7 @@ public class ConfigBuilderGeneratorTest {
         String className = createClassName(key.getName());
         ConfigInstance instance = (ConfigInstance) builder.getClass().getClassLoader().loadClass("com.yahoo." + key.getNamespace() + "." + className).getConstructor(new Class<?>[]{builder.getClass()}).newInstance(builder);
         assertNotNull(instance);
-        assertThat(instance.toString(), is("intval 3\nstringval \"Hello, world\""));
+        assertEquals("intval 3\nstringval \"Hello, world\"", instance.toString());
     }
+
 }

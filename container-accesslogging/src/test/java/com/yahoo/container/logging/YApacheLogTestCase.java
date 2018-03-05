@@ -3,6 +3,7 @@ package com.yahoo.container.logging;
 
 import com.yahoo.container.core.AccessLogConfig;
 import org.hamcrest.MatcherAssert;
+import org.junit.Test;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -17,18 +18,20 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author tonytv
  */
-public class YApacheLogTestCase extends junit.framework.TestCase {
+public class YApacheLogTestCase {
 
     private static String ipAddress = "152.200.54.243";
     private static final String EMPTY_REFERRER = "";
     private static final String EMPTY_USERAGENT = "";
 
+    @Test
     public void testIt() throws Exception {
         AccessLogEntry entry = new AccessLogEntry();
         addCommonEntries(entry);
@@ -83,6 +86,7 @@ public class YApacheLogTestCase extends junit.framework.TestCase {
         entry.setRemotePort(12345);
     }
 
+    @Test
     public void test_remote_address_different_from_ip_address() throws Exception {
         AccessLogEntry entry = new AccessLogEntry();
         addCommonEntries(entry);
@@ -93,6 +97,7 @@ public class YApacheLogTestCase extends junit.framework.TestCase {
                 new YApacheFormatter(entry).format());
     }
 
+    @Test
     public void test_remote_address_same_as_ip_address_does_not_cause_double_adding() throws Exception {
         AccessLogEntry entry = new AccessLogEntry();
         addCommonEntries(entry);
@@ -101,6 +106,7 @@ public class YApacheLogTestCase extends junit.framework.TestCase {
         assertThat(new YApacheFormatter(entry).format(), not(containsString(ipAddress)));
     }
 
+    @Test
     public void test_status_code_stored_as_decimal() throws Exception {
         AccessLogEntry entry = new AccessLogEntry();
         addCommonEntries(entry);
@@ -112,6 +118,7 @@ public class YApacheLogTestCase extends junit.framework.TestCase {
     /**
      * author someone-else. Please rewrite this.
      */
+    @Test
     public void testYApacheAccessLogWithDateNamingScheme() {
         AccessLogConfig.Builder builder = new AccessLogConfig.Builder().
                 fileHandler(new AccessLogConfig.FileHandler.Builder().
@@ -154,6 +161,7 @@ public class YApacheLogTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testThatQueryWithEncodedCharactersIsLoggedInEncodedForm() {
         final String query = "%5E%3B%22";
         final AccessLogEntry entry = new AccessLogEntry();
@@ -182,6 +190,7 @@ public class YApacheLogTestCase extends junit.framework.TestCase {
     /**
      * author someone-else. Please rewrite this.
      */
+    @Test
     public void testYApacheAccessLogWithSequenceNamingScheme() throws IOException, InterruptedException {
         // try without existing files
         assertCorrectSequenceBehavior(1);

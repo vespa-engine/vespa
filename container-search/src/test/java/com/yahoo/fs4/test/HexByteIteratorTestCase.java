@@ -3,15 +3,20 @@ package com.yahoo.fs4.test;
 
 import java.nio.ByteBuffer;
 
-import junit.framework.TestCase;
-
 import com.yahoo.fs4.HexByteIterator;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test of HexByteIterator
+ *
  * @author tonytv
  */
-public class HexByteIteratorTestCase extends TestCase {
+public class HexByteIteratorTestCase {
+
+    @Test
     public void testHexByteIterator() {
         int[] numbers = { 0x00, 0x01, 0xDE, 0xAD, 0xBE, 0xEF, 0xFF };
 

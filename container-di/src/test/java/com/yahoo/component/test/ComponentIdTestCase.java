@@ -2,13 +2,16 @@
 package com.yahoo.component.test;
 
 import com.yahoo.component.ComponentId;
-import junit.framework.TestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
  */
-public class ComponentIdTestCase extends TestCase {
+public class ComponentIdTestCase {
 
+    @Test
     public void testFileNameConversion() {
         assertFileNameEquals("a","a");
         assertFileNameEquals("a-1","a-1");
@@ -28,6 +31,7 @@ public class ComponentIdTestCase extends TestCase {
                      expected,ComponentId.fromFileName(initial).toFileName());
     }
 
+    @Test
     public void testCompareWithNameSpace() {
         ComponentId withNS = ComponentId.fromString("foo@ns");
         ComponentId withoutNS = ComponentId.fromString("foo"); // Should be less than withNs

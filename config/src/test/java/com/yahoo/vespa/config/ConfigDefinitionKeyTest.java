@@ -3,11 +3,7 @@ package com.yahoo.vespa.config;
 
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertFalse;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
+import static org.junit.Assert.*;
 
 /**
  * Tests ConfigDefinitionKey
@@ -21,8 +17,8 @@ public class ConfigDefinitionKeyTest {
         ConfigDefinitionKey def1 = new ConfigDefinitionKey("foo", "fuz");
         ConfigDefinitionKey def2 = new ConfigDefinitionKey("foo", "bar");
 
-        assertThat(def1.getName(), is("foo"));
-        assertThat(def1.getNamespace(), is("fuz"));
+        assertEquals("foo", def1.getName());
+        assertEquals("fuz", def1.getNamespace());
 
         assertTrue(def1.equals(def1));
         assertFalse(def1.equals(def2));
@@ -35,8 +31,8 @@ public class ConfigDefinitionKeyTest {
         ConfigKey<?> key1 = new ConfigKey<>("foo", "id", "bar");
         ConfigDefinitionKey def1 = new ConfigDefinitionKey(key1);
 
-        assertThat(def1.getName(), is(key1.getName()));
-        assertThat(def1.getNamespace(), is(key1.getNamespace()));
+        assertEquals(key1.getName(), def1.getName());
+        assertEquals(key1.getNamespace(), def1.getNamespace());
     }
 
 }

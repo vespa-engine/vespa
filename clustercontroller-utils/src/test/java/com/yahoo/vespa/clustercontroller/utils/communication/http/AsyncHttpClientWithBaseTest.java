@@ -7,7 +7,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class AsyncHttpClientWithBaseTest {
 
@@ -46,9 +46,9 @@ public class AsyncHttpClientWithBaseTest {
 
     @Test
     public void testClientMustBeSet() {
-        try {
+        try{
             new AsyncHttpClientWithBase<>(null);
-            assertTrue(false);
+            fail();
         } catch (IllegalArgumentException e) {
         }
     }

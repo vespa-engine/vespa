@@ -1,13 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.component;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
-public class ComponentSpecTestCase extends TestCase {
+public class ComponentSpecTestCase {
 
+    @Test
     public void testMatches() {
         ComponentId a = new ComponentId("test:1");
         ComponentId b = new ComponentId("test:1.1.1");
@@ -46,6 +51,7 @@ public class ComponentSpecTestCase extends TestCase {
 
     }
 
+    @Test
     public void testMatchesWithNamespace() {
         ComponentId namespace = new ComponentId("namespace:2");
 
@@ -61,6 +67,7 @@ public class ComponentSpecTestCase extends TestCase {
         assertFalse(spec.matches(c));
     }
 
+    @Test
     public void testStringValue() {
         assertStringValueEqualsInputSpec("a:1.0.0.alpha@namespace");
         assertStringValueEqualsInputSpec("a:1.0.0.alpha");
@@ -72,4 +79,5 @@ public class ComponentSpecTestCase extends TestCase {
         assertEquals(componentSpec,
                 new ComponentSpecification(componentSpec).stringValue());
     }
+
 }
