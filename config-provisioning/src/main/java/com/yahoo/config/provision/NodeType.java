@@ -14,6 +14,9 @@ public enum NodeType {
     /** Nodes running the shared proxy layer */
     proxy(false),
 
+    /** A host of a (docker) proxy node */
+    proxyhost(true),
+
     /** A node to be assigned to a tenant to run application workloads */
     tenant(false),
 
