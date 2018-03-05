@@ -2,6 +2,7 @@
 
 #include "executorthreadingservice.h"
 #include <vespa/vespalib/util/executor.h>
+#include "executor_threading_service_stats.h"
 
 using vespalib::ThreadStackExecutorBase;
 
@@ -66,6 +67,17 @@ ExecutorThreadingService::setTaskLimit(uint32_t taskLimit, uint32_t summaryTaskL
     _indexFieldInverter.setTaskLimit(taskLimit);
     _indexFieldWriter.setTaskLimit(taskLimit);
     _attributeFieldWriter.setTaskLimit(taskLimit);
+}
+
+ExecutorThreadingServiceStats
+ExecutorThreadingService::getStats()
+{
+    return ExecutorThreadingServiceStats(_masterExecutor.getStats(),
+                                         _indexExecutor.getStats(),
+                                         _summaryExecutor.getStats(),
+                                         _indexFieldInverter.getStats(),
+                                         _indexFieldWriter.getStats(),
+                                         _attributeFieldWriter.getStats());
 }
 
 } // namespace proton

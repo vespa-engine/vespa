@@ -9,6 +9,8 @@
 
 namespace proton {
 
+class ExecutorThreadingServiceStats;
+
 /**
  * Implementation of IThreadingService using 2 underlying thread stack executors
  * with 1 thread each.
@@ -83,6 +85,8 @@ public:
     virtual search::ISequencedTaskExecutor &attributeFieldWriter() override {
         return _attributeFieldWriter;
     }
+
+    ExecutorThreadingServiceStats getStats();
 };
 
 } // namespace proton
