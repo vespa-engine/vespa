@@ -92,7 +92,8 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docType
       index(this),
       ready("ready", this),
       notReady("notready", this),
-      removed("removed", this)
+      removed("removed", this),
+      threadingService("threading_service", this)
 { }
 
 DocumentDBTaggedMetrics::~DocumentDBTaggedMetrics() { }

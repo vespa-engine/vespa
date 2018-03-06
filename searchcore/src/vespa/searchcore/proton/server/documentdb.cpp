@@ -1270,8 +1270,9 @@ updateMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics)
 }
 
 void
-DocumentDB::updateMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &)
+DocumentDB::updateMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats)
 {
+    metrics.threadingService.update(threadingServiceStats);
     _jobTrackers.updateMetrics(metrics.job);
 
     updateMetrics(metrics.attribute);
