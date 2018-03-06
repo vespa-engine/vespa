@@ -110,6 +110,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
         model.smallConstants().forEach((k, v) -> transformSmallConstant(store, profile, k, v));
         model.largeConstants().forEach((k, v) -> transformLargeConstant(store, profile, k, v));
+        model.macros().forEach((k, v) -> transformMacro(store, profile, k, v));
 
         return expression.getRoot();
     }
@@ -121,6 +122,10 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         for (RankingConstant constant : store.readLargeConstants()) {
             if ( ! profile.getSearch().getRankingConstants().containsKey(constant.getName()))
                 profile.getSearch().addRankingConstant(constant);
+        }
+
+        for (Pair<String, RankingExpression> macro : store.readMacros()) {
+            addMacroToProfile(profile, macro.getFirst(), macro.getSecond());
         }
 
         return store.readConverted().getRoot();
@@ -192,6 +197,21 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             profile.getSearch().addRankingConstant(new RankingConstant(constantName, constantValue.type(),
                                                                        constantPath.toString()));
         }
+    }
+
+    private void transformMacro(ModelStore store, RankProfile profile, String macroName, RankingExpression expression) {
+        store.writeMacro(macroName, expression);
+        addMacroToProfile(profile, macroName, expression);
+    }
+
+    private void addMacroToProfile(RankProfile profile, String macroName, RankingExpression expression) {
+        if (profile.getMacros().containsKey(macroName)) {
+            throw new IllegalArgumentException("Generated TensorFlow macro '" + macroName + "' already exists.");
+        }
+        profile.addMacro(macroName, false);  // todo: inline if only used once
+        RankProfile.Macro macro = profile.getMacros().get(macroName);
+        macro.setRankingExpression(expression);
+        macro.setTextualExpression(expression.getRoot().toString());
     }
 
     private String skippedOutputsDescription(TensorFlowModel.Signature signature) {
@@ -382,6 +402,39 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             }
         }
 
+        /** Adds this macro expression to the application package to it can be read later. */
+        public void writeMacro(String name, RankingExpression expression) {
+            application.getFile(arguments.macrosPath()).appendFile(name + "\t" +
+                    expression.getRoot().toString() + "\n");
+        }
+
+        /** Reads the previously stored macro expressions for these arguments */
+        public List<Pair<String, RankingExpression>> readMacros() {
+            try {
+                ApplicationFile file = application.getFile(arguments.macrosPath());
+                if (!file.exists()) return Collections.emptyList();
+
+                List<Pair<String, RankingExpression>> macros = new ArrayList<>();
+                BufferedReader reader = new BufferedReader(file.createReader());
+                String line;
+                while (null != (line = reader.readLine())) {
+                    String[] parts = line.split("\t");
+                    String name = parts[0];
+                    try {
+                        RankingExpression expression = new RankingExpression(parts[1]);
+                        macros.add(new Pair<>(name, expression));
+                    }
+                    catch (ParseException e) {
+                        throw new IllegalStateException("Could not parse " + arguments.expressionPath(), e);
+                    }
+                }
+                return macros;
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
         /**
          * Reads the information about all the large (aka ranking) constants stored in the application package
          * (the constant value itself is replicated with file distribution).
@@ -510,8 +563,13 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR.append(modelPath).append("constants");
         }
 
+        /** Path to the macros file */
+        public Path macrosPath() {
+            return ApplicationPackage.MODELS_GENERATED_DIR.append(modelPath).append("macros.txt");
+        }
+
         public Path expressionPath() {
-            return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR
+            return ApplicationPackage.MODELS_GENERATED_DIR
                     .append(modelPath).append("expressions").append(expressionFileName());
         }
 

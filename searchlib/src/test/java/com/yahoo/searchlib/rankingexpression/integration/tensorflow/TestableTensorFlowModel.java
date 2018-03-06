@@ -1,10 +1,14 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow;
 
+import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.TensorConverter;
+import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
+import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
+import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.tensorflow.SavedModelBundle;
@@ -42,6 +46,9 @@ public class TestableTensorFlowModel {
         Context context = contextFrom(model);
         Tensor placeholder = placeholderArgument();
         context.put(inputName, new TensorValue(placeholder));
+
+        model.macros().forEach((k,v) -> evaluateMacro(context, model, k));
+
         Tensor vespaResult = model.expressions().get(operationName).evaluate(context).asTensor();
         assertEquals("Operation '" + operationName + "' produces equal results", tfResult, vespaResult);
     }
@@ -72,6 +79,28 @@ public class TestableTensorFlowModel {
             for (int d1 = 0; d1 < d1Size; d1++)
                 b.cell(d1 * 1.0 / d1Size, d0, d1);
         return b.build();
+    }
+
+    private void evaluateMacro(Context context, TensorFlowModel model, String macroName) {
+        if (!context.names().contains(macroName)) {
+            RankingExpression e = model.macros().get(macroName);
+            evaluateMacroDependencies(context, model, e.getRoot());
+            context.put(macroName, new TensorValue(e.evaluate(context).asTensor()));
+        }
+    }
+
+    private void evaluateMacroDependencies(Context context, TensorFlowModel model, ExpressionNode node) {
+        if (node instanceof ReferenceNode) {
+            String name = node.toString();
+            if (model.macros().containsKey(name)) {
+                evaluateMacro(context, model, name);
+            }
+        }
+        else if (node instanceof CompositeNode) {
+            for (ExpressionNode child : ((CompositeNode)node).children()) {
+                evaluateMacroDependencies(context, model, child);
+            }
+        }
     }
 
 }
