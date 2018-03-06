@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.serviceview;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import com.yahoo.container.jaxrs.annotation.Component;
+import com.yahoo.vespa.serviceview.bindings.ApplicationView;
+import com.yahoo.vespa.serviceview.bindings.ConfigClient;
+import com.yahoo.vespa.serviceview.bindings.HealthClient;
+import com.yahoo.vespa.serviceview.bindings.ModelResponse;
+import com.yahoo.vespa.serviceview.bindings.StateClient;
+import org.glassfish.jersey.client.proxy.WebResourceFactory;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -14,19 +15,20 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
-import com.yahoo.container.jaxrs.annotation.Component;
-import com.yahoo.vespa.serviceview.bindings.ApplicationView;
-import com.yahoo.vespa.serviceview.bindings.ConfigClient;
-import com.yahoo.vespa.serviceview.bindings.HealthClient;
-import com.yahoo.vespa.serviceview.bindings.ModelResponse;
-import com.yahoo.vespa.serviceview.bindings.StateClient;
-
-import org.glassfish.jersey.client.proxy.WebResourceFactory;
+import static java.util.Collections.singletonList;
 
 
 /**
@@ -37,7 +39,9 @@ import org.glassfish.jersey.client.proxy.WebResourceFactory;
 @Path("/")
 public class StateResource implements StateClient {
 
+    private static final String USER_AGENT = "service-view-config-server-client";
     private static final String SINGLE_API_LINK = "url";
+
     private final int restApiPort;
     private final String host;
     private final UriInfo uriInfo;
@@ -55,7 +59,7 @@ public class StateResource implements StateClient {
 
     public StateResource(@Component ConfigServerLocation configServer, @Context UriInfo ui) {
         this.restApiPort = configServer.restApiPort;
-        host = "localhost";
+        this.host = "localhost";
         this.uriInfo = ui;
     }
 
@@ -87,7 +91,7 @@ public class StateResource implements StateClient {
     @Produces(MediaType.TEXT_HTML)
     public interface HtmlProxyHack {
         @GET
-        public String proxy();
+        String proxy();
     }
 
     @GET
@@ -103,7 +107,7 @@ public class StateResource implements StateClient {
         ServiceModel model = new ServiceModel(getModelConfig(tenantName, applicationName, environmentName, regionName, instanceName));
         Service s = model.getService(identifier);
         int requestedPort = s.matchIdentifierWithPort(identifier);
-        Client client = ClientBuilder.newClient();
+        Client client = client();
         try {
             final StringBuilder uriBuffer = new StringBuilder("http://").append(s.host).append(':').append(requestedPort).append('/')
                     .append(apiParams);
@@ -113,9 +117,7 @@ public class StateResource implements StateClient {
             HtmlProxyHack resource = WebResourceFactory.newResource(HtmlProxyHack.class, target);
             return resource.proxy();
         } finally {
-            if (client != null) {
-                client.close();
-            }
+            client.close();
         }
     }
 
@@ -129,17 +131,13 @@ public class StateResource implements StateClient {
     }
 
     protected ModelResponse getModelConfig(String tenant, String application, String environment, String region, String instance) {
-        Client client = ClientBuilder.newClient();
+        Client client = client();
         try {
             WebTarget target = client.target("http://" + host + ":" + restApiPort + "/");
-
             ConfigClient resource = WebResourceFactory.newResource(ConfigClient.class, target);
-
             return resource.getServiceModel(tenant, application, environment, region, instance);
         } finally {
-            if (client != null) {
-                client.close();
-            }
+            client.close();
         }
     }
 
@@ -158,16 +156,14 @@ public class StateResource implements StateClient {
         ServiceModel model = new ServiceModel(getModelConfig(tenantName, applicationName, environmentName, regionName, instanceName));
         Service s = model.getService(identifier);
         int requestedPort = s.matchIdentifierWithPort(identifier);
-        Client client = ClientBuilder.newClient();
+        Client client = client();
         try {
             HealthClient resource = getHealthClient(apiParams, s, requestedPort, client);
             HashMap<?, ?> apiResult = resource.getHealthInfo();
             rewriteResourceLinks(apiResult, model, s, applicationIdentifier(tenantName, applicationName, environmentName, regionName, instanceName), identifier);
             return apiResult;
         } finally {
-            if (client != null) {
-                client.close();
-            }
+            client.close();
         }
     }
 
@@ -180,8 +176,11 @@ public class StateResource implements StateClient {
     }
 
     private String applicationIdentifier(String tenant, String application, String environment, String region, String instance) {
-        return new StringBuilder("tenant/").append(tenant).append("/application/").append(application).append("/environment/")
-                .append(environment).append("/region/").append(region).append("/instance/").append(instance).toString();
+        return "tenant/" + tenant
+               + "/application/" + application
+               + "/environment/" + environment
+               + "/region/" + region
+               + "/instance/" + instance;
     }
 
     private void rewriteResourceLinks(Object apiResult,
@@ -277,6 +276,13 @@ public class StateResource implements StateClient {
         }
         newUri.append("/service/").append(s.getIdentifier(linkPort));
         newUri.append(link.getRawPath());
+    }
+
+    private static Client client() {
+        return ClientBuilder.newBuilder()
+                            .register((ClientRequestFilter) ctx -> ctx.getHeaders().put(HttpHeaders.USER_AGENT,
+                                                                                        singletonList(USER_AGENT)))
+                            .build();
     }
 
 }

@@ -167,7 +167,7 @@ public class Authorizer implements BiPredicate<Principal, URI> {
             path = path.substring(0, path.length() - 1);
         }
         int lastSeparator = path.lastIndexOf("/");
-        if (lastSeparator == - 1) {
+        if (lastSeparator == -1) {
             return path;
         }
         return path.substring(lastSeparator + 1, path.length());

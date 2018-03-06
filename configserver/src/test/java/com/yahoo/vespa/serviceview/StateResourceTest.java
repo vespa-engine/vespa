@@ -1,33 +1,31 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.serviceview;
 
-import static org.junit.Assert.*;
-
-import java.net.URI;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.UriInfo;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.HealthClient;
 import com.yahoo.vespa.serviceview.bindings.ModelResponse;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.UriInfo;
+import java.net.URI;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Functional test for {@link StateResource}.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class StateResourceTest {
 
@@ -51,14 +49,14 @@ public class StateResourceTest {
             HashMap<Object, Object> dummyHealthData = new HashMap<>();
             HashMap<String, String> dummyLink = new HashMap<>();
             dummyLink.put("url", BASE_URI);
-            dummyHealthData.put("resources", Arrays.asList(dummyLink));
+            dummyHealthData.put("resources", Collections.singletonList(dummyLink));
             Mockito.when(healthClient.getHealthInfo()).thenReturn(dummyHealthData);
             return healthClient;
         }
     }
 
-    StateResource testResource;
-    ServiceModel correspondingModel;
+    private StateResource testResource;
+    private ServiceModel correspondingModel;
 
     @Before
     public void setUp() throws Exception {
@@ -70,7 +68,7 @@ public class StateResourceTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         testResource = null;
         correspondingModel = null;
     }

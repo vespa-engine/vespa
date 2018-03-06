@@ -1,32 +1,33 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.serviceview;
 
-import static org.junit.Assert.*;
-
-import java.util.Arrays;
-
 import com.yahoo.vespa.defaults.Defaults;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.HostService;
 import com.yahoo.vespa.serviceview.bindings.ModelResponse;
 import com.yahoo.vespa.serviceview.bindings.ServicePort;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Functional tests for the programmatic view of cloud.config.model.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class ServiceModelTest {
 
-    ServiceModel model;
+    private ServiceModel model;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         ModelResponse model = syntheticModelResponse();
         this.model = new ServiceModel(model);
     }
@@ -46,7 +47,7 @@ public class ServiceModelTest {
             ServicePort port = new ServicePort();
             port.number = Defaults.getDefaults().vespaWebServicePort();
             port.tags = "state http";
-            service0.ports = Arrays.asList(new ServicePort[] { port });
+            service0.ports = Collections.singletonList(port);
         }
         com.yahoo.vespa.serviceview.bindings.Service service1 = new com.yahoo.vespa.serviceview.bindings.Service();
         {
@@ -59,7 +60,7 @@ public class ServiceModelTest {
             ServicePort port = new ServicePort();
             port.number = 4090;
             port.tags = "state http";
-            service1.ports = Arrays.asList(new ServicePort[] { port });
+            service1.ports = Collections.singletonList(port);
         }
         com.yahoo.vespa.serviceview.bindings.Service service2 = new com.yahoo.vespa.serviceview.bindings.Service();
         {
@@ -72,15 +73,15 @@ public class ServiceModelTest {
             ServicePort port = new ServicePort();
             port.number = 5000;
             port.tags = "state http";
-            service2.ports = Arrays.asList(new ServicePort[] { port });
+            service2.ports = Collections.singletonList(port);
         }
-        h.services = Arrays.asList(new com.yahoo.vespa.serviceview.bindings.Service[] { service0, service1, service2 });
-        model.hosts = Arrays.asList(new HostService[] { h });
+        h.services = Arrays.asList(service0, service1, service2);
+        model.hosts = Collections.singletonList(h);
         return model;
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         model = null;
     }
 
