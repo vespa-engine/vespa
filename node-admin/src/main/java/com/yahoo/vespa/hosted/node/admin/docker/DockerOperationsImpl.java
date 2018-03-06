@@ -99,14 +99,14 @@ public class DockerOperationsImpl implements DockerOperations {
                 Inet6Address ipV6Address = this.retriever.getIPv6Address(nodeSpec.hostname).orElseThrow(
                         () -> new RuntimeException("Unable to find a valid IPv6 address. Missing an AAAA DNS entry?"));
                 InetAddress ipV6Prefix = InetAddress.getByName(IPV6_NPT_PREFIX);
-                InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 64);
+                InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 8);
                 command.withIpAddress(ipV6Local);
 
                 // IPv4 - Only present for some containers
                 Optional<Inet4Address> ipV4Address = this.retriever.getIPv4Address(nodeSpec.hostname);
                 if (ipV4Address.isPresent()) {
                     InetAddress ipV4Prefix = InetAddress.getByName(IPV4_NPT_PREFIX);
-                    InetAddress ipV4Local = IPAddresses.prefixTranslate(ipV4Address.get(), ipV4Prefix, 16);
+                    InetAddress ipV4Local = IPAddresses.prefixTranslate(ipV4Address.get(), ipV4Prefix, 2);
                     command.withIpAddress(ipV4Local);
                 }
 

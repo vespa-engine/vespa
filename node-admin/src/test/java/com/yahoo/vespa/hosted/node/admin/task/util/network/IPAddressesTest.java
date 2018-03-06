@@ -21,7 +21,7 @@ public class IPAddressesTest {
                 .addAddress("localhost", "fe80::1")
                 .addAddress("localhost", "2001::1");
 
-        Assert.assertEquals("10.0.2.2", mock.getIPv4Address("localhost"));
+        Assert.assertTrue(equals("10.0.2.2", mock.getIPv4Address("localhost").get()));
     }
 
     @Test
@@ -31,7 +31,7 @@ public class IPAddressesTest {
                 .addAddress("localhost", "fe80::1")
                 .addAddress("localhost", "2001::1");
 
-        Assert.assertEquals("2001::1", mock.getIPv6Address("localhost"));
+        Assert.assertTrue(equals("2001::1", mock.getIPv6Address("localhost").get()));
     }
 
     @Test(expected = RuntimeException.class)
@@ -55,17 +55,25 @@ public class IPAddressesTest {
         // Test simplest possible address
         Inet6Address original = (Inet6Address) InetAddress.getByName("2001:db8::1");
         Inet6Address prefix = (Inet6Address) InetAddress.getByName("fd00::");
-        InetAddress translated = IPAddresses.prefixTranslate(original, prefix, 64);
+        InetAddress translated = IPAddresses.prefixTranslate(original, prefix, 8);
         Assert.assertEquals("fd00:0:0:0:0:0:0:1", translated.getHostAddress());
 
 
         // Test an actual aws address we use
         original = (Inet6Address) InetAddress.getByName("2600:1f16:f34:5300:ccc6:1703:b7c2:369d");
-        translated = IPAddresses.prefixTranslate(original, prefix, 64);
+        translated = IPAddresses.prefixTranslate(original, prefix, 8);
         Assert.assertEquals("fd00:0:0:0:ccc6:1703:b7c2:369d", translated.getHostAddress());
 
         // Test different subnet size
-        translated = IPAddresses.prefixTranslate(original, prefix, 48);
+        translated = IPAddresses.prefixTranslate(original, prefix, 6);
         Assert.assertEquals("fd00:0:0:5300:ccc6:1703:b7c2:369d", translated.getHostAddress());
+    }
+
+    boolean equals(String a, InetAddress b) {
+        try {
+            return InetAddress.getByName(a).equals(b);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
