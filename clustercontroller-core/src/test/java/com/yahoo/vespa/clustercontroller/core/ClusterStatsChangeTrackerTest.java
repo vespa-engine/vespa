@@ -15,7 +15,7 @@ public class ClusterStatsChangeTrackerTest {
 
         public Fixture() {
             aggregator = new ClusterStatsAggregator(Sets.newHashSet(1), Sets.newHashSet(2));
-            tracker = new ClusterStatsChangeTracker(aggregator);
+            tracker = new ClusterStatsChangeTracker(aggregator.getAggregatedStats());
         }
 
         public void setBucketsPendingStats() {
@@ -31,9 +31,9 @@ public class ClusterStatsChangeTrackerTest {
                     .add(2, "global", 5, bucketsPending).build());
         }
 
-        public void updateAggregator() {
+        public void updateAggregatedStats() {
             aggregator = new ClusterStatsAggregator(Sets.newHashSet(1), Sets.newHashSet(2));
-            tracker.updateAggregator(aggregator);
+            tracker.updateAggregatedStats(aggregator.getAggregatedStats());
         }
 
         public boolean statsHaveChanged() {
@@ -57,7 +57,7 @@ public class ClusterStatsChangeTrackerTest {
         f.setBucketsPendingStats();
         assertTrue(f.statsHaveChanged());
 
-        f.updateAggregator(); // previous stats may now have buckets pending
+        f.updateAggregatedStats(); // previous stats may now have buckets pending
 
         f.setInSyncStats();
         assertTrue(f.statsHaveChanged());

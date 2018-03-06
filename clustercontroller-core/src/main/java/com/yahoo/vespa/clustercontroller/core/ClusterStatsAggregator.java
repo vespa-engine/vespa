@@ -46,8 +46,20 @@ public class ClusterStatsAggregator {
         aggregatedStats = new ContentClusterStats(storageNodes);
     }
 
-    public ContentClusterStats getAggregatedStats() {
-        return aggregatedStats;
+    public AggregatedClusterStats getAggregatedStats() {
+        return new AggregatedClusterStats() {
+
+            @Override
+            public boolean hasUpdatesFromAllDistributors() {
+                return nonUpdatedDistributors.isEmpty();
+            }
+
+            @Override
+            public ContentClusterStats getStats() {
+                return aggregatedStats;
+            }
+
+        };
     }
 
     public ContentNodeStats getAggregatedStatsForDistributor(int distributorIndex) {
@@ -61,26 +73,8 @@ public class ClusterStatsAggregator {
         return result;
     }
 
-    boolean hasUpdatesFromAllDistributors() {
-        return nonUpdatedDistributors.isEmpty();
-    }
-
-    boolean mayHaveBucketsPendingInGlobalSpace() {
-        if (!hasUpdatesFromAllDistributors()) {
-            return true;
-        }
-        MergePendingChecker checker = createMergePendingChecker();
-        for (Iterator<ContentNodeStats> itr = aggregatedStats.iterator(); itr.hasNext(); ) {
-            ContentNodeStats stats = itr.next();
-            if (checker.mayHaveMergesPending(FixedBucketSpaces.globalSpace(), stats.getNodeIndex())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     MergePendingChecker createMergePendingChecker() {
-        return new AggregatedStatsMergePendingChecker(aggregatedStats);
+        return new AggregatedStatsMergePendingChecker(getAggregatedStats());
     }
 
     /**
