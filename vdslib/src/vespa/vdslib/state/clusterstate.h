@@ -36,9 +36,7 @@ public:
 
     ClusterState();
     ClusterState(const ClusterState&);
-    // FIXME make ClusterState parsing not require null termination of string,
-    // then move to vespalib::stringref
-    explicit ClusterState(const vespalib::string& serialized);
+    explicit ClusterState(const vespalib::stringref & serialized);
     ~ClusterState();
 
     std::string getTextualDifference(const ClusterState& other) const;
