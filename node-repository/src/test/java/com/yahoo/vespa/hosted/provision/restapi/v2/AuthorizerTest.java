@@ -136,6 +136,16 @@ public class AuthorizerTest {
         assertTrue(authorized("proxy1", "/routing/v1/status"));
     }
 
+    @Test
+    public void athenz_authorization() {
+        assertFalse(authorized("node1", "/athenz/v1/provider/identity-document?hostname=node2"));
+        assertTrue(authorized("node1", "/athenz/v1/provider/identity-document?hostname=node1"));
+
+        // Host can access own child
+        assertFalse(authorized("host1", "/athenz/v1/provider/identity-document?hostname=child2-1"));
+        assertTrue(authorized("host1", "/athenz/v1/provider/identity-document?hostname=child1-1"));
+    }
+
     private boolean authorized(String principal, String path) {
         return authorizer.test(() -> principal, uri(path));
     }
