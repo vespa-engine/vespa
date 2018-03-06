@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesImpl;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
 
@@ -65,7 +66,7 @@ public class DockerTester implements AutoCloseable {
                 .pathResolver(new PathResolver(pathToVespaHome, Paths.get("/tmp"), Paths.get("/tmp")))
                 .build();
         Clock clock = Clock.systemUTC();
-        DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, null);
+        DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, null, new IPAddressesImpl());
         StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(dockerOperations, null, environment, callOrderVerifier, clock);
         AclMaintainer aclMaintainer = mock(AclMaintainer.class);
 

@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -34,7 +35,9 @@ public class DockerOperationsImplTest {
             .build();
     private final Docker docker = mock(Docker.class);
     private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
-    private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment, processExecuter);
+    private final IPAddressesMock addressesMock = new IPAddressesMock();
+    private final DockerOperationsImpl dockerOperations
+            = new DockerOperationsImpl(docker, environment, processExecuter, addressesMock);
 
     @Test
     public void processResultFromNodeProgramWhenSuccess() throws Exception {
