@@ -2,7 +2,6 @@
 #include "fnetlistener.h"
 #include "communicationmanager.h"
 #include "rpcrequestwrapper.h"
-#include "slime_cluster_state_bundle_codec.h"
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/host_name.h>
@@ -10,12 +9,13 @@
 #include <sstream>
 
 #include <vespa/log/log.h>
+
 LOG_SETUP(".rpc.listener");
 
 namespace storage {
 
-FNetListener::FNetListener(MessageEnqueuer& messageEnqueuer, const config::ConfigUri & configUri, uint32_t port)
-    : _messageEnqueuer(messageEnqueuer),
+FNetListener::FNetListener(CommunicationManager& comManager, const config::ConfigUri & configUri, uint32_t port)
+    : _comManager(comManager),
       _orb(std::make_unique<FRT_Supervisor>()),
       _closed(false),
       _slobrokRegister(*_orb, configUri)
@@ -86,12 +86,6 @@ FNetListener::initRPC()
     rb.MethodDesc("Set systemstate on this node");
     rb.ParamDesc("systemstate", "New systemstate to set");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("setdistributionstates", "bix", "", true, FRT_METHOD(FNetListener::RPC_setDistributionStates), this);
-    rb.MethodDesc("Set distribution states for cluster and bucket spaces");
-    rb.ParamDesc("compressionType", "Compression type for payload");
-    rb.ParamDesc("uncompressedSize", "Uncompressed size for payload");
-    rb.ParamDesc("payload", "Binary Slime format payload");
-    //-------------------------------------------------------------------------
     rb.DefineMethod("getcurrenttime", "", "lis", true, FRT_METHOD(FNetListener::RPC_getCurrentTime), this);
     rb.MethodDesc("Get current time on this node");
     rb.ReturnDesc("seconds", "Current time in seconds since epoch");
@@ -119,13 +113,6 @@ FNetListener::RPC_getCurrentTime(FRT_RPCRequest *req)
     return;
 }
 
-void FNetListener::detach_and_forward_to_enqueuer(std::shared_ptr<api::StorageMessage> cmd, FRT_RPCRequest *req) {
-    // Create a request object to avoid needing a separate transport type
-    cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::make_unique<RPCRequestWrapper>(req)));
-    req->Detach();
-    _messageEnqueuer.enqueue(std::move(cmd));
-}
-
 void
 FNetListener::RPC_getNodeState2(FRT_RPCRequest *req)
 {
@@ -147,7 +134,10 @@ FNetListener::RPC_getNodeState2(FRT_RPCRequest *req)
     if (req->GetParams()->GetNumValues() > 2) {
         cmd->setSourceIndex(req->GetParams()->GetValue(2)._intval32);
     }
-    detach_and_forward_to_enqueuer(std::move(cmd), req);
+        // Create a request object to avoid needing a separate transport type
+    cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::make_unique<RPCRequestWrapper>(req)));
+    req->Detach();
+    _comManager.enqueue(std::move(cmd));
 }
 
 void
@@ -165,50 +155,10 @@ FNetListener::RPC_setSystemState2(FRT_RPCRequest *req)
     auto cmd(std::make_shared<api::SetSystemStateCommand>(lib::ClusterStateBundle(systemState)));
     cmd->setPriority(api::StorageMessage::VERYHIGH);
 
-    detach_and_forward_to_enqueuer(std::move(cmd), req);
-}
-
-namespace {
-
-std::shared_ptr<const lib::ClusterStateBundle> decode_bundle_from_params(const FRT_Values& params) {
-    const uint32_t uncompressed_length = params[1]._intval32;
-    if (uncompressed_length > FNetListener::StateBundleMaxUncompressedSize) {
-        throw std::range_error(vespalib::make_string("RPC ClusterStateBundle uncompressed size (%u) is "
-                                                     "greater than max size (%u)", uncompressed_length,
-                                                     FNetListener::StateBundleMaxUncompressedSize));
-    }
-    SlimeClusterStateBundleCodec codec;
-    EncodedClusterStateBundle encoded_bundle;
-    encoded_bundle._compression_type = vespalib::compression::CompressionConfig::toType(params[0]._intval8);
-    encoded_bundle._uncompressed_length = uncompressed_length;
-    // Caution: type cast to const ptr is essential or DataBuffer behavior changes!
-    encoded_bundle._buffer = std::make_unique<vespalib::DataBuffer>(
-            static_cast<const char*>(params[2]._data._buf), params[2]._data._len);
-    return codec.decode(encoded_bundle);
-}
-
-}
-
-void FNetListener::RPC_setDistributionStates(FRT_RPCRequest* req) {
-    if (_closed) {
-        LOG(debug, "Not handling RPC call setDistributionStates() as we have closed");
-        req->SetError(RPCRequestWrapper::ERR_NODE_SHUTTING_DOWN, "Node shutting down");
-        return;
-    }
-    std::shared_ptr<const lib::ClusterStateBundle> state_bundle;
-    try {
-        state_bundle = decode_bundle_from_params(*req->GetParams());
-    } catch (std::exception& e) {
-        LOG(error, "setDistributionStates RPC failed decoding: %s", e.what());
-        req->SetError(RPCRequestWrapper::ERR_BAD_REQUEST, e.what());
-        return;
-    }
-
-    // TODO add constructor taking in shared_ptr directly instead?
-    auto cmd = std::make_shared<api::SetSystemStateCommand>(*state_bundle);
-    cmd->setPriority(api::StorageMessage::VERYHIGH);
-
-    detach_and_forward_to_enqueuer(std::move(cmd), req);
+    // Create a request object to avoid needing a separate transport type
+    cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::make_unique<RPCRequestWrapper>(req)));
+    req->Detach();
+    _comManager.enqueue(std::move(cmd));
 }
 
 }

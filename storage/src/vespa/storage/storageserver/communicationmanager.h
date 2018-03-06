@@ -12,7 +12,6 @@
 
 #include "communicationmanagermetrics.h"
 #include "documentapiconverter.h"
-#include "message_enqueuer.h"
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/config/config-stor-communicationmanager.h>
@@ -86,14 +85,12 @@ public:
     std::unique_ptr<RPCRequestWrapper>            _request;
 };
 
-class CommunicationManager final
-    : public StorageLink,
-      public framework::Runnable,
-      private config::IFetcherCallback<vespa::config::content::core::StorCommunicationmanagerConfig>,
-      public mbus::IMessageHandler,
-      public mbus::IReplyHandler,
-      private framework::MetricUpdateHook,
-      public MessageEnqueuer
+class CommunicationManager : public StorageLink,
+                             public framework::Runnable,
+                             private config::IFetcherCallback<vespa::config::content::core::StorCommunicationmanagerConfig>,
+                             public mbus::IMessageHandler,
+                             public mbus::IReplyHandler,
+                             private framework::MetricUpdateHook
 {
 private:
     CommunicationManager(const CommunicationManager&);
@@ -153,7 +150,7 @@ public:
                          const config::ConfigUri & configUri);
     ~CommunicationManager();
 
-    void enqueue(std::shared_ptr<api::StorageMessage> msg) override;
+    void enqueue(std::shared_ptr<api::StorageMessage> msg);
     mbus::RPCMessageBus& getMessageBus() { assert(_mbus.get()); return *_mbus; }
     const PriorityConverter& getPriorityConverter() const { return _docApiConverter.getPriorityConverter(); }
 
