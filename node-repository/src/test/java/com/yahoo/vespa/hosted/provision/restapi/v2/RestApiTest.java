@@ -583,11 +583,13 @@ public class RestApiTest {
     private void assertFile(Request request, String responseFile) throws IOException {
         String expectedResponse = IOUtils.readFile(new File(responsesPath + responseFile));
         expectedResponse = include(expectedResponse);
-        expectedResponse = expectedResponse.replaceAll("\\s", "");
+        expectedResponse = expectedResponse.replaceAll("(\"[^\"]*\")|\\s*", "$1"); // Remove whitespace
         String responseString = container.handleRequest(request).getBodyAsString();
         if (expectedResponse.contains("(ignore)")) {
+            // Convert expected response to a literal pattern and replace any ignored field with a pattern that matches
+            // anything
             String expectedResponsePattern = Pattern.quote(expectedResponse)
-                                                    .replaceAll("\\(ignore\\)", "\\\\E.*\\\\Q");
+                                                    .replaceAll("\"?\\(ignore\\)\"?", "\\\\E.*\\\\Q");
             if (!Pattern.matches(expectedResponsePattern, responseString)) {
                 throw new ComparisonFailure(responseFile + " (with ignored fields)", expectedResponsePattern,
                                             responseString);
