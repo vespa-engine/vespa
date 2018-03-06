@@ -17,9 +17,11 @@ import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.NATCommand;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
@@ -42,7 +44,8 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private static final String MANAGER_NAME = "node-admin";
 
-    private static final String LOCAL_IPV6_PREFIX = "fd00::";
+    private static final String IPV6_NPT_PREFIX = "fd00::";
+    private static final String IPV4_NPT_PREFIX = "172.17.0.0";
     private static final String DOCKER_CUSTOM_BRIDGE_NETWORK_NAME = "vespa-bridge";
     
     private final Docker docker;
@@ -50,11 +53,13 @@ public class DockerOperationsImpl implements DockerOperations {
     private final ProcessExecuter processExecuter;
     private final String nodeProgram;
     private Map<Path, Boolean> directoriesToMount;
+    private final IPAddresses retriever;
 
-    public DockerOperationsImpl(Docker docker, Environment environment, ProcessExecuter processExecuter) {
+    public DockerOperationsImpl(Docker docker, Environment environment, ProcessExecuter processExecuter, IPAddresses retriever) {
         this.docker = docker;
         this.environment = environment;
         this.processExecuter = processExecuter;
+        this.retriever = retriever;
 
         this.nodeProgram = environment.pathInNodeUnderVespaHome("bin/vespa-nodectl").toString();
         this.directoriesToMount = getDirectoriesToMount(environment);
@@ -90,10 +95,21 @@ public class DockerOperationsImpl implements DockerOperations {
                 command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
                 command.withVolume("/etc/hosts", "/etc/hosts"); // TODO This is probably not necessary - review later
             } else {
-                command.withIpAddress(NetworkPrefixTranslator.translate(
-                        nodeInetAddress,
-                        InetAddress.getByName(LOCAL_IPV6_PREFIX),
-                        64));
+                // IPv6 - Assume always valid
+                Inet6Address ipV6Address = this.retriever.getIPv6Address(nodeSpec.hostname).orElseThrow(
+                        () -> new RuntimeException("Unable to find a valid IPv6 address. Missing an AAAA DNS entry?"));
+                InetAddress ipV6Prefix = InetAddress.getByName(IPV6_NPT_PREFIX);
+                InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 64);
+                command.withIpAddress(ipV6Local);
+
+                // IPv4 - Only present for some containers
+                Optional<Inet4Address> ipV4Address = this.retriever.getIPv4Address(nodeSpec.hostname);
+                if (ipV4Address.isPresent()) {
+                    InetAddress ipV4Prefix = InetAddress.getByName(IPV4_NPT_PREFIX);
+                    InetAddress ipV4Local = IPAddresses.prefixTranslate(ipV4Address.get(), ipV4Prefix, 16);
+                    command.withIpAddress(ipV4Local);
+                }
+
                 command.withNetworkMode(DOCKER_CUSTOM_BRIDGE_NETWORK_NAME);
             }
 

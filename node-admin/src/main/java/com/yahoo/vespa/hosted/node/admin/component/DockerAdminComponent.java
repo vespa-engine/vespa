@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesImpl;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -93,7 +94,8 @@ public class DockerAdminComponent implements AdminComponent {
         DockerOperations dockerOperations = new DockerOperationsImpl(
                 docker,
                 environment.get(),
-                processExecuter);
+                processExecuter,
+                new IPAddressesImpl());
 
         StorageMaintainer storageMaintainer = new StorageMaintainer(
                 dockerOperations,
