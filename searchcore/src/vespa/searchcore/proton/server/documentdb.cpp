@@ -11,7 +11,7 @@
 #include "maintenance_jobs_injector.h"
 #include "reconfig_params.h"
 #include "bootstrapconfig.h"
-#include "executor_threading_service_stats.h"
+#include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
@@ -1270,8 +1270,9 @@ updateMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics)
 }
 
 void
-DocumentDB::updateMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &)
+DocumentDB::updateMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats)
 {
+    metrics.threadingService.update(threadingServiceStats);
     _jobTrackers.updateMetrics(metrics.job);
 
     updateMetrics(metrics.attribute);

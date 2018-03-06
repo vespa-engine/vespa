@@ -2,7 +2,7 @@
 
 #include "executorthreadingservice.h"
 #include <vespa/vespalib/util/executor.h>
-#include "executor_threading_service_stats.h"
+#include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
 
 using vespalib::ThreadStackExecutorBase;
 

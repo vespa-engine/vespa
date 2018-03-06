@@ -3,6 +3,7 @@
 
 #include "attribute_metrics.h"
 #include "memory_usage_metrics.h"
+#include "executor_threading_service_metrics.h"
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/valuemetric.h>
 
@@ -97,6 +98,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     SubDBMetrics ready;
     SubDBMetrics notReady;
     SubDBMetrics removed;
+    ExecutorThreadingServiceMetrics threadingService;
 
     DocumentDBTaggedMetrics(const vespalib::string &docTypeName);
     ~DocumentDBTaggedMetrics();
