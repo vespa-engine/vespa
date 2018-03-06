@@ -39,7 +39,7 @@ public class NodeEventForBucketSpace extends ArgumentMatcher<NodeEvent> {
     }
 
     @Factory
-    public static NodeEventForBucketSpace nodeEventForNullBucketSpace() {
+    public static NodeEventForBucketSpace nodeEventForBaseline() {
         return new NodeEventForBucketSpace(Optional.empty());
     }
 }

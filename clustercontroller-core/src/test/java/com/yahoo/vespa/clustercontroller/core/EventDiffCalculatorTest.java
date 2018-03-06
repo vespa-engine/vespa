@@ -3,7 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import static com.yahoo.vespa.clustercontroller.core.matchers.EventForNode.eventForNode;
 import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventForBucketSpace.nodeEventForBucketSpace;
-import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventForBucketSpace.nodeEventForNullBucketSpace;
+import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventForBucketSpace.nodeEventForBaseline;
 import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventWithDescription.nodeEventWithDescription;
 import static com.yahoo.vespa.clustercontroller.core.matchers.ClusterEventWithDescription.clusterEventWithDescription;
 import static com.yahoo.vespa.clustercontroller.core.matchers.EventTypeIs.eventTypeIs;
@@ -386,7 +386,7 @@ public class EventDiffCalculatorTest {
         assertThat(events.size(), equalTo(2));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(0)),
-                nodeEventForNullBucketSpace(),
+                nodeEventForBaseline(),
                 nodeEventWithDescription("Altered node state in cluster state from 'U' to 'M'"))));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(1)),
@@ -408,7 +408,7 @@ public class EventDiffCalculatorTest {
         assertThat(events.size(), equalTo(1));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(0)),
-                nodeEventForNullBucketSpace(),
+                nodeEventForBaseline(),
                 nodeEventWithDescription("Altered node state in cluster state from 'U' to 'M'"))));
     }
 

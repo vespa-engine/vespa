@@ -806,7 +806,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 final ClusterStateBundle before = stateVersionTracker.getVersionedClusterStateBundle();
 
                 stateVersionTracker.promoteCandidateToVersionedState(timeNowMs);
-                // TODO also emit derived state edges events
                 emitEventsForAlteredStateEdges(before, stateVersionTracker.getVersionedClusterStateBundle(), timeNowMs);
                 handleNewSystemState(stateVersionTracker.getVersionedClusterStateBundle());
                 stateWasChanged = true;

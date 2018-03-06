@@ -21,7 +21,7 @@ public class ClusterStateBundleTest {
 
     private static ClusterStateBundle createTestBundle(boolean modifyDefaultSpace) {
         return ClusterStateBundle
-                .builder(AnnotatedClusterState.withoutAnnotations(stateOf("distributor:2 storage:2")))
+                .builder(annotatedStateOf("distributor:2 storage:2"))
                 .bucketSpaces("default", "global", "narnia")
                 .stateDeriver((state, space) -> {
                     AnnotatedClusterState derived = state.clone();

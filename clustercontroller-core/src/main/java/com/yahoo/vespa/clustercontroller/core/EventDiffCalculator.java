@@ -156,9 +156,9 @@ public class EventDiffCalculator {
 
     private static NodeEvent createNodeEvent(NodeInfo nodeInfo, String description, PerStateParams params) {
         if (params.bucketSpace.isPresent()) {
-            return new NodeEvent(nodeInfo, params.bucketSpace.get(), description, NodeEvent.Type.CURRENT, params.currentTime);
+            return NodeEvent.forBucketSpace(nodeInfo, params.bucketSpace.get(), description, NodeEvent.Type.CURRENT, params.currentTime);
         } else {
-            return new NodeEvent(nodeInfo, description, NodeEvent.Type.CURRENT, params.currentTime);
+            return NodeEvent.forBaseline(nodeInfo, description, NodeEvent.Type.CURRENT, params.currentTime);
         }
     }
 

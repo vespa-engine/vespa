@@ -132,9 +132,9 @@ public class StateChangeHandler {
         // *** LOGGING ONLY
         if ( ! reportedState.similarTo(node.getReportedState())) {
             if (reportedState.getState().equals(State.DOWN)) {
-                eventLog.addNodeOnlyEvent(new NodeEvent(node, "Failed to get node state: " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
+                eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(node, "Failed to get node state: " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
             } else {
-                eventLog.addNodeOnlyEvent(new NodeEvent(node, "Now reporting state " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), LogLevel.DEBUG);
+                eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(node, "Now reporting state " + reportedState.toString(true), NodeEvent.Type.REPORTED, currentTime), LogLevel.DEBUG);
             }
         }
 
@@ -150,7 +150,7 @@ public class StateChangeHandler {
             log.log(LogLevel.DEBUG,
                     String.format("Altering node state to reflect that min distribution bit count has changed from %d to %d",
                             oldCount, newCount));
-            eventLog.add(new NodeEvent(node, String.format("Altered min distribution bit count from %d to %d", oldCount, newCount),
+            eventLog.add(NodeEvent.forBaseline(node, String.format("Altered min distribution bit count from %d to %d", oldCount, newCount),
                          NodeEvent.Type.CURRENT, currentTime), isMaster);
         } else if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, String.format("Not altering state of %s in cluster state because new state is too similar: %s",
@@ -163,7 +163,7 @@ public class StateChangeHandler {
     public void handleNewNode(NodeInfo node) {
         setHostName(node);
         String message = "Found new node " + node + " in slobrok at " + node.getRpcAddress();
-        eventLog.add(new NodeEvent(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
+        eventLog.add(NodeEvent.forBaseline(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
     }
 
     public void handleMissingNode(final ClusterState currentClusterState,
@@ -175,9 +175,9 @@ public class StateChangeHandler {
         final long timeNow = timer.getCurrentTimeInMillis();
 
         if (node.getLatestNodeStateRequestTime() != null) {
-            eventLog.add(new NodeEvent(node, "Node is no longer in slobrok, but we still have a pending state request.", NodeEvent.Type.REPORTED, timeNow), isMaster);
+            eventLog.add(NodeEvent.forBaseline(node, "Node is no longer in slobrok, but we still have a pending state request.", NodeEvent.Type.REPORTED, timeNow), isMaster);
         } else {
-            eventLog.add(new NodeEvent(node, "Node is no longer in slobrok. No pending state request to node.", NodeEvent.Type.REPORTED, timeNow), isMaster);
+            eventLog.add(NodeEvent.forBaseline(node, "Node is no longer in slobrok. No pending state request to node.", NodeEvent.Type.REPORTED, timeNow), isMaster);
         }
 
         if (node.getReportedState().getState().equals(State.STOPPING)) {
@@ -215,13 +215,13 @@ public class StateChangeHandler {
         assert(proposedState.getState().validWantedNodeState(node.getNode().getType()));
         long timeNow = timer.getCurrentTimeInMillis();
         if (proposedState.above(currentReported)) {
-            eventLog.add(new NodeEvent(node, String.format("Wanted state %s, but we cannot force node into that " +
+            eventLog.add(NodeEvent.forBaseline(node, String.format("Wanted state %s, but we cannot force node into that " +
                     "state yet as it is currently in %s", proposedState, currentReported),
                     NodeEvent.Type.REPORTED, timeNow), isMaster);
             return;
         }
         if ( ! proposedState.similarTo(currentState)) {
-            eventLog.add(new NodeEvent(node, String.format("Node state set to %s.", proposedState),
+            eventLog.add(NodeEvent.forBaseline(node, String.format("Node state set to %s.", proposedState),
                     NodeEvent.Type.WANTED, timeNow), isMaster);
         }
     }
@@ -229,13 +229,13 @@ public class StateChangeHandler {
     public void handleNewRpcAddress(NodeInfo node) {
         setHostName(node);
         String message = "Node " + node + " has a new address in slobrok: " + node.getRpcAddress();
-        eventLog.add(new NodeEvent(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
+        eventLog.add(NodeEvent.forBaseline(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
     }
 
     public void handleReturnedRpcAddress(NodeInfo node) {
         setHostName(node);
         String message = "Node got back into slobrok with same address as before: " + node.getRpcAddress();
-        eventLog.add(new NodeEvent(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
+        eventLog.add(NodeEvent.forBaseline(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
     }
 
     private void setHostName(NodeInfo node) {
@@ -305,7 +305,7 @@ public class StateChangeHandler {
         if (nodeStillUnavailableAfterTransitionTimeExceeded(
                 currentTime, node, currentStateInSystem, lastReportedState))
         {
-            eventLog.add(new NodeEvent(node, String.format(
+            eventLog.add(NodeEvent.forBaseline(node, String.format(
                         "%d milliseconds without contact. Marking node down.",
                         currentTime - node.getTransitionTime()),
                     NodeEvent.Type.CURRENT, currentTime), isMaster);
@@ -313,7 +313,7 @@ public class StateChangeHandler {
         }
 
         if (nodeInitProgressHasTimedOut(currentTime, node, currentStateInSystem, lastReportedState)) {
-            eventLog.add(new NodeEvent(node, String.format(
+            eventLog.add(NodeEvent.forBaseline(node, String.format(
                         "%d milliseconds without initialize progress. Marking node down. " +
                         "Premature crash count is now %d.",
                         currentTime - node.getInitProgressTime(),
@@ -392,7 +392,7 @@ public class StateChangeHandler {
             if (!state.hasDescription()) {
                 state.setDescription(desc);
             }
-            eventLog.add(new NodeEvent(node, desc, NodeEvent.Type.CURRENT, currentTime), isMaster);
+            eventLog.add(NodeEvent.forBaseline(node, desc, NodeEvent.Type.CURRENT, currentTime), isMaster);
             handleNewReportedNodeState(currentClusterState, node, state.clone(), nodeListener);
             node.setReportedState(state, currentTime);
             return true;
@@ -449,7 +449,7 @@ public class StateChangeHandler {
                 && reportedState.getState().oneOf("ds")
                 && !isControlledShutdown(reportedState))
         {
-            eventLog.add(new NodeEvent(node, String.format("Stop or crash during initialization. " +
+            eventLog.add(NodeEvent.forBaseline(node, String.format("Stop or crash during initialization. " +
                     "Premature crash count is now %d.", node.getPrematureCrashCount() + 1),
                     NodeEvent.Type.CURRENT, timeNow), isMaster);
             handlePrematureCrash(node, nodeListener);
@@ -467,7 +467,7 @@ public class StateChangeHandler {
         if (currentState.getState().equals(State.INITIALIZING) &&
             (reportedState.getState().equals(State.INITIALIZING) && reportedState.getInitProgress() < currentState.getInitProgress()))
         {
-            eventLog.add(new NodeEvent(node, String.format(
+            eventLog.add(NodeEvent.forBaseline(node, String.format(
                         "Stop or crash during initialization detected from reverse initializing progress." +
                         " Progress was %g but is now %g. Premature crash count is now %d.",
                         currentState.getInitProgress(), reportedState.getInitProgress(),
@@ -487,7 +487,7 @@ public class StateChangeHandler {
             node.setTransitionTime(timeNow);
             if (node.getUpStableStateTime() + stableStateTimePeriod > timeNow && !isControlledShutdown(reportedState)) {
                 log.log(LogLevel.DEBUG, "Stable state: " + node.getUpStableStateTime() + " + " + stableStateTimePeriod + " > " + timeNow);
-                eventLog.add(new NodeEvent(node,
+                eventLog.add(NodeEvent.forBaseline(node,
                         String.format("Stopped or possibly crashed after %d ms, which is before " +
                                       "stable state time period. Premature crash count is now %d.",
                                 timeNow - node.getUpStableStateTime(), node.getPrematureCrashCount() + 1),

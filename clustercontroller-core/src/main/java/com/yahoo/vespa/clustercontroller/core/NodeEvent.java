@@ -18,7 +18,7 @@ public class NodeEvent implements Event {
 
     private final Type type;
 
-    public NodeEvent(NodeInfo node, String description, Type type, long currentTime) {
+    private NodeEvent(NodeInfo node, String description, Type type, long currentTime) {
         this.node = node;
         this.description = description;
         this.eventTime = currentTime;
@@ -26,12 +26,20 @@ public class NodeEvent implements Event {
         this.bucketSpace = Optional.empty();
     }
 
-    public NodeEvent(NodeInfo node, String bucketSpace, String description, Type type, long currentTime) {
+    private NodeEvent(NodeInfo node, String bucketSpace, String description, Type type, long currentTime) {
         this.node = node;
         this.description = description;
         this.eventTime = currentTime;
         this.type = type;
         this.bucketSpace = Optional.of(bucketSpace);
+    }
+
+    public static NodeEvent forBaseline(NodeInfo node, String description, Type type, long currentTime) {
+        return new NodeEvent(node, description, type, currentTime);
+    }
+
+    public static NodeEvent forBucketSpace(NodeInfo node, String bucketSpace, String description, Type type, long currentTime) {
+        return new NodeEvent(node, bucketSpace, description, type, currentTime);
     }
 
     public NodeInfo getNode() {
