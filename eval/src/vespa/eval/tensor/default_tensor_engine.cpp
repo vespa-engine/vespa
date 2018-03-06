@@ -15,11 +15,15 @@
 #include "dense/vector_from_doubles_function.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/dump_target.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <cassert>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".eval.tensor.default_tensor_engine");
 
 namespace vespalib {
 namespace tensor {
@@ -213,6 +217,11 @@ DefaultTensorEngine::decode(nbostream &input) const
 const TensorFunction &
 DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
 {
+    if (LOG_WOULD_LOG(debug)) {
+        vespalib::string dump = eval::DumpTarget::dump(expr);
+        LOG(debug, "Optimizing tensor function:\n%s\n",
+            dump.c_str());
+    }
     using Child = TensorFunction::Child;
     Child root(expr);
     std::vector<Child::CREF> nodes({root});
@@ -228,6 +237,11 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
         child.set(DenseInplaceMapFunction::optimize(child.get(), stash));
         child.set(DenseInplaceJoinFunction::optimize(child.get(), stash));
         nodes.pop_back();
+    }
+    if (LOG_WOULD_LOG(debug)) {
+        vespalib::string dump = eval::DumpTarget::dump(root.get());
+        LOG(debug, "Optimized tensor function:\n%s\n",
+            dump.c_str());
     }
     return root.get();
 }

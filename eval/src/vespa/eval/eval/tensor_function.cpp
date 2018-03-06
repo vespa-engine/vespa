@@ -115,6 +115,13 @@ ConstValue::compile_self(Stash &) const
     return Instruction(op_load_const, wrap_param<Value>(_value));
 }
 
+void
+ConstValue::dump_tree(DumpTarget &target) const
+{
+    target.node("ConstValue");
+}
+
+
 //-----------------------------------------------------------------------------
 
 Instruction
@@ -123,6 +130,13 @@ Inject::compile_self(Stash &) const
     return Instruction::fetch_param(_param_idx);
 }
 
+void
+Inject::dump_tree(DumpTarget &target) const
+{
+    target.node("Inject");
+}
+
+
 //-----------------------------------------------------------------------------
 
 Instruction
@@ -130,6 +144,15 @@ Reduce::compile_self(Stash &stash) const
 {
     ReduceParams &params = stash.create<ReduceParams>(_aggr, _dimensions);
     return Instruction(op_tensor_reduce, wrap_param<ReduceParams>(params));
+}
+
+void
+Reduce::dump_tree(DumpTarget &target) const
+{
+    target.node("Reduce");
+    target.arg("aggr").value(aggr());
+    target.arg("dimensions").value(dimensions());
+    target.child("child", child());
 }
 
 //-----------------------------------------------------------------------------
@@ -141,6 +164,67 @@ Map::compile_self(Stash &) const
         return Instruction(op_double_map, to_param(_function));
     }
     return Instruction(op_tensor_map, to_param(_function));
+}
+
+vespalib::string
+name_of(map_fun_t fun)
+{
+    if (fun == operation::Neg::f) return "-";
+    if (fun == operation::Not::f) return "!";
+    if (fun == operation::Cos::f) return "cos";
+    if (fun == operation::Sin::f) return "sin";
+    if (fun == operation::Tan::f) return "tan";
+    if (fun == operation::Cosh::f) return "cosh";
+    if (fun == operation::Sinh::f) return "sinh";
+    if (fun == operation::Tanh::f) return "tanh";
+    if (fun == operation::Acos::f) return "acos";
+    if (fun == operation::Asin::f) return "asin";
+    if (fun == operation::Atan::f) return "atan";
+    if (fun == operation::Exp::f) return "exp";
+    if (fun == operation::Log10::f) return "log10";
+    if (fun == operation::Log::f) return "log";
+    if (fun == operation::Sqrt::f) return "sqrt";
+    if (fun == operation::Ceil::f) return "ceil";
+    if (fun == operation::Fabs::f) return "fabs";
+    if (fun == operation::Floor::f) return "floor";
+    if (fun == operation::IsNan::f) return "isnan";
+    if (fun == operation::Relu::f) return "relu";
+    if (fun == operation::Sigmoid::f) return "sigmoid";
+    if (fun == operation::Elu::f) return "elu";
+    return "[other map function]";
+}
+
+vespalib::string
+name_of(join_fun_t fun)
+{
+    if (fun == operation::Add::f) return "+";
+    if (fun == operation::Sub::f) return "-";
+    if (fun == operation::Mul::f) return "*";
+    if (fun == operation::Div::f) return "/";
+    if (fun == operation::Mod::f) return "%";
+    if (fun == operation::Pow::f) return "^";
+    if (fun == operation::Equal::f) return "==";
+    if (fun == operation::NotEqual::f) return "!=";
+    if (fun == operation::Approx::f) return "~";
+    if (fun == operation::Less::f) return "<";
+    if (fun == operation::LessEqual::f) return "<=";
+    if (fun == operation::Greater::f) return ">";
+    if (fun == operation::GreaterEqual::f) return ">=";
+    if (fun == operation::And::f) return "&&";
+    if (fun == operation::Or::f) return "||";
+    if (fun == operation::Atan2::f) return "atan2";
+    if (fun == operation::Ldexp::f) return "ldexp";
+    if (fun == operation::Min::f) return "min";
+    if (fun == operation::Max::f) return "max";
+    return "[other join function]";
+}
+
+void
+Map::dump_tree(DumpTarget &target) const
+{
+    target.node("Map");
+    target.arg("function").value(function());
+    target.child("child", child());
 }
 
 //-----------------------------------------------------------------------------
@@ -160,12 +244,31 @@ Join::compile_self(Stash &) const
     return Instruction(op_tensor_join, to_param(_function));
 }
 
+void
+Join::dump_tree(DumpTarget &target) const
+{
+    target.node("Join");
+    target.arg("function").value(function());
+    target.child("lhs", lhs());
+    target.child("rhs", rhs());
+}
+
+
 //-----------------------------------------------------------------------------
 
 Instruction
 Concat::compile_self(Stash &) const
 {
     return Instruction(op_tensor_concat, wrap_param<vespalib::string>(_dimension));
+}
+
+void
+Concat::dump_tree(DumpTarget &target) const
+{
+    target.node("Concat");
+    target.arg("dimension").value(dimension());
+    target.child("lhs", lhs());
+    target.child("rhs", rhs());
 }
 
 //-----------------------------------------------------------------------------
@@ -175,6 +278,16 @@ Rename::compile_self(Stash &stash) const
 {
     RenameParams &params = stash.create<RenameParams>(_from, _to);
     return Instruction(op_tensor_rename, wrap_param<RenameParams>(params));
+}
+
+
+void
+Rename::dump_tree(DumpTarget &target) const
+{
+    target.node("Rename");
+    target.arg("from").value(from());
+    target.arg("to").value(to());
+    target.child("child", child());
 }
 
 //-----------------------------------------------------------------------------
@@ -193,6 +306,15 @@ If::compile_self(Stash &) const
     // 'if' is handled directly by compile_tensor_function to enable
     // lazy-evaluation of true/false sub-expressions.
     abort();
+}
+
+void
+If::dump_tree(DumpTarget &target) const
+{
+    target.node("If");
+    target.child("cond", _cond.get());
+    target.child("t_child", _true_child.get());
+    target.child("f_child", _false_child.get());
 }
 
 //-----------------------------------------------------------------------------

@@ -91,6 +91,18 @@ VectorFromDoublesFunction::compile_self(Stash &) const
     return eval::InterpretedFunction::Instruction(my_vector_from_doubles_op, (uint64_t)&_self);
 }
 
+void
+VectorFromDoublesFunction::dump_tree(eval::DumpTarget &target) const
+{
+    target.node("VectorFromDoubles");
+    target.arg("size").value(size());
+    target.arg("dimension").value(dimension());
+    for (const auto & child : _children) {
+        target.child("child", child.get());
+    }
+}
+
+
 const TensorFunction &
 VectorFromDoublesFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
 {
