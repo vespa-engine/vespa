@@ -82,12 +82,7 @@ public class EventDiffCalculatorTest {
             return this;
         }
         private static AnnotatedClusterState.Builder getBuilder(Map<String, AnnotatedClusterState.Builder> derivedStates, String bucketSpace) {
-            AnnotatedClusterState.Builder result = derivedStates.get(bucketSpace);
-            if (result == null) {
-                result = new AnnotatedClusterState.Builder();
-                derivedStates.put(bucketSpace, result);
-            }
-            return result;
+            return derivedStates.computeIfAbsent(bucketSpace, key -> new AnnotatedClusterState.Builder());
         }
 
         List<Event> computeEventDiff() {
