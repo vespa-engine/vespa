@@ -569,7 +569,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         }
 
         public Path expressionPath() {
-            return ApplicationPackage.MODELS_GENERATED_DIR
+            return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR
                     .append(modelPath).append("expressions").append(expressionFileName());
         }
 
