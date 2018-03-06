@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.serviceview;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import com.yahoo.container.jaxrs.annotation.Component;
+import com.yahoo.vespa.serviceview.bindings.ApplicationView;
+import com.yahoo.vespa.serviceview.bindings.ConfigClient;
+import com.yahoo.vespa.serviceview.bindings.HealthClient;
+import com.yahoo.vespa.serviceview.bindings.ModelResponse;
+import com.yahoo.vespa.serviceview.bindings.StateClient;
+import org.glassfish.jersey.client.proxy.WebResourceFactory;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -18,15 +19,12 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
-
-import com.yahoo.container.jaxrs.annotation.Component;
-import com.yahoo.vespa.serviceview.bindings.ApplicationView;
-import com.yahoo.vespa.serviceview.bindings.ConfigClient;
-import com.yahoo.vespa.serviceview.bindings.HealthClient;
-import com.yahoo.vespa.serviceview.bindings.ModelResponse;
-import com.yahoo.vespa.serviceview.bindings.StateClient;
-
-import org.glassfish.jersey.client.proxy.WebResourceFactory;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
 
 /**
@@ -38,6 +36,7 @@ import org.glassfish.jersey.client.proxy.WebResourceFactory;
 public class StateResource implements StateClient {
 
     private static final String SINGLE_API_LINK = "url";
+
     private final int restApiPort;
     private final String host;
     private final UriInfo uriInfo;
@@ -55,7 +54,7 @@ public class StateResource implements StateClient {
 
     public StateResource(@Component ConfigServerLocation configServer, @Context UriInfo ui) {
         this.restApiPort = configServer.restApiPort;
-        host = "localhost";
+        this.host = "localhost";
         this.uriInfo = ui;
     }
 
@@ -87,7 +86,7 @@ public class StateResource implements StateClient {
     @Produces(MediaType.TEXT_HTML)
     public interface HtmlProxyHack {
         @GET
-        public String proxy();
+        String proxy();
     }
 
     @GET
@@ -113,9 +112,7 @@ public class StateResource implements StateClient {
             HtmlProxyHack resource = WebResourceFactory.newResource(HtmlProxyHack.class, target);
             return resource.proxy();
         } finally {
-            if (client != null) {
-                client.close();
-            }
+            client.close();
         }
     }
 
@@ -132,14 +129,10 @@ public class StateResource implements StateClient {
         Client client = ClientBuilder.newClient();
         try {
             WebTarget target = client.target("http://" + host + ":" + restApiPort + "/");
-
             ConfigClient resource = WebResourceFactory.newResource(ConfigClient.class, target);
-
             return resource.getServiceModel(tenant, application, environment, region, instance);
         } finally {
-            if (client != null) {
-                client.close();
-            }
+            client.close();
         }
     }
 
@@ -165,9 +158,7 @@ public class StateResource implements StateClient {
             rewriteResourceLinks(apiResult, model, s, applicationIdentifier(tenantName, applicationName, environmentName, regionName, instanceName), identifier);
             return apiResult;
         } finally {
-            if (client != null) {
-                client.close();
-            }
+            client.close();
         }
     }
 
@@ -180,8 +171,11 @@ public class StateResource implements StateClient {
     }
 
     private String applicationIdentifier(String tenant, String application, String environment, String region, String instance) {
-        return new StringBuilder("tenant/").append(tenant).append("/application/").append(application).append("/environment/")
-                .append(environment).append("/region/").append(region).append("/instance/").append(instance).toString();
+        return "tenant/" + tenant
+               + "/application/" + application
+               + "/environment/" + environment
+               + "/region/" + region
+               + "/instance/" + instance;
     }
 
     private void rewriteResourceLinks(Object apiResult,

@@ -10,16 +10,16 @@ import javax.ws.rs.core.MediaType;
 /**
  * Client to fetch the model config from the configserver.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public interface ConfigClient {
 
     @GET
     @Path("/config/v2/tenant/{tenantName}/application/{applicationName}/environment/{environmentName}/region/{regionName}/instance/{instanceName}/cloud.config.model")
     @Produces(MediaType.APPLICATION_JSON)
-    public ModelResponse getServiceModel(@PathParam("tenantName") String tenantName,
-            @PathParam("applicationName") String applicationName,
-            @PathParam("environmentName") String environmentName,
-            @PathParam("regionName") String regionName,
-            @PathParam("instanceName") String instanceName);
+    ModelResponse getServiceModel(@PathParam("tenantName") String tenantName,
+                                  @PathParam("applicationName") String applicationName,
+                                  @PathParam("environmentName") String environmentName,
+                                  @PathParam("regionName") String regionName,
+                                  @PathParam("instanceName") String instanceName);
 }
