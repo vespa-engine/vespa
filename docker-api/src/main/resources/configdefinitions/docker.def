@@ -13,3 +13,5 @@ isRunningLocally bool default = false
 imageGCMinTimeToLiveMinutes int default = 45
 
 networkNATed bool default = false
+
+runContainersInPrivileged bool default = false

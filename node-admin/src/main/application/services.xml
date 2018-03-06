@@ -13,6 +13,7 @@
 
     <config name="vespa.hosted.dockerapi.docker">
       <uri>unix:///var/run/docker.sock</uri>
+      <runContainersInPrivileged>true</runContainersInPrivileged>
     </config>
 
     <preprocess:include file="variant.xml" required="false"/>

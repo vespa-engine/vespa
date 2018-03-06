@@ -221,6 +221,11 @@ public class DockerMock implements Docker {
         }
 
         @Override
+        public CreateContainerCommand withPrivileged(boolean privileged) {
+            return this;
+        }
+
+        @Override
         public void create() {
 
         }
