@@ -4,12 +4,60 @@ package com.yahoo.vespa.hosted.dockerapi;
 
 import org.junit.Test;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
 public class CreateContainerCommandImplTest {
+
+    @Test
+    public void testToString() throws UnknownHostException {
+        DockerImage dockerImage = new DockerImage("docker.registry.domain.tld/my/image:1.2.3");
+        ContainerResources containerResources = new ContainerResources(100, 1024);
+        String hostname = "docker-1.region.domain.tld";
+        ContainerName containerName = ContainerName.fromHostname(hostname);
+
+        Docker.CreateContainerCommand createContainerCommand = new CreateContainerCommandImpl(
+                null, dockerImage, containerResources, containerName, hostname)
+                .withLabel("my-label", "test-label")
+                .withUlimit("nofile", 1, 2)
+                .withUlimit("nproc", 10, 20)
+                .withEnvironment("env1", "val1")
+                .withEnvironment("env2", "val2")
+                .withVolume("vol1", "/host/vol1")
+                .withAddCapability("SYS_PTRACE")
+                .withAddCapability("SYS_ADMIN")
+                .withDropCapability("NET_ADMIN")
+                .withNetworkMode("bridge")
+                .withIpAddress(InetAddress.getByName("10.0.0.1"))
+                .withIpAddress(InetAddress.getByName("::1"))
+                .withEntrypoint("/path/to/program", "arg1", "arg2")
+                .withPrivileged(true);
+
+        assertEquals("--name docker-1 " +
+                "--hostname docker-1.region.domain.tld " +
+                "--cpu-shares 100 " +
+                "--memory 1024 " +
+                "--label my-label=test-label " +
+                "--ulimit nofile=1:2 " +
+                "--ulimit nproc=10:20 " +
+                "--env env1=val1 " +
+                "--env env2=val2 " +
+                "--volume vol1:/host/vol1 " +
+                "--cap-add SYS_ADMIN " +
+                "--cap-add SYS_PTRACE " +
+                "--cap-drop NET_ADMIN " +
+                "--net bridge " +
+                "--ip 10.0.0.1 " +
+                "--ip6 0:0:0:0:0:0:0:1 " +
+                "--entrypoint /path/to/program " +
+                "--privileged docker.registry.domain.tld/my/image:1.2.3 " +
+                "arg1 " +
+                "arg2", createContainerCommand.toString());
+    }
 
     @Test
     public void generateMacAddressTest() {

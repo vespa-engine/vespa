@@ -21,6 +21,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private final DockerClient docker;
@@ -32,13 +33,14 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private final List<String> environmentAssignments = new ArrayList<>();
     private final List<String> volumeBindSpecs = new ArrayList<>();
     private final List<Ulimit> ulimits = new ArrayList<>();
+    private final Set<Capability> addCapabilities = new HashSet<>();
+    private final Set<Capability> dropCapabilities = new HashSet<>();
 
     private Optional<String> networkMode = Optional.empty();
     private Optional<String> ipv4Address = Optional.empty();
     private Optional<String> ipv6Address = Optional.empty();
     private Optional<String[]> entrypoint = Optional.empty();
-    private Set<Capability> addCapabilities = new HashSet<>();
-    private Set<Capability> dropCapabilities = new HashSet<>();
+    private boolean privileged = false;
 
     CreateContainerCommandImpl(DockerClient docker,
                                DockerImage dockerImage,
@@ -60,8 +62,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     }
 
     public Docker.CreateContainerCommand withManagedBy(String manager) {
-        labels.put(DockerImpl.LABEL_NAME_MANAGEDBY, manager);
-        return this;
+        return withLabel(DockerImpl.LABEL_NAME_MANAGEDBY, manager);
     }
 
     @Override
@@ -77,6 +78,12 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     }
 
     @Override
+    public Docker.CreateContainerCommand withPrivileged(boolean privileged) {
+        this.privileged = privileged;
+        return this;
+    }
+
+    @Override
     public Docker.CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit) {
         ulimits.add(new Ulimit(name, softLimit, hardLimit));
         return this;
@@ -84,6 +91,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
 
     @Override
     public Docker.CreateContainerCommand withEntrypoint(String... entrypoint) {
+        if (entrypoint.length < 1) throw new IllegalArgumentException("Entrypoint must contain at least 1 element");
         this.entrypoint = Optional.of(entrypoint);
         return this;
     }
@@ -142,7 +150,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .withBinds(volumeBinds)
                 .withUlimits(ulimits)
                 .withCapAdd(new ArrayList<>(addCapabilities))
-                .withCapDrop(new ArrayList<>(dropCapabilities));
+                .withCapDrop(new ArrayList<>(dropCapabilities))
+                .withPrivileged(privileged);
 
         networkMode
                 .filter(mode -> ! mode.toLowerCase().equals("host"))
@@ -156,15 +165,19 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         return containerCmd;
     }
 
-    /** Maps ("--env", {"A", "B", "C"}) to "--env A --env B --env C ". */
+    /** Maps ("--env", {"A", "B", "C"}) to "--env A --env B --env C" */
     private String toRepeatedOption(String option, List<String> optionValues) {
-        StringBuilder builder = new StringBuilder();
-        optionValues.forEach(optionValue -> builder.append(option).append(" ").append(optionValue).append(" "));
-        return builder.toString();
+        return optionValues.stream()
+                .map(optionValue -> option + " " + optionValue)
+                .collect(Collectors.joining(" "));
     }
 
-    private String toOptionalOption(String option, Optional<?> value) {
-        return value.isPresent() ? option + " " + value.get() + " " : "";
+    private String toOptionalOption(String option, Optional<String> value) {
+        return value.map(o -> option + " " + o).orElse("");
+    }
+
+    private String toFlagOption(String option, boolean value) {
+        return value ? option : "";
     }
 
     /** Make toString() print the equivalent arguments to 'docker run' */
@@ -175,24 +188,31 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         List<String> ulimitList = ulimits.stream()
                 .map(ulimit -> ulimit.getName() + "=" + ulimit.getSoft() + ":" + ulimit.getHard())
                 .collect(Collectors.toList());
-        List<String> addCapabilitiesList = addCapabilities.stream().map(Enum<Capability>::toString).collect(Collectors.toList());
-        List<String> dropCapabilitiesList = dropCapabilities.stream().map(Enum<Capability>::toString).collect(Collectors.toList());
+        List<String> addCapabilitiesList = addCapabilities.stream().map(Enum<Capability>::toString).sorted().collect(Collectors.toList());
+        List<String> dropCapabilitiesList = dropCapabilities.stream().map(Enum<Capability>::toString).sorted().collect(Collectors.toList());
+        Optional<String> entrypointExecuteable = entrypoint.map(args -> args[0]);
+        String entrypointArgs = entrypoint.map(Stream::of).orElseGet(Stream::empty)
+                .skip(1)
+                .collect(Collectors.joining(" "));
 
-        return "--name " + containerName.asString() + " "
-                + "--hostname " + hostName + " "
-                + "--cpu-shares " + containerResources.cpuShares + " "
-                + "--memory " + containerResources.memoryBytes + " "
-                + toRepeatedOption("--label", labelList)
-                + toRepeatedOption("--ulimit", ulimitList)
-                + toRepeatedOption("--env", environmentAssignments)
-                + toRepeatedOption("--volume", volumeBindSpecs)
-                + toRepeatedOption("--cap-add", addCapabilitiesList)
-                + toRepeatedOption("--cap-drop", dropCapabilitiesList)
-                + toOptionalOption("--net", networkMode)
-                + toOptionalOption("--ip", ipv4Address)
-                + toOptionalOption("--ip6", ipv6Address)
-                + toOptionalOption("--entrypoint", entrypoint)
-                + dockerImage.asString();
+        return String.join(" ",
+                "--name " + containerName.asString(),
+                "--hostname " + hostName,
+                "--cpu-shares " + containerResources.cpuShares,
+                "--memory " + containerResources.memoryBytes,
+                toRepeatedOption("--label", labelList),
+                toRepeatedOption("--ulimit", ulimitList),
+                toRepeatedOption("--env", environmentAssignments),
+                toRepeatedOption("--volume", volumeBindSpecs),
+                toRepeatedOption("--cap-add", addCapabilitiesList),
+                toRepeatedOption("--cap-drop", dropCapabilitiesList),
+                toOptionalOption("--net", networkMode),
+                toOptionalOption("--ip", ipv4Address),
+                toOptionalOption("--ip6", ipv6Address),
+                toOptionalOption("--entrypoint", entrypointExecuteable),
+                toFlagOption("--privileged", privileged),
+                dockerImage.asString(),
+                entrypointArgs);
     }
 
     /**
