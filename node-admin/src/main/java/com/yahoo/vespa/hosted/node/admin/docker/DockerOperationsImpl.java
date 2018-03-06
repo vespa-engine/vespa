@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.collections.Pair;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -369,6 +370,10 @@ public class DockerOperationsImpl implements DockerOperations {
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/zpe"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("tmp"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/container-data"), false);
+
+        if (environment.getNodeType() == NodeType.confighost) {
+            directoriesToMount.put(Paths.get("/var/lib/sia"), false);
+        }
         
         return directoriesToMount;
     }
