@@ -196,7 +196,7 @@ public class StatusPagesTest extends FleetControllerTest {
 
         assertTrue(content, content.contains("<html>"));
         assertTrue(content, content.contains("</html>"));
-        assertTrue(content, content.contains("Current cluster state"));
+        assertTrue(content, content.contains("Baseline cluster state"));
         assertTrue(content, content.contains("Cluster states"));
         assertTrue(content, content.contains("Event log"));
 
