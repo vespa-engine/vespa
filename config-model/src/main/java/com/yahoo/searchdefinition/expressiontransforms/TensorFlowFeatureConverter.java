@@ -565,7 +565,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
         /** Path to the macros file */
         public Path macrosPath() {
-            return ApplicationPackage.MODELS_GENERATED_DIR.append(modelPath).append("macros.txt");
+            return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR.append(modelPath).append("macros.txt");
         }
 
         public Path expressionPath() {
