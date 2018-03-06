@@ -14,5 +14,5 @@ public interface ClusterStateDeriver {
      * @param bucketSpace The name of the bucket space for which the state should be derived
      * @return A cluster state instance representing the derived state, or <em>state</em> unchanged.
      */
-    ClusterState derivedFrom(ClusterState state, String bucketSpace);
+    AnnotatedClusterState derivedFrom(AnnotatedClusterState state, String bucketSpace);
 }

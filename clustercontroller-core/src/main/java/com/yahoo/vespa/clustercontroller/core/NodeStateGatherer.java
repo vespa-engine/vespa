@@ -157,7 +157,7 @@ public class NodeStateGatherer {
         if (req.getReply().getReturnCode() == ErrorCode.TIMEOUT) {
             String msg = "RPC timeout";
             if (info.getReportedState().getState().oneOf("ui")) {
-                eventLog.addNodeOnlyEvent(new NodeEvent(info, prefix + "RPC timeout talking to node.", NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
+                eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + "RPC timeout talking to node.", NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
             } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
                 log.log(LogLevel.DEBUG, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
             }
@@ -172,7 +172,7 @@ public class NodeStateGatherer {
                 if (msg.equals("Connection refused")) {
                     msg = "Connection error: Connection refused";
                     if (info.getReportedState().getState().oneOf("ui")) {
-                        eventLog.addNodeOnlyEvent(new NodeEvent(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
+                        eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
                     } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
                         log.log(LogLevel.DEBUG, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode()
                                 + " " + req.getReply().getReturnMessage() + ": " + msg);
@@ -184,7 +184,7 @@ public class NodeStateGatherer {
                         msg += " Node is no longer in slobrok.";
                     }
                     if (info.getReportedState().getState().oneOf("ui")) {
-                        eventLog.addNodeOnlyEvent(new NodeEvent(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
+                        eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
                     } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
                         log.log(LogLevel.DEBUG, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
                     }
@@ -192,14 +192,14 @@ public class NodeStateGatherer {
                 } else if (msg.equals("Connection timed out")) {
                     if (info.getReportedState().getState().oneOf("ui")) {
                         msg = "Connection error: Timeout";
-                        eventLog.addNodeOnlyEvent(new NodeEvent(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
+                        eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
                     } else {
                         log.log(LogLevel.DEBUG, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
                     }
                 } else {
                     msg = "Connection error: " + reason;
                     if (info.getReportedState().getState().oneOf("ui")) {
-                        eventLog.addNodeOnlyEvent(new NodeEvent(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.WARNING);
+                        eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.WARNING);
                     } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
                         log.log(LogLevel.DEBUG, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
                     }
@@ -210,7 +210,7 @@ public class NodeStateGatherer {
                         req.getReply().getReturnCode() + ": " + req.getReply().getReturnMessage();
 
                 if (info.getReportedState().getState().oneOf("ui")) {
-                    eventLog.addNodeOnlyEvent(new NodeEvent(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.WARNING);
+                    eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.WARNING);
                 } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
                     log.log(LogLevel.DEBUG, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
                 }
@@ -221,7 +221,7 @@ public class NodeStateGatherer {
         } else if (req.getReply().getReturnCode() == ErrorCode.NO_SUCH_METHOD) {
             String msg = "no such RPC method error";
             if (info.getReportedState().getState().oneOf("ui")) {
-                eventLog.addNodeOnlyEvent(new NodeEvent(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.WARNING);
+                eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.WARNING);
             } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
                 log.log(LogLevel.DEBUG, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
             }
@@ -233,7 +233,7 @@ public class NodeStateGatherer {
                 log.log(LogLevel.DEBUG, "Failed to get node state from " + info + " because it is still shutting down.");
             } else {
                 if (info.getReportedState().getState().oneOf("ui")) {
-                    eventLog.addNodeOnlyEvent(new NodeEvent(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
+                    eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.INFO);
                 } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
                     log.log(LogLevel.DEBUG, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
                 }
@@ -242,7 +242,7 @@ public class NodeStateGatherer {
         } else {
             String msg = "Got unexpected error, assumed to be node issue " + req.getReply().getReturnCode() + ": " + req.getReply().getReturnMessage();
             if (info.getReportedState().getState().oneOf("ui")) {
-                eventLog.addNodeOnlyEvent(new NodeEvent(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.WARNING);
+                eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), LogLevel.WARNING);
             } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
                 log.log(LogLevel.DEBUG, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
             }

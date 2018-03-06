@@ -4,8 +4,6 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vdslib.state.*;
 import org.junit.Test;
 
-import java.text.ParseException;
-
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
@@ -14,23 +12,25 @@ import static org.junit.Assert.assertTrue;
 public class ClusterStateBundleTest {
 
     private static ClusterState stateOf(String state) {
-        try {
-            return new ClusterState(state);
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
+        return ClusterState.stateFromString(state);
+    }
+
+    private static AnnotatedClusterState annotatedStateOf(String state) {
+        return AnnotatedClusterState.withoutAnnotations(stateOf(state));
     }
 
     private static ClusterStateBundle createTestBundle(boolean modifyDefaultSpace) {
         return ClusterStateBundle
-                .builder(AnnotatedClusterState.withoutAnnotations(stateOf("distributor:2 storage:2")))
+                .builder(annotatedStateOf("distributor:2 storage:2"))
                 .bucketSpaces("default", "global", "narnia")
                 .stateDeriver((state, space) -> {
-                    ClusterState derived = state.clone();
+                    AnnotatedClusterState derived = state.clone();
                     if (space.equals("default") && modifyDefaultSpace) {
-                        derived.setNodeState(Node.ofStorage(0), new NodeState(NodeType.STORAGE, State.DOWN));
+                        derived.getClusterState()
+                                .setNodeState(Node.ofStorage(0), new NodeState(NodeType.STORAGE, State.DOWN));
                     } else if (space.equals("narnia")) {
-                        derived.setNodeState(Node.ofDistributor(0), new NodeState(NodeType.DISTRIBUTOR, State.DOWN));
+                        derived.getClusterState()
+                                .setNodeState(Node.ofDistributor(0), new NodeState(NodeType.DISTRIBUTOR, State.DOWN));
                     }
                     return derived;
                 })
@@ -46,9 +46,9 @@ public class ClusterStateBundleTest {
         ClusterStateBundle bundle = createTestBundle();
         assertThat(bundle.getBaselineClusterState(), equalTo(stateOf("distributor:2 storage:2")));
         assertThat(bundle.getDerivedBucketSpaceStates().size(), equalTo(3));
-        assertThat(bundle.getDerivedBucketSpaceStates().get("default"), equalTo(stateOf("distributor:2 storage:2 .0.s:d")));
-        assertThat(bundle.getDerivedBucketSpaceStates().get("global"), equalTo(stateOf("distributor:2 storage:2")));
-        assertThat(bundle.getDerivedBucketSpaceStates().get("narnia"), equalTo(stateOf("distributor:2 .0.s:d storage:2")));
+        assertThat(bundle.getDerivedBucketSpaceStates().get("default"), equalTo(annotatedStateOf("distributor:2 storage:2 .0.s:d")));
+        assertThat(bundle.getDerivedBucketSpaceStates().get("global"), equalTo(annotatedStateOf("distributor:2 storage:2")));
+        assertThat(bundle.getDerivedBucketSpaceStates().get("narnia"), equalTo(annotatedStateOf("distributor:2 .0.s:d storage:2")));
     }
 
     @Test
@@ -56,9 +56,9 @@ public class ClusterStateBundleTest {
         ClusterStateBundle bundle = createTestBundle().clonedWithVersionSet(123);
         assertThat(bundle.getBaselineClusterState(), equalTo(stateOf("version:123 distributor:2 storage:2")));
         assertThat(bundle.getDerivedBucketSpaceStates().size(), equalTo(3));
-        assertThat(bundle.getDerivedBucketSpaceStates().get("default"), equalTo(stateOf("version:123 distributor:2 storage:2 .0.s:d")));
-        assertThat(bundle.getDerivedBucketSpaceStates().get("global"), equalTo(stateOf("version:123 distributor:2 storage:2")));
-        assertThat(bundle.getDerivedBucketSpaceStates().get("narnia"), equalTo(stateOf("version:123 distributor:2 .0.s:d storage:2")));
+        assertThat(bundle.getDerivedBucketSpaceStates().get("default"), equalTo(annotatedStateOf("version:123 distributor:2 storage:2 .0.s:d")));
+        assertThat(bundle.getDerivedBucketSpaceStates().get("global"), equalTo(annotatedStateOf("version:123 distributor:2 storage:2")));
+        assertThat(bundle.getDerivedBucketSpaceStates().get("narnia"), equalTo(annotatedStateOf("version:123 distributor:2 .0.s:d storage:2")));
     }
 
     @Test
@@ -83,7 +83,7 @@ public class ClusterStateBundleTest {
     @Test
     public void toString_without_bucket_space_states_prints_only_baseline_state() {
         ClusterStateBundle bundle = ClusterStateBundle.ofBaselineOnly(
-                AnnotatedClusterState.withoutAnnotations(stateOf("distributor:2 storage:2")));
+                annotatedStateOf("distributor:2 storage:2"));
         assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2')"));
     }
 

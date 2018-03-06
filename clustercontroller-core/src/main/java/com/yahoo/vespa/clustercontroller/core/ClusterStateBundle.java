@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class ClusterStateBundle {
 
     private final AnnotatedClusterState baselineState;
-    private final Map<String, ClusterState> derivedBucketSpaceStates;
+    private final Map<String, AnnotatedClusterState> derivedBucketSpaceStates;
 
     public static class Builder {
         private final AnnotatedClusterState baselineState;
@@ -53,15 +53,15 @@ public class ClusterStateBundle {
             if (stateDeriver == null || bucketSpaces == null || bucketSpaces.isEmpty()) {
                 return ClusterStateBundle.ofBaselineOnly(baselineState);
             }
-            Map<String, ClusterState> derived = bucketSpaces.stream()
+            Map<String, AnnotatedClusterState> derived = bucketSpaces.stream()
                     .collect(Collectors.toMap(
                             Function.identity(),
-                            s -> stateDeriver.derivedFrom(baselineState.getClusterState(), s)));
+                            s -> stateDeriver.derivedFrom(baselineState, s)));
             return new ClusterStateBundle(baselineState, derived);
         }
     }
 
-    private ClusterStateBundle(AnnotatedClusterState baselineState, Map<String, ClusterState> derivedBucketSpaceStates) {
+    private ClusterStateBundle(AnnotatedClusterState baselineState, Map<String, AnnotatedClusterState> derivedBucketSpaceStates) {
         this.baselineState = baselineState;
         this.derivedBucketSpaceStates = Collections.unmodifiableMap(derivedBucketSpaceStates);
     }
@@ -70,7 +70,7 @@ public class ClusterStateBundle {
         return new Builder(baselineState);
     }
 
-    public static ClusterStateBundle of(AnnotatedClusterState baselineState, Map<String, ClusterState> derivedBucketSpaceStates) {
+    public static ClusterStateBundle of(AnnotatedClusterState baselineState, Map<String, AnnotatedClusterState> derivedBucketSpaceStates) {
         return new ClusterStateBundle(baselineState, derivedBucketSpaceStates);
     }
 
@@ -86,17 +86,16 @@ public class ClusterStateBundle {
         return baselineState.getClusterState();
     }
 
-    public Map<String, ClusterState> getDerivedBucketSpaceStates() {
+    public Map<String, AnnotatedClusterState> getDerivedBucketSpaceStates() {
         return derivedBucketSpaceStates;
     }
 
     public ClusterStateBundle cloneWithMapper(Function<ClusterState, ClusterState> mapper) {
-        AnnotatedClusterState clonedBaseline = new AnnotatedClusterState(
-                mapper.apply(baselineState.getClusterState().clone()),
-                baselineState.getClusterStateReason(),
-                baselineState.getNodeStateReasons());
-        Map<String, ClusterState> clonedDerived = derivedBucketSpaceStates.entrySet().stream()
-                .collect(Collectors.toMap(e -> e.getKey(), e -> mapper.apply(e.getValue().clone())));
+        AnnotatedClusterState clonedBaseline = baselineState.cloneWithClusterState(
+                mapper.apply(baselineState.getClusterState().clone()));
+        Map<String, AnnotatedClusterState> clonedDerived = derivedBucketSpaceStates.entrySet().stream()
+                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().cloneWithClusterState(
+                        mapper.apply(e.getValue().getClusterState().clone()))));
         return new ClusterStateBundle(clonedBaseline, clonedDerived);
     }
 
@@ -114,7 +113,7 @@ public class ClusterStateBundle {
         // FIXME we currently treat mismatching bucket space sets as unchanged to avoid breaking some tests
         return derivedBucketSpaceStates.entrySet().stream()
                 .allMatch(entry -> other.derivedBucketSpaceStates.getOrDefault(entry.getKey(), entry.getValue())
-                        .similarToIgnoringInitProgress(entry.getValue()));
+                        .getClusterState().similarToIgnoringInitProgress(entry.getValue().getClusterState()));
     }
 
     public int getVersion() {
@@ -126,7 +125,7 @@ public class ClusterStateBundle {
         if (derivedBucketSpaceStates.isEmpty()) {
             return String.format("ClusterStateBundle('%s')", baselineState);
         }
-        Map<String, ClusterState> orderedStates = new TreeMap<>(derivedBucketSpaceStates);
+        Map<String, AnnotatedClusterState> orderedStates = new TreeMap<>(derivedBucketSpaceStates);
         return String.format("ClusterStateBundle('%s', %s)", baselineState, orderedStates.entrySet().stream()
                 .map(e -> String.format("%s '%s'", e.getKey(), e.getValue()))
                 .collect(Collectors.joining(", ")));

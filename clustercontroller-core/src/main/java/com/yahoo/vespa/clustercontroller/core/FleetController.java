@@ -803,11 +803,10 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                     || stateVersionTracker.hasReceivedNewVersionFromZooKeeper())
             {
                 final long timeNowMs = timer.getCurrentTimeInMillis();
-                final AnnotatedClusterState before = stateVersionTracker.getAnnotatedVersionedClusterState();
+                final ClusterStateBundle before = stateVersionTracker.getVersionedClusterStateBundle();
 
                 stateVersionTracker.promoteCandidateToVersionedState(timeNowMs);
-                // TODO also emit derived state edges events
-                emitEventsForAlteredStateEdges(before, stateVersionTracker.getAnnotatedVersionedClusterState(), timeNowMs);
+                emitEventsForAlteredStateEdges(before, stateVersionTracker.getVersionedClusterStateBundle(), timeNowMs);
                 handleNewSystemState(stateVersionTracker.getVersionedClusterStateBundle());
                 stateWasChanged = true;
             }
@@ -852,8 +851,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         return ClusterStateGenerator.generatedStateFrom(params);
     }
 
-    private void emitEventsForAlteredStateEdges(final AnnotatedClusterState fromState,
-                                                final AnnotatedClusterState toState,
+    private void emitEventsForAlteredStateEdges(final ClusterStateBundle fromState,
+                                                final ClusterStateBundle toState,
                                                 final long timeNowMs) {
         final List<Event> deltaEvents = EventDiffCalculator.computeEventDiff(
                 EventDiffCalculator.params()
@@ -865,7 +864,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             eventLog.add(event, isMaster);
         }
 
-        emitStateAppliedEvents(timeNowMs, fromState.getClusterState(), toState.getClusterState());
+        emitStateAppliedEvents(timeNowMs, fromState.getBaselineClusterState(), toState.getBaselineClusterState());
     }
 
     private void emitStateAppliedEvents(long timeNowMs, ClusterState fromClusterState, ClusterState toClusterState) {

@@ -4,16 +4,38 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
-public class AnnotatedClusterState {
+public class AnnotatedClusterState implements Cloneable {
 
     private final ClusterState clusterState;
     private final Map<Node, NodeStateReason> nodeStateReasons;
     private final Optional<ClusterStateReason> clusterStateReason;
+
+    public static class Builder {
+        private ClusterState clusterState = ClusterState.emptyState();
+        private Optional<ClusterStateReason> clusterReason = Optional.empty();
+        private Map<Node, NodeStateReason> nodeStateReasons = new HashMap<>();
+
+        public Builder clusterState(String stateStr) {
+            clusterState = ClusterState.stateFromString(stateStr);
+            return this;
+        }
+
+        public Builder clusterReason(ClusterStateReason reason) {
+            clusterReason = Optional.of(reason);
+            return this;
+        }
+
+        public Builder storageNodeReason(int nodeIndex, NodeStateReason reason) {
+            nodeStateReasons.put(Node.ofStorage(nodeIndex), reason);
+            return this;
+        }
+
+        AnnotatedClusterState build() {
+            return new AnnotatedClusterState(clusterState, clusterReason, nodeStateReasons);
+        }
+    }
 
     public AnnotatedClusterState(ClusterState clusterState,
                                  Optional<ClusterStateReason> clusterStateReason,
@@ -46,6 +68,16 @@ public class AnnotatedClusterState {
 
     public Optional<ClusterStateReason> getClusterStateReason() {
         return clusterStateReason;
+    }
+
+    public AnnotatedClusterState clone() {
+        return cloneWithClusterState(clusterState.clone());
+    }
+
+    public AnnotatedClusterState cloneWithClusterState(ClusterState newClusterState) {
+        return new AnnotatedClusterState(newClusterState,
+                getClusterStateReason(),
+                getNodeStateReasons());
     }
 
     @Override

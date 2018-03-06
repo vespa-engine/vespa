@@ -4,7 +4,9 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.vdslib.state.*;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -28,18 +30,15 @@ public class MaintenanceWhenPendingGlobalMerges implements ClusterStateDeriver {
     }
 
     @Override
-    public ClusterState derivedFrom(ClusterState baselineState, String bucketSpace) {
-        ClusterState derivedState = baselineState.clone();
+    public AnnotatedClusterState derivedFrom(AnnotatedClusterState baselineState, String bucketSpace) {
         if (!bucketSpace.equals(bucketSpaceToDerive)) {
-            return derivedState;
+            return baselineState.clone();
         }
-        Set<Integer> incompleteNodeIndices = nodesWithMergesNotDone(baselineState);
+        Set<Integer> incompleteNodeIndices = nodesWithMergesNotDone(baselineState.getClusterState());
         if (incompleteNodeIndices.isEmpty()) {
-            return derivedState; // Nothing to do
+            return baselineState.clone();
         }
-        incompleteNodeIndices.forEach(nodeIndex -> derivedState.setNodeState(Node.ofStorage(nodeIndex),
-                new NodeState(NodeType.STORAGE, State.MAINTENANCE)));
-        return derivedState;
+        return setNodesInMaintenance(baselineState, incompleteNodeIndices);
     }
 
     private Set<Integer> nodesWithMergesNotDone(ClusterState baselineState) {
@@ -49,18 +48,32 @@ public class MaintenanceWhenPendingGlobalMerges implements ClusterStateDeriver {
             // FIXME should only set nodes into maintenance if they've not yet been up in the cluster
             // state since they came back as Reported state Up!
             // Must be implemented before this state deriver is enabled in production.
-            if (contentNodeIsAvailable(baselineState, nodeIndex) && hasMergesNotDone(bucketSpaceToCheck, nodeIndex)) {
+            if (contentNodeIsAvailable(baselineState, nodeIndex) && mayHaveMergesPending(bucketSpaceToCheck, nodeIndex)) {
                 incompleteNodes.add(nodeIndex);
             }
         }
         return incompleteNodes;
     }
 
+    private AnnotatedClusterState setNodesInMaintenance(AnnotatedClusterState baselineState,
+                                                        Set<Integer> incompleteNodeIndices) {
+        ClusterState derivedState = baselineState.getClusterState().clone();
+        Map<Node, NodeStateReason> nodeStateReasons = new HashMap<>(baselineState.getNodeStateReasons());
+        incompleteNodeIndices.forEach(nodeIndex -> {
+            Node node = Node.ofStorage(nodeIndex);
+            derivedState.setNodeState(node, new NodeState(NodeType.STORAGE, State.MAINTENANCE));
+            nodeStateReasons.put(node, NodeStateReason.MAY_HAVE_MERGES_PENDING);
+        });
+        return new AnnotatedClusterState(derivedState,
+                baselineState.getClusterStateReason(),
+                nodeStateReasons);
+    }
+
     private boolean contentNodeIsAvailable(ClusterState state, int nodeIndex) {
         return state.getNodeState(Node.ofStorage(nodeIndex)).getState().oneOf("uir");
     }
 
-    private boolean hasMergesNotDone(String bucketSpace, int nodeIndex) {
+    private boolean mayHaveMergesPending(String bucketSpace, int nodeIndex) {
         return mergePendingChecker.mayHaveMergesPending(bucketSpace, nodeIndex);
     }
 }

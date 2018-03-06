@@ -2,6 +2,8 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import static com.yahoo.vespa.clustercontroller.core.matchers.EventForNode.eventForNode;
+import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventForBucketSpace.nodeEventForBucketSpace;
+import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventForBucketSpace.nodeEventForBaseline;
 import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventWithDescription.nodeEventWithDescription;
 import static com.yahoo.vespa.clustercontroller.core.matchers.ClusterEventWithDescription.clusterEventWithDescription;
 import static com.yahoo.vespa.clustercontroller.core.matchers.EventTypeIs.eventTypeIs;
@@ -14,31 +16,21 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.storageNode;
 import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.distributorNode;
 
-import com.yahoo.vdslib.state.ClusterState;
-import com.yahoo.vdslib.state.Node;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class EventDiffCalculatorTest {
 
-    private static Map<Node, NodeStateReason> emptyNodeStateReasons() {
-        return Collections.emptyMap();
-    }
-
     private static class EventFixture {
         final ClusterFixture clusterFixture;
-        // TODO could reasonably put shared state into a common class to avoid dupes for both before/after
-        Optional<ClusterStateReason> clusterReasonBefore = Optional.empty();
-        Optional<ClusterStateReason> clusterReasonAfter = Optional.empty();
-        ClusterState clusterStateBefore = ClusterState.emptyState();
-        ClusterState clusterStateAfter = ClusterState.emptyState();
-        final Map<Node, NodeStateReason> nodeReasonsBefore = new HashMap<>();
-        final Map<Node, NodeStateReason> nodeReasonsAfter = new HashMap<>();
+        AnnotatedClusterState.Builder baselineBefore = new AnnotatedClusterState.Builder();
+        AnnotatedClusterState.Builder baselineAfter = new AnnotatedClusterState.Builder();
+        Map<String, AnnotatedClusterState.Builder> derivedBefore = new HashMap<>();
+        Map<String, AnnotatedClusterState.Builder> derivedAfter = new HashMap<>();
         long currentTimeMs = 0;
 
         EventFixture(int nodeCount) {
@@ -46,46 +38,65 @@ public class EventDiffCalculatorTest {
         }
 
         EventFixture clusterStateBefore(String stateStr) {
-            clusterStateBefore = ClusterState.stateFromString(stateStr);
+            baselineBefore.clusterState(stateStr);
             return this;
         }
         EventFixture clusterStateAfter(String stateStr) {
-            clusterStateAfter = ClusterState.stateFromString(stateStr);
+            baselineAfter.clusterState(stateStr);
             return this;
         }
-        EventFixture storageNodeReasonBefore(int index, NodeStateReason reason) {
-            nodeReasonsBefore.put(storageNode(index), reason);
+        EventFixture storageNodeReasonBefore(int nodeIndex, NodeStateReason reason) {
+            baselineBefore.storageNodeReason(nodeIndex, reason);
             return this;
         }
-        EventFixture storageNodeReasonAfter(int index, NodeStateReason reason) {
-            nodeReasonsAfter.put(storageNode(index), reason);
+        EventFixture storageNodeReasonAfter(int nodeIndex, NodeStateReason reason) {
+            baselineAfter.storageNodeReason(nodeIndex, reason);
             return this;
         }
         EventFixture clusterReasonBefore(ClusterStateReason reason) {
-            this.clusterReasonBefore = Optional.of(reason);
+            baselineBefore.clusterReason(reason);
             return this;
         }
         EventFixture clusterReasonAfter(ClusterStateReason reason) {
-            this.clusterReasonAfter = Optional.of(reason);
+            baselineAfter.clusterReason(reason);
             return this;
         }
         EventFixture currentTimeMs(long timeMs) {
             this.currentTimeMs = timeMs;
             return this;
         }
+        EventFixture derivedClusterStateBefore(String bucketSpace, String stateStr) {
+            getBuilder(derivedBefore, bucketSpace).clusterState(stateStr);
+            return this;
+        }
+        EventFixture derivedClusterStateAfter(String bucketSpace, String stateStr) {
+            getBuilder(derivedAfter, bucketSpace).clusterState(stateStr);
+            return this;
+        }
+        EventFixture derivedStorageNodeReasonBefore(String bucketSpace, int nodeIndex, NodeStateReason reason) {
+            getBuilder(derivedBefore, bucketSpace).storageNodeReason(nodeIndex, reason);
+            return this;
+        }
+        EventFixture derivedStorageNodeReasonAfter(String bucketSpace, int nodeIndex, NodeStateReason reason) {
+            getBuilder(derivedAfter, bucketSpace).storageNodeReason(nodeIndex, reason);
+            return this;
+        }
+        private static AnnotatedClusterState.Builder getBuilder(Map<String, AnnotatedClusterState.Builder> derivedStates, String bucketSpace) {
+            return derivedStates.computeIfAbsent(bucketSpace, key -> new AnnotatedClusterState.Builder());
+        }
 
         List<Event> computeEventDiff() {
-            final AnnotatedClusterState stateBefore = new AnnotatedClusterState(
-                    clusterStateBefore, clusterReasonBefore, nodeReasonsBefore);
-            final AnnotatedClusterState stateAfter = new AnnotatedClusterState(
-                    clusterStateAfter, clusterReasonAfter, nodeReasonsAfter);
-
             return EventDiffCalculator.computeEventDiff(
                     EventDiffCalculator.params()
                             .cluster(clusterFixture.cluster())
-                            .fromState(stateBefore)
-                            .toState(stateAfter)
+                            .fromState(ClusterStateBundle.of(baselineBefore.build(), toDerivedStates(derivedBefore)))
+                            .toState(ClusterStateBundle.of(baselineAfter.build(), toDerivedStates(derivedAfter)))
                             .currentTimeMs(currentTimeMs));
+        }
+
+        private static Map<String, AnnotatedClusterState> toDerivedStates(Map<String, AnnotatedClusterState.Builder> derivedBuilders) {
+            return derivedBuilders.entrySet().stream()
+                    .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue().build()));
         }
 
         static EventFixture createForNodes(int nodeCount) {
@@ -314,6 +325,86 @@ public class EventDiffCalculatorTest {
         assertThat(events.size(), equalTo(1));
         assertThat(events, hasItem(
                 clusterEventWithDescription("Too low ratio of available distributor nodes. Setting cluster state down")));
+    }
+
+    @Test
+    public void may_have_merges_pending_up_edge_event_emitted_if_derived_bucket_space_state_differs_from_baseline() {
+        EventFixture f = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .derivedClusterStateBefore("default", "distributor:3 storage:3")
+                .clusterStateAfter("distributor:3 storage:3")
+                .derivedClusterStateAfter("default", "distributor:3 storage:3 .1.s:m")
+                .derivedStorageNodeReasonAfter("default", 1, NodeStateReason.MAY_HAVE_MERGES_PENDING);
+
+        List<Event> events = f.computeEventDiff();
+        assertThat(events.size(), equalTo(2));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(1)),
+                nodeEventForBucketSpace("default"),
+                nodeEventWithDescription("Altered node state in cluster state from 'U' to 'M'"))));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(1)),
+                nodeEventForBucketSpace("default"),
+                nodeEventWithDescription("Node may have merges pending"))));
+    }
+
+    @Test
+    public void may_have_merges_pending_down_edge_event_emitted_if_derived_bucket_space_state_differs_from_baseline() {
+        EventFixture f = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .derivedClusterStateBefore("default", "distributor:3 storage:3 .1.s:m")
+                .derivedStorageNodeReasonBefore("default", 1, NodeStateReason.MAY_HAVE_MERGES_PENDING)
+                .clusterStateAfter("distributor:3 storage:3")
+                .derivedClusterStateAfter("default", "distributor:3 storage:3");
+
+        List<Event> events = f.computeEventDiff();
+        assertThat(events.size(), equalTo(2));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(1)),
+                nodeEventForBucketSpace("default"),
+                nodeEventWithDescription("Altered node state in cluster state from 'M' to 'U'"))));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(1)),
+                nodeEventForBucketSpace("default"),
+                nodeEventWithDescription("Node no longer have merges pending"))));
+    }
+
+    @Test
+    public void both_baseline_and_derived_bucket_space_state_events_are_emitted() {
+        EventFixture f = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .derivedClusterStateBefore("default", "distributor:3 storage:3")
+                .clusterStateAfter("distributor:3 storage:3 .0.s:m")
+                .derivedClusterStateAfter("default", "distributor:3 storage:3 .1.s:m");
+
+        List<Event> events = f.computeEventDiff();
+        assertThat(events.size(), equalTo(2));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(0)),
+                nodeEventForBaseline(),
+                nodeEventWithDescription("Altered node state in cluster state from 'U' to 'M'"))));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(1)),
+                nodeEventForBucketSpace("default"),
+                nodeEventWithDescription("Altered node state in cluster state from 'U' to 'M'"))));
+    }
+
+    @Test
+    public void derived_bucket_space_state_events_are_not_emitted_if_similar_to_baseline() {
+        EventFixture f = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .derivedClusterStateBefore("default", "distributor:3 storage:3")
+                .derivedClusterStateBefore("global", "distributor:3 storage:3")
+                .clusterStateAfter("distributor:3 storage:3 .0.s:m")
+                .derivedClusterStateAfter("default", "distributor:3 storage:3 .0.s:m")
+                .derivedClusterStateAfter("global", "distributor:3 storage:3 .0.s:m");
+
+        List<Event> events = f.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(0)),
+                nodeEventForBaseline(),
+                nodeEventWithDescription("Altered node state in cluster state from 'U' to 'M'"))));
     }
 
 }
