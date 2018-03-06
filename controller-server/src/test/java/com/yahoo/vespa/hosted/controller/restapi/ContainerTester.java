@@ -4,29 +4,21 @@ package com.yahoo.vespa.hosted.controller.restapi;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
-import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
 import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
-import com.yahoo.slime.ArrayTraverser;
-import com.yahoo.slime.Inspector;
-import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
+import org.junit.ComparisonFailure;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 
@@ -74,19 +66,24 @@ public class ContainerTester {
     public void assertResponse(Request request, File responseFile, int expectedStatusCode) throws IOException {
         String expectedResponse = IOUtils.readFile(new File(responseFilePath + responseFile.toString()));
         expectedResponse = include(expectedResponse);
+        expectedResponse = expectedResponse.replaceAll("(\"[^\"]*\")|\\s*", "$1"); // Remove whitespace
         FilterResult filterResult = invokeSecurityFilters(request);
         request = filterResult.request;
         Response response = filterResult.response != null ? filterResult.response : container.handleRequest(request);
-        Slime expectedSlime = SlimeUtils.jsonToSlime(expectedResponse.getBytes(StandardCharsets.UTF_8));
-        Set<String> fieldsToCensor = fieldsToCensor(null, expectedSlime.get(), new HashSet<>());
-        Slime responseSlime = SlimeUtils.jsonToSlime(response.getBody());
-        List<Pair<String,String>> replaceStrings = new ArrayList<>();
-        buildReplaceStrings(null, responseSlime.get(), fieldsToCensor, replaceStrings);
-
-        String body = response.getBodyAsString();
-        assertEquals("Status code. Response body was: " + body, expectedStatusCode, response.getStatus());
-        assertEquals(responseFile.toString(), new String(SlimeUtils.toJsonBytes(expectedSlime), StandardCharsets.UTF_8),
-                     replace(new String(SlimeUtils.toJsonBytes(responseSlime), StandardCharsets.UTF_8), replaceStrings));
+        String responseString = response.getBodyAsString();
+        if (expectedResponse.contains("(ignore)")) {
+            // Convert expected response to a literal pattern and replace any ignored field with a pattern that matches
+            // anything
+            String expectedResponsePattern = Pattern.quote(expectedResponse)
+                                                    .replaceAll("\"?\\(ignore\\)\"?", "\\\\E.*\\\\Q");
+            if (!Pattern.matches(expectedResponsePattern, responseString)) {
+                throw new ComparisonFailure(responseFile.toString() + " (with ignored fields)",
+                                            expectedResponsePattern, responseString);
+            }
+        } else {
+            assertEquals(responseFile.toString(), expectedResponse, responseString);
+        }
+        assertEquals("Status code", expectedStatusCode, response.getStatus());
     }
 
     public void assertResponse(Supplier<Request> request, String expectedResponse) throws IOException {
@@ -125,53 +122,6 @@ public class ContainerTester {
             }
         }
         return new FilterResult(request, null);
-    }
-
-    private Set<String> fieldsToCensor(String fieldNameOrNull, Inspector value, Set<String> fieldsToCensor) {
-        switch (value.type()) {
-            case ARRAY:  value.traverse((ArrayTraverser)(int index, Inspector element) -> fieldsToCensor(null, element, fieldsToCensor)); break;
-            case OBJECT: value.traverse((String fieldName, Inspector fieldValue) -> fieldsToCensor(fieldName, fieldValue, fieldsToCensor)); break;
-            case STRING: if (fieldNameOrNull != null && "(ignore)".equals(value.asString())) fieldsToCensor.add(fieldNameOrNull); break;
-        }
-        return fieldsToCensor;
-    }
-
-    private void buildReplaceStrings(String fieldNameOrNull, Inspector value, Set<String> fieldsToCensor,
-                                     List<Pair<String,String>> replaceStrings) {
-        switch (value.type()) {
-            case ARRAY:  value.traverse((ArrayTraverser)(int index, Inspector element) -> buildReplaceStrings(null, element, fieldsToCensor, replaceStrings)); break;
-            case OBJECT: value.traverse((String fieldName, Inspector fieldValue) -> buildReplaceStrings(fieldName, fieldValue, fieldsToCensor, replaceStrings)); break;
-            default: replaceString(fieldNameOrNull, value, fieldsToCensor, replaceStrings);
-        }
-    }
-
-    private void replaceString(String fieldName, Inspector fieldValue,
-                               Set<String> fieldsToCensor, List<Pair<String,String>> replaceStrings) {
-        if (fieldName == null) return;
-        if ( ! fieldsToCensor.contains(fieldName)) return;
-
-        String fromString;
-        switch (fieldValue.type()) {
-            case STRING:
-                fromString = "\"" + fieldName + "\":\"" + fieldValue.asString() + "\"";
-                break;
-            case LONG:
-                fromString = "\"" + fieldName + "\":" + fieldValue.asLong();
-                break;
-            case BOOL:
-                fromString = "\"" + fieldName + "\":" + fieldValue.asBool();
-                break;
-            default:
-                throw new IllegalArgumentException("Can only censor strings, longs and booleans");
-        }
-        String toString = "\"" + fieldName + "\":\"(ignore)\"";
-        replaceStrings.add(new Pair<>(fromString, toString));
-    }
-
-    private String replace(String json, List<Pair<String,String>> replaceStrings) {
-        for (Pair<String,String> replaceString : replaceStrings)
-            json = json.replace(replaceString.getFirst(), replaceString.getSecond());
-        return json;
     }
 
     /** Replaces @include(localFile) with the content of the file */

@@ -123,10 +123,6 @@ public class ControllerContainerTest {
         return addIdentityToRequest(new Request(uri), USER);
     }
 
-    protected static Request authenticatedRequest(String uri, String body, Request.Method method) {
-        return addIdentityToRequest(new Request(uri, body, method), USER);
-    }
-
     protected static Request authenticatedRequest(String uri, byte[] body, Request.Method method) {
         return addIdentityToRequest(new Request(uri, body, method), USER);
     }
