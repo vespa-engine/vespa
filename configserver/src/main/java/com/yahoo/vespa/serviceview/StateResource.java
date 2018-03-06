@@ -15,8 +15,10 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
@@ -25,6 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+
+import static java.util.Collections.singletonList;
 
 
 /**
@@ -35,6 +39,7 @@ import java.util.Map;
 @Path("/")
 public class StateResource implements StateClient {
 
+    private static final String USER_AGENT = "service-view-config-server-client";
     private static final String SINGLE_API_LINK = "url";
 
     private final int restApiPort;
@@ -102,7 +107,7 @@ public class StateResource implements StateClient {
         ServiceModel model = new ServiceModel(getModelConfig(tenantName, applicationName, environmentName, regionName, instanceName));
         Service s = model.getService(identifier);
         int requestedPort = s.matchIdentifierWithPort(identifier);
-        Client client = ClientBuilder.newClient();
+        Client client = client();
         try {
             final StringBuilder uriBuffer = new StringBuilder("http://").append(s.host).append(':').append(requestedPort).append('/')
                     .append(apiParams);
@@ -126,7 +131,7 @@ public class StateResource implements StateClient {
     }
 
     protected ModelResponse getModelConfig(String tenant, String application, String environment, String region, String instance) {
-        Client client = ClientBuilder.newClient();
+        Client client = client();
         try {
             WebTarget target = client.target("http://" + host + ":" + restApiPort + "/");
             ConfigClient resource = WebResourceFactory.newResource(ConfigClient.class, target);
@@ -151,7 +156,7 @@ public class StateResource implements StateClient {
         ServiceModel model = new ServiceModel(getModelConfig(tenantName, applicationName, environmentName, regionName, instanceName));
         Service s = model.getService(identifier);
         int requestedPort = s.matchIdentifierWithPort(identifier);
-        Client client = ClientBuilder.newClient();
+        Client client = client();
         try {
             HealthClient resource = getHealthClient(apiParams, s, requestedPort, client);
             HashMap<?, ?> apiResult = resource.getHealthInfo();
@@ -271,6 +276,13 @@ public class StateResource implements StateClient {
         }
         newUri.append("/service/").append(s.getIdentifier(linkPort));
         newUri.append(link.getRawPath());
+    }
+
+    private static Client client() {
+        return ClientBuilder.newBuilder()
+                            .register((ClientRequestFilter) ctx -> ctx.getHeaders().put(HttpHeaders.USER_AGENT,
+                                                                                        singletonList(USER_AGENT)))
+                            .build();
     }
 
 }
