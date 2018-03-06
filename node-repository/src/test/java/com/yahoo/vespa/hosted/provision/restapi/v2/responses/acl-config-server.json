@@ -1,0 +1,165 @@
+{
+  "trustedNodes": [
+    {
+      "hostname": "cfg1",
+      "ipAddress": "(ignore)",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "cfg2",
+      "ipAddress": "(ignore)",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "cfg3",
+      "ipAddress": "(ignore)",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "dockerhost1.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "dockerhost1.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "dockerhost2.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "dockerhost2.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "dockerhost3.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "dockerhost3.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "dockerhost4.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "dockerhost4.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "dockerhost5.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "dockerhost5.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host1.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host1.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host10.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host10.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host2.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host2.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host3.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host3.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host4.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host4.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host5.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host5.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host55.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host55.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host6.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host6.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host7.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "host7.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "cfg1"
+    },
+    {
+      "hostname": "test-container-1",
+      "ipAddress": "::2",
+      "trustedBy": "cfg1"
+    }
+  ],
+  "trustedNetworks": []
+}

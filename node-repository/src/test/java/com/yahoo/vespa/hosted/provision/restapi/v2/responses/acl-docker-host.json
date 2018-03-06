@@ -1,0 +1,75 @@
+{
+  "trustedNodes": [
+    {
+      "hostname": "cfg1",
+      "ipAddress": "(ignore)",
+      "trustedBy": "dockerhost1.yahoo.com"
+    },
+    {
+      "hostname": "cfg2",
+      "ipAddress": "(ignore)",
+      "trustedBy": "dockerhost1.yahoo.com"
+    },
+    {
+      "hostname": "cfg3",
+      "ipAddress": "(ignore)",
+      "trustedBy": "dockerhost1.yahoo.com"
+    },
+    {
+      "hostname": "dockerhost1.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "dockerhost1.yahoo.com"
+    },
+    {
+      "hostname": "dockerhost1.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "dockerhost1.yahoo.com"
+    },
+    {
+      "hostname": "dockerhost2.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "dockerhost1.yahoo.com"
+    },
+    {
+      "hostname": "dockerhost2.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "dockerhost1.yahoo.com"
+    },
+    {
+      "hostname": "dockerhost3.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "dockerhost1.yahoo.com"
+    },
+    {
+      "hostname": "dockerhost3.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "dockerhost1.yahoo.com"
+    },
+    {
+      "hostname": "dockerhost4.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "dockerhost1.yahoo.com"
+    },
+    {
+      "hostname": "dockerhost4.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "dockerhost1.yahoo.com"
+    },
+    {
+      "hostname": "dockerhost5.yahoo.com",
+      "ipAddress": "::1",
+      "trustedBy": "dockerhost1.yahoo.com"
+    },
+    {
+      "hostname": "dockerhost5.yahoo.com",
+      "ipAddress": "127.0.0.1",
+      "trustedBy": "dockerhost1.yahoo.com"
+    }
+  ],
+  "trustedNetworks": [
+    {
+      "network": "172.17.0.0/16",
+      "trustedBy": "dockerhost1.yahoo.com"
+    }
+  ]
+}

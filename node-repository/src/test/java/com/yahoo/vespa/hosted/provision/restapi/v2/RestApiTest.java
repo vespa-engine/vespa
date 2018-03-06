@@ -13,6 +13,7 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ComparisonFailure;
 import org.junit.Test;
 
 import java.io.File;
@@ -330,47 +331,17 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/" + hostname,
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved foo.yahoo.com to ready\"}");
-        Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[.*" +
-                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\",\"trustedBy\":\"foo.yahoo.com\"}," +
-                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\",\"trustedBy\":\"foo.yahoo.com\"}," +
-                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\",\"trustedBy\":\"foo.yahoo.com\"}" +
-                ".*],\"trustedNetworks\":\\[\\]}");
-        assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/" + hostname), responsePattern);
+        assertFile(new Request("http://localhost:8080/nodes/v2/acl/" + hostname), "acl-tenant-node.json");
     }
 
     @Test
     public void acl_request_by_config_server() throws Exception {
-        Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[.*" +
-                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}," +
-                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}," +
-                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}" +
-                ".*],\"trustedNetworks\":\\[\\]}");
-        assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/cfg1"), responsePattern);
+        assertFile(new Request("http://localhost:8080/nodes/v2/acl/cfg1"), "acl-config-server.json");
     }
 
     @Test
     public void acl_request_by_docker_host() throws Exception {
-        Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[" +
-                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\",\"trustedBy\":\"dockerhost1.yahoo.com\"}," +
-                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\",\"trustedBy\":\"dockerhost1.yahoo.com\"}," +
-                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\",\"trustedBy\":\"dockerhost1.yahoo.com\"}]," +
-                "\"trustedNetworks\":\\[" +
-                "\\{\"network\":\"172.17.0.0/16\",\"trustedBy\":\"dockerhost1.yahoo.com\"}]}");
-        assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/dockerhost1.yahoo.com"), responsePattern);
-    }
-
-    @Test
-    public void acl_response_with_dual_stack_node() throws Exception {
-        Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[" +
-                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\",\"trustedBy\":\"host1.yahoo.com\"}," +
-                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\",\"trustedBy\":\"host1.yahoo.com\"}," +
-                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\",\"trustedBy\":\"host1.yahoo.com\"}," +
-                "\\{\"hostname\":\"host1.yahoo.com\",\"ipAddress\":\"::1\",\"trustedBy\":\"host1.yahoo.com\"}," +
-                "\\{\"hostname\":\"host1.yahoo.com\",\"ipAddress\":\"127.0.0.1\",\"trustedBy\":\"host1.yahoo.com\"}," +
-                "\\{\"hostname\":\"host10.yahoo.com\",\"ipAddress\":\"::1\",\"trustedBy\":\"host1.yahoo.com\"}," +
-                "\\{\"hostname\":\"host10.yahoo.com\",\"ipAddress\":\"127.0.0.1\",\"trustedBy\":\"host1.yahoo.com\"}" +
-                "],\"trustedNetworks\":\\[\\]}");
-        assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/host1.yahoo.com"), responsePattern);
+        assertFile(new Request("http://localhost:8080/nodes/v2/acl/dockerhost1.yahoo.com"), "acl-docker-host.json");
     }
 
     @Test
@@ -609,18 +580,21 @@ public class RestApiTest {
                 response.contains(responseSnippet));
     }
 
-    private void assertResponseMatches(Request request, Pattern pattern) throws IOException {
-        String response = container.handleRequest(request).getBodyAsString();
-        assertTrue(String.format("Expected response to match pattern: %s\nResponse: %s", pattern.toString(), response),
-                   pattern.matcher(response).matches());
-    }
-
     private void assertFile(Request request, String responseFile) throws IOException {
         String expectedResponse = IOUtils.readFile(new File(responsesPath + responseFile));
         expectedResponse = include(expectedResponse);
         expectedResponse = expectedResponse.replaceAll("\\s", "");
         String responseString = container.handleRequest(request).getBodyAsString();
-        assertEquals(responseFile, expectedResponse, responseString);
+        if (expectedResponse.contains("(ignore)")) {
+            String expectedResponsePattern = Pattern.quote(expectedResponse)
+                                                    .replaceAll("\\(ignore\\)", "\\\\E.*\\\\Q");
+            if (!Pattern.matches(expectedResponsePattern, responseString)) {
+                throw new ComparisonFailure(responseFile + " (with ignored fields)", expectedResponsePattern,
+                                            responseString);
+            }
+        } else {
+            assertEquals(responseFile, expectedResponse, responseString);
+        }
     }
 
     private void assertRestart(int restartCount, Request request) throws IOException {
