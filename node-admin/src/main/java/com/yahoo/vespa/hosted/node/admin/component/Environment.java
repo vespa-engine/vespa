@@ -65,7 +65,6 @@ public class Environment {
 
     public Environment(ConfigServerConfig configServerConfig) {
         this(configServerConfig,
-             // TODO: Are these three ever set? Does not look like they are. How can this work then?
              getEnvironmentVariable(ENVIRONMENT),
              getEnvironmentVariable(REGION),
              getEnvironmentVariable(SYSTEM),
