@@ -34,9 +34,6 @@
       "name":"MetricsReporter"
     },
     {
-      "name":"ZooKeeperAccessMaintainer"
-    },
-    {
       "name":"NodeFailer"
     }
   ],

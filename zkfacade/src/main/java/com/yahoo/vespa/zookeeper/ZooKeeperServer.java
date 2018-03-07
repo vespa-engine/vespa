@@ -3,6 +3,7 @@ package com.yahoo.vespa.zookeeper;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.log.LogLevel;
@@ -10,16 +11,14 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * Writes zookeeper config and starts zookeeper server.
  *
- * @author lulf
- * @since 5.3
+ * @author Ulf Lilleengen
  */
 public class ZooKeeperServer extends AbstractComponent implements Runnable {
 
@@ -35,15 +34,16 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     private static final String ZOOKEEPER_JMX_LOG4J_DISABLE = "zookeeper.jmx.log4j.disable";
     static final String ZOOKEEPER_JUTE_MAX_BUFFER = "jute.maxbuffer";
     private final Thread zkServerThread;
-    private final ZookeeperServerConfig config;
+    private final ZookeeperServerConfig zookeeperServerConfig;
 
-    ZooKeeperServer(ZookeeperServerConfig config, boolean startServer) {
-        this.config = config;
+    ZooKeeperServer(ZookeeperServerConfig zookeeperServerConfig, ConfigserverConfig configserverConfig, boolean startServer) {
+        this.zookeeperServerConfig = zookeeperServerConfig;
         System.setProperty("zookeeper.jmx.log4j.disable", "true");
-        System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, "" + config.juteMaxBuffer());
+        System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, "" + zookeeperServerConfig.juteMaxBuffer());
         System.setProperty("zookeeper.serverCnxnFactory", "com.yahoo.vespa.zookeeper.RestrictedServerCnxnFactory");
 
-        writeConfigToDisk(config);
+        setAllowedClientHostnames(zookeeperServerConfig, configserverConfig);
+        writeConfigToDisk(zookeeperServerConfig);
         zkServerThread = new Thread(this, "zookeeper server");
         if (startServer) {
             zkServerThread.start();
@@ -51,13 +51,15 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     }
 
     @Inject
-    public ZooKeeperServer(ZookeeperServerConfig config) {
-        this(config, true);
+    public ZooKeeperServer(ZookeeperServerConfig zookeeperServerConfig, ConfigserverConfig configserverConfig) {
+        this(zookeeperServerConfig, configserverConfig, true);
     }
-    
+
     /** Restrict access to this ZooKeeper server to the given client hosts */
-    public static void setAllowedClientHostnames(Collection<String> hostnames) {
-        allowedClientHostnames = ImmutableSet.copyOf(hostnames);
+    private static void setAllowedClientHostnames(ZookeeperServerConfig zookeeperServerConfig, ConfigserverConfig configserverConfig) {
+        if (configserverConfig.hostedVespa())
+            allowedClientHostnames =  ImmutableSet.copyOf(zookeeperServerHostnames(zookeeperServerConfig));
+        // empty set if not hosted Vespa => allow all access
     }
     
     /** Returns the hosts which are allowed to access this ZooKeeper server, or empty to allow access from anywhere */
@@ -130,10 +132,9 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     @Override
     public void run() {
         System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
-        String[] args = new String[]{getDefaults().underVespaHome(config.zooKeeperConfigFile())};
+        String[] args = new String[]{getDefaults().underVespaHome(zookeeperServerConfig.zooKeeperConfigFile())};
         log.log(LogLevel.DEBUG, "Starting ZooKeeper server with config: " + args[0]);
-        log.log(LogLevel.INFO, "Trying to establish ZooKeeper quorum (from " +
-                config.server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toList()) + ")");
+        log.log(LogLevel.INFO, "Trying to establish ZooKeeper quorum (from " + zookeeperServerHostnames(zookeeperServerConfig) + ")");
         org.apache.zookeeper.server.quorum.QuorumPeerMain.main(args);
     }
 
@@ -143,6 +144,10 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
         super.deconstruct();
     }
 
-    public ZookeeperServerConfig getConfig() { return config; }
+    public ZookeeperServerConfig getZookeeperServerConfig() { return zookeeperServerConfig; }
+
+    private static Set<String> zookeeperServerHostnames(ZookeeperServerConfig zookeeperServerConfig) {
+        return zookeeperServerConfig.server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toSet());
+    }
 
 }
