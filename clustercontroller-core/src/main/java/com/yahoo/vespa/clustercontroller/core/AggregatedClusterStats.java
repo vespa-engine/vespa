@@ -6,8 +6,8 @@ package com.yahoo.vespa.clustercontroller.core;
  */
 public interface AggregatedClusterStats {
 
-    public boolean hasUpdatesFromAllDistributors();
+    boolean hasUpdatesFromAllDistributors();
 
-    public ContentClusterStats getStats();
+    ContentClusterStats getStats();
 
 }

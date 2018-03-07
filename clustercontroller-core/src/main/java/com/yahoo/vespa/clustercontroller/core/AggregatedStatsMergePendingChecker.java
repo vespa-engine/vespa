@@ -26,11 +26,7 @@ public class AggregatedStatsMergePendingChecker implements MergePendingChecker {
         ContentNodeStats nodeStats = stats.getStats().getContentNode(contentNodeIndex);
         if (nodeStats != null) {
             ContentNodeStats.BucketSpaceStats bucketSpaceStats = nodeStats.getBucketSpace(bucketSpace);
-            if (bucketSpaceStats != null && bucketSpaceStats.mayHaveBucketsPending()) {
-                return true;
-            } else {
-                return false;
-            }
+            return (bucketSpaceStats != null && bucketSpaceStats.mayHaveBucketsPending());
         }
         return true;
     }
