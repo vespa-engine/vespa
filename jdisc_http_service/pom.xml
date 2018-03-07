@@ -19,12 +19,12 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk15on</artifactId>
-      <scope>compile</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
-      <scope>compile</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.google.inject</groupId>
@@ -176,6 +176,8 @@
         <configuration>
           <discPreInstallBundle>
             asm-debug-all-${asm-debug-all.version}.jar,
+            bcpkix-jdk15on-${bouncycastle.version}.jar,
+            bcprov-jdk15on-${bouncycastle.version}.jar,
             javax.servlet-api-3.1.0.jar,
             jetty-continuation-${jetty.version}.jar,
             jetty-http-${jetty.version}.jar,
