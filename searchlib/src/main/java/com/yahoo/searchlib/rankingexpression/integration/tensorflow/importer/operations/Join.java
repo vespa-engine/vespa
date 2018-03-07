@@ -61,10 +61,10 @@ public class Join extends TensorFlowOperation {
         // "end" (highest numbered) dimensions of the first, but I'm not sure whether this is generally true.
         // Anyway, we move the dimensions of b to the last dimensions of a (instead of by default, the first).
 
-        TensorType a = inputs.get(0).type().get().type();
-        TensorType b = inputs.get(1).type().get().type();
+        OrderedTensorType a = inputs.get(0).type().get();
+        OrderedTensorType b = inputs.get(1).type().get();
         if (a.rank() < b.rank()) {
-            TensorType temp = a;
+            OrderedTensorType temp = a;
             a = b;
             b = temp;
         }

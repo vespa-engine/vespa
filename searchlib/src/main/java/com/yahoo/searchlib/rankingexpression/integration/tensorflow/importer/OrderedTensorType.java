@@ -42,6 +42,8 @@ public class OrderedTensorType {
         return this.type;
     }
 
+    public int rank() { return dimensions.size(); }
+
     public List<TensorType.Dimension> dimensions() {
         return dimensions;
     }
