@@ -591,6 +591,20 @@ BucketDBUpdater::reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
         xos << XmlAttribute("sendtimestamp", entry.second.timestamp)
             << XmlEndTag();
     }
+    xos << XmlEndTag()
+        << XmlTag("delayed_single_bucket_requests");
+    for (const auto & entry : _delayedRequests)
+    {
+        xos << XmlTag("storagenode")
+            << XmlAttribute("index", entry.second.targetNode);
+        if (entry.second.bucket.getBucketId().getRawId() == 0) {
+            xos << XmlAttribute("bucket", ALL);
+        } else {
+            xos << XmlAttribute("bucket", entry.second.bucket.getBucketId().getId(), XmlAttribute::HEX);
+        }
+        xos << XmlAttribute("resendtimestamp", entry.first.getTime())
+            << XmlEndTag();
+    }
     xos << XmlEndTag() << XmlEndTag();
     return "";
 }
