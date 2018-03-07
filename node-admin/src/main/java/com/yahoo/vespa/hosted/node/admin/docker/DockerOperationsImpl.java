@@ -29,6 +29,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,7 @@ public class DockerOperationsImpl implements DockerOperations {
     private final Environment environment;
     private final ProcessExecuter processExecuter;
     private final String nodeProgram;
-    private Map<Path, Boolean> directoriesToMount;
+    private final Map<Path, Boolean> directoriesToMount;
     private final IPAddresses retriever;
 
     public DockerOperationsImpl(Docker docker, Environment environment, ProcessExecuter processExecuter, IPAddresses retriever) {
@@ -90,6 +91,10 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withUlimit("core", -1, -1)
                     .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
                     .withAddCapability("SYS_ADMIN"); // Needed for perf
+
+            if (environment.getNodeType() == NodeType.confighost) {
+                command.withVolume("/var/lib/sia", "/var/lib/sia");
+            }
 
             if (!docker.networkNPTed()) {
                 command.withIpAddress(nodeInetAddress);
@@ -387,10 +392,6 @@ public class DockerOperationsImpl implements DockerOperations {
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("tmp"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/container-data"), false);
 
-        if (environment.getNodeType() == NodeType.confighost) {
-            directoriesToMount.put(Paths.get("/var/lib/sia"), false);
-        }
-        
-        return directoriesToMount;
+        return Collections.unmodifiableMap(directoriesToMount);
     }
 }
