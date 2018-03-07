@@ -10,7 +10,7 @@ import java.util.List;
  * This is a container for all {@link Annotation}s constants used by built-in Vespa features. These must be in sync with
  * the corresponding class in the C++ file 'document/datatype/annotationtype.h'.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 @SuppressWarnings({ "UnusedDeclaration" })
 public final class AnnotationTypes {

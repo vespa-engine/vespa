@@ -8,9 +8,10 @@ import com.yahoo.processing.request.Properties;
 /**
  * TODO: What's this?
  *
-* @author tonytv
-*/
+ * @author tonytv
+ */
 public abstract class Target extends AbstractComponent {
+
     final ComponentId localId;
     final boolean isDerived;
 
@@ -28,4 +29,5 @@ public abstract class Target extends AbstractComponent {
     public abstract String searchRefDescription();
 
     abstract void freeze();
+
 }
