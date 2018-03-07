@@ -16,21 +16,18 @@ import java.security.cert.X509Certificate;
  */
 public class AthenzCertificateClient {
 
-    private final AthenzProviderServiceConfig config;
     private final AthenzProviderServiceConfig.Zones zoneConfig;
     private final AthenzIdentityProvider bootstrapIdentity;
 
     public AthenzCertificateClient(AthenzIdentityProvider bootstrapIdentity,
-                                   AthenzProviderServiceConfig config,
                                    AthenzProviderServiceConfig.Zones zoneConfig) {
         this.bootstrapIdentity = bootstrapIdentity;
-        this.config = config;
         this.zoneConfig = zoneConfig;
     }
 
     public X509Certificate updateCertificate(PrivateKey privateKey) {
         SSLContext bootstrapSslContext = bootstrapIdentity.getIdentitySslContext();
-        ZTSClient ztsClient = new ZTSClient(config.ztsUrl(), bootstrapSslContext);
+        ZTSClient ztsClient = new ZTSClient(zoneConfig.ztsUrl(), bootstrapSslContext);
         InstanceRefreshRequest req =
                 ZTSClient.generateInstanceRefreshRequest(
                         zoneConfig.domain(), zoneConfig.serviceName(), privateKey, zoneConfig.certDnsSuffix(), /*expiryTime*/0);

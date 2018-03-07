@@ -17,7 +17,7 @@ zones{}.secretVersion                     int
 zones{}.certDnsSuffix                     string
 
 # Athenz ZTS server url
-ztsUrl                                    string
+zones{}.ztsUrl                            string
 
 # Path to Athenz CA JKS trust store
 athenzCaTrustStore                        string

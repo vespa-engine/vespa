@@ -20,11 +20,11 @@ public class TestUtils {
                         .secretVersion(0)
                         .domain(domain)
                         .certDnsSuffix(dnsSuffix)
+                        .ztsUrl("localhost/zts")
                         .secretName("s3cr3t");
         return new AthenzProviderServiceConfig(
                 new AthenzProviderServiceConfig.Builder()
                         .zones(ImmutableMap.of(zone.environment().value() + "." + zone.region().value(), zoneConfig))
-                        .ztsUrl("localhost/zts")
                         .athenzCaTrustStore("/dummy/path/to/athenz-ca.jks"));
     }
 

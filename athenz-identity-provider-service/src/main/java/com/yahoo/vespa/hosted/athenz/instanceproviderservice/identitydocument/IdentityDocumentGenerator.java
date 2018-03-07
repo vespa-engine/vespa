@@ -40,7 +40,7 @@ public class IdentityDocumentGenerator {
         this.keyProvider = keyProvider;
         this.dnsSuffix = zoneConfig.certDnsSuffix();
         this.providerService = zoneConfig.serviceName();
-        this.ztsUrl = config.ztsUrl();
+        this.ztsUrl = zoneConfig.ztsUrl();
         this.providerDomain = zoneConfig.domain();
         this.signingSecretVersion = zoneConfig.secretVersion();
     }

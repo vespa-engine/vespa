@@ -65,7 +65,7 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
                                          ConfigserverConfig configserverConfig) {
         AthenzProviderServiceConfig.Zones zoneConfig = getZoneConfig(config, zone);
         Path keystoreCachePath = createKeystoreCachePath(configserverConfig);
-        AthenzCertificateClient certificateClient = new AthenzCertificateClient(bootstrapIdentity, config, zoneConfig);
+        AthenzCertificateClient certificateClient = new AthenzCertificateClient(bootstrapIdentity, zoneConfig);
         Duration updatePeriod = Duration.ofDays(config.updatePeriodDays());
         this.certificateClient = certificateClient;
         this.keyProvider = keyProvider;
