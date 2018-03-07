@@ -6,7 +6,6 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
@@ -60,7 +59,6 @@ public class DockerTester implements AutoCloseable {
         }
 
         Environment environment = new Environment.Builder()
-                .configServerConfig(new ConfigServerConfig(new ConfigServerConfig.Builder()))
                 .inetAddressResolver(inetAddressResolver)
                 .region("us-east-1")
                 .environment("prod")

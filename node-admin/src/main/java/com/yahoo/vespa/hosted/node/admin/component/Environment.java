@@ -90,7 +90,21 @@ public class Environment {
                 pathResolver,
                 getLogstashNodesFromEnvironment(),
                 coreDumpFeedEndpoint,
-                nodeType
+
+                createKeyStoreOptions(
+                        configServerConfig.keyStoreConfig().path(),
+                        configServerConfig.keyStoreConfig().password().toCharArray(),
+                        configServerConfig.keyStoreConfig().type().name(),
+                        "BC"),
+                createKeyStoreOptions(
+                        configServerConfig.trustStoreConfig().path(),
+                        configServerConfig.trustStoreConfig().password().toCharArray(),
+                        configServerConfig.trustStoreConfig().type().name(),
+                        null),
+                createAthenzIdentity(
+                        configServerConfig.athenzDomain(),
+                        configServerConfig.serviceName()),
+             nodeType
         );
     }
 
@@ -103,26 +117,15 @@ public class Environment {
                        PathResolver pathResolver,
                        List<String> logstashNodes,
                        Optional<String> feedEndpoint,
+                       Optional<KeyStoreOptions> keyStoreOptions,
+                       Optional<KeyStoreOptions> trustStoreOptions,
+                       Optional<AthenzIdentity> athenzIdentity,
                        NodeType nodeType) {
         this.configServerHostNames = configServerConfig.hosts();
         this.configServerURIs = createConfigServerUris(
                 configServerConfig.scheme(),
                 configServerConfig.hosts(),
                 configServerConfig.port());
-        this.keyStoreOptions = createKeyStoreOptions(
-                configServerConfig.keyStoreConfig().path(),
-                configServerConfig.keyStoreConfig().password().toCharArray(),
-                configServerConfig.keyStoreConfig().type().name(),
-                "BC");
-        this.trustStoreOptions = createKeyStoreOptions(
-                configServerConfig.trustStoreConfig().path(),
-                configServerConfig.trustStoreConfig().password().toCharArray(),
-                configServerConfig.trustStoreConfig().type().name(),
-                null);
-        this.athenzIdentity = createAthenzIdentity(
-                configServerConfig.athenzDomain(),
-                configServerConfig.serviceName());
-
         this.environment = environment;
         this.region = region;
         this.system = system;
@@ -131,6 +134,9 @@ public class Environment {
         this.pathResolver = pathResolver;
         this.logstashNodes = logstashNodes;
         this.feedEndpoint = feedEndpoint;
+        this.keyStoreOptions = keyStoreOptions;
+        this.trustStoreOptions = trustStoreOptions;
+        this.athenzIdentity = athenzIdentity;
         this.nodeType = nodeType;
     }
 
@@ -273,7 +279,7 @@ public class Environment {
     public NodeType getNodeType() { return nodeType; }
 
     public static class Builder {
-        private ConfigServerConfig configServerConfig;
+        ConfigServerConfig configServerConfig = new ConfigServerConfig(new ConfigServerConfig.Builder());
         private String environment;
         private String region;
         private String system;
@@ -282,6 +288,9 @@ public class Environment {
         private PathResolver pathResolver;
         private List<String> logstashNodes = Collections.emptyList();
         private Optional<String> feedEndpoint = Optional.empty();
+        private KeyStoreOptions keyStoreOptions;
+        private KeyStoreOptions trustStoreOptions;
+        private AthenzIdentity athenzIdentity;
         private NodeType nodeType = NodeType.tenant;
 
         public Builder configServerConfig(ConfigServerConfig configServerConfig) {
@@ -329,17 +338,30 @@ public class Environment {
             return this;
         }
 
+        public Builder keyStoreOptions(KeyStoreOptions keyStoreOptions) {
+            this.keyStoreOptions = keyStoreOptions;
+            return this;
+        }
+
+        public Builder trustStoreOptions(KeyStoreOptions trustStoreOptions) {
+            this.trustStoreOptions = trustStoreOptions;
+            return this;
+        }
+
+        public Builder athenzIdentity(AthenzIdentity athenzIdentity) {
+            this.athenzIdentity = athenzIdentity;
+            return this;
+        }
+
         public Builder nodeType(NodeType nodeType) {
             this.nodeType = nodeType;
             return this;
         }
 
         public Environment build() {
-            Objects.requireNonNull(configServerConfig, "configServerConfig cannot be null");
             Objects.requireNonNull(environment, "environment cannot be null");
             Objects.requireNonNull(region, "region cannot be null");
             Objects.requireNonNull(system, "system cannot be null");
-
             return new Environment(configServerConfig,
                                    environment,
                                    region,
@@ -349,6 +371,9 @@ public class Environment {
                                    Optional.ofNullable(pathResolver).orElseGet(PathResolver::new),
                                    logstashNodes,
                                    feedEndpoint,
+                                   Optional.ofNullable(keyStoreOptions),
+                                   Optional.ofNullable(trustStoreOptions),
+                                   Optional.ofNullable(athenzIdentity),
                                    nodeType);
         }
     }

@@ -4,11 +4,9 @@ package com.yahoo.vespa.hosted.node.admin.logging;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
-import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +19,7 @@ import static org.junit.Assert.*;
  */
 public class FilebeatConfigProviderTest {
 
+
     private static final String tenant = "vespa";
     private static final String application = "music";
     private static final String instance = "default";
@@ -31,7 +30,7 @@ public class FilebeatConfigProviderTest {
 
     @Test
     public void it_replaces_all_fields_correctly() {
-        FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
+        FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment());
 
         Optional<String> config = filebeatConfigProvider.getConfig(getNodeSpec(tenant, application, instance));
 
@@ -42,7 +41,11 @@ public class FilebeatConfigProviderTest {
 
     @Test
     public void it_does_not_generate_config_when_no_logstash_nodes() {
-        Environment env = getEnvironment(Collections.emptyList());
+        Environment env = new Environment.Builder()
+                .environment(environment)
+                .region(region)
+                .system(system)
+                .build();
 
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(env);
         Optional<String> config = filebeatConfigProvider.getConfig(getNodeSpec(tenant, application, instance));
@@ -51,7 +54,7 @@ public class FilebeatConfigProviderTest {
 
     @Test
     public void it_does_not_generate_config_for_nodes_wihout_owner() {
-        FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
+        FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment());
         ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .nodeFlavor("flavor")
                 .nodeState(Node.State.active)
@@ -77,7 +80,12 @@ public class FilebeatConfigProviderTest {
 
     @Test
     public void it_does_not_add_double_quotes() {
-        Environment environment = getEnvironment(ImmutableList.of("unquoted", "\"quoted\""));
+        Environment environment = new Environment.Builder()
+                .environment(FilebeatConfigProviderTest.environment)
+                .region(region)
+                .system(system)
+                .logstashNodes(ImmutableList.of("unquoted", "\"quoted\""))
+                .build();
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
         Optional<String> config = filebeatConfigProvider.getConfig(getNodeSpec(tenant, application, instance));
         assertThat(config.get(), containsString("hosts: [\"unquoted\",\"quoted\"]"));
@@ -90,14 +98,13 @@ public class FilebeatConfigProviderTest {
     }
 
     private String getConfigString() {
-        FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
+        FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment());
         ContainerNodeSpec nodeSpec = getNodeSpec(tenant, application, instance);
         return filebeatConfigProvider.getConfig(nodeSpec).orElseThrow(() -> new RuntimeException("Failed to get filebeat config"));
     }
 
-    private Environment getEnvironment(List<String> logstashNodes) {
+    private Environment getEnvironment() {
         return new Environment.Builder()
-                .configServerConfig(new ConfigServerConfig(new ConfigServerConfig.Builder()))
                 .environment(environment)
                 .region(region)
                 .system(system)
