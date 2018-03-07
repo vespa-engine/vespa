@@ -288,7 +288,7 @@ public class RankingExpressionWithTensorFlowTestCase {
                 "input",
                 application);
         search.assertFirstPhaseExpression(expression, "my_profile");
-        assertSmallConstant("dnn_hidden2_Const", TensorType.fromSpec("tensor(d0[1])"), search);
+        assertSmallConstant("dnn_hidden2_Const", TensorType.fromSpec("tensor(d2[1])"), search);
         search.assertMacro(macroExpression1, "tf_macro_dnn_hidden1_add", "my_profile");
         search.assertMacro(macroExpression2, "tf_macro_dnn_hidden2_add", "my_profile");
 
@@ -306,7 +306,7 @@ public class RankingExpressionWithTensorFlowTestCase {
                     "input",
                     storedApplication);
             searchFromStored.assertFirstPhaseExpression(expression, "my_profile");
-            assertSmallConstant("dnn_hidden2_Const", TensorType.fromSpec("tensor(d0[1])"), search);
+            assertSmallConstant("dnn_hidden2_Const", TensorType.fromSpec("tensor(d2[1])"), search);
             searchFromStored.assertMacro(macroExpression1, "tf_macro_dnn_hidden1_add", "my_profile");
             searchFromStored.assertMacro(macroExpression2, "tf_macro_dnn_hidden2_add", "my_profile");
         }
