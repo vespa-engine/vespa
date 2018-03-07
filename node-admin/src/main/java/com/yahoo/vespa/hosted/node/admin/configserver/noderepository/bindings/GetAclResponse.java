@@ -29,6 +29,7 @@ public class GetAclResponse {
         this.trustedNetworks = trustedNetworks == null ? Collections.emptyList() : trustedNetworks;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Node {
 
         @JsonProperty("hostname")
@@ -49,6 +50,7 @@ public class GetAclResponse {
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Network {
 
         @JsonProperty("network")
