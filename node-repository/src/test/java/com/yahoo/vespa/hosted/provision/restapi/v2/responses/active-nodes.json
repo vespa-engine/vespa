@@ -1,13 +1,13 @@
 {
   "nodes": [
+    @include(node6.json),
+    @include(node2.json),
+    @include(docker-container1.json),
+    @include(node4.json),
     @include(docker-node4.json),
     @include(docker-node5.json),
     @include(docker-node2.json),
     @include(docker-node1.json),
-    @include(docker-node3.json),
-    @include(node6.json),
-    @include(node2.json),
-    @include(docker-container1.json),
-    @include(node4.json)
+    @include(docker-node3.json)
   ]
 }
