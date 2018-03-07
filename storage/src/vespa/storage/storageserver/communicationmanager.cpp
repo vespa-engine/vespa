@@ -635,7 +635,7 @@ CommunicationManager::sendDirectRPCReply(
         serializeNodeState(gns, ns, true, true, false);
         request.addReturnString(ns.str().c_str());
         LOGBP(debug, "Sending getnodestate2 reply with no host info.");
-    } else if (requestName == "setsystemstate2") {
+    } else if (requestName == "setsystemstate2" || requestName == "setdistributionstates") {
         // No data to return
     } else {
         request.addReturnInt(reply->getResult().getResult());

@@ -7,6 +7,7 @@ vespa_add_library(storage_teststorageserver TEST
     communicationmanagertest.cpp
     configurable_bucket_resolver_test.cpp
     documentapiconvertertest.cpp
+    fnet_listener_test.cpp
     mergethrottlertest.cpp
     priorityconvertertest.cpp
     service_layer_error_listener_test.cpp

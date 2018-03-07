@@ -20,6 +20,7 @@ vespa_add_library(storage_storageserver
     service_layer_error_listener.cpp
     servicelayernode.cpp
     servicelayernodecontext.cpp
+    slime_cluster_state_bundle_codec.cpp
     statemanager.cpp
     statereporter.cpp
     storagemetricsset.cpp
