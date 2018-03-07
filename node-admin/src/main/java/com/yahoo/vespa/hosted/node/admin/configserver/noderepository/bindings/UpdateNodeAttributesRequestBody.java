@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 
@@ -16,6 +17,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
  * @author bakksjo
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UpdateNodeAttributesRequestBody {
     public Long currentRestartGeneration;
     public Long currentRebootGeneration;

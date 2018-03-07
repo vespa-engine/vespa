@@ -119,7 +119,7 @@ public class GetNodesResponse {
                     + " }";
         }
 
-
+        @JsonIgnoreProperties(ignoreUnknown = true)
         public static class Owner {
             public final String tenant;
             public final String application;
@@ -143,6 +143,7 @@ public class GetNodesResponse {
             }
         }
 
+        @JsonIgnoreProperties(ignoreUnknown = true)
         public static class Membership {
             public final String clusterType;
             public final String clusterId;
