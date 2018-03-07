@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
+import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.when;
 
 public class DockerOperationsImplTest {
     private final Environment environment = new Environment.Builder()
+            .configServerConfig(new ConfigServerConfig(new ConfigServerConfig.Builder()))
             .region("us-east-1")
             .environment("prod")
             .system("main")
