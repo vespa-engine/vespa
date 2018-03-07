@@ -23,26 +23,17 @@ public class IdentityDocumentGenerator {
     private final NodeRepository nodeRepository;
     private final Zone zone;
     private final KeyProvider keyProvider;
-    private final String dnsSuffix;
-    private final String providerService;
-    private final String ztsUrl;
-    private final String providerDomain;
-    private final int signingSecretVersion;
+    private final AthenzProviderServiceConfig.Zones zoneConfig;
 
     @Inject
     public IdentityDocumentGenerator(AthenzProviderServiceConfig config,
                                      NodeRepository nodeRepository,
                                      Zone zone,
                                      KeyProvider keyProvider) {
-        AthenzProviderServiceConfig.Zones zoneConfig = Utils.getZoneConfig(config, zone);
+        this.zoneConfig = Utils.getZoneConfig(config, zone);
         this.nodeRepository = nodeRepository;
         this.zone = zone;
         this.keyProvider = keyProvider;
-        this.dnsSuffix = zoneConfig.certDnsSuffix();
-        this.providerService = zoneConfig.serviceName();
-        this.ztsUrl = zoneConfig.ztsUrl();
-        this.providerDomain = zoneConfig.domain();
-        this.signingSecretVersion = zoneConfig.secretVersion();
     }
 
     public SignedIdentityDocument generateSignedIdentityDocument(String hostname) {
@@ -55,7 +46,7 @@ public class IdentityDocumentGenerator {
                     Base64.getEncoder().encodeToString(identityDocumentString.getBytes());
             Signature sigGenerator = Signature.getInstance("SHA512withRSA");
 
-            PrivateKey privateKey = keyProvider.getPrivateKey(signingSecretVersion);
+            PrivateKey privateKey = keyProvider.getPrivateKey(zoneConfig.secretVersion());
             sigGenerator.initSign(privateKey);
             sigGenerator.update(encodedIdentityDocument.getBytes());
             String signature = Base64.getEncoder().encodeToString(sigGenerator.sign());
@@ -65,9 +56,9 @@ public class IdentityDocumentGenerator {
                     signature,
                     SignedIdentityDocument.DEFAULT_KEY_VERSION,
                     identityDocument.providerUniqueId.asString(),
-                    toZoneDnsSuffix(zone, dnsSuffix),
-                    providerDomain + "." + providerService,
-                    ztsUrl,
+                    toZoneDnsSuffix(zone, zoneConfig.certDnsSuffix()),
+                    zoneConfig.domain() + "." + zoneConfig.serviceName(),
+                    zoneConfig.ztsUrl(),
                     SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION);
         } catch (Exception e) {
             throw new RuntimeException("Exception generating identity document: " + e.getMessage(), e);
