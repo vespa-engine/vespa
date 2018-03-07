@@ -5,6 +5,7 @@ import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
+import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -105,7 +106,8 @@ public final class ReferenceNode extends CompositeNode {
         // TODO: Context should accept a Reference instead.
         if (reference.isIdentifier())
             return context.get(reference.name());
-        return context.get(getName(), getArguments(), getOutput());
+        else
+            return context.get(getName(), getArguments(), getOutput());
     }
 
     @Override

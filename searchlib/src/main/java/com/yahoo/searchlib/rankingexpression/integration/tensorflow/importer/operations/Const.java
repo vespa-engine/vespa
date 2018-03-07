@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.operations;
 
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.BooleanValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
@@ -46,7 +47,7 @@ public class Const extends TensorFlowOperation {
         if (type.type().rank() == 0 && getConstantValue().isPresent()) {
             expressionNode = new ConstantNode(getConstantValue().get().asDoubleValue());
         } else {
-            expressionNode = new ReferenceNode("constant(\"" + vespaName() + "\")");
+            expressionNode = new ReferenceNode(Reference.simple("constant", vespaName()));
         }
         return new TensorFunctionNode.TensorFunctionExpressionNode(expressionNode);
     }
@@ -72,7 +73,7 @@ public class Const extends TensorFlowOperation {
     private Value value() {
         if (!node.getAttrMap().containsKey("value")) {
             throw new IllegalArgumentException("Node '" + node.getName() + "' of type " +
-                    "const has missing 'value' attribute");
+                                               "const has missing 'value' attribute");
         }
         AttrValue attrValue = node.getAttrMap().get("value");
         if (attrValue.getValueCase() == AttrValue.ValueCase.TENSOR) {

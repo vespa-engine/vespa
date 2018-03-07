@@ -42,7 +42,7 @@ import static org.junit.Assert.*;
 public class RankingExpressionWithTensorFlowTestCase {
 
     private final Path applicationDir = Path.fromString("src/test/integration/tensorflow/");
-    private final String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(\"layer_Variable_read\"), f(a,b)(a * b)), sum, d2), constant(\"layer_Variable_1_read\"), f(a,b)(a + b))";
+    private final String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(layer_Variable_1_read), f(a,b)(a + b))";
 
     @After
     public void removeGeneratedConstantTensorFiles() {
@@ -252,8 +252,51 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
+    public void testImportingFromStoredExpressionsWithMacroOverridingConstant() throws IOException {
+        String rankProfile =
+                "  rank-profile my_profile {\n" +
+                "    macro Placeholder() {\n" +
+                "      expression: tensor(d0[2],d1[784])(0.0)\n" +
+                "    }\n" +
+                "    macro layer_Variable_read() {\n" +
+                "      expression: tensor(d1[10],d2[784])(0.0)\n" +
+                "    }\n" +
+                "    first-phase {\n" +
+                "      expression: tensorflow('mnist_softmax/saved')" +
+                "    }\n" +
+                "  }";
+
+
+        String vespaExpressionWithoutConstant =
+                "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), layer_Variable_read, f(a,b)(a * b)), sum, d2), constant(layer_Variable_1_read), f(a,b)(a + b))";
+        RankProfileSearchFixture search = fixtureWith(rankProfile, new StoringApplicationPackage(applicationDir));
+        search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
+
+        assertNull("Constant overridden by macro is not added",
+                   search.search().getRankingConstants().get("layer_Variable_read"));
+        assertLargeConstant("layer_Variable_1_read", search, Optional.of(10L));
+
+        // At this point the expression is stored - copy application to another location which do not have a models dir
+        Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
+        try {
+            storedApplicationDirectory.toFile().mkdirs();
+            IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
+                                  storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+            StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
+            RankProfileSearchFixture searchFromStored = fixtureWith(rankProfile, storedApplication);
+            searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
+            assertNull("Constant overridden by macro is not added",
+                       searchFromStored.search().getRankingConstants().get("layer_Variable_read"));
+            assertLargeConstant("layer_Variable_1_read", searchFromStored, Optional.of(10L));
+        }
+        finally {
+            IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
+        }
+    }
+
+    @Test
     public void testTensorFlowReduceBatchDimension() {
-        final String expression = "join(join(reduce(join(reduce(rename(Placeholder, (d0, d1), (d0, d2)), sum, d0), constant(\"layer_Variable_read\"), f(a,b)(a * b)), sum, d2), constant(\"layer_Variable_1_read\"), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
+        final String expression = "join(join(reduce(join(reduce(rename(Placeholder, (d0, d1), (d0, d2)), sum, d0), constant(layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(layer_Variable_1_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
         RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
                 "tensorflow('mnist_softmax/saved')");
         search.assertFirstPhaseExpression(expression, "my_profile");
@@ -263,9 +306,9 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @Test
     public void testMacroGeneration() {
-        final String expression = "join(reduce(join(join(join(constant(\"dnn_hidden2_Const\"), tf_macro_dnn_hidden2_add, f(a,b)(a * b)), tf_macro_dnn_hidden2_add, f(a,b)(max(a,b))), constant(\"dnn_outputs_weights_read\"), f(a,b)(a * b)), sum, d2), constant(\"dnn_outputs_bias_read\"), f(a,b)(a + b))";
-        final String macroExpression1 = "join(reduce(join(rename(input, (d0, d1), (d0, d4)), constant(\"dnn_hidden1_weights_read\"), f(a,b)(a * b)), sum, d4), constant(\"dnn_hidden1_bias_read\"), f(a,b)(a + b))";
-        final String macroExpression2 = "join(reduce(join(join(join(0.009999999776482582, tf_macro_dnn_hidden1_add, f(a,b)(a * b)), tf_macro_dnn_hidden1_add, f(a,b)(max(a,b))), constant(\"dnn_hidden2_weights_read\"), f(a,b)(a * b)), sum, d3), constant(\"dnn_hidden2_bias_read\"), f(a,b)(a + b))";
+        final String expression = "join(reduce(join(join(join(constant(dnn_hidden2_Const), tf_macro_dnn_hidden2_add, f(a,b)(a * b)), tf_macro_dnn_hidden2_add, f(a,b)(max(a,b))), constant(dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(dnn_outputs_bias_read), f(a,b)(a + b))";
+        final String macroExpression1 = "join(reduce(join(rename(input, (d0, d1), (d0, d4)), constant(dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(dnn_hidden1_bias_read), f(a,b)(a + b))";
+        final String macroExpression2 = "join(reduce(join(join(join(0.009999999776482582, tf_macro_dnn_hidden1_add, f(a,b)(a * b)), tf_macro_dnn_hidden1_add, f(a,b)(max(a,b))), constant(dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(dnn_hidden2_bias_read), f(a,b)(a + b))";
 
         RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
                 "tensorflow('mnist/saved')");
@@ -276,9 +319,9 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @Test
     public void testImportingFromStoredExpressionsWithSmallConstants() throws IOException {
-        final String expression = "join(reduce(join(join(join(constant(\"dnn_hidden2_Const\"), tf_macro_dnn_hidden2_add, f(a,b)(a * b)), tf_macro_dnn_hidden2_add, f(a,b)(max(a,b))), constant(\"dnn_outputs_weights_read\"), f(a,b)(a * b)), sum, d2), constant(\"dnn_outputs_bias_read\"), f(a,b)(a + b))";
-        final String macroExpression1 = "join(reduce(join(rename(input, (d0, d1), (d0, d4)), constant(\"dnn_hidden1_weights_read\"), f(a,b)(a * b)), sum, d4), constant(\"dnn_hidden1_bias_read\"), f(a,b)(a + b))";
-        final String macroExpression2 = "join(reduce(join(join(join(0.009999999776482582, tf_macro_dnn_hidden1_add, f(a,b)(a * b)), tf_macro_dnn_hidden1_add, f(a,b)(max(a,b))), constant(\"dnn_hidden2_weights_read\"), f(a,b)(a * b)), sum, d3), constant(\"dnn_hidden2_bias_read\"), f(a,b)(a + b))";
+        final String expression = "join(reduce(join(join(join(constant(dnn_hidden2_Const), tf_macro_dnn_hidden2_add, f(a,b)(a * b)), tf_macro_dnn_hidden2_add, f(a,b)(max(a,b))), constant(dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(dnn_outputs_bias_read), f(a,b)(a + b))";
+        final String macroExpression1 = "join(reduce(join(rename(input, (d0, d1), (d0, d4)), constant(dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(dnn_hidden1_bias_read), f(a,b)(a + b))";
+        final String macroExpression2 = "join(reduce(join(join(join(0.009999999776482582, tf_macro_dnn_hidden1_add, f(a,b)(a * b)), tf_macro_dnn_hidden1_add, f(a,b)(max(a,b))), constant(dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(dnn_hidden2_bias_read), f(a,b)(a + b))";
 
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
         RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
@@ -377,6 +420,16 @@ public class RankingExpressionWithTensorFlowTestCase {
                     "  }",
                     constant,
                     field);
+        }
+        catch (ParseException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    private RankProfileSearchFixture fixtureWith(String rankProfile, StoringApplicationPackage application) {
+        try {
+            return new RankProfileSearchFixture(application, application.getQueryProfiles(),
+                                                rankProfile, null, null);
         }
         catch (ParseException e) {
             throw new IllegalArgumentException(e);

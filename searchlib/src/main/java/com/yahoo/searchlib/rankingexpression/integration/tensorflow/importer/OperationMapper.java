@@ -34,9 +34,7 @@ public class OperationMapper {
 
     public static TensorFlowOperation get(NodeDef node, List<TensorFlowOperation> inputs, int port) {
         switch (node.getOp().toLowerCase()) {
-            /*
-             * array ops
-             */
+            // array ops
             case "const":       return new Const(node, inputs, port);
             case "expanddims":  return new ExpandDims(node, inputs, port);
             case "identity":    return new Identity(node, inputs, port);
@@ -46,15 +44,11 @@ public class OperationMapper {
             case "shape":       return new Shape(node, inputs, port);
             case "squeeze":     return new Squeeze(node, inputs, port);
 
-            /*
-             * control flow
-             */
+            // control flow
             case "merge":       return new Merge(node, inputs, port);
             case "switch":      return new Switch(node, inputs, port);
 
-            /*
-             * math ops
-             */
+            // math ops
             case "add":         return new Join(node, inputs, port, ScalarFunctions.add());
             case "add_n":       return new Join(node, inputs, port, ScalarFunctions.add());
             case "acos":        return new Map(node, inputs, port, ScalarFunctions.acos());
@@ -75,27 +69,17 @@ public class OperationMapper {
             case "sub":         return new Join(node, inputs, port, ScalarFunctions.subtract());
             case "subtract":    return new Join(node, inputs, port, ScalarFunctions.subtract());
 
-            /*
-             * nn ops
-             */
+            // nn ops
             case "biasadd":     return new Join(node, inputs, port, ScalarFunctions.add());
             case "elu":         return new Map(node, inputs, port, ScalarFunctions.elu());
             case "relu":        return new Map(node, inputs, port, ScalarFunctions.relu());
             case "selu":        return new Map(node, inputs, port, ScalarFunctions.selu());
 
-            /*
-             * random ops
-             */
-
-            /*
-             * state ops
-             */
+            // state ops
             case "variable":    return new Variable(node, inputs, port);
             case "variablev2":  return new Variable(node, inputs, port);
 
-            /*
-             * evaluation no-ops
-             */
+            // evaluation no-ops
             case "stopgradient":return new Identity(node, inputs, port);
             case "noop":        return new NoOp(node, inputs, port);
         }
