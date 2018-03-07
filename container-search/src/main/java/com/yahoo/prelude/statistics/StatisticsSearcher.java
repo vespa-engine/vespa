@@ -144,10 +144,6 @@ public class StatisticsSearcher extends Searcher {
         }
     }
 
-    StatisticsSearcher(Metric metric) {
-        this(com.yahoo.statistics.Statistics.nullImplementation, metric, MetricReceiver.nullImplementation);
-    }
-
     public StatisticsSearcher(com.yahoo.statistics.Statistics manager, Metric metric, MetricReceiver metricReceiver) {
         this.peakQpsReporter = new PeakQpsReporter();
         this.metric = metric;
@@ -158,10 +154,6 @@ public class StatisticsSearcher extends Searcher {
     @Override
     public void deconstruct() {
         scheduler.cancel();
-    }
-
-    public String getMyID() {
-        return (getId().stringValue());
     }
 
     private void qps(Metric.Context metricContext) {
