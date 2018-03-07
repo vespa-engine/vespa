@@ -7,13 +7,12 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Set;
 
 /**
  * @author mpolden
@@ -37,35 +36,36 @@ public class NodeAclResponse extends HttpResponse {
         toSlime(hostname, root);
     }
 
+    private static String baseName(String path) {
+        return new File(path).getName();
+    }
+
     private void toSlime(String hostname, Cursor object) {
         Node node = nodeRepository.getNode(hostname)
                 .orElseGet(() -> nodeRepository.getConfigNode(hostname)
                         .orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'")));
 
         Cursor trustedNodesArray = object.setArray("trustedNodes");
-        nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toSlime(nodeAcl, trustedNodesArray));
+        nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toTrustedNodeSlime(nodeAcl, trustedNodesArray));
 
         Cursor trustedNetworksArray = object.setArray("trustedNetworks");
-        nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toSlime(nodeAcl.trustedNetworks(),
-                                                                                     nodeAcl.node(),
-                                                                                     trustedNetworksArray));
+        nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toTrustedNetworkSlime(nodeAcl, trustedNetworksArray));
     }
 
-    private void toSlime(NodeAcl nodeAcl, Cursor array) {
+    private void toTrustedNodeSlime(NodeAcl nodeAcl, Cursor array) {
         nodeAcl.trustedNodes().forEach(node -> node.ipAddresses().forEach(ipAddress -> {
             Cursor object = array.addObject();
             object.setString("hostname", node.hostname());
-            object.setString("type", node.type().name());
             object.setString("ipAddress", ipAddress);
             object.setString("trustedBy", nodeAcl.node().hostname());
         }));
     }
 
-    private void toSlime(Set<String> trustedNetworks, Node trustedBy, Cursor array) {
-        trustedNetworks.forEach(network -> {
+    private void toTrustedNetworkSlime(NodeAcl nodeAcl, Cursor array) {
+        nodeAcl.trustedNetworks().forEach(network -> {
             Cursor object = array.addObject();
             object.setString("network", network);
-            object.setString("trustedBy", trustedBy.hostname());
+            object.setString("trustedBy", nodeAcl.node().hostname());
         });
     }
 
@@ -77,9 +77,5 @@ public class NodeAclResponse extends HttpResponse {
     @Override
     public String getContentType() {
         return "application/json";
-    }
-
-    private static String baseName(String path) {
-        return new File(path).getName();
     }
 }
