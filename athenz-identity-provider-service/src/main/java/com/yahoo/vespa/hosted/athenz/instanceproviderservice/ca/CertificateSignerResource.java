@@ -9,6 +9,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -48,6 +49,9 @@ public class CertificateSignerResource {
             log.log(LogLevel.DEBUG, "Certification request from " + remoteHostname + ": " + csr);
             X509Certificate certificate = certificateSigner.generateX509Certificate(csr, remoteHostname);
             return new CertificateSerializedPayload(certificate);
+        } catch (IllegalArgumentException e) {
+            log.log(LogLevel.WARNING, e.getMessage());
+            throw new ForbiddenException(e.getMessage(), e);
         } catch (RuntimeException e) {
             log.log(LogLevel.ERROR, e.getMessage(), e);
             throw new InternalServerErrorException(e.getMessage(), e);
