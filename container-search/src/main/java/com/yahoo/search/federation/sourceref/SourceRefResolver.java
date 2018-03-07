@@ -18,13 +18,15 @@ import com.yahoo.processing.request.Properties;
  * @author tonytv
  */
 public class SourceRefResolver {
+
     private final SearchChainResolver searchChainResolver;
 
     public SourceRefResolver(SearchChainResolver searchChainResolver) {
         this.searchChainResolver = searchChainResolver;
     }
-    public Set<SearchChainInvocationSpec> resolve(ComponentSpecification sourceRef, Properties sourceToProviderMap,
-            IndexFacts indexFacts)
+    public Set<SearchChainInvocationSpec> resolve(ComponentSpecification sourceRef,
+                                                  Properties sourceToProviderMap,
+                                                  IndexFacts indexFacts)
             throws UnresolvedSearchChainException {
 
         try {
@@ -47,7 +49,7 @@ public class SourceRefResolver {
                 clusterSearchChains.add(resolveClusterSearchChain(cluster, sourceRef, sourceToProviderMap));
             }
 
-            if (!clusterSearchChains.isEmpty())
+            if ( ! clusterSearchChains.isEmpty())
                 return clusterSearchChains;
         }
 
@@ -55,17 +57,22 @@ public class SourceRefResolver {
 
     }
 
-    private SearchChainInvocationSpec resolveClusterSearchChain(String cluster, ComponentSpecification sourceRef,
-                                                                Properties sourceToProviderMap) throws UnresolvedSearchChainException {
+    private SearchChainInvocationSpec resolveClusterSearchChain(String cluster,
+                                                                ComponentSpecification sourceRef,
+                                                                Properties sourceToProviderMap)
+            throws UnresolvedSearchChainException {
         try {
             return searchChainResolver.resolve(new ComponentSpecification(cluster), sourceToProviderMap);
-        } catch (UnresolvedSearchChainException e) {
+        }
+        catch (UnresolvedSearchChainException e) {
             throw new UnresolvedSearchChainException("Failed to resolve cluster search chain " + quote(cluster) +
-                    " when using source ref " + quote(sourceRef) + " as a document name.");
+                                                     " when using source ref " + quote(sourceRef) +
+                                                     " as a document name.");
         }
     }
 
     private boolean hasOnlyName(ComponentSpecification sourceSpec) {
         return new ComponentSpecification(sourceSpec.getName()).equals(sourceSpec);
     }
+
 }

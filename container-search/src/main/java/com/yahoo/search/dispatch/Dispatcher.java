@@ -245,7 +245,7 @@ public class Dispatcher extends AbstractComponent {
             }
 
             Inspector summaries = new SlimeAdapter(root.field("docsums"));
-            if ( ! summaries.valid() && !hasErrors)
+            if ( ! summaries.valid() && ! hasErrors)
                 throw new IllegalArgumentException("Expected a Slime root object containing a 'docsums' field");
             for (int i = 0; i < hits.size(); i++) {
                 fill(hits.get(i), summaries.entry(i).field("docsum"));

@@ -59,7 +59,7 @@ public class MnistSoftmaxImportTestCase {
         RankingExpression output = signature.outputExpression("y");
         assertNotNull(output);
         assertEquals("add", output.getName());
-        assertEquals("join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(\"Variable_read\"), f(a,b)(a * b)), sum, d2), constant(\"Variable_1_read\"), f(a,b)(a + b))",
+        assertEquals("join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(Variable_read), f(a,b)(a * b)), sum, d2), constant(Variable_1_read), f(a,b)(a + b))",
                      output.getRoot().toString());
 
         // Test execution

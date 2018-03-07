@@ -777,19 +777,8 @@ ConstantNode constantPrimitive() :
     ( <SUB> { sign = "-";} ) ?
     ( <INTEGER> { value = token.image; } |
       <FLOAT> { value = token.image; } |
-      value = stringPath() )
+      <STRING> { value = token.image; } )
     { return new ConstantNode(Value.parse(sign + value),sign + value); }
-}
-
-// Strings separated by "/"
-String stringPath() :
-{
-    StringBuilder b = new StringBuilder();
-}
-{
-    <STRING> { b.append(token.image); }
-    ( LOOKAHEAD(2) <DIV> <STRING> { b.append("/").append(token.image); } ) *
-    { return b.toString(); }
 }
 
 Value primitiveValue() :

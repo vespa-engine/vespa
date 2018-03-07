@@ -2,6 +2,7 @@
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.operations;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.DimensionRenamer;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.OrderedTensorType;
@@ -67,7 +68,7 @@ public abstract class TensorFlowOperation {
     public Optional<TensorFunction> function() {
         if (function == null) {
             if (isConstant()) {
-                ExpressionNode constant = new ReferenceNode("constant(\"" + vespaName() + "\")");
+                ExpressionNode constant = new ReferenceNode(Reference.simple("constant", vespaName()));
                 function = new TensorFunctionNode.TensorFunctionExpressionNode(constant);
             } else if (outputs.size() > 1) {
                 macro = lazyGetFunction();

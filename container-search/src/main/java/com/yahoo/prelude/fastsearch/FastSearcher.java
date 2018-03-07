@@ -330,14 +330,12 @@ public class FastSearcher extends VespaBackEndSearcher {
                 result.hits().addError(ErrorMessage.createBackendCommunicationError("Error filling hits with summary fields, source: " + getName()));
                 return;
             }
-            if (skippedHits==0 && packetWrapper != null) {
+            if (skippedHits == 0 && packetWrapper != null) {
                 cacheControl.updateCacheEntry(cacheKey, query, packetKeys, receivedPackets);
             }
 
-            if ( skippedHits>0 ) {
-                getLogger().info("Could not fill summary '" + summaryClass + "' for " + skippedHits + " hits for query: " + result.getQuery());
+            if ( skippedHits > 0 )
                 result.hits().addError(com.yahoo.search.result.ErrorMessage.createEmptyDocsums("Missing hit data for summary '" + summaryClass + "' for " + skippedHits + " hits"));
-            }
             result.analyzeHits();
 
             if (query.getTraceLevel() >= 3) {
