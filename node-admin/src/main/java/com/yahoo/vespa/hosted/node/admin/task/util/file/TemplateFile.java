@@ -29,7 +29,7 @@ public class TemplateFile {
         velocityEngine.init();
     }
 
-    public TemplateFile set(String name, String value) {
+    public TemplateFile set(String name, Object value) {
         velocityContext.put(name, value);
         return this;
     }
