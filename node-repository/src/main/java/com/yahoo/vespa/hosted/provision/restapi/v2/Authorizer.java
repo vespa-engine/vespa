@@ -19,11 +19,8 @@ import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
 /**
- * Authorizer for the node-repository and orchestrator REST APIs. This contains the authorization rules for all API
- * paths.
- *
- * Ideally, the authorization rules for orchestrator APIs should live in the orchestrator module. However, the node
- * repository is required to make decisions in some cases, which is not accessible in the orchestrator module.
+ * Authorizer for config server REST APIs. This contains the rules for all API paths where the authorization process
+ * requires information from the node-repository to make a decision.
  *
  * @author mpolden
  */
@@ -130,6 +127,9 @@ public class Authorizer implements BiPredicate<Principal, URI> {
         }
         if (isChildOf("/nodes/v2/command/", uri.getPath()) ||
             "/nodes/v2/node/".equals(uri.getPath())) {
+            return hostnamesFromQuery(uri);
+        }
+        if ("/athenz/v1/provider/identity-document".equals(uri.getPath())) {
             return hostnamesFromQuery(uri);
         }
         return Collections.emptyList();
