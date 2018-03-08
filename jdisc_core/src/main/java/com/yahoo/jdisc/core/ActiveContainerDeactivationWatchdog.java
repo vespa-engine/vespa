@@ -31,11 +31,23 @@ import static java.util.stream.Collectors.toList;
  */
 // TODO Rewrite to use cleaners instead of phantom references after Java 9 migration
 class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, AutoCloseable {
-    static final Duration WATCHDOG_FREQUENCY = Duration.ofMinutes(20);
-    static final Duration ACTIVE_CONTAINER_GRACE_PERIOD = Duration.ofHours(4);
-    static final Duration GC_TRIGGER_FREQUENCY = Duration.ofHours(1); // Must be a fraction of ACTIVE_CONTAINER_GRACE_PERIOD
+    // Frequency of writing warnings on stale container in the log
+    static final Duration REPORTING_FREQUENCY = Duration.ofMinutes(20);
+    // Only stale containers past the report grace period will be included in the metrics and log reporting
+    static final Duration REPORTING_GRACE_PERIOD = Duration.ofHours(4);
+
+    // The frequency specifies how often gc can be triggered.
+    // This value should be a fraction of REPORTING_GRACE_PERIOD to eliminate chance of reporting deactivated containers
+    // that are unreferenced, but have not been gc'ed yet.
+    static final Duration GC_TRIGGER_FREQUENCY = Duration.ofHours(1); // Must be a fraction of REPORTING_GRACE_PERIOD
+    // Gc will only be triggered if there are any stale containers past the grace period.
+    // This value should be a fraction of REPORTING_GRACE_PERIOD to eliminate chance of reporting deactivated containers
+    // that are unreferenced, but have not been gc'ed yet.
+    static final Duration GC_GRACE_PERIOD = Duration.ofHours(2);
+
+    // How often destruction of stale containers should be performed
     static final Duration ENFORCE_DESTRUCTION_GCED_CONTAINERS_FREQUENCY = Duration.ofMinutes(5);
-    static final int DEFAULT_DEACTIVATED_CONTAINERS_BEFORE_GC_THRESHOLD = 4;
+
     private static final Logger log = Logger.getLogger(ActiveContainerDeactivationWatchdog.class.getName());
 
     private final Object monitor = new Object();
@@ -46,7 +58,6 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     private final Set<ActiveContainerPhantomReference> destructorReferences = new HashSet<>();
     private final ScheduledExecutorService scheduler;
     private final Clock clock;
-    private final int deactivatedContainersBeforeGcThreshold;
 
     private ActiveContainer currentContainer;
     private Instant currentContainerActivationTime;
@@ -59,19 +70,17 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
                     Thread thread = new Thread(runnable, "active-container-deactivation-watchdog");
                     thread.setDaemon(true);
                     return thread;
-                }),
-                DEFAULT_DEACTIVATED_CONTAINERS_BEFORE_GC_THRESHOLD);
+                }));
     }
 
     ActiveContainerDeactivationWatchdog(Clock clock,
-                                        ScheduledExecutorService scheduler,
-                                        int deactivatedContainersBeforeGcThreshold) {
+                                        ScheduledExecutorService scheduler) {
         this.clock = clock;
         this.scheduler = scheduler;
         // NOTE: Make sure to update the unit test if the order commands are registered is changed.
         this.scheduler.scheduleAtFixedRate(this::warnOnStaleContainers,
-                                           WATCHDOG_FREQUENCY.getSeconds(),
-                                           WATCHDOG_FREQUENCY.getSeconds(),
+                                           REPORTING_FREQUENCY.getSeconds(),
+                                           REPORTING_FREQUENCY.getSeconds(),
                                            TimeUnit.SECONDS);
         this.scheduler.scheduleAtFixedRate(this::triggerGc,
                                            GC_TRIGGER_FREQUENCY.getSeconds(),
@@ -81,7 +90,6 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
                                            ENFORCE_DESTRUCTION_GCED_CONTAINERS_FREQUENCY.getSeconds(),
                                            ENFORCE_DESTRUCTION_GCED_CONTAINERS_FREQUENCY.getSeconds(),
                                            TimeUnit.SECONDS);
-        this.deactivatedContainersBeforeGcThreshold = deactivatedContainersBeforeGcThreshold;
     }
 
     void onContainerActivation(ActiveContainer nextContainer) {
@@ -99,7 +107,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
 
     @Override
     public void emitMetrics(Metric metric) {
-        List<DeactivatedContainer> snapshot = getDeactivatedContainersSnapshot();
+        List<DeactivatedContainer> snapshot = getDeactivatedContainersSnapshot(REPORTING_GRACE_PERIOD);
         long containersWithRetainedRefsCount = snapshot.stream()
                 .filter(c -> c.activeContainer.retainCount() > 0)
                 .count();
@@ -121,7 +129,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     private void warnOnStaleContainers() {
         log.log(Level.FINE, "Checking for stale containers");
         try {
-            List<DeactivatedContainer> snapshot = getDeactivatedContainersSnapshot();
+            List<DeactivatedContainer> snapshot = getDeactivatedContainersSnapshot(REPORTING_GRACE_PERIOD);
             if (snapshot.isEmpty()) return;
             logWarning(snapshot);
         } catch (Throwable t) {
@@ -130,8 +138,8 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     }
 
     private void triggerGc() {
-        int deactivatedContainers = getDeactivatedContainersSnapshot().size();
-        boolean shouldGc = deactivatedContainers > deactivatedContainersBeforeGcThreshold;
+        int deactivatedContainers = getDeactivatedContainersSnapshot(GC_GRACE_PERIOD).size();
+        boolean shouldGc = deactivatedContainers > 0;
         if (!shouldGc) return;
         log.log(Level.FINE, String.format("Triggering GC (currently %d deactivated containers still alive)", deactivatedContainers));
         System.gc();
@@ -153,11 +161,11 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
         }
     }
 
-    private List<DeactivatedContainer> getDeactivatedContainersSnapshot() {
+    private List<DeactivatedContainer> getDeactivatedContainersSnapshot(Duration gracePeriod) {
         Instant now = clock.instant();
         synchronized (monitor) {
             return deactivatedContainers.entrySet().stream()
-                    .filter(e -> e.getValue().isPastGracePeriod(now))
+                    .filter(e -> e.getValue().isPastGracePeriod(now, gracePeriod))
                     .map(e -> new DeactivatedContainer(e.getKey(), e.getValue()))
                     .sorted(comparing(e -> e.lifecycleStats.timeActivated))
                     .collect(toList());
@@ -180,8 +188,8 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
             this.timeDeactivated = timeDeactivated;
         }
 
-        public boolean isPastGracePeriod(Instant instant) {
-            return timeDeactivated.plus(ACTIVE_CONTAINER_GRACE_PERIOD).isBefore(instant);
+        public boolean isPastGracePeriod(Instant instant, Duration gracePeriod) {
+            return timeDeactivated.plus(gracePeriod).isBefore(instant);
         }
     }
 

@@ -33,9 +33,7 @@ public class ActiveContainerDeactivationWatchdogTest {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ManualClock clock = new ManualClock(Instant.now());
         ActiveContainerDeactivationWatchdog watchdog =
-                new ActiveContainerDeactivationWatchdog(clock,
-                                                        Executors.newScheduledThreadPool(1),
-                                                        ActiveContainerDeactivationWatchdog.DEFAULT_DEACTIVATED_CONTAINERS_BEFORE_GC_THRESHOLD);
+                new ActiveContainerDeactivationWatchdog(clock, Executors.newScheduledThreadPool(1));
         MockMetric metric = new MockMetric();
 
         ActiveContainer containerWithoutRetainedResources = new ActiveContainer(driver.newContainerBuilder());
@@ -47,7 +45,7 @@ public class ActiveContainerDeactivationWatchdogTest {
 
         watchdog.onContainerActivation(null);
         containerWithoutRetainedResources.release();
-        clock.advance(ActiveContainerDeactivationWatchdog.ACTIVE_CONTAINER_GRACE_PERIOD);
+        clock.advance(ActiveContainerDeactivationWatchdog.REPORTING_GRACE_PERIOD);
         watchdog.emitMetrics(metric);
         assertEquals(0, metric.totalCount);
         assertEquals(0, metric.withRetainedReferencesCount);
@@ -62,7 +60,7 @@ public class ActiveContainerDeactivationWatchdogTest {
             watchdog.onContainerActivation(containerWithRetainedResources);
             containerWithRetainedResources.release();
             watchdog.onContainerActivation(null);
-            clock.advance(ActiveContainerDeactivationWatchdog.ACTIVE_CONTAINER_GRACE_PERIOD.plusSeconds(1));
+            clock.advance(ActiveContainerDeactivationWatchdog.REPORTING_GRACE_PERIOD.plusSeconds(1));
             watchdog.emitMetrics(metric);
             assertEquals(2, metric.totalCount);
             assertEquals(1, metric.withRetainedReferencesCount);
@@ -76,8 +74,7 @@ public class ActiveContainerDeactivationWatchdogTest {
     public void deactivated_container_destructed_if_its_reference_counter_is_nonzero() {
         ExecutorMock executor = new ExecutorMock();
         ManualClock clock = new ManualClock(Instant.now());
-        ActiveContainerDeactivationWatchdog watchdog =
-                new ActiveContainerDeactivationWatchdog(clock, executor, /*deactivatedContainersBeforeGcThreshold*/0);
+        ActiveContainerDeactivationWatchdog watchdog = new ActiveContainerDeactivationWatchdog(clock, executor);
         ActiveContainer container =
                 new ActiveContainer(TestDriver.newSimpleApplicationInstanceWithoutOsgi().newContainerBuilder());
         AtomicBoolean destructed = new AtomicBoolean(false);
@@ -90,7 +87,7 @@ public class ActiveContainerDeactivationWatchdogTest {
 
         WeakReference<ActiveContainer> containerWeakReference = new WeakReference<>(container);
         container = null; // make container instance collectable by GC
-        clock.advance(ActiveContainerDeactivationWatchdog.ACTIVE_CONTAINER_GRACE_PERIOD.plusSeconds(1));
+        clock.advance(ActiveContainerDeactivationWatchdog.GC_GRACE_PERIOD.plusSeconds(1));
 
         executor.triggerGcCommand.run();
 
