@@ -31,6 +31,7 @@ import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.functions.Generate;
 import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.Reduce;
@@ -115,11 +116,13 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         String output = chooseOutput(signature, store.arguments().output());
         RankingExpression expression = model.expressions().get(output);
         expression = replaceConstantsByMacros(expression, constantsReplacedByMacros);
-        verifyRequiredMacros(expression, model.requiredMacros(), profile, queryProfiles);
+        verifyRequiredMacros(expression, model, profile, queryProfiles);
+        addGeneratedMacros(model, profile);
+        reduceBatchDimensions(expression, model, profile, queryProfiles);
+
+        model.macros().forEach((k, v) -> transformGeneratedMacro(store, profile, constantsReplacedByMacros, k, v));
+
         store.writeConverted(expression);
-
-        model.macros().forEach((k, v) -> transformMacro(store, profile, constantsReplacedByMacros, k, v));
-
         return expression.getRoot();
     }
 
@@ -133,7 +136,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         }
 
         for (Pair<String, RankingExpression> macro : store.readMacros()) {
-            addMacroToProfile(profile, macro.getFirst(), macro.getSecond());
+            addGeneratedMacroToProfile(profile, macro.getFirst(), macro.getSecond());
         }
 
         return store.readConverted().getRoot();
@@ -221,16 +224,15 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         }
     }
 
-    private void transformMacro(ModelStore store, RankProfile profile,
-                                Set<String> constantsReplacedByMacros,
-                                String macroName, RankingExpression expression) {
+    private void transformGeneratedMacro(ModelStore store, RankProfile profile,
+                                         Set<String> constantsReplacedByMacros,
+                                         String macroName, RankingExpression expression) {
 
         expression = replaceConstantsByMacros(expression, constantsReplacedByMacros);
         store.writeMacro(macroName, expression);
-        addMacroToProfile(profile, macroName, expression);
     }
 
-    private void addMacroToProfile(RankProfile profile, String macroName, RankingExpression expression) {
+    private void addGeneratedMacroToProfile(RankProfile profile, String macroName, RankingExpression expression) {
         if (profile.getMacros().containsKey(macroName)) {
             throw new IllegalArgumentException("Generated TensorFlow macro '" + macroName + "' already exists.");
         }
@@ -251,12 +253,12 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
      * Verify that the macros referred in the given expression exists in the given rank profile,
      * and return tensors of the types specified in requiredMacros.
      */
-    private void verifyRequiredMacros(RankingExpression expression, Map<String, TensorType> requiredMacros,
+    private void verifyRequiredMacros(RankingExpression expression, TensorFlowModel model,
                                       RankProfile profile, QueryProfileRegistry queryProfiles) {
         Set<String> macroNames = new HashSet<>();
-        addMacroNamesIn(expression.getRoot(), macroNames);
+        addMacroNamesIn(expression.getRoot(), macroNames, model);
         for (String macroName : macroNames) {
-            TensorType requiredType = requiredMacros.get(macroName);
+            TensorType requiredType = model.requiredMacros().get(macroName);
             if (requiredType == null) continue; // Not a required macro
 
             RankProfile.Macro macro = profile.getMacros().get(macroName);
@@ -279,17 +281,84 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
                                                    "' of type " + requiredType +
                                                    " which must be produced by a macro in the rank profile, but " +
                                                    "this macro produces type " + actualType);
-
-            // Check if batch dimensions can be reduced out.
-            reduceBatchDimensions(expression, macro, actualType);
         }
     }
 
     /**
-     * If the macro specifies that a single exemplar should be
-     * evaluated, we can reduce the batch dimension out.
+     * Add the generated macros to the rank profile
      */
-    private void reduceBatchDimensions(RankingExpression expression, RankProfile.Macro macro, TensorType type) {
+    private void addGeneratedMacros(TensorFlowModel model, RankProfile profile) {
+        model.macros().forEach((k, v) -> addGeneratedMacroToProfile(profile, k, v));
+    }
+
+    /**
+     * Check if batch dimensions of inputs can be reduced out. If the input
+     * macro specifies that a single exemplar should be evaluated, we can
+     * reduce the batch dimension out.
+     */
+    private void reduceBatchDimensions(RankingExpression expression, TensorFlowModel model,
+                                       RankProfile profile, QueryProfileRegistry queryProfiles) {
+        TypeContext<Reference> typeContext = profile.typeContext(queryProfiles);
+        TensorType typeBeforeReducing = expression.getRoot().type(typeContext);
+
+        // Check generated macros for inputs to reduce
+        Set<String> macroNames = new HashSet<>();
+        addMacroNamesIn(expression.getRoot(), macroNames, model);
+        for (String macroName : macroNames) {
+            if ( ! model.macros().containsKey(macroName)) {
+                continue;
+            }
+            RankProfile.Macro macro = profile.getMacros().get(macroName);
+            if (macro == null) {
+                throw new IllegalArgumentException("Model refers to generated macro '" + macroName +
+                        "but this macro is not present in " + profile);
+            }
+            RankingExpression macroExpression = macro.getRankingExpression();
+            macroExpression.setRoot(reduceBatchDimensionsAtInput(macroExpression.getRoot(), model, typeContext));
+        }
+
+        // Check expression for inputs to reduce
+        ExpressionNode root = expression.getRoot();
+        root = reduceBatchDimensionsAtInput(root, model, typeContext);
+        TensorType typeAfterReducing = root.type(typeContext);
+        root = expandBatchDimensionsAtOutput(root, typeBeforeReducing, typeAfterReducing);
+        expression.setRoot(root);
+    }
+
+    private ExpressionNode reduceBatchDimensionsAtInput(ExpressionNode node, TensorFlowModel model,
+                                                        TypeContext<Reference> typeContext) {
+        if (node instanceof TensorFunctionNode) {
+            TensorFunction tensorFunction = ((TensorFunctionNode) node).function();
+            if (tensorFunction instanceof Rename) {
+                List<ExpressionNode> children = ((TensorFunctionNode)node).children();
+                if (children.size() == 1 && children.get(0) instanceof ReferenceNode) {
+                    ReferenceNode referenceNode = (ReferenceNode) children.get(0);
+                    if (model.requiredMacros().containsKey(referenceNode.getName())) {
+                        return reduceBatchDimensionExpression(tensorFunction, typeContext);
+                    }
+                }
+            }
+        }
+        if (node instanceof ReferenceNode) {
+            ReferenceNode referenceNode = (ReferenceNode) node;
+            if (model.requiredMacros().containsKey(referenceNode.getName())) {
+                return reduceBatchDimensionExpression(TensorFunctionNode.wrapArgument(node), typeContext);
+            }
+        }
+        if (node instanceof CompositeNode) {
+            List<ExpressionNode> children = ((CompositeNode)node).children();
+            List<ExpressionNode> transformedChildren = new ArrayList<>(children.size());
+            for (ExpressionNode child : children) {
+                transformedChildren.add(reduceBatchDimensionsAtInput(child, model, typeContext));
+            }
+            return ((CompositeNode)node).setChildren(transformedChildren);
+        }
+        return node;
+    }
+
+    private ExpressionNode reduceBatchDimensionExpression(TensorFunction function, TypeContext<Reference> context) {
+        TensorFunction result = function;
+        TensorType type = function.type(context);
         if (type.dimensions().size() > 1) {
             List<String> reduceDimensions = new ArrayList<>();
             for (TensorType.Dimension dimension : type.dimensions()) {
@@ -298,42 +367,36 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
                 }
             }
             if (reduceDimensions.size() > 0) {
-                ExpressionNode root = expression.getRoot();
-                root = reduceBatchDimensionsAtInput(root, macro, reduceDimensions);
-                root = expandBatchDimensionsAtOutput(root, reduceDimensions);  // todo: determine when we can skip this
-                expression.setRoot(root);
+                result = new Reduce(function, Reduce.Aggregator.sum, reduceDimensions);
             }
         }
+        return new TensorFunctionNode(result);
     }
 
-    private ExpressionNode reduceBatchDimensionsAtInput(ExpressionNode node,
-                                                        RankProfile.Macro macro,
-                                                        List<String> reduceDimensions) {
-        if (node instanceof TensorFunctionNode) {
-            TensorFunction tensorFunction = ((TensorFunctionNode) node).function();
-            if (tensorFunction instanceof Rename) {
-                List<ExpressionNode> children = ((TensorFunctionNode)node).children();
-                if (children.size() == 1 && children.get(0) instanceof ReferenceNode) {
-                    ReferenceNode referenceNode = (ReferenceNode) children.get(0);
-                    if (referenceNode.getName().equals(macro.getName())) {
-                        return reduceBatchDimensionExpression(tensorFunction, reduceDimensions);
-                    }
-                }
+    /**
+     * If batch dimensions have been reduced away above, bring them back here
+     * for any following computation of the tensor.
+     * Todo: determine when this is not necessary!
+     */
+    private ExpressionNode expandBatchDimensionsAtOutput(ExpressionNode node, TensorType before, TensorType after) {
+        if (after.equals(before)) {
+            return node;
+        }
+        TensorType.Builder typeBuilder = new TensorType.Builder();
+        for (TensorType.Dimension dimension : before.dimensions()) {
+            if (dimension.size().orElse(-1L) == 1 && !after.dimensionNames().contains(dimension.name())) {
+                typeBuilder.indexed(dimension.name(), 1);
             }
         }
-        if (node instanceof ReferenceNode) {
-            ReferenceNode referenceNode = (ReferenceNode) node;
-            if (referenceNode.getName().equals(macro.getName())) {
-                return reduceBatchDimensionExpression(TensorFunctionNode.wrapArgument(node), reduceDimensions);
-            }
-        }
-        if (node instanceof CompositeNode) {
-            List<ExpressionNode> children = ((CompositeNode)node).children();
-            List<ExpressionNode> transformedChildren = new ArrayList<>(children.size());
-            for (ExpressionNode child : children) {
-                transformedChildren.add(reduceBatchDimensionsAtInput(child, macro, reduceDimensions));
-            }
-            return ((CompositeNode)node).setChildren(transformedChildren);
+        TensorType expandDimensionsType = typeBuilder.build();
+        if (expandDimensionsType.dimensions().size() > 0) {
+            ExpressionNode generatedExpression = new ConstantNode(new DoubleValue(0));
+            Generate generatedFunction = new Generate(expandDimensionsType,
+                                                      new GeneratorLambdaFunctionNode(expandDimensionsType,
+                                                                                      generatedExpression)
+                                                              .asLongListToDoubleOperator());
+            Join expand = new Join(TensorFunctionNode.wrapArgument(node), generatedFunction, ScalarFunctions.add());
+            return new TensorFunctionNode(expand);
         }
         return node;
     }
@@ -367,33 +430,19 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         return node;
     }
 
-    private ExpressionNode reduceBatchDimensionExpression(TensorFunction function, List<String> reduceDimensions) {
-        return new TensorFunctionNode(new Reduce(function, Reduce.Aggregator.sum, reduceDimensions));
-    }
-
-    private ExpressionNode expandBatchDimensionsAtOutput(ExpressionNode node,
-                                                         List<String> reduceDimensions) {
-        TensorType.Builder typeBuilder = new TensorType.Builder();
-        for (String name : reduceDimensions) {
-            typeBuilder.indexed(name, 1);
-        }
-        TensorType generatedType = typeBuilder.build();
-        ExpressionNode generatedExpression = new ConstantNode(new DoubleValue(1));
-        Generate generatedFunction = new Generate(generatedType,
-                new GeneratorLambdaFunctionNode(generatedType, generatedExpression).asLongListToDoubleOperator());
-        Join expand = new Join(TensorFunctionNode.wrapArgument(node), generatedFunction, ScalarFunctions.multiply());
-        return new TensorFunctionNode(expand);
-    }
-
-    private void addMacroNamesIn(ExpressionNode node, Set<String> names) {
+    private void addMacroNamesIn(ExpressionNode node, Set<String> names, TensorFlowModel model) {
         if (node instanceof ReferenceNode) {
             ReferenceNode referenceNode = (ReferenceNode)node;
-            if (referenceNode.getOutput() == null) // macro references cannot specify outputs
+            if (referenceNode.getOutput() == null) { // macro references cannot specify outputs
                 names.add(referenceNode.getName());
+                if (model.macros().containsKey(referenceNode.getName())) {
+                    addMacroNamesIn(model.macros().get(referenceNode.getName()).getRoot(), names, model);
+                }
+            }
         }
         else if (node instanceof CompositeNode) {
             for (ExpressionNode child : ((CompositeNode)node).children())
-                addMacroNamesIn(child, names);
+                addMacroNamesIn(child, names, model);
         }
     }
 
