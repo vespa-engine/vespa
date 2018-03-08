@@ -90,7 +90,7 @@ public class Dispatcher extends AbstractComponent {
             for (Map.Entry<Integer, List<FastHit>> nodeHits : hitsByNode.entrySet()) {
                 sendGetDocsumsRequest(nodeHits.getKey(), nodeHits.getValue(), summaryClass, compression, result, responseReceiver);
             }
-            responseReceiver.processResponses(result.getQuery());
+            responseReceiver.processResponses(result.getQuery(), summaryClass);
         }
         catch (TimeoutException e) {
             result.hits().addError(ErrorMessage.createTimeout("Summary data is incomplete: " + e.getMessage()));
@@ -192,8 +192,9 @@ public class Dispatcher extends AbstractComponent {
          * Call this from the dispatcher thread to initiate and complete processing of responses.
          * This will block until all responses are available and processed, or to timeout.
          */
-        public void processResponses(Query query) throws TimeoutException {
+        public void processResponses(Query query, String summaryClass) throws TimeoutException {
             try {
+                int skippedHits = 0;
                 while (outstandingResponses > 0) {
                     long timeLeftMs = query.getTimeLeft();
                     if (timeLeftMs <= 0) {
@@ -202,8 +203,11 @@ public class Dispatcher extends AbstractComponent {
                     Client.GetDocsumsResponseOrError response = responses.poll(timeLeftMs, TimeUnit.MILLISECONDS);
                     if (response == null)
                         throwTimeout();
-                    processResponse(response);
+                    skippedHits += processResponse(response);
                     outstandingResponses--;
+                }
+                if (skippedHits != 0) {
+                    result.hits().addError(com.yahoo.search.result.ErrorMessage.createEmptyDocsums("Missing hit summary data for summary " + summaryClass + " for " + skippedHits + " hits"));
                 }
             }
             catch (InterruptedException e) {
@@ -211,9 +215,9 @@ public class Dispatcher extends AbstractComponent {
             }
         }
 
-        private void processResponse(Client.GetDocsumsResponseOrError responseOrError) {
+        private int processResponse(Client.GetDocsumsResponseOrError responseOrError) {
             if (responseOrError.error().isPresent()) {
-                if (hasReportedError) return;
+                if (hasReportedError) return 0;
                 String error = responseOrError.error().get();
                 result.hits().addError(ErrorMessage.createBackendCommunicationError(error));
                 log.log(Level.WARNING, "Error fetching summary data: "+ error);
@@ -222,8 +226,9 @@ public class Dispatcher extends AbstractComponent {
                 Client.GetDocsumsResponse response = responseOrError.response().get();
                 CompressionType compression = CompressionType.valueOf(response.compression());
                 byte[] slimeBytes = compressor.decompress(response.compressedSlimeBytes(), compression, response.uncompressedSize());
-                fill(response.hitsContext(), slimeBytes);
+                return fill(response.hitsContext(), slimeBytes);
             }
+            return 0;
         }
 
         private void addErrors(com.yahoo.slime.Inspector errors) {
@@ -236,7 +241,7 @@ public class Dispatcher extends AbstractComponent {
             });
         }
 
-        private void fill(List<FastHit> hits, byte[] slimeBytes) {
+        private int fill(List<FastHit> hits, byte[] slimeBytes) {
             com.yahoo.slime.Inspector root = BinaryFormat.decode(slimeBytes).get();
             com.yahoo.slime.Inspector errors = root.field("errors");
             boolean hasErrors = errors.valid() && (errors.entries() > 0);
@@ -247,10 +252,16 @@ public class Dispatcher extends AbstractComponent {
             Inspector summaries = new SlimeAdapter(root.field("docsums"));
             if ( ! summaries.valid() && ! hasErrors)
                 throw new IllegalArgumentException("Expected a Slime root object containing a 'docsums' field");
+            int skippedHits = 0;
             for (int i = 0; i < hits.size(); i++) {
-                fill(hits.get(i), summaries.entry(i).field("docsum"));
+                Inspector summary = summaries.entry(i).field("docsum");
+                if (summary.fieldCount() != 0) {
+                    fill(hits.get(i), summary);
+                } else {
+                    skippedHits++;
+                }
             }
-
+            return skippedHits;
         }
 
         private void fill(FastHit hit, Inspector summary) {
