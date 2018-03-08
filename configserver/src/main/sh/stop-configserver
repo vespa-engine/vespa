@@ -70,7 +70,6 @@ fixlimits
 # runserver takes care of making sure that we're not running several
 # instances and saving its pid in this file:
 PIDFILE_CONFIGSERVER=${ROOT}/var/run/configserver.pid
-PIDFILE_FILEDISTRIBUTOR=var/run/filedistributor.pid
 PIDFILE_LOGD=var/run/logd.pid
 
 VESPA_LOG_TARGET="file:${ROOT}/logs/vespa/vespa.log"
@@ -78,7 +77,6 @@ export VESPA_LOG_TARGET
 
 multitenant=$cloudconfig_server__multitenant
 if [ "$multitenant" = "true" ]; then
-    vespa-run-as-vespa-user vespa-runserver -s filedistributor -p $PIDFILE_FILEDISTRIBUTOR -S
     vespa-run-as-vespa-user vespa-runserver -s logd -p $PIDFILE_LOGD -S
 fi
 
