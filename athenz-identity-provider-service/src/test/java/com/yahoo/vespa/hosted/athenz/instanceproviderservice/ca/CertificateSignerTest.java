@@ -67,7 +67,7 @@ public class CertificateSignerTest {
         assertCertificateCommonNameException("C=NO", "Only 1 common name should be set");
         assertCertificateCommonNameException("C=US+CN=abc123.domain.tld,C=NO+CN=" + requestersHostname, "Only 1 common name should be set");
         assertCertificateCommonNameException("CN=evil.hostname.domain.tld",
-                "Expected common name to be tenant-123.us-north-1.vespa.domain.tld, but was evil.hostname.domain.tld");
+                "Remote hostname tenant-123.us-north-1.vespa.domain.tld does not match common name evil.hostname.domain.tld");
     }
 
     @Test(expected = IllegalArgumentException.class)
