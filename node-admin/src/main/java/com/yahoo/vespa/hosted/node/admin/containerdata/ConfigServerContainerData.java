@@ -39,22 +39,12 @@ public class ConfigServerContainerData {
                 "  <useVespaVersionInRequest>true</useVespaVersionInRequest>\n" +
                 // TODO: Avoid hardcoding of default flavor
                 "  <defaultFlavor>t2.xlarge</defaultFlavor>\n" +
-                createZookeeperServers() +
                 "  <zookeeper>\n" +
                 "    <barrierTimeout>1200</barrierTimeout>\n" +
                 "  </zookeeper>\n" +
                 "  <serverId>" + configServerNodeHostName + "</serverId>\n" +
                 "  <nodeAdminInContainer>false</nodeAdminInContainer>\n" +
                 "</config>\n";
-    }
-
-    private String createZookeeperServers() {
-        StringBuilder zookeeperServers = new StringBuilder("  <zookeeperserver>\n");
-        environment.getConfigServerHostNames().forEach(hostname -> zookeeperServers.append("  <item>\n" +
-                                                                                                   "    <hostname>" + hostname + "</hostname>\n" +
-                                                                                                   "  </item>\n"));
-        zookeeperServers.append("  </zookeeperserver>\n");
-        return zookeeperServers.toString();
     }
 
     // TODO: Avoid hardcoded Docker registry
