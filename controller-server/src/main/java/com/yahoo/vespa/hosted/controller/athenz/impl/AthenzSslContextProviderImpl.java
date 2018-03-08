@@ -13,6 +13,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder.KeyStoreType.JKS;
+
 /**
  * @author bjorncs
  */
@@ -33,7 +35,7 @@ public class AthenzSslContextProviderImpl implements AthenzSslContextProvider {
         CachedSslContext currentCachedSslContext = this.cachedSslContext.get();
         if (currentCachedSslContext == null || currentCachedSslContext.isExpired()) {
             SSLContext sslContext = new AthenzSslContextBuilder()
-                    .withTrustStore(new File(config.athenzCaTrustStore()), "JKS")
+                    .withTrustStore(new File(config.athenzCaTrustStore()), JKS)
                     .withIdentityCertificate(clientFactory.createZtsClientWithServicePrincipal().getIdentityCertificate())
                     .build();
             this.cachedSslContext.set(new CachedSslContext(sslContext));

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.tls;
 
 import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -14,12 +15,31 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 
 /**
  * @author bjorncs
  */
 public class AthenzSslContextBuilder {
+
+    public enum KeyStoreType {
+        JKS {
+            KeyStore createKeystore() throws KeyStoreException {
+                return KeyStore.getInstance("JKS");
+            }
+        },
+        PKCS12 {
+            private final BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
+
+            KeyStore createKeystore() throws KeyStoreException {
+                return KeyStore.getInstance("PKCS12", bouncyCastleProvider);
+            }
+        };
+        abstract KeyStore createKeystore() throws GeneralSecurityException;
+    }
 
     private KeyStoreSupplier trustStoreSupplier;
     private KeyStoreSupplier keyStoreSupplier;
@@ -27,7 +47,7 @@ public class AthenzSslContextBuilder {
 
     public AthenzSslContextBuilder() {}
 
-    public AthenzSslContextBuilder withTrustStore(File file, String trustStoreType) {
+    public AthenzSslContextBuilder withTrustStore(File file, KeyStoreType trustStoreType) {
         this.trustStoreSupplier = () -> loadKeyStoreFromFile(file, null, trustStoreType);
         return this;
     }
@@ -38,14 +58,12 @@ public class AthenzSslContextBuilder {
     }
 
     public AthenzSslContextBuilder withIdentityCertificate(AthenzIdentityCertificate certificate) {
+        return withKeyStore(certificate.getPrivateKey(), certificate.getCertificate());
+    }
+
+    public AthenzSslContextBuilder withKeyStore(PrivateKey privateKey, X509Certificate certificate) {
         char[] pwd = new char[0];
-        this.keyStoreSupplier = () -> {
-            KeyStore keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(null);
-            keyStore.setKeyEntry(
-                    "athenz-identity", certificate.getPrivateKey(), pwd, new Certificate[]{certificate.getCertificate()});
-            return keyStore;
-        };
+        this.keyStoreSupplier = () -> createJksKeyStore(privateKey, certificate, pwd);
         this.keyStorePassword = pwd;
         return this;
     }
@@ -56,7 +74,7 @@ public class AthenzSslContextBuilder {
         return this;
     }
 
-    public AthenzSslContextBuilder withKeyStore(File file, char[] password, String keyStoreType) {
+    public AthenzSslContextBuilder withKeyStore(File file, char[] password, KeyStoreType keyStoreType) {
         this.keyStoreSupplier = () -> loadKeyStoreFromFile(file, password, keyStoreType);
         this.keyStorePassword = password;
         return this;
@@ -80,24 +98,34 @@ public class AthenzSslContextBuilder {
 
     private static TrustManager[] createTrustManagers(KeyStoreSupplier trustStoreSupplier)
             throws GeneralSecurityException, IOException {
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        TrustManagerFactory trustManagerFactory =
+                TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         trustManagerFactory.init(trustStoreSupplier.get());
         return trustManagerFactory.getTrustManagers();
     }
 
     private static KeyManager[] createKeyManagers(KeyStoreSupplier keyStoreSupplier, char[] password)
             throws GeneralSecurityException, IOException {
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        KeyManagerFactory keyManagerFactory =
+                KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         keyManagerFactory.init(keyStoreSupplier.get(), password);
         return keyManagerFactory.getKeyManagers();
     }
 
-    private static KeyStore loadKeyStoreFromFile(File file, char[] password, String keyStoreType)
+    private static KeyStore loadKeyStoreFromFile(File file, char[] password, KeyStoreType keyStoreType)
             throws IOException, GeneralSecurityException{
-        KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+        KeyStore keyStore = keyStoreType.createKeystore();
         try (FileInputStream in = new FileInputStream(file)) {
             keyStore.load(in, password);
         }
+        return keyStore;
+    }
+
+    private KeyStore createJksKeyStore(PrivateKey privateKey, X509Certificate certificate, char[] password)
+            throws GeneralSecurityException, IOException{
+        KeyStore keyStore = KeyStoreType.JKS.createKeystore();
+        keyStore.load(null);
+        keyStore.setKeyEntry("athenz-identity", privateKey, password, new Certificate[]{certificate});
         return keyStore;
     }
 

@@ -24,6 +24,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder.KeyStoreType.JKS;
+
 /**
  * @author mortent
  * @author bjorncs
@@ -100,7 +102,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
                 .withIdentityCertificate(new AthenzIdentityCertificate(
                         credentials.getCertificate(),
                         credentials.getKeyPair().getPrivate()))
-                .withTrustStore(new File(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks")), "JKS")
+                .withTrustStore(new File(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks")), JKS)
                 .build();
     }
 
