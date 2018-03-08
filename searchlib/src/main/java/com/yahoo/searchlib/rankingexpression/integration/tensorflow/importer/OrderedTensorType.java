@@ -119,23 +119,20 @@ public class OrderedTensorType {
         return true;
     }
 
-    public static void verifyType(NodeDef node, OrderedTensorType type) {
-        if (type == null) {
-            return;
-        }
+    public void verifyType(NodeDef node) {
         TensorShapeProto shape = tensorFlowShape(node);
-        if (shape != null && type.type != null) {
-            if (shape.getDimCount() != type.type.rank()) {
+        if (shape != null) {
+            if (shape.getDimCount() != type.rank()) {
                 throw new IllegalArgumentException("TensorFlow shape of '" + node.getName() + "' " +
-                        "does not match Vespa shape");
+                                                   "does not match Vespa shape");
             }
-            for (int tensorFlowIndex = 0; tensorFlowIndex < type.dimensions.size(); ++tensorFlowIndex) {
-                int vespaIndex = type.dimensionMap[tensorFlowIndex];
+            for (int tensorFlowIndex = 0; tensorFlowIndex < dimensions.size(); ++tensorFlowIndex) {
+                int vespaIndex = dimensionMap[tensorFlowIndex];
                 TensorShapeProto.Dim tensorFlowDimension = shape.getDim(tensorFlowIndex);
-                TensorType.Dimension vespaDimension = type.type().dimensions().get(vespaIndex);
+                TensorType.Dimension vespaDimension = type().dimensions().get(vespaIndex);
                 if (tensorFlowDimension.getSize() != vespaDimension.size().orElse(-1L)) {
                     throw new IllegalArgumentException("TensorFlow dimensions of '" + node.getName() + "' " +
-                            "does not match Vespa dimensions");
+                                                       "does not match Vespa dimensions");
                 }
             }
         }
@@ -145,23 +142,23 @@ public class OrderedTensorType {
         AttrValue attrValueList = node.getAttrMap().get("_output_shapes");
         if (attrValueList == null) {
             throw new IllegalArgumentException("_output_shapes attribute of '" + node.getName() + "' " +
-                    "does not exist");
+                                               "does not exist");
         }
         if (attrValueList.getValueCase() != AttrValue.ValueCase.LIST) {
             throw new IllegalArgumentException("_output_shapes attribute of '" + node.getName() + "' " +
-                    "is not of expected type");
+                                               "is not of expected type");
         }
         List<TensorShapeProto> shapeList = attrValueList.getList().getShapeList();
         return shapeList.get(0); // support multiple outputs?
     }
 
-    public static OrderedTensorType rename(OrderedTensorType type, DimensionRenamer renamer) {
-        List<TensorType.Dimension> renamedDimensions = new ArrayList<>(type.dimensions.size());
-        for (TensorType.Dimension dimension : type.dimensions) {
+    public OrderedTensorType rename(DimensionRenamer renamer) {
+        List<TensorType.Dimension> renamedDimensions = new ArrayList<>(dimensions.size());
+        for (TensorType.Dimension dimension : dimensions) {
             String oldName = dimension.name();
             Optional<String> newName = renamer.dimensionNameOf(oldName);
             if (!newName.isPresent())
-                return type; // presumably, already renamed
+                return this; // presumably, already renamed
             TensorType.Dimension.Type dimensionType = dimension.type();
             if (dimensionType == TensorType.Dimension.Type.indexedBound) {
                 renamedDimensions.add(TensorType.Dimension.indexed(newName.get(), dimension.size().get()));
@@ -210,20 +207,21 @@ public class OrderedTensorType {
             if (size >= 0) {
                 if (vespaDimension.type() != TensorType.Dimension.Type.indexedBound) {
                     throw new IllegalArgumentException("Non-agreement between TensorFlow and Vespa " +
-                            "dimension types");
+                                                       "dimension types");
                 }
                 if (!vespaDimension.size().isPresent()) {
                     throw new IllegalArgumentException("Tensor dimension is indexed bound but does " +
-                            "not have a size");
+                                                       "not have a size");
                 }
                 if (vespaDimension.size().get() != size) {
                     throw new IllegalArgumentException("Non-agreement between TensorFlow and Vespa " +
-                            "dimension sizes. TensorFlow: " + size + " Vespa: " + vespaDimension.size().get());
+                                                       "dimension sizes. TensorFlow: " + size + " Vespa: " +
+                                                       vespaDimension.size().get());
                 }
             } else {
                 if (vespaDimension.type() != TensorType.Dimension.Type.indexedUnbound) {
                     throw new IllegalArgumentException("Non-agreement between TensorFlow and Vespa " +
-                            "dimension types");
+                                                       "dimension types");
                 }
             }
             this.dimensions.add(vespaDimension);
