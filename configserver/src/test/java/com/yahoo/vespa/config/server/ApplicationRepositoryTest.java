@@ -4,7 +4,9 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.config.server.http.CompressedApplicationInputStreamTest;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.http.v2.ApplicationApiHandler;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -15,6 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
@@ -65,10 +68,25 @@ public class ApplicationRepositoryTest {
         assertFalse(result.configChangeActions().getRestartActions().isEmpty());
     }
 
+    @Test
+    public void createAndPrepareAndActivate() throws IOException {
+        PrepareResult result = createAndPrepareAndActivateApp();
+        assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
+        assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+    }
+
     private PrepareResult prepareAndActivateApp(File application) throws IOException {
         FilesApplicationPackage appDir = FilesApplicationPackage.fromFile(application);
         long sessionId = applicationRepository.createSession(tenant, timeoutBudget, appDir.getAppDir(), "testapp");
         return applicationRepository.prepareAndActivate(tenant, sessionId, prepareParams(), false, false, Instant.now());
+    }
+
+    private PrepareResult createAndPrepareAndActivateApp() throws IOException {
+        File file = CompressedApplicationInputStreamTest.createTarFile();
+        return applicationRepository.createSessionAndPrepareAndActivate(tenant, new FileInputStream(file),
+                                                                        ApplicationApiHandler.APPLICATION_X_GZIP,
+                                                                        timeoutBudget, "testapp", prepareParams(),
+                                                                        false, false, Instant.now());
     }
 
     private PrepareParams prepareParams() {

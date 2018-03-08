@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
+import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -16,6 +17,7 @@ import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
@@ -32,6 +34,7 @@ import com.yahoo.vespa.config.server.configchange.RefeedActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
+import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -47,6 +50,8 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
@@ -361,6 +366,23 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return result;
     }
 
+    public PrepareResult createSessionAndPrepareAndActivate(Tenant tenant, InputStream in, String contentType, TimeoutBudget timeoutBudget,
+                                                            String name, PrepareParams prepareParams,
+                                                            boolean ignoreLockFailure, boolean ignoreSessionStaleFailure,
+                                                            Instant now) {
+        long sessionId = createSession(tenant, timeoutBudget, in, contentType, name);
+        return prepareAndActivate(tenant, sessionId, prepareParams, ignoreLockFailure, ignoreSessionStaleFailure, now);
+    }
+
+    private File decompressApplication(InputStream in, String contentType, File tempDir) {
+        try (CompressedApplicationInputStream application =
+                     CompressedApplicationInputStream.createFromCompressedStream(in, contentType)) {
+            return application.decompress(tempDir);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Unable to decompress data in body", e);
+        }
+    }
+
     private List<ApplicationId> listApplicationIds(Tenant tenant) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         return applicationRepo.listApplications();
@@ -374,6 +396,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession session = sessionFactory.createSessionFromExisting(fromSession, logger, timeoutBudget);
         localSessionRepo.addSession(session);
         return session.getSessionId();
+    }
+
+    public long createSession(Tenant tenant, TimeoutBudget timeoutBudget, InputStream in, String contentType, String applicationName) {
+        File tempDir = Files.createTempDir();
+        long sessionId = createSession(tenant, timeoutBudget, decompressApplication(in, contentType, tempDir), applicationName);
+        cleanupApplicationDirectory(tempDir, logger);
+        return sessionId;
     }
 
     public long createSession(Tenant tenant, TimeoutBudget timeoutBudget, File applicationDirectory, String applicationName) {
@@ -391,6 +420,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .forEach(applicationId -> redeployApplication(applicationId, deployer, deploymentExecutor)));
         deploymentExecutor.shutdown();
         deploymentExecutor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
+    }
+
+    private static void cleanupApplicationDirectory(File tempDir, DeployLogger logger) {
+        logger.log(LogLevel.DEBUG, "Deleting tmp dir '" + tempDir + "'");
+        if (!IOUtils.recursiveDeleteDir(tempDir)) {
+            logger.log(LogLevel.WARNING, "Not able to delete tmp dir '" + tempDir + "'");
+        }
     }
 
     private void redeployApplication(ApplicationId applicationId, Deployer deployer, ExecutorService deploymentExecutor) {

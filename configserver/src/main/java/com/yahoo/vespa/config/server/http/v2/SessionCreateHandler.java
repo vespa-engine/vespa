@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.DeployLogger;
@@ -9,15 +8,11 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
-import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
-import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
-import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.TimeoutBudget;
@@ -25,11 +20,8 @@ import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
-import java.util.concurrent.Executor;
 
 /**
  * A handler that is able to create a session from an application package,
@@ -37,12 +29,9 @@ import java.util.concurrent.Executor;
  * Handles /application/v2/ requests
  *
  * @author hmusum
- * @since 5.1
  */
 public class SessionCreateHandler extends SessionHandler {
-    public final static String APPLICATION_X_GZIP = "application/x-gzip";
-    public final static String APPLICATION_ZIP = "application/zip";
-    public final static String contentTypeHeader = "Content-Type";
+
     private static final String fromPattern = "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*";
 
     private final Tenants tenants;
@@ -72,11 +61,8 @@ public class SessionCreateHandler extends SessionHandler {
             sessionId = applicationRepository.createSessionFromExisting(tenant, logger, timeoutBudget, applicationId);
         } else {
             validateDataAndHeader(request);
-            File tempDir = Files.createTempDir();
-            File applicationDirectory = decompressApplication(request, tempDir);
             String name = getNameProperty(request, logger);
-            sessionId = applicationRepository.createSession(tenant, timeoutBudget, applicationDirectory, name);
-            cleanupApplicationDirectory(tempDir, logger);
+            sessionId = applicationRepository.createSession(tenant, timeoutBudget, request.getData(), request.getHeader(ApplicationApiHandler.contentTypeHeader), name);
         }
         return createResponse(request, tenantName, deployLog, sessionId);
     }
@@ -100,12 +86,12 @@ public class SessionCreateHandler extends SessionHandler {
             .instanceName(match.group(6)).build();
     }
 
-    private DeployHandlerLogger createLogger(HttpRequest request, Slime deployLog, TenantName tenant) {
+    static DeployHandlerLogger createLogger(HttpRequest request, Slime deployLog, TenantName tenant) {
         return SessionHandler.createLogger(deployLog, request,
                                            new ApplicationId.Builder().tenant(tenant).applicationName("-").build());
     }
 
-    private String getNameProperty(HttpRequest request, DeployLogger logger) {
+    static String getNameProperty(HttpRequest request, DeployLogger logger) {
         String name = request.getProperty("name");
         // TODO: Do we need validation of this parameter?
         if (name == null) {
@@ -115,32 +101,16 @@ public class SessionCreateHandler extends SessionHandler {
         return name;
     }
 
-    private File decompressApplication(HttpRequest request, File tempDir) {
-        try (CompressedApplicationInputStream application = CompressedApplicationInputStream.createFromCompressedStream(request.getData(), request
-                .getHeader(contentTypeHeader))) {
-            return application.decompress(tempDir);
-        } catch (IOException e) {
-            throw new InternalServerException("Unable to decompress data in body", e);
-        }
-    }
-
-    private void cleanupApplicationDirectory(File tempDir, DeployLogger logger) {
-        logger.log(LogLevel.DEBUG, "Deleting tmp dir '" + tempDir + "'");
-        if (!IOUtils.recursiveDeleteDir(tempDir)) {
-            logger.log(LogLevel.WARNING, "Not able to delete tmp dir '" + tempDir + "'");
-        }
-    }
-
-    private static void validateDataAndHeader(HttpRequest request) {
+    static void validateDataAndHeader(HttpRequest request) {
         if (request.getData() == null) {
             throw new BadRequestException("Request contains no data");
         }
-        String header = request.getHeader(contentTypeHeader);
+        String header = request.getHeader(ApplicationApiHandler.contentTypeHeader);
         if (header == null) {
-            throw new BadRequestException("Request contains no " + contentTypeHeader + " header");
-        } else if (!(header.equals(APPLICATION_X_GZIP) || header.equals(APPLICATION_ZIP))) {
-            throw new BadRequestException("Request contains invalid " + contentTypeHeader + " header, only '" +
-                                                  APPLICATION_X_GZIP + "' and '" + APPLICATION_ZIP + "' are supported");
+            throw new BadRequestException("Request contains no " + ApplicationApiHandler.contentTypeHeader + " header");
+        } else if (!(header.equals(ApplicationApiHandler.APPLICATION_X_GZIP) || header.equals(ApplicationApiHandler.APPLICATION_ZIP))) {
+            throw new BadRequestException("Request contains invalid " + ApplicationApiHandler.contentTypeHeader + " header, only '" +
+                                                  ApplicationApiHandler.APPLICATION_X_GZIP + "' and '" + ApplicationApiHandler.APPLICATION_ZIP + "' are supported");
         }
     }
 
