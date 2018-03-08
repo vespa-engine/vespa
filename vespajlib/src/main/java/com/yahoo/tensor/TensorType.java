@@ -32,7 +32,7 @@ public class TensorType {
     /** Sorted list of the dimensions of this */
     private final ImmutableList<Dimension> dimensions;
 
-    private TensorType(Collection<Dimension> dimensions) {
+    public TensorType(Collection<Dimension> dimensions) {
         List<Dimension> dimensionList = new ArrayList<>(dimensions);
         Collections.sort(dimensionList);
         this.dimensions = ImmutableList.copyOf(dimensionList);
@@ -50,7 +50,7 @@ public class TensorType {
      * Example: <code>tensor(x[10],y[20])</code> (a matrix)
      */
     public static TensorType fromSpec(String specString) {
-        return TensorTypeParser.fromSpec(specString);
+        return new TensorType(TensorTypeParser.fromSpec(specString));
     }
 
     /** Returns the number of dimensions of this: dimensions().size() */

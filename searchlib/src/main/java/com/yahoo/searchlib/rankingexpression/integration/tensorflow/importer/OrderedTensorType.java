@@ -2,6 +2,7 @@
 package com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer;
 
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TensorTypeParser;
 import org.tensorflow.framework.AttrValue;
 import org.tensorflow.framework.NodeDef;
 import org.tensorflow.framework.TensorShapeProto;
@@ -169,6 +170,23 @@ public class OrderedTensorType {
             }
         }
         return new OrderedTensorType(renamedDimensions);
+    }
+
+    /**
+     * Returns a string representation of this: A standard tensor type string where dimensions
+     * are listed in the order of this rather than in the natural order of their names.
+     */
+    @Override
+    public String toString() {
+        return "tensor(" + dimensions.stream().map(TensorType.Dimension::toString).collect(Collectors.joining(",")) + ")";
+    }
+
+    /**
+     * Creates an instance from the string representation of this: A standard tensor type string
+     * where dimensions are listed in the order of this rather than the natural order of their names.
+     */
+    public static OrderedTensorType fromSpec(String typeSpec) {
+        return new OrderedTensorType(TensorTypeParser.fromSpec(typeSpec));
     }
 
     public static OrderedTensorType fromTensorFlowType(NodeDef node) {
