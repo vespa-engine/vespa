@@ -31,16 +31,4 @@ public class AggregatedStatsMergePendingChecker implements MergePendingChecker {
         return true;
     }
 
-    public boolean mayHaveMergesPendingInGlobalSpace() {
-        if (!stats.hasUpdatesFromAllDistributors()) {
-            return true;
-        }
-        for (Iterator<ContentNodeStats> itr = stats.getStats().iterator(); itr.hasNext(); ) {
-            ContentNodeStats stats = itr.next();
-            if (mayHaveMergesPending(FixedBucketSpaces.globalSpace(), stats.getNodeIndex())) {
-                return true;
-            }
-        }
-        return false;
-    }
 }

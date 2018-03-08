@@ -89,7 +89,7 @@ public class StateVersionTracker {
     public void updateLatestCandidateStateBundle(final ClusterStateBundle candidateBundle) {
         assert(latestCandidateState.getBaselineClusterState().getVersion() == 0);
         latestCandidateState = candidateBundle;
-        clusterStatsChangeTracker.syncBucketsPendingFlag();
+        clusterStatsChangeTracker.syncAggregatedStats();
     }
 
     /**

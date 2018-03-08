@@ -4,36 +4,64 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.google.common.collect.Sets;
 import org.junit.Test;
 
+import java.util.Set;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class ClusterStatsChangeTrackerTest {
 
-    private static class Fixture {
-        private ClusterStatsAggregator aggregator;
-        private ClusterStatsChangeTracker tracker;
+    private static class StatsBuilder {
+        private final ContentClusterStatsBuilder builder = new ContentClusterStatsBuilder();
 
-        public Fixture() {
-            aggregator = new ClusterStatsAggregator(Sets.newHashSet(1), Sets.newHashSet(2));
+        public StatsBuilder bucketsPending(int contentNodeIndex) {
+            builder.add(contentNodeIndex, "global", 5, 1);
+            return this;
+        }
+
+        public StatsBuilder inSync(int contentNodeIndex) {
+            builder.add(contentNodeIndex, "global", 5, 0);
+            return this;
+        }
+
+        public ContentClusterStats build() {
+            return builder.build();
+        }
+    }
+
+    private static StatsBuilder stats() {
+        return new StatsBuilder();
+    }
+
+    private static class Fixture {
+        private final Set<Integer> contentNodeIndices;
+        private ClusterStatsAggregator aggregator;
+        private final ClusterStatsChangeTracker tracker;
+
+        private Fixture(Integer... contentNodeIndices) {
+            this.contentNodeIndices = Sets.newHashSet(contentNodeIndices);
+            aggregator = new ClusterStatsAggregator(Sets.newHashSet(1), this.contentNodeIndices);
             tracker = new ClusterStatsChangeTracker(aggregator.getAggregatedStats());
         }
 
-        public void setBucketsPendingStats() {
-            updateStats(1);
+        public static Fixture empty() {
+            return new Fixture(0, 1);
         }
 
-        public void setInSyncStats() {
-            updateStats(0);
+        public static Fixture fromStats(StatsBuilder builder) {
+            Fixture result = new Fixture(0, 1);
+            result.updateStats(builder);
+            return result;
         }
 
-        public void updateStats(long bucketsPending) {
-            aggregator.updateForDistributor(1, new ContentClusterStatsBuilder()
-                    .add(2, "global", 5, bucketsPending).build());
-        }
-
-        public void updateAggregatedStats() {
-            aggregator = new ClusterStatsAggregator(Sets.newHashSet(1), Sets.newHashSet(2));
+        public void newAggregatedStats(StatsBuilder builder) {
+            aggregator = new ClusterStatsAggregator(Sets.newHashSet(1), contentNodeIndices);
+            updateStats(builder);
             tracker.updateAggregatedStats(aggregator.getAggregatedStats());
+        }
+
+        private void updateStats(StatsBuilder builder) {
+            aggregator.updateForDistributor(1, builder.build());
         }
 
         public boolean statsHaveChanged() {
@@ -44,24 +72,40 @@ public class ClusterStatsChangeTrackerTest {
 
     @Test
     public void stats_have_not_changed_if_not_all_distributors_are_updated() {
-        Fixture f = new Fixture();
+        Fixture f = Fixture.empty();
         assertFalse(f.statsHaveChanged());
     }
 
     @Test
-    public void stats_have_changed_if_previous_buckets_pending_stats_are_different_from_current() {
-        Fixture f = new Fixture();
-
-        f.setInSyncStats();
+    public void stats_have_not_changed_if_all_nodes_in_sync_and_nothing_previous() {
+        Fixture f = Fixture.fromStats(stats().inSync(0).inSync(1));
         assertFalse(f.statsHaveChanged());
-        f.setBucketsPendingStats();
-        assertTrue(f.statsHaveChanged());
+    }
 
-        f.updateAggregatedStats(); // previous stats may now have buckets pending
-
-        f.setInSyncStats();
+    @Test
+    public void stats_have_changed_if_one_node_with_buckets_pending_and_nothing_previous() {
+        Fixture f = Fixture.fromStats(stats().inSync(0).bucketsPending(1));
         assertTrue(f.statsHaveChanged());
-        f.setBucketsPendingStats();
+    }
+
+    @Test
+    public void stats_have_changed_if_one_node_has_in_sync_to_buckets_pending_transition() {
+        Fixture f = Fixture.fromStats(stats().bucketsPending(0).inSync(1));
+        f.newAggregatedStats(stats().bucketsPending(0).bucketsPending(1));
+        assertTrue(f.statsHaveChanged());
+    }
+
+    @Test
+    public void stats_have_changed_if_one_node_has_buckets_pending_to_in_sync_transition() {
+        Fixture f = Fixture.fromStats(stats().bucketsPending(0).bucketsPending(1));
+        f.newAggregatedStats(stats().bucketsPending(0).inSync(1));
+        assertTrue(f.statsHaveChanged());
+    }
+
+    @Test
+    public void stats_have_not_changed_if_no_nodes_have_changed_state() {
+        Fixture f = Fixture.fromStats(stats().bucketsPending(0).bucketsPending(1));
+        f.newAggregatedStats(stats().bucketsPending(0).bucketsPending(1));
         assertFalse(f.statsHaveChanged());
     }
 

@@ -39,10 +39,6 @@ public class AggregatedStatsMergePendingCheckerTest {
             return checker.mayHaveMergesPending(bucketSpace, contentNodeIndex);
         }
 
-        public boolean mayHaveMergesPendingInGlobalSpace() {
-            return checker.mayHaveMergesPendingInGlobalSpace();
-        }
-
     }
 
     @Test
@@ -79,29 +75,6 @@ public class AggregatedStatsMergePendingCheckerTest {
     public void cluster_without_updates_from_all_distributors_may_have_merges_pending() {
         Fixture f = Fixture.fromIncompleteStats();
         assertTrue(f.mayHaveMergesPending("default", 1));
-    }
-
-    @Test
-    public void cluster_without_updates_from_all_distributors_may_have_merges_pending_in_global_space() {
-        Fixture f = Fixture.fromIncompleteStats();
-        assertTrue(f.mayHaveMergesPendingInGlobalSpace());
-    }
-
-    @Test
-    public void cluster_may_have_merges_pending_in_global_space_if_one_node_has_buckets_pending() {
-        Fixture f = new Fixture(new ContentClusterStatsBuilder()
-                .add(1, "global", 10, 0)
-                .add(2, "global", 11, 1), true);
-        assertTrue(f.mayHaveMergesPendingInGlobalSpace());
-    }
-
-    @Test
-    public void cluster_does_not_have_merges_pending_in_global_space_if_no_nodes_have_buckets_pending() {
-        Fixture f = new Fixture(new ContentClusterStatsBuilder()
-                .add(3, "global", 10, 0)
-                .add(4, "global", 11, 0)
-                .add(4, "default", 12, 1), true);
-        assertFalse(f.mayHaveMergesPendingInGlobalSpace());
     }
 
 }
