@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.status;
 
+import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vespa.clustercontroller.core.*;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageResponse;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
@@ -94,8 +95,8 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             showLocal = false;
         }
 
-        sb.append("<h2 id=\"clusterstates\">Cluster states</h2>\n")
-          .append("<p>Current cluster state:<br><code>").append(stateVersionTracker.getVersionedClusterState().toString()).append("</code></p>\n");
+        sb.append("<h2 id=\"clusterstates\">Cluster states</h2>\n");
+        writeClusterStates(sb, stateVersionTracker.getVersionedClusterStateBundle());
 
         if ( ! stateVersionTracker.getClusterStateHistory().isEmpty()) {
             TimeZone tz = TimeZone.getTimeZone("UTC");
@@ -120,6 +121,15 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             if (current != null) writeClusterStateEntry(current, null, sb, tz);
             sb.append("</table>\n");
         }
+    }
+
+    private static void writeClusterStates(StringBuilder sb, ClusterStateBundle clusterStates) {
+        sb.append("<p>Baseline cluster state:<br><code>").append(clusterStates.getBaselineClusterState().toString()).append("</code></p>\n");
+        clusterStates.getDerivedBucketSpaceStates().entrySet().forEach(entry -> {
+            String bucketSpace = entry.getKey();
+            ClusterState clusterState = entry.getValue().getClusterState();
+            sb.append("<p>" + bucketSpace + " cluster state:<br><code>").append(clusterState.toString()).append("</code></p>\n");
+        });
     }
 
     private void writeClusterStateEntry(ClusterStateHistoryEntry entry, ClusterStateHistoryEntry last, StringBuilder sb, TimeZone tz) {

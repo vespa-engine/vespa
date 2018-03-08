@@ -9,28 +9,34 @@ package com.yahoo.vespa.clustercontroller.core;
  */
 public class ClusterStatsChangeTracker {
 
-    private ClusterStatsAggregator aggregator;
-    private boolean prevMayHaveBucketsPending;
+    private AggregatedClusterStats aggregatedStats;
+    private AggregatedStatsMergePendingChecker checker;
+    private boolean prevMayHaveMergesPending;
 
-    public ClusterStatsChangeTracker(ClusterStatsAggregator aggregator) {
-        this.aggregator = aggregator;
-        this.prevMayHaveBucketsPending = false;
+    public ClusterStatsChangeTracker(AggregatedClusterStats aggregatedStats) {
+        setAggregatedStats(aggregatedStats);
+        prevMayHaveMergesPending = false;
+    }
+
+    private void setAggregatedStats(AggregatedClusterStats aggregatedStats) {
+        this.aggregatedStats = aggregatedStats;
+        checker = new AggregatedStatsMergePendingChecker(this.aggregatedStats);
     }
 
     public void syncBucketsPendingFlag() {
-        prevMayHaveBucketsPending = aggregator.mayHaveBucketsPendingInGlobalSpace();
+        prevMayHaveMergesPending = checker.mayHaveMergesPendingInGlobalSpace();
     }
 
-    public void updateAggregator(ClusterStatsAggregator newAggregator) {
+    public void updateAggregatedStats(AggregatedClusterStats newAggregatedStats) {
         syncBucketsPendingFlag();
-        aggregator = newAggregator;
+        setAggregatedStats(newAggregatedStats);
     }
 
     public boolean statsHaveChanged() {
-        if (!aggregator.hasUpdatesFromAllDistributors()) {
+        if (!aggregatedStats.hasUpdatesFromAllDistributors()) {
             return false;
         }
-        if (prevMayHaveBucketsPending != aggregator.mayHaveBucketsPendingInGlobalSpace()) {
+        if (prevMayHaveMergesPending != checker.mayHaveMergesPendingInGlobalSpace()) {
             return true;
         }
         return false;

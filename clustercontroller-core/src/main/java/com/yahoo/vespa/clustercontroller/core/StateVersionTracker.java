@@ -39,7 +39,7 @@ public class StateVersionTracker {
 
     StateVersionTracker() {
         clusterStateView = ClusterStateView.create(currentUnversionedState.getBaselineClusterState());
-        clusterStatsChangeTracker = new ClusterStatsChangeTracker(clusterStateView.getStatsAggregator());
+        clusterStatsChangeTracker = new ClusterStatsChangeTracker(clusterStateView.getStatsAggregator().getAggregatedStats());
     }
 
     void setVersionRetrievedFromZooKeeper(final int version) {
@@ -128,7 +128,7 @@ public class StateVersionTracker {
                 newStateBundle.getBaselineClusterState().getDistributionBitCount());
         // TODO should this take place in updateLatestCandidateStateBundle instead? I.e. does it require a consolidated state?
         clusterStateView = ClusterStateView.create(currentClusterState.getBaselineClusterState());
-        clusterStatsChangeTracker.updateAggregator(clusterStateView.getStatsAggregator());
+        clusterStatsChangeTracker.updateAggregatedStats(clusterStateView.getStatsAggregator().getAggregatedStats());
     }
 
     private void recordCurrentStateInHistoryAtTime(final long currentTimeMs) {

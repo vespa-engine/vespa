@@ -119,7 +119,8 @@ public class EventLog implements EventLogInterface {
               .append(RealTimer.printDate(currentTime - recentTimePeriod, tz)).append(".</p>\n");
         }
         sb.append("<table border=\"1\" cellspacing=\"0\">\n")
-          .append("<tr><td>Date (").append(tz.getDisplayName(false, TimeZone.SHORT)).append(")</td><td>Type</td><td>Node</td><td>Event</td></tr>\n");
+          .append("<tr><td>Date (").append(tz.getDisplayName(false, TimeZone.SHORT))
+                .append(")</td><td>Type</td><td>Node</td><td>Bucket space</td><td>Event</td></tr>\n");
         int nr = 0;
         Iterator<Event> eventIterator = (events == null ? null : events.descendingIterator());
         if (eventIterator != null) while (eventIterator.hasNext()) {
@@ -127,17 +128,30 @@ public class EventLog implements EventLogInterface {
             String colStart = "<font color=\"" + (++nr > recentNodeEvents ? "grey" : "black") + "\">";
             String colEnd = "</font>";
             sb.append("<tr>\n");
-            sb.append("  <td><nobr>").append(colStart).append(RealTimer.printDate(e.getTimeMs(), tz)).append(colEnd).append("</nobr></td>\n");
-            sb.append("  <td><nobr>").append(colStart).append(e.getCategory()).append(colEnd).append("</nobr></td>\n");
+
+            addNobrTableCell(sb, colStart, colEnd, RealTimer.printDate(e.getTimeMs(), tz));
+            addNobrTableCell(sb, colStart, colEnd, e.getCategory());
             if (e instanceof NodeEvent) {
-                sb.append("  <td><nobr>").append(colStart).append(((NodeEvent) e).getNode().toString()).append(colEnd).append("</nobr></td>\n");
+                NodeEvent nodeEvent = (NodeEvent)e;
+                addNobrTableCell(sb, colStart, colEnd, nodeEvent.getNode().toString());
+                addNobrTableCell(sb, colStart, colEnd, nodeEvent.getBucketSpace().orElse(" - "));
             } else {
-                sb.append("  <td><nobr>").append(colStart).append(" - ").append(colEnd).append("</nobr></td>\n");
+                addNobrTableCell(sb, colStart, colEnd, " - ");
+                addNobrTableCell(sb, colStart, colEnd, " - ");
             }
-            sb.append("  <td>").append(colStart).append(e.getDescription()).append(colEnd).append("</td>\n");
+            addTableCell(sb, colStart, colEnd, e.getDescription());
+
             sb.append("</tr>\n");
         }
         sb.append("</table>\n");
+    }
+
+    private static void addNobrTableCell(StringBuilder sb, String colStart, String colEnd, String cellValue) {
+        sb.append("  <td><nobr>").append(colStart).append(cellValue).append(colEnd).append("</nobr></td>\n");
+    }
+
+    private static void addTableCell(StringBuilder sb, String colStart, String colEnd, String cellValue) {
+        sb.append("  <td>").append(colStart).append(cellValue).append(colEnd).append("</td>\n");
     }
 
 }

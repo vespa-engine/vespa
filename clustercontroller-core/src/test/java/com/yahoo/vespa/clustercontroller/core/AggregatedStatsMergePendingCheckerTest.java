@@ -5,61 +5,103 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class AggregatedStatsMergePendingCheckerTest {
 
     private static class Fixture {
 
+        private final AggregatedClusterStats mockAggregatedStats = mock(AggregatedClusterStats.class);
         private final AggregatedStatsMergePendingChecker checker;
 
-        public Fixture(ContentClusterStatsBuilder builder) {
-            this.checker = new AggregatedStatsMergePendingChecker(builder.build());
+        public Fixture(ContentClusterStatsBuilder builder, boolean hasUpdatesFromAllDistributors) {
+            when(mockAggregatedStats.getStats()).thenReturn(builder.build());
+            when(mockAggregatedStats.hasUpdatesFromAllDistributors()).thenReturn(hasUpdatesFromAllDistributors);
+            this.checker = new AggregatedStatsMergePendingChecker(mockAggregatedStats);
         }
 
-        public static Fixture fromBucketStats(long bucketsPending) {
+        public static Fixture fromBucketsPending(long bucketsPending) {
             return new Fixture(new ContentClusterStatsBuilder()
-                    .add(1, "default", 5, bucketsPending));
+                    .add(1, "default", 5, bucketsPending), true);
         }
 
         public static Fixture fromInvalidBucketStats() {
             return new Fixture(new ContentClusterStatsBuilder()
-                    .add(1, "default"));
+                    .add(1, "default"), true);
+        }
+
+        public static Fixture fromIncompleteStats() {
+            return new Fixture(new ContentClusterStatsBuilder(), false);
         }
 
         public boolean mayHaveMergesPending(String bucketSpace, int contentNodeIndex) {
             return checker.mayHaveMergesPending(bucketSpace, contentNodeIndex);
         }
 
+        public boolean mayHaveMergesPendingInGlobalSpace() {
+            return checker.mayHaveMergesPendingInGlobalSpace();
+        }
+
     }
 
     @Test
-    public void unknown_content_node_has_no_merges_pending() {
-        Fixture f = Fixture.fromBucketStats(1);
-        assertFalse(f.mayHaveMergesPending("default", 2));
+    public void unknown_content_node_may_have_merges_pending() {
+        Fixture f = Fixture.fromBucketsPending(1);
+        assertTrue(f.mayHaveMergesPending("default", 2));
     }
 
     @Test
     public void unknown_bucket_space_has_no_merges_pending() {
-        Fixture f = Fixture.fromBucketStats(1);
+        Fixture f = Fixture.fromBucketsPending(1);
         assertFalse(f.mayHaveMergesPending("global", 1));
     }
 
     @Test
     public void valid_bucket_space_stats_can_have_no_merges_pending() {
-        Fixture f = Fixture.fromBucketStats(0);
+        Fixture f = Fixture.fromBucketsPending(0);
         assertFalse(f.mayHaveMergesPending("default", 1));
     }
 
     @Test
-    public void valid_bucket_space_stats_can_have_merges_pending() {
-        Fixture f = Fixture.fromBucketStats(1);
+    public void valid_bucket_space_stats_may_have_merges_pending() {
+        Fixture f = Fixture.fromBucketsPending(1);
         assertTrue(f.mayHaveMergesPending("default", 1));
     }
 
     @Test
-    public void invalid_bucket_space_stats_has_merges_pending() {
+    public void invalid_bucket_space_stats_may_have_merges_pending() {
         Fixture f = Fixture.fromInvalidBucketStats();
         assertTrue(f.mayHaveMergesPending("default", 1));
+    }
+
+    @Test
+    public void cluster_without_updates_from_all_distributors_may_have_merges_pending() {
+        Fixture f = Fixture.fromIncompleteStats();
+        assertTrue(f.mayHaveMergesPending("default", 1));
+    }
+
+    @Test
+    public void cluster_without_updates_from_all_distributors_may_have_merges_pending_in_global_space() {
+        Fixture f = Fixture.fromIncompleteStats();
+        assertTrue(f.mayHaveMergesPendingInGlobalSpace());
+    }
+
+    @Test
+    public void cluster_may_have_merges_pending_in_global_space_if_one_node_has_buckets_pending() {
+        Fixture f = new Fixture(new ContentClusterStatsBuilder()
+                .add(1, "global", 10, 0)
+                .add(2, "global", 11, 1), true);
+        assertTrue(f.mayHaveMergesPendingInGlobalSpace());
+    }
+
+    @Test
+    public void cluster_does_not_have_merges_pending_in_global_space_if_no_nodes_have_buckets_pending() {
+        Fixture f = new Fixture(new ContentClusterStatsBuilder()
+                .add(3, "global", 10, 0)
+                .add(4, "global", 11, 0)
+                .add(4, "default", 12, 1), true);
+        assertFalse(f.mayHaveMergesPendingInGlobalSpace());
     }
 
 }
