@@ -8,6 +8,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.when;
 public class StorageMaintainerTest {
     private final ManualClock clock = new ManualClock();
     private final Environment environment = new Environment.Builder()
+            .configServerConfig(new ConfigServerConfig(new ConfigServerConfig.Builder()))
             .region("us-east-1")
             .environment("prod")
             .system("main")
