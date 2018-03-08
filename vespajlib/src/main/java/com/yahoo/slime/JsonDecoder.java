@@ -11,10 +11,10 @@ import java.util.List;
 /**
  * A port of the C++ json decoder intended to be fast.
  *
- * @author lulf
- * @since 5.1.21
+ * @author Ulf Lilleengen
  */
 public class JsonDecoder {
+
     private BufferedInput in;
     private byte c;
 
@@ -256,7 +256,6 @@ public class JsonDecoder {
         return ret;
     }
 
-
     private void next() {
         if (!in.eof()) {
             c = in.getByte();
@@ -302,4 +301,5 @@ public class JsonDecoder {
         public final Cursor insertARRAY()              { return target.setArray(key); }
         public final Cursor insertOBJECT()             { return target.setObject(key); }
     }
+
 }

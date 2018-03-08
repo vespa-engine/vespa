@@ -8,7 +8,12 @@ import com.yahoo.tensor.Tensor;
 
 import static com.yahoo.document.json.readers.JsonParserHelpers.*;
 
+/**
+ * Reads the tensor format described at
+ * http://docs.vespa.ai/documentation/reference/document-json-put-format.html#tensor
+ */
 public class TensorReader {
+
     public static final String TENSOR_ADDRESS = "address";
     public static final String TENSOR_DIMENSIONS = "dimensions";
     public static final String TENSOR_CELLS = "cells";
@@ -18,7 +23,7 @@ public class TensorReader {
         Tensor.Builder tensorBuilder = Tensor.Builder.of(tensorFieldValue.getDataType().getTensorType());
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
-        /* read tensor cell fields and ignore everything else */
+        // read tensor cell fields and ignore everything else
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             if (TensorReader.TENSOR_CELLS.equals(buffer.currentName()))
                 readTensorCells(buffer, tensorBuilder);

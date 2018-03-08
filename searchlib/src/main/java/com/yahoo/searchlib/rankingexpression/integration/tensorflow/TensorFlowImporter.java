@@ -240,7 +240,8 @@ public class TensorFlowImporter {
         return operation.function();
     }
 
-    private static void importInputExpressions(TensorFlowOperation operation, TensorFlowModel model, SavedModelBundle bundle) {
+    private static void importInputExpressions(TensorFlowOperation operation, TensorFlowModel model,
+                                               SavedModelBundle bundle) {
         operation.inputs().forEach(input -> importExpression(input, model, bundle));
     }
 
@@ -257,7 +258,8 @@ public class TensorFlowImporter {
         }
     }
 
-    private static Optional<TensorFunction> importConstant(TensorFlowModel model, TensorFlowOperation operation, SavedModelBundle bundle) {
+    private static Optional<TensorFunction> importConstant(TensorFlowModel model, TensorFlowOperation operation,
+                                                           SavedModelBundle bundle) {
         String name = operation.vespaName();
         if (model.largeConstants().containsKey(name) || model.smallConstants().containsKey(name)) {
             return operation.function();
@@ -271,14 +273,9 @@ public class TensorFlowImporter {
             }
             tensor = value.asTensor();
         } else {
-            Session.Runner fetched = bundle.session().runner().fetch(operation.node().getName());
-            List<org.tensorflow.Tensor<?>> importedTensors = fetched.run();
-            if (importedTensors.size() != 1) {
-                throw new IllegalStateException("Expected 1 tensor from fetching " + operation.node().getName() + ", but got " +
-                                                importedTensors.size());
-            }
             // Here we use the type from the operation, which will have correct dimension names after name resolving
-            tensor = TensorConverter.toVespaTensor(importedTensors.get(0), operation.type().get());
+            tensor = TensorConverter.toVespaTensor(readVariable(operation.node().getName(), bundle),
+                                                   operation.type().get());
             operation.setConstantValue(new TensorValue(tensor));
         }
 
@@ -288,6 +285,15 @@ public class TensorFlowImporter {
             model.largeConstant(operation.vespaName(), tensor);
         }
         return operation.function();
+    }
+
+    static org.tensorflow.Tensor<?> readVariable(String name, SavedModelBundle bundle) {
+        Session.Runner fetched = bundle.session().runner().fetch(name);
+        List<org.tensorflow.Tensor<?>> importedTensors = fetched.run();
+        if (importedTensors.size() != 1)
+            throw new IllegalStateException("Expected 1 tensor from fetching " + name +
+                                            ", but got " + importedTensors.size());
+        return importedTensors.get(0);
     }
 
     private static void importRankingExpression(TensorFlowModel model, TensorFlowOperation operation) {

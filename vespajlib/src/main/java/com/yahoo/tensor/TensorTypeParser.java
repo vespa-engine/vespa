@@ -23,7 +23,11 @@ public class TensorTypeParser {
     private static final Pattern indexedPattern = Pattern.compile("(\\w+)\\[(\\d*)\\]");
     private static final Pattern mappedPattern = Pattern.compile("(\\w+)\\{\\}");
 
-    public static List<TensorType.Dimension> fromSpec(String specString) {
+    public static TensorType fromSpec(String specString) {
+        return new TensorType.Builder(dimensionsFromSpec(specString)).build();
+    }
+
+    public static List<TensorType.Dimension> dimensionsFromSpec(String specString) {
         if ( ! specString.startsWith(START_STRING) || !specString.endsWith(END_STRING)) {
             throw new IllegalArgumentException("Tensor type spec must start with '" + START_STRING + "'" +
                                                " and end with '" + END_STRING + "', but was '" + specString + "'");

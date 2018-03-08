@@ -6,21 +6,24 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public interface SlimeFormat {
-    /**
-     * Encode a slime object into the provided output stream
-     * @param os The outputstream to write to.
-     * @param slime The slime object to encode.
-     */
-    public void encode(OutputStream os, Slime slime) throws IOException;
 
     /**
      * Encode a slime object into the provided output stream
+     *
+     * @param os The outputstream to write to.
+     * @param slime The slime object to encode.
+     */
+    void encode(OutputStream os, Slime slime) throws IOException;
+
+    /**
+     * Encode a slime object into the provided output stream
+     *
      * @param is The input stream to read from.
      * @param slime The slime object to decode into.
      */
-    public void decode(InputStream is, Slime slime) throws IOException;
+    void decode(InputStream is, Slime slime) throws IOException;
+
 }

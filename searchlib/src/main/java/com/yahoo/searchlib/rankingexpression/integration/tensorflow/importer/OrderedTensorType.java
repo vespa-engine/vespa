@@ -186,7 +186,7 @@ public class OrderedTensorType {
      * where dimensions are listed in the order of this rather than the natural order of their names.
      */
     public static OrderedTensorType fromSpec(String typeSpec) {
-        return new OrderedTensorType(TensorTypeParser.fromSpec(typeSpec));
+        return new OrderedTensorType(TensorTypeParser.dimensionsFromSpec(typeSpec));
     }
 
     public static OrderedTensorType fromTensorFlowType(NodeDef node) {

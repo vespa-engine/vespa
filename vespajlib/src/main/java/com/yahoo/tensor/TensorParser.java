@@ -18,7 +18,7 @@ class TensorParser {
                 int colonIndex = tensorString.indexOf(':');
                 String typeString = tensorString.substring(0, colonIndex);
                 String valueString = tensorString.substring(colonIndex + 1);
-                TensorType typeFromString = new TensorType(TensorTypeParser.fromSpec(typeString));
+                TensorType typeFromString = TensorTypeParser.fromSpec(typeString);
                 if (type.isPresent() && ! type.get().equals(typeFromString))
                     throw new IllegalArgumentException("Got tensor with type string '" + typeString + "', but was " +
                                                        "passed type " + type);
