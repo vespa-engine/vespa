@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.io.IOUtils;
 import org.junit.Rule;
@@ -54,11 +53,11 @@ public class ZooKeeperServerTest {
     }
 
     private void createServer(ZookeeperServerConfig.Builder builder) {
-        new ZooKeeperServer(new ZookeeperServerConfig(builder), new ConfigserverConfig(new ConfigserverConfig.Builder()), false);
+        new ZooKeeperServer(new ZookeeperServerConfig(builder), false);
     }
 
     @Test(expected = RuntimeException.class)
-    public void require_that_this_id_must_be_present_amongst_servers() {
+    public void require_that_this_id_must_be_present_amongst_servers() throws IOException {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.server(newServer(2, "bar", 234, 432));
         builder.server(newServer(3, "baz", 345, 543));

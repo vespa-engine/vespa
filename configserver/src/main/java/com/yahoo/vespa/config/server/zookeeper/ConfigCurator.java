@@ -88,7 +88,7 @@ public class ConfigCurator {
 
     @Inject
     public ConfigCurator(Curator curator, ZooKeeperServer server) {
-        this(curator, server.getZookeeperServerConfig().juteMaxBuffer());
+        this(curator, server.getConfig().juteMaxBuffer());
     }
 
     private ConfigCurator(Curator curator, int maxNodeSize) {

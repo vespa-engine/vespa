@@ -71,9 +71,9 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
         return ZooKeeperServer.getAllowedClientHostnames();
     }
 
-    private Set<String> toHostnameSet(String hostnamesString) {
+    private Set<String> toHostnameSet(String hosatnamesString) {
         Set<String> hostnames = new HashSet<>();
-        for (String hostname : StringUtilities.split(hostnamesString)) {
+        for (String hostname : StringUtilities.split(hosatnamesString)) {
             if ( ! hostname.trim().isEmpty())
                 hostnames.add(hostname.trim());
         }
