@@ -83,7 +83,7 @@ public interface IPAddresses {
         if (ipv4Addresses.size() == 1) return Optional.of((Inet4Address)ipv4Addresses.get(0));
 
         if (ipv4Addresses.isEmpty()) {
-            Optional.empty();
+            return Optional.empty();
         }
 
         List<InetAddress> siteLocalIPv4Addresses = Stream.of(allAddresses)
