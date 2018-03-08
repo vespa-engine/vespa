@@ -56,18 +56,18 @@ public class StatisticsSearcher extends Searcher {
     private static final String ACTIVE_QUERIES_METRIC = "active_queries";
     private static final String PEAK_QPS_METRIC = "peak_qps";
 
-    private Counter queries; // basic counter
-    private Counter failedQueries; // basic counter
-    private Counter nullQueries; // basic counter
-    private Counter illegalQueries; // basic counter
-    private Value queryLatency; // mean pr 5 min
-    private Value queryLatencyBuckets;
-    private Value maxQueryLatency; // separate to avoid name mangling
+    private final Counter queries; // basic counter
+    private final Counter failedQueries; // basic counter
+    private final Counter nullQueries; // basic counter
+    private final Counter illegalQueries; // basic counter
+    private final Value queryLatency; // mean pr 5 min
+    private final Value queryLatencyBuckets;
+    private final Value maxQueryLatency; // separate to avoid name mangling
     @SuppressWarnings("unused") // all the work is done by the callback
-    private Value activeQueries; // raw measure every 5 minutes
-    private Value peakQPS; // peak 1s QPS
-    private Counter emptyResults; // number of results containing no concrete hits
-    private Value hitsPerQuery; // mean number of hits per query
+    private final Value activeQueries; // raw measure every 5 minutes
+    private final Value peakQPS; // peak 1s QPS
+    private final Counter emptyResults; // number of results containing no concrete hits
+    private final Value hitsPerQuery; // mean number of hits per query
 
     private final PeakQpsReporter peakQpsReporter;
 
@@ -76,26 +76,6 @@ public class StatisticsSearcher extends Searcher {
     private Map<String, Metric.Context> chainContexts = new CopyOnWriteHashMap<>();
     private Map<String, Metric.Context> statePageOnlyContexts = new CopyOnWriteHashMap<>();
     private java.util.Timer scheduler = new java.util.Timer(true);
-
-    private void initEvents(com.yahoo.statistics.Statistics manager, MetricReceiver metricReceiver) {
-        queries = new Counter(QUERIES_METRIC, manager, false);
-        failedQueries = new Counter(FAILED_QUERIES_METRIC, manager, false);
-        nullQueries = new Counter("null_queries", manager, false);
-        illegalQueries = new Counter("illegal_queries", manager, false);
-        queryLatency = new Value(MEAN_QUERY_LATENCY_METRIC, manager,
-                new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
-        maxQueryLatency = new Value(MAX_QUERY_LATENCY_METRIC, manager,
-                new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
-        queryLatencyBuckets = Value.buildValue("query_latency", manager, null);
-        activeQueries = new Value(ACTIVE_QUERIES_METRIC, manager,
-                new Value.Parameters().setLogRaw(true).setCallback(new ActivitySampler()));
-        peakQPS = new Value(PEAK_QPS_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true)
-                .setNameExtension(false));
-        hitsPerQuery = new Value(HITS_PER_QUERY_METRIC, manager,
-                new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
-        emptyResults = new Counter(EMPTY_RESULTS_METRIC, manager, false);
-        metricReceiver.declareGauge(QUERY_LATENCY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
-    }
 
     // Callback to measure queries in flight every five minutes
     private class ActivitySampler implements Callback {
@@ -137,7 +117,7 @@ public class StatisticsSearcher extends Searcher {
             prevMaxQPSTime = now;
             queriesForQPS = 0;
         }
-        public void countQuery() {
+        void countQuery() {
             synchronized (this) {
                 ++queriesForQPS;
             }
@@ -147,7 +127,25 @@ public class StatisticsSearcher extends Searcher {
     public StatisticsSearcher(com.yahoo.statistics.Statistics manager, Metric metric, MetricReceiver metricReceiver) {
         this.peakQpsReporter = new PeakQpsReporter();
         this.metric = metric;
-        initEvents(manager, metricReceiver);
+
+        queries = new Counter(QUERIES_METRIC, manager, false);
+        failedQueries = new Counter(FAILED_QUERIES_METRIC, manager, false);
+        nullQueries = new Counter("null_queries", manager, false);
+        illegalQueries = new Counter("illegal_queries", manager, false);
+        queryLatency = new Value(MEAN_QUERY_LATENCY_METRIC, manager,
+                new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
+        maxQueryLatency = new Value(MAX_QUERY_LATENCY_METRIC, manager,
+                new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
+        queryLatencyBuckets = Value.buildValue("query_latency", manager, null);
+        activeQueries = new Value(ACTIVE_QUERIES_METRIC, manager,
+                new Value.Parameters().setLogRaw(true).setCallback(new ActivitySampler()));
+        peakQPS = new Value(PEAK_QPS_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true)
+                .setNameExtension(false));
+        hitsPerQuery = new Value(HITS_PER_QUERY_METRIC, manager,
+                new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
+        emptyResults = new Counter(EMPTY_RESULTS_METRIC, manager, false);
+        metricReceiver.declareGauge(QUERY_LATENCY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
+
         scheduler.schedule(peakQpsReporter, 1000, 1000);
     }
 
