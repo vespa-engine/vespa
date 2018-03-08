@@ -450,7 +450,7 @@ public class NodeAgentImpl implements NodeAgent {
         if (!nodeSpec.equals(lastNodeSpec)) {
             // Every time the node spec changes, we should clear the metrics for this container as the dimensions
             // will change and we will be reporting duplicate metrics.
-            if (container.isPresent()) {
+            if (container.map(c -> c.state.isRunning()).orElse(false)) {
                 storageMaintainer.writeMetricsConfig(containerName, nodeSpec);
             }
 
