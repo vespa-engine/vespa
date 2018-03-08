@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Cluster state deriver which checks if nodes have merges pending for globally
@@ -24,9 +25,12 @@ public class MaintenanceWhenPendingGlobalMerges implements ClusterStateDeriver {
     private static final String bucketSpaceToDerive = FixedBucketSpaces.defaultSpace();
 
     private final MergePendingChecker mergePendingChecker;
+    private final MaintenanceTransitionConstraint maintenanceTransitionConstraint;
 
-    public MaintenanceWhenPendingGlobalMerges(MergePendingChecker mergePendingChecker) {
+    public MaintenanceWhenPendingGlobalMerges(MergePendingChecker mergePendingChecker,
+                                              MaintenanceTransitionConstraint maintenanceTransitionConstraint) {
         this.mergePendingChecker = mergePendingChecker;
+        this.maintenanceTransitionConstraint = maintenanceTransitionConstraint;
     }
 
     @Override
@@ -34,25 +38,26 @@ public class MaintenanceWhenPendingGlobalMerges implements ClusterStateDeriver {
         if (!bucketSpace.equals(bucketSpaceToDerive)) {
             return baselineState.clone();
         }
-        Set<Integer> incompleteNodeIndices = nodesWithMergesNotDone(baselineState.getClusterState());
+        Set<Integer> incompleteNodeIndices = availableContentNodes(baselineState.getClusterState()).stream()
+                .filter(nodeIndex -> mayHaveMergesPending(bucketSpaceToCheck, nodeIndex))
+                .filter(maintenanceTransitionConstraint::maintenanceTransitionAllowed)
+                .collect(Collectors.toSet());
+
         if (incompleteNodeIndices.isEmpty()) {
             return baselineState.clone();
         }
         return setNodesInMaintenance(baselineState, incompleteNodeIndices);
     }
 
-    private Set<Integer> nodesWithMergesNotDone(ClusterState baselineState) {
-        final Set<Integer> incompleteNodes = new HashSet<>();
+    private static Set<Integer> availableContentNodes(ClusterState baselineState) {
+        final Set<Integer> availableNodes = new HashSet<>();
         final int nodeCount = baselineState.getNodeCount(NodeType.STORAGE);
         for (int nodeIndex = 0; nodeIndex < nodeCount; ++nodeIndex) {
-            // FIXME should only set nodes into maintenance if they've not yet been up in the cluster
-            // state since they came back as Reported state Up!
-            // Must be implemented before this state deriver is enabled in production.
-            if (contentNodeIsAvailable(baselineState, nodeIndex) && mayHaveMergesPending(bucketSpaceToCheck, nodeIndex)) {
-                incompleteNodes.add(nodeIndex);
+            if (contentNodeIsAvailable(baselineState, nodeIndex)) {
+                availableNodes.add(nodeIndex);
             }
         }
-        return incompleteNodes;
+        return availableNodes;
     }
 
     private AnnotatedClusterState setNodesInMaintenance(AnnotatedClusterState baselineState,
@@ -69,7 +74,7 @@ public class MaintenanceWhenPendingGlobalMerges implements ClusterStateDeriver {
                 nodeStateReasons);
     }
 
-    private boolean contentNodeIsAvailable(ClusterState state, int nodeIndex) {
+    private static boolean contentNodeIsAvailable(ClusterState state, int nodeIndex) {
         return state.getNodeState(Node.ofStorage(nodeIndex)).getState().oneOf("uir");
     }
 
