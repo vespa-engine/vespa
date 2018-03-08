@@ -101,14 +101,5 @@
       <artifactId>commons-digester</artifactId>
       <version>1.8</version>
     </dependency>
-    <!-- Required for both jdisc_http_service and container-disc -->
-    <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpkix-jdk15on</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcprov-jdk15on</artifactId>
-    </dependency>
   </dependencies>
 </project>

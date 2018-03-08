@@ -100,13 +100,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- required for Athenz libraries -->
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- compile -->
 
         <dependency>

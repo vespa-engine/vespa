@@ -29,6 +29,7 @@ declare jars_dir=%buildroot%_prefix/lib/jars
 mkdir -p "$jars_dir"
 
 declare -a dirs=(
+  jdisc_http_service/target/dependency
   jdisc_jetty/target/dependency
   vespa_jersey2/target/dependency
 )

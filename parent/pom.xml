@@ -668,16 +668,6 @@
                 <version>2.11.0</version>
             </dependency>
             <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.ibm.icu</groupId>
                 <artifactId>icu4j</artifactId>
                 <version>57.1</version>
@@ -708,7 +698,6 @@
         <asm-debug-all.version>5.0.3</asm-debug-all.version>
         <!-- Athenz dependencies. Make sure these dependencies matches those in Vespa's internal repositories -->
         <athenz.version>1.7.43</athenz.version>
-        <bouncycastle.version>1.58</bouncycastle.version>
         <commons-lang.version>2.6</commons-lang.version>
         <!-- WARNING: If you change curator version, you also need to update
                  zkfacade/src/main/java/org/apache/curator/**/package-info.java

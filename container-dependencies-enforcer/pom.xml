@@ -103,6 +103,8 @@
                                                 <include>org.apache.felix:org.apache.felix.main:[${felix.version}]:jar:provided</include>
                                                 <include>org.apache.httpcomponents:httpclient:[4.3.6]:jar:provided</include>
                                                 <include>org.apache.httpcomponents:httpcore:[4.3.3]:jar:provided</include>
+                                                <include>org.bouncycastle:bcpkix-jdk15on:[${bouncycastle.version}]:jar:provided</include>
+                                                <include>org.bouncycastle:bcprov-jdk15on:[${bouncycastle.version}]:jar:provided</include>
                                                 <include>org.eclipse.jetty:jetty-http:[${jetty.version}]:jar:provided</include>
                                                 <include>org.eclipse.jetty:jetty-io:[${jetty.version}]:jar:provided</include>
                                                 <include>org.eclipse.jetty:jetty-util:[${jetty.version}]:jar:provided</include>
