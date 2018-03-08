@@ -31,6 +31,9 @@ public interface IPAddresses {
 
     InetAddress[] getAddresses(String hostname);
 
+    /**
+     * Returns a list of string representation of the IP addresses (RFC 5952 compact format)
+     */
     default List<String> getAddresses(String hostname, IPVersion ipVersion) {
         return Stream.of(getAddresses(hostname))
                 .filter(inetAddress -> isOfType(inetAddress, ipVersion))
@@ -42,59 +45,44 @@ public interface IPAddresses {
      * Get the IPv6 address for the host if any.
      *
      * @throws RuntimeException if multiple addresses are found
-     * @return An optional string representation of the IP address (RFC 5952 compact format)
      */
     default Optional<Inet6Address> getIPv6Address(String hostname) {
-        List<InetAddress> ipv6addresses = Stream.of(getAddresses(hostname))
-                .filter(inetAddress -> inetAddress instanceof Inet6Address)
+        List<Inet6Address> ipv6addresses = Stream.of(getAddresses(hostname))
+                .filter(Inet6Address.class::isInstance)
+                .map(Inet6Address.class::cast)
                 .filter(inetAddress -> !inetAddress.isLinkLocalAddress())
                 .filter(inetAddress -> !inetAddress.isSiteLocalAddress())
                 .collect(Collectors.toList());
 
-        if (ipv6addresses.isEmpty()) {
-            return Optional.empty();
-        }
+        if (ipv6addresses.size() <= 1) return ipv6addresses.stream().findFirst();
 
-        if (ipv6addresses.size() > 1) {
-            String addresses =
-                    ipv6addresses.stream().map(InetAddresses::toAddrString).collect(Collectors.joining(","));
-            throw new RuntimeException(
-                    String.format(
-                            "Multiple IPv6 addresses found: %s. Perhaps a missing DNS entry or multiple AAAA records in DNS?",
-                            addresses));
-        }
-
-        return Optional.of((Inet6Address)ipv6addresses.get(0));
+        String addresses = ipv6addresses.stream().map(InetAddresses::toAddrString).collect(Collectors.joining(","));
+        throw new RuntimeException(
+                String.format(
+                        "Multiple IPv6 addresses found: %s. Perhaps a missing DNS entry or multiple AAAA records in DNS?",
+                        addresses));
     }
 
     /**
      * Get the IPv4 address for the host if any.
      *
      * @throws RuntimeException if multiple site-local addresses are found
-     * @return An optional string representation of the IP address
      */
     default Optional<Inet4Address> getIPv4Address(String hostname) {
-        InetAddress[] allAddresses = getAddresses(hostname);
-
-        List<InetAddress> ipv4Addresses = Stream.of(allAddresses)
-                .filter(inetAddress -> inetAddress instanceof Inet4Address)
+        List<Inet4Address> ipv4Addresses = Stream.of(getAddresses(hostname))
+                .filter(Inet4Address.class::isInstance)
+                .map(Inet4Address.class::cast)
                 .collect(Collectors.toList());
 
-        if (ipv4Addresses.size() == 1) return Optional.of((Inet4Address)ipv4Addresses.get(0));
+        if (ipv4Addresses.size() <= 1) return ipv4Addresses.stream().findFirst();
 
-        if (ipv4Addresses.isEmpty()) {
-            return Optional.empty();
-        }
-
-        List<InetAddress> siteLocalIPv4Addresses = Stream.of(allAddresses)
-                .filter(inetAddress -> inetAddress instanceof Inet4Address)
+        List<Inet4Address> siteLocalIPv4Addresses = ipv4Addresses.stream()
                 .filter(InetAddress::isSiteLocalAddress)
                 .collect(Collectors.toList());
 
-        if (siteLocalIPv4Addresses.size() == 1) return Optional.of((Inet4Address)siteLocalIPv4Addresses.get(0));
+        if (siteLocalIPv4Addresses.size() == 1) return Optional.of(siteLocalIPv4Addresses.get(0));
 
-        String addresses =
-                ipv4Addresses.stream().map(InetAddresses::toAddrString).collect(Collectors.joining(","));
+        String addresses = ipv4Addresses.stream().map(InetAddresses::toAddrString).collect(Collectors.joining(","));
         throw new RuntimeException(
                 String.format(
                         "Multiple IPv4 addresses found: %s. Perhaps a missing DNS entry or multiple A records in DNS?",
