@@ -210,13 +210,7 @@ public class CuratorDatabaseClient {
     }
 
     private History recordStateTransition(Node node, Node.State toState, Agent agent) {
-        History history = node.history();
-        // When a node is re-reserved we want to update the reservation instant, we do this by removing the existing
-        // event and recording a new one
-        if (node.state() == Node.State.reserved && toState == Node.State.reserved) {
-            history = history.without(History.Event.Type.reserved);
-        }
-        return history.recordStateTransition(node.state(), toState, agent, clock.instant());
+        return node.history().recordStateTransition(node.state(), toState, agent, clock.instant());
     }
 
     private Status newNodeStatus(Node node, Node.State toState) {
