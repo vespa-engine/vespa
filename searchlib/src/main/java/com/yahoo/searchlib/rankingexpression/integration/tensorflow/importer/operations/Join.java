@@ -59,7 +59,7 @@ public class Join extends TensorFlowOperation {
             TensorType.Dimension aDim = a.dimensions().get(i);
             long size = aDim.size().orElse(-1L);
 
-            if (i - sizeDifference > 0) {
+            if (i - sizeDifference >= 0) {
                 TensorType.Dimension bDim = b.dimensions().get(i - sizeDifference);
                 size = Math.max(size, bDim.size().orElse(-1L));
             }
