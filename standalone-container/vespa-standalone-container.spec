@@ -17,6 +17,7 @@ URL:            http://vespa.ai
 
 Requires: bash
 Requires: java-1.8.0-openjdk-headless
+Requires: vespa-base
 
 Conflicts: vespa
 
@@ -65,7 +66,6 @@ done
 cp vespajlib/target/vespajlib.jar "$jars_dir"
 
 declare -a libexec_files=(
-  vespabase/src/common-env.sh
   standalone-container/src/main/sh/standalone-container.sh
 )
 declare libexec_dir=%buildroot%_prefix/libexec/vespa
