@@ -11,11 +11,11 @@ import java.util.Optional;
  * Extra utilities/operations on slime trees that we would like to have as part of slime in the future, but
  * which resides here until we have a better place to put it.
  *
- * @author lulf
- * @since 5.8
+ * @author Ulf Lilleengen
  */
 public class SlimeUtils {
-    public static void copyObject(Inspector from, final Cursor to) {
+
+    public static void copyObject(Inspector from, Cursor to) {
         if (from.type() != Type.OBJECT) {
             throw new IllegalArgumentException("Cannot copy object: " + from);
         }

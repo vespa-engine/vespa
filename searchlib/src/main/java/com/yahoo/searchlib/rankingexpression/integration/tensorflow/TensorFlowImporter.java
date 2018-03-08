@@ -8,7 +8,9 @@ import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.Dim
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.OperationMapper;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.OrderedTensorType;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.TensorConverter;
+import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.operations.Const;
 import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.operations.TensorFlowOperation;
+import com.yahoo.searchlib.rankingexpression.integration.tensorflow.importer.operations.Variable;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.functions.Rename;
@@ -24,10 +26,12 @@ import org.tensorflow.framework.TensorInfo;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -37,6 +41,8 @@ import java.util.stream.Collectors;
  * @author lesters
  */
 public class TensorFlowImporter {
+
+    private static final Logger log = Logger.getLogger(TensorFlowImporter.class.getName());
 
     /**
      * Imports a saved TensorFlow model from a directory.
@@ -83,6 +89,7 @@ public class TensorFlowImporter {
         importExpressions(model, index, bundle);
 
         reportWarnings(model, index);
+        logVariableTypes(index);
 
         return model;
     }
@@ -233,7 +240,8 @@ public class TensorFlowImporter {
         return operation.function();
     }
 
-    private static void importInputExpressions(TensorFlowOperation operation, TensorFlowModel model, SavedModelBundle bundle) {
+    private static void importInputExpressions(TensorFlowOperation operation, TensorFlowModel model,
+                                               SavedModelBundle bundle) {
         operation.inputs().forEach(input -> importExpression(input, model, bundle));
     }
 
@@ -250,7 +258,8 @@ public class TensorFlowImporter {
         }
     }
 
-    private static Optional<TensorFunction> importConstant(TensorFlowModel model, TensorFlowOperation operation, SavedModelBundle bundle) {
+    private static Optional<TensorFunction> importConstant(TensorFlowModel model, TensorFlowOperation operation,
+                                                           SavedModelBundle bundle) {
         String name = operation.vespaName();
         if (model.largeConstants().containsKey(name) || model.smallConstants().containsKey(name)) {
             return operation.function();
@@ -264,14 +273,9 @@ public class TensorFlowImporter {
             }
             tensor = value.asTensor();
         } else {
-            Session.Runner fetched = bundle.session().runner().fetch(operation.node().getName());
-            List<org.tensorflow.Tensor<?>> importedTensors = fetched.run();
-            if (importedTensors.size() != 1) {
-                throw new IllegalStateException("Expected 1 tensor from fetching " + operation.node().getName() + ", but got " +
-                        importedTensors.size());
-            }
             // Here we use the type from the operation, which will have correct dimension names after name resolving
-            tensor = TensorConverter.toVespaTensor(importedTensors.get(0), operation.type().get());
+            tensor = TensorConverter.toVespaTensor(readVariable(operation.node().getName(), bundle),
+                                                   operation.type().get());
             operation.setConstantValue(new TensorValue(tensor));
         }
 
@@ -281,6 +285,15 @@ public class TensorFlowImporter {
             model.largeConstant(operation.vespaName(), tensor);
         }
         return operation.function();
+    }
+
+    static org.tensorflow.Tensor<?> readVariable(String name, SavedModelBundle bundle) {
+        Session.Runner fetched = bundle.session().runner().fetch(name);
+        List<org.tensorflow.Tensor<?>> importedTensors = fetched.run();
+        if (importedTensors.size() != 1)
+            throw new IllegalStateException("Expected 1 tensor from fetching " + name +
+                                            ", but got " + importedTensors.size());
+        return importedTensors.get(0);
     }
 
     private static void importRankingExpression(TensorFlowModel model, TensorFlowOperation operation) {
@@ -308,7 +321,7 @@ public class TensorFlowImporter {
                 }
                 catch (ParseException e) {
                     throw new RuntimeException("Tensorflow function " + function +
-                            " cannot be parsed as a ranking expression", e);
+                                               " cannot be parsed as a ranking expression", e);
                 }
             }
         }
@@ -328,6 +341,22 @@ public class TensorFlowImporter {
             for (String output : signature.outputs().values()) {
                 reportWarnings(index.get(output), signature);
             }
+        }
+    }
+
+    /**
+     * Log all TensorFlow Variables (i.e file constants) imported as part of this with their ordered type.
+     * This allows users to learn the exact types (including dimension order after renaming) of the Variables
+     * such that these can be converted and fed to a parent document independently of the rest of the model
+     * for fast model weight updates.
+     */
+    private static void logVariableTypes(OperationIndex index) {
+        for (TensorFlowOperation operation : index.operations()) {
+            if ( ! (operation instanceof Variable)) continue;
+            if ( ! operation.type().isPresent()) continue; // will not happen
+
+            log.info("Importing TensorFlow variable " + operation.node().getName() + " as " + operation.vespaName() +
+                     " of type " + operation.type().get());
         }
     }
 
@@ -364,12 +393,14 @@ public class TensorFlowImporter {
         return i < 0 ? 0 : Integer.parseInt(name.substring(i + 1));
     }
 
-
     private static class OperationIndex {
+
         private final Map<String, TensorFlowOperation> index = new HashMap<>();
         public TensorFlowOperation put(String key, TensorFlowOperation operation) { return index.put(key, operation); }
         public TensorFlowOperation get(String key) { return index.get(key); }
         public boolean alreadyImported(String key) { return index.containsKey(key); }
+        public Collection<TensorFlowOperation> operations() { return index.values(); }
+
     }
 
 }

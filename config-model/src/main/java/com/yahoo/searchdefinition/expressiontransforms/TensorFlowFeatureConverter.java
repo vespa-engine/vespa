@@ -216,8 +216,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
             Path constantPath = store.writeLargeConstant(constantName, constantValue);
 
-            if (!profile.getSearch().getRankingConstants().containsKey(constantName)) {
-                log.info("Adding constant '" + constantName + "' of type " + constantValue.type());
+            if ( ! profile.getSearch().getRankingConstants().containsKey(constantName)) {
                 profile.getSearch().addRankingConstant(new RankingConstant(constantName, constantValue.type(),
                                                                            constantPath.toString()));
             }

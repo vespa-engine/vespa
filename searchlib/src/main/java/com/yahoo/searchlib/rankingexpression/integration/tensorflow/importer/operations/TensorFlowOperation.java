@@ -60,7 +60,9 @@ public abstract class TensorFlowOperation {
         if (type == null) {
             type = lazyGetType();
         }
-        OrderedTensorType.verifyType(node, type);
+        if (type != null) {
+            type.verifyType(node);
+        }
         return Optional.ofNullable(type);
     }
 
@@ -96,7 +98,7 @@ public abstract class TensorFlowOperation {
     public void addDimensionNameConstraints(DimensionRenamer renamer) { }
 
     /** Performs dimension rename for this operation */
-    public void renameDimensions(DimensionRenamer renamer) { type = OrderedTensorType.rename(type, renamer); }
+    public void renameDimensions(DimensionRenamer renamer) { type = type.rename(renamer); }
 
     /** Return true for operations that are inputs to the model itself (as opposed to inputs to the operation) */
     public boolean isInput() { return false; }
@@ -131,7 +133,7 @@ public abstract class TensorFlowOperation {
         }
         if (inputs.size() != expected) {
             throw new IllegalArgumentException("Expected " + expected + " inputs " +
-                    "for '" + node.getName() + "', got " + inputs.size());
+                                               "for '" + node.getName() + "', got " + inputs.size());
         }
         return inputs.stream().map(func).allMatch(Optional::isPresent);
     }

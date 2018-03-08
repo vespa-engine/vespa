@@ -13,7 +13,7 @@ import java.io.*;
 /**
  * Encodes json from a slime object.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public final class JsonFormat implements SlimeFormat
 {
@@ -41,12 +41,30 @@ public final class JsonFormat implements SlimeFormat
     }
 
     @Override
-    public void decode(InputStream is, Slime slime) throws IOException {
+    public void decode(InputStream is, Slime slime) {
         throw new UnsupportedOperationException("Not implemented");
     }
 
-    public static final class Encoder implements ArrayTraverser, ObjectTraverser
-    {
+    /** Returns the given slime data as UTF-8-encoded JSON */
+    public static byte[] toJsonBytes(Slime slime) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            new JsonFormat(true).encode(baos, slime);
+            return baos.toByteArray();
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /** Returns the given UTF-8-encoded JSON as a Slime object */
+    public static Slime jsonToSlime(byte[] json) {
+        Slime slime = new Slime();
+        new JsonDecoder().decode(slime, json);
+        return slime;
+    }
+
+    public static final class Encoder implements ArrayTraverser, ObjectTraverser {
         private final Inspector top;
         private final AbstractByteWriter out;
         private boolean head = true;

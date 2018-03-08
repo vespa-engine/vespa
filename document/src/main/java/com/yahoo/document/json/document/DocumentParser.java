@@ -15,6 +15,7 @@ import java.util.Optional;
  * @author dybis
  */
 public class DocumentParser {
+
     public enum SupportedOperation {
         PUT, UPDATE, REMOVE
     }
@@ -59,7 +60,7 @@ public class DocumentParser {
         }
     }
 
-    private void processIndent() throws IOException {
+    private void processIndent() {
         JsonToken currentToken = parser.currentToken();
         if (currentToken == null) {
             throw new IllegalArgumentException("Could not read document, no document?");
@@ -70,7 +71,7 @@ public class DocumentParser {
                 break;
             case END_OBJECT:
                 indentLevel--;
-                return;
+                break;
             case START_ARRAY:
                 indentLevel += 10000L;
                 break;

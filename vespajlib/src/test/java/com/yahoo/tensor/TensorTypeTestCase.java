@@ -99,7 +99,7 @@ public class TensorTypeTestCase {
     private static void assertIllegalTensorType(String typeSpec, String messageSubstring) {
         try {
             TensorType.fromSpec(typeSpec);
-            fail("Expoected exception to be thrown with message: '" + messageSubstring + "'");
+            fail("Expected exception to be thrown with message: '" + messageSubstring + "'");
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), containsString(messageSubstring));
         }
