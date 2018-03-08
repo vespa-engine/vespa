@@ -4,7 +4,6 @@ package com.yahoo.vespa.curator;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.zookeeper.KeeperException;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -16,8 +15,8 @@ import java.util.List;
  * the number of members that synchronize exceed the expected number, the other members are immediately allowed
  * to pass through the barrier.
  *
- * @author vegardh, lulf
- * @since 5.1
+ * @author Vegard Havdal
+ * @author Ulf Lilleengen
  */
 class CuratorCompletionWaiter implements Curator.CompletionWaiter {
 
@@ -47,7 +46,10 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
             throw new RuntimeException(e);
         }
         if (respondents.size() < memberQty) {
-            throw new CompletionTimeoutException("Timed out waiting for peer config servers to complete operation. Got response from: " + respondents + ". Timeout passed as argument was " + timeout.toMillis() + " ms");
+            throw new CompletionTimeoutException("Timed out waiting for peer config servers to complete operation. " +
+                                                         "Got response from " + respondents + ", but need response from " +
+                                                         "at least " + memberQty + " server(s). " +
+                                                         "Timeout passed as argument was " + timeout.toMillis() + " ms");
         }
     }
 
