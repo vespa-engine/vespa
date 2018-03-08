@@ -25,10 +25,10 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     /** 
      * The set of hosts which can access the ZooKeeper server in this VM, or empty
      * to allow access from anywhere.
-     * This belongs logically to the server instance but must be static to make it accessible
+     * This belongs logically to the server instance and is final, but must be static to make it accessible
      * from RestrictedServerCnxnFactory, which is created by ZK through reflection.
      */
-    private static volatile ImmutableSet<String> allowedClientHostnames = ImmutableSet.of();
+    private static ImmutableSet<String> allowedClientHostnames = ImmutableSet.of();
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ZooKeeperServer.class.getName());
     private static final String ZOOKEEPER_JMX_LOG4J_DISABLE = "zookeeper.jmx.log4j.disable";
@@ -42,7 +42,9 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
         System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, "" + zookeeperServerConfig.juteMaxBuffer());
         System.setProperty("zookeeper.serverCnxnFactory", "com.yahoo.vespa.zookeeper.RestrictedServerCnxnFactory");
 
-        setAllowedClientHostnames(zookeeperServerConfig, configserverConfig);
+        if (configserverConfig.hostedVespa()) // restrict access to config servers only
+            allowedClientHostnames =  ImmutableSet.copyOf(zookeeperServerHostnames(zookeeperServerConfig));
+
         writeConfigToDisk(zookeeperServerConfig);
         zkServerThread = new Thread(this, "zookeeper server");
         if (startServer) {
@@ -55,13 +57,6 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
         this(zookeeperServerConfig, configserverConfig, true);
     }
 
-    /** Restrict access to this ZooKeeper server to the given client hosts */
-    private static void setAllowedClientHostnames(ZookeeperServerConfig zookeeperServerConfig, ConfigserverConfig configserverConfig) {
-        if (configserverConfig.hostedVespa())
-            allowedClientHostnames =  ImmutableSet.copyOf(zookeeperServerHostnames(zookeeperServerConfig));
-        // empty set if not hosted Vespa => allow all access
-    }
-    
     /** Returns the hosts which are allowed to access this ZooKeeper server, or empty to allow access from anywhere */
     public static ImmutableSet<String> getAllowedClientHostnames() { return allowedClientHostnames; }
     
