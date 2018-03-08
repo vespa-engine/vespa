@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.containerdata.ConfigServerContainerData;
 import com.yahoo.vespa.hosted.node.admin.containerdata.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
@@ -81,6 +82,7 @@ public class NodeAgentImplTest {
     private final PathResolver pathResolver = mock(PathResolver.class);
     private final ManualClock clock = new ManualClock();
     private final Environment environment = new Environment.Builder()
+            .configServerConfig(new ConfigServerConfig(new ConfigServerConfig.Builder()))
             .environment("dev")
             .region("us-east-1")
             .system("main")

@@ -5,6 +5,7 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
+import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -17,6 +18,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class EnvironmentTest {
     private final Environment environment = new Environment.Builder()
+            .configServerConfig(new ConfigServerConfig(new ConfigServerConfig.Builder()))
             .region("us-east-1")
             .environment("prod")
             .system("main")
