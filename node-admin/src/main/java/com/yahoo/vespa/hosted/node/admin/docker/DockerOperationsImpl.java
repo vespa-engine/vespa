@@ -273,8 +273,10 @@ public class DockerOperationsImpl implements DockerOperations {
                 .orElseThrow(() -> new RuntimeException("PID not found for container with name: " +
                         containerName.asString()));
 
+        Path procPath = environment.getPathResolver().getPathToRootOfHost().resolve("proc");
+
         final String[] wrappedCommand = Stream.concat(
-                Stream.of("sudo", "nsenter", String.format("--net=/host/proc/%d/ns/net", containerPid), "--"),
+                Stream.of("sudo", "nsenter", String.format("--net=%s/%d/ns/net", procPath, containerPid), "--"),
                 Stream.of(command))
                 .toArray(String[]::new);
 
