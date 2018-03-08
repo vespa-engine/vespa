@@ -218,6 +218,35 @@ meta_graphs {
         }
       }
       op {
+        name: "Maximum"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+        is_commutative: true
+      }
+      op {
         name: "Merge"
         input_arg {
           name: "inputs"
@@ -2022,6 +2051,96 @@ meta_graphs {
       }
     }
     node {
+      name: "outputs/Const"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            float_val: 0.009999999776482582
+          }
+        }
+      }
+    }
+    node {
+      name: "outputs/mul"
+      op: "Mul"
+      input: "outputs/Const"
+      input: "outputs/BiasAdd"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 10
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "outputs/Maximum"
+      op: "Maximum"
+      input: "outputs/mul"
+      input: "outputs/BiasAdd"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 10
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
       name: "init"
       op: "NoOp"
       input: "^outputs/kernel/Assign"
@@ -2082,7 +2201,7 @@ meta_graphs {
             dtype: DT_STRING
             tensor_shape {
             }
-            string_val: "_temp_8370883d2d9a4584b706fa987019b91d/part"
+            string_val: "_temp_6962088d414d471890a43f51e0ba56f9/part"
           }
         }
       }
@@ -2738,7 +2857,7 @@ meta_graphs {
       outputs {
         key: "y"
         value {
-          name: "outputs/BiasAdd:0"
+          name: "outputs/Maximum:0"
           dtype: DT_FLOAT
           tensor_shape {
             dim {

@@ -31,8 +31,8 @@ public class DropoutImportTestCase {
 
         RankingExpression output = signature.outputExpression("y");
         assertNotNull(output);
-        assertEquals("outputs/BiasAdd", output.getName());
-        assertEquals("join(reduce(join(tf_macro_X, constant(outputs_kernel_read), f(a,b)(a * b)), sum, d2), constant(outputs_bias_read), f(a,b)(a + b))",
+        assertEquals("outputs/Maximum", output.getName());
+        assertEquals("join(join(tf_macro_outputs_BiasAdd, reduce(constant(outputs_Const), sum, d1), f(a,b)(a * b)), tf_macro_outputs_BiasAdd, f(a,b)(max(a,b)))",
                 output.getRoot().toString());
         model.assertEqualResult("X", output.getName());
     }

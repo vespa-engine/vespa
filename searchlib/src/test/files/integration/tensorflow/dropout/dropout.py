@@ -16,8 +16,11 @@ X = tf.placeholder(tf.float32, shape=(None, n_inputs), name="X")
 y = tf.placeholder(tf.int64, shape=(None), name="y")
 training = tf.placeholder_with_default(False, shape=(), name='training')
 
+def leaky_relu_with_small_constant(z, name=None):
+    return tf.maximum(tf.constant(0.01, shape=[1]) * z, z, name=name)
+
 X_drop = tf.layers.dropout(X, dropout_rate, training=training, name="xdrop")
-output = tf.layers.dense(X_drop, n_outputs, name="outputs")
+output = tf.layers.dense(X_drop, n_outputs, activation=leaky_relu_with_small_constant, name="outputs")
 
 init = tf.global_variables_initializer()
 file_writer = tf.summary.FileWriter(logdir, tf.get_default_graph())
