@@ -50,7 +50,7 @@ public class ConfigServerContainerData {
     // TODO: Avoid hardcoded Docker registry
     private String createNodeRepoConfigXml() {
         return "<config name=\"config.provisioning.node-repository\">\n" +
-                "    <dockerImage>658543512185.dkr.ecr.us-east-2.amazonaws.com:4443/vespa/aws</dockerImage>\n" +
+                "    <dockerImage>658543512185.dkr.ecr.us-east-2.amazonaws.com/vespa/aws</dockerImage>\n" +
                 "</config>\n";
     }
 
