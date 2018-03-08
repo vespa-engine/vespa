@@ -19,27 +19,27 @@ public class UpEdgeMaintenanceTransitionConstraintTest {
     }
 
     @Test
-    public void eligible_when_previous_state_is_down() {
+    public void transition_allowed_when_previous_state_is_down() {
         assertTrue(nodeMayTransitionToMaintenanceInState(1, "distributor:5 storage:5 .1.s:d"));
     }
 
     @Test
-    public void eligible_when_previous_state_is_maintenance() {
+    public void transition_allowed_when_previous_state_is_maintenance() {
         assertTrue(nodeMayTransitionToMaintenanceInState(1, "distributor:5 storage:5 .1.s:m"));
     }
 
     @Test
-    public void not_eligible_when_previous_state_is_up() {
+    public void transition_not_allowed_when_previous_state_is_up() {
         assertFalse(nodeMayTransitionToMaintenanceInState(0, "distributor:5 storage:5"));
     }
 
     @Test
-    public void not_eligible_when_previous_state_is_initializing() {
+    public void transition_not_allowed_when_previous_state_is_initializing() {
         assertFalse(nodeMayTransitionToMaintenanceInState(0, "distributor:5 storage:5 .0.s:i"));
     }
 
     @Test
-    public void not_eligible_when_previous_state_is_retired() {
+    public void transition_not_allowed_when_previous_state_is_retired() {
         assertFalse(nodeMayTransitionToMaintenanceInState(0, "distributor:5 storage:5 .0.s:r"));
     }
 
