@@ -206,7 +206,7 @@ public class NodePrioritizer {
                                                  NodeType.tenant);
             PrioritizableNode nodePri = toNodePriority(newNode, false, true);
             if (!nodePri.violatesSpares || isAllocatingForReplacement) {
-                log.log(LogLevel.DEBUG, "Adding new Docker node " + node);
+                log.log(LogLevel.DEBUG, "Adding new Docker node " + newNode);
                 nodes.put(newNode, nodePri);
             }
         }
