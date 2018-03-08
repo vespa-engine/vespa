@@ -63,7 +63,8 @@ public class History {
 
     /** Returns a copy of this history with a record of this state transition added, if applicable */
     public History recordStateTransition(Node.State from, Node.State to, Agent agent, Instant at) {
-        if (from == to) return this;
+        // If the event is a re-reservation, allow the new one to override the older one.
+        if (from == to && from != Node.State.reserved) return this;
         switch (to) {
             case provisioned: return this.with(new Event(Event.Type.provisioned, agent, at));
             case ready:       return this.withoutApplicationEvents().with(new Event(Event.Type.readied, agent, at));
