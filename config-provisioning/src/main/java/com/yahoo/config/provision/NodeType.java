@@ -8,31 +8,38 @@ package com.yahoo.config.provision;
  */
 public enum NodeType {
 
+    /** A node to be assigned to a tenant to run application workloads */
+    tenant(false, "Tenant node"),
+
     /** A host of a set of (docker) tenant nodes */
-    host(true),
+    host(true, "Tenant docker host"),
 
     /** Nodes running the shared proxy layer */
-    proxy(false),
+    proxy(false, "Proxy node"),
 
     /** A host of a (docker) proxy node */
-    proxyhost(true),
-
-    /** A node to be assigned to a tenant to run application workloads */
-    tenant(false),
+    proxyhost(true, "Proxy docker host"),
 
     /** A config server */
-    config(false),
+    config(false, "Config server"),
 
     /** A host of a (docker) config server node */
-    confighost(true);
+    confighost(true, "Config docker host");
 
-    private boolean isDockerHost;
+    private final boolean isDockerHost;
+    private final String description;
 
-    NodeType(boolean isDockerHost) {
+    NodeType(boolean isDockerHost, String description) {
         this.isDockerHost = isDockerHost;
+        this.description = description;
     }
 
     public boolean isDockerHost() {
         return isDockerHost;
     }
+
+    public String description() {
+        return description;
+    }
+
 }

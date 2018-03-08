@@ -178,9 +178,9 @@ public class RestApiTest {
                 "{\"message\":\"Moved dockerhost1.yahoo.com, host4.yahoo.com to failed\"}");
 
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed"), "{\"nodes\":[" +
-                "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com\"}," +
                 "{\"url\":\"http://localhost:8080/nodes/v2/node/host5.yahoo.com\"}," +
-                "{\"url\":\"http://localhost:8080/nodes/v2/node/host4.yahoo.com\"}]}");
+                "{\"url\":\"http://localhost:8080/nodes/v2/node/host4.yahoo.com\"}," +
+                "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com\"}]}");
 
         // Update (PATCH) a node (multiple fields can also be sent in one request body)
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
