@@ -17,6 +17,11 @@
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <list>
 
+namespace vespalib::xml {
+class XmlOutputStream;
+class XmlAttribute;
+}
+
 namespace storage::distributor {
 
 class Distributor;
@@ -89,6 +94,7 @@ private:
               timestamp(currentTime),
               _mergeReplyGuard(guard) {};
 
+        void print_xml_tag(vespalib::xml::XmlOutputStream &xos, const vespalib::xml::XmlAttribute &timestampAttribute) const;
         uint16_t targetNode;
         document::Bucket bucket;
         uint64_t timestamp;

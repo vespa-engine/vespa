@@ -540,6 +540,21 @@ const vespalib::string BUCKETDB_UPDATER = "Bucket Database Updater";
 
 }
 
+void
+BucketDBUpdater::BucketRequest::print_xml_tag(vespalib::xml::XmlOutputStream &xos, const vespalib::xml::XmlAttribute &timestampAttribute) const
+{
+    using namespace vespalib::xml;
+    xos << XmlTag("storagenode")
+        << XmlAttribute("index", targetNode);
+    xos << XmlAttribute("bucketspace", bucket.getBucketSpace().getId(), XmlAttribute::HEX);
+    if (bucket.getBucketId().getRawId() == 0) {
+        xos << XmlAttribute("bucket", ALL);
+    } else {
+        xos << XmlAttribute("bucket", bucket.getBucketId().getId(), XmlAttribute::HEX);
+    }
+    xos << timestampAttribute << XmlEndTag();
+}
+
 bool
 BucketDBUpdater::reportStatus(std::ostream& out,
                               const framework::HttpUrlPath& path) const
@@ -581,15 +596,13 @@ BucketDBUpdater::reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
         << XmlTag("single_bucket_requests");
     for (const auto & entry : _sentMessages)
     {
-        xos << XmlTag("storagenode")
-            << XmlAttribute("index", entry.second.targetNode);
-        if (entry.second.bucket.getBucketId().getRawId() == 0) {
-            xos << XmlAttribute("bucket", ALL);
-        } else {
-            xos << XmlAttribute("bucket", entry.second.bucket.getBucketId().getId(), XmlAttribute::HEX);
-        }
-        xos << XmlAttribute("sendtimestamp", entry.second.timestamp)
-            << XmlEndTag();
+        entry.second.print_xml_tag(xos, XmlAttribute("sendtimestamp", entry.second.timestamp));
+    }
+    xos << XmlEndTag()
+        << XmlTag("delayed_single_bucket_requests");
+    for (const auto & entry : _delayedRequests)
+    {
+        entry.second.print_xml_tag(xos, XmlAttribute("resendtimestamp", entry.first.getTime()));
     }
     xos << XmlEndTag() << XmlEndTag();
     return "";
