@@ -317,7 +317,7 @@ public class FastSearcher extends VespaBackEndSearcher {
 
             int skippedHits;
             try {
-                FillHitsResult fillHitsResult = fillHits(result, 0, receivedPackets, summaryClass);
+                FillHitsResult fillHitsResult = fillHits(result, receivedPackets, summaryClass);
                 skippedHits = fillHitsResult.skippedHits;
                 if (fillHitsResult.error != null) {
                     result.hits().addError(ErrorMessage.createTimeout(fillHitsResult.error));
@@ -327,7 +327,7 @@ public class FastSearcher extends VespaBackEndSearcher {
                 result.hits().addError(ErrorMessage.createTimeout(e.getMessage()));
                 return;
             } catch (IOException e) {
-                result.hits().addError(ErrorMessage.createBackendCommunicationError("Error filling hits with summary fields, source: " + getName()));
+                result.hits().addError(ErrorMessage.createBackendCommunicationError("Error filling hits with summary fields, source: " + getName() + " Exception thrown: " + e.getMessage()));
                 return;
             }
             if (skippedHits == 0 && packetWrapper != null) {

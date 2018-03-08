@@ -141,7 +141,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         return false;
     }
 
-    private Result cacheLookupFirstPhase(CacheKey key, QueryPacketData queryPacketData, Query query, int offset, int hits, String summaryClass) throws IOException {
+    private Result cacheLookupFirstPhase(CacheKey key, QueryPacketData queryPacketData, Query query, int offset, int hits, String summaryClass) {
         PacketWrapper packetWrapper = cacheControl.lookup(key, query);
 
         if (packetWrapper == null) return null;
@@ -234,7 +234,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
         resolveDocumentDatabase(query);
         transformQuery(query);
-        traceQuery(name, "search", query, query.getOffset(), query.getHits(), 1, Optional.<String>empty());
+        traceQuery(name, "search", query, query.getOffset(), query.getHits(), 1, Optional.empty());
 
         root = query.getModel().getQueryTree().getRoot();
         if (root == null || root instanceof NullItem) // root can become null after resolving and transformation?
@@ -283,31 +283,17 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             }
         }
 
-        try {
-            Result result = cacheLookupFirstPhase(cacheKey, queryPacketData, query, query.getOffset(), query.getHits(), query.getPresentation().getSummary());
-            if (result == null) return null;
+        Result result = cacheLookupFirstPhase(cacheKey, queryPacketData, query, query.getOffset(), query.getHits(), query.getPresentation().getSummary());
+        if (result == null) return null;
 
-            if (isLoggingFine()) {
-                getLogger().fine("Result retrieved from cache: " + result);
-            }
-            if (query.getTraceLevel() >= 1) {
-                query.trace(getName() + " cached response: " + result, false, 1);
-            }
-            result.trace(getName());
-            return result;
+        if (isLoggingFine()) {
+            getLogger().fine("Result retrieved from cache: " + result);
         }
-        catch (IOException e) {
-            Result result = new Result(query);
-
-            if (result.hits().getErrorHit() == null) {
-                result.hits().addError(ErrorMessage.createBackendCommunicationError(
-                                            "Fast Search (" + getName() + ") failed: " + e.getMessage()));
-            }
-            if (query.getTraceLevel() >= 1) {
-                query.trace(getName() + " error response: " + result, false, 1);
-            }
-            return result;
+        if (query.getTraceLevel() >= 1) {
+            query.trace(getName() + " cached response: " + result, false, 1);
         }
+        result.trace(getName());
+        return result;
     }
 
     private List<Result> partitionHits(Result result, String summaryClass) {
@@ -404,7 +390,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             s.append(" ranking.queryCache=true");
         }
         if (query.getGroupingSessionCache() || query.getRanking().getQueryCache()) {
-            s.append(" sessionId=" + query.getSessionId(true));
+            s.append(" sessionId=").append(query.getSessionId(true));
         }
 
         List<Grouping> grouping = GroupingExecutor.getGroupingList(query);
@@ -507,9 +493,10 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
      * @return the number of hits that we did not return data for, and an optional error message.
      *         when things are working normally we return 0.
      */
-    protected FillHitsResult fillHits(Result result, int packetIndex, Packet[] packets, String summaryClass) throws IOException {
+    protected FillHitsResult fillHits(Result result, Packet[] packets, String summaryClass) throws IOException {
         int skippedHits=0;
         String lastError = null;
+        int packetIndex = 0;
         for (Iterator<Hit> i = hitIterator(result); i.hasNext();) {
             Hit hit = i.next();
 
