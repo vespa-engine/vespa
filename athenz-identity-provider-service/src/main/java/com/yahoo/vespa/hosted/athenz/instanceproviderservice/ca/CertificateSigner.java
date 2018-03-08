@@ -117,7 +117,7 @@ public class CertificateSigner {
         }
     }
 
-    static void verifyCertificateCommonName(X500Name subject, String commonName) {
+    static void verifyCertificateCommonName(X500Name subject, String remoteHostname) {
         List<AttributeTypeAndValue> attributesAndValues = Arrays.stream(subject.getRDNs())
                 .flatMap(rdn -> rdn.isMultiValued() ?
                         Stream.of(rdn.getTypesAndValues()) : Stream.of(rdn.getFirst()))
@@ -129,8 +129,9 @@ public class CertificateSigner {
         }
 
         String actualCommonName = DERUTF8String.getInstance(attributesAndValues.get(0).getValue()).getString();
-        if (! actualCommonName.equals(commonName)) {
-            throw new IllegalArgumentException("Expected common name to be " + commonName + ", but was " + actualCommonName);
+        if (! actualCommonName.equals(remoteHostname)) {
+            throw new IllegalArgumentException("Remote hostname " + remoteHostname +
+                    " does not match common name " + actualCommonName);
         }
     }
 
