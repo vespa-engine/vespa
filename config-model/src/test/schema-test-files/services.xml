@@ -35,16 +35,22 @@
   </config>
 
   <jdisc id='qrsCluster_1' version='1.0'>
+    <secret-store type="oath-ckms">
+      <!-- NOTE: when removing (or adding) an environment, the rnc schema must also be updated! -->
+      <group name="foo" environment="alpha" />
+      <group name="foo" environment="corp" />
+      <group name="foo" environment="prod" />
+      <group name="foo" environment="aws" />
+      <group name="foo" environment="aws_stage" />
+    </secret-store>
+
     <rest-api path="jersey1">
       <components bundle="my-bundle" />
       <components bundle="other-bundle">
         <package>com.yahoo.foo</package>
         <package>com.yahoo.bar</package>
       </components>
-<!--
-      <inject component="foo-component" for-name="com.yahoo.Foo" />
-      <inject component="bar-component" for-name="com.yahoo.Bar" />
--->
+
     </rest-api>
     <rest-api path="jersey/2">
       <components bundle="my-bundle" />

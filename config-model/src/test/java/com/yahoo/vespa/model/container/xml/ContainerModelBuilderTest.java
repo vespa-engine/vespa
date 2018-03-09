@@ -32,6 +32,7 @@ import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.HttpFilter;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
@@ -605,6 +606,20 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals(false, config.restartOnDeploy());
         assertEquals(false, config.coveragereports());
         assertEquals("filedistribution/" + hostname, config.filedistributor().configid());
+    }
+
+    @Test
+    public void secret_store_can_be_set_up() throws IOException, SAXException {
+        Element clusterElem = DomBuilderTest.parse(
+                "<jdisc version='1.0'>",
+                "  <secret-store>",
+                "    <group name='group1' environment='env1'/>",
+                "  </secret-store>",
+                "</jdisc>");
+        createModel(root, clusterElem);
+        SecretStore secretStore = getContainerCluster("jdisc").getSecretStore().get();
+        assertEquals("group1", secretStore.getGroups().get(0).name);
+        assertEquals("env1", secretStore.getGroups().get(0).environment);
     }
 
     private Element generateContainerElementWithRenderer(String rendererId) {

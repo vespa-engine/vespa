@@ -25,6 +25,7 @@ ContainerServices =
     Http? &
     HttpFilter? &
     AccessLog* &
+    SecretStore? &
     GenericConfig*
 
 Components = element components {
@@ -73,6 +74,14 @@ AccessLog = element accesslog {
 
     attribute rotationInterval { string }? &
     attribute rotationScheme { string "date" | string "sequence" }?
+}
+
+SecretStore = element secret-store {
+    attribute type { string "oath-ckms" } &
+    element group {
+      attribute name { string } &
+      attribute environment { string "alpha" | string "corp" | string "prod" | string "aws" | string "aws_stage" }
+    } +
 }
 
 # REST-API:
