@@ -78,15 +78,17 @@ public class ClusterInfo {
 
         // Update node set
         nodes.clear();
-        for (ConfiguredNode node : newNodes)
+        for (ConfiguredNode node : newNodes) {
             this.nodes.put(node.index(), node);
+        }
     }
 
     private void addNodeInfo(NodeInfo nodeInfo) {
-        if (nodeInfo instanceof DistributorNodeInfo)
-            distributorNodeInfo.put(nodeInfo.getNodeIndex(), (DistributorNodeInfo)nodeInfo);
-        else
-            storageNodeInfo.put(nodeInfo.getNodeIndex(), (StorageNodeInfo)nodeInfo);
+        if (nodeInfo instanceof DistributorNodeInfo) {
+            distributorNodeInfo.put(nodeInfo.getNodeIndex(), (DistributorNodeInfo) nodeInfo);
+        } else {
+            storageNodeInfo.put(nodeInfo.getNodeIndex(), (StorageNodeInfo) nodeInfo);
+        }
         allNodeInfo.put(nodeInfo.getNode(), nodeInfo);
         nodeInfo.setReportedState(nodeInfo.getReportedState().setDescription("Node not seen in slobrok."), 0);
     }
@@ -108,8 +110,9 @@ public class ClusterInfo {
      */
     public NodeInfo setRpcAddress(Node node, String rpcAddress) {
         NodeInfo nodeInfo = getInfo(node);
-        if (nodeInfo != null)
+        if (nodeInfo != null) {
             nodeInfo.setRpcAddress(rpcAddress);
+        }
         return nodeInfo;
     }
     // TODO: Do all mutation of node info through setters in this

@@ -19,8 +19,13 @@ import static org.mockito.Mockito.when;
 public class MaintenanceWhenPendingGlobalMergesTest {
 
     private static class Fixture {
-        public MergePendingChecker mockPendingChecker = mock(MergePendingChecker.class);
-        public MaintenanceWhenPendingGlobalMerges deriver = new MaintenanceWhenPendingGlobalMerges(mockPendingChecker);
+        MergePendingChecker mockPendingChecker = mock(MergePendingChecker.class);
+        MaintenanceTransitionConstraint mockTransitionConstraint = mock(MaintenanceTransitionConstraint.class);
+        MaintenanceWhenPendingGlobalMerges deriver = new MaintenanceWhenPendingGlobalMerges(mockPendingChecker, mockTransitionConstraint);
+
+        Fixture() {
+            when(mockTransitionConstraint.maintenanceTransitionAllowed(anyInt())).thenReturn(true);
+        }
     }
 
     private static String defaultSpace() {
@@ -100,6 +105,16 @@ public class MaintenanceWhenPendingGlobalMergesTest {
         assertThat(derived, equalTo(AnnotatedClusterStateBuilder.ofState("distributor:5 storage:5 .1.s:m .3.s:m")
                 .reason(MAY_HAVE_MERGES_PENDING, 1, 3)
                 .reason(NODE_TOO_UNSTABLE, 2).build()));
+    }
+
+    @Test
+    public void node_with_pending_merges_only_set_to_maintenance_if_eligible() {
+        Fixture f = new Fixture();
+        Arrays.asList(1, 2, 3).forEach(idx -> when(f.mockPendingChecker.mayHaveMergesPending(globalSpace(), idx)).thenReturn(true));
+        Arrays.asList(1, 2, 4).forEach(idx -> when(f.mockTransitionConstraint.maintenanceTransitionAllowed(idx)).thenReturn(false));
+        AnnotatedClusterState derived = f.deriver.derivedFrom(stateFromString("distributor:5 storage:5"), defaultSpace());
+        assertThat(derived, equalTo(AnnotatedClusterStateBuilder.ofState("distributor:5 storage:5 .3.s:m")
+                .reason(MAY_HAVE_MERGES_PENDING, 3).build()));
     }
 
 }
