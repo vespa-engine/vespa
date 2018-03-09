@@ -115,6 +115,13 @@ ConstValue::compile_self(Stash &) const
     return Instruction(op_load_const, wrap_param<Value>(_value));
 }
 
+void
+ConstValue::dump_tree(DumpTarget &target) const
+{
+    target.node("ConstValue");
+}
+
+
 //-----------------------------------------------------------------------------
 
 Instruction
@@ -123,6 +130,13 @@ Inject::compile_self(Stash &) const
     return Instruction::fetch_param(_param_idx);
 }
 
+void
+Inject::dump_tree(DumpTarget &target) const
+{
+    target.node("Inject");
+}
+
+
 //-----------------------------------------------------------------------------
 
 Instruction
@@ -130,6 +144,15 @@ Reduce::compile_self(Stash &stash) const
 {
     ReduceParams &params = stash.create<ReduceParams>(_aggr, _dimensions);
     return Instruction(op_tensor_reduce, wrap_param<ReduceParams>(params));
+}
+
+void
+Reduce::dump_tree(DumpTarget &target) const
+{
+    target.node("Reduce");
+    target.arg("aggr").value(aggr());
+    target.arg("dimensions").value(dimensions());
+    target.child("child", child());
 }
 
 //-----------------------------------------------------------------------------
@@ -141,6 +164,14 @@ Map::compile_self(Stash &) const
         return Instruction(op_double_map, to_param(_function));
     }
     return Instruction(op_tensor_map, to_param(_function));
+}
+
+void
+Map::dump_tree(DumpTarget &target) const
+{
+    target.node("Map");
+    target.arg("function").value(function());
+    target.child("child", child());
 }
 
 //-----------------------------------------------------------------------------
@@ -160,12 +191,31 @@ Join::compile_self(Stash &) const
     return Instruction(op_tensor_join, to_param(_function));
 }
 
+void
+Join::dump_tree(DumpTarget &target) const
+{
+    target.node("Join");
+    target.arg("function").value(function());
+    target.child("lhs", lhs());
+    target.child("rhs", rhs());
+}
+
+
 //-----------------------------------------------------------------------------
 
 Instruction
 Concat::compile_self(Stash &) const
 {
     return Instruction(op_tensor_concat, wrap_param<vespalib::string>(_dimension));
+}
+
+void
+Concat::dump_tree(DumpTarget &target) const
+{
+    target.node("Concat");
+    target.arg("dimension").value(dimension());
+    target.child("lhs", lhs());
+    target.child("rhs", rhs());
 }
 
 //-----------------------------------------------------------------------------
@@ -175,6 +225,16 @@ Rename::compile_self(Stash &stash) const
 {
     RenameParams &params = stash.create<RenameParams>(_from, _to);
     return Instruction(op_tensor_rename, wrap_param<RenameParams>(params));
+}
+
+
+void
+Rename::dump_tree(DumpTarget &target) const
+{
+    target.node("Rename");
+    target.arg("from").value(from());
+    target.arg("to").value(to());
+    target.child("child", child());
 }
 
 //-----------------------------------------------------------------------------
@@ -193,6 +253,15 @@ If::compile_self(Stash &) const
     // 'if' is handled directly by compile_tensor_function to enable
     // lazy-evaluation of true/false sub-expressions.
     abort();
+}
+
+void
+If::dump_tree(DumpTarget &target) const
+{
+    target.node("If");
+    target.child("cond", _cond.get());
+    target.child("t_child", _true_child.get());
+    target.child("f_child", _false_child.get());
 }
 
 //-----------------------------------------------------------------------------

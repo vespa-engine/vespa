@@ -133,6 +133,18 @@ DenseXWProductFunction::compile_self(Stash &stash) const
     return eval::InterpretedFunction::Instruction(op, (uint64_t)(&self));
 }
 
+void
+DenseXWProductFunction::dump_tree(eval::DumpTarget &target) const
+{
+    target.node("DenseXWProduct");
+    target.arg("common dimension innermost").value(_commonDimensionInnermost);
+    target.arg("vector size").value(_vectorSize);
+    target.arg("result size").value(_resultSize);
+    target.child("lhs", lhs());
+    target.child("rhs", rhs());
+}
+
+
 const TensorFunction &
 DenseXWProductFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
 {

@@ -52,6 +52,13 @@ DenseInplaceMapFunction::compile_self(Stash &) const
     return eval::InterpretedFunction::Instruction(my_inplace_map_op, (uint64_t)function());
 }
 
+void
+DenseInplaceMapFunction::dump_tree(eval::DumpTarget &target) const
+{
+    target.node("DenseInplaceMap replacing:");
+    Map::dump_tree(target);
+}
+
 const TensorFunction &
 DenseInplaceMapFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
 {
