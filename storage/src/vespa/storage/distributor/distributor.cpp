@@ -444,6 +444,7 @@ BucketSpacesStatsProvider::BucketSpacesStats Distributor::make_invalid_stats_per
 }
 
 void Distributor::invalidate_bucket_space_stats() {
+    vespalib::LockGuard guard(_metricLock);
     _bucketSpacesStats = BucketSpacesStatsProvider::PerNodeBucketSpacesStats();
     auto invalid_space_stats = make_invalid_stats_per_configured_space();
 
