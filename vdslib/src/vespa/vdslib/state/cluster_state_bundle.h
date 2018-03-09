@@ -36,6 +36,7 @@ public:
     }
     uint32_t getVersion() const;
     bool operator==(const ClusterStateBundle &rhs) const;
+    bool operator!=(const ClusterStateBundle &rhs) const { return !operator==(rhs); }
 };
 
 std::ostream& operator<<(std::ostream&, const ClusterStateBundle&);
