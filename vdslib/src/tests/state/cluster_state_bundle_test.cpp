@@ -52,7 +52,7 @@ ClusterStateBundleTest::baseline_state_is_returned_if_bucket_space_is_not_found(
 }
 
 ClusterStateBundle
-makeBundle(const vespalib::string &baselineState, const std::map<BucketSpace, vespalib::string> derivedStates)
+makeBundle(const vespalib::string &baselineState, const std::map<BucketSpace, vespalib::string> &derivedStates)
 {
     ClusterStateBundle::BucketSpaceStateMapping derivedBucketSpaceStates;
     for (const auto &entry : derivedStates) {
