@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
  * @author smorgrav
  */
 public class NodePrioritizer {
+    private final static Logger log = Logger.getLogger(NodePrioritizer.class.getName());
 
     private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
     private final List<Node> allNodes;
@@ -187,11 +190,15 @@ public class NodePrioritizer {
 
             if (!hostHasCapacityForWantedFlavor || conflictingCluster) continue;
 
+            log.log(LogLevel.DEBUG, "Trying to add new Docker node on " + node);
             Set<String> ipAddresses = DockerHostCapacity.findFreeIps(node, allNodes);
             if (ipAddresses.isEmpty()) continue;
             String ipAddress = ipAddresses.stream().findFirst().get();
             Optional<String> hostname = nameResolver.getHostname(ipAddress);
-            if (!hostname.isPresent()) continue;
+            if (!hostname.isPresent()) {
+                log.log(LogLevel.DEBUG, "Could not find hostname for " + ipAddress + ", skipping it");
+                continue;
+            }
             Node newNode = Node.createDockerNode("fake-" + hostname.get(),
                                                  Collections.singleton(ipAddress),
                                                  Collections.emptySet(), hostname.get(),
@@ -199,6 +206,7 @@ public class NodePrioritizer {
                                                  NodeType.tenant);
             PrioritizableNode nodePri = toNodePriority(newNode, false, true);
             if (!nodePri.violatesSpares || isAllocatingForReplacement) {
+                log.log(LogLevel.DEBUG, "Adding new Docker node " + newNode);
                 nodes.put(newNode, nodePri);
             }
         }
