@@ -407,7 +407,7 @@ Distributor::enterRecoveryMode()
     _scanner->reset();
     _bucketDBMetricUpdater.reset();
     // TODO reset _bucketDbStats?
-    invalidate_bucket_space_stats();
+    invalidate_bucket_spaces_stats();
 
     _recoveryTimeStarted = framework::MilliSecTimer(_component.getClock());
 }
@@ -443,7 +443,7 @@ BucketSpacesStatsProvider::BucketSpacesStats Distributor::make_invalid_stats_per
     return invalid_space_stats;
 }
 
-void Distributor::invalidate_bucket_space_stats() {
+void Distributor::invalidate_bucket_spaces_stats() {
     vespalib::LockGuard guard(_metricLock);
     _bucketSpacesStats = BucketSpacesStatsProvider::PerNodeBucketSpacesStats();
     auto invalid_space_stats = make_invalid_stats_per_configured_space();
