@@ -233,6 +233,11 @@ private:
     void propagateDefaultDistribution(std::shared_ptr<const lib::Distribution>);
     void propagateClusterStates();
 
+    BucketSpacesStatsProvider::BucketSpacesStats make_invalid_stats_per_configured_space() const;
+    template <typename NodeFunctor>
+    void for_each_available_content_node_in(const lib::ClusterState&, NodeFunctor&&);
+    void invalidate_bucket_space_stats();
+
     lib::ClusterStateBundle _clusterStateBundle;
 
     DistributorComponentRegister& _compReg;

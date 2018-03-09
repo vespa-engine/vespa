@@ -58,6 +58,7 @@ class Distributor_Test : public CppUnit::TestFixture,
     CPPUNIT_TEST(external_client_requests_are_handled_individually_in_priority_order);
     CPPUNIT_TEST(internal_messages_are_started_in_fifo_order_batch);
     CPPUNIT_TEST(closing_aborts_priority_queued_client_requests);
+    CPPUNIT_TEST(entering_recovery_mode_resets_bucket_space_stats);
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -93,6 +94,7 @@ protected:
     void external_client_requests_are_handled_individually_in_priority_order();
     void internal_messages_are_started_in_fifo_order_batch();
     void closing_aborts_priority_queued_client_requests();
+    void entering_recovery_mode_resets_bucket_space_stats();
 
     void assertBucketSpaceStats(size_t expBucketPending, uint16_t node, const vespalib::string &bucketSpace,
                                 const BucketSpacesStatsProvider::PerNodeBucketSpacesStats &stats);
@@ -992,6 +994,45 @@ void Distributor_Test::closing_aborts_priority_queued_client_requests() {
         CPPUNIT_ASSERT_EQUAL(api::ReturnCode::ABORTED,
                              dynamic_cast<api::StorageReply&>(*msg).getResult().getResult());
     }
+}
+
+namespace {
+
+void assert_invalid_stats_for_all_spaces(
+        const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats,
+        uint16_t node_index) {
+    auto stats_iter = stats.find(node_index);
+    CPPUNIT_ASSERT(stats_iter != stats.cend());
+    CPPUNIT_ASSERT_EQUAL(size_t(2), stats_iter->second.size());
+    auto space_iter = stats_iter->second.find(document::FixedBucketSpaces::default_space_name());
+    CPPUNIT_ASSERT(space_iter != stats_iter->second.cend());
+    CPPUNIT_ASSERT(!space_iter->second.valid());
+    space_iter = stats_iter->second.find(document::FixedBucketSpaces::global_space_name());
+    CPPUNIT_ASSERT(space_iter != stats_iter->second.cend());
+    CPPUNIT_ASSERT(!space_iter->second.valid());
+}
+
+}
+
+void Distributor_Test::entering_recovery_mode_resets_bucket_space_stats() {
+    // Set up a cluster state + DB contents which implies merge maintenance ops
+    setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
+    addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
+    addNodesToBucketDB(document::BucketId(16, 2), "0=1/1/1/t/a");
+    addNodesToBucketDB(document::BucketId(16, 3), "0=2/2/2/t/a");
+
+    tickDistributorNTimes(5); // 2/3rds into second round through database
+
+    enableDistributorClusterState("version:2 distributor:1 storage:3 .1.s:d");
+    CPPUNIT_ASSERT(_distributor->isInRecoveryMode());
+    // Bucket space stats should now be invalid per space per node, pending stats
+    // from state version 2. Exposing stats from version 1 risks reporting stale
+    // information back to the cluster controller.
+    const auto stats = _distributor->getBucketSpacesStats();
+    CPPUNIT_ASSERT_EQUAL(size_t(2), stats.size());
+
+    assert_invalid_stats_for_all_spaces(stats, 0);
+    assert_invalid_stats_for_all_spaces(stats, 2);
 }
 
 }

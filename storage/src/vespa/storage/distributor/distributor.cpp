@@ -406,6 +406,9 @@ Distributor::enterRecoveryMode()
     _schedulingMode = MaintenanceScheduler::RECOVERY_SCHEDULING_MODE;
     _scanner->reset();
     _bucketDBMetricUpdater.reset();
+    // TODO reset _bucketDbStats?
+    invalidate_bucket_space_stats();
+
     _recoveryTimeStarted = framework::MilliSecTimer(_component.getClock());
 }
 
@@ -418,6 +421,36 @@ Distributor::leaveRecoveryMode()
                 _recoveryTimeStarted.getElapsedTimeAsDouble());
     }
     _schedulingMode = MaintenanceScheduler::NORMAL_SCHEDULING_MODE;
+}
+
+template <typename NodeFunctor>
+void Distributor::for_each_available_content_node_in(const lib::ClusterState& state, NodeFunctor&& func) {
+    const auto node_count = state.getNodeCount(lib::NodeType::STORAGE);
+    for (uint16_t i = 0; i < node_count; ++i) {
+        lib::Node node(lib::NodeType::STORAGE, i);
+        if (state.getNodeState(node).getState().oneOf("uir")) {
+            func(node);
+        }
+    }
+}
+
+BucketSpacesStatsProvider::BucketSpacesStats Distributor::make_invalid_stats_per_configured_space() const {
+    BucketSpacesStatsProvider::BucketSpacesStats invalid_space_stats;
+    for (auto& space : *_bucketSpaceRepo) {
+        invalid_space_stats.emplace(document::FixedBucketSpaces::to_string(space.first),
+                                    BucketSpaceStats::make_invalid());
+    }
+    return invalid_space_stats;
+}
+
+void Distributor::invalidate_bucket_space_stats() {
+    _bucketSpacesStats = BucketSpacesStatsProvider::PerNodeBucketSpacesStats();
+    auto invalid_space_stats = make_invalid_stats_per_configured_space();
+
+    const auto& baseline = *_clusterStateBundle.getBaselineClusterState();
+    for_each_available_content_node_in(baseline, [this, &invalid_space_stats](const lib::Node& node) {
+        _bucketSpacesStats[node.getIndex()] = invalid_space_stats;
+    });
 }
 
 void
