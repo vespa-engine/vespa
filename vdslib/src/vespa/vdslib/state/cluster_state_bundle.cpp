@@ -28,12 +28,10 @@ ClusterStateBundle::getBaselineClusterState() const
 }
 
 const std::shared_ptr<const lib::ClusterState> &
-ClusterStateBundle::getDerivedClusterState(document::BucketSpace bucketSpace) const
+ClusterStateBundle::getDerivedClusterState(document::BucketSpace) const
 {
-    auto itr = _derivedBucketSpaceStates.find(bucketSpace);
-    if (itr != _derivedBucketSpaceStates.end()) {
-        return itr->second;
-    }
+    // For now, just return the baseline cluster state.
+    // TODO use _derivedBucketSpaceStates
     return _baselineClusterState;
 }
 
