@@ -16,6 +16,9 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.containerdata.ContainerData;
+import com.yahoo.vespa.hosted.node.admin.containerdata.MotdContainerData;
+import com.yahoo.vespa.hosted.node.admin.containerdata.PromptContainerData;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.containerdata.ConfigServerContainerData;
@@ -681,9 +684,18 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void createContainerData(ContainerNodeSpec nodeSpec) {
+        // Doing this fails three tests ... Wat?
+        ContainerData containerData = ContainerData.createClean(environment,
+                                                                ContainerName.fromHostname(nodeSpec.hostname));
+
         if (nodeSpec.nodeType.equals(NodeType.config.name())) {
             logger.info("Creating files needed by config server");
-            new ConfigServerContainerData(environment, nodeSpec.hostname).create();
+            new ConfigServerContainerData(environment, nodeSpec.hostname).writeTo(containerData);
         }
+
+        logger.info("Creating files for message of the day and the bash prompt");
+        new MotdContainerData(nodeSpec, environment).writeTo(containerData);
+        new PromptContainerData(environment).writeTo(containerData);
     }
+
 }

@@ -1,0 +1,27 @@
+# Make sure we get UTC/GMT all over
+export TZ=UTC
+
+# Skip the rest for non-interactice shells
+[ -z "$PS1" ] && return
+
+# Check the window size after each command and, if necessary,
+# Update the values of LINES and COLUMNS.
+shopt -s checkwinsize
+
+# Colors; see https://wiki.archlinux.org/index.php/Color_Bash_Prompt
+color_off='\[\e[0m\]'       # Text Reset
+color_bold='\[\e[1m\]'      # Bold text
+
+env_colour=#if($zone.getSystem() == "main")#if($zone.getEnvironment() == "prod")'\e[0;91m'#else'\e[0;33m'#end#else$green#end
+
+
+PS1="${env_colour}$zone.getRegion().toUpperCase()${color_off} [\u@${color_bold}\h${color_off}:\w]\$ "
+
+# Fix colors
+if type dircolors > /dev/null 2>&1; then
+    eval $(dircolors -b)
+fi
+
+# Make PS1 available in sub-shells
+export PS1
+

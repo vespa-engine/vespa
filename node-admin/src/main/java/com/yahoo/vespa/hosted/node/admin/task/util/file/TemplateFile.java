@@ -38,7 +38,7 @@ public class TemplateFile {
         return new FileWriter(destinationPath, this::render);
     }
 
-    private String render() {
+    public String render() {
         Template template = velocityEngine.getTemplate(templatePath.getFileName().toString(), "UTF-8");
         StringWriter writer = new StringWriter();
         template.merge(velocityContext, writer);
