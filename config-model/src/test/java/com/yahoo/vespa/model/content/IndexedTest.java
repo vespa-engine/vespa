@@ -8,8 +8,6 @@ import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.messagebus.routing.RouteSpec;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
-import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -20,9 +18,7 @@ import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -110,22 +106,22 @@ public class IndexedTest extends ContentBaseTest {
         return createVespaServices(pre, sdNames, post, "streaming");
     }
 
-    private VespaModel getIndexedVespaModel() throws ParseException, IOException, SAXException {
+    private VespaModel getIndexedVespaModel() {
         return getIndexedVespaModelCreator().create();
     }
 
-    private VespaModelCreatorWithMockPkg getIndexedVespaModelCreator() throws ParseException, IOException, SAXException {
+    private VespaModelCreatorWithMockPkg getIndexedVespaModelCreator() {
         List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1", "type2", "type3");
         return new VespaModelCreatorWithMockPkg(getHosts(), createProtonIndexedVespaServices(Arrays.asList("type1", "type2", "type3")), sds);
     }
 
-    private VespaModel getStreamingVespaModel() throws ParseException, IOException, SAXException {
+    private VespaModel getStreamingVespaModel() {
         List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1");
         return new VespaModelCreatorWithMockPkg(getHosts(), createProtonStreamingVespaServices(Arrays.asList("type1")), sds).create();
     }
 
     @Test
-    public void requireMultipleDocumentTypes() throws ParseException, IOException, SAXException {
+    public void requireMultipleDocumentTypes() {
         VespaModelCreatorWithMockPkg creator = getIndexedVespaModelCreator();
         VespaModel model = creator.create();
         DeployState deployState = creator.deployState;
@@ -140,11 +136,11 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
-    public void requireIndexedOnlyServices() throws ParseException, IOException, SAXException {
+    public void requireIndexedOnlyServices() {
         VespaModel model = getIndexedVespaModel();
         HostResource h = model.getHostSystem().getHosts().get(0);
         String [] expectedServices = {"logserver", "configserver", "adminserver", "slobrok",
-                                      "logd", "configproxy","config-sentinel", "filedistributorservice",
+                                      "logd", "configproxy","config-sentinel",
                                       "qrserver", "fleetcontroller", "topleveldispatch", "docprocservice",
                                       "storagenode", "searchnode", "distributor", "transactionlogserver"};
         // TODO DomContentBuilderTest.assertServices(h, expectedServices);
@@ -182,12 +178,12 @@ public class IndexedTest extends ContentBaseTest {
         assertEquals("[Content:cluster=test]", r.getHop(1));
     }
     @Test
-    public void requireProtonStreamingOnly() throws ParseException, IOException, SAXException
+    public void requireProtonStreamingOnly()
     {
         VespaModel model = getStreamingVespaModel();
         HostResource h = model.getHostSystem().getHosts().get(0);
         String [] expectedServices = {"logserver", "configserver", "adminserver", "slobrok",
-                                      "logd", "configproxy","config-sentinel", "filedistributorservice",
+                                      "logd", "configproxy","config-sentinel",
                                       "qrserver", "storagenode", "searchnode", "distributor",
                                       "transactionlogserver"};
 // TODO        DomContentBuilderTest.assertServices(h, expectedServices);
@@ -201,7 +197,7 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
-    public void requireCorrectClusterList() throws ParseException, IOException, SAXException
+    public void requireCorrectClusterList()
     {
         VespaModel model = getStreamingVespaModel();
         ContentCluster s = model.getContentClusters().get("test");
@@ -214,7 +210,7 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
-    public void testContentSummaryStore() throws ParseException, IOException, SAXException {
+    public void testContentSummaryStore() {
         String services= 
                 "<services version='1.0'>" +
                 "<admin version='2.0'><adminserver hostalias='node0' /></admin>" +
@@ -254,7 +250,7 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
-    public void testMixedIndexAndStoreOnly() throws ParseException, IOException, SAXException {
+    public void testMixedIndexAndStoreOnly() {
         String services=
                 "<services version='1.0'>" +
                 "  <admin version='2.0'><adminserver hostalias='node0' /></admin>" +
@@ -283,7 +279,7 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
-    public void requireThatIndexingDocprocGetsConfigIdBasedOnDistributionKey() throws ParseException, IOException, SAXException {
+    public void requireThatIndexingDocprocGetsConfigIdBasedOnDistributionKey() {
         VespaModel model = getIndexedVespaModel();
         ContainerCluster cluster = model.getContainerClusters().get("cluster.test.indexing");
         assertEquals("docproc/cluster.test.indexing/3", cluster.getContainers().get(0).getConfigId());

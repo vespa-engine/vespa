@@ -164,7 +164,6 @@ ConfigStatus::action()
 
                     if (!upToDate) {
                         if (svc.type == "searchnode" ||
-                            svc.type == "filedistributorservice" ||
                             svc.type == "topleveldispatch" ||
                             svc.type == "logd")
                         {
