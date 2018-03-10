@@ -103,7 +103,6 @@ public class SlobrokMonitorManagerImpl implements SuperModelListener, SlobrokApi
             case "config-sentinel":
             case "configproxy":
             case "configserver":
-            case "filedistributorservice":
             case "logd":
             case "logserver":
             case "metricsproxy":
