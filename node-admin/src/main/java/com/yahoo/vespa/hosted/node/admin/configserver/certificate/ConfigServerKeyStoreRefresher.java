@@ -51,7 +51,7 @@ public class ConfigServerKeyStoreRefresher {
 
     public ConfigServerKeyStoreRefresher(
             KeyStoreOptions keyStoreOptions, Runnable keyStoreUpdatedCallback, ConfigServerApi configServerApi) {
-        this(keyStoreOptions, keyStoreUpdatedCallback, configServerApi, Executors.newScheduledThreadPool(0),
+        this(keyStoreOptions, keyStoreUpdatedCallback, configServerApi, Executors.newScheduledThreadPool(1),
                 Clock.systemUTC(), HostName.getLocalhost());
     }
 
