@@ -23,7 +23,6 @@ import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
-import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -112,8 +111,8 @@ public class ConfigServerKeyStoreRefresher {
 
         storeCertificate(keyPair, certificate);
 
-        String expiry = DateTimeFormatter.ISO_INSTANT.format(certificate.getNotAfter().toInstant());
-        logger.log(LogLevel.INFO, "Key store certificate refreshed, expires " + expiry);
+        logger.log(LogLevel.INFO, "Key store certificate refreshed, expires " +
+                certificate.getNotAfter().toInstant());
 
         return true;
     }
