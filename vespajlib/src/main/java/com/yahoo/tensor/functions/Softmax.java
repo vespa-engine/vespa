@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.TensorType;
 
@@ -11,7 +10,6 @@ import java.util.List;
 /**
  * @author bratseth
  */
-@Beta
 public class Softmax extends CompositeTensorFunction {
 
     private final TensorFunction argument;

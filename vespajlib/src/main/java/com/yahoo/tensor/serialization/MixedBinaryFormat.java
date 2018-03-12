@@ -2,7 +2,6 @@
 
 package com.yahoo.tensor.serialization;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
@@ -20,7 +19,6 @@ import java.util.stream.Collectors;
  *
  * @author lesters
  */
-@Beta
 class MixedBinaryFormat implements BinaryFormat {
 
     @Override

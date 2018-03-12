@@ -1,15 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.annotations.Beta;
-
 import java.util.Collections;
 import java.util.List;
 
 /**
  * @author bratseth
  */
-@Beta
 public class L1Normalize extends CompositeTensorFunction {
 
     private final TensorFunction argument;

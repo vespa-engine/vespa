@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.evaluation;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.tensor.Tensor;
 
 /**
@@ -9,7 +8,6 @@ import com.yahoo.tensor.Tensor;
  *
  * @author bratseth
  */
-@Beta
 public interface EvaluationContext<NAMETYPE extends TypeContext.Name> extends TypeContext<NAMETYPE> {
 
     /** Returns the tensor bound to this name, or null if none */

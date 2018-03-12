@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
-import com.google.common.annotations.Beta;
-
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
@@ -13,7 +11,6 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-@Beta
 public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     public static TensorAddress of(String[] labels) {
