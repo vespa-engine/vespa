@@ -145,6 +145,10 @@ consider_fallback VESPA_USE_NO_VESPAMALLOC  $(get_var "no_vespamalloc_list")
 
 
 fixlimits () {
+    # Cannot bump limits when not root (for testing)
+    if test $(id -u) -ne 0; then
+	return 0
+    fi
     # number of open files:
     if varhasvalue file_descriptor_limit; then
        ulimit -n ${file_descriptor_limit} || exit 1

@@ -28,17 +28,20 @@ int main(int argc, char** argv)
     gid_t g = p->pw_gid;
     uid_t u = p->pw_uid;
 
-    if (setgid(g) != 0) {
+    gid_t oldg = getgid();
+    uid_t oldu = getuid();
+
+    if (g != oldg && setgid(g) != 0) {
         perror("FATAL error: could not change group id");
         exit(1);
     }
     size_t listsize = 1;
     gid_t grouplist[1] = { g };
-    if (setgroups(listsize, grouplist) != 0) {
+    if ((g != oldg || u != oldu) && setgroups(listsize, grouplist) != 0) {
         perror("FATAL error: could not setgroups");
         exit(1);
     }
-    if (setuid(u) != 0) {
+    if (u != oldu && setuid(u) != 0) {
         perror("FATAL error: could not change user id");
         exit(1);
     }
