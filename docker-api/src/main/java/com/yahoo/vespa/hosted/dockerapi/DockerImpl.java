@@ -164,6 +164,8 @@ public class DockerImpl implements Docker {
                                 .withPassword(credentials.password))
                         .ifPresent(pullImageCmd::withAuthConfig);
 
+                logger.log(LogLevel.INFO, "Starting download of " + image.asString());
+
                 pullImageCmd.exec(new ImagePullCallback(image));
                 return true;
             }
@@ -467,6 +469,7 @@ public class DockerImpl implements Docker {
         public void onComplete() {
             Optional<InspectImageResponse> image = inspectImage(dockerImage);
             if (image.isPresent()) { // Download successful, update image GC with the newly downloaded image
+                logger.log(LogLevel.INFO, "Download completed: " + dockerImage.asString());
                 dockerImageGC.ifPresent(imageGC -> imageGC.updateLastUsedTimeFor(image.get().getId()));
                 removeScheduledPoll(dockerImage);
             } else {
