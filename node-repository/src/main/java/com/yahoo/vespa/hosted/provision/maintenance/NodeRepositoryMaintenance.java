@@ -146,42 +146,34 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
         DefaultTimes(Environment environment) {
+            failGrace = Duration.ofMinutes(60);
+            periodicRedeployInterval = Duration.ofMinutes(30);
+            operatorChangeRedeployInterval = Duration.ofMinutes(1);
+            failedExpirerInterval = Duration.ofMinutes(10);
+            provisionedExpiry = Duration.ofHours(4);
+            rebootInterval = Duration.ofDays(30);
+            nodeRetirerInterval = Duration.ofMinutes(30);
+            metricsInterval = Duration.ofMinutes(1);
+            throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
+
+            if (environment.isTest())
+                retiredExpiry = Duration.ofMinutes(1); // fast turnaround as test envs don't have persistent data
+            else
+                retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
+
+
             if (environment.equals(Environment.prod)) {
-                // These values are to avoid losing data (retired), and to be able to return an application
-                // back to a previous state fast (inactive)
-                failGrace = Duration.ofMinutes(60);
-                periodicRedeployInterval = Duration.ofMinutes(30);
-                operatorChangeRedeployInterval = Duration.ofMinutes(1);
                 zooKeeperAccessMaintenanceInterval = Duration.ofMinutes(1);
                 reservationExpiry = Duration.ofMinutes(20); // same as deployment timeout
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
-                retiredExpiry = Duration.ofDays(4); // enough time to migrate data
                 retiredInterval = Duration.ofMinutes(29);
-                failedExpirerInterval = Duration.ofMinutes(10);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
-                provisionedExpiry = Duration.ofHours(4);
-                rebootInterval = Duration.ofDays(30);
-                nodeRetirerInterval = Duration.ofMinutes(30);
-                metricsInterval = Duration.ofMinutes(1);
-                throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             } else {
-                // These values ensure tests and development is not delayed due to nodes staying around
-                // Use non-null values as these also determine the maintenance interval
-                failGrace = Duration.ofMinutes(60);
-                periodicRedeployInterval = Duration.ofMinutes(30);
-                operatorChangeRedeployInterval = Duration.ofMinutes(1);
                 zooKeeperAccessMaintenanceInterval = Duration.ofSeconds(10);
                 reservationExpiry = Duration.ofMinutes(10); // Need to be long enough for deployment to be finished for all config model versions
                 inactiveExpiry = Duration.ofSeconds(2); // support interactive wipe start over
-                retiredExpiry = Duration.ofMinutes(1);
                 retiredInterval = Duration.ofMinutes(5);
-                failedExpirerInterval = Duration.ofMinutes(10);
                 dirtyExpiry = Duration.ofMinutes(30);
-                provisionedExpiry = Duration.ofHours(4);
-                rebootInterval = Duration.ofDays(30);
-                nodeRetirerInterval = Duration.ofMinutes(30);
-                metricsInterval = Duration.ofMinutes(1);
-                throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             }
         }
 
