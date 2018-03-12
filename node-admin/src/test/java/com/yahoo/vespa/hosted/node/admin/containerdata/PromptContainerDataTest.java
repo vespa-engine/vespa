@@ -12,12 +12,13 @@ import static org.junit.Assert.assertTrue;
 public class PromptContainerDataTest {
 
     @Test
-    public void writesMotd() {
+    public void writesPrompt() {
         PromptContainerData promptContainerData = new PromptContainerData(new Environment.Builder()
                                                                                   .configServerConfig(new ConfigServerConfig(new ConfigServerConfig.Builder()))
                                                                                   .system("main")
                                                                                   .environment("prod")
                                                                                   .region("aws-us-east-1a")
+                                                                                  .defaultFlavor("cherry")
                                                                                   .build());
 
         promptContainerData.writeTo((path, content) -> {
