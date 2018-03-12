@@ -54,7 +54,7 @@ public class ConfigServerKeyStoreRefresherTest {
     @Before
     public void setup() {
         keyStoreOptions = new KeyStoreOptions(
-                tempFolder.getRoot().toPath().resolve("some/path/keystore.p12"), new char[0], "PKCS12", null);
+                tempFolder.getRoot().toPath().resolve("some/path/keystore.p12"), new char[0], "PKCS12");
     }
 
     @Test

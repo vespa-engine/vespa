@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.certificate;
 
 import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
+import com.yahoo.vespa.athenz.tls.KeyStoreBuilder;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.util.KeyStoreOptions;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -12,7 +13,6 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -159,14 +159,12 @@ public class ConfigServerKeyStoreRefresher {
     private void storeCertificate(KeyPair keyPair, X509Certificate certificate)
             throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException, NoSuchProviderException {
         keyStoreOptions.path.getParent().toFile().mkdirs();
-        X509Certificate[] certificateChain = {certificate};
 
-        try (FileOutputStream fos = new FileOutputStream(keyStoreOptions.path.toFile())) {
-            KeyStore keyStore = keyStoreOptions.getKeyStoreInstance();
-            keyStore.load(null, null);
-            keyStore.setKeyEntry(KEY_STORE_ALIAS, keyPair.getPrivate(), keyStoreOptions.password, certificateChain);
-            keyStore.store(fos, keyStoreOptions.password);
-        }
+        KeyStore keyStore = KeyStoreBuilder.withType(keyStoreOptions.keyStoreType)
+                .withKeyEntry(KEY_STORE_ALIAS, keyPair.getPrivate(), keyStoreOptions.password, certificate)
+                .build();
+
+        keyStoreOptions.storeKeyStore(keyStore);
     }
 
     private X509Certificate sendCsr(PKCS10CertificationRequest csr) {
