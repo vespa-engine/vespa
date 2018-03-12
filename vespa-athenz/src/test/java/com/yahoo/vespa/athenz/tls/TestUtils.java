@@ -19,6 +19,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
+import static com.yahoo.vespa.athenz.tls.KeyStoreUtils.writeKeyStoreToFile;
+
 /**
  * @author bjorncs
  */
@@ -50,9 +52,6 @@ class TestUtils {
 
     static void createKeystoreFile(File file, KeyStoreType type, char[] password)
             throws IOException, GeneralSecurityException, OperatorCreationException {
-        try (OutputStream out = new BufferedOutputStream(new FileOutputStream(file))) {
-            KeyStore keystore = createKeystore(type, password);
-            keystore.store(out, password);
-        }
+        writeKeyStoreToFile(createKeystore(type, password), file, password);
     }
 }
