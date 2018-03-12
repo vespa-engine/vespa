@@ -164,6 +164,8 @@ public class DockerImpl implements Docker {
                                 .withPassword(credentials.password))
                         .ifPresent(pullImageCmd::withAuthConfig);
 
+                logger.log(LogLevel.INFO, "Starting download of " + image.asString());
+
                 pullImageCmd.exec(new ImagePullCallback(image));
                 return true;
             }
