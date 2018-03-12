@@ -13,7 +13,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder.KeyStoreType.JKS;
+import static com.yahoo.vespa.athenz.tls.KeyStoreType.JKS;
 
 /**
  * @author bjorncs

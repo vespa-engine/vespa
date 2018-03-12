@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder;
-import com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder.KeyStoreType;
+import com.yahoo.vespa.athenz.tls.KeyStoreType;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.certificate.ConfigServerKeyStoreRefresher;
 import com.yahoo.vespa.hosted.node.admin.util.KeyStoreOptions;
