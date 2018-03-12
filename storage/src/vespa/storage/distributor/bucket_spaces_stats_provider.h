@@ -26,9 +26,12 @@ public:
           _bucketsTotal(0),
           _bucketsPending(0)
     {}
-    bool valid() const { return _valid; }
-    size_t bucketsTotal() const { return _bucketsTotal; }
-    size_t bucketsPending() const { return _bucketsPending; }
+
+    static BucketSpaceStats make_invalid() noexcept { return {}; }
+
+    bool valid() const noexcept { return _valid; }
+    size_t bucketsTotal() const noexcept { return _bucketsTotal; }
+    size_t bucketsPending() const noexcept { return _bucketsPending; }
 };
 
 /**
