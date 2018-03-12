@@ -88,7 +88,9 @@ public class NodeAgentImplTest {
             .system("main")
             .parentHostHostname("parent.host.name.yahoo.com")
             .inetAddressResolver(new InetAddressResolver())
-            .pathResolver(pathResolver).build();
+            .pathResolver(pathResolver)
+            .defaultFlavor("d-2-8-50")
+            .build();
 
     private final ContainerNodeSpec.Builder nodeSpecBuilder = new ContainerNodeSpec.Builder()
             .hostname(hostName)

@@ -58,6 +58,7 @@ public class Environment {
     private final Optional<KeyStoreOptions> trustStoreOptions;
     private final Optional<AthenzIdentity> athenzIdentity;
     private final NodeType nodeType;
+    private final String defaultFlavor;
 
     static {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -71,7 +72,8 @@ public class Environment {
 
              new PathResolver(),
              Optional.of(getEnvironmentVariable(COREDUMP_FEED_ENDPOINT)),
-             NodeType.host);
+             NodeType.host,
+             "d-2-8-50");
     }
 
     public Environment(ConfigServerConfig configServerConfig,
@@ -80,7 +82,8 @@ public class Environment {
                        String hostedSystem,
                        PathResolver pathResolver,
                        Optional<String> coreDumpFeedEndpoint,
-                       NodeType nodeType) {
+                       NodeType nodeType,
+                       String defaultFlavor) {
         this(configServerConfig,
                 hostedEnvironment,
                 hostedRegion,
@@ -90,7 +93,8 @@ public class Environment {
                 pathResolver,
                 getLogstashNodesFromEnvironment(),
                 coreDumpFeedEndpoint,
-                nodeType
+                nodeType,
+                defaultFlavor
         );
     }
 
@@ -103,7 +107,8 @@ public class Environment {
                        PathResolver pathResolver,
                        List<String> logstashNodes,
                        Optional<String> feedEndpoint,
-                       NodeType nodeType) {
+                       NodeType nodeType,
+                       String defaultFlavor) {
         this.configServerHostNames = configServerConfig.hosts();
         this.configServerURIs = createConfigServerUris(
                 configServerConfig.scheme(),
@@ -132,6 +137,7 @@ public class Environment {
         this.logstashNodes = logstashNodes;
         this.feedEndpoint = feedEndpoint;
         this.nodeType = nodeType;
+        this.defaultFlavor = defaultFlavor;
     }
 
     public List<String> getConfigServerHostNames() { return configServerHostNames; }
@@ -272,6 +278,8 @@ public class Environment {
 
     public NodeType getNodeType() { return nodeType; }
 
+    public String getDefaultFlavor() { return defaultFlavor; }
+
     public static class Builder {
         private ConfigServerConfig configServerConfig;
         private String environment;
@@ -283,6 +291,7 @@ public class Environment {
         private List<String> logstashNodes = Collections.emptyList();
         private Optional<String> feedEndpoint = Optional.empty();
         private NodeType nodeType = NodeType.tenant;
+        private String defaultFlavor;
 
         public Builder configServerConfig(ConfigServerConfig configServerConfig) {
             this.configServerConfig = configServerConfig;
@@ -334,11 +343,17 @@ public class Environment {
             return this;
         }
 
+        public Builder defaultFlavor(String defaultFlavor) {
+            this.defaultFlavor = defaultFlavor;
+            return this;
+        }
+
         public Environment build() {
             Objects.requireNonNull(configServerConfig, "configServerConfig cannot be null");
             Objects.requireNonNull(environment, "environment cannot be null");
             Objects.requireNonNull(region, "region cannot be null");
             Objects.requireNonNull(system, "system cannot be null");
+            Objects.requireNonNull(defaultFlavor, "default flavor cannot be null");
 
             return new Environment(configServerConfig,
                                    environment,
@@ -349,7 +364,8 @@ public class Environment {
                                    Optional.ofNullable(pathResolver).orElseGet(PathResolver::new),
                                    logstashNodes,
                                    feedEndpoint,
-                                   nodeType);
+                                   nodeType,
+                                   defaultFlavor);
         }
     }
 }
