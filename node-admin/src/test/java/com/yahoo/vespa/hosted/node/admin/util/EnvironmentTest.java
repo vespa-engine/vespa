@@ -23,6 +23,7 @@ public class EnvironmentTest {
             .environment("prod")
             .system("main")
             .pathResolver(new PathResolver())
+            .defaultFlavor("d-2-8-50")
             .build();
 
     @Test

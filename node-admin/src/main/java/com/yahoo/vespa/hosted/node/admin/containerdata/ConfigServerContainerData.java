@@ -37,8 +37,7 @@ public class ConfigServerContainerData {
                 "  <hostedVespa>true</hostedVespa>\n" +
                 "  <multitenant>true</multitenant>\n" +
                 "  <useVespaVersionInRequest>true</useVespaVersionInRequest>\n" +
-                // TODO: Avoid hardcoding of default flavor
-                "  <defaultFlavor>t2.xlarge</defaultFlavor>\n" +
+                "  <defaultFlavor>" + environment.getDefaultFlavor() + "</defaultFlavor>\n" +
                 "  <zookeeper>\n" +
                 "    <barrierTimeout>1200</barrierTimeout>\n" +
                 "  </zookeeper>\n" +

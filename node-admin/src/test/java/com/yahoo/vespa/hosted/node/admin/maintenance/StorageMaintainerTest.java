@@ -40,6 +40,7 @@ public class StorageMaintainerTest {
             .environment("prod")
             .system("main")
             .pathResolver(new PathResolver())
+            .defaultFlavor("d-2-8-50")
             .build();
     private final DockerOperations docker = mock(DockerOperations.class);
     private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);

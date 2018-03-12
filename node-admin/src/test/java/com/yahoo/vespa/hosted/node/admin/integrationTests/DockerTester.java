@@ -66,6 +66,7 @@ public class DockerTester implements AutoCloseable {
                 .environment("prod")
                 .system("main")
                 .pathResolver(new PathResolver(pathToVespaHome, Paths.get("/tmp"), Paths.get("/tmp")))
+                .defaultFlavor("d-2-8-50")
                 .build();
         Clock clock = Clock.systemUTC();
         DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, null, new IPAddressesImpl());
