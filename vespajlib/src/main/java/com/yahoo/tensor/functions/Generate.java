@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
@@ -19,7 +18,6 @@ import java.util.function.Function;
  *
  * @author bratseth
  */
-@Beta
 public class Generate extends PrimitiveTensorFunction {
 
     private final TensorType type;

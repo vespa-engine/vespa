@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
-import com.google.common.annotations.Beta;
-
 /**
  * An address to a subset of a tensors' cells, specifying a label for some but not necessarily all of the tensors
  * dimensions.
@@ -13,7 +11,6 @@ import com.google.common.annotations.Beta;
 // - These are created in inner (though not inner-most) loops so they are implemented with minimal allocation.
 //   We also avoid non-essential error checking.
 // - We can add support for string labels later without breaking the API
-@Beta
 public class PartialAddress {
 
     // Two arrays which contains corresponding dimension=label pairs.

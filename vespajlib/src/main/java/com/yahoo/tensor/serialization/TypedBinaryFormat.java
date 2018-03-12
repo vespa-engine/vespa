@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.serialization;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MixedTensor;
@@ -19,7 +18,6 @@ import java.util.Optional;
  *
  * @author geirst
  */
-@Beta
 public class TypedBinaryFormat {
 
     private static final int SPARSE_BINARY_FORMAT_TYPE = 1;

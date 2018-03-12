@@ -1,10 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
-import com.yahoo.lang.MutableInteger;
-import com.yahoo.lang.MutableLong;
 import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
@@ -26,7 +23,6 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-@Beta
 public class Concat extends PrimitiveTensorFunction {
 
     private final TensorFunction argumentA, argumentB;

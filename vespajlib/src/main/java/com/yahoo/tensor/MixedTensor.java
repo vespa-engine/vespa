@@ -2,7 +2,6 @@
 
 package com.yahoo.tensor;
 
-import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -23,7 +22,6 @@ import java.util.stream.Collectors;
  *
  * @author lesters
  */
-@Beta
 public class MixedTensor implements Tensor {
 
     /** The dimension specification for this tensor */

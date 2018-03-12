@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.evaluation;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -10,7 +9,6 @@ import java.util.HashMap;
 /**
  * @author bratseth
  */
-@Beta
 public class MapEvaluationContext implements EvaluationContext<TypeContext.Name> {
 
     private final java.util.Map<String, Tensor> bindings = new HashMap<>();

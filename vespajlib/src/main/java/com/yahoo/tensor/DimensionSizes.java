@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
-import com.google.common.annotations.Beta;
-
 import java.util.Arrays;
 
 /**
@@ -10,7 +8,6 @@ import java.util.Arrays;
  *
  * @author bratseth
  */
-@Beta
 public final class DimensionSizes {
 
     private final long[] sizes;
