@@ -708,8 +708,13 @@ public class ProvisioningTest {
         tester.clock().advance(Duration.ofMinutes(2));
         SystemState state = prepare(application, 2, 0, 2, 0,
                                     "default", tester);
-        assertEquals("Reserved required nodes", 4,
-                     tester.getNodes(application, Node.State.reserved).size());
+        List<Node> reserved = tester.getNodes(application, Node.State.reserved).asList();
+        assertEquals("Reserved required nodes", 4, reserved.size());
+        assertTrue("Time of event is updated for all nodes", reserved.stream()
+                                                                     .allMatch(n -> n.history()
+                                                                                     .event(History.Event.Type.reserved)
+                                                                                     .get().at()
+                                                                                     .equals(tester.clock().instant())));
 
         // Over 10 minutes pass since first reservation. First set of reserved nodes are not expired
         tester.clock().advance(Duration.ofMinutes(8).plus(Duration.ofSeconds(1)));
