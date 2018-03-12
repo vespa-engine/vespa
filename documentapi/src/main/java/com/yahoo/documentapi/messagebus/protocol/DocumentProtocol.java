@@ -306,7 +306,7 @@ public class DocumentProtocol implements Protocol {
         VersionSpecification version50 = new VersionSpecification(5, 0);
         VersionSpecification version51 = new VersionSpecification(5, 1);
         VersionSpecification version52 = new VersionSpecification(5, 115);
-        VersionSpecification version6 = new VersionSpecification(6, 999); // TODO change once stable protocol
+        VersionSpecification version6 = new VersionSpecification(6, 221);
 
         List<VersionSpecification> from50 = Arrays.asList(version50, version51, version52, version6);
         List<VersionSpecification> from51 = Arrays.asList(version51, version52, version6);

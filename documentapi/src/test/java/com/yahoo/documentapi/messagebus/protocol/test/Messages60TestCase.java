@@ -18,7 +18,7 @@ public class Messages60TestCase extends Messages52TestCase {
 
     @Override
     protected Version version() {
-        return new Version(6, 999); // TODO finalize version
+        return new Version(6, 221);
     }
 
     @Override
