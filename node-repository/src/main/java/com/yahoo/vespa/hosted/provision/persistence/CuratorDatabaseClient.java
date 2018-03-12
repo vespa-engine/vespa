@@ -17,7 +17,6 @@ import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.nio.charset.StandardCharsets;
@@ -193,7 +192,7 @@ public class CuratorDatabaseClient {
                                     newNodeStatus(node, toState),
                                     toState,
                                     toState.isAllocated() ? node.allocation() : Optional.empty(),
-                                    recordStateTransition(node, toState, agent),
+                                    node.history().recordStateTransition(node.state(), toState, agent, clock.instant()),
                                     node.type());
             curatorTransaction.add(CuratorOperations.delete(toPath(node).getAbsolute()))
                               .add(CuratorOperations.create(toPath(toState, newNode.hostname()).getAbsolute(), nodeSerializer.toJson(newNode)));
@@ -207,10 +206,6 @@ public class CuratorDatabaseClient {
             }
         });
         return writtenNodes;
-    }
-
-    private History recordStateTransition(Node node, Node.State toState, Agent agent) {
-        return node.history().recordStateTransition(node.state(), toState, agent, clock.instant());
     }
 
     private Status newNodeStatus(Node node, Node.State toState) {
