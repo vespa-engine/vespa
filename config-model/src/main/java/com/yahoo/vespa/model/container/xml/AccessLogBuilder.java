@@ -57,11 +57,17 @@ public class AccessLogBuilder {
                     fileNamePattern(spec),
                     rotationInterval(spec),
                     rotationScheme(spec),
+                    compressOnRotation(spec),
                     symlinkName(spec));
         }
 
         private String symlinkName(Element spec) {
             return nullIfEmpty(spec.getAttribute("symlinkName"));
+        }
+
+        private Boolean compressOnRotation(Element spec) {
+            String compress = spec.getAttribute("compressOnRotation");
+            return (compress.isEmpty() ? null : Boolean.parseBoolean(compress));
         }
 
         private AccessLogConfig.FileHandler.RotateScheme.Enum rotationScheme(Element spec) {

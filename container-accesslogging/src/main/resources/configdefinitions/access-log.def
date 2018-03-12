@@ -27,4 +27,4 @@ fileHandler.rotateScheme enum {DATE, SEQUENCE} default=DATE
 fileHandler.symlink string default=""
 
 # compress the previous access log after rotation
-fileHandler.compressOnRotation bool default=true
+fileHandler.compressOnRotation bool default=false
