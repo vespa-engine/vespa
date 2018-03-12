@@ -1,3 +1,4 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 fallback VESPA_HOME @CMAKE_INSTALL_PREFIX@
 override VESPA_USER @VESPA_USER@
+override VESPA_UNPRIVILEGED @VESPA_UNPRIVILEGED@

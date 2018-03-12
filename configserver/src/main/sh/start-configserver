@@ -63,7 +63,9 @@ cd ${VESPA_HOME} || { echo "Cannot cd to ${VESPA_HOME}" 1>&2; exit 1; }
 fixfile () {
     if [ -f $1 ]; then
         if [ "${VESPA_USER}" ]; then
-            chown ${VESPA_USER} $1
+            if test "${VESPA_UNPRIVILEGED}" != yes; then
+                chown ${VESPA_USER} $1
+            fi
         fi
         chmod 644 $1
     fi
@@ -75,7 +77,9 @@ fixddir () {
        mkdir -p $1 || exit 1
     fi
     if [ "${VESPA_USER}" ]; then
-       chown ${VESPA_USER} $1
+       if test "${VESPA_UNPRIVILEGED}" != yes; then
+           chown ${VESPA_USER} $1
+       fi
     fi
     chmod 755 $1
 }
