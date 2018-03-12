@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 /**
  * Maintenance job which deactivates retired nodes, if given permission by orchestrator, or
- * after giving the system has been given sufficient time to migrate data to other nodes.
+ * after the system has been given sufficient time to migrate data to other nodes.
  *
  * @author hakon
  */
