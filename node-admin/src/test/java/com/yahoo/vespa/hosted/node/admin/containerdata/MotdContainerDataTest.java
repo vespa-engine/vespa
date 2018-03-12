@@ -46,10 +46,10 @@ public class MotdContainerDataTest {
             assertTrue(content.contains("tenant"));
             assertTrue(content.contains("[0;91m"));
             assertTrue(content.contains("MAIN PROD AWS-US-EAST-1A"));
-            assertTrue(content.contains("tenant1 application1 default"));
+            assertTrue(content.contains("tenant1:application1:default"));
             assertTrue(content.contains("dirty"));
-            assertTrue(content.contains("wanted-unknown"));
-            assertTrue(content.contains("installed=7.0.0"));
+            assertTrue(content.contains("wanted = unknown"));
+            assertTrue(content.contains("installed = 7.0.0"));
         });
 
     }
