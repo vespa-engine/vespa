@@ -11,8 +11,8 @@ import java.util.Optional;
 
 public class PlaceholderWithDefault extends TensorFlowOperation {
 
-    public PlaceholderWithDefault(NodeDef node, List<TensorFlowOperation> inputs, int port) {
-        super(node, inputs, port);
+    public PlaceholderWithDefault(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
+        super(modelName, node, inputs, port);
     }
 
     @Override

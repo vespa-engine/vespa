@@ -17,8 +17,8 @@ public class Join extends TensorFlowOperation {
 
     private final DoubleBinaryOperator operator;
 
-    public Join(NodeDef node, List<TensorFlowOperation> inputs, int port, DoubleBinaryOperator operator) {
-        super(node, inputs, port);
+    public Join(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port, DoubleBinaryOperator operator) {
+        super(modelName, node, inputs, port);
         this.operator = operator;
     }
 

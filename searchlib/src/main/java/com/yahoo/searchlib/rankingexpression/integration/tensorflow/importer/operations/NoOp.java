@@ -10,8 +10,8 @@ import java.util.List;
 
 public class NoOp extends TensorFlowOperation {
 
-    public NoOp(NodeDef node, List<TensorFlowOperation> inputs, int port) {
-        super(node, Collections.emptyList(), port);  // don't propagate inputs
+    public NoOp(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
+        super(modelName, node, Collections.emptyList(), port);  // don't propagate inputs
     }
 
     @Override

@@ -32,6 +32,8 @@ public abstract class TensorFlowOperation {
 
     protected final static String MACRO_PREFIX = "tf_macro_";
 
+    private final String modelName;
+
     protected final NodeDef node;
     protected final int port;
     protected final List<TensorFlowOperation> inputs;
@@ -45,12 +47,15 @@ public abstract class TensorFlowOperation {
     private Value constantValue = null;
     private List<TensorFlowOperation> controlInputs = Collections.emptyList();
 
-    TensorFlowOperation(NodeDef node, List<TensorFlowOperation> inputs, int port) {
+    TensorFlowOperation(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
+        this.modelName = modelName;
         this.node = node;
         this.port = port;
         this.inputs = Collections.unmodifiableList(inputs);
         this.inputs.forEach(i -> i.outputs.add(this));
     }
+
+    protected String modelName() { return modelName; }
 
     protected abstract OrderedTensorType lazyGetType();
     protected abstract TensorFunction lazyGetFunction();
@@ -122,7 +127,7 @@ public abstract class TensorFlowOperation {
     public String vespaName() { return node.getName() != null ? node.getName().replace('/', '_') : null; }
 
     /** Retrieve the valid Vespa name of this node if it is a macro */
-    public String macroName() { return vespaName() != null ? MACRO_PREFIX + vespaName() : null; }
+    public String macroName() { return vespaName() != null ? MACRO_PREFIX + modelName + "_" + vespaName() : null; }
 
     /** Retrieve the list of warnings produced during its lifetime */
     public List<String> warnings() { return Collections.unmodifiableList(importWarnings); }

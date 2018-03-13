@@ -30,8 +30,8 @@ import static com.yahoo.searchlib.rankingexpression.integration.tensorflow.impor
 
 public class Reshape extends TensorFlowOperation {
 
-    public Reshape(NodeDef node, List<TensorFlowOperation> inputs, int port) {
-        super(node, inputs, port);
+    public Reshape(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
+        super(modelName, node, inputs, port);
     }
 
     @Override

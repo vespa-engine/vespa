@@ -10,8 +10,8 @@ import java.util.Optional;
 
 public class Switch extends TensorFlowOperation {
 
-    public Switch(NodeDef node, List<TensorFlowOperation> inputs, int port) {
-        super(node, inputs, port);
+    public Switch(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
+        super(modelName, node, inputs, port);
     }
 
     @Override

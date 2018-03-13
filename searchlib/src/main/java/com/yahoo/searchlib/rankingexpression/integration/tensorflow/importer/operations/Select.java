@@ -17,8 +17,8 @@ import static com.yahoo.searchlib.rankingexpression.integration.tensorflow.impor
 
 public class Select extends TensorFlowOperation {
 
-    public Select(NodeDef node, List<TensorFlowOperation> inputs, int port) {
-        super(node, inputs, port);
+    public Select(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
+        super(modelName, node, inputs, port);
     }
 
     @Override

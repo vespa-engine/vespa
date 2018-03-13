@@ -23,11 +23,8 @@ import java.util.Optional;
 
 public class Const extends TensorFlowOperation {
 
-    private final String modelName;
-
     public Const(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
-        super(node, inputs, port);
-        this.modelName = modelName;
+        super(modelName, node, inputs, port);
         setConstantValue(value());
     }
 
@@ -58,7 +55,7 @@ public class Const extends TensorFlowOperation {
     /** Constant names are prefixed by "modelName_" to avoid name conflicts between models */
     @Override
     public String vespaName() {
-        return modelName + "_" + super.vespaName();
+        return modelName() + "_" + super.vespaName();
     }
 
     @Override

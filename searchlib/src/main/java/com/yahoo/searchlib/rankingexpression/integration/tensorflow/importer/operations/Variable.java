@@ -11,17 +11,14 @@ import java.util.List;
 
 public class Variable extends TensorFlowOperation {
 
-    private final String modelName;
-
     public Variable(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
-        super(node, inputs, port);
-        this.modelName = modelName;
+        super(modelName, node, inputs, port);
     }
 
     /** Constant names are prefixed by "modelName_" to avoid name conflicts between models */
     @Override
     public String vespaName() {
-        return modelName + "_" + super.vespaName();
+        return modelName() + "_" + super.vespaName();
     }
 
     @Override

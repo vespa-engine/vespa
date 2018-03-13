@@ -13,8 +13,8 @@ import java.util.List;
 
 public class Shape extends TensorFlowOperation {
 
-    public Shape(NodeDef node, List<TensorFlowOperation> inputs, int port) {
-        super(node, inputs, port);
+    public Shape(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
+        super(modelName, node, inputs, port);
         createConstantValue();
     }
 

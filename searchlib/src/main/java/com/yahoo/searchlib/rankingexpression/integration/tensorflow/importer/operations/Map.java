@@ -13,8 +13,8 @@ public class Map extends TensorFlowOperation {
 
     private final DoubleUnaryOperator operator;
 
-    public Map(NodeDef node, List<TensorFlowOperation> inputs, int port, DoubleUnaryOperator operator) {
-        super(node, inputs, port);
+    public Map(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port, DoubleUnaryOperator operator) {
+        super(modelName, node, inputs, port);
         this.operator = operator;
     }
 
