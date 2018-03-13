@@ -261,9 +261,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void startContainer(ContainerNodeSpec nodeSpec) {
-        // ContainerData only works when root, which is the case only for HostAdmin so far.
-        if (environment.getRegion().startsWith("aws-"))
-            createContainerData(nodeSpec);
+        createContainerData(nodeSpec);
         dockerOperations.createContainer(containerName, nodeSpec);
         dockerOperations.startContainer(containerName, nodeSpec);
         aclMaintainer.run();
@@ -689,14 +687,18 @@ public class NodeAgentImpl implements NodeAgent {
         ContainerData containerData = ContainerData.createClean(environment,
                                                                 ContainerName.fromHostname(nodeSpec.hostname));
 
+        // ContainerData only works when root, which is the case only for HostAdmin so far -- config nodes are only used under HostAdmin.
         if (nodeSpec.nodeType.equals(NodeType.config.name())) {
             logger.info("Creating files needed by config server");
             new ConfigServerContainerData(environment, nodeSpec.hostname).writeTo(containerData);
         }
 
-        logger.info("Creating files for message of the day and the bash prompt");
-        new MotdContainerData(nodeSpec, environment).writeTo(containerData);
-        new PromptContainerData(environment).writeTo(containerData);
+        // ContainerData only works when root, which is the case only for HostAdmin so far -- only AWS uses HostAdmin now.
+        if (environment.getRegion().startsWith("aws-")) {
+            logger.info("Creating files for message of the day and the bash prompt");
+            new MotdContainerData(nodeSpec, environment).writeTo(containerData);
+            new PromptContainerData(environment).writeTo(containerData);
+        }
 
     }
 
