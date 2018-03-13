@@ -37,7 +37,7 @@ public class ContainerData {
         this.destinationPathOnHost = environment.pathInHostFromPathInNode(containerName, ContainerData.containerDataPath);
     }
 
-    public static ContainerData createCleanContainerData(Environment environment, ContainerName containerName) {
+    public static ContainerData createClean(Environment environment, ContainerName containerName) {
         ContainerData containerData = new ContainerData(environment, containerName);
         IOExceptionUtil.uncheck(containerData::cleanup);
         return containerData;

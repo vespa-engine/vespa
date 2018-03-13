@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.node.admin.containerdata;
 
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 
 import java.nio.file.Path;
@@ -18,9 +17,7 @@ public class ConfigServerContainerData {
         this.configServerNodeHostName = configServerNodeHostName;
     }
 
-    public void create() {
-        ContainerData containerData = ContainerData.createCleanContainerData(
-                environment, ContainerName.fromHostname(configServerNodeHostName));
+    public void writeTo(ContainerData containerData) {
         containerData.addFile(getPath("configserver-config.xml"), createConfigServerConfigXml());
         containerData.addFile(getPath("node-repository-config.xml"), createNodeRepoConfigXml());
     }

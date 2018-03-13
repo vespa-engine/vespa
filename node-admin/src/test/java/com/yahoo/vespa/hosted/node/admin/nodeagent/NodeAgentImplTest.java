@@ -175,6 +175,7 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
+        when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
         when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
         when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(201326592000L));
 
@@ -230,7 +231,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void containerIsRestartedIfFlavorChanged() {
+    public void containerIsRestartedIfFlavorChanged() throws IOException {
         final long wantedRestartGeneration = 1;
         final long currentRestartGeneration = 1;
         ContainerNodeSpec.Builder specBuilder = nodeSpecBuilder
@@ -253,6 +254,7 @@ public class NodeAgentImplTest {
                 .thenReturn(Optional.of(thirdSpec));
         when(dockerOperations.pullImageAsyncIfNeeded(any())).thenReturn(true);
         when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(201326592000L));
+        when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
 
         nodeAgent.converge();
         nodeAgent.converge();
@@ -472,6 +474,7 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
         when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
+        when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
         when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(201326592000L));
 
         nodeAgent.tick();
@@ -583,6 +586,7 @@ public class NodeAgentImplTest {
         when(dockerOperations.getContainerStats(eq(containerName)))
                 .thenReturn(Optional.of(stats1))
                 .thenReturn(Optional.of(stats2));
+        when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
 
         nodeAgent.converge(); // Run the converge loop once to initialize lastNodeSpec
         nodeAgent.updateContainerNodeMetrics(); // Update metrics once to init and lastCpuMetric
