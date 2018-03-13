@@ -7,10 +7,12 @@ import com.yahoo.jdisc.http.servlet.ServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -136,6 +138,11 @@ class ServletFilterRequest extends DiscFilterRequest {
     @Override
     public void setUserPrincipal(Principal principal) {
         parent.setUserPrincipal(principal);
+    }
+
+    @Override
+    public Optional<X509Certificate[]> getClientCertificateChain() {
+        return Optional.ofNullable((X509Certificate[]) parent.context().get(ServletRequest.SERVLET_REQUEST_X509CERT));
     }
 
     @Override

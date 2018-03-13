@@ -39,6 +39,7 @@ import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
 public class ServletRequest extends HttpServletRequestWrapper implements ServletOrJdiscHttpRequest {
     public static final String JDISC_REQUEST_PRINCIPAL = "jdisc.request.principal";
     public static final String JDISC_REQUEST_X509CERT = "jdisc.request.X509Certificate";
+    public static final String SERVLET_REQUEST_X509CERT = "javax.servlet.request.X509Certificate";
 
     private final HttpServletRequest request;
     private final HeaderFields headerFields;

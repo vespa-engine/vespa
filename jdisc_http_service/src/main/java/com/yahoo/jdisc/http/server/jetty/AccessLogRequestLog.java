@@ -116,7 +116,7 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
         if (principal != null) {
             accessLogEntry.setUserPrincipal(principal);
         }
-        X509Certificate[] clientCert = (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
+        X509Certificate[] clientCert = (X509Certificate[]) request.getAttribute(ServletRequest.SERVLET_REQUEST_X509CERT);
         if (clientCert != null && clientCert.length > 0) {
             accessLogEntry.setSslPrincipal(clientCert[0].getSubjectX500Principal());
         }

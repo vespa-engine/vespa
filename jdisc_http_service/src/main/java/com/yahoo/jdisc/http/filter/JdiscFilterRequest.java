@@ -3,13 +3,16 @@ package com.yahoo.jdisc.http.filter;
 
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
+import com.yahoo.jdisc.http.servlet.ServletRequest;
 
 import java.net.URI;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * JDisc implementation of a filter request.
@@ -111,6 +114,11 @@ public class JdiscFilterRequest extends DiscFilterRequest {
     @Override
     public void setUserPrincipal(Principal principal) {
         this.parent.setUserPrincipal(principal);
+    }
+
+    @Override
+    public Optional<X509Certificate[]> getClientCertificateChain() {
+        return Optional.ofNullable((X509Certificate[]) parent.context().get(ServletRequest.JDISC_REQUEST_X509CERT));
     }
 
     @Override

@@ -11,6 +11,7 @@ import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpRequest;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -368,6 +370,8 @@ public abstract class DiscFilterRequest {
     }
 
     public abstract void setUserPrincipal(Principal principal);
+
+    public abstract Optional<X509Certificate[]> getClientCertificateChain();
 
     public void setUserRoles(String[] roles) {
         this.roles = roles;
