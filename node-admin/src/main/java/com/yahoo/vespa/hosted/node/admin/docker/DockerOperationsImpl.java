@@ -96,6 +96,10 @@ public class DockerOperationsImpl implements DockerOperations {
                 command.withVolume("/var/lib/sia", "/var/lib/sia");
             }
 
+            if (environment.getNodeType() == NodeType.proxyhost) {
+                command.withVolume("/opt/yahoo/share/ssl/certs/", "/opt/yahoo/share/ssl/certs/");
+            }
+
             if (!docker.networkNPTed()) {
                 command.withIpAddress(nodeInetAddress);
                 command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
