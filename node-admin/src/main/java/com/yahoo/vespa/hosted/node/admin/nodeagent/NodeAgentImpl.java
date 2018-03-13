@@ -261,7 +261,9 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void startContainer(ContainerNodeSpec nodeSpec) {
-        createContainerData(nodeSpec);
+        // ContainerData only works when root, which is the case only for HostAdmin so far.
+        if (environment.getZone().contains("aws-"))
+            createContainerData(nodeSpec);
         dockerOperations.createContainer(containerName, nodeSpec);
         dockerOperations.startContainer(containerName, nodeSpec);
         aclMaintainer.run();
@@ -695,6 +697,7 @@ public class NodeAgentImpl implements NodeAgent {
         logger.info("Creating files for message of the day and the bash prompt");
         new MotdContainerData(nodeSpec, environment).writeTo(containerData);
         new PromptContainerData(environment).writeTo(containerData);
+
     }
 
 }
