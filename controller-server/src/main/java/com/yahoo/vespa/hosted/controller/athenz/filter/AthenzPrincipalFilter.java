@@ -81,7 +81,7 @@ public class AthenzPrincipalFilter implements SecurityRequestFilter {
     }
 
     private static Optional<X509Certificate> getClientCertificate(DiscFilterRequest request) {
-        return Optional.ofNullable((X509Certificate[]) request.getAttribute("jdisc.request.X509Certificate"))
+        return request.getClientCertificateChain()
                 .map(chain -> chain[0]);
     }
 
