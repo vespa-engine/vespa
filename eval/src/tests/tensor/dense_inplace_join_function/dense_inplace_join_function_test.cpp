@@ -144,4 +144,12 @@ TEST("require that mapped tensors are not optimized") {
     TEST_DO(verify_not_optimized("mut_x_sparse+mut_x_sparse"));
 }
 
+TEST("require that inplace join can be debug dumped") {
+    EvalFixture fixture(prod_engine, "con_x5_A-mut_x5_B", param_repo, true, true);
+    auto info = fixture.find_all<DenseInplaceJoinFunction>();
+    ASSERT_EQUAL(info.size(), 1u);
+    EXPECT_TRUE(info[0]->result_is_mutable());
+    fprintf(stderr, "%s\n", info[0]->as_string().c_str());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

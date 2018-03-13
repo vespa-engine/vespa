@@ -112,20 +112,6 @@ private:
     Node_UP _child;
     std::vector<vespalib::string> _from;
     std::vector<vespalib::string> _to;
-    static vespalib::string flatten(const std::vector<vespalib::string> &list) {
-        if (list.size() == 1) {
-            return list[0];
-        }
-        vespalib::string str = "(";
-        for (size_t i = 0; i < list.size(); ++i) {
-            if (i > 0) {
-                str += ",";
-            }
-            str += list[i];
-        }
-        str += ")";
-        return str;
-    }
 public:
     TensorRename(Node_UP child, std::vector<vespalib::string> from_in, std::vector<vespalib::string> to_in)
         : _child(std::move(child)), _from(std::move(from_in)), _to(std::move(to_in)) {}
@@ -150,6 +136,20 @@ public:
     }
     void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_child));
+    }
+    static vespalib::string flatten(const std::vector<vespalib::string> &list) {
+        if (list.size() == 1) {
+            return list[0];
+        }
+        vespalib::string str = "(";
+        for (size_t i = 0; i < list.size(); ++i) {
+            if (i > 0) {
+                str += ",";
+            }
+            str += list[i];
+        }
+        str += ")";
+        return str;
     }
 };
 

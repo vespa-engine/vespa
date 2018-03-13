@@ -19,6 +19,7 @@
 namespace vespalib {
 
 class Stash;
+class ObjectVisitor;
 
 namespace eval {
 
@@ -99,6 +100,12 @@ struct TensorFunction
      **/
     virtual void dump_tree(DumpTarget &target) const = 0;
 
+    // for debug dumping
+    vespalib::string as_string() const;
+    virtual vespalib::string class_name() const;
+    virtual void visit_self(vespalib::ObjectVisitor &visitor) const;
+    virtual void visit_children(vespalib::ObjectVisitor &visitor) const;
+
     virtual ~TensorFunction() {}
 };
 
@@ -144,6 +151,7 @@ public:
         : Node(result_type_in), _child(child_in) {}
     const TensorFunction &child() const { return _child.get(); }    
     void push_children(std::vector<Child::CREF> &children) const final override;
+    void visit_children(vespalib::ObjectVisitor &visitor) const final override;
 };
 
 class Op2 : public Node
@@ -159,6 +167,7 @@ public:
     const TensorFunction &lhs() const { return _lhs.get(); }
     const TensorFunction &rhs() const { return _rhs.get(); }
     void push_children(std::vector<Child::CREF> &children) const final override;
+    void visit_children(vespalib::ObjectVisitor &visitor) const final override;
 };
 
 //-----------------------------------------------------------------------------
@@ -172,6 +181,7 @@ public:
     bool result_is_mutable() const override { return false; }
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
     void dump_tree(DumpTarget &target) const override;
+    void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -187,6 +197,7 @@ public:
     bool result_is_mutable() const override { return false; }
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
     void dump_tree(DumpTarget &target) const override;
+    void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -207,6 +218,7 @@ public:
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
     void dump_tree(DumpTarget &target) const override;
+    void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -224,6 +236,7 @@ public:
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(Stash &stash) const override;
     void dump_tree(DumpTarget &target) const override;
+    void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -242,6 +255,7 @@ public:
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(Stash &stash) const override;
     void dump_tree(DumpTarget &target) const override;
+    void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -260,6 +274,7 @@ public:
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
     void dump_tree(DumpTarget &target) const override;
+    void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -280,6 +295,7 @@ public:
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
     void dump_tree(DumpTarget &target) const override;
+    void visit_self(vespalib::ObjectVisitor &visitor) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -306,6 +322,7 @@ public:
     }
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
     void dump_tree(DumpTarget &target) const override;
+    void visit_children(vespalib::ObjectVisitor &visitor) const final override;
 };
 
 //-----------------------------------------------------------------------------

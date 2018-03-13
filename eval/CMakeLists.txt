@@ -2,6 +2,7 @@
 vespa_define_module(
     DEPENDS
     vespalib
+    staging_vespalib
 
     APPS
     src/apps/eval_expr

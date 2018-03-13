@@ -26,6 +26,7 @@ public:
     bool result_is_mutable() const override { return true; }
     eval::InterpretedFunction::Instruction compile_self(Stash &stash) const override;
     void dump_tree(eval::DumpTarget &target) const override;
+    void visit_self(vespalib::ObjectVisitor &visitor) const override;
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };
 

@@ -336,4 +336,26 @@ TEST("require that push_children works") {
     //-------------------------------------------------------------------------
 }
 
+TEST("require that tensor function can be dumped for debugging") {
+    Stash stash;
+    auto my_value_1 = stash.create<DoubleValue>(5.0);
+    auto my_value_2 = stash.create<DoubleValue>(1.0);
+    //-------------------------------------------------------------------------
+    const auto &x5 = inject(ValueType::from_spec("tensor(x[5])"), 0, stash);
+    const auto &mapped_x5 = map(x5, operation::Relu::f, stash);
+    const auto &const_1 = const_value(my_value_1, stash);
+    const auto &joined_x5 = join(mapped_x5, const_1, operation::Mul::f, stash);
+    //-------------------------------------------------------------------------
+    const auto &x2 = inject(ValueType::from_spec("tensor(x[2])"), 1, stash);
+    const auto &a3y10 = inject(ValueType::from_spec("tensor(a[3],y[10])"), 2, stash);
+    const auto &a3 = reduce(a3y10, Aggr::SUM, {"y"}, stash);
+    const auto &x3 = rename(a3, {"a"}, {"x"}, stash);
+    const auto &concat_x5 = concat(x3, x2, "x", stash);
+    //-------------------------------------------------------------------------
+    const auto &const_2 = const_value(my_value_2, stash);
+    const auto &root = if_node(const_2, joined_x5, concat_x5, stash);
+    EXPECT_EQUAL(root.result_type(), ValueType::from_spec("tensor(x[5])"));
+    fprintf(stderr, "function dump -->[[%s]]<-- function dump\n", root.as_string().c_str());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -6,9 +6,46 @@
 #include "tensor.h"
 #include "tensor_engine.h"
 #include "simple_tensor_engine.h"
+#include "visit_stuff.h"
+#include <vespa/vespalib/objects/visit.hpp>
+#include <vespa/vespalib/objects/objectdumper.h>
+#include <vespa/vespalib/util/classname.h>
 
 namespace vespalib {
 namespace eval {
+
+vespalib::string
+TensorFunction::as_string() const
+{
+    ObjectDumper dumper;
+    ::visit(dumper, "", *this);
+    return dumper.toString();
+}
+
+vespalib::string
+TensorFunction::class_name() const
+{
+    return vespalib::getClassName(*this);
+}
+
+void
+TensorFunction::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    visitor.visitString("result_type", result_type().to_spec());
+    visitor.visitBool("result_is_mutable", result_is_mutable());
+}
+
+void
+TensorFunction::visit_children(vespalib::ObjectVisitor &visitor) const
+{
+    std::vector<vespalib::eval::TensorFunction::Child::CREF> children;
+    push_children(children);
+    for (size_t i = 0; i < children.size(); ++i) {
+        vespalib::string name = vespalib::make_string("children[%zu]", i);
+        ::visit(visitor, name, children[i].get().get());
+    }
+}
+
 namespace tensor_function {
 
 namespace {
@@ -94,6 +131,8 @@ Leaf::push_children(std::vector<Child::CREF> &) const
 {
 }
 
+//-----------------------------------------------------------------------------
+
 void
 Op1::push_children(std::vector<Child::CREF> &children) const
 {
@@ -101,10 +140,25 @@ Op1::push_children(std::vector<Child::CREF> &children) const
 }
 
 void
+Op1::visit_children(vespalib::ObjectVisitor &visitor) const
+{
+    ::visit(visitor, "child", _child.get());
+}
+
+//-----------------------------------------------------------------------------
+
+void
 Op2::push_children(std::vector<Child::CREF> &children) const
 {
     children.emplace_back(_lhs);
     children.emplace_back(_rhs);
+}
+
+void
+Op2::visit_children(vespalib::ObjectVisitor &visitor) const
+{
+    ::visit(visitor, "lhs", _lhs.get());
+    ::visit(visitor, "rhs", _rhs.get());
 }
 
 //-----------------------------------------------------------------------------
@@ -121,6 +175,16 @@ ConstValue::dump_tree(DumpTarget &target) const
     target.node("ConstValue");
 }
 
+void
+ConstValue::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Leaf::visit_self(visitor);
+    if (result_type().is_double()) {
+        visitor.visitFloat("value", _value.as_double());
+    } else {
+        visitor.visitString("value", "...");
+    }
+}
 
 //-----------------------------------------------------------------------------
 
@@ -136,6 +200,12 @@ Inject::dump_tree(DumpTarget &target) const
     target.node("Inject");
 }
 
+void
+Inject::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Leaf::visit_self(visitor);
+    visitor.visitInt("param_idx", _param_idx);
+}
 
 //-----------------------------------------------------------------------------
 
@@ -155,6 +225,14 @@ Reduce::dump_tree(DumpTarget &target) const
     target.child("child", child());
 }
 
+void
+Reduce::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Op1::visit_self(visitor);
+    ::visit(visitor, "aggr", _aggr);
+    ::visit(visitor, "dimensions", visit::DimList(_dimensions));
+}
+
 //-----------------------------------------------------------------------------
 
 Instruction
@@ -172,6 +250,13 @@ Map::dump_tree(DumpTarget &target) const
     target.node("Map");
     target.arg("function").value(function());
     target.child("child", child());
+}
+
+void
+Map::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Op1::visit_self(visitor);
+    ::visit(visitor, "function", _function);
 }
 
 //-----------------------------------------------------------------------------
@@ -200,6 +285,12 @@ Join::dump_tree(DumpTarget &target) const
     target.child("rhs", rhs());
 }
 
+void
+Join::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Op2::visit_self(visitor);
+    ::visit(visitor, "function", _function);
+}
 
 //-----------------------------------------------------------------------------
 
@@ -218,6 +309,13 @@ Concat::dump_tree(DumpTarget &target) const
     target.child("rhs", rhs());
 }
 
+void
+Concat::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Op2::visit_self(visitor);
+    visitor.visitString("dimension", _dimension);
+}
+
 //-----------------------------------------------------------------------------
 
 Instruction
@@ -227,7 +325,6 @@ Rename::compile_self(Stash &stash) const
     return Instruction(op_tensor_rename, wrap_param<RenameParams>(params));
 }
 
-
 void
 Rename::dump_tree(DumpTarget &target) const
 {
@@ -235,6 +332,13 @@ Rename::dump_tree(DumpTarget &target) const
     target.arg("from").value(from());
     target.arg("to").value(to());
     target.child("child", child());
+}
+
+void
+Rename::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Op1::visit_self(visitor);
+    ::visit(visitor, "from_to", visit::FromTo(_from, _to));
 }
 
 //-----------------------------------------------------------------------------
@@ -262,6 +366,14 @@ If::dump_tree(DumpTarget &target) const
     target.child("cond", _cond.get());
     target.child("t_child", _true_child.get());
     target.child("f_child", _false_child.get());
+}
+
+void
+If::visit_children(vespalib::ObjectVisitor &visitor) const
+{
+    ::visit(visitor, "cond", _cond.get());
+    ::visit(visitor, "true_child", _true_child.get());
+    ::visit(visitor, "false_child", _false_child.get());
 }
 
 //-----------------------------------------------------------------------------

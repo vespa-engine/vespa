@@ -3,6 +3,7 @@
 #include "dense_inplace_join_function.h"
 #include "dense_tensor.h"
 #include "dense_tensor_view.h"
+#include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/tensor/tensor.h>
 
@@ -72,6 +73,13 @@ DenseInplaceJoinFunction::dump_tree(eval::DumpTarget &target) const
 {
     target.node("DenseInplaceJoin replacing:");
     Join::dump_tree(target);
+}
+
+void
+DenseInplaceJoinFunction::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Join::visit_self(visitor);
+    visitor.visitBool("write_left", _write_left);
 }
 
 const TensorFunction &
