@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
@@ -45,7 +44,7 @@ public class ApplicationOwnershipConfirmerTest {
         Supplier<Application> propertyApp = () -> tester.controller().applications().require(ApplicationId.from("property", "application", "default"));
 
         TenantId user = new TenantId("by-user");
-        tester.controller().tenants().addTenant(Tenant.createUserTenant(user), Optional.empty());
+        tester.controller().tenants().createUserTenant("user");
         tester.createAndDeploy(user, "application", 2, "default");
         Supplier<Application> userApp = () -> tester.controller().applications().require(ApplicationId.from("by-user", "application", "default"));
 

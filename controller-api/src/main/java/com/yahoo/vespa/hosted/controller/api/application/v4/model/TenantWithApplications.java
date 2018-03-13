@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 
 import java.util.List;
 
@@ -19,7 +18,6 @@ public class TenantWithApplications {
     public TenantType type;
     public AthenzDomain athensDomain;
     public Property property;
-    public UserGroup userGroup;
     public List<ApplicationReference> applications;
 
     public TenantWithApplications() {}
@@ -28,12 +26,10 @@ public class TenantWithApplications {
             TenantType type,
             AthenzDomain athensDomain,
             Property property,
-            UserGroup userGroup,
             List<ApplicationReference> applications) {
         this.type = type;
         this.athensDomain = athensDomain;
         this.property = property;
-        this.userGroup = userGroup;
         this.applications = applications;
     }
 }

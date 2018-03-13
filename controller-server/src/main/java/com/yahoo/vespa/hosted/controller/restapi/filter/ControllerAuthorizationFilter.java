@@ -167,13 +167,6 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
             case ATHENS:
                 return clientFactory.createZmsClientWithServicePrincipal()
                         .hasTenantAdminAccess(identity, tenant.getAthensDomain().get());
-            case OPSDB: {
-                if (!(identity instanceof AthenzUser)) {
-                    return false;
-                }
-                AthenzUser user = (AthenzUser) identity;
-                return entityService.isGroupMember(new UserId(user.getName()), tenant.getUserGroup().get());
-            }
             case USER: {
                 if (!(identity instanceof AthenzUser)) {
                     return false;

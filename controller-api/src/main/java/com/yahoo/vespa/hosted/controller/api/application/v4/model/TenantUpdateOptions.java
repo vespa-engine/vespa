@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -20,14 +19,11 @@ import java.util.Optional;
 @JsonInclude(value = JsonInclude.Include.NON_ABSENT)
 public class TenantUpdateOptions {
     public final Property property;
-    public final Optional<UserGroup> userGroup;
     public final Optional<AthenzDomain> athensDomain;
 
     @JsonCreator
     public TenantUpdateOptions(@JsonProperty("property") Property property,
-                               @JsonProperty("userGroup") Optional<UserGroup> userGroup,
                                @JsonProperty("athensDomain") Optional<AthenzDomain> athensDomain) {
-        this.userGroup = userGroup;
         this.property = property;
         this.athensDomain = athensDomain;
     }
@@ -38,20 +34,18 @@ public class TenantUpdateOptions {
         if (o == null || getClass() != o.getClass()) return false;
         TenantUpdateOptions that = (TenantUpdateOptions) o;
         return Objects.equals(property, that.property) &&
-                Objects.equals(userGroup, that.userGroup) &&
                 Objects.equals(athensDomain, that.athensDomain);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(property, userGroup, athensDomain);
+        return Objects.hash(property, athensDomain);
     }
 
     @Override
     public String toString() {
         return "TenantUpdateOptions{" +
                 "property=" + property +
-                ", userGroup=" + userGroup +
                 ", athensDomain=" + athensDomain +
                 '}';
     }

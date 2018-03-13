@@ -8,7 +8,6 @@ import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
@@ -61,16 +60,13 @@ public class TenantController {
     }
 
     public List<Tenant> asList(UserId user) {
-        Set<UserGroup> userGroups = entityService.getUserGroups(user);
         Set<AthenzDomain> userDomains = new HashSet<>(athenzClientFactory.createZtsClientWithServicePrincipal()
                                                               .getTenantDomainsForUser(AthenzUser.fromUserId(user.id())));
-
-        Predicate<Tenant> hasUsersGroup = (tenant) -> tenant.getUserGroup().isPresent() && userGroups.contains(tenant.getUserGroup().get());
         Predicate<Tenant> hasUsersDomain = (tenant) -> tenant.getAthensDomain().isPresent() && userDomains.contains(tenant.getAthensDomain().get());
         Predicate<Tenant> isUserTenant = (tenant) -> tenant.getId().equals(user.toTenantId());
 
         return asList().stream()
-                .filter(t -> hasUsersGroup.test(t) || hasUsersDomain.test(t) || isUserTenant.test(t))
+                .filter(t -> hasUsersDomain.test(t) || isUserTenant.test(t))
                 .collect(Collectors.toList());
     }
 
@@ -83,11 +79,10 @@ public class TenantController {
         }
     }
 
-    /** Creates an Athens or OpsDb tenant. */
-    // TODO: Rename to createAthensTenant and move creation here when opsDbTenant creation is removed */
-    public void addTenant(Tenant tenant, Optional<NToken> token) {
+    /** Creates an Athens tenant. */
+    public void createAthenzTenant(Tenant tenant, NToken token) {
         try (Lock lock = lock(tenant.getId())) {
-            internalCreateTenant(tenant, token);
+            internalCreateTenant(tenant, Optional.of(token));
         }
     }
 

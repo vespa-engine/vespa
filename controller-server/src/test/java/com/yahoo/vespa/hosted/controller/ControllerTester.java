@@ -196,7 +196,7 @@ public final class ControllerTester {
 
         Tenant tenant = Tenant.createAthensTenant(id, createDomain(domainName), new Property("app1Property"),
                 propertyId == null ? Optional.empty() : Optional.of(new PropertyId(propertyId.toString())));
-        controller().tenants().addTenant(tenant, Optional.of(TestIdentities.userNToken));
+        controller().tenants().createAthenzTenant(tenant, TestIdentities.userNToken);
         assertNotNull(controller().tenants().tenant(id));
         return id;
     }

@@ -23,6 +23,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -49,7 +50,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
@@ -631,18 +631,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             case USER: {
                 throw new BadRequestException("Cannot set property or OpsDB user group for user tenant");
             }
-            case OPSDB: {
-                UserGroup userGroup = new UserGroup(mandatory("userGroup", requestData).asString());
-                updatedTenant = Tenant.createOpsDbTenant(new TenantId(tenantName),
-                                                         userGroup,
-                                                         new Property(mandatory("property", requestData).asString()),
-                                                         optional("propertyId", requestData).map(PropertyId::new));
-                controller.tenants().updateTenant(updatedTenant, getUserPrincipal(request).getNToken());
-                break;
-            }
             case ATHENS: {
-                if (requestData.field("userGroup").valid())
-                    throw new BadRequestException("Cannot set OpsDB user group to Athens tenant");
                 updatedTenant = Tenant.createAthensTenant(new TenantId(tenantName),
                                                           new AthenzDomain(mandatory("athensDomain", requestData).asString()),
                                                           new Property(mandatory("property", requestData).asString()),
@@ -664,14 +653,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Inspector requestData = toSlime(request.getData()).get();
 
         Tenant tenant = new Tenant(new TenantId(tenantName),
-                                   optional("userGroup", requestData).map(UserGroup::new),
                                    optional("property", requestData).map(Property::new),
                                    optional("athensDomain", requestData).map(AthenzDomain::new),
                                    optional("propertyId", requestData).map(PropertyId::new));
         if (tenant.isAthensTenant())
             throwIfNotAthenzDomainAdmin(new AthenzDomain(mandatory("athensDomain", requestData).asString()), request);
 
-        controller.tenants().addTenant(tenant, getUserPrincipal(request).getNToken());
+        NToken token = getUserPrincipal(request).getNToken()
+                .orElseThrow(() -> new IllegalArgumentException("Could not create " + tenant + ": No NToken provided"));
+        controller.tenants().createAthenzTenant(tenant, token);
         return tenant(tenant, request, true);
     }
 
@@ -921,7 +911,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         tenant.getAthensDomain().ifPresent(a -> object.setString("athensDomain", a.getName()));
         tenant.getProperty().ifPresent(p -> object.setString("property", p.id()));
         tenant.getPropertyId().ifPresent(p -> object.setString("propertyId", p.toString()));
-        tenant.getUserGroup().ifPresent(g -> object.setString("userGroup", g.id()));
         Cursor applicationArray = object.setArray("applications");
         if (listApplications) { // This cludge is needed because we call this after deleting the tenant. As this call makes another tenant lookup it will fail. TODO is to support lookup on tenant
             for (Application application : controller.applications().asList(TenantName.from(tenant.getId().id()))) {
@@ -959,7 +948,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         metaData.setString("type", tenant.tenantType().name());
         tenant.getAthensDomain().ifPresent(a -> metaData.setString("athensDomain", a.getName()));
         tenant.getProperty().ifPresent(p -> metaData.setString("property", p.id()));
-        tenant.getUserGroup().ifPresent(g -> metaData.setString("userGroup", g.id()));
         object.setString("url", withPath("/application/v4/tenant/" + tenant.getId().id(), requestURI).toString());
     }
 
