@@ -27,5 +27,6 @@ vespa_add_library(eval_eval OBJECT
     value.cpp
     value_type.cpp
     value_type_spec.cpp
+    visit_stuff.cpp
     vm_forest.cpp
 )

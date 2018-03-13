@@ -3,6 +3,7 @@
 #include "dense_xw_product_function.h"
 #include "dense_tensor.h"
 #include "dense_tensor_view.h"
+#include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/tensor/tensor.h>
@@ -144,6 +145,14 @@ DenseXWProductFunction::dump_tree(eval::DumpTarget &target) const
     target.child("rhs", rhs());
 }
 
+void
+DenseXWProductFunction::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Op2::visit_self(visitor);
+    visitor.visitInt("vector_size", _vectorSize);
+    visitor.visitInt("result_size", _resultSize);
+    visitor.visitBool("common_dimension_innermost", _commonDimensionInnermost);
+}
 
 const TensorFunction &
 DenseXWProductFunction::optimize(const eval::TensorFunction &expr, Stash &stash)

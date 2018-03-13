@@ -13,9 +13,6 @@ class DenseInplaceMapFunction : public eval::tensor_function::Map
 {
 public:
     using map_fun_t = ::vespalib::eval::tensor_function::map_fun_t;
-private:
-    map_fun_t _function;
-public:
     DenseInplaceMapFunction(const eval::ValueType &result_type,
                             const eval::TensorFunction &child,
                             map_fun_t function_in);

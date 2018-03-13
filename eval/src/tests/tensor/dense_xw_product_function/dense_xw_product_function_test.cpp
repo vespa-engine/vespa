@@ -124,4 +124,12 @@ TEST("require that xw products with incompatible dimensions are not optimized") 
     TEST_DO(verify_not_optimized("reduce(y3*x2z3,sum,z)"));
 }
 
+TEST("require that xw product can be debug dumped") {
+    EvalFixture fixture(prod_engine, "reduce(y5*x8y5,sum,y)", param_repo, true);
+    auto info = fixture.find_all<DenseXWProductFunction>();
+    ASSERT_EQUAL(info.size(), 1u);
+    EXPECT_TRUE(info[0]->result_is_mutable());
+    fprintf(stderr, "%s\n", info[0]->as_string().c_str());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
