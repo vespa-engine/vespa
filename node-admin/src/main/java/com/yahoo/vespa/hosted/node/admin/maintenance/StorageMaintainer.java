@@ -136,6 +136,10 @@ public class StorageMaintainer {
 
     // Public for testing
     long getDiskUsedInBytes(Path path) throws IOException, InterruptedException {
+        if (!Files.exists(path)) {
+            return 0;
+        }
+
         final String[] command = {"du", "-xsk", path.toString()};
 
         Process duCommand = new ProcessBuilder().command(command).start();
