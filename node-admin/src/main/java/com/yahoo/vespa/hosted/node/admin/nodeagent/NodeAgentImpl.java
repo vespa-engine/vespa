@@ -262,7 +262,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void startContainer(ContainerNodeSpec nodeSpec) {
         // ContainerData only works when root, which is the case only for HostAdmin so far.
-        if (environment.getZone().contains("aws-"))
+        if (environment.getRegion().startsWith("aws-"))
             createContainerData(nodeSpec);
         dockerOperations.createContainer(containerName, nodeSpec);
         dockerOperations.startContainer(containerName, nodeSpec);
