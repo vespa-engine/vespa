@@ -26,17 +26,6 @@ class PendingMessageTrackerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testGetPendingMessageTypes);
     CPPUNIT_TEST(testHasPendingMessage);
     CPPUNIT_TEST(testGetAllMessagesForSingleBucket);
-    CPPUNIT_TEST(nodeStatsCanBeOutputStreamed);
-    CPPUNIT_TEST(totalPutLatencyIsInitiallyZero);
-    CPPUNIT_TEST(statsNotAlteredBeforeReplyReceived);
-    CPPUNIT_TEST(totalPutLatencyIsTrackedForSingleRequest);
-    CPPUNIT_TEST(statsAreTrackedSeparatelyPerNode);
-    CPPUNIT_TEST(onlyPutMessagesAreTracked);
-    CPPUNIT_TEST(totalPutLatencyIsAggregatedAcrossRequests);
-    CPPUNIT_TEST(clearingMessagesDoesNotAffectStats);
-    CPPUNIT_TEST(timeTravellingClockLatenciesNotRegistered);
-    CPPUNIT_TEST(statsSnapshotIncludesAllNodes);
-    CPPUNIT_TEST(latencyProviderForwardsToImplementation);
     CPPUNIT_TEST(busy_reply_marks_node_as_busy);
     CPPUNIT_TEST(busy_node_duration_can_be_adjusted);
     CPPUNIT_TEST_SUITE_END();
@@ -48,39 +37,13 @@ public:
     void testGetPendingMessageTypes();
     void testHasPendingMessage();
     void testGetAllMessagesForSingleBucket();
-    void nodeStatsCanBeOutputStreamed();
-    void totalPutLatencyIsInitiallyZero();
-    void statsNotAlteredBeforeReplyReceived();
-    void totalPutLatencyIsTrackedForSingleRequest();
-    void statsAreTrackedSeparatelyPerNode();
-    void onlyPutMessagesAreTracked();
-    void totalPutLatencyIsAggregatedAcrossRequests();
-    void clearingMessagesDoesNotAffectStats();
-    void timeTravellingClockLatenciesNotRegistered();
-    void statsSnapshotIncludesAllNodes();
-    void latencyProviderForwardsToImplementation();
     void busy_reply_marks_node_as_busy();
     void busy_node_duration_can_be_adjusted();
 
 private:
     void insertMessages(PendingMessageTracker& tracker);
 
-    OperationStats makeOpStats(std::chrono::milliseconds totalLatency,
-                               uint64_t numRequests) const
-    {
-        OperationStats stats;
-        stats.totalLatency = totalLatency;
-        stats.numRequests = numRequests;
-        return stats;
-    }
 };
-
-bool
-operator==(const OperationStats& a, const OperationStats& b)
-{
-    return (a.totalLatency == b.totalLatency
-            && a.numRequests == b.numRequests);
-}
 
 namespace {
 
@@ -158,10 +121,6 @@ public:
     {
         auto put = sendPut(RequestBuilder().atTime(1000ms).toNode(node));
         sendPutReply(*put, RequestBuilder().atTime(1000ms + latency));
-    }
-
-    OperationStats getNodePutOperationStats(uint16_t node) {
-        return _tracker->getNodeStats(node).puts;
     }
 
     PendingMessageTracker& tracker() { return *_tracker; }
@@ -539,137 +498,6 @@ PendingMessageTrackerTest::testGetAllMessagesForSingleBucket()
         tracker.checkPendingMessages(makeDocumentBucket(document::BucketId(16, 9876)), enumerator);
         CPPUNIT_ASSERT_EQUAL(std::string(""), enumerator.str());
     }
-}
-
-void
-PendingMessageTrackerTest::nodeStatsCanBeOutputStreamed()
-{
-    NodeStats stats;
-    stats.puts = makeOpStats(56789ms, 10);
-
-    std::ostringstream os;
-    os << stats;
-    std::string expected(
-            "NodeStats(puts=OperationStats("
-                "totalLatency=56789ms, "
-                "numRequests=10))");
-    CPPUNIT_ASSERT_EQUAL(expected, os.str());
-}
-
-void
-PendingMessageTrackerTest::totalPutLatencyIsInitiallyZero()
-{
-    Fixture fixture;
-    CPPUNIT_ASSERT_EQUAL(makeOpStats(0ms, 0),
-                         fixture.getNodePutOperationStats(0));
-}
-
-void
-PendingMessageTrackerTest::statsNotAlteredBeforeReplyReceived()
-{
-    Fixture fixture;
-    fixture.sendPut(RequestBuilder().atTime(1000ms).toNode(0));
-    CPPUNIT_ASSERT_EQUAL(makeOpStats(0ms, 0),
-                         fixture.getNodePutOperationStats(0));
-}
-
-void
-PendingMessageTrackerTest::totalPutLatencyIsTrackedForSingleRequest()
-{
-    Fixture fixture;
-    fixture.sendPutAndReplyWithLatency(0, 500ms);
-
-    CPPUNIT_ASSERT_EQUAL(makeOpStats(500ms, 1),
-                         fixture.getNodePutOperationStats(0));
-}
-
-void
-PendingMessageTrackerTest::statsAreTrackedSeparatelyPerNode()
-{
-    Fixture fixture;
-    fixture.sendPutAndReplyWithLatency(0, 500ms);
-    fixture.sendPutAndReplyWithLatency(1, 600ms);
-
-    CPPUNIT_ASSERT_EQUAL(makeOpStats(500ms, 1),
-                         fixture.getNodePutOperationStats(0));
-    CPPUNIT_ASSERT_EQUAL(makeOpStats(600ms, 1),
-                         fixture.getNodePutOperationStats(1));
-}
-
-// Necessarily, this test will have to be altered when we add tracking of
-// other message types as well.
-void
-PendingMessageTrackerTest::onlyPutMessagesAreTracked()
-{
-    Fixture fixture;
-    auto remove = fixture.sendRemove(
-            RequestBuilder().atTime(1000ms).toNode(0));
-    fixture.sendRemoveReply(*remove, RequestBuilder().atTime(2000ms));
-    CPPUNIT_ASSERT_EQUAL(makeOpStats(0ms, 0),
-                         fixture.getNodePutOperationStats(0));
-}
-
-void
-PendingMessageTrackerTest::totalPutLatencyIsAggregatedAcrossRequests()
-{
-    Fixture fixture;
-    // Model 2 concurrent puts to node 0.
-    fixture.sendPutAndReplyWithLatency(0, 500ms);
-    fixture.sendPutAndReplyWithLatency(0, 600ms);
-    CPPUNIT_ASSERT_EQUAL(makeOpStats(1100ms, 2),
-                         fixture.getNodePutOperationStats(0));
-}
-
-void
-PendingMessageTrackerTest::clearingMessagesDoesNotAffectStats()
-{
-    Fixture fixture;
-    fixture.sendPutAndReplyWithLatency(2, 2000ms);
-    fixture.tracker().clearMessagesForNode(2);
-    CPPUNIT_ASSERT_EQUAL(makeOpStats(2000ms, 1),
-                         fixture.getNodePutOperationStats(2));
-}
-
-void
-PendingMessageTrackerTest::timeTravellingClockLatenciesNotRegistered()
-{
-    Fixture fixture;
-    auto put = fixture.sendPut(RequestBuilder().atTime(1000ms).toNode(0));
-    fixture.sendPutReply(*put, RequestBuilder().atTime(999ms));
-    // Latency increase of zero, but we do count the request itself.
-    CPPUNIT_ASSERT_EQUAL(makeOpStats(0ms, 1),
-                         fixture.getNodePutOperationStats(0));
-}
-
-void
-PendingMessageTrackerTest::statsSnapshotIncludesAllNodes()
-{
-    Fixture fixture;
-    fixture.sendPutAndReplyWithLatency(0, 500ms);
-    fixture.sendPutAndReplyWithLatency(1, 600ms);
-
-    NodeStatsSnapshot snapshot = fixture.tracker().getLatencyStatistics();
-
-    CPPUNIT_ASSERT_EQUAL(size_t(2), snapshot.nodeToStats.size());
-    CPPUNIT_ASSERT_EQUAL(makeOpStats(500ms, 1),
-                         snapshot.nodeToStats[0].puts);
-    CPPUNIT_ASSERT_EQUAL(makeOpStats(600ms, 1),
-                         snapshot.nodeToStats[1].puts);
-}
-
-void
-PendingMessageTrackerTest::latencyProviderForwardsToImplementation()
-{
-    Fixture fixture;
-    fixture.sendPutAndReplyWithLatency(0, 500ms);
-
-    LatencyStatisticsProvider& provider(
-            fixture.tracker().getLatencyStatisticsProvider());
-    NodeStatsSnapshot snapshot = provider.getLatencyStatistics();
-
-    CPPUNIT_ASSERT_EQUAL(size_t(1), snapshot.nodeToStats.size());
-    CPPUNIT_ASSERT_EQUAL(makeOpStats(500ms, 1),
-                         snapshot.nodeToStats[0].puts);
 }
 
 // TODO don't set busy for visitor replies? These will mark the node as busy today,

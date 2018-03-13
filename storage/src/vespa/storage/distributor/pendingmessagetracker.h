@@ -2,7 +2,6 @@
 #pragma once
 
 #include "nodeinfo.h"
-#include "latency_statistics_provider.h"
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/component/componentregister.h>
@@ -28,19 +27,6 @@ namespace distributor {
 
 class PendingMessageTracker : public framework::HtmlStatusReporter
 {
-    class ForwardingLatencyStatisticsProvider
-        : public LatencyStatisticsProvider
-    {
-        PendingMessageTracker& _messageTracker;
-    public:
-        ForwardingLatencyStatisticsProvider(
-                PendingMessageTracker& messageTracker)
-            : _messageTracker(messageTracker)
-        {
-        }
-
-        NodeStatsSnapshot doGetLatencyStatistics() const override;
-    };
 
 public:
     class Checker {
@@ -103,40 +89,10 @@ public:
     NodeInfo& getNodeInfo() { return _nodeInfo; }
 
     /**
-     * Get the statistics for all completed operations towards a specific
-     * storage node. "Completed" here means both successful and failed
-     * operations. Statistics are monotonically increasing within the scope of
-     * the process' lifetime and are never reset. This models how the Linux
-     * kernel reports its internal stats and means the caller must maintain
-     * value snapshots to extract meaningful time series information.
-     *
-     * If stats are requested for a node that has not had any operations
-     * complete towards it, the returned stats will be all zero.
-     *
-     * Method is thread safe and data race free.
-     *
-     * It is assumed that NodeStats is sufficiently small that returning it
-     * by value does not incur a measurable performance impact. This also
-     * prevents any data race issues in case returned stats are e.g.
-     * concurrently read by another thread such the metric snapshotting thread.
-     */
-    NodeStats getNodeStats(uint16_t node) const;
-
-    /**
      * Clears all pending messages for the given node, and returns
      * the messages erased.
      */
     std::vector<uint64_t> clearMessagesForNode(uint16_t node);
-
-    /**
-     * Must not be called when _lock is already held or there will be a
-     * deadlock.
-     */
-    NodeStatsSnapshot getLatencyStatistics() const;
-
-    LatencyStatisticsProvider& getLatencyStatisticsProvider() {
-        return _statisticsForwarder;
-    }
 
     void setNodeBusyDuration(std::chrono::seconds secs) noexcept {
         _nodeBusyDuration = secs;
@@ -212,9 +168,7 @@ private:
 
     Messages _messages;
     framework::Component _component;
-    std::unordered_map<uint16_t, NodeStats> _nodeIndexToStats;
     NodeInfo _nodeInfo;
-    ForwardingLatencyStatisticsProvider _statisticsForwarder;
     std::chrono::seconds _nodeBusyDuration;
 
     // Since distributor is currently single-threaded, this will only
@@ -233,15 +187,6 @@ private:
      * _lock MUST be held upon invocation.
      */
     void updateNodeStatsOnReply(const MessageEntry& entry);
-
-
-    /**
-     * Modifies opStats in-place with added latency based on delta from send
-     * time to current time and incremented operation count.
-     */
-    void updateOperationStats(OperationStats& opStats,
-                              const MessageEntry& entry) const;
-
 
     void getStatusStartPage(std::ostream& out) const;
     void getStatusPerNode(std::ostream& out) const;

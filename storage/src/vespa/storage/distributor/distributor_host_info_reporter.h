@@ -8,7 +8,6 @@ namespace storage {
 namespace distributor {
 
 class BucketSpacesStatsProvider;
-class LatencyStatisticsProvider;
 class MinReplicaProvider;
 struct OperationStats;
 

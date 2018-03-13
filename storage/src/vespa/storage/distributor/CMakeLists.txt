@@ -17,7 +17,6 @@ vespa_add_library(storage_distributor
     externaloperationhandler.cpp
     idealstatemanager.cpp
     idealstatemetricsset.cpp
-    latency_statistics_provider.cpp
     messagetracker.cpp
     nodeinfo.cpp
     operation_sequencer.cpp

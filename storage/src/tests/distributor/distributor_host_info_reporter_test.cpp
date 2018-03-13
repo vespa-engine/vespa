@@ -2,7 +2,6 @@
 
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/distributor/distributor_host_info_reporter.h>
-#include <vespa/storage/distributor/latency_statistics_provider.h>
 #include <vespa/storage/distributor/min_replica_provider.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/fileutil.h>

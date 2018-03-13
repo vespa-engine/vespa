@@ -7,17 +7,13 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".pendingmessages");
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 PendingMessageTracker::PendingMessageTracker(framework::ComponentRegister& cr)
     : framework::HtmlStatusReporter("pendingmessages",
                                     "Pending messages to storage nodes"),
       _component(cr, "pendingmessagetracker"),
-      _nodeIndexToStats(),
       _nodeInfo(_component.getClock()),
-      _statisticsForwarder(*this),
       _nodeBusyDuration(60),
       _lock()
 {
@@ -130,7 +126,6 @@ PendingMessageTracker::reply(const api::StorageReply& r)
     if (iter != msgs.end()) {
         bucket = iter->bucket;
         _nodeInfo.decPending(r.getAddress()->getIndex());
-        updateNodeStatsOnReply(*iter);
         api::ReturnCode::Result code = r.getResult().getResult();
         if (code == api::ReturnCode::BUSY || code == api::ReturnCode::TIMEOUT) {
             _nodeInfo.setBusy(r.getAddress()->getIndex(), _nodeBusyDuration);
@@ -140,49 +135,6 @@ PendingMessageTracker::reply(const api::StorageReply& r)
     }
 
     return bucket;
-}
-
-void
-PendingMessageTracker::updateNodeStatsOnReply(const MessageEntry& entry)
-{
-    NodeStats& stats(_nodeIndexToStats[entry.nodeIdx]);
-    switch (entry.msgType) {
-    case api::MessageType::PUT_ID:
-        updateOperationStats(stats.puts, entry);
-        break;
-    default:
-        return; // Message was for type not tracked by stats.
-    }
-}
-
-void
-PendingMessageTracker::updateOperationStats(OperationStats& opStats,
-                                            const MessageEntry& entry) const
-{
-    // Time might go backwards due to clock adjustments (here assuming clock
-    // implementation in storage framework is non-monotonic), so avoid negative
-    // latencies by clamping to delta of 0.
-    auto now = std::max(currentTime(), entry.timeStamp);
-    opStats.totalLatency += (now - entry.timeStamp);
-    ++opStats.numRequests;
-}
-
-
-NodeStatsSnapshot
-PendingMessageTracker::getLatencyStatistics() const
-{
-    std::lock_guard<std::mutex> guard(_lock);
-    NodeStatsSnapshot snapshot;
-    // Conveniently, snapshot data structure is exactly the same as our own.
-    snapshot.nodeToStats = _nodeIndexToStats;
-    return snapshot;
-}
-
-NodeStatsSnapshot
-PendingMessageTracker::ForwardingLatencyStatisticsProvider
-::doGetLatencyStatistics() const
-{
-    return _messageTracker.getLatencyStatistics();
 }
 
 namespace {
@@ -334,14 +286,4 @@ PendingMessageTracker::print(std::ostream& /*out*/,
 
 }
 
-NodeStats
-PendingMessageTracker::getNodeStats(uint16_t node) const
-{
-    std::lock_guard<std::mutex> guard(_lock);
-    auto nodeIter = _nodeIndexToStats.find(node);
-    return (nodeIter != _nodeIndexToStats.end() ? nodeIter->second
-                                                : NodeStats());
 }
-
-} // distributor
-} // storage
