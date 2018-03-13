@@ -12,6 +12,7 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
@@ -55,6 +56,8 @@ public class StatisticsSearcher extends Searcher {
     private static final String QUERIES_METRIC = "queries";
     private static final String ACTIVE_QUERIES_METRIC = "active_queries";
     private static final String PEAK_QPS_METRIC = "peak_qps";
+    private static final String COVERAGE_METRIC = "coverage_per_query";
+    private static final String DEGRADED_METRIC = "degraded_queries";
 
     private final Counter queries; // basic counter
     private final Counter failedQueries; // basic counter
@@ -71,10 +74,12 @@ public class StatisticsSearcher extends Searcher {
 
     private final PeakQpsReporter peakQpsReporter;
 
+    enum DegradedReason { MatchPhase, AdaptiveTimeout, Timeout, NonIdealState }
 
     private Metric metric;
     private Map<String, Metric.Context> chainContexts = new CopyOnWriteHashMap<>();
     private Map<String, Metric.Context> statePageOnlyContexts = new CopyOnWriteHashMap<>();
+    private Map<String, Map<DegradedReason, Metric.Context>> degradedReasonContexts = new CopyOnWriteHashMap<>();
     private java.util.Timer scheduler = new java.util.Timer(true);
 
     // Callback to measure queries in flight every five minutes
@@ -132,17 +137,12 @@ public class StatisticsSearcher extends Searcher {
         failedQueries = new Counter(FAILED_QUERIES_METRIC, manager, false);
         nullQueries = new Counter("null_queries", manager, false);
         illegalQueries = new Counter("illegal_queries", manager, false);
-        queryLatency = new Value(MEAN_QUERY_LATENCY_METRIC, manager,
-                new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
-        maxQueryLatency = new Value(MAX_QUERY_LATENCY_METRIC, manager,
-                new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
-        queryLatencyBuckets = Value.buildValue("query_latency", manager, null);
-        activeQueries = new Value(ACTIVE_QUERIES_METRIC, manager,
-                new Value.Parameters().setLogRaw(true).setCallback(new ActivitySampler()));
-        peakQPS = new Value(PEAK_QPS_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true)
-                .setNameExtension(false));
-        hitsPerQuery = new Value(HITS_PER_QUERY_METRIC, manager,
-                new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
+        queryLatency = new Value(MEAN_QUERY_LATENCY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
+        maxQueryLatency = new Value(MAX_QUERY_LATENCY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
+        queryLatencyBuckets = Value.buildValue(QUERY_LATENCY_METRIC, manager, null);
+        activeQueries = new Value(ACTIVE_QUERIES_METRIC, manager, new Value.Parameters().setLogRaw(true).setCallback(new ActivitySampler()));
+        peakQPS = new Value(PEAK_QPS_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
+        hitsPerQuery = new Value(HITS_PER_QUERY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
         emptyResults = new Counter(EMPTY_RESULTS_METRIC, manager, false);
         metricReceiver.declareGauge(QUERY_LATENCY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
 
@@ -170,6 +170,35 @@ public class StatisticsSearcher extends Searcher {
         return context;
     }
 
+    private Metric.Context getDegradedMetricContext(String chainName, Coverage coverage) {
+        Map<DegradedReason, Metric.Context> reasons = degradedReasonContexts.get(chainName);
+        if (reasons == null) {
+            DegradedReason [] reasonEnums = {
+                    DegradedReason.MatchPhase, DegradedReason.AdaptiveTimeout,
+                    DegradedReason.Timeout, DegradedReason.NonIdealState
+            };
+            reasons = new HashMap<>(4);
+            for (DegradedReason reason : reasonEnums ) {
+                Map<String, String> dimensions = new HashMap<>();
+                dimensions.put("chain", chainName);
+                dimensions.put("reason", reason.toString());
+                Metric.Context context = this.metric.createContext(dimensions);
+                reasons.put(reason, context);
+            }
+            degradedReasonContexts.put(chainName, reasons);
+        }
+        if (coverage.isDegradedByMatchPhase()) {
+            return reasons.get(DegradedReason.MatchPhase);
+        }
+        if (coverage.isDegradedByTimeout()) {
+            return reasons.get(DegradedReason.Timeout);
+        }
+        if (coverage.isDegradedByAdapativeTimeout()) {
+            return reasons.get(DegradedReason.AdaptiveTimeout);
+        }
+        return reasons.get(DegradedReason.NonIdealState);
+    }
+
     /**
      * Generate statistics for the query passing through this Searcher
      * 1) Add 1 to total query count
@@ -177,7 +206,7 @@ public class StatisticsSearcher extends Searcher {
      * 3) .....
      */
     public Result search(com.yahoo.search.Query query, Execution execution) {
-        if(query.properties().getBoolean(IGNORE_QUERY,false)){
+        if (query.properties().getBoolean(IGNORE_QUERY,false)) {
             return execution.search(query);
         }
 
@@ -207,10 +236,16 @@ public class StatisticsSearcher extends Searcher {
         }
         if (result.hits().getError() != null) {
             incrErrorCount(result, metricContext);
-            incrementStatePageOnlyErrors(result, execution);
+            incrementStatePageOnlyErrors(result);
+        }
+        Coverage queryCoverage = result.getCoverage(false);
+        if (queryCoverage.isDegraded()) {
+            Metric.Context degradedContext = getDegradedMetricContext(execution.chain().getId().stringValue(), queryCoverage);
+            metric.add(DEGRADED_METRIC, 1, degradedContext);
         }
         int hitCount = result.getConcreteHitCount();
         hitsPerQuery.put((double) hitCount);
+        metric.set(COVERAGE_METRIC, (double) queryCoverage.getResultPercentage(), metricContext);
         metric.set(HITS_PER_QUERY_METRIC, (double) hitCount, metricContext);
         metric.set(TOTALHITS_PER_QUERY_METRIC, (double) result.getTotalHitCount(), metricContext);
         if (hitCount == 0) {
@@ -265,7 +300,7 @@ public class StatisticsSearcher extends Searcher {
      *
      * @param result The result to check for errors
      */
-    private void incrementStatePageOnlyErrors(Result result, Execution execution) {
+    private void incrementStatePageOnlyErrors(Result result) {
         if (result == null) return;
 
         ErrorHit error = result.hits().getErrorHit();
@@ -273,7 +308,7 @@ public class StatisticsSearcher extends Searcher {
 
         for (ErrorMessage m : error.errors()) {
             int code = m.getCode();
-            Metric.Context c = getDimensions(m.getSource(), result, execution);
+            Metric.Context c = getDimensions(m.getSource());
             if (code == TIMEOUT.code) {
                 metric.add("error.timeout", 1, c);
             } else if (code == NO_BACKENDS_IN_SERVICE.code) {
@@ -302,7 +337,7 @@ public class StatisticsSearcher extends Searcher {
         }
     }
 
-    private Metric.Context getDimensions(String source, Result r, Execution execution) {
+    private Metric.Context getDimensions(String source) {
         Metric.Context context = statePageOnlyContexts.get(source == null ? "" : source);
         if (context == null) {
             Map<String, String> dims = new HashMap<>();
