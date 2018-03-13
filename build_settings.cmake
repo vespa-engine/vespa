@@ -86,6 +86,11 @@ else()
   set(VESPA_USER "vespa")
 endif()
 
+if(VESPA_UNPRIVILEGED)
+else()
+  set(VESPA_UNPRIVILEGED "no")
+endif()
+
 if(EXTRA_INCLUDE_DIRECTORY)
     include_directories(SYSTEM ${EXTRA_INCLUDE_DIRECTORY})
 endif()
