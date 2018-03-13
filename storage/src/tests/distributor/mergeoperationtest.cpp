@@ -31,6 +31,7 @@ class MergeOperationTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(onlyMarkRedundantRetiredReplicasAsSourceOnly);
     CPPUNIT_TEST(mark_post_merge_redundant_replicas_source_only);
     CPPUNIT_TEST(merge_operation_is_blocked_by_any_busy_target_node);
+    CPPUNIT_TEST(missing_replica_is_included_in_limited_node_list);
     CPPUNIT_TEST_SUITE_END();
 
     std::unique_ptr<PendingMessageTracker> _pendingTracker;
@@ -45,6 +46,7 @@ protected:
     void onlyMarkRedundantRetiredReplicasAsSourceOnly();
     void mark_post_merge_redundant_replicas_source_only();
     void merge_operation_is_blocked_by_any_busy_target_node();
+    void missing_replica_is_included_in_limited_node_list();
 
 public:
     void setUp() override {
@@ -502,6 +504,23 @@ void MergeOperationTest::merge_operation_is_blocked_by_any_busy_target_node() {
     // Should block on other operation nodes than the first listed as well
     _pendingTracker->getNodeInfo().setBusy(1, std::chrono::seconds(10));
     CPPUNIT_ASSERT(op.isBlocked(*_pendingTracker));
+}
+
+void MergeOperationTest::missing_replica_is_included_in_limited_node_list() {
+    setupDistributor(Redundancy(4), NodeCount(4), "distributor:1 storage:4");
+    getClock().setAbsoluteTimeInSeconds(10);
+    addNodesToBucketDB(document::BucketId(16, 1), "1=0/0/0/t,2=0/0/0/t,3=0/0/0/t");
+    const uint16_t max_merge_size = 2;
+    MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(0, 1, 2, 3)), max_merge_size);
+    op.setIdealStateManager(&getIdealStateManager());
+    op.start(_sender, framework::MilliSecTime(0));
+
+    // Must include missing node 0 and not just 2 existing replicas
+    CPPUNIT_ASSERT_EQUAL(
+            std::string("MergeBucketCommand(BucketId(0x4000000000000001), to time 10000000, "
+                    "cluster state version: 0, nodes: [0, 1], chain: [], "
+                    "reasons to start: ) => 0"),
+            _sender.getLastCommand(true));
 }
 
 } // distributor
