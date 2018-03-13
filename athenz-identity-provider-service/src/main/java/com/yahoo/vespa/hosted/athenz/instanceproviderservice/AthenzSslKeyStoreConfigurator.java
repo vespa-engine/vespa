@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.google.inject.Inject;
@@ -9,25 +9,19 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreConfigurator;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreContext;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.athenz.tls.KeyStoreBuilder;
+import com.yahoo.vespa.athenz.tls.KeyStoreType;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.AthenzCertificateClient;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -37,6 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.athenz.tls.KeyStoreUtils.writeKeyStoreToFile;
 import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils.getZoneConfig;
 
 /**
@@ -87,15 +82,14 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
     private static Optional<KeyStore> tryReadKeystoreFile(File certificateFile, Duration updatePeriod) {
         try {
             if (!certificateFile.exists()) return Optional.empty();
-            KeyStore keyStore = KeyStore.getInstance("JKS");
-            try (InputStream in = new BufferedInputStream(new FileInputStream(certificateFile))) {
-                keyStore.load(in, new char[0]);
-            }
+            KeyStore keyStore = KeyStoreBuilder.withType(KeyStoreType.JKS)
+                    .fromFile(certificateFile)
+                    .build();
             Instant minimumExpiration = Instant.now().plus(updatePeriod).plus(EXPIRATION_MARGIN);
             boolean isExpired = getCertificateExpiry(keyStore).isBefore(minimumExpiration);
             if (isExpired) return Optional.empty();
             return Optional.of(keyStore);
-        } catch (IOException | GeneralSecurityException e) {
+        } catch (GeneralSecurityException e) {
             log.log(LogLevel.ERROR, "Failed to read keystore from disk: " + e.getMessage(), e);
             return Optional.empty();
         }
@@ -139,28 +133,23 @@ public class AthenzSslKeyStoreConfigurator extends AbstractComponent implements 
                                                 AthenzCertificateClient certificateClient,
                                                 AthenzProviderServiceConfig.Zones zoneConfig,
                                                 Path keystoreCachePath) {
-        try {
-            PrivateKey privateKey = keyProvider.getPrivateKey(zoneConfig.secretVersion());
-            X509Certificate certificate = certificateClient.updateCertificate(privateKey);
-            Instant expirationTime = certificate.getNotAfter().toInstant();
-            Duration expiry = Duration.between(certificate.getNotBefore().toInstant(), expirationTime);
-            log.log(LogLevel.INFO, String.format("Got Athenz x509 certificate with expiry %s (expires %s)", expiry, expirationTime));
+        PrivateKey privateKey = keyProvider.getPrivateKey(zoneConfig.secretVersion());
+        X509Certificate certificate = certificateClient.updateCertificate(privateKey);
+        Instant expirationTime = certificate.getNotAfter().toInstant();
+        Duration expiry = Duration.between(certificate.getNotBefore().toInstant(), expirationTime);
+        log.log(LogLevel.INFO, String.format("Got Athenz x509 certificate with expiry %s (expires %s)", expiry, expirationTime));
 
-            KeyStore keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(null);
-            keyStore.setKeyEntry(
-                    CERTIFICATE_ALIAS, privateKey, CERTIFICATE_PASSWORD.toCharArray(), new Certificate[]{certificate});
-            tryWriteKeystore(keyStore, keystoreCachePath);
-            return keyStore;
-        } catch (IOException | GeneralSecurityException e) {
-            throw new RuntimeException(e);
-        }
+        KeyStore keyStore = KeyStoreBuilder.withType(KeyStoreType.JKS)
+                .withKeyEntry(CERTIFICATE_ALIAS, privateKey, CERTIFICATE_PASSWORD.toCharArray(), certificate)
+                .build();
+        tryWriteKeystore(keyStore, keystoreCachePath);
+        return keyStore;
     }
 
     private static void tryWriteKeystore(KeyStore keyStore, Path keystoreCachePath) {
-        try (OutputStream out = new BufferedOutputStream(new FileOutputStream(keystoreCachePath.toFile()))) {
-            keyStore.store(out, new char[0]);
-        } catch (IOException | GeneralSecurityException e) {
+        try  {
+            writeKeyStoreToFile(keyStore, keystoreCachePath.toFile());
+        } catch (Exception e) {
             log.log(LogLevel.ERROR, "Failed to write keystore to disk: " + e.getMessage(), e);
         }
     }

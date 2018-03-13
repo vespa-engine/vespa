@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.google.inject.Inject;
@@ -6,6 +6,8 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.jdisc.http.ssl.SslTrustStoreConfigurator;
 import com.yahoo.jdisc.http.ssl.SslTrustStoreContext;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.athenz.tls.KeyStoreBuilder;
+import com.yahoo.vespa.athenz.tls.KeyStoreType;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
@@ -20,7 +22,7 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -70,12 +72,10 @@ public class AthenzSslTrustStoreConfigurator implements SslTrustStoreConfigurato
             KeyPair keyPair = getKeyPair(keyProvider, configserverConfig, athenzProviderServiceConfig);
             X509Certificate selfSignedCertificate = createSelfSignedCertificate(keyPair, configserverConfig);
             log.log(LogLevel.FINE, "Generated self-signed certificate: " + selfSignedCertificate);
-            KeyStore trustStore = KeyStore.getInstance("JKS");
-            try (FileInputStream in = new FileInputStream(athenzProviderServiceConfig.athenzCaTrustStore())) {
-                trustStore.load(in, "changeit".toCharArray());
-            }
-            trustStore.setCertificateEntry(CERTIFICATE_ALIAS, selfSignedCertificate);
-            return trustStore;
+            return KeyStoreBuilder.withType(KeyStoreType.JKS)
+                    .fromFile(new File(athenzProviderServiceConfig.athenzCaTrustStore()), "changeit".toCharArray())
+                    .withCertificateEntry(CERTIFICATE_ALIAS, selfSignedCertificate)
+                    .build();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
