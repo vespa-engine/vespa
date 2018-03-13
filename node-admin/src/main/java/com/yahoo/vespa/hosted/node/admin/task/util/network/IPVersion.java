@@ -5,7 +5,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.network;
  *
  * @author smorgrav
  */
-enum IPVersion {
+public enum IPVersion {
 
     IPv6("ip6tables"),
     IPv4("iptables");
