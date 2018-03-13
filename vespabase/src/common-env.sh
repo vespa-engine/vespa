@@ -146,7 +146,7 @@ consider_fallback VESPA_USE_NO_VESPAMALLOC  $(get_var "no_vespamalloc_list")
 
 fixlimits () {
     # Cannot bump limits when not root (for testing)
-    if test "${VESPA_UNPRIVILEGED}" = yes; then
+    if [ "${VESPA_UNPRIVILEGED}" = yes ]; then
 	return 0
     fi
     # number of open files:

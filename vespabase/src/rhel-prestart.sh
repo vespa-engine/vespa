@@ -71,7 +71,7 @@ fixdir () {
         exit 1
     fi
     mkdir -p "$4"
-    if test "${VESPA_UNPRIVILEGED}" != yes; then
+    if [ "${VESPA_UNPRIVILEGED}" != yes ]; then
       chown $1 "$4"
       chgrp $2 "$4"
     fi
@@ -105,7 +105,7 @@ fixdir ${VESPA_USER} wheel  755  var/vespa/bundlecache
 fixdir ${VESPA_USER} wheel  755  var/vespa/bundlecache/configserver
 fixdir ${VESPA_USER} wheel  755  var/vespa/cache/config/
 
-if test "${VESPA_UNPRIVILEGED}" != yes; then
+if [ "${VESPA_UNPRIVILEGED}" != yes ]; then
   chown -hR ${VESPA_USER} logs/vespa
   chown -hR ${VESPA_USER} var/db/vespa
 fi
