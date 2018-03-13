@@ -77,8 +77,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private void registerInstance() {
         try {
             credentials = athenzCredentialsService.registerInstance();
-            scheduler.scheduleAtFixedRate(this::refreshCertificate, 0, 5, TimeUnit.MINUTES);
-            scheduler.scheduleAtFixedRate(this::reportMetrics, UPDATE_PERIOD.toMinutes(), UPDATE_PERIOD.toMinutes(), TimeUnit.MINUTES);
+            scheduler.scheduleAtFixedRate(this::refreshCertificate, UPDATE_PERIOD.toMinutes(), UPDATE_PERIOD.toMinutes(), TimeUnit.MINUTES);
+            scheduler.scheduleAtFixedRate(this::reportMetrics, 0, 5, TimeUnit.MINUTES);
         } catch (Throwable t) {
             throw new AthenzIdentityProviderException("Could not retrieve Athenz credentials", t);
         }
