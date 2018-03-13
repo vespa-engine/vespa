@@ -9,8 +9,8 @@ import java.util.List;
 
 public class Merge extends TensorFlowOperation {
 
-    public Merge(NodeDef node, List<TensorFlowOperation> inputs, int port) {
-        super(node, inputs, port);
+    public Merge(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
+        super(modelName, node, inputs, port);
     }
 
     @Override

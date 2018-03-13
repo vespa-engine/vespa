@@ -15,8 +15,8 @@ public class Placeholder extends TensorFlowOperation {
 
     private OrderedTensorType standardNamingType;  // using standard naming convention: d0, d1, ...
 
-    public Placeholder(NodeDef node, List<TensorFlowOperation> inputs, int port) {
-        super(node, inputs, port);
+    public Placeholder(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
+        super(modelName, node, inputs, port);
         standardNamingType = OrderedTensorType.fromTensorFlowType(node);
     }
 

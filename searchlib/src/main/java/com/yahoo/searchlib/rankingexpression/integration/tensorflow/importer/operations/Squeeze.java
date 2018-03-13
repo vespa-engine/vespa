@@ -19,8 +19,8 @@ public class Squeeze extends TensorFlowOperation {
 
     private List<String> squeezeDimensions;
 
-    public Squeeze(NodeDef node, List<TensorFlowOperation> inputs, int port) {
-        super(node, inputs, port);
+    public Squeeze(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
+        super(modelName, node, inputs, port);
     }
 
     @Override

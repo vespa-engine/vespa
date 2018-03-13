@@ -22,8 +22,8 @@ public class ExpandDims extends TensorFlowOperation {
 
     private List<String> expandDimensions;
 
-    public ExpandDims(NodeDef node, List<TensorFlowOperation> inputs, int port) {
-        super(node, inputs, port);
+    public ExpandDims(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
+        super(modelName, node, inputs, port);
     }
 
     @Override

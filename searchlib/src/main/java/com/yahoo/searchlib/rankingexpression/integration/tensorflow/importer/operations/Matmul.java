@@ -12,8 +12,8 @@ import java.util.Optional;
 
 public class Matmul extends TensorFlowOperation {
 
-    public Matmul(NodeDef node, List<TensorFlowOperation> inputs, int port) {
-        super(node, inputs, port);
+    public Matmul(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
+        super(modelName, node, inputs, port);
     }
 
     @Override

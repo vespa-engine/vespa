@@ -25,8 +25,8 @@ public class Mean extends TensorFlowOperation {
 
     private List<String> reduceDimensions;
 
-    public Mean(NodeDef node, List<TensorFlowOperation> inputs, int port) {
-        super(node, inputs, port);
+    public Mean(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
+        super(modelName, node, inputs, port);
     }
 
     @Override
