@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -141,8 +142,11 @@ class ServletFilterRequest extends DiscFilterRequest {
     }
 
     @Override
-    public Optional<X509Certificate[]> getClientCertificateChain() {
-        return Optional.ofNullable((X509Certificate[]) parent.context().get(ServletRequest.SERVLET_REQUEST_X509CERT));
+    public List<X509Certificate> getClientCertificateChain() {
+        return Optional.ofNullable(parent.context().get(ServletRequest.SERVLET_REQUEST_X509CERT))
+                .map(X509Certificate[].class::cast)
+                .map(Arrays::asList)
+                .orElse(Collections.emptyList());
     }
 
     @Override

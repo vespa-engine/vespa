@@ -9,6 +9,7 @@ import java.net.URI;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -117,8 +118,11 @@ public class JdiscFilterRequest extends DiscFilterRequest {
     }
 
     @Override
-    public Optional<X509Certificate[]> getClientCertificateChain() {
-        return Optional.ofNullable((X509Certificate[]) parent.context().get(ServletRequest.JDISC_REQUEST_X509CERT));
+    public List<X509Certificate> getClientCertificateChain() {
+        return Optional.ofNullable(parent.context().get(ServletRequest.JDISC_REQUEST_X509CERT))
+                .map(X509Certificate[].class::cast)
+                .map(Arrays::asList)
+                .orElse(Collections.emptyList());
     }
 
     @Override

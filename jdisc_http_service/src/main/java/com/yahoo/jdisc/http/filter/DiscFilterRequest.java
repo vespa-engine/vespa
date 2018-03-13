@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -371,7 +370,11 @@ public abstract class DiscFilterRequest {
 
     public abstract void setUserPrincipal(Principal principal);
 
-    public abstract Optional<X509Certificate[]> getClientCertificateChain();
+    /**
+     * @return The client certificate chain in ascending order of trust. The first certificate is the one sent from the client.
+     *         Returns an empty list if the client did not provide a certificate.
+     */
+    public abstract List<X509Certificate> getClientCertificateChain();
 
     public void setUserRoles(String[] roles) {
         this.roles = roles;

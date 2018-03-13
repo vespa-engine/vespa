@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -178,8 +177,8 @@ public class ApplicationRequestToDiscFilterRequestWrapper extends DiscFilterRequ
     }
 
     @Override
-    public Optional<X509Certificate[]> getClientCertificateChain() {
-        return Optional.empty();
+    public List<X509Certificate> getClientCertificateChain() {
+        return Collections.emptyList();
     }
 
     @Override
