@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -58,6 +59,12 @@ public class StorageMaintainerTest {
         long usedBytes = storageMaintainer.getDiskUsedInBytes(folder.getRoot().toPath());
         if (usedBytes * 4 < writeSize || usedBytes > writeSize * 4)
             fail("Used bytes is " + usedBytes + ", but wrote " + writeSize + " bytes, not even close.");
+    }
+
+    @Test
+    public void testNonExistingDiskUsed() throws IOException, InterruptedException {
+        long usedBytes = storageMaintainer.getDiskUsedInBytes(folder.getRoot().toPath().resolve("doesn't exist"));
+        assertEquals(0L, usedBytes);
     }
 
     @Test
