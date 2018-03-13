@@ -8,7 +8,6 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.jdisc.http.servlet.ServletRequest;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.restapi.v2.Authorizer;
 import com.yahoo.vespa.hosted.provision.restapi.v2.ErrorResponse;
@@ -101,7 +100,7 @@ public class AuthorizationFilter implements SecurityRequestFilter {
 
     /** Get client certificate from request */
     private static Optional<X509Certificate> certificateFrom(DiscFilterRequest request) {
-        Object x509cert = request.getAttribute(ServletRequest.JDISC_REQUEST_X509CERT);
+        Object x509cert = request.getAttribute("javax.servlet.request.X509Certificate");
         return Optional.ofNullable(x509cert)
                        .filter(X509Certificate[].class::isInstance)
                        .map(X509Certificate[].class::cast)
