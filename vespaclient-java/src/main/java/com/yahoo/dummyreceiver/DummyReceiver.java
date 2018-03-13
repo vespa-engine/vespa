@@ -44,6 +44,7 @@ public class DummyReceiver implements MessageHandler {
     long maxQueueTime = -1;
     BlockingQueue<Runnable> queue;
     boolean verbose = false;
+    private boolean helpOption = false;
 
     DummyReceiver() {
     }
@@ -144,6 +145,7 @@ public class DummyReceiver implements MessageHandler {
 
                 if (arg.equals("-h") || arg.equals("--help")) {
                     help();
+                    helpOption = true;
                     return false;
                 } else if ("--name".equals(arg)) {
                     name = getParam(args, arg);
@@ -161,6 +163,7 @@ public class DummyReceiver implements MessageHandler {
                     verbose = true;
                 } else {
                     help();
+                    helpOption = true;
                     return false;
                 }
             }
@@ -180,8 +183,11 @@ public class DummyReceiver implements MessageHandler {
         for (String arg : args) {
             l.add(arg);
         }
-        if (!rcv.parseArgs(l)) {
+        if (!rcv.parseArgs(l) && !rcv.helpOption) {
             System.exit(1);
+        }
+        if (rcv.helpOption) {
+            System.exit(0); // exit with success instead of returning
         }
 
         rcv.init();
