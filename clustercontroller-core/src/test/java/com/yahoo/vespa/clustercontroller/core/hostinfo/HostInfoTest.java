@@ -48,9 +48,6 @@ public class HostInfoTest {
         List<StorageNode> storageNodeList = hostInfo.getDistributor().getStorageNodes();
         assertThat(storageNodeList.size(), is(2));
         assertThat(storageNodeList.get(0).getIndex(), is(0));
-        assertThat(storageNodeList.get(0).getOpsLatenciesOrNull().getPut().getCount(), is(16L));
-        assertThat(storageNodeList.get(1).getOpsLatenciesOrNull().getPut().getCount(), is(18L));
-        assertThat(storageNodeList.get(0).getOpsLatenciesOrNull().getPut().getLatencyMsSum(), is(15L));
         List<Metrics.Metric> metrics = hostInfo.getMetrics().getMetrics();
         assertThat(metrics.size(), is(2));
         Metrics.Value value = metrics.get(0).getValue();
@@ -93,15 +90,9 @@ public class HostInfoTest {
         assertTrue(storageNodeByIndex.containsKey(0));
         assertThat(storageNodeByIndex.get(0).getIndex(), is(0));
         assertThat(storageNodeByIndex.get(0).getMinCurrentReplicationFactorOrNull(), is(2));
-        assertNotNull(storageNodeByIndex.get(0).getOpsLatenciesOrNull());
-        assertThat(storageNodeByIndex.get(0).getOpsLatenciesOrNull().getPut().getLatencyMsSum(), is(10000L));
-        assertThat(storageNodeByIndex.get(0).getOpsLatenciesOrNull().getPut().getCount(), is(3L));
 
         assertTrue(storageNodeByIndex.containsKey(5));
         assertThat(storageNodeByIndex.get(5).getIndex(), is(5));
         assertThat(storageNodeByIndex.get(5).getMinCurrentReplicationFactorOrNull(), is(9));
-        assertNotNull(storageNodeByIndex.get(5).getOpsLatenciesOrNull());
-        assertThat(storageNodeByIndex.get(5).getOpsLatenciesOrNull().getPut().getLatencyMsSum(), is(25000L));
-        assertThat(storageNodeByIndex.get(5).getOpsLatenciesOrNull().getPut().getCount(), is(7L));
     }
 }

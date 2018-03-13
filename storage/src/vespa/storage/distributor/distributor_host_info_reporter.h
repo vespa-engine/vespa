@@ -8,15 +8,13 @@ namespace storage {
 namespace distributor {
 
 class BucketSpacesStatsProvider;
-class LatencyStatisticsProvider;
 class MinReplicaProvider;
 struct OperationStats;
 
 class DistributorHostInfoReporter : public HostReporter
 {
 public:
-    DistributorHostInfoReporter(LatencyStatisticsProvider& latencyProvider,
-                                MinReplicaProvider& minReplicaProvider,
+    DistributorHostInfoReporter(MinReplicaProvider& minReplicaProvider,
                                 BucketSpacesStatsProvider& bucketSpacesStatsProvider);
 
     DistributorHostInfoReporter(const DistributorHostInfoReporter&) = delete;
@@ -43,7 +41,6 @@ public:
     }
 
 private:
-    LatencyStatisticsProvider& _latencyProvider;
     MinReplicaProvider& _minReplicaProvider;
     BucketSpacesStatsProvider& _bucketSpacesStatsProvider;
     std::atomic<bool> _enabled;

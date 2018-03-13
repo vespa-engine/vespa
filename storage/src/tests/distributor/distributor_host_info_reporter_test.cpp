@@ -2,7 +2,6 @@
 
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/distributor/distributor_host_info_reporter.h>
-#include <vespa/storage/distributor/latency_statistics_provider.h>
 #include <vespa/storage/distributor/min_replica_provider.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -21,19 +20,13 @@ using Object = vespalib::JsonStream::Object;
 class DistributorHostInfoReporterTest : public CppUnit::TestFixture
 {
     CPPUNIT_TEST_SUITE(DistributorHostInfoReporterTest);
-    CPPUNIT_TEST(hostInfoWithPutLatenciesOnly);
-    CPPUNIT_TEST(hostInfoAllInfo);
-    CPPUNIT_TEST(generateExampleJson);
-    CPPUNIT_TEST(noReportGeneratedIfDisabled);
+    CPPUNIT_TEST(min_replica_stats_are_reported);
+    CPPUNIT_TEST(generate_example_json);
+    CPPUNIT_TEST(no_report_generated_if_disabled);
     CPPUNIT_TEST(bucket_spaces_stats_are_reported);
     CPPUNIT_TEST_SUITE_END();
 
-    void hostInfoWithPutLatenciesOnly();
-    void hostInfoAllInfo();
-    void verifyReportedNodeLatencies(const vespalib::Slime& root,
-                                     uint16_t nodeIndex,
-                                     int64_t latencySum,
-                                     int64_t count);
+    void min_replica_stats_are_reported();
     void verifyBucketSpaceStats(const vespalib::Slime& root,
                                 uint16_t nodeIndex,
                                 const vespalib::string& bucketSpaceName,
@@ -42,8 +35,8 @@ class DistributorHostInfoReporterTest : public CppUnit::TestFixture
     void verifyBucketSpaceStats(const vespalib::Slime& root,
                                 uint16_t nodeIndex,
                                 const vespalib::string& bucketSpaceName);
-    void generateExampleJson();
-    void noReportGeneratedIfDisabled();
+    void generate_example_json();
+    void no_report_generated_if_disabled();
     void bucket_spaces_stats_are_reported();
 };
 
@@ -53,25 +46,7 @@ using ms = std::chrono::milliseconds;
 
 namespace {
 
-OperationStats
-makeOpStats(std::chrono::milliseconds totalLatency, uint64_t numRequests)
-{
-    OperationStats stats;
-    stats.totalLatency = totalLatency;
-    stats.numRequests = numRequests;
-    return stats;
-}
-
 // My kingdom for GoogleMock!
-struct MockedLatencyStatisticsProvider : LatencyStatisticsProvider
-{
-    NodeStatsSnapshot returnedSnapshot;
-
-    NodeStatsSnapshot doGetLatencyStatistics() const override {
-        return returnedSnapshot;
-    }
-};
-
 struct MockedMinReplicaProvider : MinReplicaProvider
 {
     std::unordered_map<uint16_t, uint32_t> minReplica;
@@ -110,12 +85,6 @@ getMinReplica(const vespalib::Slime& root, uint16_t nodeIndex)
 }
 
 const vespalib::slime::Inspector&
-getLatenciesForNode(const vespalib::Slime& root, uint16_t nodeIndex)
-{
-    return getNode(root, nodeIndex)["ops-latency"];
-}
-
-const vespalib::slime::Inspector&
 getBucketSpaceStats(const vespalib::Slime& root, uint16_t nodeIndex, const vespalib::string& bucketSpaceName)
 {
     const auto& bucketSpaces = getNode(root, nodeIndex)["bucket-spaces"];
@@ -127,18 +96,6 @@ getBucketSpaceStats(const vespalib::Slime& root, uint16_t nodeIndex, const vespa
     throw std::runtime_error("No bucket space found with name " + bucketSpaceName);
 }
 
-}
-
-void
-DistributorHostInfoReporterTest::verifyReportedNodeLatencies(const vespalib::Slime& root,
-                                                             uint16_t nodeIndex,
-                                                             int64_t latencySum,
-                                                             int64_t count)
-{
-    auto& latencies = getLatenciesForNode(root, nodeIndex);
-    CPPUNIT_ASSERT_EQUAL(latencySum,
-                         latencies["put"]["latency-ms-sum"].asLong());
-    CPPUNIT_ASSERT_EQUAL(count, latencies["put"]["count"].asLong());
 }
 
 void
@@ -164,43 +121,21 @@ DistributorHostInfoReporterTest::verifyBucketSpaceStats(const vespalib::Slime& r
 }
 
 struct Fixture {
-    MockedLatencyStatisticsProvider latencyStatsProvider;
     MockedMinReplicaProvider minReplicaProvider;
     MockedBucketSpacesStatsProvider bucketSpacesStatsProvider;
     DistributorHostInfoReporter reporter;
     Fixture()
-        : latencyStatsProvider(),
-          minReplicaProvider(),
+        : minReplicaProvider(),
           bucketSpacesStatsProvider(),
-          reporter(latencyStatsProvider, minReplicaProvider, bucketSpacesStatsProvider)
+          reporter(minReplicaProvider, bucketSpacesStatsProvider)
     {}
     ~Fixture() {}
 };
 
 void
-DistributorHostInfoReporterTest::hostInfoWithPutLatenciesOnly()
+DistributorHostInfoReporterTest::min_replica_stats_are_reported()
 {
     Fixture f;
-    NodeStatsSnapshot snapshot;
-    snapshot.nodeToStats[0] = { makeOpStats(ms(10000), 3) };
-    snapshot.nodeToStats[5] = { makeOpStats(ms(25000), 7) };
-
-    f.latencyStatsProvider.returnedSnapshot = snapshot;
-
-    vespalib::Slime root;
-    util::reporterToSlime(f.reporter, root);
-    verifyReportedNodeLatencies(root, 0, 10000, 3);
-    verifyReportedNodeLatencies(root, 5, 25000, 7);
-}
-
-void
-DistributorHostInfoReporterTest::hostInfoAllInfo()
-{
-    Fixture f;
-    NodeStatsSnapshot latencySnapshot;
-    latencySnapshot.nodeToStats[0] = { makeOpStats(ms(10000), 3) };
-    latencySnapshot.nodeToStats[5] = { makeOpStats(ms(25000), 7) };
-    f.latencyStatsProvider.returnedSnapshot = latencySnapshot;
 
     std::unordered_map<uint16_t, uint32_t> minReplica;
     minReplica[0] = 2;
@@ -209,21 +144,15 @@ DistributorHostInfoReporterTest::hostInfoAllInfo()
 
     vespalib::Slime root;
     util::reporterToSlime(f.reporter, root);
-    verifyReportedNodeLatencies(root, 0, 10000, 3);
-    verifyReportedNodeLatencies(root, 5, 25000, 7);
 
     CPPUNIT_ASSERT_EQUAL(2, getMinReplica(root, 0));
     CPPUNIT_ASSERT_EQUAL(9, getMinReplica(root, 5));
 }
 
 void
-DistributorHostInfoReporterTest::generateExampleJson()
+DistributorHostInfoReporterTest::generate_example_json()
 {
     Fixture f;
-    NodeStatsSnapshot snapshot;
-    snapshot.nodeToStats[0] = { makeOpStats(ms(10000), 3) };
-    snapshot.nodeToStats[5] = { makeOpStats(ms(25000), 7) };
-    f.latencyStatsProvider.returnedSnapshot = snapshot;
 
     std::unordered_map<uint16_t, uint32_t> minReplica;
     minReplica[0] = 2;
@@ -261,16 +190,15 @@ DistributorHostInfoReporterTest::generateExampleJson()
 }
 
 void
-DistributorHostInfoReporterTest::noReportGeneratedIfDisabled()
+DistributorHostInfoReporterTest::no_report_generated_if_disabled()
 {
     Fixture f;
     f.reporter.enableReporting(false);
 
-    NodeStatsSnapshot snapshot;
-    snapshot.nodeToStats[0] = { makeOpStats(ms(10000), 3) };
-    snapshot.nodeToStats[5] = { makeOpStats(ms(25000), 7) };
-
-    f.latencyStatsProvider.returnedSnapshot = snapshot;
+    std::unordered_map<uint16_t, uint32_t> minReplica;
+    minReplica[0] = 2;
+    minReplica[5] = 9;
+    f.minReplicaProvider.minReplica = minReplica;
 
     vespalib::Slime root;
     util::reporterToSlime(f.reporter, root);

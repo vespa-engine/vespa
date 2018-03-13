@@ -96,7 +96,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _maintenanceStats(),
       _bucketSpacesStats(),
       _bucketDbStats(),
-      _hostInfoReporter(_pendingMessageTracker.getLatencyStatisticsProvider(), *this, *this),
+      _hostInfoReporter(*this, *this),
       _ownershipSafeTimeCalc(
             std::make_unique<OwnershipTransferSafeTimePointCalculator>(
                 std::chrono::seconds(0))) // Set by config later
