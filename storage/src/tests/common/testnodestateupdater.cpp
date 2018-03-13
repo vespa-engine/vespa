@@ -8,7 +8,7 @@ namespace storage {
 TestNodeStateUpdater::TestNodeStateUpdater(const lib::NodeType& type)
     : _reported(new lib::NodeState(type, lib::State::UP)),
       _current(new lib::NodeState(type, lib::State::UP)),
-      _clusterStateBundle(),
+      _clusterStateBundle(std::make_shared<const lib::ClusterStateBundle>(lib::ClusterState())),
       _listeners()
 { }
 

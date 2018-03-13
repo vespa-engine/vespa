@@ -61,6 +61,7 @@ FileStorManager(const config::ConfigUri & configUri,
     _component.registerMetric(*_metrics);
     _component.registerStatusPage(*this);
     _component.getStateUpdater().addStateListener(*this);
+    propagateClusterStates();
 }
 
 FileStorManager::~FileStorManager()
@@ -980,7 +981,7 @@ FileStorManager::updateState()
     }
     for (const auto &elem : _component.getBucketSpaceRepo()) {
         BucketSpace bucketSpace(elem.first);
-        spi::ClusterState spiState(*state, _component.getIndex(), *elem.second->getDistribution());
+        spi::ClusterState spiState(*elem.second->getClusterState(), _component.getIndex(), *elem.second->getDistribution());
         _provider->setClusterState(bucketSpace, spiState);
     }
     _nodeUpInLastNodeStateSeenByProvider = nodeUp;
@@ -993,8 +994,18 @@ FileStorManager::storageDistributionChanged()
 }
 
 void
+FileStorManager::propagateClusterStates()
+{
+    auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
+    for (const auto &elem : _component.getBucketSpaceRepo()) {
+        elem.second->setClusterState(clusterStateBundle->getDerivedClusterState(elem.first));
+    }
+}
+
+void
 FileStorManager::handleNewState()
 {
+    propagateClusterStates();
     //TODO: Don't update if it isn't necessary (distributor-only change)
     updateState();
 }

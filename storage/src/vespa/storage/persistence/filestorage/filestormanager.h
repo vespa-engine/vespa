@@ -183,6 +183,7 @@ private:
     void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
     void storageDistributionChanged() override;
     void updateState();
+    void propagateClusterStates();
 };
 
 } // storage
