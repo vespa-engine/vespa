@@ -31,6 +31,8 @@ import java.util.function.BiPredicate;
 import java.util.logging.Logger;
 
 /**
+ * Authorization filter for all paths in config server.
+ *
  * @author mpolden
  */
 public class AuthorizationFilter implements SecurityRequestFilter {
