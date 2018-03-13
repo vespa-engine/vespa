@@ -11,13 +11,22 @@ import java.util.List;
 
 public class Variable extends TensorFlowOperation {
 
-    public Variable(NodeDef node, List<TensorFlowOperation> inputs, int port) {
+    private final String modelName;
+
+    public Variable(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
         super(node, inputs, port);
+        this.modelName = modelName;
+    }
+
+    /** Constant names are prefixed by "modelName_" to avoid name conflicts between models */
+    @Override
+    public String vespaName() {
+        return modelName + "_" + super.vespaName();
     }
 
     @Override
     protected OrderedTensorType lazyGetType() {
-        return OrderedTensorType.fromTensorFlowType(node, vespaName() + "_");
+        return OrderedTensorType.fromTensorFlowType(node, super.vespaName() + "_");
     }
 
     @Override

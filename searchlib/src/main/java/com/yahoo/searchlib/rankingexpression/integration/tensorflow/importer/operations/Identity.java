@@ -9,8 +9,17 @@ import java.util.List;
 
 public class Identity extends TensorFlowOperation {
 
-    public Identity(NodeDef node, List<TensorFlowOperation> inputs, int port) {
+    private final String modelName;
+
+    public Identity(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
         super(node, inputs, port);
+        this.modelName = modelName;
+    }
+
+    /** Constant names are prefixed by "modelName_" to avoid name conflicts between models */
+    @Override
+    public String vespaName() {
+        return modelName + "_" + super.vespaName();
     }
 
     @Override

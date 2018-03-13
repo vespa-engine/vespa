@@ -16,7 +16,7 @@ public class DropoutImportTestCase {
 
     @Test
     public void testDropoutImport() {
-        TestableTensorFlowModel model = new TestableTensorFlowModel("src/test/files/integration/tensorflow/dropout/saved");
+        TestableTensorFlowModel model = new TestableTensorFlowModel("test", "src/test/files/integration/tensorflow/dropout/saved");
 
         // Check required macros
         assertEquals(1, model.get().requiredMacros().size());
@@ -32,7 +32,7 @@ public class DropoutImportTestCase {
         RankingExpression output = signature.outputExpression("y");
         assertNotNull(output);
         assertEquals("outputs/Maximum", output.getName());
-        assertEquals("join(join(tf_macro_outputs_BiasAdd, reduce(constant(outputs_Const), sum, d1), f(a,b)(a * b)), tf_macro_outputs_BiasAdd, f(a,b)(max(a,b)))",
+        assertEquals("join(join(tf_macro_outputs_BiasAdd, reduce(constant(test_outputs_Const), sum, d1), f(a,b)(a * b)), tf_macro_outputs_BiasAdd, f(a,b)(max(a,b)))",
                 output.getRoot().toString());
         model.assertEqualResult("X", output.getName());
     }

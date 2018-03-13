@@ -13,6 +13,7 @@ import java.util.List;
  * Serves stor-filestor for storage clusters.
  */
 public class FileStorProducer implements StorFilestorConfig.Producer {
+
     public static class Builder {
         protected FileStorProducer build(ContentCluster parent, ModelElement clusterElem) {
             return new FileStorProducer(parent, getThreads(clusterElem));

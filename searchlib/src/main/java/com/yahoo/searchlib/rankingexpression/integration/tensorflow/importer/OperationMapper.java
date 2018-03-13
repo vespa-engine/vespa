@@ -32,12 +32,12 @@ import java.util.List;
  */
 public class OperationMapper {
 
-    public static TensorFlowOperation get(NodeDef node, List<TensorFlowOperation> inputs, int port) {
+    public static TensorFlowOperation get(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
         switch (node.getOp().toLowerCase()) {
             // array ops
-            case "const":       return new Const(node, inputs, port);
+            case "const":       return new Const(modelName, node, inputs, port);
             case "expanddims":  return new ExpandDims(node, inputs, port);
-            case "identity":    return new Identity(node, inputs, port);
+            case "identity":    return new Identity(modelName, node, inputs, port);
             case "placeholder": return new Placeholder(node, inputs, port);
             case "placeholderwithdefault": return new PlaceholderWithDefault(node, inputs, port);
             case "reshape":     return new Reshape(node, inputs, port);
@@ -76,11 +76,11 @@ public class OperationMapper {
             case "selu":        return new Map(node, inputs, port, ScalarFunctions.selu());
 
             // state ops
-            case "variable":    return new Variable(node, inputs, port);
-            case "variablev2":  return new Variable(node, inputs, port);
+            case "variable":    return new Variable(modelName, node, inputs, port);
+            case "variablev2":  return new Variable(modelName, node, inputs, port);
 
             // evaluation no-ops
-            case "stopgradient":return new Identity(node, inputs, port);
+            case "stopgradient":return new Identity(modelName, node, inputs, port);
             case "noop":        return new NoOp(node, inputs, port);
         }
         return new NoOp(node, inputs, port);

@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * The result of importing a TensorFlow model into Vespa.
@@ -21,6 +22,25 @@ import java.util.Map;
  */
 // This object can be built incrementally within this package, but is immutable when observed from outside the package
 public class TensorFlowModel {
+
+    private static final Pattern nameRegexp = Pattern.compile("[A-Za-z0-9_]*");
+
+    private final String name;
+
+    /**
+     * Creates a TensorFlow model
+     *
+     * @param name the name of this mode, containing only characters in [A-Za-z0-9_]
+     */
+    public TensorFlowModel(String name) {
+        if ( ! nameRegexp.matcher(name).matches())
+            throw new IllegalArgumentException("A TensorFlow model name can only contain [A-Za-z0-9_], but is '" +
+                                               name + "'");
+        this.name = name;
+    }
+
+    /** Returns the name of this model, which can only contain the characters in [A-Za-z0-9_] */
+    public String name() { return name; }
 
     private final Map<String, Signature> signatures = new HashMap<>();
     private final Map<String, TensorType> arguments = new HashMap<>();
