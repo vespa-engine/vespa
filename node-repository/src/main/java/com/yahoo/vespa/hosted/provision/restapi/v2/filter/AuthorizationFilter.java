@@ -8,7 +8,6 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.jdisc.http.servlet.ServletRequest;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.restapi.v2.Authorizer;
 import com.yahoo.vespa.hosted.provision.restapi.v2.ErrorResponse;
@@ -55,7 +54,7 @@ public class AuthorizationFilter implements SecurityRequestFilter {
 
     @Override
     public void filter(DiscFilterRequest request, ResponseHandler handler) {
-        Optional<X509Certificate> cert = certificateFrom(request);
+        Optional<X509Certificate> cert = request.getClientCertificateChain().stream().findFirst();
         if (cert.isPresent()) {
             if (!authorizer.test(() -> commonName(cert.get()), request.getUri())) {
                 responseWriter.accept(ErrorResponse.forbidden(
@@ -99,16 +98,6 @@ public class AuthorizationFilter implements SecurityRequestFilter {
         } catch (CertificateEncodingException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    /** Get client certificate from request */
-    private static Optional<X509Certificate> certificateFrom(DiscFilterRequest request) {
-        Object x509cert = request.getAttribute(ServletRequest.JDISC_REQUEST_X509CERT);
-        return Optional.ofNullable(x509cert)
-                       .filter(X509Certificate[].class::isInstance)
-                       .map(X509Certificate[].class::cast)
-                       .filter(certs -> certs.length > 0)
-                       .map(certs -> certs[0]);
     }
 
 }

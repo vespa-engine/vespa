@@ -5,7 +5,6 @@ import com.yahoo.application.container.handler.Request.Method;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.jdisc.http.servlet.ServletRequest;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
@@ -27,6 +26,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
 
@@ -72,8 +72,7 @@ public class FilterTester {
         when(r.getRemoteAddr()).thenReturn(request.remoteAddr());
         if (request.commonName().isPresent()) {
             X509Certificate cert = certificateFor(request.commonName().get(), keyPair());
-            when(r.getAttribute(ServletRequest.JDISC_REQUEST_X509CERT))
-                    .thenReturn(new X509Certificate[]{cert});
+            when(r.getClientCertificateChain()).thenReturn(Collections.singletonList(cert));
         }
         return r;
     }
