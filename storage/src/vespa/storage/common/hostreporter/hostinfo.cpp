@@ -6,10 +6,6 @@
 namespace storage {
 
 HostInfo::HostInfo() {
-    registerReporter(&cpuReporter);
-    registerReporter(&diskReporter);
-    registerReporter(&memReporter);
-    registerReporter(&networkReporter);
     registerReporter(&versionReporter);
 }
 
@@ -25,4 +21,5 @@ void HostInfo::printReport(vespalib::JsonStream& report) {
 void HostInfo::registerReporter(HostReporter *reporter) {
     customReporters.push_back(reporter);
 }
-} /* namespace storage */
+
+}

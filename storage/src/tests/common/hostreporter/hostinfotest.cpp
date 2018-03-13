@@ -51,8 +51,7 @@ HostInfoReporterTest::testHostInfoReporter()
     vespalib::Slime slime;
     JsonFormat::decode(Memory(jsonData), slime);
     CPPUNIT_ASSERT(slime.get()["dummy"]["foo"].asString() == "bar");
-    CPPUNIT_ASSERT(0 < slime.get()["network"]["lo"]["input"]["packets"].asLong());
-    CPPUNIT_ASSERT(1.0 <= slime.get()["cpu"]["context switches"].asDouble());
+    CPPUNIT_ASSERT(!slime.get()["vtag"]["version"].asString().make_string().empty());
 }
 } // storage
 
