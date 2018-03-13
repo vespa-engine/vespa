@@ -16,28 +16,28 @@ ContentBucketSpace::ContentBucketSpace(document::BucketSpace bucketSpace)
 void
 ContentBucketSpace::setClusterState(std::shared_ptr<const lib::ClusterState> clusterState)
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     _clusterState = std::move(clusterState);
 }
 
 std::shared_ptr<const lib::ClusterState>
 ContentBucketSpace::getClusterState() const
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     return _clusterState;
 }
 
 void
 ContentBucketSpace::setDistribution(std::shared_ptr<const lib::Distribution> distribution)
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     _distribution = std::move(distribution);
 }
 
 std::shared_ptr<const lib::Distribution>
 ContentBucketSpace::getDistribution() const
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     return _distribution;
 }
 
