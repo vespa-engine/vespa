@@ -89,7 +89,7 @@ public class ZoneApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         Cursor uris = root.setArray("uris");
-        zoneRegistry.zones().all().ids().forEach(zoneId -> uris.addString(request.getUri()
+        zoneRegistry.zones().controllerManaged().ids().forEach(zoneId -> uris.addString(request.getUri()
                                                                .resolve("/zone/v2/")
                                                                .resolve(zoneId.environment().value() + "/")
                                                                .resolve(zoneId.region().value())
