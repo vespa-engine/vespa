@@ -11,6 +11,7 @@ import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpRequest;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -173,6 +174,11 @@ public class ApplicationRequestToDiscFilterRequestWrapper extends DiscFilterRequ
     @Override
     public void setUserPrincipal(Principal principal) {
         this.userPrincipal = principal;
+    }
+
+    @Override
+    public List<X509Certificate> getClientCertificateChain() {
+        return Collections.emptyList();
     }
 
     @Override

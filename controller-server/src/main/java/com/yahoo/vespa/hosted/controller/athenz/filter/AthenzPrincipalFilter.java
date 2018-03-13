@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsKeystore;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
@@ -81,8 +82,9 @@ public class AthenzPrincipalFilter implements SecurityRequestFilter {
     }
 
     private static Optional<X509Certificate> getClientCertificate(DiscFilterRequest request) {
-        return Optional.ofNullable((X509Certificate[]) request.getAttribute("jdisc.request.X509Certificate"))
-                .map(chain -> chain[0]);
+        List<X509Certificate> chain = request.getClientCertificateChain();
+        if (chain.isEmpty()) return Optional.empty();
+        return Optional.of(chain.get(0));
     }
 
     private static Optional<NToken> getPrincipalToken(DiscFilterRequest request, String principalTokenHeaderName) {

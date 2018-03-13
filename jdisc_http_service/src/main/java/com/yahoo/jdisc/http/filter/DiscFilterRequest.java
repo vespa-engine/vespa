@@ -11,6 +11,7 @@ import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpRequest;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -368,6 +369,12 @@ public abstract class DiscFilterRequest {
     }
 
     public abstract void setUserPrincipal(Principal principal);
+
+    /**
+     * @return The client certificate chain in ascending order of trust. The first certificate is the one sent from the client.
+     *         Returns an empty list if the client did not provide a certificate.
+     */
+    public abstract List<X509Certificate> getClientCertificateChain();
 
     public void setUserRoles(String[] roles) {
         this.roles = roles;
