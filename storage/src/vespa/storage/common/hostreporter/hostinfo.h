@@ -1,13 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#ifndef STORAGE_SRC_CPP_STORAGE_COMMON_HOSTREPORTER_HOSTINFO_H_
-#define STORAGE_SRC_CPP_STORAGE_COMMON_HOSTREPORTER_HOSTINFO_H_
+
+#pragma once
 
 #include <vespa/vespalib/util/jsonstream.h>
 
-#include "cpureporter.h"
-#include "diskreporter.h"
-#include "memreporter.h"
-#include "networkreporter.h"
 #include "versionreporter.h"
 
 namespace storage {
@@ -27,13 +23,8 @@ public:
 
 private:
     std::vector<HostReporter*> customReporters;
-    CpuReporter cpuReporter;
-    DiskReporter diskReporter;
-    MemReporter memReporter;
-    NetworkReporter networkReporter;
     VersionReporter versionReporter;
 };
 
-} /* namespace storage */
+}
 
-#endif /* STORAGE_SRC_CPP_STORAGE_COMMON_HOSTREPORTER_HOSTINFO_H_ */
