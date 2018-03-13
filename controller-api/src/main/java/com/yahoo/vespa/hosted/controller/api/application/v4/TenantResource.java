@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.api.application.v4;
 
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantCreateOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantInfo;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantMigrateOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantUpdateOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantWithApplications;
 
@@ -41,7 +40,4 @@ public interface TenantResource {
     @Path(ApplicationResource.API_PATH)
     ApplicationResource application();
 
-    @PUT
-    @Path("migrateTenantToAthens")
-    TenantInfo migrateTenantToAthens(TenantMigrateOptions tenantOptions);
 }

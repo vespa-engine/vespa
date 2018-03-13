@@ -127,7 +127,6 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     private static boolean isTenantAdminOperation(Path path, Method method) {
         if (isHostedOperatorOperation(path, method)) return false;
         return path.matches("/application/v4/tenant/{tenant}") ||
-                path.matches("/application/v4/tenant/{tenant}/migrateTenantToAthens") ||
                 path.matches("/application/v4/tenant/{tenant}/application/{application}") ||
                 path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/dev/{*}") ||
                 path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/perf/{*}") ||

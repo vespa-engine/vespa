@@ -23,7 +23,6 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -185,7 +184,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Path path = new Path(request.getUri().getPath());
         if (path.matches("/application/v4/user")) return createUser(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/migrateTenantToAthens")) return migrateTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override"))
             return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
         return ErrorResponse.notFoundError("Nothing at " + path);
@@ -674,21 +672,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             throwIfNotAthenzDomainAdmin(new AthenzDomain(mandatory("athensDomain", requestData).asString()), request);
 
         controller.tenants().addTenant(tenant, getUserPrincipal(request).getNToken());
-        return tenant(tenant, request, true);
-    }
-
-    private HttpResponse migrateTenant(String tenantName, HttpRequest request) {
-        TenantId tenantid = new TenantId(tenantName);
-        Inspector requestData = toSlime(request.getData()).get();
-        AthenzDomain tenantDomain = new AthenzDomain(mandatory("athensDomain", requestData).asString());
-        Property property = new Property(mandatory("property", requestData).asString());
-        PropertyId propertyId = new PropertyId(mandatory("propertyId", requestData).asString());
-
-        throwIfNotAthenzDomainAdmin(tenantDomain, request);
-        NToken nToken = getUserPrincipal(request).getNToken()
-                .orElseThrow(() ->
-                                     new BadRequestException("The NToken for a domain admin is required to migrate tenant to Athens"));
-        Tenant tenant = controller.tenants().migrateTenantToAthenz(tenantid, tenantDomain, propertyId, property, nToken);
         return tenant(tenant, request, true);
     }
 
