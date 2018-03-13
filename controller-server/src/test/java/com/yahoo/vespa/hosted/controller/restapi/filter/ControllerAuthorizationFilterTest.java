@@ -144,8 +144,7 @@ public class ControllerAuthorizationFilterTest {
 
     private static ControllerAuthorizationFilter createFilter(ControllerTester controllerTester) {
         return new ControllerAuthorizationFilter(new AthenzClientFactoryMock(controllerTester.athenzDb()),
-                                                 controllerTester.controller(),
-                                                 controllerTester.entityService());
+                                                 controllerTester.controller());
     }
 
     private static Optional<AuthorizationResponse> invokeFilter(ControllerAuthorizationFilter filter,

@@ -14,13 +14,13 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
-import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
 import com.yahoo.yolean.chain.After;
 
@@ -54,8 +54,7 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     private static final Logger log = Logger.getLogger(ControllerAuthorizationFilter.class.getName());
 
     private final AthenzClientFactory clientFactory;
-    private final Controller controller;
-    private final EntityService entityService;
+    private final TenantController tenantController;
     private final AuthorizationResponseHandler authorizationResponseHandler;
 
     public interface AuthorizationResponseHandler {
@@ -63,19 +62,15 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     }
 
     @Inject
-    public ControllerAuthorizationFilter(AthenzClientFactory clientFactory,
-                                         Controller controller,
-                                         EntityService entityService) {
-        this(clientFactory, controller, entityService, new DefaultAuthorizationResponseHandler());
+    public ControllerAuthorizationFilter(AthenzClientFactory clientFactory, Controller controller) {
+        this(clientFactory, controller.tenants(), new DefaultAuthorizationResponseHandler());
     }
 
     ControllerAuthorizationFilter(AthenzClientFactory clientFactory,
-                                  Controller controller,
-                                  EntityService entityService,
+                                  TenantController tenantController,
                                   AuthorizationResponseHandler authorizationResponseHandler) {
         this.clientFactory = clientFactory;
-        this.controller = controller;
-        this.entityService = entityService;
+        this.tenantController = tenantController;
         this.authorizationResponseHandler = authorizationResponseHandler;
     }
 
@@ -154,7 +149,7 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     }
 
     private void verifyIsTenantAdmin(AthenzPrincipal principal, TenantId tenantId) {
-        controller.tenants().tenant(tenantId)
+        tenantController.tenant(tenantId)
                 .ifPresent(tenant -> {
                     if (!isTenantAdmin(principal.getIdentity(), tenant)) {
                         throw new ForbiddenException("Tenant admin or Vespa operator role required");
@@ -182,7 +177,7 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     private void verifyIsTenantPipelineOperator(AthenzPrincipal principal,
                                                 TenantId tenantId,
                                                 ApplicationName application) {
-        controller.tenants().tenant(tenantId)
+        tenantController.tenant(tenantId)
                 .ifPresent(tenant -> verifyIsTenantPipelineOperator(principal.getIdentity(), tenant, application));
     }
 
