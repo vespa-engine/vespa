@@ -125,43 +125,19 @@ public abstract class StateRestApiTest {
                 "        \"storage-nodes\": [\n" +
                 "            {\n" +
                 "                \"node-index\": 1,\n" +
-                "                \"min-current-replication-factor\": 2,\n" +
-                "                \"ops-latency\": {\n" +
-                "                    \"put\": {\n" +
-                "                        \"latency-ms-sum\": 6,\n" +
-                "                        \"count\": 7\n" +
-                "                    }\n" +
-                "                }\n" +
+                "                \"min-current-replication-factor\": 2\n" +
                 "            },\n" +
                 "            {\n" +
                 "                \"node-index\": 3,\n" +
-                "                \"min-current-replication-factor\": 2,\n" +
-                "                \"ops-latency\": {\n" +
-                "                    \"put\": {\n" +
-                "                        \"latency-ms-sum\": 5,\n" +
-                "                        \"count\": 4\n" +
-                "                    }\n" +
-                "                }\n" +
+                "                \"min-current-replication-factor\": 2\n" +
                 "            },\n" +
                 "            {\n" +
                 "                \"node-index\": 5,\n" +
-                "                \"min-current-replication-factor\": 2,\n" +
-                "                \"ops-latency\": {\n" +
-                "                    \"put\": {\n" +
-                "                        \"latency-ms-sum\": 4,\n" +
-                "                        \"count\": 5\n" +
-                "                    }\n" +
-                "                }\n" +
+                "                \"min-current-replication-factor\": 2\n" +
                 "            },\n" +
                 "            {\n" +
                 "                \"node-index\": 7,\n" +
-                "                \"min-current-replication-factor\": 2,\n" +
-                "                \"ops-latency\": {\n" +
-                "                    \"put\": {\n" +
-                "                        \"latency-ms-sum\": 6,\n" +
-                "                        \"count\": 7\n" +
-                "                    }\n" +
-                "                }\n" +
+                "                \"min-current-replication-factor\": 2\n" +
                 "            }\n" +
                 "        ]\n" +
                 "    }\n" +

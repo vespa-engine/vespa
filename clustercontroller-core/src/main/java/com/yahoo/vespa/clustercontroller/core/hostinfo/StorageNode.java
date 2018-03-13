@@ -14,31 +14,6 @@ import java.util.List;
  */
 public class StorageNode {
 
-    static public class Put {
-        private final Long latencyMsSum;
-        private final Long count;
-
-        @JsonCreator
-        public Put(@JsonProperty("latency-ms-sum") Long latencyMsSum, @JsonProperty("count") Long count) {
-            this.latencyMsSum = latencyMsSum;
-            this.count = count;
-        }
-
-        public Long getLatencyMsSum() { return latencyMsSum; }
-        public Long getCount() { return count; }
-    }
-
-    static public class OpsLatency {
-        private final Put put;
-
-        @JsonCreator
-        public OpsLatency(@JsonProperty("put") Put put) {
-            this.put = put;
-        }
-
-        public Put getPut() { return put; }
-    }
-
     static public class BucketStats {
         private final long total;
         private final long pending;
@@ -80,9 +55,6 @@ public class StorageNode {
 
     private final Integer index;
 
-    @JsonProperty("ops-latency")
-    private OpsLatency opsLatencies;
-
     // If a Distributor does not manage any bucket copies for a particular storage node,
     // then the distributor will not return any min-current-replication-factor for that
     // storage node.
@@ -99,10 +71,6 @@ public class StorageNode {
 
     public Integer getIndex() {
         return index;
-    }
-
-    public OpsLatency getOpsLatenciesOrNull() {
-        return opsLatencies;
     }
 
     // See documentation on minCurrentReplicationFactor.

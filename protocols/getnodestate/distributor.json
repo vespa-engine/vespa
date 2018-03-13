@@ -4,12 +4,6 @@
             {
                 "node-index": 0,
                 "min-current-replication-factor": 2,
-                "ops-latency" : {
-                    "put": {
-                        "latency-ms-sum": 10000,
-                        "count": 3
-                    }
-                },
                 "bucket-spaces" : [
                     {
                         "name": "default",
@@ -30,12 +24,6 @@
             {
                 "node-index": 5,
                 "min-current-replication-factor": 9,
-                "ops-latency" : {
-                    "put": {
-                        "latency-ms-sum": 25000,
-                        "count": 7
-                    }
-                },
                 "bucket-spaces" : [
                     {
                         "name": "default"

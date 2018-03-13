@@ -20,27 +20,15 @@ using Array = vespalib::JsonStream::Array;
 using End = vespalib::JsonStream::End;
 
 DistributorHostInfoReporter::DistributorHostInfoReporter(
-        LatencyStatisticsProvider& latencyProvider,
         MinReplicaProvider& minReplicaProvider,
         BucketSpacesStatsProvider& bucketSpacesStatsProvider)
-    : _latencyProvider(latencyProvider),
-      _minReplicaProvider(minReplicaProvider),
+    : _minReplicaProvider(minReplicaProvider),
       _bucketSpacesStatsProvider(bucketSpacesStatsProvider),
       _enabled(true)
 {
 }
 
 namespace {
-
-void
-writeOperationStats(vespalib::JsonStream& stream,
-                    const OperationStats& stats)
-{
-    stream << "put" << Object()
-           << "latency-ms-sum" << stats.totalLatency.count()
-           << "count" << stats.numRequests
-           << End();
-}
 
 void
 writeBucketSpacesStats(vespalib::JsonStream& stream,
@@ -60,14 +48,10 @@ writeBucketSpacesStats(vespalib::JsonStream& stream,
 
 void
 outputStorageNodes(vespalib::JsonStream& output,
-                   const unordered_map<uint16_t, NodeStats>& nodeStats,
                    const unordered_map<uint16_t, uint32_t>& minReplica,
                    const PerNodeBucketSpacesStats& bucketSpacesStats)
 {
     set<uint16_t> nodes;
-    for (const auto& element : nodeStats) {
-        nodes.insert(element.first);
-    }
     for (const auto& element : minReplica) {
         nodes.insert(element.first);
     }
@@ -79,15 +63,6 @@ outputStorageNodes(vespalib::JsonStream& output,
         output << Object();
         {
             output << "node-index" << node;
-
-            auto nodeStatsIt = nodeStats.find(node);
-            if (nodeStatsIt != nodeStats.end()) {
-                output << "ops-latency" << Object();
-                {
-                    writeOperationStats(output, nodeStatsIt->second.puts);
-                }
-                output << End();
-            }
 
             auto minReplicaIt = minReplica.find(node);
             if (minReplicaIt != minReplica.end()) {
@@ -115,7 +90,6 @@ DistributorHostInfoReporter::report(vespalib::JsonStream& output)
         return;
     }
 
-    auto nodeStats = _latencyProvider.getLatencyStatistics();
     auto minReplica = _minReplicaProvider.getMinReplica();
     auto bucketSpacesStats = _bucketSpacesStatsProvider.getBucketSpacesStats();
 
@@ -123,7 +97,7 @@ DistributorHostInfoReporter::report(vespalib::JsonStream& output)
     {
         output << "storage-nodes" << Array();
 
-        outputStorageNodes(output, nodeStats.nodeToStats, minReplica, bucketSpacesStats);
+        outputStorageNodes(output, minReplica, bucketSpacesStats);
 
         output << End();
     }
