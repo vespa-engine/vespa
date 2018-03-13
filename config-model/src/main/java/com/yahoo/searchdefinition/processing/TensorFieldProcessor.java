@@ -27,20 +27,12 @@ public class TensorFieldProcessor extends Processor {
 
         for (SDField field : search.allConcreteFields()) {
             if ( field.getDataType() instanceof TensorDataType ) {
-                warnUseOfTensorFieldAsAttribute(field);
                 validateIndexingScripsForTensorField(field);
                 validateAttributeSettingForTensorField(field);
             }
             else if (field.getDataType() instanceof CollectionDataType){
                 validateDataTypeForCollectionField(field);
             }
-        }
-    }
-
-    private void warnUseOfTensorFieldAsAttribute(SDField field) {
-        if (field.doesAttributing()) {
-            // TODO (geirst): Remove when no longer beta
-            warn(search, field, "An attribute of type 'tensor' is currently beta, and re-feeding data between Vespa versions might be required.");
         }
     }
 
