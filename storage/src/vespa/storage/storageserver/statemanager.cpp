@@ -421,7 +421,7 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
 }
 
 void
-StateManager::setClusterState(const lib::ClusterState& c)
+StateManager::setClusterStateBundle(const ClusterStateBundle& c)
 {
     {
         vespalib::LockGuard lock(_stateLock);
@@ -434,7 +434,7 @@ bool
 StateManager::onSetSystemState(
         const std::shared_ptr<api::SetSystemStateCommand>& cmd)
 {
-    setClusterState(cmd->getSystemState());
+    setClusterStateBundle(cmd->getClusterStateBundle());
     std::shared_ptr<api::SetSystemStateReply> reply(
             new api::SetSystemStateReply(*cmd));
     sendUp(reply);

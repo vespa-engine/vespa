@@ -228,7 +228,7 @@ StateManagerTest::testClusterStateVersion()
 {
     ClusterState state(*_manager->getClusterStateBundle()->getBaselineClusterState());
     state.setVersion(123);
-    _manager->setClusterState(state);
+    _manager->setClusterStateBundle(lib::ClusterStateBundle(state));
 
     std::string nodeInfoString(_manager->getNodeInfo());
     vespalib::Memory goldenMemory(nodeInfoString);

@@ -88,7 +88,7 @@ public:
 
     Lock::SP grabStateChangeLock() override;
     void setReportedNodeState(const lib::NodeState& state) override;
-    void setClusterState(const lib::ClusterState& c);
+    void setClusterStateBundle(const ClusterStateBundle& c);
     HostInfo& getHostInfo() { return *_hostInfo; }
 
 private:
