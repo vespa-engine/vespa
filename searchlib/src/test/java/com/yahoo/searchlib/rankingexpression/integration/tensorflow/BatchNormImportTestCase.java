@@ -14,7 +14,7 @@ public class BatchNormImportTestCase {
 
     @Test
     public void testBatchNormImport() {
-        TestableTensorFlowModel model = new TestableTensorFlowModel("src/test/files/integration/tensorflow/batch_norm/saved");
+        TestableTensorFlowModel model = new TestableTensorFlowModel("test", "src/test/files/integration/tensorflow/batch_norm/saved");
         TensorFlowModel.Signature signature = model.get().signature("serving_default");
 
         assertEquals("Has skipped outputs",

@@ -17,18 +17,18 @@ public class MnistSoftmaxImportTestCase {
 
     @Test
     public void testMnistSoftmaxImport() {
-        TestableTensorFlowModel model = new TestableTensorFlowModel("src/test/files/integration/tensorflow/mnist_softmax/saved");
+        TestableTensorFlowModel model = new TestableTensorFlowModel("test", "src/test/files/integration/tensorflow/mnist_softmax/saved");
 
         // Check constants
         assertEquals(2, model.get().largeConstants().size());
 
-        Tensor constant0 = model.get().largeConstants().get("Variable_read");
+        Tensor constant0 = model.get().largeConstants().get("test_Variable_read");
         assertNotNull(constant0);
         assertEquals(new TensorType.Builder().indexed("d2", 784).indexed("d1", 10).build(),
                      constant0.type());
         assertEquals(7840, constant0.size());
 
-        Tensor constant1 = model.get().largeConstants().get("Variable_1_read");
+        Tensor constant1 = model.get().largeConstants().get("test_Variable_1_read");
         assertNotNull(constant1);
         assertEquals(new TensorType.Builder().indexed("d1", 10).build(),
                      constant1.type());
@@ -59,7 +59,7 @@ public class MnistSoftmaxImportTestCase {
         RankingExpression output = signature.outputExpression("y");
         assertNotNull(output);
         assertEquals("add", output.getName());
-        assertEquals("join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(Variable_read), f(a,b)(a * b)), sum, d2), constant(Variable_1_read), f(a,b)(a + b))",
+        assertEquals("join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(test_Variable_read), f(a,b)(a * b)), sum, d2), constant(test_Variable_1_read), f(a,b)(a + b))",
                      output.getRoot().toString());
 
         // Test execution

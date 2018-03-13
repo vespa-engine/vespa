@@ -42,7 +42,7 @@ import static org.junit.Assert.*;
 public class RankingExpressionWithTensorFlowTestCase {
 
     private final Path applicationDir = Path.fromString("src/test/integration/tensorflow/");
-    private final String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(layer_Variable_1_read), f(a,b)(a + b))";
+    private final String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(mnist_softmax_saved_layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_saved_layer_Variable_1_read), f(a,b)(a + b))";
 
     @After
     public void removeGeneratedConstantTensorFiles() {
@@ -54,8 +54,8 @@ public class RankingExpressionWithTensorFlowTestCase {
         RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                                                       "tensorflow('mnist_softmax/saved')");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("layer_Variable_read", search, Optional.of(7840L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -65,8 +65,8 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "constant mytensor { file: ignored\ntype: tensor(d0[7],d1[784]) }",
                                                       null);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("layer_Variable_read", search, Optional.of(7840L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -85,8 +85,8 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "Placeholder",
                                                       application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("layer_Variable_read", search, Optional.of(7840L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -99,8 +99,8 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "Placeholder",
                                                       application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("layer_Variable_read", search, Optional.of(7840L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -119,8 +119,8 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "Placeholder",
                                                       application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("layer_Variable_read", search, Optional.of(7840L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -128,8 +128,8 @@ public class RankingExpressionWithTensorFlowTestCase {
         RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                                                       "5 + sum(tensorflow('mnist_softmax/saved'))");
         search.assertFirstPhaseExpression("5 + reduce(" + vespaExpression + ", sum)", "my_profile");
-        assertLargeConstant("layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("layer_Variable_read", search, Optional.of(7840L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -224,8 +224,8 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "tensorflow('mnist_softmax/saved')");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
 
-        assertLargeConstant("layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("layer_Variable_read", search, Optional.of(7840L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
         Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
@@ -243,8 +243,8 @@ public class RankingExpressionWithTensorFlowTestCase {
             searchFromStored.assertFirstPhaseExpression(vespaExpression, "my_profile");
             // Verify that the constants exists, but don't verify the content as we are not
             // simulating file distribution in this test
-            assertLargeConstant("layer_Variable_1_read", searchFromStored, Optional.empty());
-            assertLargeConstant("layer_Variable_read", searchFromStored, Optional.empty());
+            assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", searchFromStored, Optional.empty());
+            assertLargeConstant("mnist_softmax_saved_layer_Variable_read", searchFromStored, Optional.empty());
         }
         finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
@@ -258,7 +258,7 @@ public class RankingExpressionWithTensorFlowTestCase {
                 "    macro Placeholder() {\n" +
                 "      expression: tensor(d0[2],d1[784])(0.0)\n" +
                 "    }\n" +
-                "    macro layer_Variable_read() {\n" +
+                "    macro mnist_softmax_saved_layer_Variable_read() {\n" +
                 "      expression: tensor(d1[10],d2[784])(0.0)\n" +
                 "    }\n" +
                 "    first-phase {\n" +
@@ -268,13 +268,13 @@ public class RankingExpressionWithTensorFlowTestCase {
 
 
         String vespaExpressionWithoutConstant =
-                "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), layer_Variable_read, f(a,b)(a * b)), sum, d2), constant(layer_Variable_1_read), f(a,b)(a + b))";
+                "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), mnist_softmax_saved_layer_Variable_read, f(a,b)(a * b)), sum, d2), constant(mnist_softmax_saved_layer_Variable_1_read), f(a,b)(a + b))";
         RankProfileSearchFixture search = fixtureWith(rankProfile, new StoringApplicationPackage(applicationDir));
         search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
 
         assertNull("Constant overridden by macro is not added",
-                   search.search().getRankingConstants().get("layer_Variable_read"));
-        assertLargeConstant("layer_Variable_1_read", search, Optional.of(10L));
+                   search.search().getRankingConstants().get("mnist_softmax_saved_layer_Variable_read"));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
         Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
@@ -286,8 +286,8 @@ public class RankingExpressionWithTensorFlowTestCase {
             RankProfileSearchFixture searchFromStored = fixtureWith(rankProfile, storedApplication);
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
             assertNull("Constant overridden by macro is not added",
-                       searchFromStored.search().getRankingConstants().get("layer_Variable_read"));
-            assertLargeConstant("layer_Variable_1_read", searchFromStored, Optional.of(10L));
+                       searchFromStored.search().getRankingConstants().get("mnist_softmax_saved_layer_Variable_read"));
+            assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", searchFromStored, Optional.of(10L));
         }
         finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
@@ -296,22 +296,26 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @Test
     public void testTensorFlowReduceBatchDimension() {
-        final String expression = "join(join(reduce(join(reduce(rename(Placeholder, (d0, d1), (d0, d2)), sum, d0), constant(layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(layer_Variable_1_read), f(a,b)(a + b)), tensor(d0[1])(0.0), f(a,b)(a + b))";
+        final String expression = "join(join(reduce(join(reduce(rename(Placeholder, (d0, d1), (d0, d2)), sum, d0), constant(mnist_softmax_saved_layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_saved_layer_Variable_1_read), f(a,b)(a + b)), tensor(d0[1])(0.0), f(a,b)(a + b))";
         RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
                 "tensorflow('mnist_softmax/saved')");
         search.assertFirstPhaseExpression(expression, "my_profile");
-        assertLargeConstant("layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("layer_Variable_read", search, Optional.of(7840L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
+        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
     public void testMacroGeneration() {
-        final String expression = "join(join(reduce(join(join(join(tf_macro_dnn_hidden2_add, reduce(constant(dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), tf_macro_dnn_hidden2_add, f(a,b)(max(a,b))), constant(dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(0.0), f(a,b)(a + b))";
-        final String macroExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(dnn_hidden1_bias_read), f(a,b)(a + b))";
-        final String macroExpression2 = "join(reduce(join(join(join(tf_macro_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), tf_macro_dnn_hidden1_add, f(a,b)(max(a,b))), constant(dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(dnn_hidden2_bias_read), f(a,b)(a + b))";
+        final String expression = "join(join(reduce(join(join(join(tf_macro_dnn_hidden2_add, reduce(constant(mnist_saved_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), tf_macro_dnn_hidden2_add, f(a,b)(max(a,b))), constant(mnist_saved_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(mnist_saved_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(0.0), f(a,b)(a + b))";
+        final String macroExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(mnist_saved_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(mnist_saved_dnn_hidden1_bias_read), f(a,b)(a + b))";
+        final String macroExpression2 = "join(reduce(join(join(join(tf_macro_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), tf_macro_dnn_hidden1_add, f(a,b)(max(a,b))), constant(mnist_saved_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(mnist_saved_dnn_hidden2_bias_read), f(a,b)(a + b))";
 
         RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
-                "tensorflow('mnist/saved')", null, null, "input", new StoringApplicationPackage(applicationDir));
+                                    "tensorflow('mnist/saved')",
+                                                      null,
+                                                      null,
+                                                      "input",
+                                                      new StoringApplicationPackage(applicationDir));
         search.assertFirstPhaseExpression(expression, "my_profile");
         search.assertMacro(macroExpression1, "tf_macro_dnn_hidden1_add", "my_profile");
         search.assertMacro(macroExpression2, "tf_macro_dnn_hidden2_add", "my_profile");
@@ -319,9 +323,9 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @Test
     public void testImportingFromStoredExpressionsWithSmallConstants() throws IOException {
-        final String expression = "join(join(reduce(join(join(join(tf_macro_dnn_hidden2_add, reduce(constant(dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), tf_macro_dnn_hidden2_add, f(a,b)(max(a,b))), constant(dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(0.0), f(a,b)(a + b))";
-        final String macroExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(dnn_hidden1_bias_read), f(a,b)(a + b))";
-        final String macroExpression2 = "join(reduce(join(join(join(tf_macro_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), tf_macro_dnn_hidden1_add, f(a,b)(max(a,b))), constant(dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(dnn_hidden2_bias_read), f(a,b)(a + b))";
+        final String expression = "join(join(reduce(join(join(join(tf_macro_dnn_hidden2_add, reduce(constant(mnist_saved_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), tf_macro_dnn_hidden2_add, f(a,b)(max(a,b))), constant(mnist_saved_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(mnist_saved_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(0.0), f(a,b)(a + b))";
+        final String macroExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(mnist_saved_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(mnist_saved_dnn_hidden1_bias_read), f(a,b)(a + b))";
+        final String macroExpression2 = "join(reduce(join(join(join(tf_macro_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), tf_macro_dnn_hidden1_add, f(a,b)(max(a,b))), constant(mnist_saved_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(mnist_saved_dnn_hidden2_bias_read), f(a,b)(a + b))";
 
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
         RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
@@ -331,7 +335,7 @@ public class RankingExpressionWithTensorFlowTestCase {
                 "input",
                 application);
         search.assertFirstPhaseExpression(expression, "my_profile");
-        assertSmallConstant("dnn_hidden2_Const", TensorType.fromSpec("tensor(d2[1])"), search);
+        assertSmallConstant("mnist_saved_dnn_hidden2_Const", TensorType.fromSpec("tensor(d2[1])"), search);
         search.assertMacro(macroExpression1, "tf_macro_dnn_hidden1_add", "my_profile");
         search.assertMacro(macroExpression2, "tf_macro_dnn_hidden2_add", "my_profile");
 
@@ -349,7 +353,7 @@ public class RankingExpressionWithTensorFlowTestCase {
                     "input",
                     storedApplication);
             searchFromStored.assertFirstPhaseExpression(expression, "my_profile");
-            assertSmallConstant("dnn_hidden2_Const", TensorType.fromSpec("tensor(d2[1])"), search);
+            assertSmallConstant("mnist_saved_dnn_hidden2_Const", TensorType.fromSpec("tensor(d2[1])"), search);
             searchFromStored.assertMacro(macroExpression1, "tf_macro_dnn_hidden1_add", "my_profile");
             searchFromStored.assertMacro(macroExpression2, "tf_macro_dnn_hidden2_add", "my_profile");
         }

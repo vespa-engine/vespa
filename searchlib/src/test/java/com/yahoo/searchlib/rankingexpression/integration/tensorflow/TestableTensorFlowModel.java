@@ -34,9 +34,9 @@ public class TestableTensorFlowModel {
     private final int d0Size = 1;
     private final int d1Size = 784;
 
-    public TestableTensorFlowModel(String modelDir) {
+    public TestableTensorFlowModel(String modelName, String modelDir) {
         tensorFlowModel = SavedModelBundle.load(modelDir, "serve");
-        model = new TensorFlowImporter().importModel(tensorFlowModel);
+        model = new TensorFlowImporter().importModel(modelName, tensorFlowModel);
     }
 
     public TensorFlowModel get() { return model; }

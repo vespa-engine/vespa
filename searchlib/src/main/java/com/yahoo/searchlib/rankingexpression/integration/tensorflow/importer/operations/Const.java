@@ -23,8 +23,11 @@ import java.util.Optional;
 
 public class Const extends TensorFlowOperation {
 
-    public Const(NodeDef node, List<TensorFlowOperation> inputs, int port) {
+    private final String modelName;
+
+    public Const(String modelName, NodeDef node, List<TensorFlowOperation> inputs, int port) {
         super(node, inputs, port);
+        this.modelName = modelName;
         setConstantValue(value());
     }
 
@@ -52,6 +55,12 @@ public class Const extends TensorFlowOperation {
         return new TensorFunctionNode.TensorFunctionExpressionNode(expressionNode);
     }
 
+    /** Constant names are prefixed by "modelName_" to avoid name conflicts between models */
+    @Override
+    public String vespaName() {
+        return modelName + "_" + super.vespaName();
+    }
+
     @Override
     public void addDimensionNameConstraints(DimensionRenamer renamer) {
         for (TensorType.Dimension dimension : type.type().dimensions()) {
@@ -71,7 +80,7 @@ public class Const extends TensorFlowOperation {
     }
 
     private Value value() {
-        if (!node.getAttrMap().containsKey("value")) {
+        if ( ! node.getAttrMap().containsKey("value")) {
             throw new IllegalArgumentException("Node '" + node.getName() + "' of type " +
                                                "const has missing 'value' attribute");
         }
@@ -89,6 +98,6 @@ public class Const extends TensorFlowOperation {
             return new DoubleValue(attrValue.getF());
         }
         throw new IllegalArgumentException("Requesting value of constant in " +
-                node.getName() + " but type is not recognized.");
+                                           node.getName() + " but type is not recognized.");
     }
 }

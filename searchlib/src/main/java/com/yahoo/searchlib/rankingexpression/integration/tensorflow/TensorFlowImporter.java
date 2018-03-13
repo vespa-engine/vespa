@@ -49,25 +49,27 @@ public class TensorFlowImporter {
      * The model should be saved as a .pbtxt or .pb file.
      * The name of the model is taken as the db/pbtxt file name (not including the file ending).
      *
+     * @param modelName the name of the model to import, consisting of characters in [A-Za-z0-9_]
      * @param modelDir the directory containing the TensorFlow model files to import
      */
-    public TensorFlowModel importModel(String modelDir) {
+    public TensorFlowModel importModel(String modelName, String modelDir) {
         try (SavedModelBundle model = SavedModelBundle.load(modelDir, "serve")) {
-            return importModel(model);
+
+            return importModel(modelName, model);
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Could not import TensorFlow model from directory '" + modelDir + "'", e);
         }
     }
 
-    public TensorFlowModel importModel(File modelDir) {
-        return importModel(modelDir.toString());
+    public TensorFlowModel importModel(String modelName, File modelDir) {
+        return importModel(modelName, modelDir.toString());
     }
 
     /** Imports a TensorFlow model */
-    public TensorFlowModel importModel(SavedModelBundle model) {
+    public TensorFlowModel importModel(String modelName, SavedModelBundle model) {
         try {
-            return importGraph(MetaGraphDef.parseFrom(model.metaGraphDef()), model);
+            return importGraph(modelName, MetaGraphDef.parseFrom(model.metaGraphDef()), model);
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Could not import TensorFlow model '" + model + "'", e);
@@ -79,8 +81,8 @@ public class TensorFlowImporter {
      * finding a suitable set of dimensions names for each
      * placeholder/constant/variable, then importing the expressions.
      */
-    private static TensorFlowModel importGraph(MetaGraphDef graph, SavedModelBundle bundle) {
-        TensorFlowModel model = new TensorFlowModel();
+    private static TensorFlowModel importGraph(String modelName, MetaGraphDef graph, SavedModelBundle bundle) {
+        TensorFlowModel model = new TensorFlowModel(modelName);
         OperationIndex index = new OperationIndex();
 
         importSignatures(graph, model);
@@ -138,21 +140,21 @@ public class TensorFlowImporter {
     private static void importNodes(MetaGraphDef graph, TensorFlowModel model, OperationIndex index) {
         for (TensorFlowModel.Signature signature : model.signatures().values()) {
             for (String outputName : signature.outputs().values()) {
-                importNode(outputName, graph.getGraphDef(), index);
+                importNode(model.name(), outputName, graph.getGraphDef(), index);
             }
         }
     }
 
-    private static TensorFlowOperation importNode(String name, GraphDef graph, OperationIndex index) {
-        if (index.alreadyImported(name)) {
-            return index.get(name);
+    private static TensorFlowOperation importNode(String modelName, String nodeName, GraphDef graph, OperationIndex index) {
+        if (index.alreadyImported(nodeName)) {
+            return index.get(nodeName);
         }
-        NodeDef node = getTensorFlowNodeFromGraph(namePartOf(name), graph);
-        List<TensorFlowOperation> inputs = importNodeInputs(node, graph, index);
-        TensorFlowOperation operation = OperationMapper.get(node, inputs, portPartOf(name));
-        index.put(name, operation);
+        NodeDef node = getTensorFlowNodeFromGraph(namePartOf(nodeName), graph);
+        List<TensorFlowOperation> inputs = importNodeInputs(modelName, node, graph, index);
+        TensorFlowOperation operation = OperationMapper.get(modelName, node, inputs, portPartOf(nodeName));
+        index.put(nodeName, operation);
 
-        List<TensorFlowOperation> controlInputs = importControlInputs(node, graph, index);
+        List<TensorFlowOperation> controlInputs = importControlInputs(modelName, node, graph, index);
         if (controlInputs.size() > 0) {
             operation.setControlInputs(controlInputs);
         }
@@ -160,17 +162,17 @@ public class TensorFlowImporter {
         return operation;
     }
 
-    private static List<TensorFlowOperation> importNodeInputs(NodeDef node, GraphDef graph, OperationIndex index) {
+    private static List<TensorFlowOperation> importNodeInputs(String modelName, NodeDef node, GraphDef graph, OperationIndex index) {
         return node.getInputList().stream()
                 .filter(name -> ! isControlDependency(name))
-                .map(name -> importNode(name, graph, index))
+                .map(nodeName -> importNode(modelName, nodeName, graph, index))
                 .collect(Collectors.toList());
     }
 
-    private static List<TensorFlowOperation> importControlInputs(NodeDef node, GraphDef graph, OperationIndex index) {
+    private static List<TensorFlowOperation> importControlInputs(String modelName, NodeDef node, GraphDef graph, OperationIndex index) {
         return node.getInputList().stream()
-                .filter(name -> isControlDependency(name))
-                .map(name -> importNode(name, graph, index))
+                .filter(nodeName -> isControlDependency(nodeName))
+                .map(nodeName -> importNode(modelName, nodeName, graph, index))
                 .collect(Collectors.toList());
     }
 
@@ -280,9 +282,9 @@ public class TensorFlowImporter {
         }
 
         if (tensor.type().rank() == 0 || tensor.size() <= 1) {
-            model.smallConstant(operation.vespaName(), tensor);
+            model.smallConstant(name, tensor);
         } else {
-            model.largeConstant(operation.vespaName(), tensor);
+            model.largeConstant(name, tensor);
         }
         return operation.function();
     }

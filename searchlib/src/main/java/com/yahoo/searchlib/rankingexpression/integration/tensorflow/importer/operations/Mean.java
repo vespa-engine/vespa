@@ -37,7 +37,7 @@ public class Mean extends TensorFlowOperation {
         TensorFlowOperation reductionIndices = inputs.get(1);
         if (!reductionIndices.getConstantValue().isPresent()) {
             throw new IllegalArgumentException("Mean in " + node.getName() + ": " +
-                    "reduction indices must be a constant.");
+                                               "reduction indices must be a constant.");
         }
         Tensor indices = reductionIndices.getConstantValue().get().asTensor();
         reduceDimensions = new ArrayList<>();

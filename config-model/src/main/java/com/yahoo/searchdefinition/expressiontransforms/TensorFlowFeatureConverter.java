@@ -53,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -63,10 +62,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-// TODO: Avoid name conflicts across models for constants
 public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
-
-    private static final Logger log = Logger.getLogger(TensorFlowFeatureConverter.class.getName());
 
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
 
@@ -87,8 +83,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         if ( ! feature.getName().equals("tensorflow")) return feature;
 
         try {
-            ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(),
-                                              feature.getArguments());
+            ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), feature.getArguments());
             if ( ! store.hasStoredModel()) // not converted yet - access TensorFlow model files
                 return transformFromTensorFlowModel(store, context.rankProfile(), context.queryProfiles());
             else
@@ -103,7 +98,8 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
                                                         RankProfile profile,
                                                         QueryProfileRegistry queryProfiles) {
         TensorFlowModel model = importedModels.computeIfAbsent(store.arguments().modelPath(),
-                                                               k -> tensorFlowImporter.importModel(store.tensorFlowModelDir()));
+                                                               k -> tensorFlowImporter.importModel(store.arguments().modelName(),
+                                                                                                   store.tensorFlowModelDir()));
 
         // Add constants
         Set<String> constantsReplacedByMacros = new HashSet<>();
@@ -213,9 +209,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             constantsReplacedByMacros.add(constantName); // will replace constant(constantName) by constantName later
         }
         else {
-
             Path constantPath = store.writeLargeConstant(constantName, constantValue);
-
             if ( ! profile.getSearch().getRankingConstants().containsKey(constantName)) {
                 profile.getSearch().addRankingConstant(new RankingConstant(constantName, constantValue.type(),
                                                                            constantPath.toString()));
@@ -310,7 +304,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             RankProfile.Macro macro = profile.getMacros().get(macroName);
             if (macro == null) {
                 throw new IllegalArgumentException("Model refers to generated macro '" + macroName +
-                        "but this macro is not present in " + profile);
+                                                   "but this macro is not present in " + profile);
             }
             RankingExpression macroExpression = macro.getRankingExpression();
             macroExpression.setRoot(reduceBatchDimensionsAtInput(macroExpression.getRoot(), model, typeContext));
@@ -464,6 +458,8 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             this.application = application;
             this.arguments = new FeatureArguments(arguments);
         }
+
+
 
         public FeatureArguments arguments() { return arguments; }
 
@@ -650,6 +646,9 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
             signature = optionalArgument(1, arguments);
             output = optionalArgument(2, arguments);
         }
+
+        /** Returns modelPath with slashes replaced by underscores */
+        public String modelName() { return modelPath.toString().replace('/', '_'); }
 
         /** Returns relative path to this model below the "models/" dir in the application package */
         public Path modelPath() { return modelPath; }
