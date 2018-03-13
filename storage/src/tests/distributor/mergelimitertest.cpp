@@ -17,6 +17,7 @@ struct MergeLimiterTest : public CppUnit::TestFixture
     void non_source_only_replica_chosen_from_in_sync_group();
     void non_source_only_replicas_preferred_when_replicas_not_in_sync();
     void at_least_one_non_source_only_replica_chosen_when_all_trusted();
+    void missing_replica_distinct_from_empty_replica();
 
     CPPUNIT_TEST_SUITE(MergeLimiterTest);
     CPPUNIT_TEST(testKeepsAllBelowLimit);
@@ -29,6 +30,7 @@ struct MergeLimiterTest : public CppUnit::TestFixture
     CPPUNIT_TEST(non_source_only_replica_chosen_from_in_sync_group);
     CPPUNIT_TEST(non_source_only_replicas_preferred_when_replicas_not_in_sync);
     CPPUNIT_TEST(at_least_one_non_source_only_replica_chosen_when_all_trusted);
+    CPPUNIT_TEST(missing_replica_distinct_from_empty_replica);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -50,6 +52,14 @@ namespace {
         NodeFactory& addTrusted(int index, int crc) {
             add(index, crc);
             _bucketDatabase.back()->setTrusted(true);
+            return *this;
+        }
+        NodeFactory& addMissing(int index) {
+            add(index, 0x1); // "Magic" checksum value implying invalid/recently created replica
+            return *this;
+        }
+        NodeFactory& addEmpty(int index) {
+            add(index, 0x0);
             return *this;
         }
         NodeFactory& setSourceOnly() {
@@ -206,6 +216,16 @@ void MergeLimiterTest::at_least_one_non_source_only_replica_chosen_when_all_trus
         .addTrusted(1, 0x6).setSourceOnly());
     ASSERT_LIMIT(2, nodes, "2,13s");
     ASSERT_LIMIT(3, nodes, "2,13s,1s");
+}
+
+void MergeLimiterTest::missing_replica_distinct_from_empty_replica() {
+    MergeLimiter::NodeArray nodes(NodeFactory()
+        .addEmpty(3)
+        .addEmpty(5)
+        .addMissing(1)
+        .addMissing(2));
+    ASSERT_LIMIT(2, nodes, "5,2");
+    ASSERT_LIMIT(3, nodes, "5,2,3");
 }
 
 } // storage::distributor

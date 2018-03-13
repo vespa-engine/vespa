@@ -119,11 +119,11 @@ MergeOperation::onStart(DistributorMessageSender& sender)
 
     for (uint32_t i = 0; i < getNodes().size(); ++i) {
         const BucketCopy* copy = entry->getNode(getNodes()[i]);
-        if (copy == 0) { // New copies?
-            newCopies.push_back(std::make_unique<BucketCopy>(0, getNodes()[i], api::BucketInfo()));
+        if (copy == nullptr) { // New copies?
+            newCopies.emplace_back(std::make_unique<BucketCopy>(BucketCopy::recentlyCreatedCopy(0, getNodes()[i])));
             copy = newCopies.back().get();
         }
-        nodes.push_back(MergeMetaData(getNodes()[i], *copy));
+        nodes.emplace_back(getNodes()[i], *copy);
     }
     _infoBefore = entry.getBucketInfo();
 
