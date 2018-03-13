@@ -684,7 +684,6 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void createContainerData(ContainerNodeSpec nodeSpec) {
-        // Doing this fails three tests ... Wat?
         ContainerData containerData = ContainerData.createClean(environment,
                                                                 ContainerName.fromHostname(nodeSpec.hostname));
 

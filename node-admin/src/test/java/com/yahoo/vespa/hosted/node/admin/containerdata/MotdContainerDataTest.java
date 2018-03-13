@@ -24,7 +24,7 @@ public class MotdContainerDataTest {
                                                                             .nodeState(Node.State.dirty)
                                                                             .vespaVersion("7.0.0")
                                                                             .hostname("nope")
-                                                                            .nodeFlavor("nope")
+                                                                            .nodeFlavor("D-WAVE")
                                                                             .allowedToBeDown(false)
                                                                             .membership(new ContainerNodeSpec.Membership(null, null, null, 0, false))
                                                                             .minCpuCores(0)
@@ -44,7 +44,10 @@ public class MotdContainerDataTest {
         motdContainerData.writeTo((path, content) -> {
             assertEquals(path, Paths.get("etc/profile.d/motd.sh"));
 
+            System.out.println(content);
+
             assertTrue(content.contains("tenant"));
+            assertTrue(content.contains("D-WAVE"));
             assertTrue(content.contains("[0;91m"));
             assertTrue(content.contains("MAIN PROD AWS-US-EAST-1A"));
             assertTrue(content.contains("tenant1:application1:default"));

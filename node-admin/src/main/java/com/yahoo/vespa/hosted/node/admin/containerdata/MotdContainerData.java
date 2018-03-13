@@ -31,13 +31,14 @@ public class MotdContainerData {
                                                  "\n" +
                                                  "    echo -e \"\n" +
                                                  "${green}Zone          : ${alert}$zone.getSystem().toUpperCase() $zone.getEnvironment().toUpperCase() $zone.getRegion().toUpperCase()\n" +
-                                                 "${green}Node type     : ${no_color}$node.type()\n" +
+                                                 "${green}Node type     : ${no_color}$type\n" +
+                                                 "${green}Node flavor   : ${no_color}$flavor\n" +
                                                  "${green}Host name     : ${no_color}$(hostname)\n" +
                                                  "${green}Uptime        : ${no_color}$uptime\n" +
-                                                 "${green}Version       : ${no_color}wanted = $node.wanted().orElse(\"unknown\"); installed = $node.installed().orElse(\"unknown\")\n" +
-                                                 "#if($node.owner().isPresent())\n" +
-                                                 "${green}Node state    : ${no_color}$node.state()\n" +
-                                                 "${green}Owner         : ${no_color}$node.owner().get().serializedForm()\n" +
+                                                 "${green}Version       : ${no_color}wanted = $wanted.orElse(\"unknown\"); installed = $installed.orElse(\"unknown\")\n" +
+                                                 "#if($owner.isPresent())\n" +
+                                                 "${green}Node state    : ${no_color}$state\n" +
+                                                 "${green}Owner         : ${no_color}$owner.get().serializedForm()\n" +
                                                  "#end\n" +
                                                  "\"\n" +
                                                  "}\n" +
@@ -50,11 +51,12 @@ public class MotdContainerData {
     public MotdContainerData(ContainerNodeSpec nodeSpec, Environment environment) {
         renderedString = Template.of(templateString)
                 .set("zone", environment)
-                .set("node", new Node(nodeSpec.nodeType,
-                                      nodeSpec.nodeState,
-                                      nodeSpec.vespaVersion,
-                                      nodeSpec.wantedVespaVersion,
-                                      nodeSpec.owner))
+                .set("type", nodeSpec.nodeType)
+                .set("state", nodeSpec.nodeState)
+                .set("installed", nodeSpec.vespaVersion)
+                .set("wanted", nodeSpec.wantedVespaVersion)
+                .set("owner", nodeSpec.owner.map(id -> ApplicationId.from(id.tenant, id.application, id.instance)))
+                .set("flavor", nodeSpec.nodeFlavor)
                 .render();
     }
 
@@ -64,32 +66,6 @@ public class MotdContainerData {
 
     void writeTo(BiConsumer<Path, String> fileWriter) {
         fileWriter.accept(motdPath, renderedString);
-    }
-
-
-    // Needs to be public for Velocity to use it.
-    public static class Node {
-
-        private final String type;
-        private final State state;
-        private final Optional<String> installed;
-        private final Optional<String> wanted;
-        private final Optional<ApplicationId> owner;
-
-        public Node(String type, State state, Optional<String> installed, Optional<String> wanted, Optional<ContainerNodeSpec.Owner> owner) {
-            this.type = type;
-            this.state = state;
-            this.installed = installed;
-            this.wanted = wanted;
-            this.owner = owner.map(id -> ApplicationId.from(id.tenant, id.application, id.instance));
-        }
-
-        public String type() { return type; }
-        public State state() { return state; }
-        public Optional<String> installed() { return installed; }
-        public Optional<String> wanted() { return wanted; }
-        public Optional<ApplicationId> owner() { return owner; }
-
     }
 
 }
