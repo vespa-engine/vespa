@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.configserver.orchestrator;
 
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
-import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.HostStateChangeDenialReason;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
@@ -149,8 +148,8 @@ public class OrchestratorImplTest {
         String exceptionMessage = "Exception: Something crashed!";
 
         when(configServerApi.put(
-                OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
+                "/orchestrator/v1/suspensions/hosts/host1.test.yahoo.com?hostname=a1.host1.test.yahoo.com&hostname=a2.host1.test.yahoo.com",
+                Optional.empty(),
                 BatchOperationResult.class
         )).thenThrow(new RuntimeException(exceptionMessage));
 
