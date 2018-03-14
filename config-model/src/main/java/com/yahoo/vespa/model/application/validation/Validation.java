@@ -15,6 +15,7 @@ import com.yahoo.vespa.model.application.validation.change.ContentClusterRemoval
 import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
+import com.yahoo.vespa.model.application.validation.first.AccessControlValidator;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -60,6 +61,7 @@ public class Validation {
             return validateChanges((VespaModel)currentActiveModel.get(), model,
                                    deployState.validationOverrides(), deployState.getDeployLogger(), deployState.now());
         else
+            validateFirstTimeDeployment(model, deployState);
             return new ArrayList<>();
     }
 
@@ -78,6 +80,10 @@ public class Validation {
         return Arrays.stream(validators)
                 .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
                 .collect(toList());
+    }
+
+    private static void validateFirstTimeDeployment(VespaModel model, DeployState deployState) {
+        new AccessControlValidator().validate(model, deployState);
     }
 
 }
