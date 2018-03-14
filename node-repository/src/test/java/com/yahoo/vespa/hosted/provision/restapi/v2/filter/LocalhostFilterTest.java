@@ -25,7 +25,7 @@ public class LocalhostFilterTest {
                              "1.2.3.4: Unauthorized host\"}");
 
         tester.assertSuccess(new Request(Method.GET, "/").remoteAddr("127.0.0.1"));
-        tester.assertSuccess(new Request(Method.GET, "/").remoteAddr("::1"));
+        tester.assertSuccess(new Request(Method.GET, "/").remoteAddr("0:0:0:0:0:0:0:1"));
     }
 
 }
