@@ -7,6 +7,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Optional;
 
+/**
+ * @author hakonhall
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BatchOperationResult {
     private static final String FAILURE_REASON = "failure-reason";

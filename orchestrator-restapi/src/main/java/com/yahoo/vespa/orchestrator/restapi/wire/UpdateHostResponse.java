@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-/*
+/**
  * @author andreer
  */
 @JsonIgnoreProperties(ignoreUnknown = true)

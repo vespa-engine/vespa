@@ -7,8 +7,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
-/*
+/**
  * A reason to reject a host state change request
+ *
  * @author andreer
  */
 @JsonIgnoreProperties(ignoreUnknown = true)

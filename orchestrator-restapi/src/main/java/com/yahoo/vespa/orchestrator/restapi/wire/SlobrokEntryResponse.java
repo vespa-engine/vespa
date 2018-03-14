@@ -6,6 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
+/**
+ * @author hakonhall
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SlobrokEntryResponse {
     @JsonProperty("name")
