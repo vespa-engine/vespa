@@ -18,6 +18,7 @@ struct TestNodeStateUpdater : public NodeStateUpdater
     lib::NodeState::CSP _current;
     std::shared_ptr<const lib::ClusterStateBundle> _clusterStateBundle;
     std::vector<StateListener*> _listeners;
+    size_t _explicit_node_state_reply_send_invocations;
 
 public:
     explicit TestNodeStateUpdater(const lib::NodeType& type);
@@ -32,13 +33,19 @@ public:
     void setReportedNodeState(const lib::NodeState& state) override {
         _reported = std::make_shared<lib::NodeState>(state);
     }
-    void immediately_send_get_node_state_replies() override {}
+    void immediately_send_get_node_state_replies() override {
+        ++_explicit_node_state_reply_send_invocations;
+    }
 
     void setCurrentNodeState(const lib::NodeState& state) {
         _current = std::make_shared<lib::NodeState>(state);
     }
 
     void setClusterState(lib::ClusterState::CSP c);
+
+    size_t explicit_node_state_reply_send_invocations() const noexcept {
+        return _explicit_node_state_reply_send_invocations;
+    }
 };
 
 } // storage

@@ -557,6 +557,7 @@ StateManager::getNodeInfo() const
 }
 
 void StateManager::immediately_send_get_node_state_replies() {
+    LOG(debug, "Immediately replying to all pending GetNodeState requests");
     sendGetNodeStateReplies();
 }
 

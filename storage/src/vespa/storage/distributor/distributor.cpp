@@ -419,6 +419,9 @@ Distributor::leaveRecoveryMode()
         LOG(debug, "Leaving recovery mode");
         _metrics->recoveryModeTime.addValue(
                 _recoveryTimeStarted.getElapsedTimeAsDouble());
+        if (_doneInitializing) {
+            _component.getStateUpdater().immediately_send_get_node_state_replies();
+        }
     }
     _schedulingMode = MaintenanceScheduler::NORMAL_SCHEDULING_MODE;
 }
@@ -730,8 +733,8 @@ Distributor::scanNextBucket()
 {
     MaintenanceScanner::ScanResult scanResult(_scanner->scanNext());
     if (scanResult.isDone()) {
-        leaveRecoveryMode();
         updateInternalMetricsForCompletedScan();
+        leaveRecoveryMode(); // Must happen after internal metrics updates
         _scanner->reset();
     } else {
         const auto &distribution(_bucketSpaceRepo->get(scanResult.getBucketSpace()).getDistribution());

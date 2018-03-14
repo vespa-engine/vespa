@@ -59,6 +59,7 @@ class Distributor_Test : public CppUnit::TestFixture,
     CPPUNIT_TEST(internal_messages_are_started_in_fifo_order_batch);
     CPPUNIT_TEST(closing_aborts_priority_queued_client_requests);
     CPPUNIT_TEST(entering_recovery_mode_resets_bucket_space_stats);
+    CPPUNIT_TEST(leaving_recovery_mode_immediately_sends_getnodestate_replies);
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -95,6 +96,7 @@ protected:
     void internal_messages_are_started_in_fifo_order_batch();
     void closing_aborts_priority_queued_client_requests();
     void entering_recovery_mode_resets_bucket_space_stats();
+    void leaving_recovery_mode_immediately_sends_getnodestate_replies();
 
     void assertBucketSpaceStats(size_t expBucketPending, uint16_t node, const vespalib::string &bucketSpace,
                                 const BucketSpacesStatsProvider::PerNodeBucketSpacesStats &stats);
@@ -195,6 +197,10 @@ private:
         std::string retVal = dumpBucket(document::BucketId(16, 1));
         getBucketDatabase().clear();
         return retVal;
+    }
+
+    size_t explicit_node_state_reply_send_invocations() const noexcept {
+        return _node->getNodeStateUpdater().explicit_node_state_reply_send_invocations();
     }
 
     void configureMaxClusterClockSkew(int seconds);
@@ -1021,7 +1027,7 @@ void Distributor_Test::entering_recovery_mode_resets_bucket_space_stats() {
     addNodesToBucketDB(document::BucketId(16, 2), "0=1/1/1/t/a");
     addNodesToBucketDB(document::BucketId(16, 3), "0=2/2/2/t/a");
 
-    tickDistributorNTimes(5); // 2/3rds into second round through database
+    tickDistributorNTimes(5); // 1/3rds into second round through database
 
     enableDistributorClusterState("version:2 distributor:1 storage:3 .1.s:d");
     CPPUNIT_ASSERT(_distributor->isInRecoveryMode());
@@ -1033,6 +1039,27 @@ void Distributor_Test::entering_recovery_mode_resets_bucket_space_stats() {
 
     assert_invalid_stats_for_all_spaces(stats, 0);
     assert_invalid_stats_for_all_spaces(stats, 2);
+}
+
+void Distributor_Test::leaving_recovery_mode_immediately_sends_getnodestate_replies() {
+    setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
+    // Should not send explicit replies during init stage
+    CPPUNIT_ASSERT_EQUAL(size_t(0), explicit_node_state_reply_send_invocations());
+    // Add a couple of buckets so we have something to iterate over
+    addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
+    addNodesToBucketDB(document::BucketId(16, 2), "0=1/1/1/t/a");
+
+    enableDistributorClusterState("version:2 distributor:1 storage:3 .1.s:d");
+    CPPUNIT_ASSERT(_distributor->isInRecoveryMode());
+    CPPUNIT_ASSERT_EQUAL(size_t(0), explicit_node_state_reply_send_invocations());
+    tickDistributorNTimes(1); // DB round not yet complete
+    CPPUNIT_ASSERT_EQUAL(size_t(0), explicit_node_state_reply_send_invocations());
+    tickDistributorNTimes(2); // DB round complete after 2nd bucket + "scan done" discovery tick
+    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
+    CPPUNIT_ASSERT(!_distributor->isInRecoveryMode());
+    // Now out of recovery mode, subsequent round completions should not send replies
+    tickDistributorNTimes(10);
+    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
 }
 
 }
