@@ -393,7 +393,7 @@ HandlerSet::prepareGetModifiedBuckets()
 
 class SimplePersistenceEngineOwner : public IPersistenceEngineOwner
 {
-    void setClusterState(const storage::spi::ClusterState &calc) override { (void) calc; }
+    void setClusterState(BucketSpace, const storage::spi::ClusterState &calc) override { (void) calc; }
 };
 
 struct SimpleResourceWriteFilter : public IResourceWriteFilter

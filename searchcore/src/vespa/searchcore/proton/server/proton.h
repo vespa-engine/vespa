@@ -56,7 +56,6 @@ private:
     typedef std::map<DocTypeName, DocumentDB::SP>         DocumentDBMap;
     typedef BootstrapConfig::ProtonConfigSP               ProtonConfigSP;
     using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
-    using lock_guard = std::lock_guard<std::mutex>;
     using BucketSpace = document::BucketSpace;
 
     struct MetricsUpdateHook : metrics::UpdateHook
@@ -123,6 +122,8 @@ private:
     bool                            _initComplete;
     bool                            _initDocumentDbsInSequence;
     std::shared_ptr<IDocumentDBReferenceRegistry> _documentDBReferenceRegistry;
+    std::mutex                      _nodeUpLock;
+    std::set<BucketSpace>           _nodeUp;   // bucketspaces where node is up
 
     IDocumentDBConfigOwner *
     addDocumentDB(const DocTypeName & docTypeName, BucketSpace bucketSpace, const vespalib::string & configid,
@@ -145,6 +146,7 @@ private:
     uint32_t getDistributionKey() const override { return _distributionKey; }
     BootstrapConfig::SP getActiveConfigSnapshot() const;
     std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override;
+    bool updateNodeUp(BucketSpace bucketSpace, bool nodeUpInBucketSpace);
 public:
     typedef std::unique_ptr<Proton> UP;
     typedef std::shared_ptr<Proton> SP;
@@ -177,7 +179,7 @@ public:
     bool prepareRestart();
 
     void getComponentConfig(Consumer &consumer) override;
-    void setClusterState(const storage::spi::ClusterState &calc) override;
+    void setClusterState(BucketSpace bucketSpace, const storage::spi::ClusterState &calc) override;
 
     // Return the oldest active config generation used by proton.
     int64_t getConfigGeneration();

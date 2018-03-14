@@ -201,7 +201,9 @@ Proton::Proton(const config::ConfigUri & configUri,
       _initStarted(false),
       _initComplete(false),
       _initDocumentDbsInSequence(false),
-      _documentDBReferenceRegistry()
+      _documentDBReferenceRegistry(),
+      _nodeUpLock(),
+      _nodeUp()
 {
     _documentDBReferenceRegistry = std::make_shared<DocumentDBReferenceRegistry>();
 }
@@ -763,15 +765,27 @@ Proton::getConfigGeneration()
     return _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getGeneration();
 }
 
+bool
+Proton::updateNodeUp(BucketSpace bucketSpace, bool nodeUpInBucketSpace)
+{
+    std::lock_guard guard(_nodeUpLock);
+    if (nodeUpInBucketSpace) {
+        _nodeUp.insert(bucketSpace);
+    } else {
+        _nodeUp.erase(bucketSpace);
+    }
+    return !_nodeUp.empty();
+}
 
 void
-Proton::setClusterState(const storage::spi::ClusterState &calc)
+Proton::setClusterState(BucketSpace bucketSpace, const storage::spi::ClusterState &calc)
 {
     // forward info sent by cluster controller to persistence engine
     // about whether node is supposed to be up or not.  Match engine
     // needs to know this in order to stop serving queries.
-    bool nodeUp(calc.nodeUp());
+    bool nodeUpInBucketSpace(calc.nodeUp());
     bool nodeRetired(calc.nodeRetired());
+    bool nodeUp = updateNodeUp(bucketSpace, nodeUpInBucketSpace);
     _matchEngine->setNodeUp(nodeUp);
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setNodeRetired(nodeRetired);

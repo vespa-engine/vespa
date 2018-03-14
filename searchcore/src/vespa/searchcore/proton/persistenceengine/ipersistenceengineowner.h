@@ -16,7 +16,7 @@ public:
     }
 
     virtual void
-    setClusterState(const storage::spi::ClusterState &calc) = 0;
+    setClusterState(document::BucketSpace bucketSpace, const storage::spi::ClusterState &calc) = 0;
 };
 
 } // namespace proton
