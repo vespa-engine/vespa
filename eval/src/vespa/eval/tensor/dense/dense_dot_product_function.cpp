@@ -59,15 +59,6 @@ DenseDotProductFunction::compile_self(Stash &) const
     return eval::InterpretedFunction::Instruction(my_dot_product_op, (uint64_t)(_hwAccelerator.get()));
 }
 
-void
-DenseDotProductFunction::dump_tree(eval::DumpTarget &target) const
-{
-    target.node("DenseDotProduct");
-    target.child("lhs", lhs());
-    target.child("rhs", rhs());
-}
-
-
 const TensorFunction &
 DenseDotProductFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
 {

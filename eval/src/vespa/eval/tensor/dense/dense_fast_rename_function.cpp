@@ -68,14 +68,6 @@ DenseFastRenameFunction::compile_self(Stash &) const
     return eval::InterpretedFunction::Instruction(my_fast_rename_op, (uint64_t)&(result_type()));
 }
 
-void
-DenseFastRenameFunction::dump_tree(eval::DumpTarget &target) const
-{
-    target.node("DenseFastRename");
-    target.child("child", child());
-}
-
-
 const TensorFunction &
 DenseFastRenameFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
 {

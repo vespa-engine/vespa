@@ -6,7 +6,6 @@ vespa_add_library(eval_eval OBJECT
     call_nodes.cpp
     compile_tensor_function.cpp
     delete_node.cpp
-    dump_target.cpp
     function.cpp
     gbdt.cpp
     interpreted_function.cpp

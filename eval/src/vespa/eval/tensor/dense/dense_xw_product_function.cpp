@@ -135,17 +135,6 @@ DenseXWProductFunction::compile_self(Stash &stash) const
 }
 
 void
-DenseXWProductFunction::dump_tree(eval::DumpTarget &target) const
-{
-    target.node("DenseXWProduct");
-    target.arg("common dimension innermost").value(_commonDimensionInnermost);
-    target.arg("vector size").value(_vectorSize);
-    target.arg("result size").value(_resultSize);
-    target.child("lhs", lhs());
-    target.child("rhs", rhs());
-}
-
-void
 DenseXWProductFunction::visit_self(vespalib::ObjectVisitor &visitor) const
 {
     Op2::visit_self(visitor);
