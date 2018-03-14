@@ -7,6 +7,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.proxy.ConfigServerRestExecutor;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyException;
@@ -89,13 +90,14 @@ public class ZoneApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         Cursor uris = root.setArray("uris");
-        zoneRegistry.zones().controllerManaged().ids().forEach(zoneId -> uris.addString(request.getUri()
+        ZoneList zoneList = zoneRegistry.zones().controllerManaged();
+        zoneList.ids().forEach(zoneId -> uris.addString(request.getUri()
                                                                .resolve("/zone/v2/")
                                                                .resolve(zoneId.environment().value() + "/")
                                                                .resolve(zoneId.region().value())
                                                                .toString()));
         Cursor zones = root.setArray("zones");
-        zoneRegistry.zones().all().ids().forEach(zoneId -> {
+        zoneList.ids().forEach(zoneId -> {
             Cursor object = zones.addObject();
             object.setString("environment", zoneId.environment().value());
             object.setString("region", zoneId.region().value());
