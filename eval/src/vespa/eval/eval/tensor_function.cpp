@@ -7,7 +7,6 @@
 #include "tensor_engine.h"
 #include "simple_tensor_engine.h"
 #include "visit_stuff.h"
-#include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/objects/objectdumper.h>
 
 namespace vespalib {
