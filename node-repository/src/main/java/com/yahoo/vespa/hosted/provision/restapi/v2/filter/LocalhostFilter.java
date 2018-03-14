@@ -21,7 +21,7 @@ import java.io.UncheckedIOException;
 public class LocalhostFilter implements SecurityRequestFilter {
 
     private static final String inet4Loopback = "127.0.0.1";
-    private static final String inet6Loopback = "::1";
+    private static final String inet6Loopback = "0:0:0:0:0:0:0:1";
 
     @Override
     public void filter(DiscFilterRequest request, ResponseHandler handler) {
