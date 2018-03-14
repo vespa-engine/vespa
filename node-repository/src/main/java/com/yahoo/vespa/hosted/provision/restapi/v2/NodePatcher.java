@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.restapi.v2;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Type;
@@ -108,8 +107,6 @@ public class NodePatcher {
 
     private Node applyField(String name, Inspector value) {
         switch (name) {
-            case "convergedStateVersion" :
-                return node; // TODO: Ignored, can be removed when callers no longer include this field
             case "currentRebootGeneration" :
                 return node.withCurrentRebootGeneration(asLong(value), nodeRepository.clock().instant());
             case "currentRestartGeneration" :
@@ -123,8 +120,6 @@ public class NodePatcher {
                 return node.with(node.status().withVespaVersion(versionFromImage));
             case "currentVespaVersion" :
                 return node.with(node.status().withVespaVersion(Version.fromString(asString(value))));
-            case "currentHostedVersion" :
-                return node; // TODO: Ignored, can be removed when callers no longer include this field
             case "failCount" :
                 return node.with(node.status().setFailCount(asLong(value).intValue()));
             case "flavor" :
