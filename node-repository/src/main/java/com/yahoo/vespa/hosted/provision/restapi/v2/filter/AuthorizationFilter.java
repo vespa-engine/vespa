@@ -3,8 +3,6 @@ package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.jdisc.handler.FastContentWriter;
-import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
@@ -17,9 +15,6 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.security.Principal;
 import java.security.cert.CertificateEncodingException;
@@ -67,20 +62,6 @@ public class AuthorizationFilter implements SecurityRequestFilter {
                     String.format("%s %s denied for %s: Missing credentials", request.getMethod(),
                                   request.getUri().getPath(), request.getRemoteAddr())), handler
             );
-        }
-    }
-
-    /** Write error response */
-    static void write(ErrorResponse response, ResponseHandler handler) {
-        try (FastContentWriter writer = ResponseDispatch.newInstance(response.getJdiscResponse())
-                                                        .connectFastWriter(handler)) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try {
-                response.render(out);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-            writer.write(out.toByteArray());
         }
     }
 
