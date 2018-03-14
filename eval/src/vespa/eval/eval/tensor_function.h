@@ -167,6 +167,7 @@ public:
 
 class ConstValue : public Leaf
 {
+    using Super = Leaf;
 private:
     const Value &_value;
 public:
@@ -180,6 +181,7 @@ public:
 
 class Inject : public Leaf
 {
+    using Super = Leaf;
 private:
     size_t _param_idx;
 public:
@@ -195,6 +197,7 @@ public:
 
 class Reduce : public Op1
 {
+    using Super = Op1;
 private:
     Aggr _aggr;
     std::vector<vespalib::string> _dimensions;
@@ -215,6 +218,7 @@ public:
 
 class Map : public Op1
 {
+    using Super = Op1;
 private:
     map_fun_t _function;
 public:
@@ -232,6 +236,7 @@ public:
 
 class Join : public Op2
 {
+    using Super = Op2;
 private:
     join_fun_t _function;    
 public:
@@ -250,6 +255,7 @@ public:
 
 class Concat : public Op2
 {
+    using Super = Op2;
 private:
     vespalib::string _dimension;    
 public:
@@ -268,6 +274,7 @@ public:
 
 class Rename : public Op1
 {
+    using Super = Op1;
 private:
     std::vector<vespalib::string> _from;
     std::vector<vespalib::string> _to;

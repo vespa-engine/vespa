@@ -16,6 +16,7 @@ using XWOutput = ArrayRef<double>;
  */
 class DenseXWProductFunction : public eval::tensor_function::Op2
 {
+    using Super = eval::tensor_function::Op2;
 public:
     struct Self {
         const eval::ValueType _resultType;

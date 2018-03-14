@@ -164,7 +164,7 @@ ConstValue::compile_self(Stash &) const
 void
 ConstValue::visit_self(vespalib::ObjectVisitor &visitor) const
 {
-    Leaf::visit_self(visitor);
+    Super::visit_self(visitor);
     if (result_type().is_double()) {
         visitor.visitFloat("value", _value.as_double());
     } else {
@@ -183,7 +183,7 @@ Inject::compile_self(Stash &) const
 void
 Inject::visit_self(vespalib::ObjectVisitor &visitor) const
 {
-    Leaf::visit_self(visitor);
+    Super::visit_self(visitor);
     visitor.visitInt("param_idx", _param_idx);
 }
 
@@ -199,7 +199,7 @@ Reduce::compile_self(Stash &stash) const
 void
 Reduce::visit_self(vespalib::ObjectVisitor &visitor) const
 {
-    Op1::visit_self(visitor);
+    Super::visit_self(visitor);
     ::visit(visitor, "aggr", _aggr);
     ::visit(visitor, "dimensions", visit::DimList(_dimensions));
 }
@@ -218,7 +218,7 @@ Map::compile_self(Stash &) const
 void
 Map::visit_self(vespalib::ObjectVisitor &visitor) const
 {
-    Op1::visit_self(visitor);
+    Super::visit_self(visitor);
     ::visit(visitor, "function", _function);
 }
 
@@ -242,7 +242,7 @@ Join::compile_self(Stash &) const
 void
 Join::visit_self(vespalib::ObjectVisitor &visitor) const
 {
-    Op2::visit_self(visitor);
+    Super::visit_self(visitor);
     ::visit(visitor, "function", _function);
 }
 
@@ -257,7 +257,7 @@ Concat::compile_self(Stash &) const
 void
 Concat::visit_self(vespalib::ObjectVisitor &visitor) const
 {
-    Op2::visit_self(visitor);
+    Super::visit_self(visitor);
     visitor.visitString("dimension", _dimension);
 }
 
@@ -273,7 +273,7 @@ Rename::compile_self(Stash &stash) const
 void
 Rename::visit_self(vespalib::ObjectVisitor &visitor) const
 {
-    Op1::visit_self(visitor);
+    Super::visit_self(visitor);
     ::visit(visitor, "from_to", visit::FromTo(_from, _to));
 }
 

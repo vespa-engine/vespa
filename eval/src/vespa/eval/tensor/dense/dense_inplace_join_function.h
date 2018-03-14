@@ -11,6 +11,7 @@ namespace vespalib::tensor {
  **/
 class DenseInplaceJoinFunction : public eval::tensor_function::Join
 {
+    using Super = eval::tensor_function::Join;
 public:
     using join_fun_t = ::vespalib::eval::tensor_function::join_fun_t;
 private:

@@ -137,7 +137,7 @@ DenseXWProductFunction::compile_self(Stash &stash) const
 void
 DenseXWProductFunction::visit_self(vespalib::ObjectVisitor &visitor) const
 {
-    Op2::visit_self(visitor);
+    Super::visit_self(visitor);
     visitor.visitInt("vector_size", _vectorSize);
     visitor.visitInt("result_size", _resultSize);
     visitor.visitBool("common_dimension_innermost", _commonDimensionInnermost);

@@ -71,7 +71,7 @@ DenseInplaceJoinFunction::compile_self(Stash &) const
 void
 DenseInplaceJoinFunction::visit_self(vespalib::ObjectVisitor &visitor) const
 {
-    Join::visit_self(visitor);
+    Super::visit_self(visitor);
     visitor.visitBool("write_left", _write_left);
 }
 
