@@ -92,7 +92,8 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
                     .withAddCapability("SYS_ADMIN"); // Needed for perf
 
-            if (environment.getNodeType() == NodeType.confighost) {
+            if (environment.getNodeType() == NodeType.confighost ||
+                    environment.getNodeType() == NodeType.proxyhost) {
                 command.withVolume("/var/lib/sia", "/var/lib/sia");
             }
 
