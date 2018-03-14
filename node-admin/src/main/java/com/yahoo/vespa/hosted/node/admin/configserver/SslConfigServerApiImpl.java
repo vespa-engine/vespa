@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder;
-import com.yahoo.vespa.athenz.tls.KeyStoreType;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.certificate.ConfigServerKeyStoreRefresher;
 import com.yahoo.vespa.hosted.node.admin.util.KeyStoreOptions;
@@ -18,7 +17,7 @@ import java.util.Optional;
 
 /**
  * ConfigServerApi with proper keystore, truststore and hostname verifier to communicate with the
- * configserver(s). The keystore is refreshed automatically.
+ * config server(s). The keystore is refreshed automatically.
  *
  * @author freva
  */
@@ -99,16 +98,8 @@ public class SslConfigServerApiImpl implements ConfigServerApi {
 
     private SSLContext makeSslContext(Optional<KeyStoreOptions> keyStoreOptions) {
         AthenzSslContextBuilder sslContextBuilder = new AthenzSslContextBuilder();
-        environment.getTrustStoreOptions().ifPresent(
-                options -> sslContextBuilder.withTrustStore(options.path.toFile(), KeyStoreType.valueOf(options.type)));
-
-        keyStoreOptions.ifPresent(options -> {
-            try {
-                sslContextBuilder.withKeyStore(options.path.toFile(), options.password, KeyStoreType.valueOf(options.type));
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to read key store", e);
-            }
-        });
+        environment.getTrustStoreOptions().map(KeyStoreOptions::loadKeyStore).ifPresent(sslContextBuilder::withTrustStore);
+        keyStoreOptions.ifPresent(options -> sslContextBuilder.withKeyStore(options.loadKeyStore(), options.password));
 
         return sslContextBuilder.build();
     }

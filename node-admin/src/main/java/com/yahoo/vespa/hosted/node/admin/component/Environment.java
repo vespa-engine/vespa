@@ -117,13 +117,11 @@ public class Environment {
         this.keyStoreOptions = createKeyStoreOptions(
                 configServerConfig.keyStoreConfig().path(),
                 configServerConfig.keyStoreConfig().password().toCharArray(),
-                configServerConfig.keyStoreConfig().type().name(),
-                "BC");
+                configServerConfig.keyStoreConfig().type().name());
         this.trustStoreOptions = createKeyStoreOptions(
                 configServerConfig.trustStoreConfig().path(),
                 configServerConfig.trustStoreConfig().password().toCharArray(),
-                configServerConfig.trustStoreConfig().type().name(),
-                null);
+                configServerConfig.trustStoreConfig().type().name());
         this.athenzIdentity = createAthenzIdentity(
                 configServerConfig.athenzDomain(),
                 configServerConfig.serviceName());
@@ -184,10 +182,10 @@ public class Environment {
         return Arrays.asList(logstashNodes.split("[,\\s]+"));
     }
 
-    private static Optional<KeyStoreOptions> createKeyStoreOptions(String pathToKeyStore, char[] password, String type, String provider) {
+    private static Optional<KeyStoreOptions> createKeyStoreOptions(String pathToKeyStore, char[] password, String type) {
         return Optional.ofNullable(pathToKeyStore)
                 .filter(path -> !Strings.isNullOrEmpty(path))
-                .map(path -> new KeyStoreOptions(Paths.get(path), password, type, provider));
+                .map(path -> new KeyStoreOptions(Paths.get(path), password, type));
     }
 
     private static Optional<AthenzIdentity> createAthenzIdentity(String athenzDomain, String serviceName) {
