@@ -96,7 +96,6 @@ struct TensorFunction
 
     // for debug dumping
     vespalib::string as_string() const;
-    virtual vespalib::string class_name() const;
     virtual void visit_self(vespalib::ObjectVisitor &visitor) const;
     virtual void visit_children(vespalib::ObjectVisitor &visitor) const;
 

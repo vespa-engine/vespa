@@ -9,7 +9,6 @@
 #include "visit_stuff.h"
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/objects/objectdumper.h>
-#include <vespa/vespalib/util/classname.h>
 
 namespace vespalib {
 namespace eval {
@@ -20,12 +19,6 @@ TensorFunction::as_string() const
     ObjectDumper dumper;
     ::visit(dumper, "", *this);
     return dumper.toString();
-}
-
-vespalib::string
-TensorFunction::class_name() const
-{
-    return vespalib::getClassName(*this);
 }
 
 void
