@@ -2,10 +2,12 @@
 package com.yahoo.vespa.orchestrator.restapi.wire;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Optional;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BatchOperationResult {
     private static final String FAILURE_REASON = "failure-reason";
 
