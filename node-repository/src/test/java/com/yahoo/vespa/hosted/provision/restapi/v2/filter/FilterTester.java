@@ -28,6 +28,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -55,6 +57,8 @@ public class FilterTester {
         Optional<Response> response = getResponse(request);
         assertTrue("Expected response from filter", response.isPresent());
         assertEquals("Response body", body, response.get().body);
+        assertEquals("Content type", "application/json",
+                     response.get().headers.get("Content-Type").get(0));
         assertEquals("Status code", status, response.get().status);
     }
 
@@ -62,7 +66,7 @@ public class FilterTester {
         RequestHandlerTestDriver.MockResponseHandler handler = new RequestHandlerTestDriver.MockResponseHandler();
         filter.filter(toDiscFilterRequest(request), handler);
         return Optional.ofNullable(handler.getResponse())
-                       .map(response -> new Response(response.getStatus(), handler.readAll()));
+                       .map(response -> new Response(response.getStatus(), response.headers(), handler.readAll()));
     }
 
     private static DiscFilterRequest toDiscFilterRequest(Request request) {
@@ -113,10 +117,12 @@ public class FilterTester {
     private static class Response {
 
         private final int status;
+        private final Map<String, List<String>> headers;
         private final String body;
 
-        private Response(int status, String body) {
+        private Response(int status, Map<String, List<String>> headers, String body) {
             this.status = status;
+            this.headers = headers;
             this.body = body;
         }
 

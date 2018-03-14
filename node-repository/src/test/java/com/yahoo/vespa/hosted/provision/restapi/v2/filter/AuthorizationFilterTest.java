@@ -23,7 +23,7 @@ public class AuthorizationFilterTest {
         tester = new FilterTester(new AuthorizationFilter(new Authorizer(SystemName.main,
                                                                          new MockNodeRepository(new MockCurator(),
                                                                                                 new MockNodeFlavors())),
-                                                          AuthorizationFilter::write));
+                                                          FilterUtils::write));
     }
 
     @Test
