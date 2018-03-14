@@ -21,6 +21,8 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -39,6 +41,8 @@ import static org.mockito.Mockito.when;
  * @author mortent
  */
 public class MetricsReporterTest {
+
+    private static final Path testData = Paths.get("src/test/resources/");
 
     @Test
     public void test_chef_metrics() throws IOException {
@@ -108,7 +112,7 @@ public class MetricsReporterTest {
         Chef client = Mockito.mock(Chef.class);
         PartialNodeResult result = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .readValue(getClass().getClassLoader().getResource("chef_output.json"), PartialNodeResult.class);
+                .readValue(testData.resolve("chef_output.json").toFile(), PartialNodeResult.class);
         when(client.partialSearchNodes(anyString(), anyListOf(AttributeMapping.class))).thenReturn(result);
 
         Clock clock = Clock.fixed(Instant.ofEpochSecond(1475497913), ZoneId.systemDefault());
