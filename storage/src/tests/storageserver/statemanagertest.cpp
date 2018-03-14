@@ -33,12 +33,14 @@ struct StateManagerTest : public CppUnit::TestFixture {
 
     void testSystemState();
     void testReportedNodeState();
-    void testClusterStateVersion();
+    void current_cluster_state_version_is_included_in_host_info_json();
+    void can_explicitly_send_get_node_state_reply();
 
     CPPUNIT_TEST_SUITE(StateManagerTest);
     CPPUNIT_TEST(testSystemState);
     CPPUNIT_TEST(testReportedNodeState);
-    CPPUNIT_TEST(testClusterStateVersion);
+    CPPUNIT_TEST(current_cluster_state_version_is_included_in_host_info_json);
+    CPPUNIT_TEST(can_explicitly_send_get_node_state_reply);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -223,9 +225,7 @@ StateManagerTest::testReportedNodeState()
     CPPUNIT_ASSERT_EQUAL(expectedEvents, stateListener.ost.str());
 }
 
-void
-StateManagerTest::testClusterStateVersion()
-{
+void StateManagerTest::current_cluster_state_version_is_included_in_host_info_json() {
     ClusterState state(*_manager->getClusterStateBundle()->getBaselineClusterState());
     state.setVersion(123);
     _manager->setClusterStateBundle(lib::ClusterStateBundle(state));
@@ -253,6 +253,28 @@ StateManagerTest::testClusterStateVersion()
 
     int version = clusterStateVersionCursor.asLong();
     CPPUNIT_ASSERT_EQUAL(123, version);
+}
+
+void StateManagerTest::can_explicitly_send_get_node_state_reply() {
+    {
+        auto lock = _manager->grabStateChangeLock();
+        _manager->setReportedNodeState(NodeState(NodeType::STORAGE, State::UP));
+    }
+    // Send down a GetNodeState with the same state as we currently have. This
+    // ensures that the StateManager doesn't auto-reply with the current state
+    // to inform the caller that the state has changed.
+    auto cmd = std::make_shared<api::GetNodeStateCommand>(
+            std::make_unique<NodeState>(NodeType::STORAGE, State::UP));
+    cmd->setTimeout(10000000);
+    _upper->sendDown(cmd);
+
+    CPPUNIT_ASSERT_EQUAL(size_t(0), _upper->getNumReplies());
+
+    _manager->immediately_send_get_node_state_replies();
+
+    std::shared_ptr<api::StorageReply> reply;
+    GET_ONLY_OK_REPLY(reply);
+    CPPUNIT_ASSERT_EQUAL(api::MessageType::GETNODESTATE_REPLY, reply->getType());
 }
 
 } // storage

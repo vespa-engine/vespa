@@ -556,4 +556,8 @@ StateManager::getNodeInfo() const
     return json.str();
 }
 
+void StateManager::immediately_send_get_node_state_replies() {
+    sendGetNodeStateReplies();
+}
+
 } // storage
