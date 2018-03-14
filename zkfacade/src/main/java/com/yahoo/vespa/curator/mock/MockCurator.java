@@ -451,12 +451,6 @@ public class MockCurator extends Curator {
         public void release() { 
             if (lock != null)
                 lock.close();
-            lock = null;
-        }
-
-        @Override
-        public boolean isAcquiredInThisProcess() {
-            return lock != null;
         }
 
     }
