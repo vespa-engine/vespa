@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 
 import java.util.Optional;
 
@@ -19,18 +18,15 @@ public class TenantMetaData {
     public TenantType type;
     public Optional<AthenzDomain> athensDomain;
     public Optional<Property> property;
-    public Optional<UserGroup> userGroup;
 
     // Required for Jackson deserialization
     public TenantMetaData() {}
 
     public TenantMetaData(TenantType type,
                           Optional<AthenzDomain> athensDomain,
-                          Optional<Property> property,
-                          Optional<UserGroup> userGroup) {
+                          Optional<Property> property) {
         this.type = type;
         this.athensDomain = athensDomain;
         this.property = property;
-        this.userGroup = userGroup;
     }
 }

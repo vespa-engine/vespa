@@ -158,18 +158,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant2", GET).userIdentity(USER_ID),
                               new File("tenant-without-applications-with-id.json"));
 
-        // Test legacy OpsDB tenants
-        // POST (add) an OpsDB tenant with property ID
-        tester.assertResponse(request("/application/v4/tenant/tenant3", POST)
-                                      .userIdentity(USER_ID)
-                                      .data("{\"userGroup\":\"group1\",\"property\":\"property1\",\"propertyId\":\"1234\"}"),
-                              new File("opsdb-tenant-with-id-without-applications.json"));
-        // PUT (modify) the OpsDB tenant to set another property
-        tester.assertResponse(request("/application/v4/tenant/tenant3", PUT)
-                                      .userIdentity(USER_ID)
-                                      .data("{\"userGroup\":\"group1\",\"property\":\"property2\",\"propertyId\":\"4321\"}"),
-                              new File("opsdb-tenant-with-new-id-without-applications.json"));
-
         // POST (create) an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
                                       .userIdentity(USER_ID)
@@ -558,6 +546,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Add the same tenant again
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
                                       .userIdentity(USER_ID)
+                                      .nToken(N_TOKEN)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'tenant1' already exists\"}",
                               400);

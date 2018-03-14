@@ -75,10 +75,10 @@ public class ContainerControllerTester {
 
     public Application createApplication(String athensDomain, String tenant, String application) {
         AthenzDomain domain1 = addTenantAthenzDomain(athensDomain, "mytenant");
-        controller().tenants().addTenant(Tenant.createAthensTenant(new TenantId(tenant), domain1,
-                                                                 new Property("property1"),
-                                                                 Optional.of(new PropertyId("1234"))),
-                                       Optional.of(TestIdentities.userNToken));
+        controller().tenants().createAthenzTenant(Tenant.createAthensTenant(new TenantId(tenant), domain1,
+                                                                            new Property("property1"),
+                                                                            Optional.of(new PropertyId("1234"))),
+                                                  TestIdentities.userNToken);
         ApplicationId app = ApplicationId.from(tenant, application, "default");
         return controller().applications().createApplication(app, Optional.of(TestIdentities.userNToken));
     }

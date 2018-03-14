@@ -7,11 +7,7 @@ import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
-import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
@@ -64,16 +60,13 @@ public class TenantController {
     }
 
     public List<Tenant> asList(UserId user) {
-        Set<UserGroup> userGroups = entityService.getUserGroups(user);
         Set<AthenzDomain> userDomains = new HashSet<>(athenzClientFactory.createZtsClientWithServicePrincipal()
                                                               .getTenantDomainsForUser(AthenzUser.fromUserId(user.id())));
-
-        Predicate<Tenant> hasUsersGroup = (tenant) -> tenant.getUserGroup().isPresent() && userGroups.contains(tenant.getUserGroup().get());
         Predicate<Tenant> hasUsersDomain = (tenant) -> tenant.getAthensDomain().isPresent() && userDomains.contains(tenant.getAthensDomain().get());
         Predicate<Tenant> isUserTenant = (tenant) -> tenant.getId().equals(user.toTenantId());
 
         return asList().stream()
-                .filter(t -> hasUsersGroup.test(t) || hasUsersDomain.test(t) || isUserTenant.test(t))
+                .filter(t -> hasUsersDomain.test(t) || isUserTenant.test(t))
                 .collect(Collectors.toList());
     }
 
@@ -86,11 +79,10 @@ public class TenantController {
         }
     }
 
-    /** Creates an Athens or OpsDb tenant. */
-    // TODO: Rename to createAthensTenant and move creation here when opsDbTenant creation is removed */
-    public void addTenant(Tenant tenant, Optional<NToken> token) {
+    /** Creates an Athens tenant. */
+    public void createAthenzTenant(Tenant tenant, NToken token) {
         try (Lock lock = lock(tenant.getId())) {
-            internalCreateTenant(tenant, token);
+            internalCreateTenant(tenant, Optional.of(token));
         }
     }
 
@@ -187,44 +179,6 @@ public class TenantController {
                 athenzClientFactory.createZmsClientWithAuthorizedServiceToken(token.get())
                         .deleteTenant(tenant.getAthensDomain().get());
             log.info("Deleted " + tenant);
-        }
-    }
-
-    public Tenant migrateTenantToAthenz(TenantId tenantId,
-                                        AthenzDomain tenantDomain,
-                                        PropertyId propertyId,
-                                        Property property,
-                                        NToken nToken) {
-        try (Lock lock = lock(tenantId)) {
-            Tenant existing = tenant(tenantId).orElseThrow(() -> new NotExistsException(tenantId));
-            if (existing.isAthensTenant()) return existing; // nothing to do
-            log.info("Starting migration of " + existing + " to Athenz domain " + tenantDomain.getName());
-            if (tenantHaving(tenantDomain).isPresent())
-                throw new IllegalArgumentException("Could not migrate " + existing + " to " + tenantDomain + ": " +
-                                                   "This domain is already used by " + tenantHaving(tenantDomain).get());
-            if ( ! existing.isOpsDbTenant())
-                throw new IllegalArgumentException("Could not migrate " + existing + " to " + tenantDomain + ": " +
-                                                   "Tenant is not currently an OpsDb tenant");
-
-            ZmsClient zmsClient = athenzClientFactory.createZmsClientWithAuthorizedServiceToken(nToken);
-            zmsClient.createTenant(tenantDomain);
-
-            // Create resource group in Athenz for each application name
-            controller.applications()
-                    .asList(TenantName.from(existing.getId().id()))
-                    .stream()
-                    .map(name -> new ApplicationId(name.id().application().value()))
-                    .distinct()
-                    .forEach(appId -> zmsClient.addApplication(tenantDomain, appId));
-
-            db.deleteTenant(tenantId);
-            Tenant tenant = Tenant.createAthensTenant(tenantId, tenantDomain, property, Optional.of(propertyId));
-            db.createTenant(tenant);
-            log.info("Migration of " + existing + " to Athenz completed.");
-            return tenant;
-        }
-        catch (PersistenceException e) {
-            throw new RuntimeException("Failed migrating " + tenantId + " to Athenz", e);
         }
     }
 

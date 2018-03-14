@@ -415,44 +415,6 @@ public class ControllerTest {
     }
 
     @Test
-    public void testMigratingTenantToAthenzWillModifyAthenzDomainsCorrectly() {
-        ControllerTester tester = new ControllerTester();
-
-        // Create Athens domain mock
-        AthenzDomain athensDomain = new AthenzDomain("vespa.john");
-        AthenzDbMock.Domain mockDomain = new AthenzDbMock.Domain(athensDomain);
-        tester.athenzDb().addDomain(mockDomain);
-
-        // Create OpsDb tenant
-        TenantId tenantId = new TenantId("mytenant");
-        Tenant existingTenant = Tenant.createOpsDbTenant(tenantId, new UserGroup("myusergroup"), new Property("myproperty"));
-        tester.controller().tenants().addTenant(existingTenant, Optional.empty());
-
-        // Create an application without instance
-        String applicationName = "myapplication";
-        ApplicationId applicationId = ApplicationId.from(tenantId.id(), applicationName, "default");
-        tester.controller().applications().createApplication(applicationId, Optional.empty());
-
-        // Verify that Athens domain does not have any relations to tenant/application yet
-        assertTrue(mockDomain.applications.keySet().isEmpty());
-        assertFalse(mockDomain.isVespaTenant);
-
-        // Migrate tenant to Athens
-        NToken nToken = TestIdentities.userNToken;
-        tester.controller().tenants().migrateTenantToAthenz(
-                tenantId, athensDomain, new PropertyId("1567"), new Property("vespa_dev.no"), nToken);
-
-        // Verify that tenant is migrated
-        Tenant tenant = tester.controller().tenants().tenant(tenantId).get();
-        assertTrue(tenant.isAthensTenant());
-        assertEquals(athensDomain, tenant.getAthensDomain().get());
-        // Verify that domain knows about tenant and application
-        assertTrue(mockDomain.isVespaTenant);
-        assertTrue(mockDomain.applications.keySet().contains(
-                new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(applicationName)));
-    }
-
-    @Test
     public void requeueOutOfCapacityStagingJob() {
         DeploymentTester tester = new DeploymentTester();
 
