@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
-import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.PersistenceException;
@@ -44,15 +43,13 @@ public class TenantController {
     private final CuratorDb curator;
 
     private final AthenzClientFactory athenzClientFactory;
-    private final EntityService entityService;
 
-    public TenantController(Controller controller, ControllerDb db, CuratorDb curator, EntityService entityService,
+    public TenantController(Controller controller, ControllerDb db, CuratorDb curator,
                             AthenzClientFactory athenzClientFactory) {
         this.controller = controller;
         this.db = db;
         this.curator = curator;
         this.athenzClientFactory = athenzClientFactory;
-        this.entityService = entityService;
     }
 
     public List<Tenant> asList() {

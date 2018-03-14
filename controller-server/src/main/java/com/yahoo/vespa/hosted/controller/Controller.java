@@ -138,7 +138,7 @@ public class Controller extends AbstractComponent {
                                                           rotationsConfig,
                                                           nameService, configServerClient, artifactRepository,
                                                           routingGenerator, clock);
-        tenantController = new TenantController(this, db, curator, entityService, athenzClientFactory);
+        tenantController = new TenantController(this, db, curator, athenzClientFactory);
     }
     
     /** Returns the instance controlling tenants */
