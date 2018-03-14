@@ -143,7 +143,7 @@ class ServletFilterRequest extends DiscFilterRequest {
 
     @Override
     public List<X509Certificate> getClientCertificateChain() {
-        return Optional.ofNullable(parent.context().get(ServletRequest.SERVLET_REQUEST_X509CERT))
+        return Optional.ofNullable(parent.getRequest().getAttribute(ServletRequest.SERVLET_REQUEST_X509CERT))
                 .map(X509Certificate[].class::cast)
                 .map(Arrays::asList)
                 .orElse(Collections.emptyList());
