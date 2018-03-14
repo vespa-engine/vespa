@@ -462,7 +462,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         response.setString("nodes", withPath("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/?&recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
 
-        controller.getLogServerUrl(deploymentId)
+        controller.zoneRegistry().getLogServerUri(deploymentId)
                 .ifPresent(elkUrl -> response.setString("elkUrl", elkUrl.toString()));
 
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
@@ -593,7 +593,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationView applicationView = controller.getApplicationView(tenantName, applicationName, instanceName, environment, region);
         ServiceApiResponse response = new ServiceApiResponse(ZoneId.from(environment, region),
                                                              new ApplicationId.Builder().tenant(tenantName).applicationName(applicationName).instanceName(instanceName).build(),
-                                                             controller.getSecureConfigServerUris(ZoneId.from(environment, region)),
+                                                             controller.zoneRegistry().getConfigServerUris(ZoneId.from(environment, region)),
                                                              request.getUri());
         response.setResponse(applicationView);
         return response;
@@ -603,7 +603,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Map<?,?> result = controller.getServiceApiResponse(tenantName, applicationName, instanceName, environment, region, serviceName, restPath);
         ServiceApiResponse response = new ServiceApiResponse(ZoneId.from(environment, region),
                                                              new ApplicationId.Builder().tenant(tenantName).applicationName(applicationName).instanceName(instanceName).build(),
-                                                             controller.getSecureConfigServerUris(ZoneId.from(environment, region)),
+                                                             controller.zoneRegistry().getConfigServerUris(ZoneId.from(environment, region)),
                                                              request.getUri());
         response.setResponse(result, serviceName, restPath);
         return response;

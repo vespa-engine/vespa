@@ -119,7 +119,7 @@ public class VersionStatus {
         List<URI> configServers = controller.zoneRegistry().zones()
                 .controllerManaged()
                 .ids().stream()
-                .flatMap(zoneId -> controller.getSecureConfigServerUris(zoneId).stream())
+                .flatMap(zoneId -> controller.zoneRegistry().getConfigServerUris(zoneId).stream())
                 .collect(Collectors.toList());
 
         ListMap<Version, String> versions = new ListMap<>();

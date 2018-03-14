@@ -86,7 +86,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public List<URI> getConfigServerSecureUris(ZoneId zoneId) {
+    public List<URI> getConfigServerUris(ZoneId zoneId) {
         return Collections.singletonList(URI.create(String.format("https://cfg.%s.test:4443", zoneId.value())));
     }
 

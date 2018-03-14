@@ -28,9 +28,8 @@ public interface ZoneRegistry {
     /** Returns the default region for the given environment, if one is configured. */
     Optional<RegionName> getDefaultRegion(Environment environment);
 
-    // TODO Rename to getConfigServerUris once port 4080 is removed from configservers
     /** Returns a list with all known config servers in the given zone, with a secure connection URL. */
-    List<URI> getConfigServerSecureUris(ZoneId zoneId);
+    List<URI> getConfigServerUris(ZoneId zoneId);
 
     /** Returns a URL with the logs for the given deployment, if logging is configured for its zone. */
     Optional<URI> getLogServerUri(DeploymentId deploymentId);
