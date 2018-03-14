@@ -76,7 +76,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return ZoneFilterMock.from(Collections.unmodifiableList(zones));
     }
 
-    public AthenzService getConfigserverAthenzService(ZoneId zone) {
+    public AthenzService getConfigServerAthenzService(ZoneId zone) {
         return new AthenzService("vespadomain", "provider-" + zone.environment().value() + "-" + zone.region().value());
     }
 

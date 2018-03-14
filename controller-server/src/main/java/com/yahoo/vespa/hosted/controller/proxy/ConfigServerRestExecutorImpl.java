@@ -263,7 +263,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         AthenzIdentityVerifier hostnameVerifier =
                 new AthenzIdentityVerifier(
                         singleton(
-                                zoneRegistry.getConfigserverAthenzService(
+                                zoneRegistry.getConfigServerAthenzService(
                                         ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion()))));
         return HttpClientBuilder.create()
                 .setUserAgent("config-server-proxy-client")
