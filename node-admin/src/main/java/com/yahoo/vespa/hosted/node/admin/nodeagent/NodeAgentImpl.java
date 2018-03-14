@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.io.UncheckedIOException;
 import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
@@ -688,18 +689,21 @@ public class NodeAgentImpl implements NodeAgent {
                                                                 ContainerName.fromHostname(nodeSpec.hostname));
 
         // ContainerData only works when root, which is the case only for HostAdmin so far -- config nodes are only used under HostAdmin.
+        // If this fails, however, we should fail the start-up, as the config server won't work without it. Thus, no catch here.
         if (nodeSpec.nodeType.equals(NodeType.config.name())) {
             logger.info("Creating files needed by config server");
             new ConfigServerContainerData(environment, nodeSpec.hostname).writeTo(containerData);
         }
 
-        // ContainerData only works when root, which is the case only for HostAdmin so far -- only AWS uses HostAdmin now.
-        if (environment.getRegion().startsWith("aws-")) {
+        // ContainerData only works when root, which is the case only for HostAdmin so far. Allow this to fail, since it's not critical.
+        try {
             logger.info("Creating files for message of the day and the bash prompt");
             new MotdContainerData(nodeSpec, environment).writeTo(containerData);
             new PromptContainerData(environment).writeTo(containerData);
         }
-
+        catch (UncheckedIOException e) {
+            logger.info("Failed creating files for message of the day and the bash prompt", e);
+        }
     }
 
 }
