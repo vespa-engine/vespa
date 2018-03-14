@@ -125,9 +125,4 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
                           + deploymentId.zoneId().region().value() + "&application=" + deploymentId.applicationId().toShortString());
     }
 
-    @Override
-    public URI getDashboardUri() {
-        return URI.create("http://dashboard.test");
-    }
-
 }
