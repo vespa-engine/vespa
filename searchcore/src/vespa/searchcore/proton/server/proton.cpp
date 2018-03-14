@@ -780,7 +780,6 @@ Proton::updateNodeUp(BucketSpace bucketSpace, bool nodeUpInBucketSpace)
 void
 Proton::setClusterState(BucketSpace bucketSpace, const storage::spi::ClusterState &calc)
 {
-    (void) bucketSpace;
     // forward info sent by cluster controller to persistence engine
     // about whether node is supposed to be up or not.  Match engine
     // needs to know this in order to stop serving queries.
