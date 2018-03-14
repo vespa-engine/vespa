@@ -12,7 +12,6 @@ import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
@@ -56,10 +55,15 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -413,15 +417,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.getSessionId();
     }
 
-    void redeployAllApplications(Deployer deployer) throws InterruptedException {
-        ExecutorService deploymentExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
-                                                                          new DaemonThreadFactory("redeploy apps"));
-        tenants.getAllTenants().forEach(tenant -> listApplicationIds(tenant)
-                .forEach(applicationId -> redeployApplication(applicationId, deployer, deploymentExecutor)));
-        deploymentExecutor.shutdown();
-        deploymentExecutor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
-    }
-
     private static void cleanupApplicationDirectory(File tempDir, DeployLogger logger) {
         logger.log(LogLevel.DEBUG, "Deleting tmp dir '" + tempDir + "'");
         if (!IOUtils.recursiveDeleteDir(tempDir)) {
@@ -429,16 +424,24 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private void redeployApplication(ApplicationId applicationId, Deployer deployer, ExecutorService deploymentExecutor) {
-        log.log(LogLevel.DEBUG, () -> "Redeploying " + applicationId);
-        deployer.deployFromLocalActive(applicationId)
-                .ifPresent(deployment -> deploymentExecutor.execute(() -> {
-                    try {
-                        deployment.activate();
-                    } catch (RuntimeException e) {
-                        log.log(LogLevel.ERROR, "Redeploying " + applicationId + " failed", e);
-                    }
-                }));
+    void redeployAllApplications() throws InterruptedException {
+        ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
+                                                                new DaemonThreadFactory("redeploy apps"));
+        // Keep track of deployment per application
+        Map<ApplicationId, Future<?>> futures = new HashMap<>();
+        tenants.getAllTenants()
+                .forEach(tenant -> listApplicationIds(tenant)
+                        .forEach(appId -> deployFromLocalActive(appId).ifPresent(
+                                deployment -> futures.put(appId,executor.submit(deployment::activate)))));
+        for (Map.Entry<ApplicationId, Future<?>> f : futures.entrySet()) {
+            try {
+                f.getValue().get();
+            } catch (ExecutionException e) {
+                throw new RuntimeException("Redeploying of " + f.getKey() + " failed", e);
+            }
+        }
+        executor.shutdown();
+        executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
     }
 
     public ApplicationFile getApplicationFileFromSession(TenantName tenantName, long sessionId, String path, LocalSession.Mode mode) {

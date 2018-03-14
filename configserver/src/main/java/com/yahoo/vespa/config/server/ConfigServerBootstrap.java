@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.config.provision.Deployer;
 import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
@@ -22,7 +21,6 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final ApplicationRepository applicationRepository;
     private final RpcServer server;
     private final Thread serverThread;
-    private final Deployer deployer;
     private final VersionState versionState;
     private final StateMonitor stateMonitor;
 
@@ -31,13 +29,23 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     @SuppressWarnings("WeakerAccess")
     @Inject
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
-                                 Deployer deployer, VersionState versionState, StateMonitor stateMonitor) {
+                                 VersionState versionState, StateMonitor stateMonitor) {
+        this(applicationRepository, server, versionState, stateMonitor, true);
+    }
+
+    // For testing only
+    ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
+                          VersionState versionState, StateMonitor stateMonitor, boolean startMainThread) {
         this.applicationRepository = applicationRepository;
         this.server = server;
-        this.deployer = deployer;
         this.versionState = versionState;
         this.stateMonitor = stateMonitor;
         this.serverThread = new Thread(this, "configserver main");
+        if (startMainThread)
+            start();
+    }
+
+    private void start() {
         serverThread.start();
     }
 
@@ -55,21 +63,34 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     @Override
     public void run() {
         if (versionState.isUpgraded()) {
-            log.log(LogLevel.INFO, "Configserver upgraded from " + versionState.storedVersion() + " to "
+            log.log(LogLevel.INFO, "Configserver upgrading from " + versionState.storedVersion() + " to "
                     + versionState.currentVersion() + ". Redeploying all applications");
             try {
-                applicationRepository.redeployAllApplications(deployer);
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Redeploying applications failed", e);
+                applicationRepository.redeployAllApplications();
+                versionState.saveNewVersion();
+                log.log(LogLevel.INFO, "All applications redeployed successfully");
+            } catch (Exception e) {
+                log.log(LogLevel.ERROR, "Redeployment of applications failed", e);
+                return; // Status will not be set to 'up' since we return here
             }
-            log.log(LogLevel.INFO, "All applications redeployed");
         }
-        versionState.saveNewVersion();
         stateMonitor.status(StateMonitor.Status.up);
-        log.log(LogLevel.DEBUG, "Starting RPC server");
+        log.log(LogLevel.INFO, "Starting RPC server");
         server.run();
-        log.log(LogLevel.DEBUG, "RPC server stopped");
+        do {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                log.log(LogLevel.ERROR, "Got interrupted", e);
+                break;
+            }
+        } while (server.isRunning());
+        log.log(LogLevel.INFO, "RPC server stopped");
         stateMonitor.status(StateMonitor.Status.down);
+    }
+
+    StateMonitor.Status status() {
+        return stateMonitor.status();
     }
 
 }

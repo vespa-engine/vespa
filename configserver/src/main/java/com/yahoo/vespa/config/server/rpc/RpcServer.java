@@ -100,6 +100,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private final ThreadPoolExecutor executorService;
     private final FileDownloader downloader;
     private volatile boolean allTenantsLoaded = false;
+    private boolean isRunning = false;
 
     /**
      * Creates an RpcServer listening on the specified <code>port</code>.
@@ -168,6 +169,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         log.log(LogLevel.INFO, "Rpc server listening on port " + spec.port());
         try {
             Acceptor acceptor = supervisor.listen(spec);
+            isRunning = true;
             supervisor.transport().join();
             acceptor.shutdown().join();
         } catch (ListenFailedException e) {
@@ -185,6 +187,11 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         }
         delayedConfigResponses.stop();
         supervisor.transport().shutdown().join();
+        isRunning = false;
+    }
+
+    public boolean isRunning() {
+        return isRunning;
     }
 
     /**

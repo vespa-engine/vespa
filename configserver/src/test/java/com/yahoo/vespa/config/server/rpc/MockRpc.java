@@ -20,8 +20,7 @@ import java.util.concurrent.CompletionService;
 /**
  * Test utility mocking an RPC server.
  *
- * @author lulf
- * @since 5.25
+ * @author Ulf Lilleengen
  */
 public class MockRpc extends RpcServer {
 
@@ -110,5 +109,10 @@ public class MockRpc extends RpcServer {
 
     @Override
     public boolean allTenantsLoaded() { return true; }
+
+    @Override
+    public boolean isRunning() {
+        return true;
+    }
 
 }
