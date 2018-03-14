@@ -35,7 +35,7 @@ public class AuthorizerTest {
     public void before() {
         NodeFlavors flavors = new MockNodeFlavors();
         nodeRepository = new MockNodeRepository(new MockCurator(), flavors);
-        authorizer = new Authorizer(SystemName.main, nodeRepository);
+        authorizer = new Authorizer(SystemName.main, nodeRepository, () -> "cfg-host");
         { // Populate with nodes used in this test. Note that only nodes requiring node repository lookup are added here
             Set<String> ipAddresses = new HashSet<>(Arrays.asList("127.0.0.1", "::1"));
             Flavor flavor = flavors.getFlavorOrThrow("default");
@@ -134,6 +134,12 @@ public class AuthorizerTest {
         // Node of proxy type can access routing resource
         assertFalse(authorized("node1", "/routing/v1/status"));
         assertTrue(authorized("proxy1", "/routing/v1/status"));
+    }
+
+    @Test
+    public void host_authorization() {
+        assertTrue(authorized("cfg-host", "/"));
+        assertTrue(authorized("cfg-host", "/application/v2"));
     }
 
     private boolean authorized(String principal, String path) {
