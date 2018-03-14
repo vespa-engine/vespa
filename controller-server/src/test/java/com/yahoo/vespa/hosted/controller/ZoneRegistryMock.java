@@ -76,7 +76,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return ZoneFilterMock.from(Collections.unmodifiableList(zones));
     }
 
-    public AthenzService getConfigserverAthenzService(ZoneId zone) {
+    public AthenzService getConfigServerAthenzService(ZoneId zone) {
         return new AthenzService("vespadomain", "provider-" + zone.environment().value() + "-" + zone.region().value());
     }
 
@@ -86,7 +86,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public List<URI> getConfigServerSecureUris(ZoneId zoneId) {
+    public List<URI> getConfigServerUris(ZoneId zoneId) {
         return Collections.singletonList(URI.create(String.format("https://cfg.%s.test:4443", zoneId.value())));
     }
 
@@ -123,11 +123,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     public URI getMonitoringSystemUri(DeploymentId deploymentId) {
         return URI.create("http://monitoring-system.test/?environment=" + deploymentId.zoneId().environment().value() + "&region="
                           + deploymentId.zoneId().region().value() + "&application=" + deploymentId.applicationId().toShortString());
-    }
-
-    @Override
-    public URI getDashboardUri() {
-        return URI.create("http://dashboard.test");
     }
 
 }

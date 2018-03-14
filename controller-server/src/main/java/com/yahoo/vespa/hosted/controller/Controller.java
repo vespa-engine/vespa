@@ -24,7 +24,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Organizati
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -33,7 +32,6 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
-import java.net.URI;
 import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -162,15 +160,6 @@ public class Controller extends AbstractComponent {
 
     public Clock clock() { return clock; }
 
-    public Optional<URI> getLogServerUrl(DeploymentId deploymentId) {
-        return zoneRegistry.getLogServerUri(deploymentId);
-    }
-
-    // TODO Rename to getConfigServerUris once port 4080 is removed from configservers
-    public List<URI> getSecureConfigServerUris(ZoneId zoneId) {
-        return zoneRegistry.getConfigServerSecureUris(zoneId);
-    }
-    
     public ZoneRegistry zoneRegistry() { return zoneRegistry; }
 
     public Map<String, RotationStatus> getHealthStatus(String hostname) {

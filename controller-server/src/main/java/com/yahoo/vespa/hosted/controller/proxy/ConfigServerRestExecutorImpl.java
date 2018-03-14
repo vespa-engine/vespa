@@ -80,7 +80,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         ZoneId zoneId = ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion());
 
         // Make a local copy of the list as we want to manipulate it in case of ping problems.
-        List<URI> allServers = new ArrayList<>(zoneRegistry.getConfigServerSecureUris(zoneId));
+        List<URI> allServers = new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId));
 
         StringBuilder errorBuilder = new StringBuilder();
         if (queueFirstServerIfDown(allServers, proxyRequest)) {
@@ -263,7 +263,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         AthenzIdentityVerifier hostnameVerifier =
                 new AthenzIdentityVerifier(
                         singleton(
-                                zoneRegistry.getConfigserverAthenzService(
+                                zoneRegistry.getConfigServerAthenzService(
                                         ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion()))));
         return HttpClientBuilder.create()
                 .setUserAgent("config-server-proxy-client")
