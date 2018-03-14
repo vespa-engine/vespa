@@ -24,7 +24,7 @@ public class PromptContainerData {
                                                  "color_off='\\[\\e[0m\\]'       # Text Reset\n" +
                                                  "color_bold='\\[\\e[1m\\]'      # Bold text\n" +
                                                  "\n" +
-                                                 "env_colour=#if($zone.getSystem() == \"main\")#if($zone.getEnvironment() == \"prod\")'\\e[0;91m'#else'\\e[0;33m'#end#else$green#end\n" +
+                                                 "env_colour=#if($zone.getSystem() == \"main\")#if($zone.getEnvironment() == \"prod\")'\\[\\e[0;91m\\]'#else'\\[\\e[0;33m\\]'#end#else'\\[\\e[0;32m\\]'#end\n" +
                                                  "\n" +
                                                  "\n" +
                                                  "PS1=\"${env_colour}$zone.getRegion().toUpperCase()${color_off} [\\u@${color_bold}\\h${color_off}:\\w]\\$ \"\n" +
