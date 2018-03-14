@@ -285,7 +285,7 @@ PersistenceEngine::setClusterState(BucketSpace bucketSpace, const ClusterState &
         handler->handleSetClusterState(calc, resultHandler);
     }
     resultHandler.await();
-    _owner.setClusterState(calc);
+    _owner.setClusterState(bucketSpace, calc);
     return resultHandler.getResult();
 }
 

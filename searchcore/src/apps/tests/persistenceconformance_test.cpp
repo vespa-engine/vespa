@@ -286,7 +286,7 @@ protected:
 class MyPersistenceEngineOwner : public IPersistenceEngineOwner
 {
     virtual void
-    setClusterState(const storage::spi::ClusterState &calc) override
+    setClusterState(BucketSpace, const storage::spi::ClusterState &calc) override
     {
         (void) calc;
     }
