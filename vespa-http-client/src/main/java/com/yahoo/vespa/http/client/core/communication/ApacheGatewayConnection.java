@@ -235,6 +235,7 @@ class ApacheGatewayConnection implements GatewayConnection {
         });
 
         if (useCompression) {
+            httpPost.setHeader("Content-Encoding", "br");
             httpPost.setHeader("Content-Encoding", "gzip");
         }
         return httpPost;
