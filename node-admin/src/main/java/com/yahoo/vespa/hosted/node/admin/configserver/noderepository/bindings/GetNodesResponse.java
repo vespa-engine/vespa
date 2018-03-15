@@ -48,6 +48,7 @@ public class GetNodesResponse {
         public final Boolean fastDisk;
         public final Set<String> ipAddresses;
         public final String hardwareDivergence;
+        public final String parentHostname;
 
         @JsonCreator
         public Node(@JsonProperty("id") String hostname,
@@ -71,7 +72,8 @@ public class GetNodesResponse {
                     @JsonProperty("minDiskAvailableGb") Double minDiskAvailableGb,
                     @JsonProperty("fastDisk") Boolean fastDisk,
                     @JsonProperty("ipAddresses") Set<String> ipAddresses,
-                    @JsonProperty("hardwareDivergence") String hardwareDivergence) {
+                    @JsonProperty("hardwareDivergence") String hardwareDivergence,
+                    @JsonProperty("parentHostname") String parentHostname) {
             this.hostname = hostname;
             this.wantedDockerImage = wantedDockerImage;
             this.currentDockerImage = currentDockerImage;
@@ -94,6 +96,7 @@ public class GetNodesResponse {
             this.fastDisk = fastDisk;
             this.ipAddresses = ipAddresses;
             this.hardwareDivergence = hardwareDivergence;
+            this.parentHostname = parentHostname;
         }
 
         public String toString() {
@@ -116,6 +119,7 @@ public class GetNodesResponse {
                     + " minCpuCores = " + minCpuCores
                     + " minMainMemoryAvailableGb = " + minMainMemoryAvailableGb
                     + " minDiskAvailableGb = " + minDiskAvailableGb
+                    + " parentHostname = " + parentHostname
                     + " }";
         }
 
