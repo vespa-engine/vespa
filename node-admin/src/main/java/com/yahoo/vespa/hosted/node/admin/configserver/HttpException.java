@@ -4,13 +4,26 @@ package com.yahoo.vespa.hosted.node.admin.configserver;
 import javax.ws.rs.core.Response;
 import java.util.Optional;
 
+/**
+ * @author hakonhall
+ */
 @SuppressWarnings("serial")
 public class HttpException extends RuntimeException {
+
     public static class NotFoundException extends HttpException {
-        private static final long serialVersionUID = 4791511887L;
+
         public NotFoundException(String message) {
             super(Response.Status.NOT_FOUND, message);
         }
+
+    }
+
+    public static class ForbiddenException extends HttpException {
+
+        public ForbiddenException(String message) {
+            super(Response.Status.FORBIDDEN, message);
+        }
+
     }
 
     /**
@@ -28,6 +41,8 @@ public class HttpException extends RuntimeException {
             case SUCCESSFUL: return Optional.empty();
             case CLIENT_ERROR:
                 switch (status) {
+                    case FORBIDDEN:
+                        throw new ForbiddenException(message);
                     case NOT_FOUND:
                         throw new NotFoundException(message);
                     case CONFLICT:
