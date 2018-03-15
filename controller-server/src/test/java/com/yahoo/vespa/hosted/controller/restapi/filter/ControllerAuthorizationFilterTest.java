@@ -56,7 +56,6 @@ public class ControllerAuthorizationFilterTest {
         ControllerAuthorizationFilter filter = createFilter(new ControllerTester());
         assertIsAllowed(invokeFilter(filter, createRequest(PUT, "/application/v4/user", USER)));
         assertIsAllowed(invokeFilter(filter, createRequest(POST, "/application/v4/tenant/john", USER)));
-        assertIsAllowed(invokeFilter(filter, createRequest(DELETE, "/screwdriver/v1/jobsToRun", USER)));
     }
 
     @Test
