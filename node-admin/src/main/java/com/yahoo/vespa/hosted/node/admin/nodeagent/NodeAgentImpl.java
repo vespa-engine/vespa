@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
+import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.STARTING;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.UNKNOWN;
 
 /**
@@ -93,19 +94,21 @@ public class NodeAgentImpl implements NodeAgent {
     private final ScheduledExecutorService filebeatRestarter =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("filebeatrestarter"));
     private Consumer<String> serviceRestarter;
-    private Future<?> currentFilebeatRestarter;
+    private Optional<Future<?>> currentFilebeatRestarter = Optional.empty();
 
     private boolean resumeScriptRun = false;
 
     /**
      * ABSENT means container is definitely absent - A container that was absent will not suddenly appear without
      * NodeAgent explicitly starting it.
+     * STARTING state is set just before we attempt to start a container, if successful we move to the next state.
      * Otherwise we can't be certain. A container that was running a minute ago may no longer be running without
      * NodeAgent doing anything (container could have crashed). Therefore we always have to ask docker daemon
      * to get updated state of the container.
      */
     enum ContainerState {
         ABSENT,
+        STARTING,
         UNKNOWN
     }
 
@@ -225,8 +228,15 @@ public class NodeAgentImpl implements NodeAgent {
         logger.info("Stopped");
     }
 
-    private void runLocalResumeScriptIfNeeded() {
+    void runLocalResumeScriptIfNeeded(ContainerNodeSpec nodeSpec) {
         if (! resumeScriptRun) {
+            storageMaintainer.writeMetricsConfig(containerName, nodeSpec);
+            storageMaintainer.writeFilebeatConfig(containerName, nodeSpec);
+            aclMaintainer.run();
+            stopFilebeatSchedulerIfNeeded();
+            currentFilebeatRestarter = Optional.of(filebeatRestarter.scheduleWithFixedDelay(
+                    () -> serviceRestarter.accept("filebeat"), 1, 1, TimeUnit.DAYS));
+
             addDebugMessage("Starting optional node program resume command");
             dockerOperations.resumeNode(containerName);
             resumeScriptRun = true;
@@ -245,8 +255,8 @@ public class NodeAgentImpl implements NodeAgent {
                 // update reboot gen with wanted gen if set, we ignore reboot for Docker nodes but
                 // want the two to be equal in node repo
                 .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(0L))
-                .withDockerImage(nodeSpec.wantedDockerImage.filter(node -> containerState != ABSENT).orElse(new DockerImage("")))
-                .withVespaVersion(nodeSpec.wantedVespaVersion.filter(node -> containerState != ABSENT).orElse(""));
+                .withDockerImage(nodeSpec.wantedDockerImage.filter(node -> containerState == UNKNOWN).orElse(new DockerImage("")))
+                .withVespaVersion(nodeSpec.wantedVespaVersion.filter(node -> containerState == UNKNOWN).orElse(""));
 
         publishStateToNodeRepoIfChanged(currentNodeAttributes, wantedNodeAttributes);
     }
@@ -265,15 +275,9 @@ public class NodeAgentImpl implements NodeAgent {
         createContainerData(nodeSpec);
         dockerOperations.createContainer(containerName, nodeSpec);
         dockerOperations.startContainer(containerName, nodeSpec);
-        aclMaintainer.run();
         lastCpuMetric = new CpuUsageReporter();
 
-        currentFilebeatRestarter = filebeatRestarter.scheduleWithFixedDelay(() -> serviceRestarter.accept("filebeat"), 1, 1, TimeUnit.DAYS);
-        storageMaintainer.writeMetricsConfig(containerName, nodeSpec);
-        storageMaintainer.writeFilebeatConfig(containerName, nodeSpec);
-
         resumeScriptRun = false;
-        containerState = UNKNOWN;
         logger.info("Container successfully started, new containerState is " + containerState);
     }
 
@@ -336,6 +340,8 @@ public class NodeAgentImpl implements NodeAgent {
             return Optional.of("Container should be running with different resource allocation, wanted: " +
                     wantedContainerResources + ", actual: " + existingContainer.resources);
         }
+
+        if (containerState == STARTING) return Optional.of("Container failed to start");
         return Optional.empty();
     }
 
@@ -355,7 +361,7 @@ public class NodeAgentImpl implements NodeAgent {
                     logger.info("Failed stopping services, ignoring", e);
                 }
             }
-            if (currentFilebeatRestarter != null) currentFilebeatRestarter.cancel(true);
+            stopFilebeatSchedulerIfNeeded();
             dockerOperations.removeContainer(existingContainer, nodeSpec);
             containerState = ABSENT;
             logger.info("Container successfully removed, new containerState is " + containerState);
@@ -419,13 +425,7 @@ public class NodeAgentImpl implements NodeAgent {
                 logger.info(e.getMessage());
                 addDebugMessage(e.getMessage());
             } catch (DockerException e) {
-                // When a new version of node-admin app is released, there is a brief period of time when both
-                // new and old version run together. If one of them stats/stops/deletes the container it manages,
-                // the other's assumption of containerState may become incorrect. It'll then start making invalid
-                // requests, for example to start a container that is already running, the containerState should
-                // therefore be reset if we get an exception from docker.
                 numberOfUnhandledException++;
-                containerState = UNKNOWN;
                 logger.error("Caught a DockerException, resetting containerState to " + containerState, e);
             } catch (Exception e) {
                 numberOfUnhandledException++;
@@ -486,10 +486,12 @@ public class NodeAgentImpl implements NodeAgent {
                 container = removeContainerIfNeededUpdateContainerState(nodeSpec, container);
                 if (! container.isPresent()) {
                     storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
+                    containerState = STARTING;
                     startContainer(nodeSpec);
+                    containerState = UNKNOWN;
                 }
 
-                runLocalResumeScriptIfNeeded();
+                runLocalResumeScriptIfNeeded(nodeSpec);
                 // Because it's more important to stop a bad release from rolling out in prod,
                 // we put the resume call last. So if we fail after updating the node repo attributes
                 // but before resume, the app may go through the tenant pipeline but will halt in prod.
@@ -524,10 +526,17 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
+    private void stopFilebeatSchedulerIfNeeded() {
+        if (currentFilebeatRestarter.isPresent()) {
+            currentFilebeatRestarter.get().cancel(true);
+            currentFilebeatRestarter = Optional.empty();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public void updateContainerNodeMetrics() {
         final ContainerNodeSpec nodeSpec = lastNodeSpec;
-        if (nodeSpec == null || containerState == ABSENT) return;
+        if (nodeSpec == null || containerState != UNKNOWN) return;
 
         Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
         if (!containerStats.isPresent()) return;

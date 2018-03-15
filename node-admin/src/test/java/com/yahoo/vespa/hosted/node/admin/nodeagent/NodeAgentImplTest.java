@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStatsImpl;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
@@ -52,6 +53,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -551,6 +553,49 @@ public class NodeAgentImplTest {
     }
 
     @Test
+    public void start_container_subtask_failure_leads_to_container_restart() throws IOException {
+        final long restartGeneration = 1;
+        final long rebootGeneration = 0;
+        final ContainerNodeSpec nodeSpec = nodeSpecBuilder
+                .wantedDockerImage(dockerImage)
+                .nodeState(Node.State.active)
+                .wantedVespaVersion(vespaVersion)
+                .wantedRestartGeneration(restartGeneration)
+                .currentRestartGeneration(restartGeneration)
+                .wantedRebootGeneration(rebootGeneration)
+                .build();
+
+        NodeAgentImpl nodeAgent = spy(makeNodeAgent(null, false));
+
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+        when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
+        when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
+        when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
+        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(201326592000L));
+        doThrow(new DockerException("Failed to set up network")).doNothing().when(dockerOperations).startContainer(eq(containerName), eq(nodeSpec));
+
+        try {
+            nodeAgent.converge();
+            fail("Expected to get DockerException");
+        } catch (DockerException ignored) { }
+
+        verify(dockerOperations, never()).removeContainer(any(), any());
+        verify(dockerOperations, times(1)).createContainer(eq(containerName), eq(nodeSpec));
+        verify(dockerOperations, times(1)).startContainer(eq(containerName), eq(nodeSpec));
+        verify(nodeAgent, never()).runLocalResumeScriptIfNeeded(any());
+
+        // The docker container was actually started and is running, but subsequent exec calls to set up
+        // networking failed
+        mockGetContainer(dockerImage, true);
+        nodeAgent.converge();
+
+        verify(dockerOperations, times(1)).removeContainer(any(), eq(nodeSpec));
+        verify(dockerOperations, times(2)).createContainer(eq(containerName), eq(nodeSpec));
+        verify(dockerOperations, times(2)).startContainer(eq(containerName), eq(nodeSpec));
+        verify(nodeAgent, times(1)).runLocalResumeScriptIfNeeded(any());
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     public void testGetRelevantMetrics() throws Exception {
         final ObjectMapper objectMapper = new ObjectMapper();
@@ -689,6 +734,17 @@ public class NodeAgentImplTest {
     }
 
     private NodeAgentImpl makeNodeAgent(DockerImage dockerImage, boolean isRunning) {
+        mockGetContainer(dockerImage, isRunning);
+
+        when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(emptyContainerStats));
+        doNothing().when(storageMaintainer).writeFilebeatConfig(any(), any());
+        doNothing().when(storageMaintainer).writeMetricsConfig(any(), any());
+
+        return new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
+                storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL);
+    }
+
+    private void mockGetContainer(DockerImage dockerImage, boolean isRunning) {
         Optional<Container> container = dockerImage != null ?
                 Optional.of(new Container(
                         hostName,
@@ -699,12 +755,6 @@ public class NodeAgentImplTest {
                         isRunning ? 1 : 0)) :
                 Optional.empty();
 
-        when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(emptyContainerStats));
         when(dockerOperations.getContainer(eq(containerName))).thenReturn(container);
-        doNothing().when(storageMaintainer).writeFilebeatConfig(any(), any());
-        doNothing().when(storageMaintainer).writeMetricsConfig(any(), any());
-
-        return new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-                storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL);
     }
 }
