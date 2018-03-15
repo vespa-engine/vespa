@@ -96,7 +96,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private final MetricUpdaterFactory metricUpdaterFactory;
     private final HostLivenessTracker hostLivenessTracker;
     private final FileServer fileServer;
-    
+
     private final ThreadPoolExecutor executorService;
     private final FileDownloader downloader;
     private volatile boolean allTenantsLoaded = false;
@@ -131,7 +131,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     /**
-     * Called by reflection from RCP.
+     * Called by reflection from RPC.
      * Handles RPC method "config.v3.getConfig" requests.
      * Uses the template pattern to call methods in classes that extend RpcServer.
      */
@@ -147,7 +147,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     /**
-     * Called by reflection from RCP.
+     * Called by reflection from RPC.
      * Returns 0 if server is alive.
      */
     @SuppressWarnings("UnusedDeclaration")
@@ -156,7 +156,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     /**
-     * Called by reflection from RCP.
+     * Called by reflection from RPC.
      * Returns a String with statistics data for the server.
      *
      * @param req a Request
