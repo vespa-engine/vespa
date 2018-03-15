@@ -240,13 +240,15 @@ public class StatisticsSearcher extends Searcher {
             incrementStatePageOnlyErrors(result);
         }
         Coverage queryCoverage = result.getCoverage(false);
-        if (queryCoverage != null && queryCoverage.isDegraded()) {
-            Metric.Context degradedContext = getDegradedMetricContext(execution.chain().getId().stringValue(), queryCoverage);
-            metric.add(DEGRADED_METRIC, 1, degradedContext);
+        if (queryCoverage != null) {
+            if (queryCoverage.isDegraded()) {
+                Metric.Context degradedContext = getDegradedMetricContext(execution.chain().getId().stringValue(), queryCoverage);
+                metric.add(DEGRADED_METRIC, 1, degradedContext);
+            }
+            metric.set(COVERAGE_METRIC, (double) queryCoverage.getResultPercentage(), metricContext);
         }
         int hitCount = result.getConcreteHitCount();
         hitsPerQuery.put((double) hitCount);
-        metric.set(COVERAGE_METRIC, (double) queryCoverage.getResultPercentage(), metricContext);
         metric.set(HITS_PER_QUERY_METRIC, (double) hitCount, metricContext);
         metric.set(TOTALHITS_PER_QUERY_METRIC, (double) result.getTotalHitCount(), metricContext);
         if (hitCount == 0) {
