@@ -201,7 +201,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     public FileDistributor getFileDistributor() {
-        // return root.getFileDistributionConfigProducer().getFileDistributor();
         return fileDistributor;
     }
 

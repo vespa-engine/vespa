@@ -11,7 +11,6 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.log.LogLevel;
 
-import java.util.Collection;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -28,23 +27,8 @@ public class FileDistributionImpl implements FileDistribution {
     }
 
     @Override
-    public void sendDeployedFiles(String hostName, Set<FileReference> fileReferences) {
-        // Nothing do do, legacy handler not in use anymore
-    }
-
-    @Override
     public void startDownload(String hostName, int port, Set<FileReference> fileReferences) {
          startDownloadingFileReferences(hostName, port, fileReferences);
-    }
-
-    @Override
-    public void reloadDeployFileDistributor() {
-        // Nothing do do, legacy handler not in use anymore
-    }
-
-    @Override
-    public void removeDeploymentsThatHaveDifferentApplicationId(Collection<String> targetHostnames) {
-        // Nothing do do, legacy handler not in use anymore
     }
 
     // Notifies config proxy which file references it should start downloading. It's OK if the call does not succeed,

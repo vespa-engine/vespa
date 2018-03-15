@@ -9,7 +9,6 @@ import com.yahoo.vespa.model.ConfigProxy;
 import com.yahoo.vespa.model.Host;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Responsible for directing distribution of files to hosts.
@@ -101,10 +100,6 @@ public class FileDistributor {
         return hosts;
     }
 
-    public Set<String> getTargetHostnames() {
-        return getTargetHosts().stream().map(Host::getHostname).collect(Collectors.toSet());
-    }
-
     /** Returns the host which is the source of the files */
     public String fileSourceHost() {
         return fileRegistry.fileSourceHost();
@@ -119,7 +114,6 @@ public class FileDistributor {
         String fileSourceHost = fileSourceHost();
         for (Host host : getTargetHosts()) {
             if ( ! host.getHostname().equals(fileSourceHost)) {
-                dbHandler.sendDeployedFiles(host.getHostname(), filesToSendToHost(host));
                 dbHandler.startDownload(host.getHostname(), ConfigProxy.BASEPORT, filesToSendToHost(host));
             }
         }
@@ -128,9 +122,6 @@ public class FileDistributor {
             configServerSpecs.stream()
                     .filter(configServerSpec -> !configServerSpec.getHostName().equals(fileSourceHost))
                     .forEach(spec -> dbHandler.startDownload(spec.getHostName(), spec.getConfigServerPort(), allFilesToSend()));
-
-        dbHandler.sendDeployedFiles(fileSourceHost, allFilesToSend());
-        dbHandler.removeDeploymentsThatHaveDifferentApplicationId(getTargetHostnames());
     }
 
 }

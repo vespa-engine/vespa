@@ -68,7 +68,7 @@ public class SessionPreparerTest extends TestWithCurator {
     public TemporaryFolder folder = new TemporaryFolder();
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         componentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
         fileDistributionFactory = (MockFileDistributionFactory)componentRegistry.getFileDistributionFactory();
         preparer = createPreparer();
@@ -123,15 +123,15 @@ public class SessionPreparerTest extends TestWithCurator {
     @Test
     public void require_that_filedistribution_is_ignored_on_dryrun() throws IOException {
         preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(),
-                         new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build(),
-                         Optional.empty(), tenantPath, Instant.now());
-        assertThat(fileDistributionFactory.mockFileDistributionProvider.getMockFileDBHandler().sendDeployedFilesCalled, is(0));
+                                                       new PrepareParams.Builder().dryRun(true).timeoutBudget(TimeoutBudgetTest.day()).build(),
+                                                       Optional.empty(), tenantPath, Instant.now());
+        assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(0));
     }
 
     @Test
     public void require_that_application_is_prepared() throws Exception {
         preparer.prepare(getContext(getApplicationPackage(testApp)), getLogger(), new PrepareParams.Builder().build(), Optional.empty(), tenantPath, Instant.now());
-        assertThat(fileDistributionFactory.mockFileDistributionProvider.getMockFileDBHandler().sendDeployedFilesCalled, is(2));
+        assertThat(fileDistributionFactory.mockFileDistributionProvider.timesCalled, is(2));
         assertTrue(configCurator.exists(sessionsPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
     }
 
