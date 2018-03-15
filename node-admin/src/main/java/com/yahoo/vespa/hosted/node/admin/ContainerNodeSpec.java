@@ -69,7 +69,7 @@ public class ContainerNodeSpec {
             final Boolean fastDisk,
             final Set<String> ipAddresses,
             final Optional<String> hardwareDivergence,
-            Optional<String> parentHostname) {
+            final Optional<String> parentHostname) {
         Objects.requireNonNull(hostname);
         Objects.requireNonNull(nodeState);
         Objects.requireNonNull(nodeType);
