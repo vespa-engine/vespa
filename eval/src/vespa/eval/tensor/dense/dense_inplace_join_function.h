@@ -11,6 +11,7 @@ namespace vespalib::tensor {
  **/
 class DenseInplaceJoinFunction : public eval::tensor_function::Join
 {
+    using Super = eval::tensor_function::Join;
 public:
     using join_fun_t = ::vespalib::eval::tensor_function::join_fun_t;
 private:
@@ -25,7 +26,6 @@ public:
     bool write_left() const { return _write_left; }
     bool result_is_mutable() const override { return true; }
     eval::InterpretedFunction::Instruction compile_self(Stash &stash) const override;
-    void dump_tree(eval::DumpTarget &target) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };

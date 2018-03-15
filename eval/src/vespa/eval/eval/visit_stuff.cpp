@@ -7,6 +7,7 @@
 #include "tensor_nodes.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
+#include <vespa/vespalib/util/classname.h>
 
 namespace vespalib::eval::visit {
 namespace {
@@ -64,7 +65,7 @@ vespalib::string name_of(join_fun_t fun) {
 } // namespace vespalib::eval::visit
 
 void visit(vespalib::ObjectVisitor &visitor, const vespalib::string &name, const vespalib::eval::TensorFunction &value) {
-    visitor.openStruct(name, value.class_name());
+    visitor.openStruct(name, vespalib::getClassName(value));
     {
         value.visit_self(visitor);
         value.visit_children(visitor);

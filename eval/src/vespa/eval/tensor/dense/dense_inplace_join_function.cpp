@@ -69,16 +69,9 @@ DenseInplaceJoinFunction::compile_self(Stash &) const
 }
 
 void
-DenseInplaceJoinFunction::dump_tree(eval::DumpTarget &target) const
-{
-    target.node("DenseInplaceJoin replacing:");
-    Join::dump_tree(target);
-}
-
-void
 DenseInplaceJoinFunction::visit_self(vespalib::ObjectVisitor &visitor) const
 {
-    Join::visit_self(visitor);
+    Super::visit_self(visitor);
     visitor.visitBool("write_left", _write_left);
 }
 
