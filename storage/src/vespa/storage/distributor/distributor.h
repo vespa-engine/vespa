@@ -310,6 +310,7 @@ private:
     BucketDBMetricUpdater::Stats _bucketDbStats;
     DistributorHostInfoReporter _hostInfoReporter;
     std::unique_ptr<OwnershipTransferSafeTimePointCalculator> _ownershipSafeTimeCalc;
+    bool _must_send_updated_host_info;
 };
 
 } // distributor

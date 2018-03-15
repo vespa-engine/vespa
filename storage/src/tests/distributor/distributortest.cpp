@@ -60,6 +60,7 @@ class Distributor_Test : public CppUnit::TestFixture,
     CPPUNIT_TEST(closing_aborts_priority_queued_client_requests);
     CPPUNIT_TEST(entering_recovery_mode_resets_bucket_space_stats);
     CPPUNIT_TEST(leaving_recovery_mode_immediately_sends_getnodestate_replies);
+    CPPUNIT_TEST(pending_to_no_pending_merges_edge_immediately_sends_getnodestate_replies);
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -97,6 +98,9 @@ protected:
     void closing_aborts_priority_queued_client_requests();
     void entering_recovery_mode_resets_bucket_space_stats();
     void leaving_recovery_mode_immediately_sends_getnodestate_replies();
+    void pending_to_no_pending_merges_edge_immediately_sends_getnodestate_replies();
+    // TODO handle edge case for window between getnodestate reply already
+    // sent and new request not yet received
 
     void assertBucketSpaceStats(size_t expBucketPending, uint16_t node, const vespalib::string &bucketSpace,
                                 const BucketSpacesStatsProvider::PerNodeBucketSpacesStats &stats);
@@ -1061,6 +1065,41 @@ void Distributor_Test::leaving_recovery_mode_immediately_sends_getnodestate_repl
     tickDistributorNTimes(10);
     CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
 }
+
+void Distributor_Test::pending_to_no_pending_merges_edge_immediately_sends_getnodestate_replies() {
+    setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
+    // 2 buckets with missing replicas triggering merge pending stats
+    addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
+    addNodesToBucketDB(document::BucketId(16, 2), "0=1/1/1/t/a");
+    tickDistributorNTimes(3);
+    CPPUNIT_ASSERT(!_distributor->isInRecoveryMode());
+    assertBucketSpaceStats(2, 1, FixedBucketSpaces::default_space_name(), _distributor->getBucketSpacesStats());
+    CPPUNIT_ASSERT_EQUAL(size_t(0), explicit_node_state_reply_send_invocations());
+
+    // Edge not triggered when 1 bucket with missing replica left
+    addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a,1=1/1/1/t");
+    tickDistributorNTimes(3);
+    assertBucketSpaceStats(1, 1, FixedBucketSpaces::default_space_name(), _distributor->getBucketSpacesStats());
+    CPPUNIT_ASSERT_EQUAL(size_t(0), explicit_node_state_reply_send_invocations());
+
+    // Edge triggered when no more buckets with requiring merge
+    addNodesToBucketDB(document::BucketId(16, 2), "0=1/1/1/t/a,1=1/1/1/t");
+    tickDistributorNTimes(3);
+    CPPUNIT_ASSERT_EQUAL(size_t(0), _distributor->getBucketSpacesStats().size());
+    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
+
+    // Should only send when edge happens, not in subsequent DB iterations
+    tickDistributorNTimes(10);
+    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
+
+    // Going back to merges pending should _not_ send a getnodestate reply (at least for now)
+    addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
+    tickDistributorNTimes(3);
+    assertBucketSpaceStats(1, 1, FixedBucketSpaces::default_space_name(), _distributor->getBucketSpacesStats());
+    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
+}
+
+// TODO test with global space
 
 }
 
