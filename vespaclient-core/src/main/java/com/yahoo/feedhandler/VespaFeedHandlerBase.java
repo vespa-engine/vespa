@@ -18,6 +18,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.search.query.ParameterParser;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespaclient.config.FeederConfig;
+import org.brotli.dec.BrotliInputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,7 +76,14 @@ public abstract class VespaFeedHandlerBase extends ThreadedHttpRequestHandler {
      * @throws IllegalArgumentException if GZIP stream creation failed
      */
     public InputStream getRequestInputStream(HttpRequest request) {
-        if ("gzip".equals(request.getHeader("Content-Encoding"))) {
+        if ("br".equals(request.getHeader("Content-Encoding"))) {
+            try {
+                return new BrotliInputStream(request.getData());
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Failed to create Brotli input stream from content", e);
+            }
+        }
+        else if ("gzip".equals(request.getHeader("Content-Encoding"))) {
             try {
                 return new GZIPInputStream(request.getData());
             } catch (IOException e) {

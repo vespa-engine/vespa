@@ -27,6 +27,7 @@ import com.yahoo.search.result.DefaultErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespaclient.config.FeederConfig;
+import org.brotli.dec.BrotliInputStream;
 
 import java.io.*;
 import java.util.*;
@@ -263,7 +264,10 @@ public class GetSearcher extends Searcher {
     private void handleData(HttpRequest request, List<String> docIds) throws IOException {
         if (request.getData() != null) {
             InputStream input;
-            if ("gzip".equals(request.getHeader("Content-Encoding"))) {
+            if ("br".equals(request.getHeader("Content-Encoding"))) {
+                input = new BrotliInputStream(request.getData());
+            }
+            else if ("gzip".equals(request.getHeader("Content-Encoding"))) {
                 input = new GZIPInputStream(request.getData());
             } else {
                 input = request.getData();
