@@ -71,7 +71,10 @@ public class RealNodeRepository implements NodeRepository {
                 return Optional.empty();
             }
             return Optional.of(createContainerNodeSpec(nodeResponse));
-        } catch (HttpException.NotFoundException e) {
+        } catch (HttpException.NotFoundException|HttpException.ForbiddenException e) {
+            // Return empty on 403 in addition to 404 as it likely means we're trying to access a node that
+            // has been deleted. When a node is deleted, the parent-child relationship no longer exists and
+            // authorization cannot be granted.
             return Optional.empty();
         }
     }

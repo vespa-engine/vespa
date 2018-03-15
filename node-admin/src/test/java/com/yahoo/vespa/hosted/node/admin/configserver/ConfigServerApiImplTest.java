@@ -76,14 +76,14 @@ public class ConfigServerApiImplTest {
     }
 
     @Test
-    public void testBasicParsingSingleServer() throws Exception {
+    public void testBasicParsingSingleServer() {
         TestPojo answer = executor.get("/path", TestPojo.class);
         assertThat(answer.foo, is("bar"));
         assertLogStringContainsGETForAHost();
     }
 
     @Test(expected = HttpException.class)
-    public void testBasicFailure() throws Exception {
+    public void testBasicFailure() {
         // Server is returning 400, no retries.
         mockReturnCode = 400;
 
@@ -93,7 +93,7 @@ public class ConfigServerApiImplTest {
     }
 
     @Test
-    public void testBasicSuccessWithNoRetries() throws Exception {
+    public void testBasicSuccessWithNoRetries() {
         // Server is returning 201, no retries.
         mockReturnCode = 201;
 
@@ -103,7 +103,7 @@ public class ConfigServerApiImplTest {
     }
 
     @Test
-    public void testRetries() throws Exception {
+    public void testRetries() {
         // Client is throwing exception, should be retries.
         mockReturnCode = 100000;
         try {
@@ -118,7 +118,7 @@ public class ConfigServerApiImplTest {
     }
 
     @Test
-    public void testRetriesOnBadHttpResponseCode() throws Exception {
+    public void testRetriesOnBadHttpResponseCode() {
         // Client is throwing exception, should be retries.
         mockReturnCode = 503;
         try {
@@ -134,7 +134,19 @@ public class ConfigServerApiImplTest {
     }
 
     @Test
-    public void testNotFound() throws Exception {
+    public void testForbidden() {
+        mockReturnCode = 403;
+        try {
+            executor.get("/path", TestPojo.class);
+            fail("Expected exception");
+        } catch (HttpException.ForbiddenException e) {
+            // ignore
+        }
+        assertLogStringContainsGETForAHost();
+    }
+
+    @Test
+    public void testNotFound() {
         // Server is returning 404, special exception is thrown.
         mockReturnCode = 404;
         try {
@@ -147,7 +159,7 @@ public class ConfigServerApiImplTest {
     }
 
     @Test
-    public void testConflict() throws Exception {
+    public void testConflict() {
         // Server is returning 409, no exception is thrown.
         mockReturnCode = 409;
         executor.get("/path", TestPojo.class);
@@ -156,8 +168,6 @@ public class ConfigServerApiImplTest {
 
     private void assertLogStringContainsGETForAHost() {
         String logString = mockLog.toString();
-        //assertThat(logString, startsWith("GET http://host"));
-        //assertThat(logString, endsWith(":666/path  "));
         assertTrue("log does not contain expected entries:" + logString,
                    (logString.equals("GET http://host1:666/path  ") || logString.equals("GET http://host2:666/path  ")));
     }
