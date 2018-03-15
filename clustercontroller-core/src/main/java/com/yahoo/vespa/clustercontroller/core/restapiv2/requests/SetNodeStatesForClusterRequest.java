@@ -1,17 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2.requests;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.*;
-import com.yahoo.vespa.clustercontroller.core.ContentCluster;
-import com.yahoo.vespa.clustercontroller.core.NodeInfo;
-import com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Id;
-import com.yahoo.vespa.clustercontroller.core.restapiv2.MissingIdException;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Request;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InternalFailure;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InvalidContentException;
@@ -70,14 +63,14 @@ public class SetNodeStatesForClusterRequest extends Request<SetResponse> {
                     newStates,
                     node,
                     context.nodeStateOrHostInfoChangeHandler,
-                    context.currentState);
+                    context.currentConsolidatedState);
 
             if (!setResponse.getWasModified()) {
                 throw new InternalFailure("We have not yet implemented the meaning of " +
                         "failing to set the wanted state for a subset of nodes: " +
                         "condition = " + condition +
                         ", newStates = " + newStates +
-                        ", currentState = " + context.currentState);
+                        ", currentConsolidatedState = " + context.currentConsolidatedState);
             }
         }
 

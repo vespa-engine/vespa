@@ -11,7 +11,7 @@ public class ClusterTest extends StateRestApiTest {
     @Test
     public void testCluster() throws Exception {
         setUp(true);
-        UnitResponse response = restAPI.getState(new StateRequest("music", 0));
+        UnitResponse response = restAPI.getState(new StateRequest("books", 0));
         String expected =
                 "{\n" +
                 "  \"state\": {\"generated\": {\n" +
@@ -19,9 +19,22 @@ public class ClusterTest extends StateRestApiTest {
                 "    \"reason\": \"\"\n" +
                 "  }},\n" +
                 "  \"service\": {\n" +
-                "    \"storage\": {\"link\": \"\\/cluster\\/v2\\/music\\/storage\"},\n" +
-                "    \"distributor\": {\"link\": \"\\/cluster\\/v2\\/music\\/distributor\"}\n" +
-                "  }\n" +
+                "    \"storage\": {\"link\": \"\\/cluster\\/v2\\/books\\/storage\"},\n" +
+                "    \"distributor\": {\"link\": \"\\/cluster\\/v2\\/books\\/distributor\"}\n" +
+                "  },\n" +
+                "  \"distribution-states\": {\"published\": {\n" +
+                "    \"baseline\": \"distributor:4 storage:4\",\n" +
+                "    \"bucket-spaces\": [\n" +
+                "      {\n" +
+                "        \"name\": \"default\",\n" +
+                "        \"state\": \"distributor:4 storage:4 .3.s:m\"\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"name\": \"global\",\n" +
+                "        \"state\": \"distributor:4 storage:4\"\n" +
+                "      }\n" +
+                "    ]\n" +
+                "  }}\n" +
                 "}";
         assertEquals(expected, jsonWriter.createJson(response).toString(2));
     }
@@ -51,7 +64,11 @@ public class ClusterTest extends StateRestApiTest {
                 "      \"5\": {\"link\": \"\\/cluster\\/v2\\/music\\/distributor\\/5\"},\n" +
                 "      \"7\": {\"link\": \"\\/cluster\\/v2\\/music\\/distributor\\/7\"}\n" +
                 "    }}\n" +
-                "  }\n" +
+                "  },\n" +
+                "  \"distribution-states\": {\"published\": {\n" +
+                "    \"baseline\": \"distributor:8 .0.s:d .2.s:d .4.s:d .6.s:d storage:8 .0.s:d .2.s:d .4.s:d .6.s:d\",\n" +
+                "    \"bucket-spaces\": []\n" +
+                "  }}\n" +
                 "}";
         assertEquals(expected, jsonWriter.createJson(response).toString(2));
     }

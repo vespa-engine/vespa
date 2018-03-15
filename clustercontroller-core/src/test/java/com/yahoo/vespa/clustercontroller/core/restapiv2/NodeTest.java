@@ -124,7 +124,7 @@ public class NodeTest extends StateRestApiTest {
         music.context.cluster = new ContentCluster(old.getName(), old.getConfiguredNodes().values(), old.getDistribution(), 0, 0.0);
         NodeState currentState = new NodeState(NodeType.STORAGE, State.DOWN);
         currentState.setDescription("Not seen");
-        music.context.currentState.setNodeState(new Node(NodeType.STORAGE, 1), currentState);
+        music.context.currentConsolidatedState.setNodeState(new Node(NodeType.STORAGE, 1), currentState);
         UnitResponse response = restAPI.getState(new StateRequest("music/storage/1", 0));
         String expected =
                 "{\n" +

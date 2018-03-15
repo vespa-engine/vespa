@@ -16,11 +16,13 @@ public class ClusterControllerMock implements RemoteClusterControllerTaskSchedul
     public StringBuilder events = new StringBuilder();
 
     public ClusterControllerMock(ContentCluster cluster, ClusterState state,
+                                 ClusterStateBundle publishedClusterStateBundle,
                                  int fcIndex, Integer fcMaster) {
         this.fleetControllerIndex = fcIndex;
         this.fleetControllerMaster = fcMaster;
         context.cluster = cluster;
-        context.currentState = state;
+        context.currentConsolidatedState = state;
+        context.publishedClusterStateBundle = publishedClusterStateBundle;
         context.masterInfo = new MasterInterface() {
             @Override
             public boolean isMaster() {
