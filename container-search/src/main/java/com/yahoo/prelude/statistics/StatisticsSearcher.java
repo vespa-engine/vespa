@@ -12,6 +12,7 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
@@ -55,47 +56,32 @@ public class StatisticsSearcher extends Searcher {
     private static final String QUERIES_METRIC = "queries";
     private static final String ACTIVE_QUERIES_METRIC = "active_queries";
     private static final String PEAK_QPS_METRIC = "peak_qps";
+    private static final String COVERAGE_METRIC = "coverage_per_query";
+    private static final String DEGRADED_METRIC = "degraded_queries";
 
-    private Counter queries; // basic counter
-    private Counter failedQueries; // basic counter
-    private Counter nullQueries; // basic counter
-    private Counter illegalQueries; // basic counter
-    private Value queryLatency; // mean pr 5 min
-    private Value queryLatencyBuckets;
-    private Value maxQueryLatency; // separate to avoid name mangling
+    private final Counter queries; // basic counter
+    private final Counter failedQueries; // basic counter
+    private final Counter nullQueries; // basic counter
+    private final Counter illegalQueries; // basic counter
+    private final Value queryLatency; // mean pr 5 min
+    private final Value queryLatencyBuckets;
+    private final Value maxQueryLatency; // separate to avoid name mangling
     @SuppressWarnings("unused") // all the work is done by the callback
-    private Value activeQueries; // raw measure every 5 minutes
-    private Value peakQPS; // peak 1s QPS
-    private Counter emptyResults; // number of results containing no concrete hits
-    private Value hitsPerQuery; // mean number of hits per query
+    private final Value activeQueries; // raw measure every 5 minutes
+    private final Value peakQPS; // peak 1s QPS
+    private final Counter emptyResults; // number of results containing no concrete hits
+    private final Value hitsPerQuery; // mean number of hits per query
 
     private final PeakQpsReporter peakQpsReporter;
 
+    // Naming of enums are reflected directly in metric dimensions and should not be changed as they are public API
+    private enum DegradedReason { match_phase, adaptive_timeout, timeout, non_ideal_state }
 
     private Metric metric;
     private Map<String, Metric.Context> chainContexts = new CopyOnWriteHashMap<>();
     private Map<String, Metric.Context> statePageOnlyContexts = new CopyOnWriteHashMap<>();
+    private Map<String, Map<DegradedReason, Metric.Context>> degradedReasonContexts = new CopyOnWriteHashMap<>();
     private java.util.Timer scheduler = new java.util.Timer(true);
-
-    private void initEvents(com.yahoo.statistics.Statistics manager, MetricReceiver metricReceiver) {
-        queries = new Counter(QUERIES_METRIC, manager, false);
-        failedQueries = new Counter(FAILED_QUERIES_METRIC, manager, false);
-        nullQueries = new Counter("null_queries", manager, false);
-        illegalQueries = new Counter("illegal_queries", manager, false);
-        queryLatency = new Value(MEAN_QUERY_LATENCY_METRIC, manager,
-                new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
-        maxQueryLatency = new Value(MAX_QUERY_LATENCY_METRIC, manager,
-                new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
-        queryLatencyBuckets = Value.buildValue("query_latency", manager, null);
-        activeQueries = new Value(ACTIVE_QUERIES_METRIC, manager,
-                new Value.Parameters().setLogRaw(true).setCallback(new ActivitySampler()));
-        peakQPS = new Value(PEAK_QPS_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true)
-                .setNameExtension(false));
-        hitsPerQuery = new Value(HITS_PER_QUERY_METRIC, manager,
-                new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
-        emptyResults = new Counter(EMPTY_RESULTS_METRIC, manager, false);
-        metricReceiver.declareGauge(QUERY_LATENCY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
-    }
 
     // Callback to measure queries in flight every five minutes
     private class ActivitySampler implements Callback {
@@ -137,31 +123,36 @@ public class StatisticsSearcher extends Searcher {
             prevMaxQPSTime = now;
             queriesForQPS = 0;
         }
-        public void countQuery() {
+        void countQuery() {
             synchronized (this) {
                 ++queriesForQPS;
             }
         }
     }
 
-    StatisticsSearcher(Metric metric) {
-        this(com.yahoo.statistics.Statistics.nullImplementation, metric, MetricReceiver.nullImplementation);
-    }
-
     public StatisticsSearcher(com.yahoo.statistics.Statistics manager, Metric metric, MetricReceiver metricReceiver) {
         this.peakQpsReporter = new PeakQpsReporter();
         this.metric = metric;
-        initEvents(manager, metricReceiver);
+
+        queries = new Counter(QUERIES_METRIC, manager, false);
+        failedQueries = new Counter(FAILED_QUERIES_METRIC, manager, false);
+        nullQueries = new Counter("null_queries", manager, false);
+        illegalQueries = new Counter("illegal_queries", manager, false);
+        queryLatency = new Value(MEAN_QUERY_LATENCY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
+        maxQueryLatency = new Value(MAX_QUERY_LATENCY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
+        queryLatencyBuckets = Value.buildValue(QUERY_LATENCY_METRIC, manager, null);
+        activeQueries = new Value(ACTIVE_QUERIES_METRIC, manager, new Value.Parameters().setLogRaw(true).setCallback(new ActivitySampler()));
+        peakQPS = new Value(PEAK_QPS_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
+        hitsPerQuery = new Value(HITS_PER_QUERY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
+        emptyResults = new Counter(EMPTY_RESULTS_METRIC, manager, false);
+        metricReceiver.declareGauge(QUERY_LATENCY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
+
         scheduler.schedule(peakQpsReporter, 1000, 1000);
     }
 
     @Override
     public void deconstruct() {
         scheduler.cancel();
-    }
-
-    public String getMyID() {
-        return (getId().stringValue());
     }
 
     private void qps(Metric.Context metricContext) {
@@ -180,6 +171,35 @@ public class StatisticsSearcher extends Searcher {
         return context;
     }
 
+    private Metric.Context getDegradedMetricContext(String chainName, Coverage coverage) {
+        Map<DegradedReason, Metric.Context> reasons = degradedReasonContexts.get(chainName);
+        if (reasons == null) {
+            reasons = new HashMap<>(4);
+            for (DegradedReason reason : DegradedReason.values() ) {
+                Map<String, String> dimensions = new HashMap<>();
+                dimensions.put("chain", chainName);
+                dimensions.put("reason", reason.toString());
+                Metric.Context context = this.metric.createContext(dimensions);
+                reasons.put(reason, context);
+            }
+            degradedReasonContexts.put(chainName, reasons);
+        }
+        return reasons.get(getMostImportantDegradeReason(coverage));
+    }
+
+    private DegradedReason getMostImportantDegradeReason(Coverage coverage) {
+        if (coverage.isDegradedByMatchPhase()) {
+            return DegradedReason.match_phase;
+        }
+        if (coverage.isDegradedByTimeout()) {
+            return DegradedReason.timeout;
+        }
+        if (coverage.isDegradedByAdapativeTimeout()) {
+            return DegradedReason.adaptive_timeout;
+        }
+        return DegradedReason.non_ideal_state;
+    }
+
     /**
      * Generate statistics for the query passing through this Searcher
      * 1) Add 1 to total query count
@@ -187,7 +207,7 @@ public class StatisticsSearcher extends Searcher {
      * 3) .....
      */
     public Result search(com.yahoo.search.Query query, Execution execution) {
-        if(query.properties().getBoolean(IGNORE_QUERY,false)){
+        if (query.properties().getBoolean(IGNORE_QUERY,false)) {
             return execution.search(query);
         }
 
@@ -217,7 +237,15 @@ public class StatisticsSearcher extends Searcher {
         }
         if (result.hits().getError() != null) {
             incrErrorCount(result, metricContext);
-            incrementStatePageOnlyErrors(result, execution);
+            incrementStatePageOnlyErrors(result);
+        }
+        Coverage queryCoverage = result.getCoverage(false);
+        if (queryCoverage != null) {
+            if (queryCoverage.isDegraded()) {
+                Metric.Context degradedContext = getDegradedMetricContext(execution.chain().getId().stringValue(), queryCoverage);
+                metric.add(DEGRADED_METRIC, 1, degradedContext);
+            }
+            metric.set(COVERAGE_METRIC, (double) queryCoverage.getResultPercentage(), metricContext);
         }
         int hitCount = result.getConcreteHitCount();
         hitsPerQuery.put((double) hitCount);
@@ -275,7 +303,7 @@ public class StatisticsSearcher extends Searcher {
      *
      * @param result The result to check for errors
      */
-    private void incrementStatePageOnlyErrors(Result result, Execution execution) {
+    private void incrementStatePageOnlyErrors(Result result) {
         if (result == null) return;
 
         ErrorHit error = result.hits().getErrorHit();
@@ -283,7 +311,7 @@ public class StatisticsSearcher extends Searcher {
 
         for (ErrorMessage m : error.errors()) {
             int code = m.getCode();
-            Metric.Context c = getDimensions(m.getSource(), result, execution);
+            Metric.Context c = getDimensions(m.getSource());
             if (code == TIMEOUT.code) {
                 metric.add("error.timeout", 1, c);
             } else if (code == NO_BACKENDS_IN_SERVICE.code) {
@@ -312,7 +340,7 @@ public class StatisticsSearcher extends Searcher {
         }
     }
 
-    private Metric.Context getDimensions(String source, Result r, Execution execution) {
+    private Metric.Context getDimensions(String source) {
         Metric.Context context = statePageOnlyContexts.get(source == null ? "" : source);
         if (context == null) {
             Map<String, String> dims = new HashMap<>();
