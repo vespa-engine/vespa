@@ -240,7 +240,7 @@ public class StatisticsSearcher extends Searcher {
             incrementStatePageOnlyErrors(result);
         }
         Coverage queryCoverage = result.getCoverage(false);
-        if (queryCoverage.isDegraded()) {
+        if (queryCoverage != null && queryCoverage.isDegraded()) {
             Metric.Context degradedContext = getDegradedMetricContext(execution.chain().getId().stringValue(), queryCoverage);
             metric.add(DEGRADED_METRIC, 1, degradedContext);
         }
