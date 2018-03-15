@@ -74,7 +74,8 @@ public class StatisticsSearcher extends Searcher {
 
     private final PeakQpsReporter peakQpsReporter;
 
-    enum DegradedReason { MatchPhase, AdaptiveTimeout, Timeout, NonIdealState }
+    // Naming of enums are reflected directly in metric dimensions and should not be changed as they are public API
+    private enum DegradedReason { match_phase, adaptive_timeout, timeout, non_ideal_state }
 
     private Metric metric;
     private Map<String, Metric.Context> chainContexts = new CopyOnWriteHashMap<>();
@@ -174,8 +175,8 @@ public class StatisticsSearcher extends Searcher {
         Map<DegradedReason, Metric.Context> reasons = degradedReasonContexts.get(chainName);
         if (reasons == null) {
             DegradedReason [] reasonEnums = {
-                    DegradedReason.MatchPhase, DegradedReason.AdaptiveTimeout,
-                    DegradedReason.Timeout, DegradedReason.NonIdealState
+                    DegradedReason.match_phase, DegradedReason.adaptive_timeout,
+                    DegradedReason.timeout, DegradedReason.non_ideal_state
             };
             reasons = new HashMap<>(4);
             for (DegradedReason reason : reasonEnums ) {
@@ -188,15 +189,15 @@ public class StatisticsSearcher extends Searcher {
             degradedReasonContexts.put(chainName, reasons);
         }
         if (coverage.isDegradedByMatchPhase()) {
-            return reasons.get(DegradedReason.MatchPhase);
+            return reasons.get(DegradedReason.match_phase);
         }
         if (coverage.isDegradedByTimeout()) {
-            return reasons.get(DegradedReason.Timeout);
+            return reasons.get(DegradedReason.timeout);
         }
         if (coverage.isDegradedByAdapativeTimeout()) {
-            return reasons.get(DegradedReason.AdaptiveTimeout);
+            return reasons.get(DegradedReason.adaptive_timeout);
         }
-        return reasons.get(DegradedReason.NonIdealState);
+        return reasons.get(DegradedReason.non_ideal_state);
     }
 
     /**
