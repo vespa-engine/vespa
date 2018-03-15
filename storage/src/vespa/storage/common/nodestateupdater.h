@@ -65,6 +65,12 @@ struct NodeStateUpdater {
      * nodestate, first retrieve it and only change the parts you want to.
      */
     virtual void setReportedNodeState(const lib::NodeState& state) = 0;
+
+    /**
+     * Replies to all currently outstanding GetNodeState requests to this node
+     * regardless of whether the reported state has changed.
+     */
+    virtual void immediately_send_get_node_state_replies() = 0;
 };
 
 } // storage

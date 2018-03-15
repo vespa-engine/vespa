@@ -18,22 +18,34 @@ struct TestNodeStateUpdater : public NodeStateUpdater
     lib::NodeState::CSP _current;
     std::shared_ptr<const lib::ClusterStateBundle> _clusterStateBundle;
     std::vector<StateListener*> _listeners;
+    size_t _explicit_node_state_reply_send_invocations;
 
 public:
-    TestNodeStateUpdater(const lib::NodeType& type);
-    ~TestNodeStateUpdater();
+    explicit TestNodeStateUpdater(const lib::NodeType& type);
+    ~TestNodeStateUpdater() override;
 
     lib::NodeState::CSP getReportedNodeState() const override { return _reported; }
     lib::NodeState::CSP getCurrentNodeState() const override { return _current; }
     std::shared_ptr<const lib::ClusterStateBundle> getClusterStateBundle() const override;
     void addStateListener(StateListener& s) override { _listeners.push_back(&s); }
     void removeStateListener(StateListener&) override {}
-    Lock::SP grabStateChangeLock() override { return Lock::SP(new Lock); }
-    void setReportedNodeState(const lib::NodeState& state) override { _reported.reset(new lib::NodeState(state)); }
+    Lock::SP grabStateChangeLock() override { return std::make_shared<Lock>(); }
+    void setReportedNodeState(const lib::NodeState& state) override {
+        _reported = std::make_shared<lib::NodeState>(state);
+    }
+    void immediately_send_get_node_state_replies() override {
+        ++_explicit_node_state_reply_send_invocations;
+    }
 
-    void setCurrentNodeState(const lib::NodeState& state) { _current.reset(new lib::NodeState(state)); }
+    void setCurrentNodeState(const lib::NodeState& state) {
+        _current = std::make_shared<lib::NodeState>(state);
+    }
 
     void setClusterState(lib::ClusterState::CSP c);
+
+    size_t explicit_node_state_reply_send_invocations() const noexcept {
+        return _explicit_node_state_reply_send_invocations;
+    }
 };
 
 } // storage

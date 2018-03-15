@@ -91,6 +91,8 @@ public:
     void setClusterStateBundle(const ClusterStateBundle& c);
     HostInfo& getHostInfo() { return *_hostInfo; }
 
+    void immediately_send_get_node_state_replies() override;
+
 private:
     class ExternalStateLock;
     friend class ExternalStateLock;
