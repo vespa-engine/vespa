@@ -184,16 +184,20 @@ public class StatisticsSearcher extends Searcher {
             }
             degradedReasonContexts.put(chainName, reasons);
         }
+        return reasons.get(getMostImportantDegradeReason(coverage));
+    }
+
+    private DegradedReason getMostImportantDegradeReason(Coverage coverage) {
         if (coverage.isDegradedByMatchPhase()) {
-            return reasons.get(DegradedReason.match_phase);
+            return DegradedReason.match_phase;
         }
         if (coverage.isDegradedByTimeout()) {
-            return reasons.get(DegradedReason.timeout);
+            return DegradedReason.timeout;
         }
         if (coverage.isDegradedByAdapativeTimeout()) {
-            return reasons.get(DegradedReason.adaptive_timeout);
+            return DegradedReason.adaptive_timeout;
         }
-        return reasons.get(DegradedReason.non_ideal_state);
+        return DegradedReason.non_ideal_state;
     }
 
     /**
