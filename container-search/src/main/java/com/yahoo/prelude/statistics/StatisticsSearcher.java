@@ -174,12 +174,8 @@ public class StatisticsSearcher extends Searcher {
     private Metric.Context getDegradedMetricContext(String chainName, Coverage coverage) {
         Map<DegradedReason, Metric.Context> reasons = degradedReasonContexts.get(chainName);
         if (reasons == null) {
-            DegradedReason [] reasonEnums = {
-                    DegradedReason.match_phase, DegradedReason.adaptive_timeout,
-                    DegradedReason.timeout, DegradedReason.non_ideal_state
-            };
             reasons = new HashMap<>(4);
-            for (DegradedReason reason : reasonEnums ) {
+            for (DegradedReason reason : DegradedReason.values() ) {
                 Map<String, String> dimensions = new HashMap<>();
                 dimensions.put("chain", chainName);
                 dimensions.put("reason", reason.toString());
