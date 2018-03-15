@@ -9,7 +9,6 @@ import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.restapi.HostSuspensionApi;
-import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 
 import javax.inject.Inject;
@@ -34,23 +33,6 @@ public class HostSuspensionResource implements HostSuspensionApi {
     @Inject
     public HostSuspensionResource(@Component Orchestrator orchestrator) {
         this.orchestrator = orchestrator;
-    }
-
-    @Override
-    public BatchOperationResult suspendAll(BatchHostSuspendRequest request) throws WebApplicationException {
-        String parentHostnameString = request.getParentHostname();
-        if (parentHostnameString == null || parentHostnameString.isEmpty()) {
-            String message = "parentHostname missing or empty in request: " + request;
-            log.log(LogLevel.DEBUG, message);
-            throw createWebApplicationException(message, Response.Status.BAD_REQUEST);
-        }
-        List<String> hostnamesAsStrings = request.getHostnames();
-        if (hostnamesAsStrings == null) {
-            String message = "hostnames missing in request: " + request;
-            log.log(LogLevel.DEBUG, message);
-            throw createWebApplicationException(message, Response.Status.BAD_REQUEST);
-        }
-        return suspendAll(parentHostnameString, hostnamesAsStrings);
     }
 
     @Override

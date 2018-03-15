@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.restapi;
 
-import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 
 import javax.ws.rs.Consumes;
@@ -31,12 +30,6 @@ public interface HostSuspensionApi {
      * may have been suspended in an earlier attempt. Ending with resumption of all hosts makes sure other
      * batch-requests for suspension of hosts succeed.
      */
-    @PUT
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Deprecated // TODO: Remove after 2018-04-01
-    BatchOperationResult suspendAll(BatchHostSuspendRequest request);
-
     @PUT
     @Path("/{hostname}")
     @Produces(MediaType.APPLICATION_JSON)
