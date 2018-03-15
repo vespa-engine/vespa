@@ -8,6 +8,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobList;
@@ -118,6 +119,8 @@ public class VersionStatus {
     private static ListMap<Version, String> findConfigServerVersions(Controller controller) {
         List<URI> configServers = controller.zoneRegistry().zones()
                 .controllerManaged()
+                // TODO jvenstad: Remove this when AWS is automatically upgraded.
+                .not().among(ZoneId.from("prod.aws-us-east-1a"))
                 .ids().stream()
                 .flatMap(zoneId -> controller.zoneRegistry().getConfigServerUris(zoneId).stream())
                 .collect(Collectors.toList());
