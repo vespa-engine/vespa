@@ -22,6 +22,7 @@ import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDataBlob;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.IOException;
@@ -119,9 +120,14 @@ public class FileServer {
             log.warning(errorDescription + " for sending to '" + target.toString() + "'. " + e.toString());
         }
 
-        target.receive(fileData, new ReplayStatus(success ? 0 : 1, success ? "OK" : errorDescription));
-        fileData.close();
-        log.log(LogLevel.DEBUG, "Done serving reference '" + reference.toString() + "' with file '" + file.getAbsolutePath() + "'");
+        try {
+            target.receive(fileData, new ReplayStatus(success ? 0 : 1, success ? "OK" : errorDescription));
+            log.log(LogLevel.DEBUG, "Done serving reference '" + reference.toString() + "' with file '" + file.getAbsolutePath() + "'");
+        } catch (Exception e) {
+            log.log(LogLevel.WARNING, "Failed serving file: " + Exceptions.toMessageString(e));
+        } finally {
+            fileData.close();
+        }
     }
 
     private FileReferenceData readFileReferenceData(FileReference reference) throws IOException {
