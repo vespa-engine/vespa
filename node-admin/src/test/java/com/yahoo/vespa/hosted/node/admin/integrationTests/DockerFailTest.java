@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -35,7 +34,7 @@ public class DockerFailTest {
                 Thread.sleep(10);
             }
 
-            dockerTester.callOrderVerifier.assertInOrder(
+            dockerTester.callOrderVerifier.assertInOrder(1200,
                     "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
                     "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerTester.NODE_PROGRAM + ", resume]");
 
