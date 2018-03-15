@@ -17,18 +17,18 @@ import static com.yahoo.container.core.AccessLogConfig.FileHandler.RotateScheme;
  */
 public final class AccessLogComponent extends SimpleComponent implements AccessLogConfig.Producer {
 
-
     public enum AccessLogType { queryAccessLog, yApacheAccessLog, jsonAccessLog }
 
     private final String fileNamePattern;
     private final String rotationInterval;
     private final RotateScheme.Enum rotationScheme;
+    private final Boolean compression;
     private final String symlinkName;
 
     public AccessLogComponent(AccessLogType logType, String clusterName) {
         this(logType,
                 String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName, "%Y%m%d%H%M%S"),
-                null, null,
+                null, null, null,
                 capitalize(logType.name()) + "." + clusterName);
     }
 
@@ -39,11 +39,15 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     public AccessLogComponent(AccessLogType logType,
                               String fileNamePattern,
                               String rotationInterval,
-                              RotateScheme.Enum rotationScheme, String symlinkName) {
+                              RotateScheme.Enum rotationScheme,
+                              Boolean compressOnRotation,
+                              String symlinkName)
+    {
         super(new ComponentModel(accessLogClass(logType), null, "container-core", null));
         this.fileNamePattern = fileNamePattern;
         this.rotationInterval = rotationInterval;
         this.rotationScheme = rotationScheme;
+        this.compression = compressOnRotation;
         this.symlinkName = symlinkName;
 
         if (fileNamePattern == null)
@@ -78,6 +82,11 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
             builder.rotateScheme(rotationScheme);
         if (symlinkName != null)
             builder.symlink(symlinkName);
+        if (compression != null) {
+            builder.compressOnRotation(compression);
+        } else if (isHostedVespa()) {
+            builder.compressOnRotation(true);
+        }
 
         return builder;
     }

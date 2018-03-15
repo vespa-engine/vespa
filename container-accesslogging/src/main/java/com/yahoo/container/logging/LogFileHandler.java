@@ -31,6 +31,7 @@ public class LogFileHandler extends StreamHandler {
 
     /** True to use the sequence file name scheme, false (default) to use the date scheme */
     private final boolean useSequenceNameScheme;
+    private final boolean compressOnRotation;
     private long[] rotationTimes = {0}; //default to one log per day, at midnight
     private String filePattern = "./log.%T";  // default to current directory, ms time stamp
     private long lastRotationTime = -1; // absolute time (millis since epoch) of current file start
@@ -90,12 +91,23 @@ public class LogFileHandler extends StreamHandler {
     LogThread logThread = null;
 
     public LogFileHandler() {
-        this(AccessLogConfig.FileHandler.RotateScheme.Enum.DATE);
+        this(AccessLogConfig.FileHandler.RotateScheme.Enum.DATE, false);
+    }
+
+    public LogFileHandler(boolean compressOnRotation) {
+        this(AccessLogConfig.FileHandler.RotateScheme.Enum.DATE, compressOnRotation);
     }
 
     public LogFileHandler(AccessLogConfig.FileHandler.RotateScheme.Enum rotateScheme) {
+        this(rotateScheme, false);
+    }
+
+    public LogFileHandler(AccessLogConfig.FileHandler.RotateScheme.Enum rotateScheme,
+                          boolean compressOnRotation)
+    {
         super();
-        this.useSequenceNameScheme = rotateScheme == AccessLogConfig.FileHandler.RotateScheme.Enum.SEQUENCE;
+        this.useSequenceNameScheme = (rotateScheme == AccessLogConfig.FileHandler.RotateScheme.Enum.SEQUENCE);
+        this.compressOnRotation = compressOnRotation;
         init();
     }
 
@@ -104,9 +116,14 @@ public class LogFileHandler extends StreamHandler {
      *
      * @param useSequenceNameScheme True to use the sequence file name scheme, false (default) to use the date scheme
      */
-    public LogFileHandler(OutputStream out, Formatter formatter,boolean useSequenceNameScheme) {
-        super(out,formatter);
-        this.useSequenceNameScheme=useSequenceNameScheme;
+    public LogFileHandler(OutputStream out, Formatter formatter, boolean useSequenceNameScheme) {
+        this(out, formatter, useSequenceNameScheme, false);
+    }
+
+    public LogFileHandler(OutputStream out, Formatter formatter, boolean useSequenceNameScheme, boolean compressOnRotation) {
+        super(out, formatter);
+        this.useSequenceNameScheme = useSequenceNameScheme;
+        this.compressOnRotation = compressOnRotation;
         init();
     }
 
@@ -219,6 +236,7 @@ public class LogFileHandler extends StreamHandler {
         // figure out new file name, then
         // use super.setOutputStream to switch to a new file
 
+        String oldFileName = fileName;
         long now = System.currentTimeMillis();
         fileName = LogFormatter.insertDate(filePattern, now);
         super.flush();
@@ -243,6 +261,21 @@ public class LogFileHandler extends StreamHandler {
         numberOfRecords = 0;
         lastRotationTime = now;
         nextRotationTime = 0; //figure it out later (lazy evaluation)
+        if (compressOnRotation && (oldFileName != null)) {
+            triggerCompression(oldFileName);
+        }
+    }
+
+    private void triggerCompression(String oldFileName) throws InterruptedException {
+        try {
+            Runtime r = Runtime.getRuntime();
+            Process p = r.exec(new String[] { "gzip", oldFileName });
+            // Detonator pattern: Think of all the fun we can have if gzip isn't what we
+            // think it is, if it doesn't return, etc, etc
+            p.waitFor();
+        } catch (IOException e) {
+            // little we can do...
+        }
     }
 
     /** Name files by date - create a symlink with a constant name to the newest file */

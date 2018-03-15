@@ -25,3 +25,6 @@ fileHandler.rotateScheme enum {DATE, SEQUENCE} default=DATE
 # Use this as the name of the symlink created pointing to the newest file in the "date" naming scheme.
 # This is ignored if the sequence naming scheme is used.
 fileHandler.symlink string default=""
+
+# compress the previous access log after rotation
+fileHandler.compressOnRotation bool default=false

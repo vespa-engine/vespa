@@ -18,7 +18,7 @@ class AccessLogHandler {
     public AccessLogHandler(AccessLogConfig.FileHandler config) {
         access.setUseParentHandlers(false);
 
-        logFileHandler = new LogFileHandler(config.rotateScheme());
+        logFileHandler = new LogFileHandler(config.rotateScheme(), config.compressOnRotation());
 
         logFileHandler.setFilePattern(config.pattern());
         logFileHandler.setRotationTimes(config.rotation());
