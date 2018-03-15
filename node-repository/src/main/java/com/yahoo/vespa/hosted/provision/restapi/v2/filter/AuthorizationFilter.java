@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
 import com.google.inject.Inject;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
@@ -34,17 +35,17 @@ public class AuthorizationFilter implements SecurityRequestFilter {
     private static final Logger log = Logger.getLogger(AuthorizationFilter.class.getName());
 
     private final BiPredicate<Principal, URI> authorizer;
-    private final BiConsumer<ErrorResponse, ResponseHandler> responseWriter;
+    private final BiConsumer<ErrorResponse, ResponseHandler> rejectAction;
 
     @Inject
     public AuthorizationFilter(Zone zone, NodeRepository nodeRepository) {
-         this(new Authorizer(zone.system(), nodeRepository), AuthorizationFilter::log); // TODO: Use write method once all clients are using certificates
+        this(new Authorizer(zone.system(), nodeRepository), rejectActionIn(zone.system()));
     }
 
     AuthorizationFilter(BiPredicate<Principal, URI> authorizer,
-                        BiConsumer<ErrorResponse, ResponseHandler> responseWriter) {
+                        BiConsumer<ErrorResponse, ResponseHandler> rejectAction) {
         this.authorizer = authorizer;
-        this.responseWriter = responseWriter;
+        this.rejectAction = rejectAction;
     }
 
     @Override
@@ -52,22 +53,33 @@ public class AuthorizationFilter implements SecurityRequestFilter {
         Optional<X509Certificate> cert = request.getClientCertificateChain().stream().findFirst();
         if (cert.isPresent()) {
             if (!authorizer.test(() -> commonName(cert.get()), request.getUri())) {
-                responseWriter.accept(ErrorResponse.forbidden(
+                rejectAction.accept(ErrorResponse.forbidden(
                         String.format("%s %s denied for %s: Invalid credentials", request.getMethod(),
                                       request.getUri().getPath(), request.getRemoteAddr())), handler
                 );
             }
         } else {
-            responseWriter.accept(ErrorResponse.unauthorized(
+            rejectAction.accept(ErrorResponse.unauthorized(
                     String.format("%s %s denied for %s: Missing credentials", request.getMethod(),
                                   request.getUri().getPath(), request.getRemoteAddr())), handler
             );
         }
     }
 
-    /** Log error response without writing anything */
+    private static BiConsumer<ErrorResponse, ResponseHandler> rejectActionIn(SystemName system) {
+        if (system == SystemName.cd) {
+            return AuthorizationFilter::logAndReject;
+        }
+        return AuthorizationFilter::log;
+    }
+
     private static void log(ErrorResponse response, @SuppressWarnings("unused") ResponseHandler handler) {
         log.warning("Would reject request: " + response.getStatus() + " - " + response.message());
+    }
+
+    private static void logAndReject(ErrorResponse response, ResponseHandler handler) {
+        log.warning(response.message());
+        FilterUtils.write(response, handler);
     }
 
     /** Read common name (CN) from certificate */
