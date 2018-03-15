@@ -183,4 +183,4 @@ sequence_mutating_operations bool default=true
 ## Number of seconds that scheduling of new merge operations should be inhibited
 ## towards a node if it has indicated that its merge queues are full or it is
 ## suffering from resource exhaustion.
-inhibit_merge_sending_on_busy_node_duration_sec int default=30
+inhibit_merge_sending_on_busy_node_duration_sec int default=10
