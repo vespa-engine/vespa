@@ -11,7 +11,6 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
-import org.apache.commons.compress.archivers.ArchiveEntry;
 
 import java.io.File;
 import java.time.Duration;
@@ -119,15 +118,15 @@ public class FileReferenceDownloader {
                 log.log(LogLevel.DEBUG, () -> "Found file reference '" + fileReference.value() + "' available at " + connection.getAddress());
                 return true;
             } else {
-                log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found for " + connection.getAddress());
+                log.log(LogLevel.DEBUG, "File reference '" + fileReference.value() + "' not found for " + connection.getAddress());
                 connectionPool.setNewCurrentConnection();
                 return false;
             }
         } else {
-            log.log(LogLevel.INFO, "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
+            log.log(LogLevel.DEBUG, "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
                     ", error code: " + request.errorCode());
             if (request.isError() && request.errorCode() == ErrorCode.CONNECTION || request.errorCode() == ErrorCode.TIMEOUT) {
-                log.log(LogLevel.INFO, "Mark connection " + connection.getAddress() + " with error");
+                log.log(LogLevel.DEBUG, "Mark connection " + connection.getAddress() + " with error");
                 connectionPool.setError(connection, request.errorCode());
             }
             return false;
