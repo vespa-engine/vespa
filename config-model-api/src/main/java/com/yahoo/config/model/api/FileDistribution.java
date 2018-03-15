@@ -15,7 +15,8 @@ import java.util.Set;
  */
 public interface FileDistribution {
 
-    void sendDeployedFiles(String hostName, Set<FileReference> fileReferences);
+    // TODO: Remove when 6.223 is oldest version used
+    default void sendDeployedFiles(String hostName, Set<FileReference> fileReferences) {}
 
     /**
      * Notifies client which file references to download. Used to start downloading early (while
@@ -27,9 +28,11 @@ public interface FileDistribution {
      */
     void startDownload(String hostName, int port, Set<FileReference> fileReferences);
 
-    void reloadDeployFileDistributor();
+    // TODO: Remove when 6.223 is oldest version used
+    default void reloadDeployFileDistributor() {}
 
-    void removeDeploymentsThatHaveDifferentApplicationId(Collection<String> targetHostnames);
+    // TODO: Remove when 6.223 is oldest version used
+    default void removeDeploymentsThatHaveDifferentApplicationId(Collection<String> targetHostnames) {}
 
     static String getDefaultFileDBRoot() {
         return Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution");
