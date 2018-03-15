@@ -132,6 +132,29 @@
           <artifactId>spring-test</artifactId>
           <scope>test</scope>
       </dependency>
+    <!-- https://mvnrepository.com/artifact/org.brotli/parent -->
+    <dependency>
+      <groupId>org.brotli</groupId>
+      <artifactId>parent</artifactId>
+      <version>0.1.2</version>
+      <type>pom</type>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-compress -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <version>1.9</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.brotli/dec -->
+    <dependency>
+      <groupId>org.brotli</groupId>
+      <artifactId>dec</artifactId>
+      <version>0.1.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.brotli.wrapper</groupId>
+      <artifactId>enc</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

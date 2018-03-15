@@ -370,6 +370,7 @@ public class JettyHttpServer extends AbstractServerProvider {
 
     private GzipHandler newGzipHandler(ServerConfig serverConfig) {
         GzipHandler gzipHandler = new GzipHandlerWithVaryHeaderFixed();
+        gzipHandler.setIncludedMimeTypes("application/brotli","application/gzip");
         gzipHandler.setCompressionLevel(serverConfig.responseCompressionLevel());
         gzipHandler.setCheckGzExists(false);
         gzipHandler.setIncludedMethods("GET", "POST");

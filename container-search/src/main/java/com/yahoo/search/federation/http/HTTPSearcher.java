@@ -845,6 +845,7 @@ public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
             addRequestInterceptor((request, context) -> {
                 if (!request.containsHeader("Accept-Encoding")) {
                     request.addHeader("Accept-Encoding", "gzip");
+                    request.addHeader("Accept-Encoding", "br");
                 }
             });
             addResponseInterceptor((response, context) -> {
@@ -853,7 +854,11 @@ public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
                 Header ceheader = entity.getContentEncoding();
                 if (ceheader == null) return;
                 for (HeaderElement codec : ceheader.getElements()) {
-                    if (codec.getName().equalsIgnoreCase("gzip")) {
+                    if (codec.getName().equalsIgnoreCase("br")) {
+                        response.setEntity(new BrotliDecompressingEntity(response.getEntity()));
+                        return;
+                    }
+                    else if (codec.getName().equalsIgnoreCase("gzip")) {
                         response.setEntity(new GzipDecompressingEntity(response.getEntity()));
                         return;
                     }
