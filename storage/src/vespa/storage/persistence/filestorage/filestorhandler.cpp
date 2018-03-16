@@ -7,12 +7,8 @@ namespace storage {
 FileStorHandler::FileStorHandler(MessageSender& sender,
                                  FileStorMetrics& metrics,
                                  const spi::PartitionStateList& partitions,
-                                 ServiceLayerComponentRegister& compReg,
-                                 uint8_t maxPriorityToBlock,
-                                 uint8_t minPriorityToBeBlocking)
-    : _impl(new FileStorHandlerImpl(
-                sender, metrics, partitions, compReg,
-                maxPriorityToBlock, minPriorityToBeBlocking))
+                                 ServiceLayerComponentRegister& compReg)
+    : _impl(new FileStorHandlerImpl(sender, metrics, partitions, compReg))
 {
 }
 
@@ -55,11 +51,6 @@ bool
 FileStorHandler::schedule(const api::StorageMessage::SP& msg, uint16_t thread)
 {
     return _impl->schedule(msg, thread);
-}
-
-void
-FileStorHandler::pause(uint16_t disk, uint8_t priority) const {
-    return _impl->pause(disk, priority);
 }
 
 FileStorHandler::LockedMessage

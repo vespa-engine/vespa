@@ -23,20 +23,14 @@ using document::BucketSpace;
 
 namespace storage {
 
-FileStorHandlerImpl::FileStorHandlerImpl(
-        MessageSender& sender,
-        FileStorMetrics& metrics,
-        const spi::PartitionStateList& partitions,
-        ServiceLayerComponentRegister& compReg,
-        uint8_t maxPriorityToBlock,
-        uint8_t minPriorityToBeBlocking)
+FileStorHandlerImpl::FileStorHandlerImpl(MessageSender& sender, FileStorMetrics& metrics,
+                                         const spi::PartitionStateList& partitions,
+                                         ServiceLayerComponentRegister& compReg)
     : _partitions(partitions),
       _component(compReg, "filestorhandlerimpl"),
       _diskInfo(_component.getDiskCount()),
       _messageSender(sender),
       _bucketIdFactory(_component.getBucketIdFactory()),
-      _maxPriorityToBlock(maxPriorityToBlock),
-      _minPriorityToBeBlocking(minPriorityToBeBlocking),
       _getNextMessageTimeout(100),
       _paused(false)
 {
@@ -46,23 +40,21 @@ FileStorHandlerImpl::FileStorHandlerImpl(
     }
 
     if (_diskInfo.size() == 0) {
-        throw vespalib::IllegalArgumentException(
-                "No disks configured", VESPA_STRLOC);
+        throw vespalib::IllegalArgumentException("No disks configured", VESPA_STRLOC);
     }
         // Add update hook, so we will get callbacks each 5 seconds to update
         // metrics.
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
 }
 
-FileStorHandlerImpl::~FileStorHandlerImpl() { }
+FileStorHandlerImpl::~FileStorHandlerImpl() = default;
 
 void
 FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, MergeStatus::SP status)
 {
     vespalib::LockGuard mlock(_mergeStatesLock);
     if (_mergeStates.find(bucket) != _mergeStates.end()) {;
-        LOG(warning, "A merge status already existed for %s. Overwriting it.",
-            bucket.toString().c_str());
+        LOG(warning, "A merge status already existed for %s. Overwriting it.", bucket.toString().c_str());
     }
     _mergeStates[bucket] = status;
 }
@@ -73,8 +65,7 @@ FileStorHandlerImpl::editMergeStatus(const document::Bucket& bucket)
     vespalib::LockGuard mlock(_mergeStatesLock);
     MergeStatus::SP status = _mergeStates[bucket];
     if (status.get() == 0) {
-        throw vespalib::IllegalStateException(
-                "No merge state exist for " + bucket.toString(), VESPA_STRLOC);
+        throw vespalib::IllegalStateException("No merge state exist for " + bucket.toString(), VESPA_STRLOC);
     }
     return *status;
 }
@@ -94,8 +85,7 @@ FileStorHandlerImpl::getNumActiveMerges() const
 }
 
 void
-FileStorHandlerImpl::clearMergeStatus(const document::Bucket& bucket,
-                                      const api::ReturnCode* code)
+FileStorHandlerImpl::clearMergeStatus(const document::Bucket& bucket, const api::ReturnCode* code)
 {
     vespalib::LockGuard mlock(_mergeStatesLock);
     auto it = _mergeStates.find(bucket);
@@ -153,10 +143,9 @@ FileStorHandlerImpl::flush(bool killPendingMerges)
     if (killPendingMerges) {
         api::ReturnCode code(api::ReturnCode::ABORTED,
                              "Storage node is shutting down");
-        for (std::map<document::Bucket, MergeStatus::SP>::iterator it
-                 = _mergeStates.begin(); it != _mergeStates.end(); ++it)
+        for (auto & entry : _mergeStates)
         {
-            MergeStatus& s(*it->second);
+            MergeStatus& s(*entry.second);
             if (s.pendingGetDiff.get() != 0) {
                 s.pendingGetDiff->setResult(code);
                 _messageSender.sendReply(s.pendingGetDiff);
@@ -182,11 +171,9 @@ FileStorHandlerImpl::reply(api::StorageMessage& msg,
         std::shared_ptr<api::StorageReply> rep(
                 static_cast<api::StorageCommand&>(msg).makeReply().release());
         if (state == FileStorHandler::DISABLED) {
-            rep->setResult(api::ReturnCode(
-                    api::ReturnCode::DISK_FAILURE, "Disk disabled"));
+            rep->setResult(api::ReturnCode(api::ReturnCode::DISK_FAILURE, "Disk disabled"));
         } else {
-            rep->setResult(api::ReturnCode(
-                    api::ReturnCode::ABORTED, "Shutting down storage node."));
+            rep->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node."));
         }
         _messageSender.sendReply(rep);
     }
@@ -268,29 +255,6 @@ FileStorHandlerImpl::schedule(const std::shared_ptr<api::StorageMessage>& msg,
         return false;
     }
     return true;
-}
-
-void
-FileStorHandlerImpl::pause(uint16_t disk, uint8_t priority) const {
-    if (priority < _maxPriorityToBlock) {
-        return;
-    }
-
-    assert(disk < _diskInfo.size());
-    const Disk& t(_diskInfo[disk]);
-    vespalib::MonitorGuard lockGuard(t.lock);
-
-    bool paused = true;
-    while (paused) {
-        paused = false;
-        for (auto& lockedBucket : t.lockedBuckets) {
-            if (lockedBucket.second.priority <= _minPriorityToBeBlocking) {
-                paused = true;
-                lockGuard.wait();
-                break;
-            }
-        }
-    }
 }
 
 bool
@@ -395,18 +359,6 @@ FileStorHandlerImpl::abortQueuedOperations(
     }    
 }
 
-bool
-FileStorHandlerImpl::hasBlockingOperations(const Disk& t) const
-{
-    for (const auto & lockedBucket : t.lockedBuckets) {
-        if (lockedBucket.second.priority <= _minPriorityToBeBlocking) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 void
 FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
 {
@@ -423,10 +375,7 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, FileStorHandler::LockedMessag
 {
     document::Bucket bucket(lck.first->getBucket());
 
-    LOG(spam,
-        "Disk %d retrieving message for buffered bucket %s",
-        disk,
-        bucket.getBucketId().toString().c_str());
+    LOG(spam, "Disk %d retrieving message for buffered bucket %s", disk, bucket.getBucketId().toString().c_str());
 
     assert(disk < _diskInfo.size());
     Disk& t(_diskInfo[disk]);
@@ -449,22 +398,12 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, FileStorHandler::LockedMessag
     api::StorageMessage & m(*range.first->_command);
     mbus::Trace& trace = m.getTrace();
 
-    // Priority is too low, not buffering any more.
-    if (m.getPriority() >= _maxPriorityToBlock) {
-        lck.second.reset();
-        return lck;
-    }
+    MBUS_TRACE(trace, 9, "FileStorHandler: Message identified by disk thread looking for more requests to active bucket.");
 
-    MBUS_TRACE(trace, 9,
-            "FileStorHandler: Message identified by disk thread looking for "
-            "more requests to active bucket.");
+    uint64_t waitTime(const_cast<metrics::MetricTimer&>(range.first->_timer).stop(
+            t.metrics->averageQueueWaitingTime[m.getLoadType()]));
 
-    uint64_t waitTime(
-            const_cast<metrics::MetricTimer&>(range.first->_timer).stop(
-                    t.metrics->averageQueueWaitingTime[m.getLoadType()]));
-
-    LOG(debug, "Message %s waited %" PRIu64 " ms in storage queue (bucket %s), "
-               "timeout %d",
+    LOG(debug, "Message %s waited %" PRIu64 " ms in storage queue (bucket %s), timeout %d",
         m.toString().c_str(), waitTime, bucket.getBucketId().toString().c_str(),
         static_cast<api::StorageCommand&>(m).getTimeout());
 
@@ -478,15 +417,11 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, FileStorHandler::LockedMessag
         lockGuard.unlock();
         return lck;
     } else {
-        std::shared_ptr<api::StorageReply> msgReply(
-                static_cast<api::StorageCommand&>(m)
-                .makeReply().release());
+        std::shared_ptr<api::StorageReply> msgReply(static_cast<api::StorageCommand&>(m).makeReply().release());
         idx.erase(range.first);
         lockGuard.broadcast();
         lockGuard.unlock();
-        msgReply->setResult(api::ReturnCode(
-                api::ReturnCode::TIMEOUT,
-                "Message waited too long in storage queue"));
+        msgReply->setResult(api::ReturnCode(api::ReturnCode::TIMEOUT, "Message waited too long in storage queue"));
         _messageSender.sendReply(msgReply);
 
         lck.second.reset();
@@ -515,23 +450,13 @@ FileStorHandlerImpl::diskIsClosed(uint16_t disk) const
 }
 
 bool
-FileStorHandlerImpl::operationBlockedByHigherPriorityThread(
-        const api::StorageMessage& msg,
-        const Disk& disk) const
-{
-    return ((msg.getPriority() >= _maxPriorityToBlock)
-            && hasBlockingOperations(disk));
-}
-
-bool
 FileStorHandlerImpl::messageTimedOutInQueue(const api::StorageMessage& msg,
                                             uint64_t waitTime) const
 {
     if (msg.getType().isReply()) {
         return false; // Replies must always be processed and cannot time out.
     }
-    return (waitTime >= static_cast<const api::StorageCommand&>(
-                msg).getTimeout());
+    return (waitTime >= static_cast<const api::StorageCommand&>(msg).getTimeout());
 }
 
 std::unique_ptr<FileStorHandler::BucketLockInterface>
@@ -541,8 +466,7 @@ FileStorHandlerImpl::takeDiskBucketLockOwnership(
         const document::Bucket &bucket,
         const api::StorageMessage& msg)
 {
-    return std::unique_ptr<FileStorHandler::BucketLockInterface>(
-            new BucketLock(guard, disk, bucket, msg.getPriority(), msg.getSummary()));
+    return std::make_unique<BucketLock>(guard, disk, bucket, msg.getPriority(), msg.getSummary());
 }
 
 std::unique_ptr<api::StorageReply>
@@ -587,11 +511,7 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk)
             iter++;
         }
         if (iter != end) {
-            api::StorageMessage &m(*iter->_command);
-
-            if (! operationBlockedByHigherPriorityThread(m, t)
-                && ! isPaused())
-            {
+            if (! isPaused()) {
                 return getMessage(lockGuard, t, idx, iter);
             }
         }

@@ -77,9 +77,7 @@ PersistenceQueueTest::testFetchNextUnlockedMessageIfBucketLocked()
     metrics.initDiskMetrics(_node->getPartitions().size(),
                             loadTypes.getMetricLoadTypes(), 1);
 
-    FileStorHandler filestorHandler(messageSender, metrics,
-                                     _node->getPartitions(),
-                                    _node->getComponentRegister(), 255, 0);
+    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
 
     // Send 2 puts, 2 to the first bucket, 1 to the second. Calling
     // getNextMessage 2 times should then return a lock on the first bucket,

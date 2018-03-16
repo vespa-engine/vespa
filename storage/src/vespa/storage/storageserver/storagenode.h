@@ -115,20 +115,20 @@ private:
     bool _attemptedStopped;
     vespalib::string _pidFile;
 
-        // First components that doesn't depend on others
+    // First components that doesn't depend on others
     std::unique_ptr<StatusWebServer>           _statusWebServer;
     std::shared_ptr<StorageMetricSet>          _metrics;
     std::unique_ptr<metrics::MetricManager>    _metricManager;
 
-        // Depends on bucket databases and stop() functionality
+    // Depends on bucket databases and stop() functionality
     std::unique_ptr<DeadLockDetector>          _deadLockDetector;
-        // Depends on metric manager
+    // Depends on metric manager
     std::unique_ptr<StatusMetricConsumer>      _statusMetrics;
-        // Depends on metric manager
+    // Depends on metric manager
     std::unique_ptr<StateReporter>             _stateReporter;
     std::unique_ptr<StateManager>              _stateManager;
 
-        // The storage chain can depend on anything.
+    // The storage chain can depend on anything.
     std::unique_ptr<StorageLink>               _chain;
 
     /** Implementation of config callbacks. */

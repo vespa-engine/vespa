@@ -15,7 +15,6 @@
 
 #include "mergestatus.h"
 #include <vespa/document/bucket/bucket.h>
-#include <ostream>
 #include <vespa/storage/storageutil/resumeguard.h>
 #include <vespa/storage/common/messagesender.h>
 
@@ -72,12 +71,7 @@ public:
         CLOSED
     };
 
-    FileStorHandler(MessageSender&,
-                    FileStorMetrics&,
-                    const spi::PartitionStateList&,
-                    ServiceLayerComponentRegister&,
-                    uint8_t maxPriorityToBlock,
-                    uint8_t minPriorityToBeBlocking);
+    FileStorHandler(MessageSender&, FileStorMetrics&, const spi::PartitionStateList&, ServiceLayerComponentRegister&);
     ~FileStorHandler();
 
         // Commands used by file stor manager
@@ -115,17 +109,7 @@ public:
      * Schedule a storage message to be processed by the given disk
      * @return True if we maanged to schedule operation. False if not
      */
-    bool schedule(const std::shared_ptr<api::StorageMessage>&,
-                  uint16_t disk);
-
-    // Commands used by file stor threads
-
-    /**
-     * When called, checks if any running operations have "preempting"
-     * priority.  If so, and the given priority is less than that, this call
-     * will hang until the other operation is done.
-     */
-    void pause(uint16_t disk, uint8_t priority) const;
+    bool schedule(const std::shared_ptr<api::StorageMessage>&, uint16_t disk);
 
     /**
      * Used by file stor threads to get their next message to process.
@@ -216,8 +200,7 @@ public:
      * Fail all operations towards a single bucket currently queued to the
      * given thread with the given error code.
      */
-    void failOperations(const document::Bucket&, uint16_t fromDisk,
-                        const api::ReturnCode&);
+    void failOperations(const document::Bucket&, uint16_t fromDisk, const api::ReturnCode&);
 
     /**
      * Add a new merge state to the registry.

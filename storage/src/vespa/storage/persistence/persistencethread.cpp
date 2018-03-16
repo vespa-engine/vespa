@@ -947,28 +947,23 @@ PersistenceThread::processMessage(api::StorageMessage& msg)
     ++_env._metrics.operations;
     if (msg.getType().isReply()) {
         try{
-            _env._pauseHandler.setPriority(msg.getPriority());
             LOG(debug, "Handling reply: %s", msg.toString().c_str());
             LOG(spam, "Message content: %s", msg.toString(true).c_str());
             handleReply(static_cast<api::StorageReply&>(msg));
         } catch (std::exception& e) {
             // It's a reply, so nothing we can do.
-            LOG(debug, "Caught exception for %s: %s",
-                msg.toString().c_str(),
-                e.what());
+            LOG(debug, "Caught exception for %s: %s", msg.toString().c_str(), e.what());
         }
     } else {
         api::StorageCommand& initiatingCommand =
             static_cast<api::StorageCommand&>(msg);
 
         try {
-            int64_t startTime(
-                    _component->getClock().getTimeInMillis().getTime());
+            int64_t startTime(_component->getClock().getTimeInMillis().getTime());
 
             LOG(debug, "Handling command: %s", msg.toString().c_str());
             LOG(spam, "Message content: %s", msg.toString(true).c_str());
-            std::unique_ptr<MessageTracker> tracker(
-                    handleCommand(initiatingCommand));
+            auto tracker(handleCommand(initiatingCommand));
             if (!tracker.get()) {
                 LOG(debug, "Received unsupported command %s",
                     msg.getType().getName().c_str());

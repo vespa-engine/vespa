@@ -76,7 +76,6 @@ PersistenceUtil::PersistenceUtil(
       _metrics(metrics),
       _bucketFactory(_component.getBucketIdFactory()),
       _repo(_component.getTypeRepo()),
-      _pauseHandler(),
       _spi(provider)
 {
 }
@@ -87,9 +86,8 @@ void
 PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket, const api::BucketInfo& i)
 {
     // Update bucket database
-    StorBucketDatabase::WrappedEntry entry(getBucketDatabase(bucket.getBucketSpace()).get(
-                                                   bucket.getBucketId(),
-                                                   "env::updatebucketdb"));
+    StorBucketDatabase::WrappedEntry entry(getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(),
+                                                                                          "env::updatebucketdb"));
     if (entry.exist()) {
         api::BucketInfo info = i;
 
@@ -101,9 +99,7 @@ PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket, const api:
         entry->setBucketInfo(info);
         entry.write();
     } else {
-        LOG(debug,
-            "Bucket(%s).getBucketInfo: Bucket does not exist.",
-            bucket.getBucketId().toString().c_str());
+        LOG(debug, "Bucket(%s).getBucketInfo: Bucket does not exist.", bucket.getBucketId().toString().c_str());
     }
 }
 

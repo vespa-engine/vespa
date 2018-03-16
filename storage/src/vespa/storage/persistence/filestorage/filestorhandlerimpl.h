@@ -142,12 +142,8 @@ public:
         document::Bucket _bucket;
     };
 
-    FileStorHandlerImpl(MessageSender&,
-                        FileStorMetrics&,
-                        const spi::PartitionStateList&,
-                        ServiceLayerComponentRegister&,
-                        uint8_t maxPriorityToBlock,
-                        uint8_t minPriorityToBeBlocking);
+    FileStorHandlerImpl(MessageSender&, FileStorMetrics&,
+                        const spi::PartitionStateList&, ServiceLayerComponentRegister&);
 
     ~FileStorHandlerImpl();
     void setGetNextMessageTimeout(uint32_t timeout) { _getNextMessageTimeout = timeout; }
@@ -158,7 +154,6 @@ public:
     void close();
     bool schedule(const std::shared_ptr<api::StorageMessage>&, uint16_t disk);
 
-    void pause(uint16_t disk, uint8_t priority) const;
     FileStorHandler::LockedMessage getNextMessage(uint16_t disk);
     FileStorHandler::LockedMessage getMessage(vespalib::MonitorGuard & guard, Disk & t, PriorityIdx & idx, PriorityIdx::iterator iter);
 
@@ -203,8 +198,6 @@ private:
 
     std::map<document::Bucket, MergeStatus::SP> _mergeStates;
 
-    uint8_t _maxPriorityToBlock;
-    uint8_t _minPriorityToBeBlocking;
     uint32_t _getNextMessageTimeout;
 
     vespalib::Monitor _pauseMonitor;
@@ -236,12 +229,6 @@ private:
     bool diskIsClosed(uint16_t disk) const;
 
     /**
-     * Return whether an already running high priority operation pre-empts
-     * (blocks) the operation in msg from even starting in the current thread.
-     */
-    bool operationBlockedByHigherPriorityThread(const api::StorageMessage& msg, const Disk& disk) const;
-
-    /**
      * Return whether msg has timed out based on waitTime and the message's
      * specified timeout.
      */
@@ -261,7 +248,6 @@ private:
      */
     std::unique_ptr<api::StorageReply> makeQueueTimeoutReply(api::StorageMessage& msg) const;
     bool messageMayBeAborted(const api::StorageMessage& msg) const;
-    bool hasBlockingOperations(const Disk& t) const;
     void abortQueuedCommandsForBuckets(Disk& disk, const AbortBucketOperationsCommand& cmd);
     bool diskHasActiveOperationForAbortedBucket(const Disk& disk, const AbortBucketOperationsCommand& cmd) const;
     void waitUntilNoActiveOperationsForAbortedBuckets(Disk& disk, const AbortBucketOperationsCommand& cmd);
@@ -286,4 +272,3 @@ private:
 };
 
 } // storage
-
