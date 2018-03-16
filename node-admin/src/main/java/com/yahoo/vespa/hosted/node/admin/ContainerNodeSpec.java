@@ -44,6 +44,7 @@ public class ContainerNodeSpec {
     public final Set<String> ipAddresses;
 
     public final Optional<String> hardwareDivergence;
+    public final Optional<String> parentHostname;
 
     public ContainerNodeSpec(
             final String hostname,
@@ -67,7 +68,8 @@ public class ContainerNodeSpec {
             final Double minDiskAvailableGb,
             final Boolean fastDisk,
             final Set<String> ipAddresses,
-            final Optional<String> hardwareDivergence) {
+            final Optional<String> hardwareDivergence,
+            final Optional<String> parentHostname) {
         Objects.requireNonNull(hostname);
         Objects.requireNonNull(nodeState);
         Objects.requireNonNull(nodeType);
@@ -103,6 +105,7 @@ public class ContainerNodeSpec {
         this.fastDisk = fastDisk;
         this.ipAddresses = ipAddresses;
         this.hardwareDivergence = hardwareDivergence;
+        this.parentHostname = parentHostname;
     }
 
     @Override
@@ -133,7 +136,8 @@ public class ContainerNodeSpec {
                 Objects.equals(minDiskAvailableGb, that.minDiskAvailableGb) &&
                 Objects.equals(fastDisk, that.fastDisk) &&
                 Objects.equals(ipAddresses, that.ipAddresses) &&
-                Objects.equals(hardwareDivergence, that.hardwareDivergence);
+                Objects.equals(hardwareDivergence, that.hardwareDivergence) &&
+                Objects.equals(parentHostname, that.parentHostname);
     }
 
     @Override
@@ -160,7 +164,8 @@ public class ContainerNodeSpec {
                 minDiskAvailableGb,
                 fastDisk,
                 ipAddresses,
-                hardwareDivergence);
+                hardwareDivergence,
+                parentHostname);
     }
 
     @Override
@@ -188,6 +193,7 @@ public class ContainerNodeSpec {
                 + " fastDisk=" + fastDisk
                 + " ipAddresses=" + ipAddresses
                 + " hardwareDivergence=" + hardwareDivergence
+                + " parentHostname=" + parentHostname
                 + " }";
     }
 
@@ -308,6 +314,7 @@ public class ContainerNodeSpec {
         private Boolean fastDisk = false;
         private Set<String> ipAddresses = Collections.emptySet();
         private Optional<String> hardwareDivergence = Optional.empty();
+        private Optional<String> parentHostname = Optional.empty();
 
         public Builder() {}
 
@@ -334,6 +341,7 @@ public class ContainerNodeSpec {
             nodeSpec.wantedRebootGeneration.ifPresent(this::wantedRebootGeneration);
             nodeSpec.currentRebootGeneration.ifPresent(this::currentRebootGeneration);
             nodeSpec.hardwareDivergence.ifPresent(this::hardwareDivergence);
+            nodeSpec.parentHostname.ifPresent(this::parentHostname);
         }
 
         public Builder hostname(String hostname) {
@@ -445,6 +453,11 @@ public class ContainerNodeSpec {
             return this;
         }
 
+        public Builder parentHostname(String parentHostname) {
+            this.parentHostname = Optional.of(parentHostname);
+            return this;
+        }
+
         public ContainerNodeSpec build() {
             return new ContainerNodeSpec(hostname, wantedDockerImage, currentDockerImage, nodeState, nodeType,
                                          nodeFlavor, nodeCanonicalFlavor,
@@ -452,7 +465,7 @@ public class ContainerNodeSpec {
                                          wantedRestartGeneration, currentRestartGeneration,
                                          wantedRebootGeneration, currentRebootGeneration,
                                          minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb,
-                                         fastDisk, ipAddresses, hardwareDivergence);
+                                         fastDisk, ipAddresses, hardwareDivergence, parentHostname);
         }
 
     }

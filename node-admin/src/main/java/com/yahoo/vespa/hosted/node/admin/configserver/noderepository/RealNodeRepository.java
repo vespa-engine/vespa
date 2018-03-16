@@ -139,7 +139,8 @@ public class RealNodeRepository implements NodeRepository {
                 node.minDiskAvailableGb,
                 node.fastDisk,
                 node.ipAddresses,
-                Optional.ofNullable(node.hardwareDivergence));
+                Optional.ofNullable(node.hardwareDivergence),
+                Optional.ofNullable(node.parentHostname));
     }
 
     @Override
