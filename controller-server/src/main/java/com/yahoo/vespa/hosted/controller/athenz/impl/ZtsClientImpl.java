@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.athenz.impl;
 
 import com.yahoo.athenz.auth.util.Crypto;
-import com.yahoo.athenz.zts.InstanceRefreshRequest;
 import com.yahoo.athenz.zts.RoleCertificateRequest;
 import com.yahoo.athenz.zts.TenantDomains;
 import com.yahoo.athenz.zts.ZTSClient;
@@ -10,7 +9,6 @@ import com.yahoo.athenz.zts.ZTSClientException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
 import com.yahoo.vespa.athenz.api.AthenzRoleCertificate;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZtsClient;
@@ -58,25 +56,6 @@ public class ZtsClientImpl implements ZtsClient {
             return domains.getTenantDomainNames().stream()
                     .map(AthenzDomain::new)
                     .collect(toList());
-        });
-    }
-
-    @Override
-    public AthenzIdentityCertificate getIdentityCertificate() {
-        return getOrThrow(() -> {
-            log.log(LogLevel.DEBUG,
-                    String.format("postInstanceRefreshRequest(service=%s)", service.getFullName()));
-            InstanceRefreshRequest req =
-                    ZTSClient.generateInstanceRefreshRequest(
-                            service.getDomain().getName(),
-                            service.getName(),
-                            privateKey,
-                            certificateDnsDomain,
-                            (int) certExpiry.getSeconds());
-            X509Certificate certificate = Crypto.loadX509Certificate(
-                    ztsClient.postInstanceRefreshRequest(service.getDomain().getName(), service.getName(), req)
-                            .getCertificate());
-            return new AthenzIdentityCertificate(certificate, privateKey);
         });
     }
 
