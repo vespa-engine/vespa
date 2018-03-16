@@ -23,13 +23,8 @@ disk_operation_timeout int default=0 restart
 
 ## PERFORMANCE PARAMETERS
 
-## Number of threads to use for each mountpoint. VDS needs memory per thread
-## to perform disk operations, so increasing this number will increase
-## memory usage, but it will also make the disk queue on a given disk be
-## able to be larger, such that the disk can choose operations to optimize
-## seek time.
-## See benchmarks for performance/memory tradeoff.
-threads[].lowestpri int default=255 restart
+## Number of threads to use for each mountpoint.
+num_threads int default=6 restart
 
 ## When merging, if we find more than this number of documents that exist on all
 ## of the same copies, send a separate apply bucket diff with these entries
