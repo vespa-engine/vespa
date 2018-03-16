@@ -26,7 +26,7 @@ class NodeMaintenanceStatsTrackerTest : public CppUnit::TestFixture
     void statsAreTrackedPerNode();
     void statsAreTrackedPerBucketSpace();
     void assertEmptyBucketStats(BucketSpace bucketSpace, const NodeMaintenanceStatsTracker& tracker);
-    void assertBucketStats(uint64_t expMovingOut, uint64_t expSyncing, uint64_t expCopyingIn, uint64_t expCopyingOut,
+    void assertBucketStats(uint64_t expMovingOut, uint64_t expSyncing, uint64_t expCopyingIn, uint64_t expCopyingOut, uint64_t expTotal,
                            BucketSpace bucketSpace, const NodeMaintenanceStatsTracker& tracker);
 };
 
@@ -112,25 +112,30 @@ NodeMaintenanceStatsTrackerTest::statsAreTrackedPerBucketSpace()
     BucketSpace fooSpace(3);
     BucketSpace barSpace(5);
 
+    tracker.incTotal(0, fooSpace);
     tracker.incMovingOut(0, fooSpace);
-    assertBucketStats(1, 0, 0, 0, fooSpace, tracker);
+    assertBucketStats(1, 0, 0, 0, 1, fooSpace, tracker);
     assertEmptyBucketStats(barSpace, tracker);
 
+    tracker.incTotal(0, barSpace);
     tracker.incMovingOut(0, barSpace);
-    assertBucketStats(1, 0, 0, 0, fooSpace, tracker);
-    assertBucketStats(1, 0, 0, 0, barSpace, tracker);
+    assertBucketStats(1, 0, 0, 0, 1, fooSpace, tracker);
+    assertBucketStats(1, 0, 0, 0, 1, barSpace, tracker);
 
+    tracker.incTotal(0, fooSpace);
     tracker.incSyncing(0, fooSpace);
-    assertBucketStats(1, 1, 0, 0, fooSpace, tracker);
-    assertBucketStats(1, 0, 0, 0, barSpace, tracker);
+    assertBucketStats(1, 1, 0, 0, 2, fooSpace, tracker);
+    assertBucketStats(1, 0, 0, 0, 1, barSpace, tracker);
 
+    tracker.incTotal(0, fooSpace);
     tracker.incCopyingIn(0, fooSpace);
-    assertBucketStats(1, 1, 1, 0, fooSpace, tracker);
-    assertBucketStats(1, 0, 0, 0, barSpace, tracker);
+    assertBucketStats(1, 1, 1, 0, 3, fooSpace, tracker);
+    assertBucketStats(1, 0, 0, 0, 1, barSpace, tracker);
 
+    tracker.incTotal(0, fooSpace);
     tracker.incCopyingOut(0, fooSpace);
-    assertBucketStats(1, 1, 1, 1, fooSpace, tracker);
-    assertBucketStats(1, 0, 0, 0, barSpace, tracker);
+    assertBucketStats(1, 1, 1, 1, 4, fooSpace, tracker);
+    assertBucketStats(1, 0, 0, 0, 1, barSpace, tracker);
 }
 
 void
@@ -146,10 +151,11 @@ NodeMaintenanceStatsTrackerTest::assertBucketStats(uint64_t expMovingOut,
                                                    uint64_t expSyncing,
                                                    uint64_t expCopyingIn,
                                                    uint64_t expCopyingOut,
+                                                   uint64_t expTotal,
                                                    BucketSpace bucketSpace,
                                                    const NodeMaintenanceStatsTracker& tracker)
 {
-    NodeMaintenanceStats expStats(expMovingOut, expSyncing, expCopyingIn, expCopyingOut);
+    NodeMaintenanceStats expStats(expMovingOut, expSyncing, expCopyingIn, expCopyingOut, expTotal);
     CPPUNIT_ASSERT_EQUAL(expStats, tracker.forNode(0, bucketSpace));
 }
 

@@ -15,6 +15,7 @@ operator<<(std::ostream& os, const NodeMaintenanceStats& stats)
        << ",syncing="    << stats.syncing
        << ",copyingIn="  << stats.copyingIn
        << ",copyingOut=" << stats.copyingOut
+       << ",total="      << stats.total
        << ")";
     return os;
 }
