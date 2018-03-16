@@ -17,7 +17,6 @@
 #include <vespa/messagebus/routing/routingtable.h>
 #include <vespa/messagebus/routing/policydirective.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vdslib/container/mutabledocumentlist.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>

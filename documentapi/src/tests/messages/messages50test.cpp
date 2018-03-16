@@ -6,7 +6,6 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/vdslib/container/writabledocumentlist.h>
 
 using document::DataType;
 using document::DocumentTypeRepo;

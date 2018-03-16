@@ -20,11 +20,6 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/vdslib/state/random.h>
-#include <vespa/vdslib/container/mutabledocumentlist.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>

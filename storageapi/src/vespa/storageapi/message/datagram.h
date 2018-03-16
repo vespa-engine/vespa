@@ -5,7 +5,6 @@
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/storageapi/defs.h>
-#include <vespa/vdslib/container/documentlist.h>
 
 namespace storage::api {
 

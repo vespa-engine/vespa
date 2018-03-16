@@ -2,13 +2,9 @@
 vespa_add_library(vdslib_container OBJECT
     SOURCES
     dummycppfile.cpp
-    documentlist.cpp
-    mutabledocumentlist.cpp
-    writabledocumentlist.cpp
     parameters.cpp
     searchresult.cpp
     documentsummary.cpp
-    operationlist.cpp
     visitorstatistics.cpp
     visitorordering.cpp
     DEPENDS
