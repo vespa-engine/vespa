@@ -37,13 +37,14 @@ public class FileDownloader {
         this(connectionPool,
              new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution")),
              new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution")),
-             Duration.ofMinutes(15));
+             Duration.ofMinutes(15),
+             Duration.ofSeconds(10));
     }
 
-    FileDownloader(ConnectionPool connectionPool, File downloadDirectory, File tmpDirectory, Duration timeout) {
+    FileDownloader(ConnectionPool connectionPool, File downloadDirectory, File tmpDirectory, Duration timeout, Duration sleepBetweenRetries) {
         this.downloadDirectory = downloadDirectory;
         this.timeout = timeout;
-        this.fileReferenceDownloader = new FileReferenceDownloader(downloadDirectory, tmpDirectory, connectionPool, timeout);
+        this.fileReferenceDownloader = new FileReferenceDownloader(downloadDirectory, tmpDirectory, connectionPool, timeout, sleepBetweenRetries);
     }
 
     public Optional<File> getFile(FileReference fileReference) {
