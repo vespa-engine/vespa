@@ -51,7 +51,7 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
      */
     @Override
     public ZtsClient createZtsClientWithServicePrincipal() {
-        return new ZtsClientImpl(new ZTSClient(config.ztsUrl(), identityProvider.getIdentitySslContext()), getServicePrivateKey(), config);
+        return new ZtsClientImpl(new ZTSClient(config.ztsUrl(), identityProvider.getIdentitySslContext()), config);
     }
 
     /**
