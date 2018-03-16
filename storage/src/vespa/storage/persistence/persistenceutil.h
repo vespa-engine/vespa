@@ -70,7 +70,6 @@ struct PersistenceUtil {
     FileStorThreadMetrics& _metrics;
     const document::BucketIdFactory& _bucketFactory;
     const std::shared_ptr<document::DocumentTypeRepo> _repo;
-    uint8_t _lowestPriority;
     PauseHandler _pauseHandler;
     spi::PersistenceProvider& _spi;
 
@@ -80,7 +79,6 @@ struct PersistenceUtil {
             FileStorHandler& fileStorHandler,
             FileStorThreadMetrics& metrics,
             uint16_t partition,
-            uint8_t lowestPriority,
             spi::PersistenceProvider& provider);
 
     ~PersistenceUtil();

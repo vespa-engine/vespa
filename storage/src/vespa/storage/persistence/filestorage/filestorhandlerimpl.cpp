@@ -398,7 +398,7 @@ FileStorHandlerImpl::abortQueuedOperations(
 bool
 FileStorHandlerImpl::hasBlockingOperations(const Disk& t) const
 {
-    for (auto& lockedBucket : t.lockedBuckets) {
+    for (const auto & lockedBucket : t.lockedBuckets) {
         if (lockedBucket.second.priority <= _minPriorityToBeBlocking) {
             return true;
         }
@@ -419,9 +419,7 @@ FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
 }
 
 FileStorHandler::LockedMessage &
-FileStorHandlerImpl::getNextMessage(uint16_t disk,
-                                    FileStorHandler::LockedMessage& lck,
-                                    uint8_t maxPriority)
+FileStorHandlerImpl::getNextMessage(uint16_t disk, FileStorHandler::LockedMessage& lck)
 {
     document::Bucket bucket(lck.first->getBucket());
 
@@ -452,7 +450,7 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk,
     mbus::Trace& trace = m.getTrace();
 
     // Priority is too low, not buffering any more.
-    if (m.getPriority() > maxPriority || m.getPriority() >= _maxPriorityToBlock) {
+    if (m.getPriority() >= _maxPriorityToBlock) {
         lck.second.reset();
         return lck;
     }
@@ -564,23 +562,10 @@ namespace {
     bucketIsLockedOnDisk(const document::Bucket &id, const FileStorHandlerImpl::Disk &t) {
         return (id.getBucketId().getRawId() != 0 && t.isLocked(id));
     }
-
-    /**
-     * Return whether msg has sufficiently high priority that a thread with
-     * a configured priority threshold of maxPriority can even run in.
-     * Often, operations such as streaming searches will have dedicated threads
-     * that refuse lower priority operations such as Puts etc.
-     */
-    bool
-    operationHasHighEnoughPriorityToBeRun(const api::StorageMessage& msg, uint8_t maxPriority)
-    {
-        // NOTE: priority integral value 0 is considered highest pri.
-        return (msg.getPriority() <= maxPriority);
-    }
 }
 
 FileStorHandler::LockedMessage
-FileStorHandlerImpl::getNextMessage(uint16_t disk, uint8_t maxPriority)
+FileStorHandlerImpl::getNextMessage(uint16_t disk)
 {
     assert(disk < _diskInfo.size());
     if (!tryHandlePause(disk)) {
@@ -604,8 +589,7 @@ FileStorHandlerImpl::getNextMessage(uint16_t disk, uint8_t maxPriority)
         if (iter != end) {
             api::StorageMessage &m(*iter->_command);
 
-            if (operationHasHighEnoughPriorityToBeRun(m, maxPriority)
-                && ! operationBlockedByHigherPriorityThread(m, t)
+            if (! operationBlockedByHigherPriorityThread(m, t)
                 && ! isPaused())
             {
                 return getMessage(lockGuard, t, idx, iter);

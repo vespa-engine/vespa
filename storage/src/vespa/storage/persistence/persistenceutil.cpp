@@ -66,7 +66,6 @@ PersistenceUtil::PersistenceUtil(
         FileStorHandler& fileStorHandler,
         FileStorThreadMetrics& metrics,
         uint16_t partition,
-        uint8_t lowestPriority,
         spi::PersistenceProvider& provider)
     : _config(*config::ConfigGetter<vespa::config::content::StorFilestorConfig>::getConfig(configUri.getConfigId(), configUri.getContext())),
       _compReg(compReg),
@@ -77,19 +76,15 @@ PersistenceUtil::PersistenceUtil(
       _metrics(metrics),
       _bucketFactory(_component.getBucketIdFactory()),
       _repo(_component.getTypeRepo()),
-      _lowestPriority(lowestPriority),
       _pauseHandler(),
       _spi(provider)
 {
 }
 
-PersistenceUtil::~PersistenceUtil()
-{
-}
+PersistenceUtil::~PersistenceUtil() { }
 
 void
-PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket,
-                                      const api::BucketInfo& i)
+PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket, const api::BucketInfo& i)
 {
     // Update bucket database
     StorBucketDatabase::WrappedEntry entry(getBucketDatabase(bucket.getBucketSpace()).get(

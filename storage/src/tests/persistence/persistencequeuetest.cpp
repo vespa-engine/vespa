@@ -89,17 +89,15 @@ PersistenceQueueTest::testFetchNextUnlockedMessageIfBucketLocked()
     filestorHandler.schedule(createPut(1234, 1), 0);
     filestorHandler.schedule(createPut(5432, 0), 0);
 
-    auto lock0 = filestorHandler.getNextMessage(0, 255);
+    auto lock0 = filestorHandler.getNextMessage(0);
     CPPUNIT_ASSERT(lock0.first.get());
-    CPPUNIT_ASSERT_EQUAL(
-            document::BucketId(16, 1234),
-            dynamic_cast<api::PutCommand&>(*lock0.second).getBucketId());
+    CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 1234),
+                         dynamic_cast<api::PutCommand&>(*lock0.second).getBucketId());
 
-    auto lock1 = filestorHandler.getNextMessage(0, 255);
+    auto lock1 = filestorHandler.getNextMessage(0);
     CPPUNIT_ASSERT(lock1.first.get());
-    CPPUNIT_ASSERT_EQUAL(
-            document::BucketId(16, 5432),
-            dynamic_cast<api::PutCommand&>(*lock1.second).getBucketId());
+    CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 5432),
+                         dynamic_cast<api::PutCommand&>(*lock1.second).getBucketId());
 }
 
 } // namespace storage

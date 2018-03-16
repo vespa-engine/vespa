@@ -131,16 +131,13 @@ public:
      * Used by file stor threads to get their next message to process.
      *
      * @param disk The disk to get messages for
-     * @param lowestPriority The lowest priority of operation we should return
      */
-    LockedMessage getNextMessage(uint16_t disk, uint8_t lowestPriority);
+    LockedMessage getNextMessage(uint16_t disk);
 
     /**
      * Returns the next message for the same bucket.
      */
-    LockedMessage & getNextMessage(uint16_t disk,
-                                 LockedMessage& lock,
-                                 uint8_t lowestPriority);
+    LockedMessage & getNextMessage(uint16_t disk, LockedMessage& lock);
 
     /**
      * Lock a bucket. By default, each file stor thread has the locks of all

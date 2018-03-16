@@ -265,15 +265,14 @@ std::unique_ptr<DiskThread> createThread(vdstestlib::DirConfig& config,
                                        spi::PersistenceProvider& provider,
                                        FileStorHandler& filestorHandler,
                                        FileStorThreadMetrics& metrics,
-                                       uint16_t deviceIndex,
-                                       uint8_t lowestPriority)
+                                       uint16_t deviceIndex)
 {
     (void) config;
     std::unique_ptr<DiskThread> disk;
     disk.reset(new PersistenceThread(
             node.getComponentRegister(), config.getConfigId(), provider,
             filestorHandler, metrics,
-            deviceIndex, lowestPriority));
+            deviceIndex));
     return disk;
 }
 
@@ -645,23 +644,18 @@ FileStorManagerTest::testHandlerPriority()
 
     // Populate bucket with the given data
     for (uint32_t i = 1; i < 6; i++) {
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bucket), doc, 100));
-        std::unique_ptr<api::StorageMessageAddress> address(
-                new api::StorageMessageAddress(
-                        "storage", lib::NodeType::STORAGE, 3));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), doc, 100);
+        auto address = std::make_shared<api::StorageMessageAddress>("storage", lib::NodeType::STORAGE, 3);
         cmd->setAddress(*address);
         cmd->setPriority(i * 15);
         filestorHandler.schedule(cmd, 0);
     }
 
-    CPPUNIT_ASSERT_EQUAL(15, (int)filestorHandler.getNextMessage(0, 20).second->getPriority());
-    CPPUNIT_ASSERT(filestorHandler.getNextMessage(0, 20).second.get() == NULL);
-    CPPUNIT_ASSERT_EQUAL(30, (int)filestorHandler.getNextMessage(0, 50).second->getPriority());
-    CPPUNIT_ASSERT_EQUAL(45, (int)filestorHandler.getNextMessage(0, 50).second->getPriority());
-    CPPUNIT_ASSERT(filestorHandler.getNextMessage(0, 50).second.get() == NULL);
-    CPPUNIT_ASSERT_EQUAL(60, (int)filestorHandler.getNextMessage(0, 255).second->getPriority());
-    CPPUNIT_ASSERT_EQUAL(75, (int)filestorHandler.getNextMessage(0, 255).second->getPriority());
+    CPPUNIT_ASSERT_EQUAL(15, (int)filestorHandler.getNextMessage(0).second->getPriority());
+    CPPUNIT_ASSERT_EQUAL(30, (int)filestorHandler.getNextMessage(0).second->getPriority());
+    CPPUNIT_ASSERT_EQUAL(45, (int)filestorHandler.getNextMessage(0).second->getPriority());
+    CPPUNIT_ASSERT_EQUAL(60, (int)filestorHandler.getNextMessage(0).second->getPriority());
+    CPPUNIT_ASSERT_EQUAL(75, (int)filestorHandler.getNextMessage(0).second->getPriority());
 }
 
 class MessagePusherThread : public document::Runnable
@@ -678,11 +672,9 @@ public:
     void run() override {
         while (!_done) {
             document::BucketIdFactory factory;
-            document::BucketId bucket(16, factory.getBucketId(
-                                              _doc->getId()).getRawId());
+            document::BucketId bucket(16, factory.getBucketId(_doc->getId()).getRawId());
 
-            std::shared_ptr<api::PutCommand> cmd(
-                    new api::PutCommand(makeDocumentBucket(bucket), _doc, 100));
+            auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), _doc, 100);
             _handler.schedule(cmd, 0);
             FastOS_Thread::Sleep(1);
         }
@@ -694,7 +686,7 @@ public:
 MessagePusherThread::MessagePusherThread(FileStorHandler& handler, Document::SP doc)
     : _handler(handler), _doc(doc), _done(false), _threadDone(false)
 {}
-MessagePusherThread::~MessagePusherThread() {}
+MessagePusherThread::~MessagePusherThread() = default;
 
 class MessageFetchingThread : public document::Runnable {
 public:
@@ -711,7 +703,7 @@ public:
 
     void run() override {
         while (!_done) {
-            FileStorHandler::LockedMessage msg = _handler.getNextMessage(0, 255);
+            FileStorHandler::LockedMessage msg = _handler.getNextMessage(0);
             if (msg.second.get()) {
                 uint32_t originalConfig = _config.load();
                 _fetchedCount++;
@@ -824,15 +816,15 @@ FileStorManagerTest::testHandlerPause()
         filestorHandler.schedule(cmd, 0);
     }
 
-    CPPUNIT_ASSERT_EQUAL(15, (int)filestorHandler.getNextMessage(0, 255).second->getPriority());
+    CPPUNIT_ASSERT_EQUAL(15, (int)filestorHandler.getNextMessage(0).second->getPriority());
 
     {
         ResumeGuard guard = filestorHandler.pause();
         (void)guard;
-        CPPUNIT_ASSERT(filestorHandler.getNextMessage(0, 255).second.get() == NULL);
+        CPPUNIT_ASSERT(filestorHandler.getNextMessage(0).second.get() == NULL);
     }
 
-    CPPUNIT_ASSERT_EQUAL(30, (int)filestorHandler.getNextMessage(0, 255).second->getPriority());
+    CPPUNIT_ASSERT_EQUAL(30, (int)filestorHandler.getNextMessage(0).second->getPriority());
 }
 
 namespace {
@@ -957,21 +949,21 @@ FileStorManagerTest::testHandlerMulti()
     }
 
     {
-        FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0, 255);
+        FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0);
         CPPUNIT_ASSERT_EQUAL((uint64_t)1, getPutTime(lock.second));
 
-        lock = filestorHandler.getNextMessage(0, lock, 255);
+        lock = filestorHandler.getNextMessage(0, lock);
         CPPUNIT_ASSERT_EQUAL((uint64_t)2, getPutTime(lock.second));
 
-        lock = filestorHandler.getNextMessage(0, lock, 255);
+        lock = filestorHandler.getNextMessage(0, lock);
         CPPUNIT_ASSERT_EQUAL((uint64_t)3, getPutTime(lock.second));
     }
 
     {
-        FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0, 255);
+        FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0);
         CPPUNIT_ASSERT_EQUAL((uint64_t)11, getPutTime(lock.second));
 
-        lock = filestorHandler.getNextMessage(0, lock, 255);
+        lock = filestorHandler.getNextMessage(0, lock);
         CPPUNIT_ASSERT_EQUAL((uint64_t)12, getPutTime(lock.second));
     }
 }
@@ -984,8 +976,7 @@ FileStorManagerTest::testHandlerTimeout()
     // Setup a filestorthread to test
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(
-                          dummyManager = new DummyStorageLink));
+    top.push_back(std::unique_ptr<StorageLink>(dummyManager = new DummyStorageLink));
     top.open();
     ForwardingMessageSender messageSender(*dummyManager);
 
@@ -1036,7 +1027,7 @@ FileStorManagerTest::testHandlerTimeout()
 
     FastOS_Thread::Sleep(51);
     for (;;) {
-        auto lock = filestorHandler.getNextMessage(0, 255);
+        auto lock = filestorHandler.getNextMessage(0);
         if (lock.first.get()) {
             CPPUNIT_ASSERT_EQUAL(uint8_t(200), lock.second->getPriority());
             break;
@@ -1092,17 +1083,17 @@ FileStorManagerTest::testHandlerPriorityBlocking()
     }
 
     {
-        FileStorHandler::LockedMessage lock1 = filestorHandler.getNextMessage(0, 20);
+        FileStorHandler::LockedMessage lock1 = filestorHandler.getNextMessage(0);
         CPPUNIT_ASSERT_EQUAL(15, (int)lock1.second->getPriority());
 
         LOG(debug, "Waiting for request that should time out");
-        FileStorHandler::LockedMessage lock2 = filestorHandler.getNextMessage(0, 30);
+        FileStorHandler::LockedMessage lock2 = filestorHandler.getNextMessage(0);
         LOG(debug, "Got request that should time out");
         CPPUNIT_ASSERT(lock2.second.get() == NULL);
     }
 
     {
-        FileStorHandler::LockedMessage lock1 = filestorHandler.getNextMessage(0, 40);
+        FileStorHandler::LockedMessage lock1 = filestorHandler.getNextMessage(0);
         CPPUNIT_ASSERT_EQUAL(30, (int)lock1.second->getPriority());
 
         // New high-pri message comes in
@@ -1118,20 +1109,20 @@ FileStorManagerTest::testHandlerPriorityBlocking()
         cmd->setPriority(15);
         filestorHandler.schedule(cmd, 0);
 
-        FileStorHandler::LockedMessage lock2 = filestorHandler.getNextMessage(0, 20);
+        FileStorHandler::LockedMessage lock2 = filestorHandler.getNextMessage(0);
         CPPUNIT_ASSERT_EQUAL(15, (int)lock2.second->getPriority());
 
         LOG(debug, "Waiting for request that should time out");
-        FileStorHandler::LockedMessage lock3 = filestorHandler.getNextMessage(0, 255);
+        FileStorHandler::LockedMessage lock3 = filestorHandler.getNextMessage(0);
         LOG(debug, "Got request that should time out");
         CPPUNIT_ASSERT(lock3.second.get() == NULL);
     }
 
     {
-        FileStorHandler::LockedMessage lock1 = filestorHandler.getNextMessage(0, 255);
+        FileStorHandler::LockedMessage lock1 = filestorHandler.getNextMessage(0);
         CPPUNIT_ASSERT_EQUAL(45, (int)lock1.second->getPriority());
 
-        FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0, 255);
+        FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0);
         CPPUNIT_ASSERT_EQUAL(60, (int)lock.second->getPriority());
     }
     LOG(debug, "Test done");
@@ -1150,7 +1141,7 @@ public:
         : _handler(handler), pause(false), done(false), gotoperation(false) {}
 
     void run() override {
-        FileStorHandler::LockedMessage msg = _handler.getNextMessage(0, 255);
+        FileStorHandler::LockedMessage msg = _handler.getNextMessage(0);
         gotoperation = true;
 
         while (!done) {
@@ -1229,7 +1220,7 @@ FileStorManagerTest::testHandlerPriorityPreempt()
     }
 
     {
-        FileStorHandler::LockedMessage lock1 = filestorHandler.getNextMessage(0, 20);
+        FileStorHandler::LockedMessage lock1 = filestorHandler.getNextMessage(0);
         CPPUNIT_ASSERT_EQUAL(20, (int)lock1.second->getPriority());
 
         thread.pause = true;
@@ -1273,10 +1264,10 @@ FileStorManagerTest::testPriority()
                                     _node->getComponentRegister(), 255, 0);
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, *metrics.disks[0]->threads[0], 0, 25));
+            filestorHandler, *metrics.disks[0]->threads[0], 0));
     std::unique_ptr<DiskThread> thread2(createThread(
             *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, *metrics.disks[0]->threads[1], 0, 255));
+            filestorHandler, *metrics.disks[0]->threads[1], 0));
 
     // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
@@ -1342,9 +1333,8 @@ FileStorManagerTest::testPriority()
     CPPUNIT_ASSERT_EQUAL(uint64_t(documents.size()),
             metrics.disks[0]->threads[0]->operations.getValue()
             + metrics.disks[0]->threads[1]->operations.getValue());
-    CPPUNIT_ASSERT(metrics.disks[0]->threads[0]->operations.getValue() <= 13);
-        // Closing file stor handler before threads are deleted, such that
-        // file stor threads getNextMessage calls returns.
+    // Closing file stor handler before threads are deleted, such that
+    // file stor threads getNextMessage calls returns.
     filestorHandler.close();
 }
 
@@ -1367,7 +1357,7 @@ FileStorManagerTest::testSplit1()
                                     _node->getComponentRegister(), 255, 0);
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, *metrics.disks[0]->threads[0], 0, 255));
+            filestorHandler, *metrics.disks[0]->threads[0], 0));
         // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
     for (uint32_t i=0; i<20; ++i) {
@@ -1544,7 +1534,7 @@ FileStorManagerTest::testSplitSingleGroup()
 
         std::unique_ptr<DiskThread> thread(createThread(
                 *config, *_node, _node->getPersistenceProvider(),
-                filestorHandler, *metrics.disks[0]->threads[0], 0, 255));
+                filestorHandler, *metrics.disks[0]->threads[0], 0));
             // Creating documents to test with. Different gids, 2 locations.
         std::vector<document::Document::SP > documents;
         for (uint32_t i=0; i<20; ++i) {
@@ -1677,7 +1667,7 @@ FileStorManagerTest::testSplitEmptyTargetWithRemappedOps()
                                     _node->getComponentRegister(), 255, 0);
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, *metrics.disks[0]->threads[0], 0, 255));
+            filestorHandler, *metrics.disks[0]->threads[0], 0));
 
     document::BucketId source(16, 0x10001);
 
@@ -1755,7 +1745,7 @@ FileStorManagerTest::testNotifyOnSplitSourceOwnershipChanged()
                                     _node->getComponentRegister(), 255, 0);
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, *metrics.disks[0]->threads[0], 0, 255));
+            filestorHandler, *metrics.disks[0]->threads[0], 0));
 
     document::BucketId source(getFirstBucketNotOwnedByDistributor(0));
     createBucket(source, 0);
@@ -1805,7 +1795,7 @@ FileStorManagerTest::testJoin()
                                     _node->getComponentRegister(), 255, 0);
     std::unique_ptr<DiskThread> thread(createThread(
             *config, *_node, _node->getPersistenceProvider(),
-            filestorHandler, *metrics.disks[0]->threads[0], 0, 255));
+            filestorHandler, *metrics.disks[0]->threads[0], 0));
         // Creating documents to test with. Different gids, 2 locations.
     std::vector<document::Document::SP > documents;
     for (uint32_t i=0; i<20; ++i) {
