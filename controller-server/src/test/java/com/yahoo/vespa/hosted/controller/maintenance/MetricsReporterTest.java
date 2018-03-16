@@ -17,10 +17,12 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
@@ -43,18 +45,23 @@ import static org.mockito.Mockito.when;
 public class MetricsReporterTest {
 
     private static final Path testData = Paths.get("src/test/resources/");
+    private MetricsMock metrics;
+
+    @Before
+    public void before() {
+        metrics = new MetricsMock();
+    }
 
     @Test
-    public void test_chef_metrics() throws IOException {
+    public void test_chef_metrics() {
         ControllerTester tester = new ControllerTester();
-        MetricsMock metricsMock = new MetricsMock();
-        MetricsReporter metricsReporter = setupMetricsReporter(tester.controller(), metricsMock, SystemName.cd);
+        MetricsReporter metricsReporter = createReporter(tester.controller(), metrics, SystemName.cd);
         metricsReporter.maintain();
-        assertEquals(2, metricsMock.getMetrics().size());
+        assertEquals(2, metrics.getMetrics().size());
 
-        Map<MapContext, Map<String, Number>> metrics = metricsMock.getMetricsFilteredByHost("fake-node.test");
-        assertEquals(1, metrics.size());
-        Map.Entry<MapContext, Map<String, Number>> metricEntry = metrics.entrySet().iterator().next();
+        Map<MapContext, Map<String, Number>> hostMetrics = getMetricsByHost("fake-node.test");
+        assertEquals(1, hostMetrics.size());
+        Map.Entry<MapContext, Map<String, Number>> metricEntry = hostMetrics.entrySet().iterator().next();
         MapContext metricContext = metricEntry.getKey();
         assertDimension(metricContext, "tenantName", "ciintegrationtests");
         assertDimension(metricContext, "app", "restart.default");
@@ -63,17 +70,16 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void test_deployment_metrics() throws IOException {
+    public void test_deployment_fail_ratio() {
         DeploymentTester tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
-        MetricsMock metricsMock = new MetricsMock();
-        MetricsReporter metricsReporter = setupMetricsReporter(tester.controller(), metricsMock, SystemName.cd);
+        MetricsReporter metricsReporter = createReporter(tester.controller(), metrics, SystemName.cd);
 
         metricsReporter.maintain();
-        assertEquals(0.0, metricsMock.getMetric(MetricsReporter.deploymentFailMetric));
+        assertEquals(0.0, metrics.getMetric(MetricsReporter.deploymentFailMetric));
 
         // Deploy all apps successfully
         Application app1 = tester.createApplication("app1", "tenant1", 1, 11L);
@@ -86,21 +92,21 @@ public class MetricsReporterTest {
         tester.deployCompletely(app4, applicationPackage);
 
         metricsReporter.maintain();
-        assertEquals(0.0, metricsMock.getMetric(MetricsReporter.deploymentFailMetric));
+        assertEquals(0.0, metrics.getMetric(MetricsReporter.deploymentFailMetric));
 
         // 1 app fails system-test
         tester.jobCompletion(component).application(app4).submit();
         tester.deployAndNotify(app4, applicationPackage, false, systemTest);
 
         metricsReporter.maintain();
-        assertEquals(25.0, metricsMock.getMetric(MetricsReporter.deploymentFailMetric));
+        assertEquals(25.0, metrics.getMetric(MetricsReporter.deploymentFailMetric));
     }
 
     @Test
-    public void it_omits_zone_when_unknown() throws IOException {
+    public void it_omits_zone_when_unknown() {
         ControllerTester tester = new ControllerTester();
         String hostname = "fake-node2.test";
-        MapContext metricContext = getMetricsForHost(tester.controller(), hostname);
+        MapContext metricContext = getMetricContextByHost(tester.controller(), hostname);
         assertNull(metricContext.getDimensions().get("zone"));
     }
 
@@ -108,27 +114,34 @@ public class MetricsReporterTest {
         assertEquals(expectedValue, metricContext.getDimensions().get(dimensionName));
     }
 
-    private MetricsReporter setupMetricsReporter(Controller controller, MetricsMock metricsMock, SystemName system) throws IOException {
+    private MetricsReporter createReporter(Controller controller, MetricsMock metricsMock, SystemName system) {
         Chef client = Mockito.mock(Chef.class);
-        PartialNodeResult result = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .readValue(testData.resolve("chef_output.json").toFile(), PartialNodeResult.class);
+        PartialNodeResult result;
+        try {
+            result = new ObjectMapper()
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    .readValue(testData.resolve("chef_output.json").toFile(), PartialNodeResult.class);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         when(client.partialSearchNodes(anyString(), anyListOf(AttributeMapping.class))).thenReturn(result);
 
         Clock clock = Clock.fixed(Instant.ofEpochSecond(1475497913), ZoneId.systemDefault());
 
-        return new MetricsReporter(controller, metricsMock, client, clock,
-                                   new JobControl(new MockCuratorDb()), system);
+        return new MetricsReporter(controller, metricsMock, client, clock, new JobControl(new MockCuratorDb()), system);
+    }
+
+    private Map<MapContext, Map<String, Number>> getMetricsByHost(String hostname) {
+        return metrics.getMetrics((dimension, value) -> dimension.equals("host") && value.equals(hostname));
     }
     
-    private MapContext getMetricsForHost(Controller controller, String hostname) throws IOException {
-        MetricsMock metricsMock = new MetricsMock();
-        MetricsReporter metricsReporter = setupMetricsReporter(controller, metricsMock, SystemName.main);
+    private MapContext getMetricContextByHost(Controller controller, String hostname) {
+        MetricsReporter metricsReporter = createReporter(controller, metrics, SystemName.main);
         metricsReporter.maintain();
 
-        assertFalse(metricsMock.getMetrics().isEmpty());
+        assertFalse(metrics.getMetrics().isEmpty());
 
-        Map<MapContext, Map<String, Number>> metrics = metricsMock.getMetricsFilteredByHost(hostname);
+        Map<MapContext, Map<String, Number>> metrics = getMetricsByHost(hostname);
         assertEquals(1, metrics.size());
         Map.Entry<MapContext, Map<String, Number>> metricEntry = metrics.entrySet().iterator().next();
         return metricEntry.getKey();
