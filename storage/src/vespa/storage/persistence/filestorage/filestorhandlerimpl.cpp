@@ -559,22 +559,16 @@ FileStorHandlerImpl::lock(const document::Bucket &bucket, uint16_t disk)
     assert(disk < _diskInfo.size());
 
     Disk& t(_diskInfo[disk]);
-    LOG(spam,
-        "Acquiring filestor lock for %s on disk %d",
-        bucket.getBucketId().toString().c_str(),
-        disk);
+    LOG(spam, "Acquiring filestor lock for %s on disk %d", bucket.getBucketId().toString().c_str(), disk);
 
     vespalib::MonitorGuard lockGuard(t.lock);
 
     while (bucket.getBucketId().getRawId() != 0 && t.isLocked(bucket)) {
-        LOG(spam,
-            "Contending for filestor lock for %s",
-            bucket.getBucketId().toString().c_str());
+        LOG(spam, "Contending for filestor lock for %s", bucket.getBucketId().toString().c_str());
         lockGuard.wait(100);
     }
 
-    std::shared_ptr<FileStorHandler::BucketLockInterface> locker(
-            new BucketLock(lockGuard, t, bucket, 255, "External lock"));
+    auto locker = std::make_shared<BucketLock>(lockGuard, t, bucket, 255, "External lock");
 
     lockGuard.broadcast();
     return locker;
