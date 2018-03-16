@@ -53,7 +53,7 @@ public class Environment {
     private final InetAddressResolver inetAddressResolver;
     private final PathResolver pathResolver;
     private final List<String> logstashNodes;
-    private final Optional<String> feedEndpoint;
+    private final Optional<String> coredumpFeedEndpoint;
     private final Optional<KeyStoreOptions> keyStoreOptions;
     private final Optional<KeyStoreOptions> trustStoreOptions;
     private final Optional<AthenzIdentity> athenzIdentity;
@@ -106,7 +106,7 @@ public class Environment {
                        InetAddressResolver inetAddressResolver,
                        PathResolver pathResolver,
                        List<String> logstashNodes,
-                       Optional<String> feedEndpoint,
+                       Optional<String> coreDumpFeedEndpoint,
                        NodeType nodeType,
                        String defaultFlavor) {
         this.configServerHostNames = configServerConfig.hosts();
@@ -133,7 +133,7 @@ public class Environment {
         this.inetAddressResolver = inetAddressResolver;
         this.pathResolver = pathResolver;
         this.logstashNodes = logstashNodes;
-        this.feedEndpoint = feedEndpoint;
+        this.coredumpFeedEndpoint = coreDumpFeedEndpoint;
         this.nodeType = nodeType;
         this.defaultFlavor = defaultFlavor;
     }
@@ -202,7 +202,7 @@ public class Environment {
     }
 
     public Optional<String> getCoredumpFeedEndpoint() {
-        return feedEndpoint;
+        return coredumpFeedEndpoint;
     }
 
     /**
@@ -287,7 +287,7 @@ public class Environment {
         private InetAddressResolver inetAddressResolver;
         private PathResolver pathResolver;
         private List<String> logstashNodes = Collections.emptyList();
-        private Optional<String> feedEndpoint = Optional.empty();
+        private Optional<String> coredumpFeedEndpoint = Optional.empty();
         private NodeType nodeType = NodeType.tenant;
         private String defaultFlavor;
 
@@ -331,8 +331,14 @@ public class Environment {
             return this;
         }
 
+        // TOOD: Remove when all users hav changed to use coredumpFeedEndpoint()
         public Builder feedEndpoint(String feedEndpoint) {
-            this.feedEndpoint = Optional.of(feedEndpoint);
+            this.coredumpFeedEndpoint = Optional.of(feedEndpoint);
+            return this;
+        }
+
+        public Builder coredumpFeedEndpoint(String coredumpFeedEndpoint) {
+            this.coredumpFeedEndpoint = Optional.of(coredumpFeedEndpoint);
             return this;
         }
 
@@ -361,7 +367,7 @@ public class Environment {
                                    Optional.ofNullable(inetAddressResolver).orElseGet(InetAddressResolver::new),
                                    Optional.ofNullable(pathResolver).orElseGet(PathResolver::new),
                                    logstashNodes,
-                                   feedEndpoint,
+                                   coredumpFeedEndpoint,
                                    nodeType,
                                    defaultFlavor);
         }
