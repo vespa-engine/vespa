@@ -41,11 +41,14 @@ public class FileReferenceDownloader {
     private final Map<FileReference, FileReferenceDownload> downloads = new LinkedHashMap<>();
     private final Map<FileReference, Double> downloadStatus = new HashMap<>();  // between 0 and 1
     private final Duration downloadTimeout;
+    private final Duration sleepBetweenRetries;
     private final FileReceiver fileReceiver;
 
-    FileReferenceDownloader(File downloadDirectory, File tmpDirectory, ConnectionPool connectionPool, Duration timeout) {
+    FileReferenceDownloader(File downloadDirectory, File tmpDirectory, ConnectionPool connectionPool,
+                            Duration timeout, Duration sleepBetweenRetries) {
         this.connectionPool = connectionPool;
         this.downloadTimeout = timeout;
+        this.sleepBetweenRetries = sleepBetweenRetries;
         this.fileReceiver = new FileReceiver(connectionPool.getSupervisor(), this, downloadDirectory, tmpDirectory);
     }
 
@@ -58,7 +61,7 @@ public class FileReferenceDownloader {
                 if (startDownloadRpc(fileReference)) {
                     downloadStarted = true;
                 } else {
-                    Thread.sleep(10);
+                    Thread.sleep(sleepBetweenRetries.toMillis());
                 }
             }
             catch (InterruptedException e) { /* ignored */}
@@ -191,5 +194,9 @@ public class FileReferenceDownloader {
 
     public ConnectionPool connectionPool() {
         return connectionPool;
+    }
+
+    public Duration getDownloadTimeout() {
+        return downloadTimeout;
     }
 }
