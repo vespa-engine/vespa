@@ -108,13 +108,13 @@ public class JsonWriter {
         JSONObject result = new JSONObject();
         result.put("baseline", state.getBaselineState());
         JSONArray bucketSpacesJson = new JSONArray();
-        result.put("bucket-spaces", bucketSpacesJson);
         for (Map.Entry<String, String> entry : state.getBucketSpaceStates().entrySet()) {
             JSONObject bucketSpaceJson = new JSONObject();
             bucketSpaceJson.put("name", entry.getKey());
             bucketSpaceJson.put("state", entry.getValue());
             bucketSpacesJson.put(bucketSpaceJson);
         }
+        result.put("bucket-spaces", bucketSpacesJson);
         return result;
     }
 
