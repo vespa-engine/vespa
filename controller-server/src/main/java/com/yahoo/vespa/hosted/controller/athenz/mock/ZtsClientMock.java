@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.athenz.mock;
 import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
 import com.yahoo.vespa.athenz.api.AthenzRoleCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZtsClient;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -41,18 +40,6 @@ public class ZtsClientMock implements ZtsClient {
                 .filter(domain -> domain.tenantAdmins.contains(identity) || domain.admins.contains(identity))
                 .map(domain -> domain.name)
                 .collect(toList());
-    }
-
-    @Override
-    public AthenzIdentityCertificate getIdentityCertificate() {
-        log.log(Level.INFO, "getIdentityCertificate()");
-        try {
-            KeyPair keyPair = createKeyPair();
-            String subject = "CN=controller";
-            return new AthenzIdentityCertificate(createCertificate(keyPair, subject), keyPair.getPrivate());
-        } catch (NoSuchAlgorithmException | OperatorCreationException | IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
