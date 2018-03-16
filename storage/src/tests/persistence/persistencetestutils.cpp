@@ -52,15 +52,13 @@ PersistenceTestEnvironment::PersistenceTestEnvironment(DiskCount numDisks, const
     _node.setupDummyPersistence();
     _metrics.initDiskMetrics(
             numDisks, _node.getLoadTypes()->getMetricLoadTypes(), 1);
-    _handler.reset(new FileStorHandler(
-            _messageKeeper, _metrics,
-            _node.getPersistenceProvider().getPartitionStates().getList(),
-            _node.getComponentRegister(), 255, 0));
+    _handler.reset(new FileStorHandler(_messageKeeper, _metrics,
+                                       _node.getPersistenceProvider().getPartitionStates().getList(),
+                                       _node.getComponentRegister()));
     for (uint32_t i = 0; i < numDisks; i++) {
         _diskEnvs.push_back(
-                std::unique_ptr<PersistenceUtil>(
-                        new PersistenceUtil(_config.getConfigId(), _node.getComponentRegister(),
-                                *_handler, *_metrics.disks[i]->threads[0], i, _node.getPersistenceProvider())));
+                std::make_unique<PersistenceUtil>(_config.getConfigId(), _node.getComponentRegister(), *_handler,
+                                                  *_metrics.disks[i]->threads[0], i, _node.getPersistenceProvider()));
     }
 }
 

@@ -1,12 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "types.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/persistence/filestorage/filestorhandler.h>
 #include <vespa/storage/persistence/filestorage/filestormetrics.h>
-#include <vespa/storage/persistence/filestorage/pausehandler.h>
-#include <vespa/storage/persistence/types.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/storage/storageutil/utils.h>
 #include <vespa/config-stor-filestor.h>
@@ -70,7 +69,6 @@ struct PersistenceUtil {
     FileStorThreadMetrics& _metrics;
     const document::BucketIdFactory& _bucketFactory;
     const std::shared_ptr<document::DocumentTypeRepo> _repo;
-    PauseHandler _pauseHandler;
     spi::PersistenceProvider& _spi;
 
     PersistenceUtil(
