@@ -623,6 +623,7 @@ Test::testDocumentRouteSelector()
             make_shared<DocumentUpdate>(*_docType, DocumentId("doc:scheme:"))));
     EXPECT_TRUE(frame.testSelect(StringList().add("foo")));
 
+    put = make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("doc:scheme:")));
     frame.setMessage(std::move(put));
     EXPECT_TRUE(frame.testMergeOneReply("foo"));
 }
