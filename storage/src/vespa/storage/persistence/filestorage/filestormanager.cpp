@@ -116,7 +116,7 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
 
         _disks.resize(_component.getDiskCount());
 
-        size_t numThreads = (_config->threads.size() == 0) ? 6 : _config->threads.size();
+        size_t numThreads = (_config->numThreads) ? 6 : _config->numThreads;
         _metrics->initDiskMetrics(_disks.size(), _component.getLoadTypes()->getMetricLoadTypes(), numThreads);
 
         _filestorHandler.reset(new FileStorHandler(*this, *_metrics, _partitions, _compReg));
