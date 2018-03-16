@@ -5,6 +5,7 @@ vespa_add_library(eval_tensor_dense OBJECT
     dense_fast_rename_function.cpp
     dense_inplace_join_function.cpp
     dense_inplace_map_function.cpp
+    dense_replace_type_function.cpp
     dense_tensor.cpp
     dense_tensor_address_combiner.cpp
     dense_tensor_builder.cpp

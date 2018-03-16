@@ -29,6 +29,7 @@ vespa_define_module(
     src/tests/tensor/dense_fast_rename_function
     src/tests/tensor/dense_inplace_join_function
     src/tests/tensor/dense_inplace_map_function
+    src/tests/tensor/dense_replace_type_function
     src/tests/tensor/dense_tensor_address_combiner
     src/tests/tensor/dense_tensor_builder
     src/tests/tensor/dense_xw_product_function
