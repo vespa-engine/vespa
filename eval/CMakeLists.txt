@@ -26,7 +26,7 @@ vespa_define_module(
     src/tests/eval/value_type
     src/tests/gp/ponder_nov2017
     src/tests/tensor/dense_dot_product_function
-    src/tests/tensor/dense_fast_rename_function
+    src/tests/tensor/dense_fast_rename_optimizer
     src/tests/tensor/dense_inplace_join_function
     src/tests/tensor/dense_inplace_map_function
     src/tests/tensor/dense_replace_type_function
