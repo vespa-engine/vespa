@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzRoleCertificate;
 
 import java.util.List;
 
@@ -13,7 +12,5 @@ import java.util.List;
 public interface ZtsClient {
 
     List<AthenzDomain> getTenantDomainsForUser(AthenzIdentity principal);
-
-    AthenzRoleCertificate getRoleCertificate(AthenzDomain roleDomain, String roleName);
 
 }
