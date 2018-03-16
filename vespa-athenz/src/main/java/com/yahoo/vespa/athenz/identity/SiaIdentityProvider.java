@@ -7,6 +7,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder;
+import com.yahoo.vespa.athenz.tls.KeyStoreType;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
@@ -22,11 +23,13 @@ public class SiaIdentityProvider implements AthenzIdentityProvider {
     private final AthenzDomain domain;
     private final AthenzService service;
     private final String path;
+    private final String trustStorePath;
 
     public SiaIdentityProvider(SiaProviderConfig siaProviderConfig) {
         this.domain = new AthenzDomain(siaProviderConfig.athenzDomain());
         this.service = new AthenzService(domain, siaProviderConfig.athenzService());
         this.path = siaProviderConfig.keyPathPrefix();
+        this.trustStorePath = siaProviderConfig.trustStorePath();
     }
 
     @Override
@@ -45,6 +48,7 @@ public class SiaIdentityProvider implements AthenzIdentityProvider {
         PrivateKey privateKey = Crypto.loadPrivateKey(Paths.get(path, "keys", String.format("%s.%s.key.pem", getDomain(),getService())).toFile());
 
         return new AthenzSslContextBuilder()
+                .withTrustStore(new File(trustStorePath), KeyStoreType.JKS)
                 .withIdentityCertificate(new AthenzIdentityCertificate(certificate, privateKey))
                 .build();
     }

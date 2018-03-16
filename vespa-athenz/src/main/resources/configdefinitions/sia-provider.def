@@ -4,3 +4,4 @@ namespace=vespa.athenz.identity
 athenzDomain string
 athenzService string
 keyPathPrefix string
+trustStorePath string
