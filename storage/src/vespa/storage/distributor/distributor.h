@@ -237,6 +237,7 @@ private:
     template <typename NodeFunctor>
     void for_each_available_content_node_in(const lib::ClusterState&, NodeFunctor&&);
     void invalidate_bucket_spaces_stats();
+    void send_updated_host_info_if_required();
 
     lib::ClusterStateBundle _clusterStateBundle;
 

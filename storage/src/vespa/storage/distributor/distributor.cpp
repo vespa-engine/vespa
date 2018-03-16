@@ -763,12 +763,8 @@ Distributor::scanNextBucket()
     if (scanResult.isDone()) {
         updateInternalMetricsForCompletedScan();
         leaveRecoveryMode();
+        send_updated_host_info_if_required();
         _scanner->reset();
-        // TODO factor out
-        if (_must_send_updated_host_info) {
-            _component.getStateUpdater().immediately_send_get_node_state_replies();
-            _must_send_updated_host_info = false;
-        }
     } else {
         const auto &distribution(_bucketSpaceRepo->get(scanResult.getBucketSpace()).getDistribution());
         _bucketDBMetricUpdater.visit(
@@ -776,6 +772,13 @@ Distributor::scanNextBucket()
                 distribution.getRedundancy());
     }
     return scanResult;
+}
+
+void Distributor::send_updated_host_info_if_required() {
+    if (_must_send_updated_host_info) {
+        _component.getStateUpdater().immediately_send_get_node_state_replies();
+        _must_send_updated_host_info = false;
+    }
 }
 
 void
