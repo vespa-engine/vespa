@@ -19,7 +19,7 @@ public:
     typedef std::unique_ptr<StorageReply> UP;
 
     StorageReply(mbus::BlobRef data, const ProtocolSerialization&);
-    StorageReply(const api::StorageReply::SP& reply);
+    StorageReply(api::StorageReply::SP reply);
     ~StorageReply();
 
     const mbus::string& getProtocol() const override { return StorageProtocol::NAME; }
@@ -33,7 +33,7 @@ public:
     api::StorageMessage::CSP getInternalMessage() const override { deserialize(); return _reply; }
 
     uint8_t priority() const override {
-        if (_reply.get()) {
+        if (_reply) {
             return _reply->getPriority();
         }
         return 0;

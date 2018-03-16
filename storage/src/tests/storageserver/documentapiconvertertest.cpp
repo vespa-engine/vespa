@@ -13,7 +13,6 @@
 #include <vespa/storage/storageserver/documentapiconverter.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/datagram.h>
-#include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/stat.h>
@@ -87,7 +86,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
 
     template <typename T>
     std::unique_ptr<T> toStorageAPI(documentapi::DocumentMessage &msg) {
-        auto result = _converter->toStorageAPI(msg, _repo);
+        auto result = _converter->toStorageAPI(msg);
         return dynamic_unique_ptr_cast<T>(std::move(result));
     }
 
@@ -100,7 +99,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
 
     template <typename T>
     std::unique_ptr<T> toDocumentAPI(api::StorageCommand &cmd) {
-        auto result = _converter->toDocumentAPI(cmd, _repo);
+        auto result = _converter->toDocumentAPI(cmd);
         return dynamic_unique_ptr_cast<T>(std::move(result));
     }
 
@@ -115,7 +114,6 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     void testCreateVisitorReplyLastBucket();
     void testDestroyVisitor();
     void testVisitorInfo();
-    void testMultiOperation();
     void testBatchDocumentUpdate();
     void testStatBucket();
     void testGetBucketList();
@@ -134,7 +132,6 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     CPPUNIT_TEST(testCreateVisitorReplyLastBucket);
     CPPUNIT_TEST(testDestroyVisitor);
     CPPUNIT_TEST(testVisitorInfo);
-    CPPUNIT_TEST(testMultiOperation);
     CPPUNIT_TEST(testBatchDocumentUpdate);
     CPPUNIT_TEST(testStatBucket);
     CPPUNIT_TEST(testGetBucketList);
@@ -320,61 +317,6 @@ DocumentApiConverterTest::testVisitorInfo()
     CPPUNIT_ASSERT(reply.get());
 
     toStorageAPI<api::VisitorInfoReply>(*reply, vicmd);
-}
-
-void
-DocumentApiConverterTest::testMultiOperation()
-{
-    auto doc = std::make_shared<Document>(_html_type, DocumentId(DocIdString("test", "test")));
-
-    document::BucketIdFactory fac;
-    document::BucketId bucketId = fac.getBucketId(doc->getId());
-    bucketId.setUsedBits(32);
-
-    {
-        documentapi::MultiOperationMessage momsg(_repo, bucketId, 10000);
-
-        vdslib::WritableDocumentList operations(_repo, &(momsg.getBuffer()[0]), momsg.getBuffer().size());
-        operations.addPut(*doc, 100);
-        momsg.setOperations(operations);
-        CPPUNIT_ASSERT(momsg.getBuffer().size() > 0);
-
-        // Convert it to Storage API
-        auto mocmd = toStorageAPI<api::MultiOperationCommand>(momsg);
-        CPPUNIT_ASSERT(mocmd->getBuffer().size() > 0);
-
-        // Get operations from Storage API message and check document
-        const vdslib::DocumentList& list = mocmd->getOperations();
-        CPPUNIT_ASSERT_EQUAL((uint32_t)1, list.size());
-        CPPUNIT_ASSERT_EQUAL(*doc, *dynamic_cast<document::Document*>(list.begin()->getDocument().get()));
-
-        // Create Storage API Reply
-        auto moreply = std::make_unique<api::MultiOperationReply>(*mocmd);
-        CPPUNIT_ASSERT(moreply.get());
-
-        // convert storage api reply to mbus reply.....
-        // ...
-    }
-
-    {
-        api::MultiOperationCommand mocmd(_repo, makeDocumentBucket(bucketId), 10000, false);
-        mocmd.getOperations().addPut(*doc, 100);
-
-        // Convert it to documentapi
-        auto momsg = toDocumentAPI<documentapi::MultiOperationMessage>(mocmd);
-
-        // Get operations from Document API msg and check document
-        const vdslib::DocumentList& list = momsg->getOperations();
-        CPPUNIT_ASSERT_EQUAL((uint32_t)1, list.size());
-        CPPUNIT_ASSERT_EQUAL(*doc, *dynamic_cast<document::Document*>(list.begin()->getDocument().get()));
-
-        // Create Document API reply
-        mbus::Reply::UP moreply = momsg->createReply();
-        CPPUNIT_ASSERT(moreply.get());
-
-        //Convert DocumentAPI reply to storageapi reply
-        toStorageAPI<api::MultiOperationReply>(*moreply, mocmd);
-    }
 }
 
 void

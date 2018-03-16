@@ -3,7 +3,6 @@
 #include "filestorhandlerimpl.h"
 #include "filestormetrics.h"
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
@@ -312,7 +311,6 @@ FileStorHandlerImpl::messageMayBeAborted(const api::StorageMessage& msg) const
     case api::MessageType::APPLYBUCKETDIFF_ID:
     case api::MessageType::SPLITBUCKET_ID:
     case api::MessageType::JOINBUCKETS_ID:
-    case api::MessageType::MULTIOPERATION_ID:
     case api::MessageType::UPDATE_ID:
     case api::MessageType::REMOVELOCATION_ID:
     case api::MessageType::BATCHPUTREMOVE_ID:
@@ -897,7 +895,6 @@ FileStorHandlerImpl::remapMessage(
         break;
     }
     case api::MessageType::STAT_ID:
-    case api::MessageType::MULTIOPERATION_ID:
     case api::MessageType::BATCHPUTREMOVE_ID:
     case api::MessageType::REVERT_ID:
     case api::MessageType::REMOVELOCATION_ID:
@@ -905,8 +902,7 @@ FileStorHandlerImpl::remapMessage(
     {
         // Move to correct queue if op == MOVE
         // Fail with bucket not found if op != MOVE
-        api::BucketCommand& cmd(
-                static_cast<api::BucketCommand&>(msg));
+        api::BucketCommand& cmd(static_cast<api::BucketCommand&>(msg));
         if (cmd.getBucket() == source) {
             if (op == MOVE) {
                 targetDisk = targets[0]->diskIndex;

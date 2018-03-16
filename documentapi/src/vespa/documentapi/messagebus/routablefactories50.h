@@ -280,19 +280,6 @@ public:
         DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
         bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
-    class MultiOperationMessageFactory : public DocumentMessageFactory {
-        document::DocumentTypeRepo::SP _repo;
-    protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
-    public:
-        MultiOperationMessageFactory(const document::DocumentTypeRepo::SP &r) : _repo(r) {}
-    };
-    class MultiOperationReplyFactory : public DocumentReplyFactory {
-    protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
-    };
     class PutDocumentMessageFactory : public DocumentMessageFactory {
     protected:
         const document::DocumentTypeRepo &_repo;

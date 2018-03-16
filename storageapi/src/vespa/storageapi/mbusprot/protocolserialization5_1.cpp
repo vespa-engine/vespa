@@ -4,23 +4,12 @@
 #include "serializationhelper.h"
 #include "storagecommand.h"
 #include "storagereply.h"
-#include "storageprotocol.h"
-
-#include <vespa/messagebus/blob.h>
-#include <vespa/messagebus/blobref.h>
-#include <vespa/storageapi/messageapi/storagemessage.h>
-#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/multioperation.h>
-#include <vespa/vespalib/util/growablebytebuffer.h>
-#include <vespa/document/select/orderingspecification.h>
-#include <vespa/storageapi/messageapi/returncode.h>
+#include <vespa/storageapi/message/visitor.h>
 
 using document::BucketSpace;
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 api::BucketInfo
 ProtocolSerialization5_1::getBucketInfo(document::ByteBuffer& buf) const
@@ -61,8 +50,7 @@ ProtocolSerialization5_1::ProtocolSerialization5_1(
 {
 }
 
-void ProtocolSerialization5_1::onEncode(
-        GBBuf& buf, const api::SetBucketStateCommand& msg) const
+void ProtocolSerialization5_1::onEncode(GBBuf& buf, const api::SetBucketStateCommand& msg) const
 {
     putBucket(msg.getBucket(), buf);
     buf.putByte(static_cast<uint8_t>(msg.getState()));
@@ -223,6 +211,4 @@ ProtocolSerialization5_1::onDecodeCreateBucketCommand(BBuf& buf) const
     return api::StorageCommand::UP(msg.release());
 }
 
-
-} // mbusprot
-} // storage
+}

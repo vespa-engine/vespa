@@ -15,11 +15,10 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <tests/storageserver/testvisitormessagesession.h>
-#include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
+#include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/vespalib/util/exceptions.h>
 
 using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;

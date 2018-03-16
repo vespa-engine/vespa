@@ -7,7 +7,7 @@ namespace documentapi {
 
 /**
  * This reply class is used by operations that perform writes to VDS/search,
- * that is: Put, Remove, Update, MultiOperation.
+ * that is: Put, Remove, Update.
  */
 class WriteDocumentReply : public DocumentAcceptedReply {
 private:

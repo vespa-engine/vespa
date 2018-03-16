@@ -12,7 +12,7 @@ class StorageCommand : public mbus::Message, public StorageMessage {
 public:
     typedef std::unique_ptr<StorageCommand> UP;
 
-    StorageCommand(const storage::api::StorageCommand::SP&);
+    StorageCommand(api::StorageCommand::SP);
 
     const mbus::string & getProtocol() const override { return StorageProtocol::NAME; }
     uint32_t getType() const override { return _cmd->getType().getId(); }

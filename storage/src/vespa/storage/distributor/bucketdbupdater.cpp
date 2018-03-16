@@ -8,7 +8,6 @@
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
-#include <vespa/storageapi/message/multioperation.h>
 #include <vespa/vespalib/util/xmlstream.h>
 
 #include <vespa/log/bufferedlogger.h>

@@ -21,18 +21,15 @@ StorageReply::StorageReply(mbus::BlobRef data, const ProtocolSerialization& seri
     buf.getIntNetwork(reinterpret_cast<int32_t&>(_mbusType));
 }
 
-StorageReply::StorageReply(const api::StorageReply::SP& reply)
+StorageReply::StorageReply(api::StorageReply::SP reply)
     : _serializer(0),
       _sz(0),
       _buffer(),
       _mbusType(reply->getType().getId()),
-      _reply(reply)
-{
-}
+      _reply(std::move(reply))
+{}
 
-StorageReply::~StorageReply()
-{
-}
+StorageReply::~StorageReply() = default;
 
 void
 StorageReply::deserialize() const

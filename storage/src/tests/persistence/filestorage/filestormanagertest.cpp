@@ -26,9 +26,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/multioperation.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/removelocation.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/storageapi/message/batch.h>
@@ -103,7 +100,6 @@ struct FileStorManagerTest : public CppUnit::TestFixture {
     void testDeleteBucketWithInvalidBucketInfo();
     void testNoTimestamps();
     void testEqualTimestamps();
-    void testMultiOp();
     void testGetIter();
     void testSetBucketActiveState();
     void testNotifyOwnerDistributorOnOutdatedSetBucketState();
@@ -141,7 +137,6 @@ struct FileStorManagerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testDeleteBucketWithInvalidBucketInfo);
     CPPUNIT_TEST(testNoTimestamps);
     CPPUNIT_TEST(testEqualTimestamps);
-    CPPUNIT_TEST(testMultiOp);
     CPPUNIT_TEST(testGetIter);
     CPPUNIT_TEST(testSetBucketActiveState);
     CPPUNIT_TEST(testNotifyOwnerDistributorOnOutdatedSetBucketState);
@@ -2575,158 +2570,6 @@ FileStorManagerTest::testEqualTimestamps()
         CPPUNIT_ASSERT(reply.get());
         CPPUNIT_ASSERT_EQUAL(ReturnCode::TIMESTAMP_EXIST,
                              reply->getResult().getResult());
-    }
-}
-
-void
-FileStorManagerTest::testMultiOp()
-{
-    TestName testName("testMultiOp");
-        // Setting up manager
-    DummyStorageLink top;
-    FileStorManager *manager;
-    top.push_back(unique_ptr<StorageLink>(manager =
-            new FileStorManager(config->getConfigId(), _node->getPartitions(), _node->getPersistenceProvider(), _node->getComponentRegister())));
-    top.open();
-    api::StorageMessageAddress address(
-            "storage", lib::NodeType::STORAGE, 3);
-
-    createBucket(document::BucketId(16, 0), 0);
-
-        // Add some documents to remove/update later
-    for (uint32_t i=0; i<10; ++i) {
-        std::ostringstream did;
-        did << "userdoc:crawler:0:http://www.ntnu.no/" << i;
-        Document::SP doc(createDocument(
-                    "some content", did.str()).release());
-        doc->set("headerval", (int) i);
-        doc->set("content", "some content");
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(document::BucketId(16, 0)), doc, 100 + i));
-        cmd->setAddress(address);
-        top.sendDown(cmd);
-        top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::PutReply> reply(
-                std::dynamic_pointer_cast<api::PutReply>(
-                    top.getReply(0)));
-        top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK), reply->getResult());
-    }
-    document::DocumentTypeRepo::SP repo = _node->getTypeRepo();
-
-        // Create operation list
-    std::vector<char> buffer(1024 * 1024);
-    vdslib::WritableDocumentList mdl(repo, &buffer[0], buffer.size());
-    for (uint32_t i=10; i<15; ++i) {
-        std::ostringstream did;
-        did << "userdoc:crawler:0:http://www.ntnu.no/" << i;
-        mdl.addPut(*createDocument("foo bar", did.str()),
-                   1000 + i);
-    }
-    for (uint32_t i=4; i<8; ++i) {
-        std::ostringstream did;
-        did << "userdoc:crawler:0:http://www.ntnu.no/" << i;
-        mdl.addRemove(document::DocumentId(did.str()), 2000 + i);
-    }
-    for (uint32_t i=1; i<3; ++i) {
-        std::ostringstream did;
-        did << "userdoc:crawler:0:http://www.ntnu.no/" << i;
-        document::DocumentUpdate update(*_testdoctype1,
-                                        document::DocumentId(did.str()));
-        if (i % 2 == 0) {
-            document::FieldUpdate fupd(_testdoctype1->getField("content"));
-            fupd.addUpdate(document::AssignValueUpdate(
-                            document::StringFieldValue("baah")));
-            update.addUpdate(fupd);
-        } else {
-            document::FieldUpdate fupd(_testdoctype1->getField("headerval"));
-            fupd.addUpdate(document::AssignValueUpdate(
-                                document::IntFieldValue(i + 100)));
-            update.addUpdate(fupd);
-        }
-        mdl.addUpdate(update, 3000 + i);
-    }
-        // Add a non-existing update
-    {
-        std::ostringstream did;
-        did << "userdoc:crawler:0:http://www.ntnu.no/nonexisting1";
-        document::DocumentUpdate update(*_testdoctype1,
-                                        document::DocumentId(did.str()));
-        document::FieldUpdate fupd(_testdoctype1->getField("content"));
-        fupd.addUpdate(document::AssignValueUpdate(
-                            document::StringFieldValue("baah")));
-        update.addUpdate(fupd);
-        mdl.addUpdate(update, 4000);
-    }
-
-        // Issue operation.
-    {
-        std::shared_ptr<api::MultiOperationCommand> cmd(
-                new api::MultiOperationCommand(
-                        repo, makeDocumentBucket(document::BucketId(16, 0)), buffer));
-        cmd->setAddress(address);
-        top.sendDown(cmd);
-        top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::MultiOperationReply> reply(
-                std::dynamic_pointer_cast<api::MultiOperationReply>(
-                    top.getReply(0)));
-        top.reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                             reply->getResult());
-    }
-        // Verify that new documents exist and that removed are gone.
-        // Removing it
-    for (uint32_t i=0; i<16; ++i) {
-        std::ostringstream did;
-        did << "userdoc:crawler:0:http://www.ntnu.no/" << i;
-        std::shared_ptr<api::GetCommand> cmd(new api::GetCommand(
-                    makeDocumentBucket(document::BucketId(16, 0)), document::DocumentId(did.str()),
-                    "[all]"));
-        cmd->setAddress(address);
-        top.sendDown(cmd);
-        top.waitForMessages(1, _waitTime);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, top.getNumReplies());
-        std::shared_ptr<api::GetReply> reply3(
-                std::dynamic_pointer_cast<api::GetReply>(
-                    top.getReply(0)));
-        top.reset();
-        CPPUNIT_ASSERT(reply3.get());
-        if (i < 4 || (i >= 8 && i < 15)) {
-            CPPUNIT_ASSERT_EQUAL(ReturnCode(ReturnCode::OK),
-                                 reply3->getResult());
-            CPPUNIT_ASSERT_EQUAL(vespalib::string(did.str()),
-                                 reply3->getDocumentId().toString());
-            if (i >= 10) {
-                CPPUNIT_ASSERT(!reply3->getDocument()->hasValue("headerval"));
-                CPPUNIT_ASSERT(reply3->getDocument()->hasValue("content"));
-            } else if (i >= 1 && i <3) {
-                CPPUNIT_ASSERT(reply3->getDocument()->hasValue("headerval"));
-                CPPUNIT_ASSERT(reply3->getDocument()->hasValue("content"));
-                CPPUNIT_ASSERT_EQUAL(
-                        static_cast<const document::FieldValue&>(
-                            document::IntFieldValue(i % 2 == 0 ? i : i + 100)),
-                        *reply3->getDocument()->getValue("headerval"));
-                CPPUNIT_ASSERT_EQUAL(
-                        static_cast<const document::FieldValue&>(
-                            document::StringFieldValue(i % 2 == 0 ? "baah" : "some content")),
-                        *reply3->getDocument()->getValue("content"));
-            } else {
-                CPPUNIT_ASSERT(reply3->getDocument()->hasValue("headerval"));
-                CPPUNIT_ASSERT(reply3->getDocument()->hasValue("content"));
-                CPPUNIT_ASSERT_EQUAL(
-                        static_cast<const document::FieldValue&>(
-                            document::IntFieldValue(i)),
-                        *reply3->getDocument()->getValue("headerval"));
-            }
-        } else {
-            CPPUNIT_ASSERT_EQUAL(false, reply3->wasFound());
-            CPPUNIT_ASSERT_EQUAL(vespalib::string(did.str()),
-                                 reply3->getDocumentId().toString());
-        }
     }
 }
 

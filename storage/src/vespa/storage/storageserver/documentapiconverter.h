@@ -27,10 +27,10 @@ public:
                          std::shared_ptr<const BucketResolver> bucketResolver);
     ~DocumentApiConverter();
 
-    std::unique_ptr<api::StorageCommand> toStorageAPI(documentapi::DocumentMessage& msg, const document::DocumentTypeRepo::SP &repo);
+    std::unique_ptr<api::StorageCommand> toStorageAPI(documentapi::DocumentMessage& msg);
     std::unique_ptr<api::StorageReply> toStorageAPI(documentapi::DocumentReply& reply, api::StorageCommand& originalCommand);
     void transferReplyState(storage::api::StorageReply& from, mbus::Reply& to);
-    std::unique_ptr<mbus::Message> toDocumentAPI(api::StorageCommand& cmd, const document::DocumentTypeRepo::SP &repo);
+    std::unique_ptr<mbus::Message> toDocumentAPI(api::StorageCommand& cmd);
     const PriorityConverter& getPriorityConverter() const { return *_priConverter; }
 
     // BucketResolver getter and setter are both thread safe.

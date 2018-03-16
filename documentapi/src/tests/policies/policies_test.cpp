@@ -617,29 +617,6 @@ Test::testDocumentRouteSelector()
     frame.setMessage(std::move(put));
     EXPECT_TRUE(frame.testSelect( StringList().add("foo")));
 
-    {
-        vdslib::OperationList opList;
-
-        DocumentId id("doc:scheme:");
-        Document::UP doc(new Document(*_docType, id));
-        opList.addPut(std::move(doc));
-
-        document::BucketIdFactory factory;
-        put = frame.setMessage(MultiOperationMessage::create(_repo, factory.getBucketId(id), opList));
-        EXPECT_TRUE(frame.testSelect(StringList().add("foo")));
-    }
-
-    {
-        vdslib::OperationList opList;
-        DocumentId id("doc:scheme:");
-        Document::UP doc(new Document(*_repo->getDocumentType("other"), id));
-        opList.addPut(std::move(doc));
-
-        document::BucketIdFactory factory;
-        put = frame.setMessage(MultiOperationMessage::create(_repo, factory.getBucketId(id), opList));
-        EXPECT_TRUE(frame.testSelect(StringList().add("bar")));
-    }
-
     frame.setMessage(mbus::Message::UP(new RemoveDocumentMessage(DocumentId("doc:scheme:"))));
     EXPECT_TRUE(frame.testSelect(StringList().add("foo").add("bar")));
 

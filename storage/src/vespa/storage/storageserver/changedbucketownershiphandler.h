@@ -42,7 +42,6 @@ namespace storage {
  *
  *  We consider the following external operations as mutating:
  *   - PutCommand
- *   - MultiOperationCommand
  *   - UpdateCommand
  *   - RemoveCommand
  *   - RevertCommand

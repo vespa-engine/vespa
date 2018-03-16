@@ -5,59 +5,24 @@
 #include "serializationhelper.h"
 #include "storagecommand.h"
 #include "storagereply.h"
-#include "storageprotocol.h"
 
-#include <vespa/messagebus/blob.h>
-#include <vespa/messagebus/blobref.h>
-#include <vespa/storageapi/messageapi/storagemessage.h>
-#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/batch.h>
-#include <vespa/storageapi/message/multioperation.h>
-
+#include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/removelocation.h>
-#include <vespa/vespalib/util/growablebytebuffer.h>
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.api.mbusprot.serialization.4_2");
 
 using document::BucketSpace;
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 ProtocolSerialization4_2::ProtocolSerialization4_2(
         const document::DocumentTypeRepo::SP& repo)
     : ProtocolSerialization(repo)
 {
-}
-
-void ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::MultiOperationCommand& msg) const
-{
-    uint64_t docBlockSize = msg.getOperations().spaceNeeded();
-    buf.putInt(docBlockSize);
-    char* pos = buf.allocate(docBlockSize);
-    vdslib::DocumentList copy(msg.getOperations(), pos, docBlockSize);
-    buf.putBoolean(msg.keepTimeStamps());
-    putBucket(msg.getBucket(), buf);
-    onEncodeBucketInfoCommand(buf, msg);
-}
-
-api::StorageCommand::UP
-ProtocolSerialization4_2::onDecodeMultiOperationCommand(BBuf& buf) const
-{
-    uint32_t length = SH::getInt(buf);
-    std::vector<char> buffer(length);
-    buf.getBytes(&buffer[0], length);
-    bool keepTimestamps = SH::getBoolean(buf);
-    document::Bucket bucket = getBucket(buf);
-    api::MultiOperationCommand::UP msg(
-            new api::MultiOperationCommand(getTypeRepoSp(),
-                                           bucket, buffer, keepTimestamps));
-    onDecodeBucketInfoCommand(buf, *msg);
-    return api::StorageCommand::UP(msg.release());
 }
 
 void
@@ -512,13 +477,11 @@ api::StorageReply::UP
 ProtocolSerialization4_2::onDecodeSetBucketStateReply(const SCmd&,
                                                       BBuf&) const
 {
-    throw vespalib::IllegalStateException("Unsupported deserialization",
-                                          VESPA_STRLOC);
+    throw vespalib::IllegalStateException("Unsupported deserialization", VESPA_STRLOC);
 }
 
 void
-ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::CreateVisitorCommand& msg) const
+ProtocolSerialization4_2::onEncode(GBBuf& buf, const api::CreateVisitorCommand& msg) const
 {
     putBucketSpace(msg.getBucketSpace(), buf);
     buf.putString(msg.getLibraryName());
@@ -706,5 +669,4 @@ ProtocolSerialization4_2::onDecodeDiffEntry(
     entry._hasMask = SH::getShort(buf);
 }
 
-} // mbusprot
-} // storage
+}

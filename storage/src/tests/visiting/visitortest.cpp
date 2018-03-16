@@ -13,11 +13,10 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/storageserver/testvisitormessagesession.h>
-#include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
+#include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <thread>
 
 using namespace std::chrono_literals;
@@ -349,8 +348,7 @@ VisitorTest::getMessagesAndReply(
                         static_cast<documentapi::RemoveDocumentMessage&>(*msg).getDocumentId());
                 break;
             case documentapi::DocumentProtocol::MESSAGE_VISITORINFO:
-                infoMessages.push_back(
-                        static_cast<documentapi::VisitorInfoMessage&>(*msg).getErrorMessage());
+                infoMessages.push_back(static_cast<documentapi::VisitorInfoMessage&>(*msg).getErrorMessage());
                 break;
             default:
                 break;

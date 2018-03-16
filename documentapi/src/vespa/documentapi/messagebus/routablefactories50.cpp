@@ -618,51 +618,6 @@ RoutableFactories50::MapVisitorReplyFactory::doEncode(const DocumentReply &obj, 
     return true;
 }
 
-DocumentMessage::UP
-RoutableFactories50::MultiOperationMessageFactory::doDecode(document::ByteBuffer &buf) const
-{
-    int64_t bucketId = decodeLong(buf);
-
-    int32_t len = decodeInt(buf);
-    std::vector<char> tmp(len);
-    buf.getBytes(&tmp[0], len);
-
-    DocumentMessage::UP ret(new MultiOperationMessage(_repo, document::BucketId(bucketId), tmp, decodeBoolean(buf)));
-    return ret;
-}
-
-bool
-RoutableFactories50::MultiOperationMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
-{
-    const MultiOperationMessage &msg = static_cast<const MultiOperationMessage&>(obj);
-    buf.putLong(msg.getBucketId().getRawId());
-
-    uint64_t docBlockSize = msg.getOperations().spaceNeeded();
-    buf.putInt(docBlockSize);
-    char* pos = buf.allocate(docBlockSize);
-    vdslib::DocumentList copy(msg.getOperations(), pos, docBlockSize);
-
-    buf.putBoolean(msg.keepTimeStamps());
-
-    return true;
-}
-
-DocumentReply::UP
-RoutableFactories50::MultiOperationReplyFactory::doDecode(document::ByteBuffer &buf) const
-{
-    WriteDocumentReply* reply = new WriteDocumentReply(DocumentProtocol::REPLY_MULTIOPERATION);
-    reply->setHighestModificationTimestamp(decodeLong(buf));
-    return DocumentReply::UP(reply);
-}
-
-bool
-RoutableFactories50::MultiOperationReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
-{
-    const WriteDocumentReply& reply = (const WriteDocumentReply&)obj;
-    buf.putLong(reply.getHighestModificationTimestamp());
-    return true;
-}
-
 void
 RoutableFactories50::PutDocumentMessageFactory::decodeInto(PutDocumentMessage & msg, document::ByteBuffer & buf) const {
     msg.setDocument(make_shared<document::Document>(_repo, buf));

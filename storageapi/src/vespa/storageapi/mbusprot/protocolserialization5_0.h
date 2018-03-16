@@ -4,8 +4,7 @@
 #include "protocolserialization4_2.h"
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 class ProtocolSerialization5_0 : public ProtocolSerialization4_2 {
 private:
@@ -37,7 +36,6 @@ public:
     void onEncode(GBBuf&, const api::GetBucketDiffReply&) const override;
     void onEncode(GBBuf&, const api::ApplyBucketDiffReply&) const override;
     void onEncode(GBBuf&, const api::SplitBucketReply&) const override;
-    void onEncode(GBBuf&, const api::MultiOperationReply&) const override;
     void onEncode(GBBuf&, const api::JoinBucketsCommand&) const override;
     void onEncode(GBBuf&, const api::JoinBucketsReply&) const override;
     void onEncode(GBBuf&, const api::RequestBucketInfoCommand&) const override;
@@ -65,7 +63,6 @@ public:
     SRep::UP onDecodeGetBucketDiffReply(const SCmd&, BBuf&) const override;
     SRep::UP onDecodeApplyBucketDiffReply(const SCmd&, BBuf&) const override;
     SRep::UP onDecodeSplitBucketReply(const SCmd&, BBuf&) const override;
-    SRep::UP onDecodeMultiOperationReply(const SCmd&, BBuf&) const override;
     SCmd::UP onDecodeJoinBucketsCommand(BBuf& buf) const override;
     SRep::UP onDecodeJoinBucketsReply(const SCmd& cmd, BBuf& buf) const override;
     SCmd::UP onDecodeCreateVisitorCommand(BBuf&) const override;
@@ -78,5 +75,4 @@ public:
     void onDecodeReply(BBuf&, api::StorageReply&) const override;
 };
 
-} // mbusprot
-} // storage
+}

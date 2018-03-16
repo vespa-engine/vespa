@@ -307,7 +307,6 @@ ChangedBucketOwnershipHandler::isMutatingExternalOperation(
     switch (msg.getType().getId()) {
     case api::MessageType::PUT_ID:
     case api::MessageType::REMOVE_ID:
-    case api::MessageType::MULTIOPERATION_ID:
     case api::MessageType::UPDATE_ID:
     case api::MessageType::REVERT_ID:
         return true;

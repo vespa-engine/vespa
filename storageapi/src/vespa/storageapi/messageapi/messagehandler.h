@@ -25,7 +25,6 @@ class PutCommand; // Add document
 class UpdateCommand; // Update document
 class RemoveCommand; // Remove document
 class RevertCommand; // Revert put/remove operation
-class MultiOperationCommand; // Multi put/remove/update operation
 class BatchPutRemoveCommand;
 class BatchDocumentUpdateCommand;
 
@@ -65,7 +64,6 @@ class PutReply;
 class UpdateReply;
 class RemoveReply;
 class RevertReply;
-class MultiOperationReply;
 class BatchPutRemoveReply;
 class BatchDocumentUpdateReply;
 
@@ -144,12 +142,6 @@ public:
     virtual bool onRevert(const std::shared_ptr<api::RevertCommand>&)
         { return false; }
     virtual bool onRevertReply(const std::shared_ptr<api::RevertReply>&)
-        { return false; }
-    virtual bool onMultiOperation(
-            const std::shared_ptr<api::MultiOperationCommand>&)
-        { return false; }
-    virtual bool onMultiOperationReply(
-            const std::shared_ptr<api::MultiOperationReply>&)
         { return false; }
     virtual bool onBatchPutRemove(
             const std::shared_ptr<api::BatchPutRemoveCommand>&)

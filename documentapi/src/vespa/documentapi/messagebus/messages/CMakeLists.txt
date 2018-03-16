@@ -18,7 +18,6 @@ vespa_add_library(documentapi_documentapimessages OBJECT
     getbucketstatereply.cpp
     getdocumentmessage.cpp
     getdocumentreply.cpp
-    multioperationmessage.cpp
     putdocumentmessage.cpp
     queryresultmessage.cpp
     removedocumentmessage.cpp

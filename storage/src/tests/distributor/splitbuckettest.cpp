@@ -7,7 +7,6 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storageapi/message/multioperation.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>

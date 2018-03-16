@@ -9,7 +9,6 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/multioperation.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
@@ -46,7 +45,6 @@ class ChangedBucketOwnershipHandlerTest : public CppUnit::TestFixture
     CPPUNIT_TEST(testAbortOutdatedRemoveLocation);
     CPPUNIT_TEST(testIdealStateAbortsAreConfigurable);
     CPPUNIT_TEST(testAbortOutdatedPutOperation);
-    CPPUNIT_TEST(testAbortOutdatedMultiOperation);
     CPPUNIT_TEST(testAbortOutdatedUpdateCommand);
     CPPUNIT_TEST(testAbortOutdatedRemoveCommand);
     CPPUNIT_TEST(testAbortOutdatedRevertCommand);
@@ -112,7 +110,6 @@ public:
     void testAbortOutdatedRemoveLocation();
     void testIdealStateAbortsAreConfigurable();
     void testAbortOutdatedPutOperation();
-    void testAbortOutdatedMultiOperation();
     void testAbortOutdatedUpdateCommand();
     void testAbortOutdatedRemoveCommand();
     void testAbortOutdatedRevertCommand();
@@ -561,15 +558,6 @@ ChangedBucketOwnershipHandlerTest::testAbortOutdatedPutOperation()
             getBucketToAbort(), doc, api::Timestamp(1234)));
     CPPUNIT_ASSERT(!changeAbortsMessage<api::PutCommand>(
             getBucketToAllow(), doc, api::Timestamp(1234)));
-}
-
-void
-ChangedBucketOwnershipHandlerTest::testAbortOutdatedMultiOperation()
-{
-    CPPUNIT_ASSERT(changeAbortsMessage<api::MultiOperationCommand>(
-            _testDocRepo.getTypeRepoSP(), getBucketToAbort(), 1024));
-    CPPUNIT_ASSERT(!changeAbortsMessage<api::MultiOperationCommand>(
-            _testDocRepo.getTypeRepoSP(), getBucketToAllow(), 1024));
 }
 
 void

@@ -134,10 +134,6 @@ StoragePolicy::doSelect(mbus::RoutingContext &context)
             id = _bucketIdFactory.getBucketId(static_cast<const UpdateDocumentMessage&>(msg).getDocumentUpdate().getId());
             break;
 
-        case DocumentProtocol::MESSAGE_MULTIOPERATION:
-            id = (static_cast<const MultiOperationMessage&>(msg)).getBucketId();
-            break;
-
         case DocumentProtocol::MESSAGE_STATBUCKET:
             id = static_cast<const StatBucketMessage&>(msg).getBucketId();
             break;

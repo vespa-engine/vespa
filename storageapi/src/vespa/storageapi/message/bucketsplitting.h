@@ -6,8 +6,7 @@
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
 #include <vespa/storageapi/messageapi/maintenancecommand.h>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 /**
  * @class SplitBucketCommand
@@ -118,5 +117,4 @@ public:
     DECLARE_STORAGEREPLY(JoinBucketsReply, onJoinBucketsReply)
 };
 
-} // api
-} // storage
+}

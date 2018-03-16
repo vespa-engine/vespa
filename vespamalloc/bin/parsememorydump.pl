@@ -65,10 +65,7 @@ my %patterns = (
     'storage::SlotFileBuffer::getInputBuffer' => 'Persistence layer - Input buffer',
     'storage::SlotFileBuffer::getIndexBuffer' => 'Persistence layer - Index buffer',
     'storage::SlotFileBuffer::getOutputBuffer' => 'Persistence layer - Output buffer',
-    'std::vector<storage::SlotFile::WriteEntry.*storage::FileStorThread::onMultiOperation'
-        => 'Persistence layer - Temporary buffer used to store data to write multi operation commands',
 
-    'storage::api::MultiOperationCommand::onDeserialize' => 'Messages - Queued multi operation commands',
     'storage::api::\S*::makeReply.*storage::MessageDispatcher::handleCommand' => 'Messages - Replies stored in message dispatcher',
     'document::SerializableArray::onDeserialize.*storage::CommunicationManager::onEvent\(std::auto_ptr<storage::rpc::Event>\)'
         => 'Messages - Documents from storage API messages - serializable arrays',
@@ -82,13 +79,10 @@ my %patterns = (
         => 'Messages - Merge apply entries',
     'storage::api::ApplyBucketDiffCommand::Entry::Entry.*storage::api::StorageMessage::onDeserialize'
         => 'Messages - Merge apply entries',
-    'storage::api::MultiOperationCommand::MultiOperationCommand.*storage::api::MultiOperationCommand::clone.*storage::MessageDispatcher::handleCommand'
         => 'Messages - Queued multi operation commands - cloned for local use in message dispatcher',
 
     'storage::BufHolder::reserve.*storage::FileStorThread::onGetIterCommand' => 'Visiting - Downsized docblocks',
     'storage::BufHolder::resize.*storage::FileStorThread::onGetIterCommand' => 'Visiting - Upsized docblocks',
-    'documentapi::MultiOperationMessage::MultiOperationMessage.*storage::VisitorManager::send'
-        => 'Visiting - Pending messagebus multi operation messages',
 
     'JudyLIns.*storage::StorBucketDatabase::(get|insert)' => 'Bucket database - Judy',
     'JudyLDel.*WrappedEntry::remove' => 'Bucket database - Judy',
