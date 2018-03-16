@@ -22,9 +22,8 @@ PersistenceThread::PersistenceThread(ServiceLayerComponentRegister& compReg,
                                      spi::PersistenceProvider& provider,
                                      FileStorHandler& filestorHandler,
                                      FileStorThreadMetrics& metrics,
-                                     uint16_t deviceIndex,
-                                     uint8_t lowestPriority)
-    : _env(configUri, compReg, filestorHandler, metrics, deviceIndex, lowestPriority, provider),
+                                     uint16_t deviceIndex)
+    : _env(configUri, compReg, filestorHandler, metrics, deviceIndex, provider),
       _warnOnSlowOperations(5000),
       _spi(provider),
       _processAllHandler(_env, provider),
@@ -140,9 +139,7 @@ PersistenceThread::handleRemove(api::RemoveCommand& cmd)
                     spi::Timestamp(cmd.getTimestamp()),
                     cmd.getDocumentId(), _context);
     if (checkForError(response, *tracker)) {
-        api::RemoveReply* reply(new api::RemoveReply(
-                cmd, response.wasFound() ? cmd.getTimestamp() : 0));
-        tracker->setReply(api::StorageReply::SP(reply));
+        tracker->setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
     }
     if (!response.wasFound()) {
         ++_env._metrics.remove[cmd.getLoadType()].notFound;
@@ -166,9 +163,9 @@ PersistenceThread::handleUpdate(api::UpdateCommand& cmd)
                     spi::Timestamp(cmd.getTimestamp()),
                     cmd.getUpdate(), _context);
     if (checkForError(response, *tracker)) {
-        api::UpdateReply* reply = new api::UpdateReply(cmd);
+        auto reply = std::make_shared<api::UpdateReply>(cmd);
         reply->setOldTimestamp(response.getExistingTimestamp());
-        tracker->setReply(api::StorageReply::SP(reply));
+        tracker->setReply(std::move(reply));
     }
     return tracker;
 }
@@ -300,11 +297,9 @@ PersistenceThread::handleRevert(api::RevertCommand& cmd)
                                        _env._metrics.revert[cmd.getLoadType()],
                                        _env._component.getClock()));
     spi::Bucket b = spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
-    const std::vector<api::Timestamp> tokens = cmd.getRevertTokens();
-    for (uint32_t i = 0; i < tokens.size(); ++i) {
-        spi::Result result = _spi.removeEntry(b,
-                                              spi::Timestamp(tokens[i]),
-                                              _context);
+    const std::vector<api::Timestamp> & tokens = cmd.getRevertTokens();
+    for (const api::Timestamp & token : tokens) {
+        spi::Result result = _spi.removeEntry(b, spi::Timestamp(token), _context);
     }
     return tracker;
 }
@@ -487,9 +482,7 @@ PersistenceThread::handleCreateIterator(CreateIteratorCommand& cmd)
             cmd.getIncludedVersions(),
             _context));
     if (checkForError(result, *tracker)) {
-        tracker->setReply(CreateIteratorReply::SP(
-                new CreateIteratorReply(
-                        cmd, spi::IteratorId(result.getIteratorId()))));
+        tracker->setReply(std::make_shared<CreateIteratorReply>(cmd, spi::IteratorId(result.getIteratorId())));
     }
     return tracker;
 }
@@ -576,8 +569,9 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
         // Ensure to take them in rising order.
     StorBucketDatabase::WrappedEntry sourceEntry(_env.getBucketDatabase(spiBucket.getBucket().getBucketSpace()).get(
             cmd.getBucketId(), "PersistenceThread::handleSplitBucket-source"));
-    api::SplitBucketReply* splitReply(new api::SplitBucketReply(cmd));
-    tracker->setReply(api::StorageReply::SP(splitReply));
+    auto reply = std::make_shared<api::SplitBucketReply>(cmd);
+    api::SplitBucketReply & splitReply = *reply;
+    tracker->setReply(std::move(reply));
 
     typedef std::pair<StorBucketDatabase::WrappedEntry,
                       FileStorHandler::RemapInfo> TargetInfo;
@@ -638,7 +632,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
                     createTarget.toString().c_str());
                 _spi.createBucket(createTarget, _context);
             }
-            splitReply->getSplitInfo().push_back(
+            splitReply.getSplitInfo().push_back(
                     api::SplitBucketReply::Entry(
                         targets[i].second.bucket.getBucketId(),
                         targets[i].first->getBucketInfo()));
@@ -1200,10 +1194,7 @@ void PersistenceThread::processMessages(FileStorHandler::LockedMessage & lock)
             trackers.push_back(std::move(tracker));
 
             if (trackers.back()->getReply()->getResult().success()) {
-                _env._fileStorHandler.getNextMessage(
-                    _env._partition,
-                    lock,
-                    _env._lowestPriority);
+                _env._fileStorHandler.getNextMessage(_env._partition, lock);
             } else {
                 break;
             }
@@ -1231,9 +1222,7 @@ PersistenceThread::run(framework::ThreadHandle& thread)
     {
         thread.registerTick();
 
-        FileStorHandler::LockedMessage lock(
-                _env._fileStorHandler.getNextMessage(
-                    _env._partition, _env._lowestPriority));
+        FileStorHandler::LockedMessage lock(_env._fileStorHandler.getNextMessage(_env._partition));
 
         if (lock.first.get()) {
             processMessages(lock);

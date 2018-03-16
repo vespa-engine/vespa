@@ -159,11 +159,10 @@ public:
     bool schedule(const std::shared_ptr<api::StorageMessage>&, uint16_t disk);
 
     void pause(uint16_t disk, uint8_t priority) const;
-    FileStorHandler::LockedMessage getNextMessage(uint16_t disk, uint8_t lowestPriority);
+    FileStorHandler::LockedMessage getNextMessage(uint16_t disk);
     FileStorHandler::LockedMessage getMessage(vespalib::MonitorGuard & guard, Disk & t, PriorityIdx & idx, PriorityIdx::iterator iter);
 
-    FileStorHandler::LockedMessage & getNextMessage(uint16_t disk, FileStorHandler::LockedMessage& lock,
-                                                    uint8_t lowestPriority);
+    FileStorHandler::LockedMessage & getNextMessage(uint16_t disk, FileStorHandler::LockedMessage& lock);
 
     enum Operation { MOVE, SPLIT, JOIN };
     void remapQueue(const RemapInfo& source, RemapInfo& target, Operation op);
