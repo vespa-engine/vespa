@@ -4,10 +4,7 @@ package com.yahoo.vespa.clustercontroller.core.restapiv2;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.*;
-import com.yahoo.vespa.clustercontroller.core.FleetControllerTest;
-import com.yahoo.vespa.clustercontroller.core.NodeInfo;
-import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskScheduler;
-import com.yahoo.vespa.clustercontroller.core.ContentCluster;
+import com.yahoo.vespa.clustercontroller.core.*;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.StateRestAPI;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.UnitStateRequest;
@@ -47,8 +44,12 @@ public abstract class StateRestApiTest {
             ContentCluster cluster = new ContentCluster(
                     "books", nodes, distribution, 6 /* minStorageNodesUp*/, 0.9 /* minRatioOfStorageNodesUp */);
             initializeCluster(cluster, nodes);
-            ClusterState state = new ClusterState("distributor:4 storage:4");
-            books = new ClusterControllerMock(cluster, state, 0, 0);
+            AnnotatedClusterState baselineState = AnnotatedClusterState.withoutAnnotations(ClusterState.stateFromString("distributor:4 storage:4"));
+            Map<String, AnnotatedClusterState> bucketSpaceStates = new HashMap<>();
+            bucketSpaceStates.put("default", AnnotatedClusterState.withoutAnnotations(ClusterState.stateFromString("distributor:4 storage:4 .3.s:m")));
+            bucketSpaceStates.put("global", baselineState);
+            books = new ClusterControllerMock(cluster, baselineState.getClusterState(),
+                    ClusterStateBundle.of(baselineState, bucketSpaceStates), 0, 0);
         }
         {
             Set<ConfiguredNode> nodes = FleetControllerTest.toNodes(1, 2, 3, 5, 7);
@@ -64,9 +65,10 @@ public abstract class StateRestApiTest {
             else {
                 initializeCluster(cluster, nodes);
             }
-            ClusterState state = new ClusterState("distributor:8 .0.s:d .2.s:d .4.s:d .6.s:d "
-                                                + "storage:8 .0.s:d .2.s:d .4.s:d .6.s:d");
-            music = new ClusterControllerMock(cluster, state, 0, 0);
+            AnnotatedClusterState baselineState = AnnotatedClusterState.withoutAnnotations(ClusterState.stateFromString("distributor:8 .0.s:d .2.s:d .4.s:d .6.s:d "
+                                                + "storage:8 .0.s:d .2.s:d .4.s:d .6.s:d"));
+            music = new ClusterControllerMock(cluster, baselineState.getClusterState(),
+                    ClusterStateBundle.ofBaselineOnly(baselineState), 0, 0);
         }
         ccSockets = new TreeMap<>();
         ccSockets.put(0, new ClusterControllerStateRestAPI.Socket("localhost", 80));

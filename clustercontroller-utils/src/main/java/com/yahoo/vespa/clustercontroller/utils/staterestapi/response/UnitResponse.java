@@ -9,5 +9,6 @@ public interface UnitResponse {
     CurrentUnitState getCurrentState();
     Map<String, SubUnitList> getSubUnits();
     UnitMetrics getMetrics();
+    DistributionStates getDistributionStates();
 
 }

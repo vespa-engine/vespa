@@ -698,7 +698,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private RemoteClusterControllerTask.Context createRemoteTaskProcessingContext() {
         final RemoteClusterControllerTask.Context context = new RemoteClusterControllerTask.Context();
         context.cluster = cluster;
-        context.currentState = consolidatedClusterState();
+        context.currentConsolidatedState = consolidatedClusterState();
+        context.publishedClusterStateBundle = stateVersionTracker.getVersionedClusterStateBundle();
         context.masterInfo = masterElectionHandler;
         context.nodeStateOrHostInfoChangeHandler = this;
         context.nodeAddedOrRemovedListener = this;

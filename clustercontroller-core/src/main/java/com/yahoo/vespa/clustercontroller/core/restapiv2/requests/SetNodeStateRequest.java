@@ -50,7 +50,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
                 newStates,
                 id.getNode(),
                 context.nodeStateOrHostInfoChangeHandler,
-                context.currentState);
+                context.currentConsolidatedState);
         return setResponse;
     }
 

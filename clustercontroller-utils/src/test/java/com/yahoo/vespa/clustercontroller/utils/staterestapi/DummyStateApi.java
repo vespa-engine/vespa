@@ -71,6 +71,10 @@ public class DummyStateApi implements StateRestAPI {
                 }
                 return result;
             }
+            @Override
+            public DistributionStates getDistributionStates() {
+                return null;
+            }
         };
     }
     private UnitResponse getClusterState(final DummyBackend.Cluster cluster, final int recursive) {
@@ -90,6 +94,10 @@ public class DummyStateApi implements StateRestAPI {
                     subUnits.addUnit(e.getValue(), recursive);
                 }
                 return result;
+            }
+            @Override
+            public DistributionStates getDistributionStates() {
+                return null;
             }
         };
     }
@@ -134,6 +142,10 @@ public class DummyStateApi implements StateRestAPI {
                         return m;
                     }
                 };
+            }
+            @Override
+            public DistributionStates getDistributionStates() {
+                return null;
             }
         };
 

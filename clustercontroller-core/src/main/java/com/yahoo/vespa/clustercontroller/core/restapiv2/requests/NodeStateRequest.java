@@ -35,7 +35,7 @@ public class NodeStateRequest extends Request<Response.NodeResponse> {
             result.addAttribute("hierarchical-group", info.getGroup().getPath());
         }
 
-        result.addState("generated", new Response.UnitStateImpl(context.currentState.getNodeState(id.getNode())));
+        result.addState("generated", new Response.UnitStateImpl(context.currentConsolidatedState.getNodeState(id.getNode())));
         result.addState("unit", new Response.UnitStateImpl(info.getReportedState()));
         result.addState("user", new Response.UnitStateImpl(info.getWantedState()));
 

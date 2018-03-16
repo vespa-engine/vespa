@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.server;
 
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.*;
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -29,13 +30,25 @@ public class JsonWriter {
 
     public void fillInJson(UnitResponse data, JSONObject json) throws Exception {
         UnitAttributes attributes = data.getAttributes();
-        if (attributes != null) fillInJson(attributes, json);
+        if (attributes != null) {
+            fillInJson(attributes, json);
+        }
         CurrentUnitState stateData = data.getCurrentState();
-        if (stateData != null) fillInJson(stateData, json);
+        if (stateData != null) {
+            fillInJson(stateData, json);
+        }
         UnitMetrics metrics = data.getMetrics();
-        if (metrics != null) fillInJson(metrics, json);
+        if (metrics != null) {
+            fillInJson(metrics, json);
+        }
         Map<String, SubUnitList> subUnits = data.getSubUnits();
-        if (subUnits != null) fillInJson(subUnits, json);
+        if (subUnits != null) {
+            fillInJson(subUnits, json);
+        }
+        DistributionStates distributionStates = data.getDistributionStates();
+        if (distributionStates != null) {
+            fillInJson(distributionStates, json);
+        }
     }
 
     public void fillInJson(CurrentUnitState stateData, JSONObject json) throws Exception {
@@ -83,6 +96,26 @@ public class JsonWriter {
             }
             json.put(subUnitType, typeJson);
         }
+    }
+
+    private static void fillInJson(DistributionStates states, JSONObject json) throws Exception {
+        JSONObject statesJson = new JSONObject();
+        statesJson.put("published", distributionStateToJson(states.getPublishedState()));
+        json.put("distribution-states", statesJson);
+    }
+
+    private static JSONObject distributionStateToJson(DistributionState state) throws Exception {
+        JSONObject result = new JSONObject();
+        result.put("baseline", state.getBaselineState());
+        JSONArray bucketSpacesJson = new JSONArray();
+        for (Map.Entry<String, String> entry : state.getBucketSpaceStates().entrySet()) {
+            JSONObject bucketSpaceJson = new JSONObject();
+            bucketSpaceJson.put("name", entry.getKey());
+            bucketSpaceJson.put("state", entry.getValue());
+            bucketSpacesJson.put(bucketSpaceJson);
+        }
+        result.put("bucket-spaces", bucketSpacesJson);
+        return result;
     }
 
     public JSONObject createErrorJson(String description) {

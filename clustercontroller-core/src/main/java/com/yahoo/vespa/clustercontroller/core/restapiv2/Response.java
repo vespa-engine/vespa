@@ -68,12 +68,13 @@ public class Response {
     }
 
     public static abstract class EmptyResponse<T extends UnitResponse>
-            implements UnitResponse, UnitMetrics, UnitAttributes, CurrentUnitState
+            implements UnitResponse, UnitMetrics, UnitAttributes, CurrentUnitState, DistributionStates
     {
         protected final Map<String, String> attributes = new LinkedHashMap<>();
         protected final Map<String, SubUnitList> subUnits = new LinkedHashMap<>();
         protected final Map<String, Number> metrics = new LinkedHashMap<>();
         protected final Map<String, UnitState> stateMap = new LinkedHashMap<>();
+        protected DistributionState publishedState = null;
 
         @Override
         public UnitAttributes getAttributes() { return attributes.isEmpty() ? null : this; }
@@ -84,11 +85,20 @@ public class Response {
         @Override
         public UnitMetrics getMetrics() { return metrics.isEmpty() ? null : this; }
         @Override
+        public DistributionStates getDistributionStates() {
+            return (publishedState == null) ? null : this;
+        }
+
+        @Override
         public Map<String, Number> getMetricMap() { return metrics; }
         @Override
         public Map<String, UnitState> getStatePerType() { return stateMap; }
         @Override
         public Map<String, String> getAttributeValues() { return attributes; }
+        @Override
+        public DistributionState getPublishedState() {
+            return publishedState;
+        }
 
         public EmptyResponse<T> addLink(String type, String unit, String link) {
             Link list = (Link) subUnits.get(type);
@@ -118,6 +128,10 @@ public class Response {
         }
         public EmptyResponse<T> addAttribute(String name, String value) {
             attributes.put(name, value);
+            return this;
+        }
+        public EmptyResponse<T> setPublishedState(DistributionState publishedState) {
+            this.publishedState = publishedState;
             return this;
         }
     }

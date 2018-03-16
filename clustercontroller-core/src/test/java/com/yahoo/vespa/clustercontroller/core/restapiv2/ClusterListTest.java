@@ -33,7 +33,20 @@ public class ClusterListTest extends StateRestApiTest {
                 "    \"service\": {\n" +
                 "      \"storage\": {\"link\": \"\\/cluster\\/v2\\/books\\/storage\"},\n" +
                 "      \"distributor\": {\"link\": \"\\/cluster\\/v2\\/books\\/distributor\"}\n" +
-                "    }\n" +
+                "    },\n" +
+                "    \"distribution-states\": {\"published\": {\n" +
+                "      \"baseline\": \"distributor:4 storage:4\",\n" +
+                "      \"bucket-spaces\": [\n" +
+                "        {\n" +
+                "          \"name\": \"default\",\n" +
+                "          \"state\": \"distributor:4 storage:4 .3.s:m\"\n" +
+                "        },\n" +
+                "        {\n" +
+                "          \"name\": \"global\",\n" +
+                "          \"state\": \"distributor:4 storage:4\"\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }}\n" +
                 "  },\n" +
                 "  \"music\": {\n" +
                 "    \"state\": {\"generated\": {\n" +
@@ -43,7 +56,11 @@ public class ClusterListTest extends StateRestApiTest {
                 "    \"service\": {\n" +
                 "      \"storage\": {\"link\": \"\\/cluster\\/v2\\/music\\/storage\"},\n" +
                 "      \"distributor\": {\"link\": \"\\/cluster\\/v2\\/music\\/distributor\"}\n" +
-                "    }\n" +
+                "    },\n" +
+                "    \"distribution-states\": {\"published\": {\n" +
+                "      \"baseline\": \"distributor:8 .0.s:d .2.s:d .4.s:d .6.s:d storage:8 .0.s:d .2.s:d .4.s:d .6.s:d\",\n" +
+                "      \"bucket-spaces\": []\n" +
+                "    }}\n" +
                 "  }\n" +
                 "}}";
         assertEquals(expected, jsonWriter.createJson(response).toString(2));

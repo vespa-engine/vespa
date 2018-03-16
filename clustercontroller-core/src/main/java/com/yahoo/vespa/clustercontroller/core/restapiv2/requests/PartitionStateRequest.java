@@ -31,7 +31,7 @@ public class PartitionStateRequest extends Request<Response.PartitionResponse> {
         if (verboseReports.contains(VerboseReport.STATISTICS)) {
             fillInMetrics(context.cluster.getNodeInfo(id.getNode()).getHostInfo().getMetrics(), result);
         }
-        NodeState nodeState = context.currentState.getNodeState(id.getNode());
+        NodeState nodeState = context.currentConsolidatedState.getNodeState(id.getNode());
         DiskState diskState = nodeState.getDiskState(id.getPartitionIndex());
         result.addState("generated", new Response.UnitStateImpl(diskState));
 

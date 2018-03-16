@@ -9,7 +9,8 @@ public abstract class RemoteClusterControllerTask {
 
     public static class Context {
         public ContentCluster cluster;
-        public ClusterState currentState;
+        public ClusterState currentConsolidatedState;
+        public ClusterStateBundle publishedClusterStateBundle;
         public MasterInterface masterInfo;
         public NodeStateOrHostInfoChangeHandler nodeStateOrHostInfoChangeHandler;
         public NodeAddedOrRemovedListener nodeAddedOrRemovedListener;
