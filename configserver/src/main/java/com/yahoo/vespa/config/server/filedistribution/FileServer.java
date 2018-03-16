@@ -89,11 +89,12 @@ public class FileServer {
     public boolean hasFile(String fileName) {
         return hasFile(new FileReference(fileName));
     }
-    public boolean hasFile(FileReference reference) {
+
+    private boolean hasFile(FileReference reference) {
         try {
             return root.getFile(reference).exists();
         } catch (IllegalArgumentException e) {
-            log.info("Failed locating file reference '" + reference + "' with error " + e.toString());
+            log.log(LogLevel.DEBUG, "Failed locating file reference '" + reference + "' with error " + e.toString());
         }
         return false;
     }
@@ -122,9 +123,9 @@ public class FileServer {
 
         try {
             target.receive(fileData, new ReplayStatus(success ? 0 : 1, success ? "OK" : errorDescription));
-            log.log(LogLevel.DEBUG, "Done serving reference '" + reference.toString() + "' with file '" + file.getAbsolutePath() + "'");
+            log.log(LogLevel.DEBUG, "Done serving file reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Failed serving file: " + Exceptions.toMessageString(e));
+            log.log(LogLevel.WARNING, "Failed serving file reference '" + reference.value() + "': " + Exceptions.toMessageString(e));
         } finally {
             fileData.close();
         }
