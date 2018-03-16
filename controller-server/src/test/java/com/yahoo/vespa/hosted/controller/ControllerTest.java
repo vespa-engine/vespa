@@ -10,19 +10,14 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBuildJob;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
@@ -36,11 +31,10 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentQueue;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
@@ -179,7 +173,7 @@ public class ControllerTest {
                 .environment(Environment.prod)
                 .region("us-east-3")
                 .build();
-        tester.jobCompletion(component).application(app1).buildNumber(43).uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         try {
             tester.deploy(systemTest, app1, applicationPackage);
             fail("Expected exception due to unallowed production deployment removal");
@@ -201,7 +195,7 @@ public class ControllerTest {
                 .environment(Environment.prod)
                 .region("us-east-3")
                 .build();
-        tester.jobCompletion(component).application(app1).buildNumber(44).uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(component).application(app1).nextBuildNumber(2).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         assertNull("Zone was removed",
                    applications.require(app1.id()).deployments().get(productionCorpUsEast1.zone(SystemName.main).get()));
@@ -266,7 +260,7 @@ public class ControllerTest {
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
-        tester.jobCompletion(component).application(app1).buildNumber(43).uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
@@ -458,7 +452,7 @@ public class ControllerTest {
         // out of capacity retry mechanism
         tester.clock().advance(Duration.ofMinutes(15));
         tester.jobCompletion(stagingTest).application(app1).error(JobError.outOfCapacity).submit(); // Clear the previous staging test
-        tester.jobCompletion(component).application(app1).buildNumber(43).uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
         tester.deploy(stagingTest, app1, applicationPackage);
         assertEquals(1, deploymentQueue.takeJobsToRun().size());
@@ -467,10 +461,10 @@ public class ControllerTest {
 
         // app2 and app3: New change triggers system-test jobs
         // Provide a changed application package, too, or the deployment is a no-op.
-        tester.jobCompletion(component).application(app2).buildNumber(43).uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(component).application(app2).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app2, applicationPackage2, true, systemTest);
 
-        tester.jobCompletion(component).application(app3).buildNumber(43).uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(component).application(app3).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app3, applicationPackage2, true, systemTest);
 
         assertEquals(2, deploymentQueue.jobs().size());

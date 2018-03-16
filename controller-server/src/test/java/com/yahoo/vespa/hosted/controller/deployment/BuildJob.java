@@ -74,6 +74,14 @@ public class BuildJob {
         return this;
     }
 
+    public BuildJob nextBuildNumber(int increment) {
+        return buildNumber(buildNumber + increment);
+    }
+
+    public BuildJob nextBuildNumber() {
+        return nextBuildNumber(1);
+    }
+
     public BuildJob projectId(long projectId) {
         this.projectId = projectId;
         return this;
