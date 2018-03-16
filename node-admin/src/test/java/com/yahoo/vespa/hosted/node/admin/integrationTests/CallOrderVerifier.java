@@ -32,11 +32,19 @@ public class CallOrderVerifier {
     }
 
     public void assertInOrder(String... functionCalls) {
-        assertInOrderWithAssertMessage("", functionCalls);
+        assertInOrder(waitForCallOrderTimeout, functionCalls);
+    }
+
+    public void assertInOrder(long timeout, String... functionCalls) {
+        assertInOrderWithAssertMessage(timeout, "", functionCalls);
     }
 
     public void assertInOrderWithAssertMessage(String assertMessage, String... functionCalls) {
-        boolean inOrder = verifyInOrder(waitForCallOrderTimeout, functionCalls);
+        assertInOrderWithAssertMessage(waitForCallOrderTimeout, assertMessage, functionCalls);
+    }
+
+    public void assertInOrderWithAssertMessage(long timeout, String assertMessage, String... functionCalls) {
+        boolean inOrder = verifyInOrder(timeout, functionCalls);
         if ( ! inOrder && ! assertMessage.isEmpty())
             System.err.println(assertMessage);
         assertTrue(toString(), inOrder);
