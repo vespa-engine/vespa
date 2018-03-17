@@ -41,6 +41,7 @@ public class Environment {
     private static final String ENVIRONMENT = "ENVIRONMENT";
     private static final String REGION = "REGION";
     private static final String SYSTEM = "SYSTEM";
+    private static final String CLOUD = "CLOUD";
     private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
     private static final String COREDUMP_FEED_ENDPOINT = "COREDUMP_FEED_ENDPOINT";
 
@@ -59,6 +60,7 @@ public class Environment {
     private final Optional<AthenzIdentity> athenzIdentity;
     private final NodeType nodeType;
     private final String defaultFlavor;
+    private final String cloud;
 
     static {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -69,36 +71,17 @@ public class Environment {
              getEnvironmentVariable(ENVIRONMENT),
              getEnvironmentVariable(REGION),
              getEnvironmentVariable(SYSTEM),
-
+             Defaults.getDefaults().vespaHostname(),
+             new InetAddressResolver(),
              new PathResolver(),
+             getLogstashNodesFromEnvironment(),
              Optional.of(getEnvironmentVariable(COREDUMP_FEED_ENDPOINT)),
              NodeType.host,
-             "d-2-8-50");
+             "d-2-8-50",
+             getEnvironmentVariable(CLOUD));
     }
 
-    public Environment(ConfigServerConfig configServerConfig,
-                       String hostedEnvironment,
-                       String hostedRegion,
-                       String hostedSystem,
-                       PathResolver pathResolver,
-                       Optional<String> coreDumpFeedEndpoint,
-                       NodeType nodeType,
-                       String defaultFlavor) {
-        this(configServerConfig,
-                hostedEnvironment,
-                hostedRegion,
-                hostedSystem,
-                Defaults.getDefaults().vespaHostname(),
-                new InetAddressResolver(),
-                pathResolver,
-                getLogstashNodesFromEnvironment(),
-                coreDumpFeedEndpoint,
-                nodeType,
-                defaultFlavor
-        );
-    }
-
-    public Environment(ConfigServerConfig configServerConfig,
+    private Environment(ConfigServerConfig configServerConfig,
                        String environment,
                        String region,
                        String system,
@@ -108,7 +91,8 @@ public class Environment {
                        List<String> logstashNodes,
                        Optional<String> coreDumpFeedEndpoint,
                        NodeType nodeType,
-                       String defaultFlavor) {
+                       String defaultFlavor,
+                       String cloud) {
         this.configServerHostNames = configServerConfig.hosts();
         this.configServerURIs = createConfigServerUris(
                 configServerConfig.scheme(),
@@ -136,6 +120,7 @@ public class Environment {
         this.coredumpFeedEndpoint = coreDumpFeedEndpoint;
         this.nodeType = nodeType;
         this.defaultFlavor = defaultFlavor;
+        this.cloud = cloud;
     }
 
     public List<String> getConfigServerHostNames() { return configServerHostNames; }
@@ -168,7 +153,7 @@ public class Environment {
         return getEnvironment() + "." + getRegion();
     }
 
-    public static List<URI> createConfigServerUris(String scheme, List<String> configServerHosts, int port) {
+    private static List<URI> createConfigServerUris(String scheme, List<String> configServerHosts, int port) {
         return configServerHosts.stream()
                 .map(hostname -> URI.create(scheme + "://" + hostname + ":" + port))
                 .collect(Collectors.toList());
@@ -278,6 +263,8 @@ public class Environment {
 
     public String getDefaultFlavor() { return defaultFlavor; }
 
+    public String getCloud() { return cloud; }
+
     public static class Builder {
         private ConfigServerConfig configServerConfig;
         private String environment;
@@ -290,6 +277,7 @@ public class Environment {
         private Optional<String> coredumpFeedEndpoint = Optional.empty();
         private NodeType nodeType = NodeType.tenant;
         private String defaultFlavor;
+        private String cloud = "";
 
         public Builder configServerConfig(ConfigServerConfig configServerConfig) {
             this.configServerConfig = configServerConfig;
@@ -346,6 +334,11 @@ public class Environment {
             return this;
         }
 
+        public Builder cloud(String cloud) {
+            this.cloud = cloud;
+            return this;
+        }
+
         public Environment build() {
             Objects.requireNonNull(configServerConfig, "configServerConfig cannot be null");
             Objects.requireNonNull(environment, "environment cannot be null");
@@ -363,7 +356,8 @@ public class Environment {
                                    logstashNodes,
                                    coredumpFeedEndpoint,
                                    nodeType,
-                                   defaultFlavor);
+                                   defaultFlavor,
+                                   cloud);
         }
     }
 }
