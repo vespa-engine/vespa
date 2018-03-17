@@ -331,12 +331,6 @@ public class Environment {
             return this;
         }
 
-        // TOOD: Remove when all users hav changed to use coredumpFeedEndpoint()
-        public Builder feedEndpoint(String feedEndpoint) {
-            this.coredumpFeedEndpoint = Optional.of(feedEndpoint);
-            return this;
-        }
-
         public Builder coredumpFeedEndpoint(String coredumpFeedEndpoint) {
             this.coredumpFeedEndpoint = Optional.of(coredumpFeedEndpoint);
             return this;
