@@ -22,7 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.jrt.ErrorCode.CONNECTION;
@@ -190,8 +189,8 @@ public class FileDownloaderTest {
         FileDownloader fileDownloader = new FileDownloader(connectionPool, downloadDir, tempDir, timeout, sleepBetweenRetries);
         FileReference foo = new FileReference("foo");
         FileReference bar = new FileReference("bar");
-        List<FileReference> fileReferences = Arrays.asList(foo, bar);
-        fileDownloader.queueForAsyncDownload(fileReferences);
+        fileDownloader.queueForAsyncDownload(new FileReferenceDownload(foo));
+        fileDownloader.queueForAsyncDownload(new FileReferenceDownload(bar));
 
         // Verify download status
         assertDownloadStatus(fileDownloader, foo, 0.0);

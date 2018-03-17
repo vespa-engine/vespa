@@ -44,6 +44,7 @@ import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReceiver;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
+import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -61,7 +62,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -206,7 +206,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         getSupervisor().addMethod(new Method("printStatistics", "", "s", this, "printStatistics")
                                   .methodDesc("printStatistics")
                                   .returnDesc(0, "statistics", "Statistics for server"));
-        getSupervisor().addMethod(new Method("filedistribution.serveFile", "s", "is", this, "serveFile"));
+        // TODO: Change parameters to "si" instead of "s*" when all clients have been updated
+        getSupervisor().addMethod(new Method("filedistribution.serveFile", "s*", "is", this, "serveFile"));
         getSupervisor().addMethod(new Method("filedistribution.setFileReferencesToDownload", "S", "i",
                                         this, "setFileReferencesToDownload")
                                      .methodDesc("set which file references to download")
@@ -534,11 +535,10 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     @SuppressWarnings({"UnusedDeclaration"})
     public final void setFileReferencesToDownload(Request req) {
         String[] fileReferenceStrings = req.parameters().get(0).asStringArray();
-        List<FileReference> fileReferences = Stream.of(fileReferenceStrings)
+        Stream.of(fileReferenceStrings)
                 .map(FileReference::new)
-                .collect(Collectors.toList());
-        downloader.queueForAsyncDownload(fileReferences);
-
+                .forEach(fileReference -> downloader.queueForAsyncDownload(
+                        new FileReferenceDownload(fileReference, false /* downloadFromOtherSourceIfNotFound */)));
         req.returnValues().add(new Int32Value(0));
     }
 }

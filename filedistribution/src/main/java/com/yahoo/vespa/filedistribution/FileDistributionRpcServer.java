@@ -13,14 +13,13 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.log.LogLevel;
 
 import java.io.File;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * An RPC server that handles file distribution requests.
@@ -104,12 +103,10 @@ public class FileDistributionRpcServer {
 
     @SuppressWarnings({"UnusedDeclaration"})
     public final void setFileReferencesToDownload(Request req) {
-        String[] fileReferenceStrings = req.parameters().get(0).asStringArray();
-        List<FileReference> fileReferences = Stream.of(fileReferenceStrings)
+        Arrays.stream(req.parameters().get(0).asStringArray())
                 .map(FileReference::new)
-                .collect(Collectors.toList());
-        downloader.queueForAsyncDownload(fileReferences);
-
+                .forEach(fileReference -> downloader.queueForAsyncDownload(
+                        new FileReferenceDownload(fileReference)));
         req.returnValues().add(new Int32Value(0));
     }
 
