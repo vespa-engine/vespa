@@ -39,6 +39,7 @@ public class MotdContainerDataTest {
                                                                             .environment("prod")
                                                                             .region("aws-us-east-1a")
                                                                             .defaultFlavor("cherry")
+                                                                            .cloud("mycloud")
                                                                             .build());
 
         motdContainerData.writeTo((path, content) -> {

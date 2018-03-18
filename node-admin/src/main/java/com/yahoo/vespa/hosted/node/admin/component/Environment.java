@@ -93,6 +93,13 @@ public class Environment {
                        NodeType nodeType,
                        String defaultFlavor,
                        String cloud) {
+        Objects.requireNonNull(configServerConfig, "configServerConfig cannot be null");
+        Objects.requireNonNull(environment, "environment cannot be null");
+        Objects.requireNonNull(region, "region cannot be null");
+        Objects.requireNonNull(system, "system cannot be null");
+        Objects.requireNonNull(defaultFlavor, "default flavor cannot be null");
+        Objects.requireNonNull(cloud, "cloud cannot be null");
+
         this.configServerHostNames = configServerConfig.hosts();
         this.configServerURIs = createConfigServerUris(
                 configServerConfig.scheme(),
@@ -277,7 +284,7 @@ public class Environment {
         private Optional<String> coredumpFeedEndpoint = Optional.empty();
         private NodeType nodeType = NodeType.tenant;
         private String defaultFlavor;
-        private String cloud = "";
+        private String cloud;
 
         public Builder configServerConfig(ConfigServerConfig configServerConfig) {
             this.configServerConfig = configServerConfig;
@@ -340,12 +347,6 @@ public class Environment {
         }
 
         public Environment build() {
-            Objects.requireNonNull(configServerConfig, "configServerConfig cannot be null");
-            Objects.requireNonNull(environment, "environment cannot be null");
-            Objects.requireNonNull(region, "region cannot be null");
-            Objects.requireNonNull(system, "system cannot be null");
-            Objects.requireNonNull(defaultFlavor, "default flavor cannot be null");
-
             return new Environment(configServerConfig,
                                    environment,
                                    region,

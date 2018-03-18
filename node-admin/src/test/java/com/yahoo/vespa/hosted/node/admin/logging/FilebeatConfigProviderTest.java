@@ -103,6 +103,7 @@ public class FilebeatConfigProviderTest {
                 .system(system)
                 .logstashNodes(logstashNodes)
                 .defaultFlavor("d-2-8-50")
+                .cloud("mycloud")
                 .build();
     }
 
