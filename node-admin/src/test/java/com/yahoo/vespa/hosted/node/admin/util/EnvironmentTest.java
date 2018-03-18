@@ -24,6 +24,7 @@ public class EnvironmentTest {
             .system("main")
             .pathResolver(new PathResolver())
             .defaultFlavor("d-2-8-50")
+            .cloud("mycloud")
             .build();
 
     @Test

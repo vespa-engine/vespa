@@ -53,7 +53,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -92,6 +91,7 @@ public class NodeAgentImplTest {
             .inetAddressResolver(new InetAddressResolver())
             .pathResolver(pathResolver)
             .defaultFlavor("d-2-8-50")
+            .cloud("mycloud")
             .build();
 
     private final ContainerNodeSpec.Builder nodeSpecBuilder = new ContainerNodeSpec.Builder()
@@ -302,7 +302,6 @@ public class NodeAgentImplTest {
     @Test
     public void failedNodeRunningContainerShouldStillBeRunning() {
         final long restartGeneration = 1;
-        final long rebootGeneration = 0;
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)

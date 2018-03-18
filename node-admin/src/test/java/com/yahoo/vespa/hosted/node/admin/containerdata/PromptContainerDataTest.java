@@ -19,6 +19,7 @@ public class PromptContainerDataTest {
                                                                                   .environment("prod")
                                                                                   .region("aws-us-east-1a")
                                                                                   .defaultFlavor("cherry")
+                                                                                  .cloud("mycloud")
                                                                                   .build());
 
         promptContainerData.writeTo((path, content) -> {

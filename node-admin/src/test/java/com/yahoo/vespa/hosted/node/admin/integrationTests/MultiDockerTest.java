@@ -16,7 +16,7 @@ import java.io.IOException;
 public class MultiDockerTest {
 
     @Test
-    public void test() throws InterruptedException, IOException {
+    public void test() throws InterruptedException {
         try (DockerTester dockerTester = new DockerTester()) {
             addAndWaitForNode(dockerTester, "host1.test.yahoo.com", new DockerImage("image1"));
             ContainerNodeSpec containerNodeSpec2 = addAndWaitForNode(
