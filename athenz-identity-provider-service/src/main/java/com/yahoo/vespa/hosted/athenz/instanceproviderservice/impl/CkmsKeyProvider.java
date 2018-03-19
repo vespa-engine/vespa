@@ -2,9 +2,9 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
 import com.google.inject.Inject;
-import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.Ckms;
+import com.yahoo.vespa.athenz.tls.KeyUtils;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 
@@ -58,10 +58,9 @@ public class CkmsKeyProvider implements KeyProvider {
         }
     }
 
-    // TODO: Consider moving to cryptoutils
     private KeyPair readKeyPair(int version) {
-        PrivateKey privateKey = Crypto.loadPrivateKey(ckms.getSecret(secretName, version));
-        PublicKey publicKey = Crypto.extractPublicKey(privateKey);
+        PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(ckms.getSecret(secretName, version));
+        PublicKey publicKey = KeyUtils.extractPublicKey(privateKey);
         return new KeyPair(publicKey, privateKey);
     }
 }
