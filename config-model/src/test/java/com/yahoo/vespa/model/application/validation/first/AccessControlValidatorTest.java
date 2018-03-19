@@ -102,6 +102,21 @@ public class AccessControlValidatorTest  {
         new AccessControlValidator().validate(model, deployState);
     }
 
+    @Test
+    public void cluster_with_mbus_handler_passes_validation_without_write_protection() throws IOException, SAXException{
+        String servicesXml = joinLines("<services version='1.0'>",
+                                       "  <container id='default' version='1.0'>",
+                                       "    <handler id='foo'>",
+                                       "      <binding>mbus://*/foo</binding>",
+                                       "    </handler>",
+                                       "  </container>",
+                                       "</services>");
+        DeployState deployState = deployState(servicesXml);
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
+
+        new AccessControlValidator().validate(model, deployState);
+    }
+
     private static DeployState deployState(String servicesXml) {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
