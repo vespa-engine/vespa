@@ -66,7 +66,7 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
 
         Principal dualPrincipal = SimplePrincipal.create(
                 AthenzIdentities.USER_PRINCIPAL_DOMAIN.getName(), signedToken.getName(), signedToken.getSignedToken(), athenzPrincipalAuthority);
-        return new ZmsClientImpl(new ZMSClient(config.zmsUrl(), dualPrincipal), config);
+        return new ZmsClientImpl(new ZMSClient(config.legacyZmsUrl(), dualPrincipal), config);
 
     }
 
