@@ -99,7 +99,8 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _hostInfoReporter(*this, *this),
       _ownershipSafeTimeCalc(
             std::make_unique<OwnershipTransferSafeTimePointCalculator>(
-                std::chrono::seconds(0))) // Set by config later
+                std::chrono::seconds(0))), // Set by config later
+      _must_send_updated_host_info(false)
 {
     _component.registerMetric(*_metrics);
     _component.registerMetricUpdateHook(_metricUpdateHook,
@@ -420,7 +421,7 @@ Distributor::leaveRecoveryMode()
         _metrics->recoveryModeTime.addValue(
                 _recoveryTimeStarted.getElapsedTimeAsDouble());
         if (_doneInitializing) {
-            _component.getStateUpdater().immediately_send_get_node_state_replies();
+            _must_send_updated_host_info = true;
         }
     }
     _schedulingMode = MaintenanceScheduler::NORMAL_SCHEDULING_MODE;
@@ -695,10 +696,12 @@ toBucketSpaceStats(const NodeMaintenanceStats &stats)
     return BucketSpaceStats(0, stats.syncing + stats.copyingIn);
 }
 
-BucketSpacesStatsProvider::PerNodeBucketSpacesStats
+using PerNodeBucketSpacesStats = BucketSpacesStatsProvider::PerNodeBucketSpacesStats;
+
+PerNodeBucketSpacesStats
 toBucketSpacesStats(const NodeMaintenanceStatsTracker &maintenanceStats)
 {
-    BucketSpacesStatsProvider::PerNodeBucketSpacesStats result;
+    PerNodeBucketSpacesStats result;
     for (const auto &nodeEntry : maintenanceStats.perNodeStats()) {
         for (const auto &bucketSpaceEntry : nodeEntry.second) {
             auto bucketSpace = document::FixedBucketSpaces::to_string(bucketSpaceEntry.first);
@@ -706,6 +709,27 @@ toBucketSpacesStats(const NodeMaintenanceStatsTracker &maintenanceStats)
         }
     }
     return result;
+}
+
+size_t valid_space_stats_entries(const PerNodeBucketSpacesStats& stats) {
+    size_t valid = 0;
+    for (auto& node : stats) {
+        for (auto& space : node.second) {
+            valid += space.second.valid() ? 1 : 0;
+        }
+    }
+    return valid;
+}
+
+// TODO should we also trigger on !pending --> pending edge?
+bool merge_no_longer_pending_edge(const PerNodeBucketSpacesStats& prev_stats,
+                                  const PerNodeBucketSpacesStats& curr_stats) {
+    const auto prev_valid = valid_space_stats_entries(prev_stats);
+    const auto curr_valid = valid_space_stats_entries(curr_stats);
+    // Since the valid bucket space -> stats mapping is empty for a given space
+    // iff it has no pending merges, a reduction in the valid stats map size is
+    // a direct indicator that a space no longer has merges pending.
+    return curr_valid < prev_valid;
 }
 
 }
@@ -718,7 +742,11 @@ Distributor::updateInternalMetricsForCompletedScan()
     _bucketDBMetricUpdater.completeRound();
     _bucketDbStats = _bucketDBMetricUpdater.getLastCompleteStats();
     _maintenanceStats = _scanner->getPendingMaintenanceStats();
-    _bucketSpacesStats = toBucketSpacesStats(_maintenanceStats.perNodeStats);
+    auto new_space_stats = toBucketSpacesStats(_maintenanceStats.perNodeStats);
+    if (merge_no_longer_pending_edge(_bucketSpacesStats, new_space_stats)) {
+        _must_send_updated_host_info = true;
+    }
+    _bucketSpacesStats = std::move(new_space_stats);
 }
 
 void
@@ -734,7 +762,8 @@ Distributor::scanNextBucket()
     MaintenanceScanner::ScanResult scanResult(_scanner->scanNext());
     if (scanResult.isDone()) {
         updateInternalMetricsForCompletedScan();
-        leaveRecoveryMode(); // Must happen after internal metrics updates
+        leaveRecoveryMode();
+        send_updated_host_info_if_required();
         _scanner->reset();
     } else {
         const auto &distribution(_bucketSpaceRepo->get(scanResult.getBucketSpace()).getDistribution());
@@ -743,6 +772,13 @@ Distributor::scanNextBucket()
                 distribution.getRedundancy());
     }
     return scanResult;
+}
+
+void Distributor::send_updated_host_info_if_required() {
+    if (_must_send_updated_host_info) {
+        _component.getStateUpdater().immediately_send_get_node_state_replies();
+        _must_send_updated_host_info = false;
+    }
 }
 
 void

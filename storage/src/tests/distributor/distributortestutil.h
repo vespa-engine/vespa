@@ -67,6 +67,8 @@ public:
      * Format:
      *   "node1=checksum/docs/size,node2=checksum/docs/size"
      */
+    void addNodesToBucketDB(const document::Bucket& bucket, const std::string& nodeStr);
+    // As the above, but always inserts into default bucket space
     void addNodesToBucketDB(const document::BucketId& id, const std::string& nodeStr);
 
    /**
@@ -124,8 +126,10 @@ public:
 
     // TODO explicit notion of bucket spaces for tests
     DistributorBucketSpace &getDistributorBucketSpace();
-    BucketDatabase& getBucketDatabase();
-    const BucketDatabase& getBucketDatabase() const;
+    BucketDatabase& getBucketDatabase(); // Implicit default space only
+    BucketDatabase& getBucketDatabase(document::BucketSpace space);
+    const BucketDatabase& getBucketDatabase() const; // Implicit default space only
+    const BucketDatabase& getBucketDatabase(document::BucketSpace space) const;
     DistributorBucketSpaceRepo &getBucketSpaceRepo();
     const DistributorBucketSpaceRepo &getBucketSpaceRepo() const;
 
@@ -164,6 +168,8 @@ public:
 
     void disableBucketActivationInConfig(bool disable);
 
+    BucketDatabase::Entry getBucket(const document::Bucket& bucket) const;
+    // Gets bucket entry from default space only
     BucketDatabase::Entry getBucket(const document::BucketId& bId) const;
 
     std::vector<document::BucketSpace> getBucketSpaces() const;

@@ -173,14 +173,11 @@ DistributorTestUtil::addIdealNodes(const lib::ClusterState& state,
     getBucketDatabase().update(entry);
 }
 
-void
-DistributorTestUtil::addNodesToBucketDB(const document::BucketId& id,
-                                        const std::string& nodeStr)
-{
-    BucketDatabase::Entry entry = getBucket(id);
+void DistributorTestUtil::addNodesToBucketDB(const document::Bucket& bucket, const std::string& nodeStr) {
+    BucketDatabase::Entry entry = getBucket(bucket);
 
     if (!entry.valid()) {
-        entry = BucketDatabase::Entry(id);
+        entry = BucketDatabase::Entry(bucket.getBucketId());
     }
 
     entry->clear();
@@ -228,7 +225,14 @@ DistributorTestUtil::addNodesToBucketDB(const document::BucketId& id,
         entry->addNodeManual(node);
     }
 
-    getBucketDatabase().update(entry);
+    getBucketDatabase(bucket.getBucketSpace()).update(entry);
+}
+
+void
+DistributorTestUtil::addNodesToBucketDB(const document::BucketId& id,
+                                        const std::string& nodeStr)
+{
+    addNodesToBucketDB(document::Bucket(makeBucketSpace(), id), nodeStr);
 }
 
 void
@@ -301,6 +305,10 @@ DistributorTestUtil::sendReply(Operation& op,
     op.receive(_sender, reply);
 }
 
+BucketDatabase::Entry DistributorTestUtil::getBucket(const document::Bucket& bucket) const {
+    return getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId());
+}
+
 BucketDatabase::Entry
 DistributorTestUtil::getBucket(const document::BucketId& bId) const
 {
@@ -356,9 +364,18 @@ BucketDatabase&
 DistributorTestUtil::getBucketDatabase() {
     return getDistributorBucketSpace().getBucketDatabase();
 }
+
+BucketDatabase& DistributorTestUtil::getBucketDatabase(document::BucketSpace space) {
+    return getBucketSpaceRepo().get(space).getBucketDatabase();
+}
+
 const BucketDatabase&
 DistributorTestUtil::getBucketDatabase() const {
     return getBucketSpaceRepo().get(makeBucketSpace()).getBucketDatabase();
+}
+
+const BucketDatabase& DistributorTestUtil::getBucketDatabase(document::BucketSpace space) const {
+    return getBucketSpaceRepo().get(space).getBucketDatabase();
 }
 
 DistributorBucketSpaceRepo &
