@@ -157,15 +157,11 @@ public class MetricsReporterTest {
     }
 
     private Duration getAverageDeploymentDuration(Application application) {
-        return metrics.getMetric((dimension, value) -> dimension.equals("application") &&
-                                                       value.equals(application.id().toString()),
+        return metrics.getMetric((dimensions) -> application.id().tenant().value().equals(dimensions.get("tenant")) &&
+                                                 appDimension(application).equals(dimensions.get("app")),
                                  MetricsReporter.deploymentAverageDuration)
                       .map(seconds -> Duration.ofSeconds(seconds.longValue()))
                       .orElseThrow(() -> new RuntimeException("Expected metric to exist for " + application.id()));
-    }
-
-    private void assertDimension(MapContext metricContext, String dimensionName, String expectedValue) {
-        assertEquals(expectedValue, metricContext.getDimensions().get(dimensionName));
     }
 
     private MetricsReporter createReporter(Controller controller, MetricsMock metricsMock, SystemName system) {
@@ -189,7 +185,7 @@ public class MetricsReporterTest {
     }
 
     private Map<MapContext, Map<String, Number>> getMetricsByHost(String hostname) {
-        return metrics.getMetrics((dimension, value) -> dimension.equals("host") && value.equals(hostname));
+        return metrics.getMetrics((dimensions) -> hostname.equals(dimensions.get("host")));
     }
     
     private MapContext getMetricContextByHost(Controller controller, String hostname) {
@@ -202,6 +198,14 @@ public class MetricsReporterTest {
         assertEquals(1, metrics.size());
         Map.Entry<MapContext, Map<String, Number>> metricEntry = metrics.entrySet().iterator().next();
         return metricEntry.getKey();
+    }
+
+    private static void assertDimension(MapContext metricContext, String dimensionName, String expectedValue) {
+        assertEquals(expectedValue, metricContext.getDimensions().get(dimensionName));
+    }
+
+    private static String appDimension(Application application) {
+        return application.id().application().value() + "." + application.id().instance().value();
     }
 
 }
