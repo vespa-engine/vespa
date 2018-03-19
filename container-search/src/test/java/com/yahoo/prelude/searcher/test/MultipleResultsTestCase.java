@@ -31,7 +31,7 @@ public class MultipleResultsTestCase {
     private Chain<Searcher> chain;
 
     @Before
-    protected void setUp() {
+    public void setUp() {
         docSource=new DocumentSourceSearcher();
         searcher=new MultipleResultsSearcher();
         chain=new Chain<>("multipleresultschain",searcher,docSource);

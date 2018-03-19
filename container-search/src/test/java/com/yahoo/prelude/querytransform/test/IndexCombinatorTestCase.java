@@ -29,7 +29,7 @@ public class IndexCombinatorTestCase {
     private IndexFacts f;
 
     @Before
-    protected void setUp() throws Exception {
+    public void setUp() throws Exception {
         transformer = new IndexCombinatorSearcher();
         f = new IndexFacts();
         f.addIndex("one", "z");
