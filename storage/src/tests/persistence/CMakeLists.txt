@@ -3,7 +3,6 @@ vespa_add_library(storage_testpersistence TEST
     SOURCES
     bucketownershipnotifiertest.cpp
     diskmoveoperationhandlertest.cpp
-    legacyoperationhandlertest.cpp
     mergehandlertest.cpp
     persistencequeuetest.cpp
     persistencetestutils.cpp

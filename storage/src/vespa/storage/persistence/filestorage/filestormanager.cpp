@@ -14,7 +14,6 @@
 #include <vespa/storage/storageutil/log.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/state.h>
@@ -376,16 +375,6 @@ FileStorManager::onRevert(const shared_ptr<api::RevertCommand>& cmd)
 {
     StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(
                 *cmd, 0));
-    if (entry.exist()) {
-        handlePersistenceMessage(cmd, entry->disk);
-    }
-    return true;
-}
-
-bool
-FileStorManager::onMultiOperation(const std::shared_ptr<api::MultiOperationCommand>& cmd)
-{
-    StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(*cmd, 0));
     if (entry.exist()) {
         handlePersistenceMessage(cmd, entry->disk);
     }

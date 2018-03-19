@@ -8,14 +8,12 @@
 #include <vespa/storage/distributor/operations/external/updateoperation.h>
 #include <vespa/storage/distributor/operations/external/removeoperation.h>
 #include <vespa/storage/distributor/operations/external/getoperation.h>
-#include <vespa/storage/distributor/operations/external/multioperationoperation.h>
 #include <vespa/storage/distributor/operations/external/statbucketoperation.h>
 #include <vespa/storage/distributor/operations/external/statbucketlistoperation.h>
 #include <vespa/storage/distributor/operations/external/removelocationoperation.h>
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/stat.h>
@@ -242,24 +240,6 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
                                 _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
                                 cmd,
                                 getMetrics().gets[cmd->getLoadType()]));
-    return true;
-}
-
-IMPL_MSG_COMMAND_H(ExternalOperationHandler, MultiOperation)
-{
-    if (!checkDistribution(*cmd, cmd->getBucket())) {
-        LOG(debug,
-            "Distributor manager received multi-operation message, "
-            "bucket %s with wrong distribution",
-            cmd->getBucket().toString().c_str());
-        return true;
-    }
-
-    _op = Operation::SP(new MultiOperationOperation(
-                                *this,
-                                _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
-                                cmd,
-                                getMetrics().multioperations[cmd->getLoadType()]));
     return true;
 }
 

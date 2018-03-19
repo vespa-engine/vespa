@@ -3,8 +3,7 @@
 #include "removelocation.h"
 #include <ostream>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 IMPLEMENT_COMMAND(RemoveLocationCommand, RemoveLocationReply)
 IMPLEMENT_REPLY(RemoveLocationReply)
@@ -31,5 +30,4 @@ RemoveLocationReply::RemoveLocationReply(const RemoveLocationCommand& cmd)
 {
 }
 
-} // api
-} // storage
+}

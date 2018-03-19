@@ -611,7 +611,6 @@ bool is_client_request(const api::StorageMessage& msg) noexcept {
     case api::MessageType::REMOVE_ID:
     case api::MessageType::VISITOR_CREATE_ID:
     case api::MessageType::VISITOR_DESTROY_ID:
-    case api::MessageType::MULTIOPERATION_ID: // Deprecated
     case api::MessageType::GETBUCKETLIST_ID:
     case api::MessageType::STATBUCKET_ID:
     case api::MessageType::UPDATE_ID:

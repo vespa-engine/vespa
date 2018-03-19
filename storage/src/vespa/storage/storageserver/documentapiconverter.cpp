@@ -8,7 +8,6 @@
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/documentsummary.h>
-#include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/queryresult.h>
 #include <vespa/storageapi/message/removelocation.h>
@@ -32,8 +31,7 @@ DocumentApiConverter::DocumentApiConverter(const config::ConfigUri &configUri,
 DocumentApiConverter::~DocumentApiConverter() {}
 
 std::unique_ptr<api::StorageCommand>
-DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
-                                   const document::DocumentTypeRepo::SP &repo)
+DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
 {
     api::StorageCommand::UP toMsg;
 
@@ -100,13 +98,6 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     {
         documentapi::DestroyVisitorMessage& from(static_cast<documentapi::DestroyVisitorMessage&>(fromMsg));
         toMsg = std::make_unique<api::DestroyVisitorCommand>(from.getInstanceId());
-        break;
-    }
-    case DocumentProtocol::MESSAGE_MULTIOPERATION:
-    {
-        documentapi::MultiOperationMessage& from(static_cast<documentapi::MultiOperationMessage&>(fromMsg));
-        toMsg = std::make_unique<api::MultiOperationCommand>(repo, document::Bucket(BucketSpace::placeHolder(), from.getBucketId()), from.getBuffer(),
-                                                             from.keepTimeStamps());
         break;
     }
     case DocumentProtocol::MESSAGE_BATCHDOCUMENTUPDATE:
@@ -214,7 +205,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentReply& fromReply,
 }
 
 std::unique_ptr<mbus::Message>
-DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg, const document::DocumentTypeRepo::SP &repo)
+DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
 {
     std::unique_ptr<mbus::Message> toMsg;
     switch (fromMsg.getType().getId()) {
@@ -269,13 +260,6 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg, const document
     {
         api::DocumentSummaryCommand& from(static_cast<api::DocumentSummaryCommand&>(fromMsg));
         toMsg = std::make_unique<documentapi::DocumentSummaryMessage>(from);
-        break;
-    }
-    case api::MessageType::MULTIOPERATION_ID:
-    {
-        api::MultiOperationCommand& from(static_cast<api::MultiOperationCommand&>(fromMsg));
-        toMsg = std::make_unique<documentapi::MultiOperationMessage>(repo, from.getBucketId(), from.getBuffer(),
-                                                                     from.keepTimeStamps());
         break;
     }
     case api::MessageType::MAPVISITOR_ID:
@@ -371,10 +355,6 @@ DocumentApiConverter::transferReplyState(api::StorageReply& fromMsg, mbus::Reply
         api::PutReply& from(static_cast<api::PutReply&>(fromMsg));
         documentapi::WriteDocumentReply& to(static_cast<documentapi::WriteDocumentReply&>(toMsg));
         to.setHighestModificationTimestamp(from.getTimestamp());
-    } else if (toMsg.getType() == DocumentProtocol::REPLY_MULTIOPERATION) {
-        api::MultiOperationReply& from(static_cast<api::MultiOperationReply&>(fromMsg));
-        documentapi::WriteDocumentReply& to(static_cast<documentapi::WriteDocumentReply&>(toMsg));
-        to.setHighestModificationTimestamp(from.getHighestModificationTimestamp());
     } else if (toMsg.getType() == DocumentProtocol::REPLY_UPDATEDOCUMENT) {
         api::UpdateReply& from(static_cast<api::UpdateReply&>(fromMsg));
         documentapi::UpdateDocumentReply& to(static_cast<documentapi::UpdateDocumentReply&>(toMsg));

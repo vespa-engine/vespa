@@ -16,7 +16,7 @@ GetIterCommand::GetIterCommand(const document::Bucket &bucket,
 {
 }
 
-GetIterCommand::~GetIterCommand() { }
+GetIterCommand::~GetIterCommand() = default;
 
 void
 GetIterCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
@@ -39,7 +39,7 @@ GetIterReply::GetIterReply(GetIterCommand& cmd)
       _completed(false)
 { }
 
-GetIterReply::~GetIterReply() { }
+GetIterReply::~GetIterReply() = default;
 
 void
 GetIterReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
@@ -63,7 +63,7 @@ CreateIteratorCommand::CreateIteratorCommand(const document::Bucket &bucket,
       _readConsistency(spi::ReadConsistency::STRONG)
 { }
 
-CreateIteratorCommand::~CreateIteratorCommand() { }
+CreateIteratorCommand::~CreateIteratorCommand() = default;
 
 void
 CreateIteratorCommand::print(std::ostream& out, bool, const std::string &) const {
@@ -82,7 +82,7 @@ CreateIteratorReply::CreateIteratorReply(const CreateIteratorCommand& cmd, spi::
       _iteratorId(iteratorId)
 { }
 
-CreateIteratorReply::~CreateIteratorReply() { }
+CreateIteratorReply::~CreateIteratorReply() = default;
 
 void
 CreateIteratorReply::print(std::ostream& out, bool, const std::string &) const {
@@ -94,7 +94,7 @@ DestroyIteratorCommand::DestroyIteratorCommand(spi::IteratorId iteratorId)
       _iteratorId(iteratorId)
 { }
 
-DestroyIteratorCommand::~DestroyIteratorCommand() { }
+DestroyIteratorCommand::~DestroyIteratorCommand() = default;
 
 void
 DestroyIteratorCommand::print(std::ostream& out, bool, const std::string &) const {
@@ -106,7 +106,7 @@ DestroyIteratorReply::DestroyIteratorReply(const DestroyIteratorCommand& cmd)
       _iteratorId(cmd.getIteratorId())
 { }
 
-DestroyIteratorReply::~DestroyIteratorReply() { }
+DestroyIteratorReply::~DestroyIteratorReply() = default;
 
 void
 DestroyIteratorReply::print(std::ostream& out, bool, const std::string &) const {
@@ -123,7 +123,7 @@ RecheckBucketInfoCommand::RecheckBucketInfoCommand(const document::Bucket& bucke
       _bucket(bucket)
 { }
 
-RecheckBucketInfoCommand::~RecheckBucketInfoCommand() { }
+RecheckBucketInfoCommand::~RecheckBucketInfoCommand() = default;
 
 void
 RecheckBucketInfoCommand::print(std::ostream& out, bool, const std::string &) const {
@@ -135,7 +135,7 @@ RecheckBucketInfoReply::RecheckBucketInfoReply(const RecheckBucketInfoCommand& c
       _bucket(cmd.getBucket())
 { }
 
-RecheckBucketInfoReply::~RecheckBucketInfoReply() { }
+RecheckBucketInfoReply::~RecheckBucketInfoReply() = default;
 
 void
 RecheckBucketInfoReply::print(std::ostream& out, bool, const std::string &) const {
@@ -152,7 +152,7 @@ AbortBucketOperationsCommand::AbortBucketOperationsCommand(std::unique_ptr<Abort
     _predicate(std::move(predicate))
 { }
 
-AbortBucketOperationsCommand::~AbortBucketOperationsCommand() { }
+AbortBucketOperationsCommand::~AbortBucketOperationsCommand() = default;
 
 
 void
@@ -164,7 +164,7 @@ AbortBucketOperationsReply::AbortBucketOperationsReply(const AbortBucketOperatio
     : api::InternalReply(ID, cmd)
 { }
 
-AbortBucketOperationsReply::~AbortBucketOperationsReply() { }
+AbortBucketOperationsReply::~AbortBucketOperationsReply() = default;
 
 void
 AbortBucketOperationsReply::print(std::ostream& out, bool, const std::string &) const {

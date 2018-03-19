@@ -5,7 +5,6 @@
 #include "bucketmessages.h"
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storage/persistence/messages.h>
@@ -32,15 +31,10 @@ getStorageMessageBucket(const api::StorageMessage& msg)
         return static_cast<const api::RevertCommand&>(msg).getBucket();
     case api::MessageType::STATBUCKET_ID:
         return static_cast<const api::StatBucketCommand&>(msg).getBucket();
-    case api::MessageType::MULTIOPERATION_ID:
-        return static_cast<const api::MultiOperationCommand&>(msg)
-                .getBucket();
     case api::MessageType::BATCHPUTREMOVE_ID:
-        return static_cast<const api::BatchPutRemoveCommand&>(msg)
-            .getBucket();
+        return static_cast<const api::BatchPutRemoveCommand&>(msg).getBucket();
     case api::MessageType::REMOVELOCATION_ID:
-        return static_cast<const api::RemoveLocationCommand&>(msg)
-                .getBucket();
+        return static_cast<const api::RemoveLocationCommand&>(msg).getBucket();
     case api::MessageType::CREATEBUCKET_ID:
         return static_cast<const api::CreateBucketCommand&>(msg).getBucket();
     case api::MessageType::DELETEBUCKET_ID:
@@ -52,18 +46,15 @@ getStorageMessageBucket(const api::StorageMessage& msg)
     case api::MessageType::GETBUCKETDIFF_REPLY_ID:
         return static_cast<const api::GetBucketDiffReply&>(msg).getBucket();
     case api::MessageType::APPLYBUCKETDIFF_ID:
-        return static_cast<const api::ApplyBucketDiffCommand&>(msg)
-                .getBucket();
+        return static_cast<const api::ApplyBucketDiffCommand&>(msg).getBucket();
     case api::MessageType::APPLYBUCKETDIFF_REPLY_ID:
         return static_cast<const api::ApplyBucketDiffReply&>(msg).getBucket();
-
     case api::MessageType::JOINBUCKETS_ID:
         return static_cast<const api::JoinBucketsCommand&>(msg).getBucket();
     case api::MessageType::SPLITBUCKET_ID:
         return static_cast<const api::SplitBucketCommand&>(msg).getBucket();
     case api::MessageType::SETBUCKETSTATE_ID:
         return static_cast<const api::SetBucketStateCommand&>(msg).getBucket();
-
     case api::MessageType::INTERNAL_ID:
         switch(static_cast<const api::InternalCommand&>(msg).getType()) {
         case RequestStatusPage::ID:
@@ -71,8 +62,7 @@ getStorageMessageBucket(const api::StorageMessage& msg)
         case GetIterCommand::ID:
             return static_cast<const GetIterCommand&>(msg).getBucket();
         case CreateIteratorCommand::ID:
-            return static_cast<const CreateIteratorCommand&>(msg)
-                .getBucket();
+            return static_cast<const CreateIteratorCommand&>(msg).getBucket();
         case ReadBucketList::ID:
             return static_cast<const ReadBucketList&>(msg).getBucket();
         case ReadBucketInfo::ID:
@@ -82,8 +72,7 @@ getStorageMessageBucket(const api::StorageMessage& msg)
         case BucketDiskMoveCommand::ID:
             return static_cast<const BucketDiskMoveCommand&>(msg).getBucket();
         case InternalBucketJoinCommand::ID:
-            return static_cast<const InternalBucketJoinCommand&>(msg)
-                    .getBucket();
+            return static_cast<const InternalBucketJoinCommand&>(msg).getBucket();
         case RecheckBucketInfoCommand::ID:
             return static_cast<const RecheckBucketInfoCommand&>(msg).getBucket();
         default:

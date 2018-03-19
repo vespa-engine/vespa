@@ -7,8 +7,7 @@
 #include <vespa/storageapi/messageapi/bucketinfocommand.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 /**
  * @class BatchPutRemoveCommand
@@ -189,5 +188,4 @@ public:
     DECLARE_STORAGEREPLY(BatchDocumentUpdateReply, onBatchDocumentUpdateReply)
 };
 
-}
 }

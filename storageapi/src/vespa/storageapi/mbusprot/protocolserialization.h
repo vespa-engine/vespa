@@ -17,8 +17,7 @@ namespace mbus {
 namespace vespalib {
     class GrowableByteBuffer;
 }
-namespace storage {
-namespace api {
+namespace storage::api {
 class StorageCommand;
 class StorageReply;
 class PutCommand;
@@ -49,8 +48,6 @@ class JoinBucketsCommand;
 class JoinBucketsReply;
 class SetBucketStateCommand;
 class SetBucketStateReply;
-class MultiOperationCommand;
-class MultiOperationReply;
 class CreateVisitorCommand;
 class RemoveLocationCommand;
 class RemoveLocationReply;
@@ -60,7 +57,7 @@ class BatchDocumentUpdateCommand;
 class BatchDocumentUpdateReply;
 }
 
-namespace mbusprot {
+namespace storage::mbusprot {
 
 class SerializationHelper;
 class StorageCommand;
@@ -123,8 +120,6 @@ protected:
     virtual void onEncode(GBBuf&, const api::JoinBucketsReply&) const = 0;
     virtual void onEncode(GBBuf&, const api::SetBucketStateCommand&) const = 0;
     virtual void onEncode(GBBuf&, const api::SetBucketStateReply&) const = 0;
-    virtual void onEncode(GBBuf&, const api::MultiOperationCommand&) const = 0;
-    virtual void onEncode(GBBuf&, const api::MultiOperationReply&) const = 0;
     virtual void onEncode(GBBuf&, const api::CreateVisitorCommand&) const = 0;
     virtual void onEncode(GBBuf&, const api::CreateVisitorReply&) const = 0;
     virtual void onEncode(GBBuf&, const api::DestroyVisitorCommand&) const = 0;
@@ -166,8 +161,6 @@ protected:
     virtual SRep::UP onDecodeJoinBucketsReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeSetBucketStateCommand(BBuf&) const = 0;
     virtual SRep::UP onDecodeSetBucketStateReply(const SCmd&, BBuf&) const = 0;
-    virtual SCmd::UP onDecodeMultiOperationCommand(BBuf&) const = 0;
-    virtual SRep::UP onDecodeMultiOperationReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeCreateVisitorCommand(BBuf&) const = 0;
     virtual SRep::UP onDecodeCreateVisitorReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeDestroyVisitorCommand(BBuf&) const = 0;
@@ -186,6 +179,4 @@ protected:
 
 };
 
-} // mbusprot
-} // storage
-
+}

@@ -15,8 +15,7 @@
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/document/select/orderingspecification.h>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 /**
  * @class CreateVisitorCommand
@@ -251,6 +250,4 @@ public:
     DECLARE_STORAGEREPLY(VisitorInfoReply, onVisitorInfoReply)
 };
 
-} // api
-} // storage
-
+}

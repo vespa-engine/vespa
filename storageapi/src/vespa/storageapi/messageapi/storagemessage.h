@@ -128,8 +128,6 @@ public:
         SPLITBUCKET_REPLY_ID = 67,
         JOINBUCKETS_ID = 68,
         JOINBUCKETS_REPLY_ID = 69,
-        MULTIOPERATION_ID = 70,
-        MULTIOPERATION_REPLY_ID = 71,
         DOCUMENTSUMMARY_ID = 72,
         DOCUMENTSUMMARY_REPLY_ID = 73,
         MAPVISITOR_ID = 74,
@@ -216,8 +214,6 @@ public:
     static const MessageType SPLITBUCKET_REPLY;
     static const MessageType JOINBUCKETS;
     static const MessageType JOINBUCKETS_REPLY;
-    static const MessageType MULTIOPERATION;
-    static const MessageType MULTIOPERATION_REPLY;
     static const MessageType DOCUMENTSUMMARY;
     static const MessageType DOCUMENTSUMMARY_REPLY;
     static const MessageType MAPVISITOR;

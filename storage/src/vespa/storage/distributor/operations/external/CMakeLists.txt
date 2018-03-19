@@ -2,8 +2,6 @@
 vespa_add_library(storage_distributoroperationexternal OBJECT
     SOURCES
     getoperation.cpp
-    multioperationoperation.cpp
-    multioperationoperation.cpp
     putoperation.cpp
     removelocationoperation.cpp
     removeoperation.cpp

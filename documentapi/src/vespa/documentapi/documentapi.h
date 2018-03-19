@@ -15,7 +15,6 @@
 #include <vespa/documentapi/messagebus/messages/updatedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/searchresultmessage.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
-#include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
 #include <vespa/documentapi/messagebus/messages/documentsummarymessage.h>
 #include <vespa/documentapi/messagebus/messages/wrongdistributionreply.h>
 #include <vespa/documentapi/messagebus/messages/getbucketlistmessage.h>

@@ -3,9 +3,9 @@
 
 namespace storage::mbusprot {
 
-StorageCommand::StorageCommand(const storage::api::StorageCommand::SP& cmd)
+StorageCommand::StorageCommand(api::StorageCommand::SP cmd)
     : mbus::Message(),
-      _cmd(cmd)
+      _cmd(std::move(cmd))
 { }
 
 }

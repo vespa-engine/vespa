@@ -4,7 +4,6 @@
 #include "splitbitdetector.h"
 #include "bucketownershipnotifier.h"
 #include "testandsethelper.h"
-#include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
@@ -233,62 +232,6 @@ PersistenceThread::handleRepairBucket(RepairBucketCommand& cmd)
 
         _env.updateBucketDatabase(cmd.getBucket(), after);
         tracker->setReply(api::StorageReply::SP(reply.release()));
-    }
-    return tracker;
-}
-
-MessageTracker::UP
-PersistenceThread::handleMultiOperation(api::MultiOperationCommand& cmd)
-{
-    MessageTracker::UP tracker(new MessageTracker(
-                                       _env._metrics.multiOp[cmd.getLoadType()],
-                                       _env._component.getClock()));
-    spi::Bucket b = spi::Bucket(cmd.getBucket(), spi::PartitionId(_env._partition));
-    long puts = 0;
-    long removes = 0;
-    long updates = 0;
-    long updatesNotFound = 0;
-    long removesNotFound = 0;
-    for (vdslib::DocumentList::const_iterator it =
-             cmd.getOperations().begin();
-         it != cmd.getOperations().end(); ++it)
-    {
-        document::DocumentId docId = it->getDocumentId();
-        if (it->isRemoveEntry()) {
-            ++removes;
-            spi::RemoveResult result = _spi.removeIfFound(
-                    b,
-                    spi::Timestamp(it->getTimestamp()),
-                    docId, _context);
-            if (!checkForError(result, *tracker)) {
-                return tracker;
-            }
-            if (!result.wasFound()) {
-                LOG(debug, "Cannot remove %s; document not found",
-                    docId.toString().c_str());
-                ++removesNotFound;
-            }
-        } else if (it->isUpdateEntry()) {
-            ++updates;
-            document::DocumentUpdate::SP docUpdate = it->getUpdate();
-            spi::UpdateResult result =
-                _spi.update(b, spi::Timestamp(it->getTimestamp()), docUpdate,
-                            _context);
-            if (!checkForError(result, *tracker)) {
-                return tracker;
-            }
-            if (result.getExistingTimestamp() == 0) {
-                ++updatesNotFound;
-            }
-        } else {
-            ++puts;
-            document::Document::SP doc = it->getDocument();
-            spi::Result result = _spi.put(b, spi::Timestamp(it->getTimestamp()),
-                                          doc, _context);
-            if (!checkForError(result, *tracker)) {
-                return tracker;
-            }
-        }
     }
     return tracker;
 }
@@ -902,9 +845,6 @@ PersistenceThread::handleCommandSplitByType(api::StorageCommand& msg)
         return handleRemove(static_cast<api::RemoveCommand&>(msg));
     case api::MessageType::UPDATE_ID:
         return handleUpdate(static_cast<api::UpdateCommand&>(msg));
-    case api::MessageType::MULTIOPERATION_ID:
-        return handleMultiOperation(
-                static_cast<api::MultiOperationCommand&>(msg));
     case api::MessageType::REVERT_ID:
         return handleRevert(static_cast<api::RevertCommand&>(msg));
     case api::MessageType::CREATEBUCKET_ID:
@@ -1086,7 +1026,6 @@ bool isBatchable(const api::StorageMessage& msg)
     return (msg.getType().getId() == api::MessageType::PUT_ID ||
             msg.getType().getId() == api::MessageType::REMOVE_ID ||
             msg.getType().getId() == api::MessageType::UPDATE_ID ||
-            msg.getType().getId() == api::MessageType::MULTIOPERATION_ID ||
             msg.getType().getId() == api::MessageType::REVERT_ID);
 }
 

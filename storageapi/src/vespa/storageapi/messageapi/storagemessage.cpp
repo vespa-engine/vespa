@@ -144,9 +144,6 @@ const MessageType MessageType::JOINBUCKETS("Joinbuckets", JOINBUCKETS_ID);
 const MessageType MessageType::JOINBUCKETS_REPLY(
         "Joinbuckets reply", JOINBUCKETS_REPLY_ID,
         &MessageType::JOINBUCKETS);
-const MessageType MessageType::MULTIOPERATION("MultiOperation", MULTIOPERATION_ID);
-const MessageType MessageType::MULTIOPERATION_REPLY(
-        "MultiOperation Reply", MULTIOPERATION_REPLY_ID, &MessageType::MULTIOPERATION);
 const MessageType MessageType::STATBUCKET("Statbucket", STATBUCKET_ID);
 const MessageType MessageType::STATBUCKET_REPLY(
         "Statbucket Reply", STATBUCKET_REPLY_ID, &MessageType::STATBUCKET);

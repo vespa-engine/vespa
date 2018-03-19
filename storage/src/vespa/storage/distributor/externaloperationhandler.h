@@ -31,7 +31,6 @@ public:
     DEF_MSG_COMMAND_H(Update);
     DEF_MSG_COMMAND_H(Remove);
     DEF_MSG_COMMAND_H(RemoveLocation);
-    DEF_MSG_COMMAND_H(MultiOperation);
     DEF_MSG_COMMAND_H(StatBucket);
     DEF_MSG_COMMAND_H(CreateVisitor);
     DEF_MSG_COMMAND_H(GetBucketList);

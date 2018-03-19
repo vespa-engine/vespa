@@ -5,8 +5,7 @@
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 class RemoveLocationCommand : public BucketInfoCommand
 {
@@ -31,5 +30,4 @@ public:
     DECLARE_STORAGEREPLY(RemoveLocationReply, onRemoveLocationReply)
 };
 
-}
 }

@@ -172,7 +172,6 @@ Bouncer::isExternalLoad(const api::MessageType& type) const noexcept
         case api::MessageType::UPDATE_ID:
         case api::MessageType::GET_ID:
         case api::MessageType::VISITOR_CREATE_ID:
-        case api::MessageType::MULTIOPERATION_ID:
         case api::MessageType::STATBUCKET_ID:
             return true;
         default:
@@ -186,7 +185,6 @@ Bouncer::isExternalWriteOperation(const api::MessageType& type) const noexcept {
     case api::MessageType::PUT_ID:
     case api::MessageType::REMOVE_ID:
     case api::MessageType::UPDATE_ID:
-    case api::MessageType::MULTIOPERATION_ID:
         return true;
     default:
         return false;

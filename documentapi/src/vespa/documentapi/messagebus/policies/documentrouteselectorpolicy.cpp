@@ -5,7 +5,6 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/messagebus/messages/batchdocumentupdatemessage.h>
-#include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/updatedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/documentignoredreply.h>
@@ -140,19 +139,6 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context, const vespali
         }
     }
 
-    case DocumentProtocol::MESSAGE_MULTIOPERATION:
-    {
-        const MultiOperationMessage& mom = static_cast<const MultiOperationMessage&>(msg);
-        for (vdslib::DocumentList::const_iterator iter = mom.getOperations().begin();
-             iter != mom.getOperations().end();
-             iter++) {
-            document::Document::UP doc = iter->getDocument();
-            if (it->second->contains(*doc) == Result::False) {
-                return false;
-            }
-        }
-        return true;
-    }
     case DocumentProtocol::MESSAGE_BATCHDOCUMENTUPDATE:
     {
         const BatchDocumentUpdateMessage& mom = static_cast<const BatchDocumentUpdateMessage&>(msg);

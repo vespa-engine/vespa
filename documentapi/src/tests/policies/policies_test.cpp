@@ -17,7 +17,6 @@
 #include <vespa/messagebus/routing/routingtable.h>
 #include <vespa/messagebus/routing/policydirective.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vdslib/container/mutabledocumentlist.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
@@ -617,29 +616,6 @@ Test::testDocumentRouteSelector()
     frame.setMessage(std::move(put));
     EXPECT_TRUE(frame.testSelect( StringList().add("foo")));
 
-    {
-        vdslib::OperationList opList;
-
-        DocumentId id("doc:scheme:");
-        Document::UP doc(new Document(*_docType, id));
-        opList.addPut(std::move(doc));
-
-        document::BucketIdFactory factory;
-        put = frame.setMessage(MultiOperationMessage::create(_repo, factory.getBucketId(id), opList));
-        EXPECT_TRUE(frame.testSelect(StringList().add("foo")));
-    }
-
-    {
-        vdslib::OperationList opList;
-        DocumentId id("doc:scheme:");
-        Document::UP doc(new Document(*_repo->getDocumentType("other"), id));
-        opList.addPut(std::move(doc));
-
-        document::BucketIdFactory factory;
-        put = frame.setMessage(MultiOperationMessage::create(_repo, factory.getBucketId(id), opList));
-        EXPECT_TRUE(frame.testSelect(StringList().add("bar")));
-    }
-
     frame.setMessage(mbus::Message::UP(new RemoveDocumentMessage(DocumentId("doc:scheme:"))));
     EXPECT_TRUE(frame.testSelect(StringList().add("foo").add("bar")));
 
@@ -647,6 +623,7 @@ Test::testDocumentRouteSelector()
             make_shared<DocumentUpdate>(*_docType, DocumentId("doc:scheme:"))));
     EXPECT_TRUE(frame.testSelect(StringList().add("foo")));
 
+    put = make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("doc:scheme:")));
     frame.setMessage(std::move(put));
     EXPECT_TRUE(frame.testMergeOneReply("foo"));
 }

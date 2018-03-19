@@ -4,16 +4,13 @@
 #include "serializationhelper.h"
 #include "storagecommand.h"
 #include "storagereply.h"
-
-#include <vespa/storageapi/messageapi/storagemessage.h>
-#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/multioperation.h>
-#include <vespa/storageapi/message/batch.h>
+#include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/removelocation.h>
+#include <vespa/storageapi/message/batch.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/growablebytebuffer.h>
+
+
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -21,8 +18,7 @@ LOG_SETUP(".storage.api.mbusprot.serialization.base");
 
 namespace storage::mbusprot {
 
-ProtocolSerialization::ProtocolSerialization(
-        const document::DocumentTypeRepo::SP& repo)
+ProtocolSerialization::ProtocolSerialization(const document::DocumentTypeRepo::SP& repo)
     : _repo(repo)
 {
 }
@@ -118,12 +114,6 @@ ProtocolSerialization::encode(const api::StorageMessage& msg) const
     case api::MessageType::JOINBUCKETS_REPLY_ID:
         onEncode(buf, static_cast<const api::JoinBucketsReply&>(msg));
         break;
-    case api::MessageType::MULTIOPERATION_ID:
-        onEncode(buf, static_cast<const api::MultiOperationCommand&>(msg));
-        break;
-    case api::MessageType::MULTIOPERATION_REPLY_ID:
-        onEncode(buf, static_cast<const api::MultiOperationReply&>(msg));
-        break;
     case api::MessageType::VISITOR_CREATE_ID:
         onEncode(buf, static_cast<const api::CreateVisitorCommand&>(msg));
         break;
@@ -209,8 +199,6 @@ ProtocolSerialization::decodeCommand(mbus::BlobRef data) const
         cmd = onDecodeSplitBucketCommand(buf); break;
     case api::MessageType::JOINBUCKETS_ID:
         cmd = onDecodeJoinBucketsCommand(buf); break;
-    case api::MessageType::MULTIOPERATION_ID:
-        cmd = onDecodeMultiOperationCommand(buf); break;
     case api::MessageType::VISITOR_CREATE_ID:
         cmd = onDecodeCreateVisitorCommand(buf); break;
     case api::MessageType::VISITOR_DESTROY_ID:
@@ -228,12 +216,11 @@ ProtocolSerialization::decodeCommand(mbus::BlobRef data) const
         throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
     }
     }
-    return StorageCommand::UP(new StorageCommand(SCmd::SP(cmd.release())));
+    return std::make_unique<StorageCommand>(std::move(cmd));
 }
 
 StorageReply::UP
-ProtocolSerialization::decodeReply(mbus::BlobRef data,
-                                      const api::StorageCommand& cmd) const
+ProtocolSerialization::decodeReply(mbus::BlobRef data, const api::StorageCommand& cmd) const
 {
     LOG(spam, "Decode %d bytes of data.", data.size());
     if (data.size() < sizeof(int32_t)) {
@@ -276,8 +263,6 @@ ProtocolSerialization::decodeReply(mbus::BlobRef data,
         reply = onDecodeSplitBucketReply(cmd, buf); break;
     case api::MessageType::JOINBUCKETS_REPLY_ID:
         reply = onDecodeJoinBucketsReply(cmd, buf); break;
-    case api::MessageType::MULTIOPERATION_REPLY_ID:
-        reply = onDecodeMultiOperationReply(cmd, buf); break;
     case api::MessageType::VISITOR_CREATE_REPLY_ID:
         reply = onDecodeCreateVisitorReply(cmd, buf); break;
     case api::MessageType::VISITOR_DESTROY_REPLY_ID:
@@ -295,7 +280,7 @@ ProtocolSerialization::decodeReply(mbus::BlobRef data,
         throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
     }
     }
-    return StorageReply::UP(new StorageReply(SRep::SP(reply.release())));
+    return std::make_unique<StorageReply>(std::move(reply));
 }
 
 }

@@ -2,7 +2,6 @@
 
 #include "visitormanager.h"
 #include "messages.h"
-#include "dumpvisitor.h"
 #include "dumpvisitorsingle.h"
 #include "countvisitor.h"
 #include "testvisitor.h"
@@ -52,13 +51,7 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
     framework::MilliSecTime waitTime(1000);
     _thread = _component.startThread(*this, maxProcessTime, waitTime);
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
-
-    // Register built-in visitors.
-    if (_component.isUpgradingToMajorVersion()) {
-        _visitorFactories["dumpvisitor"].reset(new DumpVisitorFactory);
-    } else {
-        _visitorFactories["dumpvisitor"].reset(new DumpVisitorSingleFactory);
-    }
+    _visitorFactories["dumpvisitor"].reset(new DumpVisitorSingleFactory);
     _visitorFactories["dumpvisitorsingle"].reset(new DumpVisitorSingleFactory);
     _visitorFactories["testvisitor"].reset(new TestVisitorFactory);
     _visitorFactories["countvisitor"].reset(new CountVisitorFactory);
@@ -185,8 +178,7 @@ VisitorManager::configure(std::unique_ptr<vespa::config::content::core::StorVisi
                     "No visitor threads configured. If you don't want visitors "
                     "to run, don't use visitormanager.", VESPA_STRLOC);
         }
-        _metrics->initThreads(config->visitorthreads,
-                              _component.getLoadTypes()->getMetricLoadTypes());
+        _metrics->initThreads(config->visitorthreads, _component.getLoadTypes()->getMetricLoadTypes());
         for (int32_t i=0; i<config->visitorthreads; ++i) {
             _visitorThread.push_back(std::make_pair(
                     std::shared_ptr<VisitorThread>(

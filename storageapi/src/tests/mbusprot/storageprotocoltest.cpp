@@ -5,7 +5,6 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/internal.h>
 #include <vespa/storageapi/message/removelocation.h>
-#include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/mbusprot/storageprotocol.h>
 #include <vespa/storageapi/mbusprot/storagecommand.h>
@@ -92,7 +91,6 @@ struct StorageProtocolTest : public CppUnit::TestFixture {
     void testSplitBucket51();
     void testSplitBucketChain51();
     void testJoinBuckets51();
-    void testMultiOperation51();
     void testBatchPutRemove51();
     void testCreateVisitor51();
     void testDestroyVisitor51();
@@ -135,7 +133,6 @@ struct StorageProtocolTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testCreateVisitor51);
     CPPUNIT_TEST(testDestroyVisitor51);
     CPPUNIT_TEST(testRemoveLocation51);
-    CPPUNIT_TEST(testMultiOperation51);
     CPPUNIT_TEST(testBatchPutRemove51);
     CPPUNIT_TEST(testInternalMessage);
     CPPUNIT_TEST(testSetBucketState51);
@@ -777,30 +774,6 @@ StorageProtocolTest::testApplyBucketDiff51()
     CPPUNIT_ASSERT_EQUAL(nodes, reply2->getNodes());
     CPPUNIT_ASSERT_EQUAL(entries, reply2->getDiff());
     CPPUNIT_ASSERT_EQUAL(1234u, reply2->getMaxBufferSize());
-
-    recordOutput(*cmd2);
-    recordOutput(*reply2);
-    recordSerialization50();
-}
-
-void
-StorageProtocolTest::testMultiOperation51()
-{
-    ScopedName test("testMultiOperation51");
-
-    document::BucketId bucketId(20, 0xf1f1f1f1f1ull);
-    document::Bucket bucket(makeDocumentBucket(bucketId));
-    DocumentTypeRepo::SP repo(new DocumentTypeRepo);
-    MultiOperationCommand::SP
-        cmd(new MultiOperationCommand(repo, bucket, 10000));
-    cmd->getOperations().addPut(*_testDoc);
-    MultiOperationCommand::SP cmd2(copyCommand(cmd, _version5_1));
-    CPPUNIT_ASSERT_EQUAL(bucketId, cmd2->getBucketId());
-    CPPUNIT_ASSERT_EQUAL(*_testDoc,
-                         *cmd2->getOperations().begin()->getDocument());
-
-    MultiOperationReply::SP reply(new MultiOperationReply(*cmd2));
-    MultiOperationReply::SP reply2(copyReply(reply));
 
     recordOutput(*cmd2);
     recordOutput(*reply2);

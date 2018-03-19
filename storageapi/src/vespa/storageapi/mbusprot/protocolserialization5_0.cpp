@@ -5,15 +5,14 @@
 #include "storagecommand.h"
 #include "storagereply.h"
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/multioperation.h>
+#include <vespa/storageapi/message/visitor.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <sstream>
 
 using document::BucketSpace;
 using document::FixedBucketSpaces;
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 document::Bucket
 ProtocolSerialization5_0::getBucket(document::ByteBuffer& buf) const
@@ -509,22 +508,6 @@ ProtocolSerialization5_0::onDecodeSplitBucketReply(const SCmd& cmd,
     return api::StorageReply::UP(msg.release());
 }
 
-void ProtocolSerialization5_0::onEncode(
-        GBBuf& buf, const api::MultiOperationReply& msg) const
-{
-    onEncodeBucketInfoReply(buf, msg);
-}
-
-api::StorageReply::UP
-ProtocolSerialization5_0::onDecodeMultiOperationReply(const SCmd& cmd,
-                                                      BBuf& buf) const
-{
-    api::MultiOperationReply::UP msg(new api::MultiOperationReply(
-                static_cast<const api::MultiOperationCommand&>(cmd)));
-    onDecodeBucketInfoReply(buf, *msg);
-    return api::StorageReply::UP(msg.release());
-}
-
 void
 ProtocolSerialization5_0::onEncode(
         GBBuf& buf, const api::JoinBucketsCommand& msg) const
@@ -612,8 +595,7 @@ ProtocolSerialization5_0::onDecodeBucketReply(
 }
 
 void
-ProtocolSerialization5_0::onEncode(
-        GBBuf& buf, const api::CreateVisitorReply& msg) const
+ProtocolSerialization5_0::onEncode(GBBuf& buf, const api::CreateVisitorReply& msg) const
 {
     onEncodeReply(buf, msg);
     buf.putInt(msg.getVisitorStatistics().getBucketsVisited());
@@ -707,5 +689,4 @@ ProtocolSerialization5_0::onDecodeCreateVisitorCommand(BBuf& buf) const
     return cvc;
 }
 
-} // mbusprot
-} // storage
+}

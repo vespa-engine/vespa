@@ -32,7 +32,6 @@ public:
     MessageTracker::UP handleRemove(api::RemoveCommand& cmd);
     MessageTracker::UP handleUpdate(api::UpdateCommand& cmd);
     MessageTracker::UP handleGet(api::GetCommand& cmd);
-    MessageTracker::UP handleMultiOperation(api::MultiOperationCommand& cmd);
     MessageTracker::UP handleRevert(api::RevertCommand& cmd);
     MessageTracker::UP handleCreateBucket(api::CreateBucketCommand& cmd);
     MessageTracker::UP handleDeleteBucket(api::DeleteBucketCommand& cmd);

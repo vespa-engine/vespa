@@ -123,7 +123,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
 
         std::unique_ptr<api::StorageCommand> cmd;
         try {
-            cmd = _docApiConverter.toStorageAPI(static_cast<documentapi::DocumentMessage&>(*docMsgPtr), _component.getTypeRepo());
+            cmd = _docApiConverter.toStorageAPI(static_cast<documentapi::DocumentMessage&>(*docMsgPtr));
         } catch (document::UnknownBucketSpaceException& e) {
             fail_with_unresolvable_bucket_space(std::move(docMsgPtr), e.getMessage());
             return;
@@ -577,7 +577,7 @@ CommunicationManager::sendCommand(
     {
         MBUS_TRACE(msg->getTrace(), 7, "Communication manager: Converting storageapi message to documentapi");
 
-        std::unique_ptr<mbus::Message> mbusMsg(_docApiConverter.toDocumentAPI(*msg, _component.getTypeRepo()));
+        std::unique_ptr<mbus::Message> mbusMsg(_docApiConverter.toDocumentAPI(*msg));
 
         if (mbusMsg.get()) {
             MBUS_TRACE(msg->getTrace(), 7, "Communication manager: Converted OK");

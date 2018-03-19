@@ -3,8 +3,7 @@
 
 #include "protocolserialization.h"
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 class ProtocolSerialization4_2 : public ProtocolSerialization {
 public:
@@ -22,7 +21,6 @@ protected:
     void onEncode(GBBuf&, const api::NotifyBucketChangeCommand&) const override;
     void onEncode(GBBuf&, const api::NotifyBucketChangeReply&) const override;
     void onEncode(GBBuf&, const api::SplitBucketCommand&) const override;
-    void onEncode(GBBuf&, const api::MultiOperationCommand&) const override;
     void onEncode(GBBuf&, const api::CreateVisitorCommand&) const override;
     void onEncode(GBBuf&, const api::DestroyVisitorCommand&) const override;
     void onEncode(GBBuf&, const api::DestroyVisitorReply&) const override;
@@ -55,7 +53,6 @@ protected:
     SCmd::UP onDecodeSplitBucketCommand(BBuf&) const override;
     SCmd::UP onDecodeSetBucketStateCommand(BBuf&) const override;
     SRep::UP onDecodeSetBucketStateReply(const SCmd&, BBuf&) const override;
-    SCmd::UP onDecodeMultiOperationCommand(BBuf&) const override;
     SCmd::UP onDecodeCreateVisitorCommand(BBuf&) const override;
     SCmd::UP onDecodeDestroyVisitorCommand(BBuf&) const override;
     SRep::UP onDecodeDestroyVisitorReply(const SCmd&, BBuf&) const override;
@@ -74,6 +71,4 @@ protected:
     virtual void onDecodeDiffEntry(BBuf&, api::GetBucketDiffCommand::Entry&) const;
 };
 
-} // mbusprot
-} // storage
-
+}
