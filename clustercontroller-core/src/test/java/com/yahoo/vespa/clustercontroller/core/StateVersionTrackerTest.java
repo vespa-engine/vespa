@@ -277,10 +277,19 @@ public class StateVersionTrackerTest {
         when(distributorNode.isDistributor()).thenReturn(true);
         assertFalse(tracker.bucketSpaceMergeCompletionStateHasChanged());
 
+        // Set baseline state
         tracker.updateLatestCandidateStateBundle(ClusterStateBundle
                 .ofBaselineOnly(stateWithoutAnnotations("distributor:1 storage:1")));
         tracker.promoteCandidateToVersionedState(1234);
         assertFalse(tracker.bucketSpaceMergeCompletionStateHasChanged());
+
+        // Current node not in previous stats
+        tracker.handleUpdatedHostInfo(distributorNode, createHostInfo(0));
+        assertTrue(tracker.bucketSpaceMergeCompletionStateHasChanged());
+
+        // Sync aggregated stats
+        tracker.updateLatestCandidateStateBundle(ClusterStateBundle
+                .ofBaselineOnly(stateWithoutAnnotations("distributor:1 storage:1")));
 
         // Give 'global' bucket space no buckets pending, which is the same as previous stats
         tracker.handleUpdatedHostInfo(distributorNode, createHostInfo(0));

@@ -53,7 +53,7 @@ public class ClusterStatsChangeTracker {
                 if (prevValue != currValue) {
                     return true;
                 }
-            } else if (currValue) {
+            } else {
                 return true;
             }
         }
