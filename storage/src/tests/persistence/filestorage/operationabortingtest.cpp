@@ -43,10 +43,8 @@ public:
           _deleteBucketInvocations(0)
     {}
 
-    spi::Result put(const spi::Bucket& bucket,
-                    spi::Timestamp timestamp,
-                    const document::Document::SP& doc,
-                    spi::Context& context) override
+    spi::Result put(const spi::Bucket& bucket, spi::Timestamp timestamp,
+                    const document::Document::SP& doc, spi::Context& context) override
     {
         (void) bucket;
         (void) timestamp;
@@ -90,26 +88,20 @@ public:
 
     void setupDisks(uint32_t diskCount, uint32_t queueBarrierThreads) {
         FileStorTestFixture::setupDisks(diskCount);
-        _dummyProvider.reset(new spi::dummy::DummyPersistence(
-                        _node->getTypeRepo(), diskCount));
+        _dummyProvider.reset(new spi::dummy::DummyPersistence(_node->getTypeRepo(), diskCount));
         _queueBarrier.reset(new vespalib::Barrier(queueBarrierThreads));
         _completionBarrier.reset(new vespalib::Barrier(2));
-        _blockingProvider = new BlockingMockProvider(*_dummyProvider,
-                *_queueBarrier, *_completionBarrier);
-            
-        _node->setPersistenceProvider(
-                spi::PersistenceProvider::UP(_blockingProvider));
+        _blockingProvider = new BlockingMockProvider(*_dummyProvider, *_queueBarrier, *_completionBarrier);
+        _node->setPersistenceProvider(spi::PersistenceProvider::UP(_blockingProvider));
     }
 
-    void validateReplies(DummyStorageLink& link,
-                         size_t repliesTotal,
+    void validateReplies(DummyStorageLink& link, size_t repliesTotal,
                          const std::vector<document::BucketId>& okReplies,
                          const std::vector<document::BucketId>& abortedGetDiffs);
 
-    void doTestSpecificOperationsNotAborted(
-            const char* testName,
-            const std::vector<api::StorageMessage::SP>& msgs,
-            bool shouldCreateBucketInitially);
+    void doTestSpecificOperationsNotAborted(const char* testName,
+                                            const std::vector<api::StorageMessage::SP>& msgs,
+                                            bool shouldCreateBucketInitially);
 
     api::BucketInfo getBucketInfoFromDB(const document::BucketId&) const;
 
@@ -138,8 +130,7 @@ namespace {
 template <typename T, typename Collection>
 bool
 existsIn(const T& elem, const Collection& collection) {
-    return (std::find(collection.begin(), collection.end(), elem)
-            != collection.end());
+    return (std::find(collection.begin(), collection.end(), elem) != collection.end());
 }
 
 }
@@ -150,18 +141,15 @@ OperationAbortingTest::setUp()
 }
 
 void
-OperationAbortingTest::validateReplies(
-        DummyStorageLink& link,
-        size_t repliesTotal,
-        const std::vector<document::BucketId>& okReplies,
-        const std::vector<document::BucketId>& abortedGetDiffs)
+OperationAbortingTest::validateReplies(DummyStorageLink& link, size_t repliesTotal,
+                                       const std::vector<document::BucketId>& okReplies,
+                                       const std::vector<document::BucketId>& abortedGetDiffs)
 {
     link.waitForMessages(repliesTotal, MSG_WAIT_TIME);
     CPPUNIT_ASSERT_EQUAL(repliesTotal, link.getNumReplies());
 
     for (uint32_t i = 0; i < repliesTotal; ++i) {
-        api::StorageReply& reply(
-                dynamic_cast<api::StorageReply&>(*link.getReply(i)));
+        api::StorageReply& reply(dynamic_cast<api::StorageReply&>(*link.getReply(i)));
         LOG(info, "Checking reply %s", reply.toString(true).c_str());
         switch (static_cast<uint32_t>(reply.getType().getId())) {
         case api::MessageType::PUT_REPLY_ID:
@@ -222,11 +210,8 @@ template <typename Container>
 AbortBucketOperationsCommand::SP
 makeAbortCmd(const Container& buckets)
 {
-    std::unique_ptr<AbortBucketOperationsCommand::AbortPredicate> pred(
-            new ExplicitBucketSetPredicate(buckets.begin(), buckets.end()));
-    AbortBucketOperationsCommand::SP cmd(
-            new AbortBucketOperationsCommand(std::move(pred)));
-    return cmd;
+    auto pred = std::make_unique<ExplicitBucketSetPredicate>(buckets.begin(), buckets.end());
+    return std::make_shared<AbortBucketOperationsCommand>(std::move(pred));
 }
 
 }
@@ -320,8 +305,7 @@ public:
 void
 OperationAbortingTest::testWaitForCurrentOperationCompletionForAbortedBucket()
 {
-    uint32_t queueBarrierThreads = 3;
-    setupDisks(1, queueBarrierThreads);
+    setupDisks(1, 3);
     TestFileStorComponents c(*this, "testWaitForCurrentOperationCompletionForAbortedBucket");
 
     document::BucketId bucket(16, 1);
@@ -350,10 +334,8 @@ OperationAbortingTest::testWaitForCurrentOperationCompletionForAbortedBucket()
     // reply, as it must finish processing fully before the abort returns.
     c.top.waitForMessages(2, MSG_WAIT_TIME);
     CPPUNIT_ASSERT_EQUAL(size_t(2), c.top.getNumReplies());
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::PUT_REPLY,
-                         c.top.getReply(0)->getType());
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::INTERNAL_REPLY,
-                         c.top.getReply(1)->getType());
+    CPPUNIT_ASSERT_EQUAL(api::MessageType::PUT_REPLY, c.top.getReply(0)->getType());
+    CPPUNIT_ASSERT_EQUAL(api::MessageType::INTERNAL_REPLY, c.top.getReply(1)->getType());
 }
 
 void
@@ -364,10 +346,7 @@ OperationAbortingTest::testDoNotAbortCreateBucketCommands()
     msgs.push_back(api::StorageMessage::SP(new api::CreateBucketCommand(makeDocumentBucket(bucket))));
 
     bool shouldCreateBucketInitially(false);
-    doTestSpecificOperationsNotAborted(
-            "testDoNotAbortCreateBucketCommands",
-            msgs,
-            shouldCreateBucketInitially);
+    doTestSpecificOperationsNotAborted("testDoNotAbortCreateBucketCommands", msgs, shouldCreateBucketInitially);
 }
 
 void
@@ -378,18 +357,14 @@ OperationAbortingTest::testDoNotAbortRecheckBucketCommands()
     msgs.push_back(api::StorageMessage::SP(new RecheckBucketInfoCommand(makeDocumentBucket(bucket))));
 
     bool shouldCreateBucketInitially(true);
-    doTestSpecificOperationsNotAborted(
-            "testDoNotAbortRecheckBucketCommands",
-            msgs,
-            shouldCreateBucketInitially);
+    doTestSpecificOperationsNotAborted("testDoNotAbortRecheckBucketCommands", msgs, shouldCreateBucketInitially);
 }
 
 api::BucketInfo
 OperationAbortingTest::getBucketInfoFromDB(const document::BucketId& id) const
 {
     StorBucketDatabase::WrappedEntry entry(
-            _node->getStorageBucketDatabase().get(id, "foo",
-                    StorBucketDatabase::CREATE_IF_NONEXISTING));
+            _node->getStorageBucketDatabase().get(id, "foo", StorBucketDatabase::CREATE_IF_NONEXISTING));
     CPPUNIT_ASSERT(entry.exist());
     return entry->info;
 }
@@ -403,20 +378,15 @@ OperationAbortingTest::testDoNotAbortDeleteBucketCommands()
     msgs.push_back(cmd);
 
     bool shouldCreateBucketInitially(true);
-    doTestSpecificOperationsNotAborted(
-            "testDoNotAbortRecheckBucketCommands",
-            msgs,
-            shouldCreateBucketInitially);
+    doTestSpecificOperationsNotAborted("testDoNotAbortRecheckBucketCommands", msgs, shouldCreateBucketInitially);
 }
 
 void
-OperationAbortingTest::doTestSpecificOperationsNotAborted(
-        const char* testName,
-        const std::vector<api::StorageMessage::SP>& msgs,
-        bool shouldCreateBucketInitially)
+OperationAbortingTest::doTestSpecificOperationsNotAborted(const char* testName,
+                                                          const std::vector<api::StorageMessage::SP>& msgs,
+                                                          bool shouldCreateBucketInitially)
 {
-    uint32_t queueBarrierThreads = 2;
-    setupDisks(1, queueBarrierThreads);
+    setupDisks(1, 2);
     TestFileStorComponents c(*this, testName);
     document::BucketId bucket(16, 1);
     document::BucketId blockerBucket(16, 2);    
@@ -443,8 +413,7 @@ OperationAbortingTest::doTestSpecificOperationsNotAborted(
             break;
         case api::MessageType::DELETEBUCKET_ID:
             {
-                api::DeleteBucketCommand& delCmd(
-                        dynamic_cast<api::DeleteBucketCommand&>(*msgs[i]));
+                api::DeleteBucketCommand& delCmd(dynamic_cast<api::DeleteBucketCommand&>(*msgs[i]));
                 delCmd.setBucketInfo(getBucketInfoFromDB(delCmd.getBucketId()));
             }
             ++expectedDeleteBuckets;
@@ -473,8 +442,7 @@ OperationAbortingTest::doTestSpecificOperationsNotAborted(
     c.sendDummyGet(blockerBucket);
 
     // put+abort+get + any other creates/deletes/rechecks
-    size_t expectedMsgs(3 + expectedCreateBuckets + expectedDeleteBuckets
-                        + expectedRecheckReplies);
+    size_t expectedMsgs(3 + expectedCreateBuckets + expectedDeleteBuckets + expectedRecheckReplies);
     LOG(info, "barrier passed, waiting for %zu replies", expectedMsgs);
 
     std::vector<document::BucketId> okReplies;
@@ -483,13 +451,10 @@ OperationAbortingTest::doTestSpecificOperationsNotAborted(
     std::vector<document::BucketId> abortedGetDiffs;
     validateReplies(c.top, expectedMsgs, okReplies, abortedGetDiffs);
 
-    CPPUNIT_ASSERT_EQUAL(expectedBucketInfoInvocations,
-                         _blockingProvider->_bucketInfoInvocations);
+    CPPUNIT_ASSERT_EQUAL(expectedBucketInfoInvocations, _blockingProvider->_bucketInfoInvocations);
     CPPUNIT_ASSERT_EQUAL(expectedCreateBuckets + (shouldCreateBucketInitially ? 2 : 1),
                          _blockingProvider->_createBucketInvocations);
-    CPPUNIT_ASSERT_EQUAL(expectedDeleteBuckets,
-                         _blockingProvider->_deleteBucketInvocations);
+    CPPUNIT_ASSERT_EQUAL(expectedDeleteBuckets, _blockingProvider->_deleteBucketInvocations);
 }
-
-
+    
 } // storage
