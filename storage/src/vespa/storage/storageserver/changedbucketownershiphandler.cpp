@@ -3,6 +3,7 @@
 #include "changedbucketownershiphandler.h"
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/common/nodestateupdater.h>
@@ -58,16 +59,15 @@ ChangedBucketOwnershipHandler::reloadClusterState()
 {
     vespalib::LockGuard guard(_stateLock);
     const auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
-    lib::ClusterState::CSP newState(clusterStateBundle->getBaselineClusterState());
-    setCurrentOwnershipWithStateNoLock(*newState);
+    setCurrentOwnershipWithStateNoLock(*clusterStateBundle);
 }
 
 void
 ChangedBucketOwnershipHandler::setCurrentOwnershipWithStateNoLock(
-        const lib::ClusterState& newState)
+        const lib::ClusterStateBundle& newState)
 {
-    _currentState = std::make_shared<lib::ClusterState>(newState);
-    _currentOwnership = std::make_shared<OwnershipState>(
+    _currentState = std::make_shared<const lib::ClusterStateBundle>(newState);
+    _currentOwnership = std::make_shared<const OwnershipState>(
             _component.getBucketSpaceRepo(), _currentState);
 }
 
@@ -97,7 +97,7 @@ ChangedBucketOwnershipHandler::Metrics::Metrics(metrics::MetricSet* owner)
 ChangedBucketOwnershipHandler::Metrics::~Metrics() { }
 
 ChangedBucketOwnershipHandler::OwnershipState::OwnershipState(const ContentBucketSpaceRepo &contentBucketSpaceRepo,
-                                                              const lib::ClusterState::CSP& state)
+                                                              std::shared_ptr<const lib::ClusterStateBundle> state)
     : _distributions(),
       _state(state)
 {
@@ -113,6 +113,13 @@ ChangedBucketOwnershipHandler::OwnershipState::OwnershipState(const ContentBucke
 ChangedBucketOwnershipHandler::OwnershipState::~OwnershipState() {}
 
 
+const lib::ClusterState&
+ChangedBucketOwnershipHandler::OwnershipState::getBaselineState() const
+{
+    assert(valid());
+    return *_state->getBaselineClusterState();
+}
+
 uint16_t
 ChangedBucketOwnershipHandler::OwnershipState::ownerOf(
         const document::Bucket& bucket) const
@@ -120,8 +127,9 @@ ChangedBucketOwnershipHandler::OwnershipState::ownerOf(
     auto distributionItr = _distributions.find(bucket.getBucketSpace());
     assert(distributionItr != _distributions.end());
     const auto &distribution = *distributionItr->second;
+    const auto &derivedState = *_state->getDerivedClusterState(bucket.getBucketSpace());
     try {
-        return distribution.getIdealDistributorNode(*_state, bucket.getBucketId());
+        return distribution.getIdealDistributorNode(derivedState, bucket.getBucketId());
     } catch (lib::TooFewBucketBitsInUseException& e) {
         LOGBP(debug,
               "Too few bucket bits used for %s to be assigned to "
@@ -133,7 +141,7 @@ ChangedBucketOwnershipHandler::OwnershipState::ownerOf(
               "bucket owner; this should not happen as we explicitly check "
               "for available distributors before reaching this code path! "
               "Cluster state is '%s', distribution is '%s'",
-              _state->toString().c_str(),
+              derivedState.toString().c_str(),
               distribution.toString().c_str());
     } catch (const std::exception& e) {
         LOG(error,
@@ -188,7 +196,7 @@ public:
         : _oldState(oldState),
           _newState(newState),
           _allDistributorsHaveGoneDown(
-                  allDistributorsDownInState(newState.getState()))
+                  allDistributorsDownInState(newState.getBaselineState()))
     {
     }
 };
@@ -233,7 +241,7 @@ ChangedBucketOwnershipHandler::onSetSystemState(
     {
         vespalib::LockGuard guard(_stateLock);
         oldOwnership = _currentOwnership;
-        setCurrentOwnershipWithStateNoLock(stateCmd->getSystemState());
+        setCurrentOwnershipWithStateNoLock(stateCmd->getClusterStateBundle());
         newOwnership = _currentOwnership;
     }
     assert(newOwnership->valid());
@@ -245,13 +253,13 @@ ChangedBucketOwnershipHandler::onSetSystemState(
         return false;
     }
 
-    if (allDistributorsDownInState(oldOwnership->getState())) {
+    if (allDistributorsDownInState(oldOwnership->getBaselineState())) {
         LOG(debug, "No need to send aborts on transition '%s' -> '%s'",
-            oldOwnership->getState().toString().c_str(),
-            newOwnership->getState().toString().c_str());
+            oldOwnership->getBaselineState().toString().c_str(),
+            newOwnership->getBaselineState().toString().c_str());
         return false;
     }
-    logTransition(oldOwnership->getState(), newOwnership->getState());
+    logTransition(oldOwnership->getBaselineState(), newOwnership->getBaselineState());
 
     metrics::MetricTimer durationTimer;
     auto predicate(makeLazyAbortPredicate(oldOwnership, newOwnership));

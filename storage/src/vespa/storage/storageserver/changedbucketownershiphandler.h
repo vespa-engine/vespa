@@ -3,7 +3,6 @@
 
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storage/common/storagelink.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/metrics/metrics.h>
@@ -16,6 +15,11 @@
 #include <unordered_map>
 
 namespace storage {
+
+namespace lib {
+class ClusterState;
+class ClusterStateBundle;
+}
 
 /**
  * The changed bucket ownership handler is a storage link that synchronously
@@ -73,13 +77,13 @@ public:
     {
         using BucketSpace = document::BucketSpace;
         std::unordered_map<BucketSpace, std::shared_ptr<const lib::Distribution>, BucketSpace::hash> _distributions;
-        lib::ClusterState::CSP _state;
+        std::shared_ptr<const lib::ClusterStateBundle> _state;
     public:
         using SP = std::shared_ptr<OwnershipState>;
         using CSP = std::shared_ptr<const OwnershipState>;
 
         OwnershipState(const ContentBucketSpaceRepo &contentBucketSpaceRepo,
-                       const lib::ClusterState::CSP& state);
+                       std::shared_ptr<const lib::ClusterStateBundle> state);
         ~OwnershipState();
 
         static const uint16_t FAILED_TO_RESOLVE = 0xffff;
@@ -91,10 +95,7 @@ public:
         /**
          * Precondition: valid() == true.
          */
-        const lib::ClusterState& getState() const {
-            assert(valid());
-            return *_state;
-        }
+        const lib::ClusterState& getBaselineState() const;
 
         uint16_t ownerOf(const document::Bucket& bucket) const;
     };
@@ -111,7 +112,7 @@ private:
     Metrics _metrics;
     config::ConfigFetcher _configFetcher;
     vespalib::Lock _stateLock;
-    lib::ClusterState::CSP _currentState;
+    std::shared_ptr<const lib::ClusterStateBundle> _currentState;
     OwnershipState::CSP _currentOwnership;
 
     std::atomic<bool> _abortQueuedAndPendingOnStateChange;
@@ -130,7 +131,7 @@ private:
      * Creates a new immutable OwnershipState based on the current distribution
      * and the provided cluster state and assigns it to _currentOwnership.
      */
-    void setCurrentOwnershipWithStateNoLock(const lib::ClusterState&);
+    void setCurrentOwnershipWithStateNoLock(const lib::ClusterStateBundle&);
 
     /**
      * Grabs _stateLock and returns a shared_ptr to the current ownership
