@@ -21,7 +21,7 @@ class PersistenceThread final : public DiskThread, public Types
 public:
     PersistenceThread(ServiceLayerComponentRegister&, const config::ConfigUri & configUri,
                       spi::PersistenceProvider& provider, FileStorHandler& filestorHandler,
-                      FileStorThreadMetrics& metrics, uint16_t deviceIndex, uint8_t lowestPriority);
+                      FileStorThreadMetrics& metrics, uint16_t deviceIndex);
     ~PersistenceThread();
 
     /** Waits for current operation to be finished. */

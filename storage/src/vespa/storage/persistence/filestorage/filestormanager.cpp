@@ -117,37 +117,17 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
 
         _disks.resize(_component.getDiskCount());
 
-        _metrics->initDiskMetrics(
-                _disks.size(),
-                _component.getLoadTypes()->getMetricLoadTypes(),
-                (_config->threads.size() > 0) ? (_config->threads.size()) : 6);
+        size_t numThreads = (_config->numThreads) ? 6 : _config->numThreads;
+        _metrics->initDiskMetrics(_disks.size(), _component.getLoadTypes()->getMetricLoadTypes(), numThreads);
 
-        _filestorHandler.reset(new FileStorHandler(
-                *this, *_metrics, _partitions, _compReg,
-                _config->maxPriorityToBlock, _config->minPriorityToBeBlocking));
+        _filestorHandler.reset(new FileStorHandler(*this, *_metrics, _partitions, _compReg));
         for (uint32_t i=0; i<_component.getDiskCount(); ++i) {
             if (_partitions[i].isUp()) {
-                if (_config->threads.size() == 0) {
-                    LOG(spam, "Setting up disk %u", i);
-                    for (uint32_t j = 0; j < 4; j++) {
-                        _disks[i].push_back(DiskThread::SP(
-                                new PersistenceThread(_compReg, _configUri, *_provider, *_filestorHandler,
-                                                      *_metrics->disks[i]->threads[j], i, 255)));
-
-                    }
-                    for (uint32_t j = 4; j < 6; j++) {
-                        _disks[i].push_back(DiskThread::SP(
-                                new PersistenceThread(_compReg, _configUri, *_provider, *_filestorHandler,
-                                                      *_metrics->disks[i]->threads[j], i, 100)));
-                    }
-                }
-
-                for (uint16_t j = 0; j < _config->threads.size(); j++) {
-                    LOG(spam, "Setting up disk %u, thread %u with priority %d",
-                        i, j, _config->threads[j].lowestpri);
+                LOG(spam, "Setting up disk %u", i);
+                for (uint32_t j = 0; j < numThreads; j++) {
                     _disks[i].push_back(DiskThread::SP(
                             new PersistenceThread(_compReg, _configUri, *_provider, *_filestorHandler,
-                                                  *_metrics->disks[i]->threads[j], i, _config->threads[j].lowestpri)));
+                                                  *_metrics->disks[i]->threads[j], i)));
 
                 }
             } else {
