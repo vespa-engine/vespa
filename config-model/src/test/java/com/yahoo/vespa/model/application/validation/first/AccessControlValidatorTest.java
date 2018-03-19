@@ -117,6 +117,19 @@ public class AccessControlValidatorTest  {
         new AccessControlValidator().validate(model, deployState);
     }
 
+    @Test
+    public void write_protection_is_not_required_for_non_default_application_type() throws IOException, SAXException{
+        String servicesXml = joinLines("<services version='1.0' application-type='hosted-infrastructure'>",
+                                       "  <container id='default' version='1.0'>",
+                                       httpHandlerXml,
+                                       "  </container>",
+                                       "</services>");
+        DeployState deployState = deployState(servicesXml);
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
+
+        new AccessControlValidator().validate(model, deployState);
+    }
+
     private static DeployState deployState(String servicesXml) {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
