@@ -33,7 +33,7 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
     private final AthenzService service;
     private final String path;
     private final String trustStorePath;
-    AtomicReference<SSLContext> sslContext;
+    private final AtomicReference<SSLContext> sslContext = new AtomicReference<SSLContext>();
     private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(1);
 
     public SiaIdentityProvider(SiaProviderConfig siaProviderConfig) {
