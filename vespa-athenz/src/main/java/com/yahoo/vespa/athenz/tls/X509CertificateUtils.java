@@ -7,6 +7,8 @@ import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.util.io.pem.PemObject;
 
+import javax.naming.NamingException;
+import javax.naming.ldap.LdapName;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -14,6 +16,9 @@ import java.io.UncheckedIOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * @author bjorncs
@@ -51,5 +56,18 @@ public class X509CertificateUtils {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public static List<String> getCommonNames(X509Certificate certificate) {
+        try {
+            String subjectPrincipal = certificate.getSubjectX500Principal().getName();
+            return new LdapName(subjectPrincipal).getRdns().stream()
+                    .filter(rdn -> rdn.getType().equalsIgnoreCase("cn"))
+                    .map(rdn -> rdn.getValue().toString())
+                    .collect(toList());
+        } catch (NamingException e) {
+            throw new IllegalArgumentException("Invalid CN: " + e, e);
+        }
+
     }
 }
