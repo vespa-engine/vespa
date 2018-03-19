@@ -107,8 +107,7 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     config->set("minimum_file_meta_slots", "2");
     config->set("minimum_file_header_block_size", "368");
     config->set("minimum_file_size", "4096");
-    config->set("threads[1]");
-    config->set("threads[0].lowestpri 255");
+    config->set("num_threads", "1");
     config->set("dir_spread", "4");
     config->set("dir_levels", "0");
     config->set("maximum_versions_of_single_document_stored", "0");
