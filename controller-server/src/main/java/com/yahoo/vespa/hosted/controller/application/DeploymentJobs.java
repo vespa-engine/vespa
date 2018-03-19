@@ -67,7 +67,6 @@ public class DeploymentJobs {
     }
 
     public DeploymentJobs withTriggering(JobType jobType,
-                                         Change change,
                                          Version version,
                                          ApplicationVersion applicationVersion,
                                          String reason,

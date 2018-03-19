@@ -347,7 +347,6 @@ public class DeploymentTrigger {
                                reason));
         deploymentQueue.addJob(application.id(), jobType, first);
         return application.withJobTriggering(jobType,
-                                             application.change(),
                                              clock.instant(),
                                              application.deployVersionFor(jobType, controller),
                                              application.deployApplicationVersionFor(jobType, controller, false)

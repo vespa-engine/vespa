@@ -49,7 +49,7 @@ public class OutstandingChangeDeployerTest {
         tester.jobCompletion(DeploymentJobs.JobType.component)
               .application(tester.application("app1"))
               .sourceRevision(new SourceRevision("repository1","master", "cafed00d"))
-              .buildNumber(43)
+              .nextBuildNumber()
               .uploadArtifact(applicationPackage)
               .submit();
 

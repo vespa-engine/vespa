@@ -305,7 +305,7 @@ public class DeploymentTriggerTest {
         ApplicationPackage changedApplication = applicationPackageBuilder.searchDefinition(searchDefinition).build();
         tester.jobCompletion(component)
               .application(app)
-              .buildNumber(43)
+              .nextBuildNumber()
               .sourceRevision(new SourceRevision("repository1", "master", "cafed00d"))
               .uploadArtifact(changedApplication)
               .submit();

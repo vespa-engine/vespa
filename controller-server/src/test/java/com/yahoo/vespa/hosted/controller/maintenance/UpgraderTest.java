@@ -532,12 +532,12 @@ public class UpgraderTest {
 
         // Multiple application changes are triggered and fail, but does not affect version confidence as upgrade has
         // completed successfully
-        tester.jobCompletion(component).application(default0).buildNumber(43).uploadArtifact(canaryPolicy).unsuccessful().submit();
-        tester.jobCompletion(component).application(default1).buildNumber(43).uploadArtifact(canaryPolicy).unsuccessful().submit();
-        tester.jobCompletion(component).application(default2).buildNumber(43).uploadArtifact(defaultPolicy).submit();
-        tester.jobCompletion(component).application(default3).buildNumber(43).uploadArtifact(defaultPolicy).submit();
-        tester.jobCompletion(component).application(default2).buildNumber(44).uploadArtifact(canaryPolicy).unsuccessful().submit();
-        tester.jobCompletion(component).application(default3).buildNumber(44).uploadArtifact(canaryPolicy).unsuccessful().submit();
+        tester.jobCompletion(component).application(default0).nextBuildNumber().uploadArtifact(canaryPolicy).unsuccessful().submit();
+        tester.jobCompletion(component).application(default1).nextBuildNumber().uploadArtifact(canaryPolicy).unsuccessful().submit();
+        tester.jobCompletion(component).application(default2).nextBuildNumber().uploadArtifact(defaultPolicy).submit();
+        tester.jobCompletion(component).application(default3).nextBuildNumber().uploadArtifact(defaultPolicy).submit();
+        tester.jobCompletion(component).application(default2).nextBuildNumber().uploadArtifact(canaryPolicy).unsuccessful().submit();
+        tester.jobCompletion(component).application(default3).nextBuildNumber(2).uploadArtifact(canaryPolicy).unsuccessful().submit();
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
     }
@@ -869,7 +869,7 @@ public class UpgraderTest {
         tester.deployAndNotify(app, applicationPackage, false, productionUsWest1);
 
         // New application change
-        tester.jobCompletion(component).application(app).buildNumber(43).uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         String applicationVersion = "1.0.43-commit1";
 
         // Application change recorded together with ongoing upgrade

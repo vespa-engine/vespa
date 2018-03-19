@@ -67,10 +67,10 @@ public class LockedApplication extends Application {
         );
     }
 
-    public LockedApplication withJobTriggering(JobType type, Change change, Instant triggerTime,
+    public LockedApplication withJobTriggering(JobType type, Instant triggerTime,
                                                Version version, ApplicationVersion applicationVersion,
                                                String reason) {
-        return new LockedApplication(new Builder(this).with(deploymentJobs().withTriggering(type, change, version, applicationVersion, reason, triggerTime)));
+        return new LockedApplication(new Builder(this).with(deploymentJobs().withTriggering(type, version, applicationVersion, reason, triggerTime)));
     }
 
     public LockedApplication withNewDeployment(ZoneId zone, ApplicationVersion applicationVersion, Version version,
