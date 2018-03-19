@@ -77,14 +77,14 @@ public class ClusterStatsChangeTrackerTest {
     }
 
     @Test
-    public void stats_have_not_changed_if_all_nodes_in_sync_and_nothing_previous() {
-        Fixture f = Fixture.fromStats(stats().inSync(0).inSync(1));
-        assertFalse(f.statsHaveChanged());
+    public void stats_have_changed_if_in_sync_node_not_found_in_previous_stats() {
+        Fixture f = Fixture.fromStats(stats().inSync(0));
+        assertTrue(f.statsHaveChanged());
     }
 
     @Test
-    public void stats_have_changed_if_one_node_with_buckets_pending_and_nothing_previous() {
-        Fixture f = Fixture.fromStats(stats().inSync(0).bucketsPending(1));
+    public void stats_have_changed_if_buckets_pending_node_not_found_in_previous_stats() {
+        Fixture f = Fixture.fromStats(stats().bucketsPending(0));
         assertTrue(f.statsHaveChanged());
     }
 
