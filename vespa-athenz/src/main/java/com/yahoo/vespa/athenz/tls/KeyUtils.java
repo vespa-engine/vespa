@@ -14,10 +14,16 @@ public class KeyUtils {
     public static KeyPair generateKeypair(KeyAlgorithm algorithm, int keySize) {
         try {
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm.getAlgorithmName());
-            keyGen.initialize(keySize);
+            if (keySize != -1) {
+                keyGen.initialize(keySize);
+            }
             return keyGen.genKeyPair();
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static KeyPair generateKeypair(KeyAlgorithm algorithm) {
+        return generateKeypair(algorithm, -1);
     }
 }
