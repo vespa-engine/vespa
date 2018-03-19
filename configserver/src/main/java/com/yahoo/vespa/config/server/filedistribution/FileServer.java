@@ -21,6 +21,7 @@ import com.yahoo.vespa.filedistribution.CompressedFileReference;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDataBlob;
+import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.yolean.Exceptions;
 
@@ -148,27 +149,32 @@ public class FileServer {
     private void serveFile(String fileReference, Request request, Receiver receiver) {
         FileApiErrorCodes result;
         try {
-            log.log(LogLevel.DEBUG, () -> "Received request for reference '" + fileReference + "'");
+            log.log(LogLevel.DEBUG, () -> "Received request for reference '" + fileReference + "' from " + request.target());
             result = hasFile(fileReference)
                     ? FileApiErrorCodes.OK
                     : FileApiErrorCodes.NOT_FOUND;
             if (result == FileApiErrorCodes.OK) {
                 startFileServing(fileReference, receiver);
             } else {
-                download(new FileReference(fileReference));
+                // Non-zero second parameter means that the request should never lead
+                // to a new download typically because the request comes from another config server.
+                // This is to avoid config servers asking each other for a file that does not exist
+                if (request.parameters().size() == 1 || request.parameters().get(1).asInt32() == 0) {
+                    log.log(LogLevel.DEBUG, "File not found, downloading from another source");
+                    downloader.getFile(new FileReferenceDownload(new FileReference(fileReference), false /* downloadFromOtherSourceIfNotFound */));
+                } else {
+                    log.log(LogLevel.DEBUG, "File not found, will not download from another source since request came from another config server");
+                    result = FileApiErrorCodes.NOT_FOUND;
+                }
             }
         } catch (IllegalArgumentException e) {
             result = FileApiErrorCodes.NOT_FOUND;
-            log.warning("Failed serving file reference '" + fileReference + "' with error " + e.toString());
+            log.warning("Failed serving file reference '" + fileReference + "', request was from " + request.target() + ", with error " + e.toString());
         }
         request.returnValues()
                 .add(new Int32Value(result.getCode()))
                 .add(new StringValue(result.getDescription()));
         request.returnRequest();
-    }
-
-    public void download(FileReference fileReference) {
-        downloader.getFile(fileReference);
     }
 
     public FileDownloader downloader() {

@@ -6,6 +6,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.jrt.ErrorCode;
+import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.log.LogLevel;
@@ -58,7 +59,7 @@ public class FileReferenceDownloader {
         boolean downloadStarted = false;
         while ((System.currentTimeMillis() < end) && !downloadStarted) {
             try {
-                if (startDownloadRpc(fileReference)) {
+                if (startDownloadRpc(fileReferenceDownload)) {
                     downloadStarted = true;
                 } else {
                     Thread.sleep(sleepBetweenRetries.toMillis());
@@ -109,19 +110,21 @@ public class FileReferenceDownloader {
         }
     }
 
-    private boolean startDownloadRpc(FileReference fileReference) {
+    private boolean startDownloadRpc(FileReferenceDownload fileReferenceDownload) {
         Connection connection = connectionPool.getCurrent();
         Request request = new Request("filedistribution.serveFile");
-        request.parameters().add(new StringValue(fileReference.value()));
+        String fileReference = fileReferenceDownload.fileReference().value();
+        request.parameters().add(new StringValue(fileReference));
+        request.parameters().add(new Int32Value(fileReferenceDownload.downloadFromOtherSourceIfNotFound() ? 0 : 1));
 
         execute(request, connection);
         if (validateResponse(request)) {
             log.log(LogLevel.DEBUG, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection);
             if (request.returnValues().get(0).asInt32() == 0) {
-                log.log(LogLevel.DEBUG, () -> "Found file reference '" + fileReference.value() + "' available at " + connection.getAddress());
+                log.log(LogLevel.DEBUG, () -> "Found file reference '" + fileReference + "' available at " + connection.getAddress());
                 return true;
             } else {
-                log.log(LogLevel.DEBUG, "File reference '" + fileReference.value() + "' not found for " + connection.getAddress());
+                log.log(LogLevel.DEBUG, "File reference '" + fileReference + "' not found for " + connection.getAddress());
                 connectionPool.setNewCurrentConnection();
                 return false;
             }

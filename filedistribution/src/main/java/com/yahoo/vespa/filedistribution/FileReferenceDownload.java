@@ -8,19 +8,33 @@ import com.yahoo.config.FileReference;
 import java.io.File;
 import java.util.Optional;
 
-class FileReferenceDownload {
+public class FileReferenceDownload {
+
     private final FileReference fileReference;
     private final SettableFuture<Optional<File>> future;
+    // If a config server wants to download from another config server (because it does not have the
+    // file itself) we set this flag to true to avoid an eternal loop
+    private final boolean downloadFromOtherSourceIfNotFound;
 
-    FileReferenceDownload(FileReference fileReference, SettableFuture<Optional<File>> future) {
+    public FileReferenceDownload(FileReference fileReference) {
+        this(fileReference, true);
+    }
+
+    public FileReferenceDownload(FileReference fileReference, boolean downloadFromOtherSourceIfNotFound) {
         this.fileReference = fileReference;
-        this.future = future;
+        this.future = SettableFuture.create();
+        this.downloadFromOtherSourceIfNotFound = downloadFromOtherSourceIfNotFound;
     }
 
     FileReference fileReference() {
         return fileReference;
     }
+
     SettableFuture<Optional<File>> future() {
         return future;
+    }
+
+    boolean downloadFromOtherSourceIfNotFound() {
+        return downloadFromOtherSourceIfNotFound;
     }
 }
