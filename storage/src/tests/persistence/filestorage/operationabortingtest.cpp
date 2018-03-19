@@ -234,8 +234,7 @@ makeAbortCmd(const Container& buckets)
 void
 OperationAbortingTest::testAbortMessageClearsRelevantQueuedOperations()
 {
-    uint32_t queueBarrierThreads = 2;
-    setupDisks(1, queueBarrierThreads);
+    setupDisks(1, 2);
     TestFileStorComponents c(*this, "testAbortMessageClearsRelevantQueuedOperations");
     document::BucketId bucket(16, 1);
     createBucket(bucket);
