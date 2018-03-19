@@ -5,12 +5,12 @@ import com.google.inject.Inject;
 import com.yahoo.athenz.auth.Principal;
 import com.yahoo.athenz.auth.impl.PrincipalAuthority;
 import com.yahoo.athenz.auth.impl.SimplePrincipal;
-import com.yahoo.athenz.auth.impl.SimpleServiceIdentityProvider;
 import com.yahoo.athenz.auth.token.PrincipalToken;
 import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.athenz.zms.ZMSClient;
 import com.yahoo.athenz.zts.ZTSClient;
 import com.yahoo.container.jdisc.Ckms;
+import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
@@ -19,21 +19,21 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZtsClient;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
 import java.security.PrivateKey;
-import java.time.Duration;
 
 /**
  * @author bjorncs
  */
-// TODO Use SiaIdentityProvider
 public class AthenzClientFactoryImpl implements AthenzClientFactory {
 
     private final Ckms ckms;
     private final AthenzConfig config;
     private final AthenzPrincipalAuthority athenzPrincipalAuthority;
+    private final AthenzIdentityProvider identityProvider;
 
     @Inject
-    public AthenzClientFactoryImpl(Ckms ckms, AthenzConfig config) {
+    public AthenzClientFactoryImpl(Ckms ckms, AthenzIdentityProvider identityProvider, AthenzConfig config) {
         this.ckms = ckms;
+        this.identityProvider = identityProvider;
         this.config = config;
         this.athenzPrincipalAuthority = new AthenzPrincipalAuthority(config.principalHeaderName());
     }
@@ -43,7 +43,7 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
      */
     @Override
     public ZmsClient createZmsClientWithServicePrincipal() {
-        return new ZmsClientImpl(new ZMSClient(config.zmsUrl(), createServicePrincipal()), config);
+        return new ZmsClientImpl(new ZMSClient(config.zmsUrl(), identityProvider.getIdentitySslContext()), config);
     }
 
     /**
@@ -51,7 +51,7 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
      */
     @Override
     public ZtsClient createZtsClientWithServicePrincipal() {
-        return new ZtsClientImpl(new ZTSClient(config.ztsUrl(), createServicePrincipal()), getServicePrivateKey(), config);
+        return new ZtsClientImpl(new ZTSClient(config.ztsUrl(), identityProvider.getIdentitySslContext()), config);
     }
 
     /**
@@ -66,22 +66,8 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
 
         Principal dualPrincipal = SimplePrincipal.create(
                 AthenzIdentities.USER_PRINCIPAL_DOMAIN.getName(), signedToken.getName(), signedToken.getSignedToken(), athenzPrincipalAuthority);
-        return new ZmsClientImpl(new ZMSClient(config.zmsUrl(), dualPrincipal), config);
+        return new ZmsClientImpl(new ZMSClient(config.legacyZmsUrl(), dualPrincipal), config);
 
-    }
-
-    private Principal createServicePrincipal() {
-        AthenzConfig.Service service = config.service();
-        // TODO bjorncs: Cache principal token
-        SimpleServiceIdentityProvider identityProvider =
-                new SimpleServiceIdentityProvider(
-                        athenzPrincipalAuthority,
-                        config.domain(),
-                        service.name(),
-                        getServicePrivateKey(),
-                        service.publicKeyId(),
-                        Duration.ofMinutes(service.credentialsExpiryMinutes()).getSeconds());
-        return identityProvider.getIdentity(config.domain(), service.name());
     }
 
     private PrivateKey getServicePrivateKey() {

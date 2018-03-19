@@ -3,9 +3,14 @@ namespace=vespa.hosted.controller.athenz.config
 
 # Principal header name
 principalHeaderName             string  default="Athenz-Principal-Auth"
+# TODO Remove once migrated to Okta
 
 # URL to ZMS API endpoint
 zmsUrl                          string
+
+# URL to legacy ZMS API endpoint
+legacyZmsUrl                    string
+# TODO Remove once migrated to Okta
 
 # URL to ZTS API endpoint
 ztsUrl                          string
