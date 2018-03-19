@@ -117,8 +117,10 @@ public class MetricsReporter extends Maintainer {
     private void reportDeploymentMetrics() {
         metric.set(deploymentFailMetric, deploymentFailRatio() * 100, metric.createContext(Collections.emptyMap()));
         for (Map.Entry<ApplicationId, Duration> entry : averageDeploymentDurations().entrySet()) {
-            metric.set(deploymentAverageDuration, entry.getValue().getSeconds(),
-                       metric.createContext(Collections.singletonMap("application", entry.getKey().toString())));
+            Map<String, String> dimensions = new HashMap<>();
+            dimensions.put("tenant", entry.getKey().tenant().value());
+            dimensions.put("app", entry.getKey().application().value() + "." + entry.getKey().instance().value());
+            metric.set(deploymentAverageDuration, entry.getValue().getSeconds(), metric.createContext(dimensions));
         }
     }
     

@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -55,23 +55,20 @@ public class MetricsMock implements Metric {
     }
 
     /** Returns metric and context for any metric matching the given dimension predicate */
-    public Map<MapContext, Map<String, Number>> getMetrics(BiPredicate<String, String> dimension) {
+    public Map<MapContext, Map<String, Number>> getMetrics(Predicate<Map<String, String>> dimensionMatcher) {
         return metrics.entrySet()
                       .stream()
-                      .filter(context -> ((MapContext) context.getKey())
-                              .getDimensions().entrySet()
-                              .stream()
-                              .anyMatch(d -> dimension.test(d.getKey(), d.getValue())))
+                      .filter(context -> dimensionMatcher.test(((MapContext) context.getKey()).getDimensions()))
                       .collect(Collectors.toMap(entry -> (MapContext) entry.getKey(), Map.Entry::getValue));
     }
 
     /** Returns metric filtered by dimension and name */
-    public Optional<Number> getMetric(BiPredicate<String, String> dimension, String name) {
-        Map<String, Number> metrics = getMetrics(dimension).entrySet()
-                                                           .stream()
-                                                           .map(Map.Entry::getValue)
-                                                           .findFirst()
-                                                           .orElseGet(Collections::emptyMap);
+    public Optional<Number> getMetric(Predicate<Map<String, String>> dimensionMatcher, String name) {
+        Map<String, Number> metrics = getMetrics(dimensionMatcher).entrySet()
+                                                                  .stream()
+                                                                  .map(Map.Entry::getValue)
+                                                                  .findFirst()
+                                                                  .orElseGet(Collections::emptyMap);
         return Optional.ofNullable(metrics.get(name));
     }
 
