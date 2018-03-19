@@ -692,7 +692,7 @@ namespace {
 BucketSpaceStats
 toBucketSpaceStats(const NodeMaintenanceStats &stats)
 {
-    return BucketSpaceStats(0, stats.syncing + stats.copyingIn);
+    return BucketSpaceStats(stats.total, stats.syncing + stats.copyingIn);
 }
 
 BucketSpacesStatsProvider::PerNodeBucketSpacesStats

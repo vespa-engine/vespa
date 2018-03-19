@@ -98,7 +98,7 @@ protected:
     void entering_recovery_mode_resets_bucket_space_stats();
     void leaving_recovery_mode_immediately_sends_getnodestate_replies();
 
-    void assertBucketSpaceStats(size_t expBucketPending, uint16_t node, const vespalib::string &bucketSpace,
+    void assertBucketSpaceStats(size_t expBucketPending, size_t expBucketTotal, uint16_t node, const vespalib::string &bucketSpace,
                                 const BucketSpacesStatsProvider::PerNodeBucketSpacesStats &stats);
     std::vector<document::BucketSpace> _bucketSpaces;
 
@@ -639,28 +639,31 @@ Distributor_Test::mergeStatsAreAccumulatedDuringDatabaseIteration()
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
         wanted.copyingOut = 2;
+        wanted.total = 3;
         CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(0, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wanted;
         wanted.movingOut = 1;
+        wanted.total = 1;
         CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(1, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
         wanted.copyingIn = 2;
+        wanted.total = 1;
         CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(2, makeBucketSpace()));
     }
     auto bucketStats = _distributor->getBucketSpacesStats();
     CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(3), bucketStats.size());
-    assertBucketSpaceStats(1, 0, "default", bucketStats);
-    assertBucketSpaceStats(0, 1, "default", bucketStats);
-    assertBucketSpaceStats(3, 2, "default", bucketStats);
+    assertBucketSpaceStats(1, 3, 0, "default", bucketStats);
+    assertBucketSpaceStats(0, 1, 1, "default", bucketStats);
+    assertBucketSpaceStats(3, 1, 2, "default", bucketStats);
 }
 
 void
-Distributor_Test::assertBucketSpaceStats(size_t expBucketPending, uint16_t node, const vespalib::string &bucketSpace,
+Distributor_Test::assertBucketSpaceStats(size_t expBucketPending, size_t expBucketTotal, uint16_t node, const vespalib::string &bucketSpace,
                                          const BucketSpacesStatsProvider::PerNodeBucketSpacesStats &stats)
 {
     auto nodeItr = stats.find(node);
@@ -669,7 +672,7 @@ Distributor_Test::assertBucketSpaceStats(size_t expBucketPending, uint16_t node,
     auto bucketSpaceItr = nodeItr->second.find(bucketSpace);
     CPPUNIT_ASSERT(bucketSpaceItr != nodeItr->second.end());
     CPPUNIT_ASSERT(bucketSpaceItr->second.valid());
-    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(0), bucketSpaceItr->second.bucketsTotal());
+    CPPUNIT_ASSERT_EQUAL(expBucketTotal, bucketSpaceItr->second.bucketsTotal());
     CPPUNIT_ASSERT_EQUAL(expBucketPending, bucketSpaceItr->second.bucketsPending());
 }
 
@@ -694,11 +697,13 @@ Distributor_Test::statsGeneratedForPreemptedOperations()
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
+        wanted.total = 1;
         CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(0, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
+        wanted.total = 1;
         CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(1, makeBucketSpace()));
     }
 }

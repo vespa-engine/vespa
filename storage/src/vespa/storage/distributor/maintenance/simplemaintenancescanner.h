@@ -35,6 +35,8 @@ private:
     DistributorBucketSpaceRepo::BucketSpaceMap::const_iterator _bucketSpaceItr;
     document::BucketId _bucketCursor;
     PendingMaintenanceStats _pendingMaintenance;
+
+    void countBucket(document::BucketSpace bucketSpace, const BucketInfo &info);
 public:
     SimpleMaintenanceScanner(BucketPriorityDatabase& bucketPriorityDb,
                              const MaintenancePriorityGenerator& priorityGenerator,

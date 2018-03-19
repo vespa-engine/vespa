@@ -37,6 +37,7 @@ SimpleMaintenanceScanner::scanNext()
             _bucketCursor = document::BucketId();
             continue;
         }
+        countBucket(_bucketSpaceItr->first, entry.getBucketInfo());
         prioritizeBucket(document::Bucket(_bucketSpaceItr->first, entry.getBucketId()));
         _bucketCursor = entry.getBucketId();
         return ScanResult::createNotDone(_bucketSpaceItr->first, entry);
@@ -49,6 +50,17 @@ SimpleMaintenanceScanner::reset()
     _bucketCursor = document::BucketId();
     _bucketSpaceItr = _bucketSpaceRepo.begin();
     _pendingMaintenance = PendingMaintenanceStats();
+}
+
+void
+SimpleMaintenanceScanner::countBucket(document::BucketSpace bucketSpace, const BucketInfo &info)
+{
+    NodeMaintenanceStatsTracker &perNodeStats = _pendingMaintenance.perNodeStats;
+    uint32_t nodeCount = info.getNodeCount();
+    for (uint32_t i = 0; i < nodeCount; ++i) {
+        const BucketCopy &node = info.getNodeRef(i);
+        perNodeStats.incTotal(node.getNode(), bucketSpace);
+    }
 }
 
 void

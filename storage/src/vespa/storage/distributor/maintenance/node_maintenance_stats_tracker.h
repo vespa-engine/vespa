@@ -15,20 +15,22 @@ struct NodeMaintenanceStats
     uint64_t syncing;
     uint64_t copyingIn;
     uint64_t copyingOut;
+    uint64_t total;
 
     NodeMaintenanceStats()
-        : movingOut(0), syncing(0), copyingIn(0), copyingOut(0)
+        : movingOut(0), syncing(0), copyingIn(0), copyingOut(0), total(0)
     {}
 
-    NodeMaintenanceStats(uint64_t movingOut_, uint64_t syncing_, uint64_t copyingIn_, uint64_t copyingOut_)
-        : movingOut(movingOut_), syncing(syncing_), copyingIn(copyingIn_), copyingOut(copyingOut_)
+    NodeMaintenanceStats(uint64_t movingOut_, uint64_t syncing_, uint64_t copyingIn_, uint64_t copyingOut_, uint64_t total_)
+        : movingOut(movingOut_), syncing(syncing_), copyingIn(copyingIn_), copyingOut(copyingOut_), total(total_)
     {}
 
     bool operator==(const NodeMaintenanceStats& other) const noexcept {
         return (movingOut == other.movingOut
                 && syncing == other.syncing
                 && copyingIn == other.copyingIn
-                && copyingOut == other.copyingOut);
+                && copyingOut == other.copyingOut
+                && total == other.total);
     }
 };
 
@@ -61,6 +63,10 @@ public:
 
     void incCopyingOut(uint16_t node, document::BucketSpace bucketSpace) {
         ++_stats[node][bucketSpace].copyingOut;
+    }
+
+    void incTotal(uint16_t node, document::BucketSpace bucketSpace) {
+        ++_stats[node][bucketSpace].total;
     }
 
     /**
