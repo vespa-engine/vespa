@@ -9,7 +9,6 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-import static com.yahoo.vespa.athenz.tls.TestUtils.createKeyPair;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -19,7 +18,7 @@ public class X509CertificateBuilderTest {
 
     @Test
     public void can_build_self_signed_certificate() throws NoSuchAlgorithmException {
-        KeyPair keyPair = createKeyPair();
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
         X500Principal subject = new X500Principal("CN=myservice");
         X509Certificate cert =
                 X509CertificateBuilder.fromKeypair(
