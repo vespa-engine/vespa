@@ -31,15 +31,15 @@ public class AuthorizationFilterTest {
         // These are just rudimentary tests of the filter. See AuthorizerTest for more exhaustive tests
         tester.assertRequest(new Request(Method.GET, "/"), 401,
                              "{\"error-code\":\"UNAUTHORIZED\",\"message\":\"GET / denied for " +
-                             "unit-test: Missing credentials\"}");
+                             "remote-addr: Missing credentials\"}");
 
         tester.assertRequest(new Request(Method.GET, "/").commonName("foo"), 403,
                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"GET / " +
-                             "denied for unit-test: Invalid credentials\"}");
+                             "denied for remote-addr: Invalid credentials\"}");
 
         tester.assertRequest(new Request(Method.GET, "/nodes/v2/node/foo").commonName("bar"),
                               403, "{\"error-code\":\"FORBIDDEN\",\"message\":\"GET /nodes/v2/node/foo " +
-                                   "denied for unit-test: Invalid credentials\"}");
+                                   "denied for remote-addr: Invalid credentials\"}");
 
         tester.assertSuccess(new Request(Method.GET, "/nodes/v2/node/foo").commonName("foo"));
     }
