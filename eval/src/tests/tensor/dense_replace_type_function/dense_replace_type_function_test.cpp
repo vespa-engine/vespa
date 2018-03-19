@@ -64,4 +64,16 @@ TEST_F("require that DenseReplaceTypeFunction works as expected", Fixture()) {
     fprintf(stderr, "%s\n", f1.my_fun.as_string().c_str());
 }
 
+TEST("require that create_compact will collapse duplicate replace operations") {
+    Stash stash;
+    ValueType type = ValueType::double_type();
+    ChildMock leaf(type);
+    const DenseReplaceTypeFunction &a = DenseReplaceTypeFunction::create_compact(type, leaf, stash);
+    const DenseReplaceTypeFunction &b = DenseReplaceTypeFunction::create_compact(type, a, stash);
+    EXPECT_EQUAL(a.result_type(), type);
+    EXPECT_EQUAL(&a.child(), &leaf);
+    EXPECT_EQUAL(b.result_type(), type);
+    EXPECT_EQUAL(&b.child(), &leaf);
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
