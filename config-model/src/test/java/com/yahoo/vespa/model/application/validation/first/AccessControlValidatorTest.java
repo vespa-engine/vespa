@@ -86,7 +86,7 @@ public class AccessControlValidatorTest  {
     }
 
     @Test
-    public void cluster_with_handler_fails_validation_without_http_element() throws IOException, SAXException{
+    public void no_http_element_has_same_effect_as_no_write_protection() throws IOException, SAXException{
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
                 "Access-control must be enabled for write operations to container clusters in production zones: [default]");
