@@ -74,6 +74,7 @@ public class FilterTester {
         when(r.getMethod()).thenReturn(request.method().name());
         when(r.getUri()).thenReturn(URI.create("http://localhost").resolve(request.path()));
         when(r.getRemoteAddr()).thenReturn(request.remoteAddr());
+        when(r.getLocalAddr()).thenReturn(request.localAddr());
         if (request.commonName().isPresent()) {
             X509Certificate cert = certificateFor(request.commonName().get(), keyPair());
             when(r.getClientCertificateChain()).thenReturn(Collections.singletonList(cert));
@@ -132,6 +133,7 @@ public class FilterTester {
 
         private final Method method;
         private final String path;
+        private String localAddr;
         private String remoteAddr;
         private String commonName;
 
@@ -139,7 +141,8 @@ public class FilterTester {
             this.method = method;
             this.path = path;
             this.commonName = null;
-            this.remoteAddr = "unit-test";
+            this.localAddr = "local-addr";
+            this.remoteAddr = "remote-addr";
         }
 
         public Method method() {
@@ -148,6 +151,10 @@ public class FilterTester {
 
         public String path() {
             return path;
+        }
+
+        public String localAddr() {
+            return localAddr;
         }
 
         public String remoteAddr() {
@@ -160,6 +167,11 @@ public class FilterTester {
 
         public Request commonName(String commonName) {
             this.commonName = commonName;
+            return this;
+        }
+
+        public Request localAddr(String localAddr) {
+            this.localAddr = localAddr;
             return this;
         }
 
