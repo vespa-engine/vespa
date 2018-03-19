@@ -11,6 +11,10 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test of MultipleResultsSearcher
@@ -18,7 +22,7 @@ import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
  * @author tonytv
  */
 @SuppressWarnings("deprecation")
-public class MultipleResultsTestCase extends junit.framework.TestCase {
+public class MultipleResultsTestCase {
 
     private DocumentSourceSearcher docSource;
 
@@ -26,13 +30,14 @@ public class MultipleResultsTestCase extends junit.framework.TestCase {
 
     private Chain<Searcher> chain;
 
+    @Before
     protected void setUp() {
         docSource=new DocumentSourceSearcher();
         searcher=new MultipleResultsSearcher();
         chain=new Chain<>("multipleresultschain",searcher,docSource);
     }
 
-
+    @Test
     public void testRetrieveHeterogenousHits() {
         Query query = createQuery();
 
@@ -57,6 +62,7 @@ public class MultipleResultsTestCase extends junit.framework.TestCase {
         assertEquals( 3, docSource.getQueryCount() );
     }
 
+    @Test
     public void testRetrieveHitsForGroup() {
         Query query = createQuery();
 
@@ -85,6 +91,7 @@ public class MultipleResultsTestCase extends junit.framework.TestCase {
         assertEquals( 15, moviesGroup.size());
     }
 
+    @Test
     public void testNoHitsForResultSet() {
         Query query = createQuery();
 
@@ -139,4 +146,5 @@ public class MultipleResultsTestCase extends junit.framework.TestCase {
         query.getModel().setRestrict(restrictList);
         return query;
     }
+
 }

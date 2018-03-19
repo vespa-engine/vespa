@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class FieldPathUpdateAdapter implements UpdateAdapter {
 

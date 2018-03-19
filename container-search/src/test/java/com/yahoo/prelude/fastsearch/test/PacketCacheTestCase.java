@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch.test;
 
-
 import com.yahoo.fs4.BasicPacket;
 import com.yahoo.fs4.BufferTooSmallException;
 import com.yahoo.fs4.PacketDecoder;
@@ -10,16 +9,20 @@ import com.yahoo.search.Query;
 import com.yahoo.prelude.fastsearch.CacheKey;
 import com.yahoo.prelude.fastsearch.PacketCache;
 import com.yahoo.prelude.fastsearch.PacketWrapper;
+import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * Tests the packet cache. Also tested in FastSearcherTestCase.
  *
  * @author  bratseth
  */
-public class PacketCacheTestCase extends junit.framework.TestCase {
+public class PacketCacheTestCase {
 
     static byte[] queryResultPacketData = new byte[] {
         0, 0, 0, 104,
@@ -41,10 +44,7 @@ public class PacketCacheTestCase extends junit.framework.TestCase {
     static CacheKey key3 = new CacheKey(QueryPacket.create(new Query("/?query=key3")));
     static CacheKey key4 = new CacheKey(QueryPacket.create(new Query("/?query=key4")));
 
-    public PacketCacheTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testPutAndGet() throws BufferTooSmallException {
         PacketCache cache = new PacketCache(0, (length + 30) * 3 - 1, 1e64);
 
@@ -81,6 +81,7 @@ public class PacketCacheTestCase extends junit.framework.TestCase {
     }
 
     // more control that delete code does not change internal access order
+    @Test
     public void testInternalOrdering() throws BufferTooSmallException {
         // room for three entries
         PacketCache cache = new PacketCache(0, length * 4 - 1, 1e64);
@@ -106,6 +107,7 @@ public class PacketCacheTestCase extends junit.framework.TestCase {
         assertNotNull(cache.get(key3));
     }
 
+    @Test
     public void testTooLargeItem() throws BufferTooSmallException {
         PacketCache cache = new PacketCache(0, 100, 1e64); // 100 bytes cache
 
@@ -116,6 +118,7 @@ public class PacketCacheTestCase extends junit.framework.TestCase {
         assertEquals(0, cache.totalPacketSize());
     }
 
+    @Test
     public void testClearing() throws BufferTooSmallException {
         PacketCache cache = new PacketCache(0, 140, 1e64); // 140 bytes cache
 
@@ -130,6 +133,7 @@ public class PacketCacheTestCase extends junit.framework.TestCase {
         assertEquals(0, cache.totalPacketSize());
     }
 
+    @Test
     public void testRemoving() throws BufferTooSmallException {
         PacketCache cache = new PacketCache(0, length*2, 1e64); // 96*2 bytes cache
 
@@ -144,6 +148,7 @@ public class PacketCacheTestCase extends junit.framework.TestCase {
         assertEquals(length, cache.totalPacketSize());
     }
 
+    @Test
     public void testEntryAging() throws BufferTooSmallException {
         // 1k bytes cache, 5h timeout
         PacketCache cache = new PacketCache(0, 1024, 5 * 3600);
@@ -160,6 +165,7 @@ public class PacketCacheTestCase extends junit.framework.TestCase {
         return createCacheEntry(null);
     }
 
+    @Test
     public void testTooBigCapacity() {
         PacketCache cache = new PacketCache(2048, 0, 5 * 3600);
         assertEquals(Integer.MAX_VALUE, cache.getByteCapacity());
@@ -171,9 +177,7 @@ public class PacketCacheTestCase extends junit.framework.TestCase {
 
         data.put(queryResultPacketData);
         data.flip();
-        BasicPacket[] content = new BasicPacket[] {
-            PacketDecoder.extractPacket(
-                    data).packet };
+        BasicPacket[] content = new BasicPacket[] { PacketDecoder.extractPacket(data).packet };
 
         return new PacketWrapper(key, content);
     }

@@ -7,8 +7,14 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.search.Fs4Config;
 import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.fs4.QueryPacket;
-import com.yahoo.prelude.*;
-import com.yahoo.prelude.fastsearch.*;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
+import com.yahoo.prelude.fastsearch.CacheKey;
+import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
+import com.yahoo.prelude.fastsearch.FS4ResourcePool;
+import com.yahoo.prelude.fastsearch.FastHit;
+import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.result.Hit;
@@ -17,22 +23,32 @@ import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.protect.Error;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.vespa.config.search.DispatchConfig;
+import org.junit.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests cluster monitoring
  *
  * @author bratseth
  */
-public class ClusterSearcherTestCase extends junit.framework.TestCase {
+public class ClusterSearcherTestCase {
 
-    public ClusterSearcherTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testNoBackends() {
         ClusterSearcher cluster = new ClusterSearcher(new LinkedHashSet<>(Arrays.asList("dummy")));
         try {
@@ -42,13 +58,11 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
             query.setHits(10);
             com.yahoo.search.Result result = execution.search(query);
             assertTrue(result.hits().getError() != null);
-            assertEquals("No backends in service. Try later", result.hits()
-                    .getError().getMessage());
+            assertEquals("No backends in service. Try later", result.hits().getError().getMessage());
         } finally {
             cluster.deconstruct();
         }
     }
-
 
     private IndexFacts createIndexFacts() {
         Map<String, List<String>> clusters = new LinkedHashMap<>();
@@ -70,6 +84,7 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
         return searcher.resolveDocumentTypes(new Query("?query=hello" + query), createIndexFacts());
     }
 
+    @Test
     public void testThatDocumentTypesAreResolved() {
         ClusterSearcher cluster1 = new ClusterSearcher(new LinkedHashSet<>(Arrays.asList("type1", "type2", "type3")));
         try {
@@ -108,6 +123,7 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testThatDocumentTypesAreResolvedTODO_REMOVE() {
         ClusterSearcher cluster1 = new ClusterSearcher(new LinkedHashSet<>(Arrays.asList("type1", "type2", "type3")));
         try {
@@ -353,10 +369,11 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
         List<Hit> hits = result.hits().asList();
         assertEquals(expHits.size(), hits.size());
         for (int i = 0; i < expHits.size(); ++i) {
-            assertEquals(expHits.get(i),  hits.get(i).getRelevance().getScore());
+            assertEquals(expHits.get(i),  hits.get(i).getRelevance().getScore(), 0.0000001);
         }
     }
 
+    @Test
     public void testThatWeCanSpecifyNumHitsAndHitOffset() {
         Execution ex = createExecution();
 
@@ -370,7 +387,7 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
         assertResult(9, Arrays.asList(5.0, 4.0),   getResult(6, 2, ex));
         assertResult(9, Arrays.asList(4.0, 3.0),   getResult(7, 2, ex));
         assertResult(9, Arrays.asList(3.0),        getResult(8, 2, ex));
-        assertResult(9, new ArrayList<Double>(),   getResult(9, 2, ex));
+        assertResult(9, new ArrayList<Double>(), getResult(9, 2, ex));
         assertResult(9, Arrays.asList(11.0, 10.0, 9.0, 8.0, 7.0), getResult(0, 5, ex));
         assertResult(9, Arrays.asList(6.0, 5.0, 4.0, 3.0),        getResult(5, 5, ex));
 
@@ -381,6 +398,7 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
         assertResult(3, new ArrayList<>(), getResult(3, 2, "&restrict=type1", ex));
     }
 
+    @Test
     public void testThatWeCanSpecifyNumHitsAndHitOffsetWhenSorting() {
         Execution ex = createExecution(true);
 
@@ -397,6 +415,7 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
         assertResult(6, new ArrayList<>(),  getResult(6, 2, extra, ex));
     }
 
+    @Test
     public void testLocalConnect() throws UnknownHostException {
         ClusterSearcher cluster = new ClusterSearcher(new LinkedHashSet<>(Arrays.asList("dummy")));
         boolean canFindYahoo;
@@ -420,6 +439,7 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testRequireThatSearchFailsForUndefinedRankProfileWithOneDocType() {
         Execution execution = createExecution(Arrays.asList("type1"), false);
 
@@ -451,6 +471,7 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
         assertEquals(3, result.getTotalHitCount());
     }
 
+    @Test
     public void testRequireThatSearchFailsForUndefinedRankProfileWithMultipleDocTypes() {
         Execution execution = createExecution(Arrays.asList("type1", "type2", "type3"), false);
 
@@ -541,6 +562,7 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testThatQueryTimeoutIsCappedWithDefaultMax() {
         QueryTimeoutFixture f = new QueryTimeoutFixture(null, null);
         f.query.setTimeout(600001);
@@ -548,6 +570,7 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
         assertEquals(600000, f.query.getTimeout());
     }
 
+    @Test
     public void testThatQueryTimeoutIsNotCapped() {
         QueryTimeoutFixture f = new QueryTimeoutFixture(null, null);
         f.query.setTimeout(599999);
@@ -555,6 +578,7 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
         assertEquals(599999, f.query.getTimeout());
     }
 
+    @Test
     public void testThatQueryTimeoutIsCappedWithSpecifiedMax() {
         QueryTimeoutFixture f = new QueryTimeoutFixture(new Double(70), null);
         f.query.setTimeout(70001);
@@ -562,6 +586,7 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
         assertEquals(70000, f.query.getTimeout());
     }
 
+    @Test
     public void testThatQueryCacheIsDisabledIfTimeoutIsLargerThanMax() {
         QueryTimeoutFixture f = new QueryTimeoutFixture(null, null);
         f.query.setTimeout(10001);
@@ -570,6 +595,7 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
         assertFalse(f.query.getRanking().getQueryCache());
     }
 
+    @Test
     public void testThatQueryCacheIsNotDisabledIfTimeoutIsOk() {
         QueryTimeoutFixture f = new QueryTimeoutFixture(null, null);
         f.query.setTimeout(10000);
@@ -578,6 +604,7 @@ public class ClusterSearcherTestCase extends junit.framework.TestCase {
         assertTrue(f.query.getRanking().getQueryCache());
     }
 
+    @Test
     public void testThatQueryCacheIsDisabledIfTimeoutIsLargerThanConfiguredMax() {
         QueryTimeoutFixture f = new QueryTimeoutFixture(null, new Double(5));
         f.query.setTimeout(5001);

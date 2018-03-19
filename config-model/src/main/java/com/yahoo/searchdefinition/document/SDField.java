@@ -30,8 +30,7 @@ import java.util.*;
  */
 public class SDField extends Field implements TypedKey, FieldOperationContainer, ImmutableSDField, Serializable {
 
-    /** Use this field for modifying index-structure, even if it doesn't
-        have any indexing code */
+    /** Use this field for modifying index-structure, even if it doesn't have any indexing code */
     private boolean indexStructureField = false;
 
     /** The indexing statements to be applied to this value during indexing */
@@ -61,7 +60,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     /**
      * Indicates what kind of matching should be done on this field
      */
-    private Matching matching=new Matching();
+    private Matching matching = new Matching();
 
     /** Attribute settings, or null if there are none */
     private Map<String, Attribute> attributes = new TreeMap<>();
@@ -104,11 +103,10 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     private boolean isExtraField = false;
 
     /**
-       Creates a new field. This method is only used to create reserved fields
-       @param name The name of the field
-       @param dataType The datatype of the field
-       @param isHeader Whether this is a "header" field or a "content" field
-       (true = "header").
+     * Creates a new field. This method is only used to create reserved fields
+     * @param name The name of the field
+     * @param dataType The datatype of the field
+     * @param isHeader Whether this is a "header" field or a "content" field (true = "header").
     */
     protected SDField(SDDocumentType repo, String name, int id, DataType dataType, boolean isHeader, boolean populate) {
         super(name, id, dataType, isHeader);

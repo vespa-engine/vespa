@@ -25,9 +25,7 @@ public abstract class SimpleIndexedItem extends SimpleTaggableItem implements In
     @NonNull
     private String index = "";
 
-    /**
-     * The name of the index this belongs to, or "" (never null) if not specified
-     **/
+    /** The name of the index this belongs to, or "" (never null) if not specified */
     @NonNull
     public String getIndexName() {
         return index;
@@ -78,4 +76,5 @@ public abstract class SimpleIndexedItem extends SimpleTaggableItem implements In
         super.disclose(discloser);
         discloser.addProperty("index", index);
     }
+
 }

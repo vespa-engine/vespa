@@ -13,25 +13,23 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.test.QueryTestCase;
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Control query transformations when doing index name expansion in QRS.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class IndexCombinatorTestCase extends TestCase {
+public class IndexCombinatorTestCase {
 
     private Searcher transformer;
     private IndexFacts f;
 
-    public IndexCombinatorTestCase(String arg0) {
-        super(arg0);
-    }
-
-    @Override
+    @Before
     protected void setUp() throws Exception {
-        super.setUp();
         transformer = new IndexCombinatorSearcher();
         f = new IndexFacts();
         f.addIndex("one", "z");
@@ -40,11 +38,7 @@ public class IndexCombinatorTestCase extends TestCase {
         f.addIndex("one", i);
     }
 
-    @Override
-    protected void tearDown() throws Exception {
-        super.tearDown();
-    }
-
+    @Test
     public void testDoNothing() {
         Result r = search("?query=z:y");
         assertEquals("z:y", r.getQuery().getModel().getQueryTree().getRoot().toString());
@@ -54,11 +48,13 @@ public class IndexCombinatorTestCase extends TestCase {
         return new Execution(transformer, Execution.Context.createContextStub(f)).search(new Query(QueryTestCase.httpEncode(query)));
     }
 
+    @Test
     public void testBasic() {
         Result r = search("?query=y");
         assertEquals("OR a:y i:y", r.getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testBasicPair() {
         Result r = search("?query=x y");
         assertEquals(
@@ -66,17 +62,20 @@ public class IndexCombinatorTestCase extends TestCase {
                         .getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testBasicTriplet() {
         Result r = search("?query=x y z");
         assertEquals("AND (OR a:x i:x) (OR a:y i:y) (OR a:z i:z)", r.getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testBasicMixedSinglet() {
         Result r = search("?query=x z:q");
         assertEquals("OR (AND a:x z:q) (AND i:x z:q)", r.getQuery().getModel().getQueryTree().getRoot()
                 .toString());
     }
 
+    @Test
     public void testBasicMixedPair() {
         Result r = search("?query=x y z:q");
         assertEquals(
@@ -84,22 +83,26 @@ public class IndexCombinatorTestCase extends TestCase {
                 r.getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testBasicMixedTriplet() {
         Result r = search("?query=x y z:q r");
         assertEquals("AND (OR a:x i:x) (OR a:y i:y) z:q (OR a:r i:r)", r
                 .getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testBasicOr() {
         Result r = search("?query=x y&type=any");
         assertEquals("OR a:y i:y a:x i:x", r.getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testBasicPhrase() {
         Result r = search("?query=\"x y\"");
         assertEquals("OR a:x y i:x y", r.getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testPhraseAndTerm() {
         Result r = search("?query=\"x y\" z");
         assertEquals(
@@ -107,12 +110,14 @@ public class IndexCombinatorTestCase extends TestCase {
                 r.getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testBasicNot() {
         Result r = search("?query=+x -y");
         assertEquals("+(OR a:x i:x) -(OR a:y i:y)", r.getQuery().getModel().getQueryTree().getRoot()
                 .toString());
     }
 
+    @Test
     public void testLessBasicNot() {
         Result r = search("?query=a and b andnot c&type=adv");
         assertEquals(
@@ -120,6 +125,7 @@ public class IndexCombinatorTestCase extends TestCase {
                 r.getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testLongerAndInPositive() {
         Result r = search("?query=a and b and c andnot d&type=adv");
         assertEquals(
@@ -127,12 +133,14 @@ public class IndexCombinatorTestCase extends TestCase {
                         .getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testTreeInNegativeBranch() {
         Result r = search("?query=a andnot (b and c)&type=adv");
         assertEquals("+(OR a:a i:a) -(AND (OR a:b i:b) (OR a:c i:c))", r
                 .getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testSomeTerms() {
         Result r = search("?query=a b -c +d g.h \"abc def\" z:q");
         assertEquals(
@@ -140,6 +148,7 @@ public class IndexCombinatorTestCase extends TestCase {
                 r.getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testMixedIndicesAndAttributes() {
         String indexInfoConfigID = "file:src/test/java/com/yahoo/prelude/querytransform/test/indexcombinator.cfg";
         ConfigGetter<IndexInfoConfig> getter = new ConfigGetter<>(IndexInfoConfig.class);
@@ -162,4 +171,5 @@ public class IndexCombinatorTestCase extends TestCase {
                 + " (AND attribute2:a b attribute2:c d)",
                 r.getQuery().getModel().getQueryTree().getRoot().toString());
     }
+
 }

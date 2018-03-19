@@ -1,11 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch.test;
 
-
 import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.fs4.QueryPacket;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.fastsearch.CacheKey;
 import com.yahoo.prelude.fastsearch.FastHit;
@@ -17,16 +15,21 @@ import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author havardpe
  */
-@SuppressWarnings("deprecation")
-public class PartialFillTestCase extends junit.framework.TestCase {
+public class PartialFillTestCase {
 
     public static class FS4 extends VespaBackEndSearcher {
         public List<Result> history = new ArrayList<>();
@@ -49,10 +52,7 @@ public class PartialFillTestCase extends junit.framework.TestCase {
         }
     }
 
-    public PartialFillTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testPartitioning() {
         FS4 fs4 = new FS4();
         Query a = new Query("/?query=foo");
@@ -109,6 +109,7 @@ public class PartialFillTestCase extends junit.framework.TestCase {
         assertEquals(2, fs4.history.get(3).getHitCount());
     }
 
+    @Test
     public void testMergeErrors() {
         BadFS4 fs4 = new BadFS4();
         Query a = new Query("/?query=foo");

@@ -5,18 +5,21 @@ import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.PhraseMatcher;
+import org.junit.Test;
 
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author bratseth
  */
-public class PhraseMatcherTestCase extends junit.framework.TestCase {
+public class PhraseMatcherTestCase {
 
-    public PhraseMatcherTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testSingleItemMatching() {
         PhraseMatcher matcher=new PhraseMatcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
         matcher.setMatchSingleItems(true);
@@ -35,6 +38,7 @@ public class PhraseMatcherTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testSingleItemMatchingCaseInsensitive() {
         PhraseMatcher matcher=new PhraseMatcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
         matcher.setMatchSingleItems(true);
@@ -54,6 +58,7 @@ public class PhraseMatcherTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testSingleItemMatchingWithPluralIgnore() {
         PhraseMatcher matcher=new PhraseMatcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa",true);
         matcher.setMatchSingleItems(true);
@@ -72,6 +77,7 @@ public class PhraseMatcherTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testSingleItemMatchingCaseInsensitiveWithPluralIgnore() {
         PhraseMatcher matcher=new PhraseMatcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa",true);
         matcher.setMatchSingleItems(true);
@@ -91,6 +97,7 @@ public class PhraseMatcherTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testPhraseMatching() {
         PhraseMatcher matcher=new PhraseMatcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa",true);
         AndItem and=new AndItem();
@@ -121,6 +128,7 @@ public class PhraseMatcherTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testPhraseMatchingCaseInsensitive() {
         PhraseMatcher matcher=new PhraseMatcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa",true);
         AndItem and=new AndItem();
@@ -155,6 +163,7 @@ public class PhraseMatcherTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testPhraseMatchingWithNumber() {
         PhraseMatcher matcher=new PhraseMatcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa",true);
         AndItem and=new AndItem();
@@ -185,6 +194,7 @@ public class PhraseMatcherTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testPhraseMatchingWithPluralIgnore() {
         PhraseMatcher matcher=new PhraseMatcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa",true);
         AndItem and=new AndItem();
@@ -215,7 +225,7 @@ public class PhraseMatcherTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
-
+    @Test
     public void testPhraseMatchingCaseInsensitiveWithPluralIgnore() {
         PhraseMatcher matcher=new PhraseMatcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa",true);
         AndItem and=new AndItem();
@@ -249,4 +259,5 @@ public class PhraseMatcherTestCase extends junit.framework.TestCase {
         assertEquals("test",i.getReplace());
         assertFalse(i.hasNext());
     }
+
 }

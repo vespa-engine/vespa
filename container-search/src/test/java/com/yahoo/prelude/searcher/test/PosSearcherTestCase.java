@@ -3,7 +3,6 @@ package com.yahoo.prelude.searcher.test;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -12,29 +11,29 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+
 /**
- * Tests for the PosSearcher class.
+ * Tests for the PosSearcher
  *
- * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
+ * @author Gunnar Gauslaa Bergem
  */
 @SuppressWarnings("deprecation")
-public class PosSearcherTestCase extends junit.framework.TestCase {
-    private PosSearcher searcher = new PosSearcher();
-    private Query q;
+public class PosSearcherTestCase {
 
-    public PosSearcherTestCase(String name) {
-        super(name);
-    }
+    private final PosSearcher searcher = new PosSearcher();
 
     /**
      * Tests basic lat/long input.
      */
+    @Test
     public void testBasics() {
-        q = new Query();
+        Query q = new Query();
         q.properties().set("pos.ll", "N0;E0");
         doSearch(searcher, q, 0, 10);
         assertEquals("(2,0,0,450668,0,1,0,4294967295)", q.getRanking().getLocation().toString());
@@ -48,8 +47,9 @@ public class PosSearcherTestCase extends junit.framework.TestCase {
     /**
      * Tests basic bounding box input.
      */
+    @Test
     public void testBoundingBox() {
-        q = new Query();
+        Query q = new Query();
         q.properties().set("pos.bb", "n=51.9,s=50.2,e=0.34,w=-10.01");
         doSearch(searcher, q, 0, 10);
         assertEquals("[2,-10010000,50200000,340000,51900000]",
@@ -77,8 +77,9 @@ public class PosSearcherTestCase extends junit.framework.TestCase {
     /**
      * Tests basic bounding box input.
      */
+    @Test
     public void testBoundingBoxAndRadius() {
-        q = new Query();
+        Query q = new Query();
         q.properties().set("pos.bb", "n=60.111,s=59.999,e=30.111,w=29.999");
         q.properties().set("pos.ll", "N60;E30");
         doSearch(searcher, q, 0, 10);
@@ -91,8 +92,9 @@ public class PosSearcherTestCase extends junit.framework.TestCase {
     /**
      * Tests different ways of specifying the radius.
      */
+    @Test
     public void testRadiusUnits() {
-        q = new Query();
+        Query q = new Query();
         q.properties().set("pos.ll", "N0;E0");
         q.properties().set("pos.radius", "2km");
         doSearch(searcher, q, 0, 10);
@@ -121,8 +123,9 @@ public class PosSearcherTestCase extends junit.framework.TestCase {
     /**
      * Tests xy position (internal format).
      */
+    @Test
     public void testXY() {
-        q = new Query();
+        Query q = new Query();
         q.properties().set("pos.xy", "22500;22500");
         doSearch(searcher, q, 0, 10);
         assertEquals("(2,22500,22500,5000,0,1,0)", q.getRanking().getLocation().toString());
@@ -134,24 +137,24 @@ public class PosSearcherTestCase extends junit.framework.TestCase {
         assertEquals("(2,22500,22500,5000,0,1,0)", q.getRanking().getLocation().toString());
     }
 
+    @Test
     public void testNotOverridingOldStyleParameters() {
         PosSearcher searcher = new PosSearcher();
-        q = new Query("?query=test&pos.ll=N10.15;E6.08&location=(2,-1100222,0,300,0,1,0,CalcLatLon)");
+        Query q = new Query("?query=test&pos.ll=N10.15;E6.08&location=(2,-1100222,0,300,0,1,0,CalcLatLon)");
         q.setTraceLevel(1);
         doSearch(searcher, q, 0, 10);
         assertEquals("(2,-1100222,0,300,0,1,0,4294967295)", q.getRanking().getLocation().toString());
-        //assertEquals("query already has a location set, not processing 'pos' params",
-        //        result.getHit(0).getFeedback(0));
     }
 
     /**
      * Tests input parameters that should report errors.
      */
+    @Test
     public void testInvalidInput() {
         PosSearcher searcher = new PosSearcher();
         Result result;
 
-        q = new Query();
+        Query q = new Query();
         q.properties().set("pos.ll", "NE74.14;E14.48");
         result = doSearch(searcher, q, 0, 10);
         assertEquals("Error in pos parameters: Unable to parse lat/long string 'NE74.14;E14.48': already set direction once, cannot add direction: E",
@@ -165,8 +168,9 @@ public class PosSearcherTestCase extends junit.framework.TestCase {
             ((ErrorHit)result.hits().get(0)).errors().iterator().next().getDetailedMessage());
     }
 
+    @Test
     public void testWrappingTheNorthPole() {
-        q = new Query();
+        Query q = new Query();
         q.properties().set("pos.ll", "N89.9985365158;E122.163600102");
         q.properties().set("pos.radius", "20mi");
         doSearch(searcher, q, 0, 10);

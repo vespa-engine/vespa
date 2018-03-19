@@ -8,15 +8,21 @@ import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.Type;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.Cursor;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the JSONString XML rendering.
  *
  * TODO: Add correct answers. These are not added because this code was checked in before sync with system test
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class JSONStringTestCase extends junit.framework.TestCase {
+public class JSONStringTestCase {
+
+    @Test
     public void testWeightedSet() {
         String json = "[[{\"as1\":[\"per\",\"paal\"],\"l1\":1122334455667788997,\"d1\":87.790001,\"i1\":7,\"al1\":[11223344556677881,11223344556677883],\"s1\":\"string\\n"
                 + "espa\u00F1a\\n"
@@ -65,6 +71,7 @@ public class JSONStringTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testWeightedSetFromInspector() {
         Value.ArrayValue top = new Value.ArrayValue();
         top.add(new Value.ArrayValue()
@@ -138,7 +145,6 @@ public class JSONStringTestCase extends junit.framework.TestCase {
                  .add(new Value.StringValue("s2"))
                  .add(new Value.LongValue(20)));
         js = new JSONString(top);
-// System.err.println("js.toString() is: >>>" + js.toString() + "<<<");
         correct = "\n" +
                   "      <item weight=\"10\">s1</item>\n" +
                   "      <item weight=\"20\">s2</item>\n" +
@@ -146,6 +152,7 @@ public class JSONStringTestCase extends junit.framework.TestCase {
         assertEquals(correct, js.renderFromInspector());
     }
 
+    @Test
     public void testStruct() {
         {
             String json = "{\"as1\":[\"per\",\"paal\"],\"l1\":1122334455667788991,\"d1\":81.790001,\"i1\":1,\"al1\":[11223344556677881,11223344556677883],\"s1\":\"string\\n"
@@ -410,6 +417,7 @@ public class JSONStringTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testMap() {
         String json = "[{\"key\":\"k1\",\"value\":\"v1\"},{\"key\":\"k2\",\"value\":\"v2\"}]";
         JSONString js = new JSONString(json);
@@ -429,6 +437,7 @@ public class JSONStringTestCase extends junit.framework.TestCase {
         assertEquals(correct, js.renderFromInspector());
     }
 
+    @Test
     public void testWithData() {
         byte[] d1 = { (byte)0x41, (byte)0x42, (byte)0x43 };
         byte[] d2 = { (byte)0x00, (byte)0x01, (byte)0x00, (byte)0x02 };
@@ -459,6 +468,7 @@ public class JSONStringTestCase extends junit.framework.TestCase {
         assertEquals(correct, js.renderFromInspector());
     }
 
+    @Test
     public void testArrayOfArray() {
         String json = "[[\"c1\", 0], [\"c2\", 2, 3], [\"c3\", 3, 4, 5], [\"c4\", 4,5,6,7]]";
         JSONString js = new JSONString(json);
@@ -488,6 +498,7 @@ public class JSONStringTestCase extends junit.framework.TestCase {
         assertEquals(7, outer.entry(3).entry(4).asLong());
     }
 
+    @Test
     public void testSimpleArrays() {
         String json = "[1, 2, 3]";
         JSONString js = new JSONString(json);
@@ -528,6 +539,7 @@ public class JSONStringTestCase extends junit.framework.TestCase {
         assertEquals(correct, js.renderFromInspector());
     }
 
+    @Test
     public void testArrayOfStruct() {
         String json = "[{\"as1\":[\"per\",\"paal\"],"
                 + "\"l1\":1122334455667788994,\"d1\":74.790001,"
@@ -667,14 +679,12 @@ public class JSONStringTestCase extends junit.framework.TestCase {
 
 ***/
 
+    @Test
     public void testArrayOfStructWithMap() {
         String json = "[{\"asf\":\"here is 1st simple string field\",\"map\":[{\"key\":\"one key string\",\"value\":[\"one value string\",\"embedded array\"]},{\"key\":\"two key string\",\"value\":[\"two value string\",\"embedded array\"]}],\"sf2\":\"here is 2nd simple string field\"},{\"asf\":\"here is 3rd simple string field\",\"map\":[{\"key\":\"three key string\",\"value\":[\"three value string\",\"embedded array\"]},{\"key\":\"four key string\",\"value\":[\"four value string\",\"embedded array\"]}],\"sf2\":\"here is 4th simple string field\"}]";
 
 
         JSONString js = new JSONString(json);
-        // System.err.println("got:>>>");
-        // System.err.println(js.toString());
-        // System.err.println("<<<:got");
         String correct = "\n"
                          + "      <item>\n"
                          + "        <struct-field name=\"asf\">here is 1st simple string field</struct-field>\n"
@@ -737,18 +747,15 @@ public class JSONStringTestCase extends junit.framework.TestCase {
                                                   .add("embedded array"))))
                              .put("sf2", "here is 4th simple string field"));
         js = new JSONString(top);
-// System.err.println(">>>"+js.renderFromInspector()+"<<<");
         assertEquals(correct, js.renderFromInspector());
     }
 
+    @Test
     public void testArrayOfStructWithEmptyMap() {
         String json = "[{\"asf\":\"here is 1st simple string field\",\"map\":[],\"sf2\":\"here is 2nd simple string field\"},{\"asf\":\"here is 3rd simple string field\",\"map\":[],\"sf2\":\"here is 4th simple string field\"}]";
 
 
         JSONString js = new JSONString(json);
-        // System.err.println("got:>>>");
-        // System.err.println(js.toString());
-        // System.err.println("<<<:got");
         String correct = "\n"
                          + "      <item>\n"
                          + "        <struct-field name=\"asf\">here is 1st simple string field</struct-field>\n"
@@ -773,11 +780,9 @@ public class JSONStringTestCase extends junit.framework.TestCase {
                              .put("map", new Value.ArrayValue())
                              .put("sf2", "here is 4th simple string field"));
         js = new JSONString(top);
-// System.err.println(">>>"+js.renderFromInspector()+"<<<");
         assertEquals(correct, js.renderFromInspector());
 
     }
-
 
     private Inspector getSlime1() {
         Slime slime = new Slime();
@@ -809,6 +814,7 @@ public class JSONStringTestCase extends junit.framework.TestCase {
         return new SlimeAdapter(slime.get());
     }
 
+    @Test
     public void testInspectorToContentMapping() {
         String content1 = new JSONString(getSlime1()).getContent();
         String content2 = new JSONString(getSlime2()).getContent();
@@ -822,6 +828,7 @@ public class JSONStringTestCase extends junit.framework.TestCase {
         assertEquals("[1,2,3]", content5);
     }
 
+    @Test
     public void testContentToInspectorMapping() {
         Inspector value1 = new JSONString("").inspect();
         Inspector value2 = new JSONString("foo").inspect();
@@ -859,4 +866,5 @@ public class JSONStringTestCase extends junit.framework.TestCase {
         assertEquals(3L, value6.entry(2).asLong());
         assertEquals("[1,2,3]", value6.toString());
     }
+
 }

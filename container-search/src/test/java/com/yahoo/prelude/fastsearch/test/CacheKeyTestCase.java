@@ -1,21 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch.test;
 
-
 import com.yahoo.fs4.QueryPacket;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.fastsearch.CacheKey;
+import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class CacheKeyTestCase extends junit.framework.TestCase {
+public class CacheKeyTestCase {
 
-    public CacheKeyTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testHitsOffsetEquality() {
         Query a = new Query("/?query=abcd");
         QueryPacket p1 = QueryPacket.create(a);
@@ -27,6 +26,7 @@ public class CacheKeyTestCase extends junit.framework.TestCase {
         assertEquals(k1.hashCode(), k2.hashCode());
     }
 
+    @Test
     public void testSessionKeyIgnored() {
         Query a = new Query("/?query=abcd");
         QueryPacket ap = QueryPacket.create(a);
@@ -38,4 +38,5 @@ public class CacheKeyTestCase extends junit.framework.TestCase {
         assertEquals(ak.hashCode(), bk.hashCode());
         assertFalse(ap.getQueryPacketData().equals(bp.getQueryPacketData()));
     }
+
 }

@@ -6,6 +6,9 @@ import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * <p>Tests that the correct query language strings are generated for various
@@ -18,18 +21,16 @@ import com.yahoo.search.Query;
  *
  * @author bratseth
  */
-public class QueryLanguageTestCase extends junit.framework.TestCase {
+public class QueryLanguageTestCase {
 
-    public QueryLanguageTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testWord() {
         WordItem w = new WordItem("test");
 
         assertEquals("test", w.toString());
     }
 
+    @Test
     public void testWordWithIndex() {
         WordItem w = new WordItem("test");
 
@@ -37,6 +38,7 @@ public class QueryLanguageTestCase extends junit.framework.TestCase {
         assertEquals("test.index:test", w.toString());
     }
 
+    @Test
     public void testPhrase() {
         PhraseItem p = new PhraseItem();
 
@@ -46,6 +48,7 @@ public class QueryLanguageTestCase extends junit.framework.TestCase {
         assertEquals("\"part of phrase\"", p.toString());
     }
 
+    @Test
     public void testPhraseWithIndex() {
         PhraseItem p = new PhraseItem();
 
@@ -56,6 +59,7 @@ public class QueryLanguageTestCase extends junit.framework.TestCase {
         assertEquals("some.index:\"part of phrase\"", p.toString());
     }
 
+    @Test
     public void testNotItem() {
         NotItem n = new NotItem();
 
@@ -65,6 +69,7 @@ public class QueryLanguageTestCase extends junit.framework.TestCase {
         assertEquals("+butthis -notthis -andnotthis", n.toString());
     }
 
+    @Test
     public void testLanguagesInQueryParameter() {
         // Right parameter is the parameter given in the query, as language=
         // Left parameter is the language sent to linguistics
@@ -103,4 +108,5 @@ public class QueryLanguageTestCase extends junit.framework.TestCase {
         assertEquals("nb_NO", new Query("?query=test&language=nb_NO").getParsingLanguage().languageCode());
         */
     }
+
 }

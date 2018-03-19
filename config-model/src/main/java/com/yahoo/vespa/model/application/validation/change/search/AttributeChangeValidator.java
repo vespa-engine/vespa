@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
  * Validates the changes between the current and next set of attribute fields in a document database.
  *
  * @author geirst
- * @since 2014-12-04
  */
 public class AttributeChangeValidator {
 
@@ -145,7 +144,7 @@ public class AttributeChangeValidator {
                                                      List<VespaConfigChangeAction> result) {
         T currentValue = settingValueProvider.apply(currentAttr);
         T nextValue = settingValueProvider.apply(nextAttr);
-        if (!Objects.equals(currentValue, nextValue)) {
+        if ( ! Objects.equals(currentValue, nextValue)) {
             String message = String.format("change property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
             result.add(new VespaRestartAction(new ChangeMessageBuilder(nextAttr.getName()).addChange(message).build()));
         }

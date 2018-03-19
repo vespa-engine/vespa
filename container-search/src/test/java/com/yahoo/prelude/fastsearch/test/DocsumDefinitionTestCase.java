@@ -15,22 +15,25 @@ import com.yahoo.document.GlobalId;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests docsum class functionality
  *
  * @author bratseth
  */
-public class DocsumDefinitionTestCase extends junit.framework.TestCase {
+public class DocsumDefinitionTestCase {
 
-    public DocsumDefinitionTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testReading() {
         String summary_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/test/documentdb-info.cfg";
         DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
@@ -58,6 +61,7 @@ public class DocsumDefinitionTestCase extends junit.framework.TestCase {
         assertTrue(docsum0.getField(18) instanceof DataField);
     }
 
+    @Test
     public void testDecoding() {
         String summary_cf = "file:src/test/java/com/yahoo/prelude/fastsearch/test/documentdb-info.cfg";
         DocsumDefinitionSet set = createDocsumDefinitionSet(summary_cf);
@@ -98,4 +102,5 @@ public class DocsumDefinitionTestCase extends junit.framework.TestCase {
         DocumentdbInfoConfig config = new ConfigGetter<>(DocumentdbInfoConfig.class).getConfig(configID);
         return new DocsumDefinitionSet(config.documentdb(0));
     }
+
 }
