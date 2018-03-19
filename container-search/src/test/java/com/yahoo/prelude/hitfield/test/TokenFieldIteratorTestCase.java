@@ -6,19 +6,18 @@ import java.util.ListIterator;
 import com.yahoo.prelude.hitfield.FieldPart;
 import com.yahoo.prelude.hitfield.HitField;
 import com.yahoo.prelude.hitfield.StringFieldPart;
+import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests the FieldTokenIterator class
  *
  * @author Steinar Knutsen
  */
-public class TokenFieldIteratorTestCase extends junit.framework.TestCase {
+public class TokenFieldIteratorTestCase {
 
-    public TokenFieldIteratorTestCase (String name) {
-        super(name);
-    }
-
+    @Test
     public void testTokenIteratorNext() {
         HitField hf = new HitField("boo", "hei paa deg");
         assertEquals(3, hf.getTokenizedContent().size());
@@ -31,6 +30,8 @@ public class TokenFieldIteratorTestCase extends junit.framework.TestCase {
         assertEquals("deg", p.getContent());
         assertEquals(false, l.hasNext());
     }
+
+    @Test
     public void testTokenIteratorPrevious() {
         HitField hf = new HitField("boo", "hei paa");
         ListIterator<?> l = hf.tokenIterator();
@@ -43,6 +44,8 @@ public class TokenFieldIteratorTestCase extends junit.framework.TestCase {
         p = (FieldPart)l.previous();
         assertEquals("hei", p.getContent());
     }
+
+    @Test
     public void testTokenIteratorSet() {
         HitField hf = new HitField("boo", "hei paa deg");
         assertEquals(3, hf.getTokenizedContent().size());
@@ -56,6 +59,8 @@ public class TokenFieldIteratorTestCase extends junit.framework.TestCase {
         l.set(new StringFieldPart("ged", true));
         assertEquals("hei aap ged", hf.getContent());
     }
+
+    @Test
     public void testTokenIteratorAdd() {
         HitField hf = new HitField("boo", "hei paa deg");
         assertEquals(3, hf.getTokenizedContent().size());
@@ -69,6 +74,8 @@ public class TokenFieldIteratorTestCase extends junit.framework.TestCase {
         assertEquals(false, l.hasNext());
         assertEquals("ahei paab degc", hf.getContent());
     }
+
+    @Test
     public void testTokenIteratorRemove() {
         HitField hf = new HitField("boo", "hei paa deg");
         ListIterator<FieldPart> l = hf.tokenIterator();

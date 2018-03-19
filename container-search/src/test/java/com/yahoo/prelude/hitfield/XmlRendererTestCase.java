@@ -2,11 +2,13 @@
 package com.yahoo.prelude.hitfield;
 
 import com.yahoo.data.access.simple.Value;
-import com.yahoo.data.access.Inspector;
-import com.yahoo.data.access.Type;
+import org.junit.Test;
 
-public class XmlRendererTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
 
+public class XmlRendererTestCase {
+
+    @Test
     public void testWeightedSet1() {
         Value.ArrayValue top = new Value.ArrayValue();
         top
@@ -20,9 +22,6 @@ public class XmlRendererTestCase extends junit.framework.TestCase {
                  .add(new Value.StringValue("espen"))
                  .add(new Value.LongValue(30)));
         String rendered = XmlRenderer.render(new StringBuilder(), top).toString();
-//System.err.println("rendered >>>");
-//System.err.println(rendered);
-//System.err.println("<<< rendered");
         String correct = "\n"
                          + "      <item weight=\"10\">per</item>\n"
                          + "      <item weight=\"20\">paal</item>\n"
@@ -31,6 +30,7 @@ public class XmlRendererTestCase extends junit.framework.TestCase {
         assertEquals(correct, rendered);
     }
 
+    @Test
     public void testWeightedSet2() {
         Value.ObjectValue top = new Value.ObjectValue();
         top
@@ -55,9 +55,6 @@ public class XmlRendererTestCase extends junit.framework.TestCase {
                       .put("weight",new Value.LongValue(30))
                       .put("item",new Value.StringValue("espen"))));
         String rendered = XmlRenderer.render(new StringBuilder(), top).toString();
-//System.err.println("rendered >>>");
-//System.err.println(rendered);
-//System.err.println("<<< rendered");
         String correct = "\n"
                          + "      <struct-field name=\"foo\">\n"
                          + "        <item weight=\"10\">per</item>\n"

@@ -11,25 +11,22 @@ import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.PhrasingSearcher;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests phrasing stuff
  *
  * @author bratseth
- * @author <a href="mailto:einarmr@europe.yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class PhrasingSearcherTestCase extends junit.framework.TestCase {
+public class PhrasingSearcherTestCase {
 
-    private Searcher searcher;
-
-    public PhrasingSearcherTestCase(String name) {
-        super(name);
-    }
-
-    @SuppressWarnings("deprecation")
+    @Test
     public void testTotalPhrasing() {
-
-        searcher=
+        Searcher searcher=
             new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
         Query query=new Query();
@@ -48,10 +45,9 @@ public class PhrasingSearcherTestCase extends junit.framework.TestCase {
         assertEquals("someindex",phrase.getIndexName());
     }
 
-    @SuppressWarnings("deprecation")
+    @Test
     public void testPartialPhrasing() {
-
-        searcher=
+        Searcher searcher=
             new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
         Query query=new Query("?query=void%20tudor%20vidor%20kanoo");
@@ -67,9 +63,9 @@ public class PhrasingSearcherTestCase extends junit.framework.TestCase {
         assertEquals("vidor",phrase.getWordItem(1).getWord());
     }
 
+    @Test
     public void testPartialPhrasingSuggestOnly() {
-
-        searcher=
+        Searcher searcher=
             new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
         Query query=new Query("?query=void%20tudor%20vidor%20kanoo&suggestonly=true");
@@ -81,9 +77,9 @@ public class PhrasingSearcherTestCase extends junit.framework.TestCase {
         assertEquals("kanoo",((WordItem)item.getItem(3)).getWord());
     }
 
+    @Test
     public void testNoPhrasingIfDifferentIndices() {
-
-        searcher=
+        Searcher searcher=
             new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
         Query query=new Query();
@@ -104,9 +100,9 @@ public class PhrasingSearcherTestCase extends junit.framework.TestCase {
         assertEquals("vidor",word.getWord());
     }
 
+    @Test
     public void testMultiplePhrases() {
-
-        searcher=
+        Searcher searcher=
             new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
         Query query=new Query();
@@ -137,9 +133,9 @@ public class PhrasingSearcherTestCase extends junit.framework.TestCase {
         assertEquals("AND someindex:tudor someindex:\"tudor vidor\" someindex:vidor (OR tudor (AND anotherindex:\"this is a test\" anotherindex:\"tudor vidor\") vidor)", query.getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testNoDetection() {
-
-        searcher=
+        Searcher searcher=
             new PhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
 
         Query query=new Query();
@@ -155,8 +151,9 @@ public class PhrasingSearcherTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testNoFileNoChange() {
-        searcher = new PhrasingSearcher("");
+        Searcher searcher = new PhrasingSearcher("");
 
         Query query=new Query();
         AndItem andItem=new AndItem();

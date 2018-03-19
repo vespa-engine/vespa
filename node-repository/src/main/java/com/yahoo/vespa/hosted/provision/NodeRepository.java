@@ -390,7 +390,8 @@ public class NodeRepository extends AbstractComponent {
 
     public Node setDirty(String hostname, Agent agent, String reason) {
         Node node = getNode(hostname, Node.State.provisioned, Node.State.failed, Node.State.parked).orElseThrow(() ->
-                new IllegalArgumentException("Could not deallocate " + hostname + ": No such node in the provisioned, failed or parked state"));
+                new IllegalArgumentException("Could not deallocate " + hostname +
+                                             ": No such node in the provisioned, failed or parked state"));
 
         return setDirty(node, agent, reason);
     }
@@ -482,7 +483,7 @@ public class NodeRepository extends AbstractComponent {
      * Should only be called by node-admin for docker containers
      */
     public List<Node> markNodeAvailableForNewAllocation(String hostname) {
-        Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname \"" + hostname + '"'));
+        Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
         if (node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER) {
             throw new IllegalArgumentException(
                     "Cannot make " + hostname + " available for new allocation, must be a docker container node");

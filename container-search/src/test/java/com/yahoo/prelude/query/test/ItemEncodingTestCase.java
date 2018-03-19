@@ -1,32 +1,40 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.test;
 
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.EquivItem;
+import com.yahoo.prelude.query.MarkerWordItem;
+import com.yahoo.prelude.query.NearItem;
+import com.yahoo.prelude.query.ONearItem;
+import com.yahoo.prelude.query.PureWeightedInteger;
+import com.yahoo.prelude.query.PureWeightedString;
+import com.yahoo.prelude.query.WeakAndItem;
+import com.yahoo.prelude.query.WordItem;
+import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
-import com.yahoo.prelude.query.*;
-
+import static org.junit.Assert.assertEquals;
 
 /**
  * Item encoding tests
  *
  * @author bratseth
  */
-public class ItemEncodingTestCase extends junit.framework.TestCase {
-
-    public ItemEncodingTestCase(String name) {
-        super(name);
-    }
+public class ItemEncodingTestCase {
 
     private void assertType(ByteBuffer buffer, int etype, int features) {
         byte type = buffer.get();
         assertEquals("Code", etype, type & 0x1f);
         assertEquals("Features", features, (type & 0xe0) >> 5);
     }
+
     private void assertWeight(ByteBuffer buffer, int weight) {
         int w = (weight > (1 << 5)) ? buffer.getShort() & 0x3fff: buffer.get();
         assertEquals("Weight", weight, w);
     }
+
+    @Test
     public void testWordItemEncoding() {
         WordItem word = new WordItem("test");
 
@@ -50,6 +58,7 @@ public class ItemEncodingTestCase extends junit.framework.TestCase {
         assertEquals('t', buffer.get());
     }
 
+    @Test
     public void testStartHostMarkerEncoding() {
         WordItem word = MarkerWordItem.createStartOfHost();
         ByteBuffer buffer = ByteBuffer.allocate(128);
@@ -75,6 +84,7 @@ public class ItemEncodingTestCase extends junit.framework.TestCase {
         assertEquals('T', buffer.get());
     }
 
+    @Test
     public void testEndHostMarkerEncoding() {
         WordItem word = MarkerWordItem.createEndOfHost();
 
@@ -99,6 +109,7 @@ public class ItemEncodingTestCase extends junit.framework.TestCase {
         assertEquals('T', buffer.get());
     }
 
+    @Test
     public void testFilterWordItemEncoding() {
         WordItem word = new WordItem("test");
 
@@ -122,6 +133,7 @@ public class ItemEncodingTestCase extends junit.framework.TestCase {
         assertEquals('t', buffer.get());
     }
 
+    @Test
     public void testNoRankedNoPositionDataWordItemEncoding() {
         WordItem word = new WordItem("test");
         word.setRanked(false);
@@ -146,6 +158,7 @@ public class ItemEncodingTestCase extends junit.framework.TestCase {
         assertEquals('t', buffer.get());
     }
 
+    @Test
     public void testAndItemEncoding() {
         WordItem a = new WordItem("a");
         WordItem b = new WordItem("b");
@@ -168,6 +181,7 @@ public class ItemEncodingTestCase extends junit.framework.TestCase {
         assertWord(buffer,"b");
     }
 
+    @Test
     public void testNearItemEncoding() {
         WordItem a = new WordItem("a");
         WordItem b = new WordItem("b");
@@ -191,6 +205,7 @@ public class ItemEncodingTestCase extends junit.framework.TestCase {
         assertWord(buffer,"b");
     }
 
+    @Test
     public void testONearItemEncoding() {
         WordItem a = new WordItem("a");
         WordItem b = new WordItem("b");
@@ -213,6 +228,7 @@ public class ItemEncodingTestCase extends junit.framework.TestCase {
         assertWord(buffer,"b");
     }
 
+    @Test
     public void testEquivItemEncoding() {
         WordItem a = new WordItem("a");
         WordItem b = new WordItem("b");
@@ -234,6 +250,7 @@ public class ItemEncodingTestCase extends junit.framework.TestCase {
         assertWord(buffer, "b");
     }
 
+    @Test
     public void testWandItemEncoding() {
         WordItem a = new WordItem("a");
         WordItem b = new WordItem("b");
@@ -257,6 +274,7 @@ public class ItemEncodingTestCase extends junit.framework.TestCase {
         assertWord(buffer, "b");
     }
 
+    @Test
     public void testPureWeightedStringEncoding() {
         PureWeightedString a = new PureWeightedString("a");
         ByteBuffer buffer = ByteBuffer.allocate(128);
@@ -268,6 +286,7 @@ public class ItemEncodingTestCase extends junit.framework.TestCase {
         assertString(buffer, a.getString());
     }
 
+    @Test
     public void testPureWeightedStringEncodingWithNonDefaultWeight() {
         PureWeightedString a = new PureWeightedString("a", 7);
         ByteBuffer buffer = ByteBuffer.allocate(128);
@@ -280,6 +299,7 @@ public class ItemEncodingTestCase extends junit.framework.TestCase {
         assertString(buffer, a.getString());
     }
 
+    @Test
     public void testPureWeightedIntegerEncoding() {
         PureWeightedInteger a = new PureWeightedInteger(23432568763534865l);
         ByteBuffer buffer = ByteBuffer.allocate(128);
@@ -291,6 +311,7 @@ public class ItemEncodingTestCase extends junit.framework.TestCase {
         assertEquals("Value", a.getValue(), buffer.getLong());
     }
 
+    @Test
     public void testPureWeightedLongEncodingWithNonDefaultWeight() {
         PureWeightedInteger a = new PureWeightedInteger(23432568763534865l, 7);
         ByteBuffer buffer = ByteBuffer.allocate(128);

@@ -28,7 +28,6 @@ import static java.util.stream.Collectors.toList;
  * Executor of validators. This defines the right order of validator execution.
  *
  * @author hmusum
- * @since 2010-01-29
  */
 public class Validation {
 

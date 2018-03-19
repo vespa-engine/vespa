@@ -46,4 +46,5 @@ public class ContainerRestartValidator implements ChangeValidator {
     private static boolean isExistingContainer(Container container, VespaModel currentModel) {
         return currentModel.getService(container.getConfigId()).isPresent();
     }
+
 }

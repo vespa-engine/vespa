@@ -13,7 +13,6 @@ import java.util.Set;
  * map reference is volatile, but on most multi-cpu machines that has no cost unless modified.</p>
  *
  * @author baldersheim
- * @since 5.2
  */
 public class CopyOnWriteHashMap<K, V> implements Map<K, V> {
 

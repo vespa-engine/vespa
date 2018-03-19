@@ -1,18 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.test;
 
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.CompositeIndexedItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.PureWeightedString;
+import com.yahoo.prelude.query.WeightedSetItem;
+import com.yahoo.prelude.query.WordItem;
+import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
-import com.yahoo.io.HexDump;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-public class WeightedSetItemTestCase extends junit.framework.TestCase {
+public class WeightedSetItemTestCase {
 
-    public WeightedSetItemTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testTokenAPI() {
         WeightedSetItem ws = new WeightedSetItem("index");
         assertEquals(0, ws.getNumTokens());
@@ -49,6 +54,7 @@ public class WeightedSetItemTestCase extends junit.framework.TestCase {
         assertEquals(2, ws.getNumTokens());
     }
 
+    @Test
     public void testNegativeWeight() {
         WeightedSetItem ws = new WeightedSetItem("index");
         assertEquals(new Integer(-10), ws.addToken("bad", -10));
@@ -70,6 +76,7 @@ public class WeightedSetItemTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testEncoding() {
         WeightedSetItem item = new WeightedSetItem("index");
         // need 2 alternative reference encoding, as the encoding
@@ -108,4 +115,5 @@ public class WeightedSetItemTestCase extends junit.framework.TestCase {
             assertTrue(actual.equals(expect2));
         }
     }
+
 }

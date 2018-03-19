@@ -7,20 +7,20 @@ import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.NonPhrasingSearcher;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests non-phrasing
  *
  * @author bratseth
  */
-public class NonPhrasingSearcherTestCase extends junit.framework.TestCase {
+public class NonPhrasingSearcherTestCase {
 
     private Searcher searcher;
 
-    public NonPhrasingSearcherTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testSingleWordNonPhrasing() {
         searcher=
             new NonPhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
@@ -31,6 +31,7 @@ public class NonPhrasingSearcherTestCase extends junit.framework.TestCase {
         assertEquals("AND void kanoo", query.getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testMultipleWordNonPhrasing() {
         searcher=
             new NonPhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
@@ -44,6 +45,7 @@ public class NonPhrasingSearcherTestCase extends junit.framework.TestCase {
         assertEquals("kanoo",((WordItem)item.getItem(1)).getWord());
     }
 
+    @Test
     public void testNoNonPhrasingIfNoOtherPhrases() {
         searcher=
             new NonPhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");
@@ -57,6 +59,7 @@ public class NonPhrasingSearcherTestCase extends junit.framework.TestCase {
         assertEquals("vidor",((WordItem)item.getItem(1)).getWord());
     }
 
+    @Test
     public void testNoNonPhrasingIfSuggestOnly() {
         searcher=
             new NonPhrasingSearcher("src/test/java/com/yahoo/prelude/querytransform/test/test-fsa.fsa");

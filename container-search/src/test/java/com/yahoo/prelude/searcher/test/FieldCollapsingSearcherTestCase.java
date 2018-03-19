@@ -3,7 +3,6 @@ package com.yahoo.prelude.searcher.test;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.query.AndItem;
@@ -23,23 +22,26 @@ import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Tests the FieldCollapsingSearcher class
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @SuppressWarnings("deprecation")
-public class FieldCollapsingSearcherTestCase extends junit.framework.TestCase {
-
-    public FieldCollapsingSearcherTestCase (String name) {
-        super(name);
-    }
+public class FieldCollapsingSearcherTestCase {
 
     private FastHit createHit(String uri,int relevancy,int mid) {
         FastHit hit = new FastHit(uri,relevancy);
@@ -66,6 +68,7 @@ public class FieldCollapsingSearcherTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testFieldCollapsingWithoutHits() {
         // Set up
         Map<Searcher, Searcher> chained = new HashMap<>();
@@ -82,6 +85,7 @@ public class FieldCollapsingSearcherTestCase extends junit.framework.TestCase {
         assertEquals(1, checker.queryCount);
     }
 
+    @Test
     public void testFieldCollapsingWithoutHitsHugeOffset() {
         Map<Searcher, Searcher> chained = new HashMap<>();
 
@@ -97,6 +101,7 @@ public class FieldCollapsingSearcherTestCase extends junit.framework.TestCase {
         assertEquals(1, checker.queryCount);
     }
 
+    @Test
     public void testFieldCollapsing() {
         Map<Searcher, Searcher> chained = new HashMap<>();
 
@@ -134,6 +139,7 @@ public class FieldCollapsingSearcherTestCase extends junit.framework.TestCase {
         assertHit("http://acme.org/g.html", 7,3,r.hits().get(3));
     }
 
+    @Test
     public void testFieldCollapsingTwoPhase() {
         // Set up
         Map<Searcher, Searcher> chained = new HashMap<>();
@@ -169,6 +175,7 @@ public class FieldCollapsingSearcherTestCase extends junit.framework.TestCase {
         assertHit("http://acme.org/g.html", 7,3,r.hits().get(3));
     }
 
+    @Test
     public void testNoCollapsingIfNotAskedTo() {
         // Set up
         Map<Searcher, Searcher> chained = new HashMap<>();
@@ -201,6 +208,7 @@ public class FieldCollapsingSearcherTestCase extends junit.framework.TestCase {
      * Tests that collapsing many hits from one site works, and without
      * an excessive number of backend requests
      */
+    @Test
     public void testCollapsingLargeCollection() {
         // Set up
         Map<Searcher, Searcher> chained = new HashMap<>();
@@ -245,6 +253,7 @@ public class FieldCollapsingSearcherTestCase extends junit.framework.TestCase {
     /**
      * Tests collapsing of "messy" data
      */
+    @Test
     public void testCollapsingDispersedCollection() {
         // Set up
         Map<Searcher, Searcher> chained = new HashMap<>();
@@ -289,6 +298,7 @@ public class FieldCollapsingSearcherTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testQueryTransformAndCollapsing() {
         // Set up
         Map<Searcher, Searcher> chained = new HashMap<>();
@@ -331,6 +341,7 @@ public class FieldCollapsingSearcherTestCase extends junit.framework.TestCase {
     // in the fill call, then saying the hits are filled for the
     // ignored argument. Rewrite to contain different summaries if
     // DocumentSourceSearcher gets extended.
+    @Test
     public void testFieldCollapsingTwoPhaseSelectSummary() {
         // Set up
         Map<Searcher, Searcher> chained = new HashMap<>();
@@ -381,6 +392,7 @@ public class FieldCollapsingSearcherTestCase extends junit.framework.TestCase {
         assertHit("http://acme.org/g.html", 7,3,r.hits().get(3));
     }
 
+    @Test
     public void testFieldCollapsingWithGrouping() {
         // Set up
         FieldCollapsingSearcher collapse = new FieldCollapsingSearcher("other");
@@ -477,4 +489,5 @@ public class FieldCollapsingSearcherTestCase extends junit.framework.TestCase {
             return root;
         }
     }
+
 }
