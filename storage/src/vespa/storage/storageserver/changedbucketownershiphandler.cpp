@@ -151,6 +151,14 @@ ChangedBucketOwnershipHandler::OwnershipState::ownerOf(
     return FAILED_TO_RESOLVE;
 }
 
+bool
+ChangedBucketOwnershipHandler::OwnershipState::storageNodeUp(document::BucketSpace bucketSpace, uint16_t nodeIndex) const
+{
+    const auto &derivedState = *_state->getDerivedClusterState(bucketSpace);
+    lib::Node node(lib::NodeType::STORAGE, nodeIndex);
+    return derivedState.getNodeState(node).getState().oneOf("uir");
+}
+
 void
 ChangedBucketOwnershipHandler::logTransition(
         const lib::ClusterState& currentState,
@@ -175,9 +183,14 @@ class StateDiffLazyAbortPredicate
     // Fast path to avoid trying (and failing) to compute owner in a state
     // where all distributors are down.
     bool _allDistributorsHaveGoneDown;
+    uint16_t _nodeIndex;
 
     bool doShouldAbort(const document::Bucket &bucket) const override {
         if (_allDistributorsHaveGoneDown) {
+            return true;
+        }
+        bool storageNodeUp = _newState.storageNodeUp(bucket.getBucketSpace(), _nodeIndex);
+        if (!storageNodeUp) {
             return true;
         }
         uint16_t oldOwner(_oldState.ownerOf(bucket));
@@ -192,11 +205,13 @@ class StateDiffLazyAbortPredicate
 public:
     StateDiffLazyAbortPredicate(
             const ChangedBucketOwnershipHandler::OwnershipState& oldState,
-            const ChangedBucketOwnershipHandler::OwnershipState& newState)
+            const ChangedBucketOwnershipHandler::OwnershipState& newState,
+            uint16_t nodeIndex)
         : _oldState(oldState),
           _newState(newState),
           _allDistributorsHaveGoneDown(
-                  allDistributorsDownInState(newState.getBaselineState()))
+                  allDistributorsDownInState(newState.getBaselineState())),
+          _nodeIndex(nodeIndex)
     {
     }
 };
@@ -209,7 +224,8 @@ ChangedBucketOwnershipHandler::makeLazyAbortPredicate(
         const OwnershipState::CSP& newOwnership) const
 {
     return std::unique_ptr<AbortBucketOperationsCommand::AbortPredicate>(
-            new StateDiffLazyAbortPredicate(*oldOwnership, *newOwnership));
+            new StateDiffLazyAbortPredicate(*oldOwnership, *newOwnership,
+                                            _component.getIndex()));
 }
 
 /*

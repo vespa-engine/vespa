@@ -98,6 +98,7 @@ public:
         const lib::ClusterState& getBaselineState() const;
 
         uint16_t ownerOf(const document::Bucket& bucket) const;
+        bool storageNodeUp(document::BucketSpace bucketSpace, uint16_t nodeIndex) const;
     };
 
     /**
