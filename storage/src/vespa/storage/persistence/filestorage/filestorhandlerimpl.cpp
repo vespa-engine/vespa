@@ -1132,10 +1132,8 @@ FileStorHandlerImpl::getStatus(std::ostream& out, const framework::HttpUrlPath& 
         out << "<h4>Active operations</h4>\n";
         for (const auto& lockedBucket : t.lockedBuckets) {
             out << lockedBucket.second.statusString
-                << " (" << lockedBucket.first.getBucketId()
-                << ") Running for "
-                << (_component.getClock().getTimeInSeconds().getTime()
-                    - lockedBucket.second.timestamp)
+                << " (" << lockedBucket.first.getBucketId() << ") Running for "
+                << (_component.getClock().getTimeInSeconds().getTime() - lockedBucket.second.timestamp)
                 << " secs<br/>\n";
         }
         if (!verbose) continue;
@@ -1150,8 +1148,7 @@ FileStorHandlerImpl::getStatus(std::ostream& out, const framework::HttpUrlPath& 
         out << "</ul>\n";
     }
 
-    out << "<tr><td>Active merge operations</td><td>" << _mergeStates.size()
-        << "</td></tr>\n";
+    out << "<tr><td>Active merge operations</td><td>" << _mergeStates.size() << "</td></tr>\n";
 
     // Print merge states
     if (verbose) {
