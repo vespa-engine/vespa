@@ -7,12 +7,10 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
-import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-import org.bouncycastle.util.io.pem.PemObject;
+import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
+import com.yahoo.vespa.athenz.tls.Pkcs10CsrUtils;
 
 import java.io.IOException;
-import java.io.StringWriter;
 
 /**
  * Contains PEM formatted Certificate Signing Request (CSR)
@@ -23,10 +21,10 @@ import java.io.StringWriter;
 public class CsrSerializedPayload {
 
     @JsonProperty("csr") @JsonSerialize(using = CertificateRequestSerializer.class)
-    public final PKCS10CertificationRequest csr;
+    public final Pkcs10Csr csr;
 
     @JsonCreator
-    public CsrSerializedPayload(@JsonProperty("csr") PKCS10CertificationRequest csr) {
+    public CsrSerializedPayload(@JsonProperty("csr") Pkcs10Csr csr) {
         this.csr = csr;
     }
 
@@ -52,15 +50,10 @@ public class CsrSerializedPayload {
                 '}';
     }
 
-    public static class CertificateRequestSerializer extends JsonSerializer<PKCS10CertificationRequest> {
+    public static class CertificateRequestSerializer extends JsonSerializer<Pkcs10Csr> {
         @Override
-        public void serialize(
-                PKCS10CertificationRequest csr, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
-                pemWriter.writeObject(new PemObject("CERTIFICATE REQUEST", csr.getEncoded()));
-                pemWriter.flush();
-                gen.writeString(stringWriter.toString());
-            }
+        public void serialize(Pkcs10Csr csr, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeString(Pkcs10CsrUtils.toPem(csr));
         }
     }
 }
