@@ -98,7 +98,7 @@ public class DeploymentTrigger {
                     return;
                 }
             }
-            else if (report.success() && deploymentComplete(application)) {
+            else if (report.jobType().isProduction() && deploymentComplete(application)) {
                 // change completed
                 application = application.withChange(Change.empty());
             }
@@ -395,16 +395,14 @@ public class DeploymentTrigger {
     }
 
     /**
-     * Returns whether the currently deployed version in the zone for the given production job is newer
-     * than the given version, in which case we should avoid an unsupported downgrade, or if it is the
-     * same version, and was successfully deployed, in which case it is unnecessary to redeploy it.
+     * Returns whether the currently deployed application in the zone for the given production job already
+     * has the given changes, in which case we should avoid an unsupported downgrade, or an unnecessary redeploy.
      */
     private boolean alreadyDeployed(Version version, Application application, JobType job) {
         if ( ! job.isProduction())
             throw new IllegalArgumentException(job + " is not a production job!");
 
-        return lastSuccessfulIs(version, job, application) ||
-               job.zone(controller.system())
+        return job.zone(controller.system())
                   .map(zone -> application.deployments().get(zone))
                   .map(deployment -> deployment.version().isAfter(version))
                   .orElse(false);
