@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.system.ProcessExecuter;
@@ -85,7 +82,8 @@ public class DockerOperationsImpl implements DockerOperations {
                     nodeSpec.hostname)
                     .withManagedBy(MANAGER_NAME)
                     .withEnvironment("CONFIG_SERVER_ADDRESS", configServers) // TODO: Remove when all images support CONTAINER_ENVIRONMENT_SETTINGS
-                    .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS", createContainerEnvironmentSettings(environment, nodeSpec))
+                    .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS",
+                                     environment.getContainerEnvironmentResolver().createSettings(environment, nodeSpec))
                     .withUlimit("nofile", 262_144, 262_144)
                     .withUlimit("nproc", 32_768, 409_600)
                     .withUlimit("core", -1, -1)
@@ -334,31 +332,6 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public void deleteUnusedDockerImages() {
         docker.deleteUnusedDockerImages();
-    }
-
-    private String createContainerEnvironmentSettings(Environment environment, ContainerNodeSpec nodeSpec) {
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        ContainerEnvironmentSettings settings = new ContainerEnvironmentSettings();
-        settings.set("configServerAddresses", environment.getConfigServerHostNames());
-        settings.set("nodeType", nodeSpec.nodeType);
-        settings.set("cloud", environment.getCloud());
-        settings.set("jvmArgs", environment.getJvmArgs());
-
-        try {
-            return objectMapper.writeValueAsString(settings);
-        } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("Could not write " + settings, e);
-        }
-    }
-
-    private class ContainerEnvironmentSettings {
-        @JsonProperty(value="environmentVariables")
-        private final Map<String, Object> variables = new HashMap<>();
-
-        void set(String argument, Object value) {
-            variables.put(argument, value);
-        }
     }
 
     /**

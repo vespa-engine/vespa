@@ -18,5 +18,3 @@ keyStoreConfig.password      string                      default=""
 trustStoreConfig.path        string                      default=""
 trustStoreConfig.type        enum { JKS, PEM, PKCS12 }   default=JKS
 trustStoreConfig.password    string                      default=""
-
-jvmargs                      string                      default=""

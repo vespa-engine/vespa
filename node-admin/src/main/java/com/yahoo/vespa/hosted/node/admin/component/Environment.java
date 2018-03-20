@@ -61,7 +61,7 @@ public class Environment {
     private final NodeType nodeType;
     private final String defaultFlavor;
     private final String cloud;
-    private final String jvmArgs;
+    private final ContainerEnvironmentResolver containerEnvironmentResolver;
 
     static {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -79,21 +79,23 @@ public class Environment {
              Optional.of(getEnvironmentVariable(COREDUMP_FEED_ENDPOINT)),
              NodeType.host,
              "d-2-8-50",
-             getEnvironmentVariable(CLOUD));
+             getEnvironmentVariable(CLOUD),
+             new DefaultContainerEnvironmentResolver());
     }
 
     private Environment(ConfigServerConfig configServerConfig,
-                       String environment,
-                       String region,
-                       String system,
-                       String parentHostHostname,
-                       InetAddressResolver inetAddressResolver,
-                       PathResolver pathResolver,
-                       List<String> logstashNodes,
-                       Optional<String> coreDumpFeedEndpoint,
-                       NodeType nodeType,
-                       String defaultFlavor,
-                       String cloud) {
+                        String environment,
+                        String region,
+                        String system,
+                        String parentHostHostname,
+                        InetAddressResolver inetAddressResolver,
+                        PathResolver pathResolver,
+                        List<String> logstashNodes,
+                        Optional<String> coreDumpFeedEndpoint,
+                        NodeType nodeType,
+                        String defaultFlavor,
+                        String cloud,
+                        ContainerEnvironmentResolver containerEnvironmentResolver) {
         Objects.requireNonNull(configServerConfig, "configServerConfig cannot be null");
         Objects.requireNonNull(environment, "environment cannot be null");
         Objects.requireNonNull(region, "region cannot be null");
@@ -129,7 +131,7 @@ public class Environment {
         this.nodeType = nodeType;
         this.defaultFlavor = defaultFlavor;
         this.cloud = cloud;
-        this.jvmArgs = configServerConfig.jvmargs();
+        this.containerEnvironmentResolver = containerEnvironmentResolver;
     }
 
     public List<String> getConfigServerHostNames() { return configServerHostNames; }
@@ -274,7 +276,9 @@ public class Environment {
 
     public String getCloud() { return cloud; }
 
-    public String getJvmArgs() { return jvmArgs; }
+    public ContainerEnvironmentResolver getContainerEnvironmentResolver() {
+        return containerEnvironmentResolver;
+    }
 
     public static class Builder {
         private ConfigServerConfig configServerConfig;
@@ -289,6 +293,7 @@ public class Environment {
         private NodeType nodeType = NodeType.tenant;
         private String defaultFlavor;
         private String cloud;
+        private ContainerEnvironmentResolver containerEnvironmentResolver;
 
         public Builder configServerConfig(ConfigServerConfig configServerConfig) {
             this.configServerConfig = configServerConfig;
@@ -322,6 +327,11 @@ public class Environment {
 
         public Builder pathResolver(PathResolver pathResolver) {
             this.pathResolver = pathResolver;
+            return this;
+        }
+
+        public Builder containerEnvironmentResolver(ContainerEnvironmentResolver containerEnvironmentResolver) {
+            this.containerEnvironmentResolver = containerEnvironmentResolver;
             return this;
         }
 
@@ -362,7 +372,8 @@ public class Environment {
                                    coredumpFeedEndpoint,
                                    nodeType,
                                    defaultFlavor,
-                                   cloud);
+                                   cloud,
+                                   Optional.ofNullable(containerEnvironmentResolver).orElseGet(DefaultContainerEnvironmentResolver::new));
         }
     }
 }
