@@ -66,7 +66,6 @@ PersistenceUtil::PersistenceUtil(
         FileStorHandler& fileStorHandler,
         FileStorThreadMetrics& metrics,
         uint16_t partition,
-        uint8_t lowestPriority,
         spi::PersistenceProvider& provider)
     : _config(*config::ConfigGetter<vespa::config::content::StorFilestorConfig>::getConfig(configUri.getConfigId(), configUri.getContext())),
       _compReg(compReg),
@@ -77,24 +76,18 @@ PersistenceUtil::PersistenceUtil(
       _metrics(metrics),
       _bucketFactory(_component.getBucketIdFactory()),
       _repo(_component.getTypeRepo()),
-      _lowestPriority(lowestPriority),
-      _pauseHandler(),
       _spi(provider)
 {
 }
 
-PersistenceUtil::~PersistenceUtil()
-{
-}
+PersistenceUtil::~PersistenceUtil() { }
 
 void
-PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket,
-                                      const api::BucketInfo& i)
+PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket, const api::BucketInfo& i)
 {
     // Update bucket database
-    StorBucketDatabase::WrappedEntry entry(getBucketDatabase(bucket.getBucketSpace()).get(
-                                                   bucket.getBucketId(),
-                                                   "env::updatebucketdb"));
+    StorBucketDatabase::WrappedEntry entry(getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(),
+                                                                                          "env::updatebucketdb"));
     if (entry.exist()) {
         api::BucketInfo info = i;
 
@@ -106,9 +99,7 @@ PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket,
         entry->setBucketInfo(info);
         entry.write();
     } else {
-        LOG(debug,
-            "Bucket(%s).getBucketInfo: Bucket does not exist.",
-            bucket.getBucketId().toString().c_str());
+        LOG(debug, "Bucket(%s).getBucketInfo: Bucket does not exist.", bucket.getBucketId().toString().c_str());
     }
 }
 

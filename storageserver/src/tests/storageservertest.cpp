@@ -222,8 +222,7 @@ StorageServerTest::setUp()
     storConfig.reset(new vdstestlib::DirConfig(getStandardConfig(true)));
     addSlobrokConfig(*distConfig, *slobrok);
     addSlobrokConfig(*storConfig, *slobrok);
-    storConfig->getConfig("stor-filestor")
-            .set("fail_disk_after_error_count", "1");
+    storConfig->getConfig("stor-filestor").set("fail_disk_after_error_count", "1");
     system("mkdir -p vdsroot/disks/d0");
     system("mkdir -p vdsroot.distributor");
     slobrokMirror.reset(new SlobrokMirror(slobrok->config()));

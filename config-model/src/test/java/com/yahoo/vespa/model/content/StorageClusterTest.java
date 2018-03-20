@@ -120,12 +120,7 @@ public class StorageClusterTest {
 
         StorFilestorConfig config = new StorFilestorConfig(builder);
 
-        assertEquals(4, config.threads().size());
-        assertEquals(190, config.threads().get(0).lowestpri());
-        assertEquals(190, config.threads().get(1).lowestpri());
-        assertEquals(60, config.threads().get(2).lowestpri());
-        assertEquals(255, config.threads().get(3).lowestpri());
-
+        assertEquals(4, config.num_threads());
         assertEquals(true, config.enable_multibit_split_optimalization());
     }
 
@@ -145,7 +140,7 @@ public class StorageClusterTest {
 
         StorFilestorConfig config = new StorFilestorConfig(builder);
 
-        assertEquals(0, config.threads().size());
+        assertEquals(6, config.num_threads());
     }
 
     @Test
