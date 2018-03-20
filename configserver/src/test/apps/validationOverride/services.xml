@@ -1,5 +1,11 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <jdisc version="1.0">
+    <http>
+        <filtering>
+            <access-control domain="foo" write="true" />
+        </filtering>
+        <server id="foo" port="4080" />
+    </http>
     <search/>
     <nodes count="2"/>
 </jdisc>
