@@ -151,7 +151,6 @@ public class VespaModelFactory implements ModelFactory {
                 .multitenant(properties.multitenant())
                 .hostedVespa(properties.hostedVespa())
                 .vespaVersion(getVersion())
-                .zone(properties.zone())
                 .build();
     }
 

@@ -810,10 +810,11 @@ public class ClusterTest extends ContentBaseTest {
     }
 
     private ContentCluster createWithZone(String clusterXml, Zone zone) throws Exception {
-        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new DeployProperties.Builder()
-                                                                                              .hostedVespa(true)
-                                                                                              .zone(zone)
-                                                                                              .build());
+        DeployState.Builder deployStateBuilder = new DeployState.Builder()
+                .zone(zone)
+                .properties(new DeployProperties.Builder()
+                                    .hostedVespa(true)
+                                    .build());
         List<String> searchDefinitions = SearchDefinitionBuilder.createSearchDefinitions("test");
         MockRoot root = ContentClusterUtils.createMockRoot(searchDefinitions, deployStateBuilder);
         ContentCluster cluster = ContentClusterUtils.createCluster(clusterXml, root);
