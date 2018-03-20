@@ -114,26 +114,6 @@ public:
     void performSearch(search::engine::SearchRequest::Source req,
                        search::engine::SearchClient &client);
 
-    /**
-     * Will enable the search interface.
-     */
-    void setOnline();
-
-    /**
-     * Will disable the search interface.
-     */
-    void setOffline();
-
-    /**
-     * Allow search interface to be online.
-     */
-    void setOutOfService();
-
-    /**
-     * Disallow search interface.
-     */
-    void setInService();
-
     /** obtain current online status */
     bool isOnline() const;
 
