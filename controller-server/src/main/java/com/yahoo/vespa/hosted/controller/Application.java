@@ -167,22 +167,28 @@ public class Application {
                 : deployVersionIn(jobType.zone(controller.system()).get(), controller);
     }
 
-    /** Returns the application version to use for the given job */
+    /**
+     * Returns the application version to use for the given job.
+     *
+     * If no version is specified by the application's {@link Change}, or by {@code currentVersion},
+     * returns the currently deployed application version, or the last successfully deployed one.
+     */
     public Optional<ApplicationVersion> deployApplicationVersionFor(DeploymentJobs.JobType jobType,
                                                                     Controller controller,
                                                                     boolean currentVersion) {
-        // Use last successful version if currentVersion is requested (staging deployment) or when we're not deploying
-        // a new application version
-        // TODO: Use currently deployed if undetermined.
+        if (jobType == DeploymentJobs.JobType.component)
+            return Optional.empty();
+
         if (currentVersion || ! change().application().isPresent()) {
-            Optional<ApplicationVersion> version = deploymentJobs().lastSuccessfulApplicationVersionFor(jobType);
-            if (version.isPresent()) {
-                return version;
-            }
+            Deployment deployment = deployments().get(jobType.zone(controller.system()).get());
+            if (deployment != null)
+                return Optional.of(deployment.applicationVersion());
+
+            if (deploymentJobs().lastSuccessfulApplicationVersionFor(jobType).isPresent())
+                return deploymentJobs().lastSuccessfulApplicationVersionFor(jobType);
         }
-        return jobType == DeploymentJobs.JobType.component
-                ? Optional.empty()
-                : deployApplicationVersionIn(jobType.zone(controller.system()).get());
+
+        return change().application();
     }
 
     /** Returns the global rotation of this, if present */
@@ -213,19 +219,6 @@ public class Application {
     /** Returns whether changes to this are blocked in the given instant */
     public boolean isBlocked(Instant instant) {
          return ! deploymentSpec().canUpgradeAt(instant) || ! deploymentSpec().canChangeRevisionAt(instant);
-    }
-
-    /** Returns the application version a deployment to this zone should use, or empty if we don't know */
-    private Optional<ApplicationVersion> deployApplicationVersionIn(ZoneId zone) {
-        if (change().application().isPresent()) {
-            return Optional.of(change().application().get());
-        }
-        return applicationVersionIn(zone);
-    }
-
-    /** Returns the application version that is or should be deployed with in the given zone, or empty if unknown. */
-    private Optional<ApplicationVersion> applicationVersionIn(ZoneId zone) {
-        return Optional.ofNullable(deployments().get(zone)).map(Deployment::applicationVersion);
     }
 
 }
