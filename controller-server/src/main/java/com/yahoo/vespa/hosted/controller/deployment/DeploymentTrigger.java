@@ -274,8 +274,9 @@ public class DeploymentTrigger {
     public void cancelChange(ApplicationId applicationId) {
         applications().lockOrThrow(applicationId, application -> {
             deploymentQueue.removeJobs(application.id());
-            // TODO: Cancel only platform change?
-            applications().store(application.withChange(Change.empty()));
+            applications().store(application.withChange(application.change().application()
+                                                                .map(Change::of)
+                                                                .orElse(Change.empty())));
         });
     }
 
