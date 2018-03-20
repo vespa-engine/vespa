@@ -587,9 +587,11 @@ public class RestApiTest {
         String responseString = container.handleRequest(request).getBodyAsString();
         if (expectedResponse.contains("(ignore)")) {
             // Convert expected response to a literal pattern and replace any ignored field with a pattern that matches
-            // anything
+            // until the first stop character
+            String stopCharacters = "[^,:\\\\[\\\\]{}]";
             String expectedResponsePattern = Pattern.quote(expectedResponse)
-                                                    .replaceAll("\"?\\(ignore\\)\"?", "\\\\E.*\\\\Q");
+                                                    .replaceAll("\"?\\(ignore\\)\"?", "\\\\E" +
+                                                                                      stopCharacters + "*\\\\Q");
             if (!Pattern.matches(expectedResponsePattern, responseString)) {
                 throw new ComparisonFailure(responseFile + " (with ignored fields)", expectedResponsePattern,
                                             responseString);
