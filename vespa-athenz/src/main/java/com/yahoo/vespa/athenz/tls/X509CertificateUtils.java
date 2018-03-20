@@ -9,6 +9,7 @@ import org.bouncycastle.util.io.pem.PemObject;
 
 import javax.naming.NamingException;
 import javax.naming.ldap.LdapName;
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -59,8 +60,12 @@ public class X509CertificateUtils {
     }
 
     public static List<String> getCommonNames(X509Certificate certificate) {
+        return getCommonNames(certificate.getSubjectX500Principal());
+    }
+
+    public static List<String> getCommonNames(X500Principal subject) {
         try {
-            String subjectPrincipal = certificate.getSubjectX500Principal().getName();
+            String subjectPrincipal = subject.getName();
             return new LdapName(subjectPrincipal).getRdns().stream()
                     .filter(rdn -> rdn.getType().equalsIgnoreCase("cn"))
                     .map(rdn -> rdn.getValue().toString())

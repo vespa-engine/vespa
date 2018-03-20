@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.tls;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -28,6 +29,7 @@ public class Pkcs10CsrBuilder {
     private final KeyPair keyPair;
     private final List<String> subjectAlternativeNames = new ArrayList<>();
     private final SignatureAlgorithm signatureAlgorithm;
+    private BasicConstraintsExtension basicConstraintsExtension;
 
     private Pkcs10CsrBuilder(X500Principal subject,
                              KeyPair keyPair,
@@ -48,20 +50,30 @@ public class Pkcs10CsrBuilder {
         return this;
     }
 
+    public Pkcs10CsrBuilder setBasicConstraints(boolean isCritical, boolean isCertAuthorityCertificate) {
+        this.basicConstraintsExtension = new BasicConstraintsExtension(isCritical, isCertAuthorityCertificate);
+        return this;
+    }
+
     public Pkcs10Csr build() {
         try {
             PKCS10CertificationRequestBuilder requestBuilder =
                     new JcaPKCS10CertificationRequestBuilder(subject, keyPair.getPublic());
-
+            ExtensionsGenerator extGen = new ExtensionsGenerator();
+            if (basicConstraintsExtension != null) {
+                extGen.addExtension(
+                        Extension.basicConstraints,
+                        basicConstraintsExtension.isCritical,
+                        new BasicConstraints(basicConstraintsExtension.isCertAuthorityCertificate));
+            }
             if (!subjectAlternativeNames.isEmpty()) {
                 GeneralNames generalNames = new GeneralNames(
                         subjectAlternativeNames.stream()
                                 .map(san -> new GeneralName(GeneralName.dNSName, san))
                                 .toArray(GeneralName[]::new));
-                ExtensionsGenerator extGen = new ExtensionsGenerator();
                 extGen.addExtension(Extension.subjectAlternativeName, false, generalNames);
-                requestBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extGen.generate());
             }
+            requestBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extGen.generate());
             ContentSigner contentSigner = new JcaContentSignerBuilder(signatureAlgorithm.getAlgorithmName())
                     .setProvider(BouncyCastleProviderHolder.getInstance())
                     .build(keyPair.getPrivate());
