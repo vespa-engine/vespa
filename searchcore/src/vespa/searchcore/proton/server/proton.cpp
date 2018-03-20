@@ -312,8 +312,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
         throw vespalib::PortListenException(protonConfig.ptport, "FS4");
     }
     int port = _fs4Server->getListenPort();
-    _matchEngine->setOnline();
-    _matchEngine->setInService();
     LOG(debug, "Started fs4 interface on port %d", port);
     _flushEngine->start();
     _isInitializing = false;

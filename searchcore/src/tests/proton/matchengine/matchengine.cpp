@@ -69,7 +69,6 @@ TEST("requireThatSearchesExecute")
 {
     int numMatcherThreads = 16;
     MatchEngine engine(numMatcherThreads, 1, 7);
-    engine.setOnline();
     engine.setNodeUp(true);
 
     MySearchHandler::SP handler(new MySearchHandler);
@@ -99,7 +98,6 @@ assertSearchReply(MatchEngine & engine, const std::string & searchDocType, size_
 TEST("requireThatCorrectHandlerIsUsed")
 {
     MatchEngine engine(1, 1, 7);
-    engine.setOnline();
     engine.setNodeUp(true);
     ISearchHandler::SP h1(new MySearchHandler(2));
     ISearchHandler::SP h2(new MySearchHandler(4));
@@ -135,7 +133,6 @@ struct ObserveBundleMatchHandler : MySearchHandler {
 TEST("requireThatBundlesAreUsed")
 {
     MatchEngine engine(15, 5, 7);
-    engine.setOnline();
     engine.setNodeUp(true);
 
     ObserveBundleMatchHandler::SP handler(new ObserveBundleMatchHandler());
@@ -153,7 +150,6 @@ TEST("requireThatBundlesAreUsed")
 TEST("requireThatHandlersCanBeRemoved")
 {
     MatchEngine engine(1, 1, 7);
-    engine.setOnline();
     engine.setNodeUp(true);
     ISearchHandler::SP h(new MySearchHandler(1));
     DocTypeName docType("foo");
@@ -171,25 +167,9 @@ TEST("requireThatHandlersCanBeRemoved")
     EXPECT_TRUE(r.get() == NULL);
 }
 
-TEST("requireThatEngineCanBeSetOffline")
-{
-    MatchEngine engine(1, 1, 7);
-    engine.setNodeUp(true);
-    engine.setOnline();
-    engine.setInService();
-    ASSERT_TRUE(engine.isOnline());
-    engine.setOffline();
-    ASSERT_FALSE(engine.isOnline());
-    engine.setOnline();
-    ASSERT_TRUE(engine.isOnline());
-    engine.setOutOfService();
-    ASSERT_FALSE(engine.isOnline());
-}
-
 TEST("requireThatEmptySearchReplyIsReturnedWhenEngineIsClosed")
 {
     MatchEngine engine(1, 1, 7);
-    engine.setOnline();
     engine.setNodeUp(true);
     engine.close();
     LocalSearchClient client;

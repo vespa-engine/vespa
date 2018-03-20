@@ -125,14 +125,6 @@ RPCHooksBase::initRPC()
 
     FRT_ReflectionBuilder rb(_orb.get());
     //-------------------------------------------------------------------------
-    rb.DefineMethod("proton.enableSearching", "", "", true,
-                    FRT_METHOD(RPCHooksBase::rpc_enableSearching), this);
-    rb.MethodDesc("Tell the node to enable searching");
-    //-------------------------------------------------------------------------
-    rb.DefineMethod("proton.disableSearching", "", "", true,
-                    FRT_METHOD(RPCHooksBase::rpc_disableSearching), this);
-    rb.MethodDesc("Tell the node to disable searching");
-    //-------------------------------------------------------------------------
     rb.DefineMethod("pandora.rtc.getState", "ii", "SSi", true,
                     FRT_METHOD(RPCHooksBase::rpc_GetState), this);
     rb.MethodDesc("Get the current state of node");
@@ -264,38 +256,6 @@ RPCHooksBase::prepareRestart(FRT_RPCRequest *req)
         LOG(warning, "RPCHooksBase::prepareRestart failed");
     }
     req->Return();
-}
-
-void
-RPCHooksBase::enableSearching(FRT_RPCRequest *req)
-{
-    _proton.getMatchEngine().setOnline();
-    LOG(info, "Searching enabled");
-    req->Return();
-}
-
-void
-RPCHooksBase::rpc_enableSearching(FRT_RPCRequest *req)
-{
-    LOG(info, "RPCHooksBase::rpc_enableSearching");
-    req->Detach();
-    letProtonDo(makeClosure(this, &RPCHooksBase::enableSearching, req));
-}
-
-void
-RPCHooksBase::disableSearching(FRT_RPCRequest *req)
-{
-    _proton.getMatchEngine().setOffline();
-    LOG(info, "Search disabled");
-    req->Return();
-}
-
-void
-RPCHooksBase::rpc_disableSearching(FRT_RPCRequest *req)
-{
-    LOG(info, "RPCHooksBase::rpc_disableSearching");
-    req->Detach();
-    letProtonDo(makeClosure(this, &RPCHooksBase::disableSearching, req));
 }
 
 void
