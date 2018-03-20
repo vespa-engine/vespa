@@ -128,7 +128,14 @@ public class ProvisioningTester {
     public void patchNode(Node node) { nodeRepository.write(node); }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, String flavor) {
-        return prepare(application, cluster, Capacity.fromNodeCount(nodeCount, Optional.ofNullable(flavor)), groups);
+        return prepare(application, cluster, nodeCount, groups, false, flavor);
+    }
+
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, boolean required, String flavor) {
+        Capacity capacity = required
+                ? Capacity.fromRequiredNodeCount(nodeCount)
+                : Capacity.fromNodeCount(nodeCount, Optional.ofNullable(flavor));
+        return prepare(application, cluster, capacity, groups);
     }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, int groups) {

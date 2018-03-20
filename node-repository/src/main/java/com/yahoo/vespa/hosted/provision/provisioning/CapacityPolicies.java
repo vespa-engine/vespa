@@ -3,10 +3,10 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 
 import java.util.Optional;
 
@@ -26,14 +26,14 @@ public class CapacityPolicies {
     }
 
     public int decideSize(Capacity requestedCapacity) {
-        int requestedNodes = requestedCapacity.nodeCount();
+        int requestedNodes = ensureRedundancy(requestedCapacity.nodeCount());
         if (requestedCapacity.isRequired()) return requestedNodes;
 
         switch(zone.environment()) {
             case dev : case test : return 1;
             case perf : return Math.min(requestedCapacity.nodeCount(), 3);
             case staging: return requestedNodes <= 1 ? requestedNodes : Math.max(2, requestedNodes / 10);
-            case prod : return ensureRedundancy(requestedCapacity.nodeCount());
+            case prod : return requestedNodes;
             default : throw new IllegalArgumentException("Unsupported environment " + zone.environment());
         }
     }
@@ -55,13 +55,13 @@ public class CapacityPolicies {
     }
 
     /**
-     * Throw if the node count is 1
+     * Throw if the node count is 1 and we're in a production zone
      *
      * @return the argument node count
      * @throws IllegalArgumentException if only one node is requested
      */
     private int ensureRedundancy(int nodeCount) {
-        if (nodeCount == 1 && zone.system() != SystemName.cd) {
+        if (nodeCount == 1 && zone.environment().isProduction() && zone.system() != SystemName.cd) {
             throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy");
         }
         return nodeCount;
