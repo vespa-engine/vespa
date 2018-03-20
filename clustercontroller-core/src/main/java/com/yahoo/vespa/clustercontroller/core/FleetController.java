@@ -121,7 +121,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         this.stateGatherer = nodeStateGatherer;
         this.stateChangeHandler = stateChangeHandler;
         this.systemStateBroadcaster = systemStateBroadcaster;
-        this.stateVersionTracker = new StateVersionTracker();
+        this.stateVersionTracker = new StateVersionTracker(options.minMergeCompletionRatio);
         this.metricUpdater = metricUpdater;
 
         this.statusPageServer = statusPage;
@@ -452,6 +452,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         } else {
             configuredBucketSpaces = Collections.emptySet();
         }
+        stateVersionTracker.setMinMergeCompletionRatio(options.minMergeCompletionRatio);
 
         communicator.propagateOptions(options);
 

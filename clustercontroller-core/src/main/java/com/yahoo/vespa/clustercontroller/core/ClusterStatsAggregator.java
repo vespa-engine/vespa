@@ -73,8 +73,8 @@ public class ClusterStatsAggregator {
         return result;
     }
 
-    MergePendingChecker createMergePendingChecker() {
-        return new AggregatedStatsMergePendingChecker(getAggregatedStats());
+    MergePendingChecker createMergePendingChecker(double minMergeCompletionRatio) {
+        return new AggregatedStatsMergePendingChecker(getAggregatedStats(), minMergeCompletionRatio);
     }
 
     /**

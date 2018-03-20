@@ -157,3 +157,9 @@ max_deferred_task_version_wait_time_sec double default=30.0
 
 ## Switch to enable multiple bucket spaces in cluster controller.
 enable_multiple_bucket_spaces bool default=false
+
+## The minimum merge completion ratio of buckets in a bucket space before it is considered complete.
+##
+## Bucket merges are considered complete when:
+## ((buckets_total - buckets_pending) / buckets_total)) >= min_merge_completion_ratio
+min_merge_completion_ratio double default=1.0

@@ -36,10 +36,13 @@ public class StateVersionTracker {
 
     private final LinkedList<ClusterStateHistoryEntry> clusterStateHistory = new LinkedList<>();
     private int maxHistoryEntryCount = 50;
+    private double minMergeCompletionRatio;
 
-    StateVersionTracker() {
+    StateVersionTracker(double minMergeCompletionRatio) {
         clusterStateView = ClusterStateView.create(currentUnversionedState.getBaselineClusterState());
-        clusterStatsChangeTracker = new ClusterStatsChangeTracker(clusterStateView.getStatsAggregator().getAggregatedStats());
+        clusterStatsChangeTracker = new ClusterStatsChangeTracker(clusterStateView.getStatsAggregator().getAggregatedStats(),
+                minMergeCompletionRatio);
+        this.minMergeCompletionRatio = minMergeCompletionRatio;
     }
 
     void setVersionRetrievedFromZooKeeper(final int version) {
@@ -56,6 +59,10 @@ public class StateVersionTracker {
      */
     void setMaxHistoryEntryCount(final int maxHistoryEntryCount) {
         this.maxHistoryEntryCount = maxHistoryEntryCount;
+    }
+
+    void setMinMergeCompletionRatio(double minMergeCompletionRatio) {
+        this.minMergeCompletionRatio = minMergeCompletionRatio;
     }
 
     int getCurrentVersion() {
@@ -128,7 +135,8 @@ public class StateVersionTracker {
                 newStateBundle.getBaselineClusterState().getDistributionBitCount());
         // TODO should this take place in updateLatestCandidateStateBundle instead? I.e. does it require a consolidated state?
         clusterStateView = ClusterStateView.create(currentClusterState.getBaselineClusterState());
-        clusterStatsChangeTracker.updateAggregatedStats(clusterStateView.getStatsAggregator().getAggregatedStats());
+        clusterStatsChangeTracker.updateAggregatedStats(clusterStateView.getStatsAggregator().getAggregatedStats(),
+                minMergeCompletionRatio);
     }
 
     private void recordCurrentStateInHistoryAtTime(final long currentTimeMs) {
@@ -149,7 +157,7 @@ public class StateVersionTracker {
     }
 
     MergePendingChecker createMergePendingChecker() {
-        return clusterStateView.getStatsAggregator().createMergePendingChecker();
+        return clusterStateView.getStatsAggregator().createMergePendingChecker(minMergeCompletionRatio);
     }
 
     /*

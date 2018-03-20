@@ -15,24 +15,35 @@ public class AggregatedStatsMergePendingCheckerTest {
         private final AggregatedClusterStats mockAggregatedStats = mock(AggregatedClusterStats.class);
         private final AggregatedStatsMergePendingChecker checker;
 
-        public Fixture(ContentClusterStatsBuilder builder, boolean hasUpdatesFromAllDistributors) {
+        public Fixture(ContentClusterStatsBuilder builder,
+                       boolean hasUpdatesFromAllDistributors,
+                       double minMergeCompletionRatio) {
             when(mockAggregatedStats.getStats()).thenReturn(builder.build());
             when(mockAggregatedStats.hasUpdatesFromAllDistributors()).thenReturn(hasUpdatesFromAllDistributors);
-            this.checker = new AggregatedStatsMergePendingChecker(mockAggregatedStats);
+            this.checker = new AggregatedStatsMergePendingChecker(mockAggregatedStats, minMergeCompletionRatio);
         }
 
         public static Fixture fromBucketsPending(long bucketsPending) {
             return new Fixture(new ContentClusterStatsBuilder()
-                    .add(1, "default", 5, bucketsPending), true);
+                    .add(1, "default", 5, bucketsPending),
+                    true, 1.0);
+        }
+
+        public static Fixture fromBucketsPending(long bucketsPending,
+                                                 double minMergeCompletionRatio) {
+            return new Fixture(new ContentClusterStatsBuilder()
+                    .add(1, "default", 5, bucketsPending),
+                    true, minMergeCompletionRatio);
         }
 
         public static Fixture fromInvalidBucketStats() {
             return new Fixture(new ContentClusterStatsBuilder()
-                    .add(1, "default"), true);
+                    .add(1, "default"),
+                    true, 1.0);
         }
 
         public static Fixture fromIncompleteStats() {
-            return new Fixture(new ContentClusterStatsBuilder(), false);
+            return new Fixture(new ContentClusterStatsBuilder(), false, 1.0);
         }
 
         public boolean mayHaveMergesPending(String bucketSpace, int contentNodeIndex) {
@@ -75,6 +86,14 @@ public class AggregatedStatsMergePendingCheckerTest {
     public void cluster_without_updates_from_all_distributors_may_have_merges_pending() {
         Fixture f = Fixture.fromIncompleteStats();
         assertTrue(f.mayHaveMergesPending("default", 1));
+    }
+
+    @Test
+    public void min_merge_completion_ratio_is_used_when_calculating_may_have_merges_pending() {
+        // Completion ratio is (5-3)/5 = 0.4
+        assertTrue(Fixture.fromBucketsPending(3, 0.6).mayHaveMergesPending("default", 1));
+        // Completion ratio is (5-2)/5 = 0.6
+        assertFalse(Fixture.fromBucketsPending(2, 0.6).mayHaveMergesPending("default", 1));
     }
 
 }
