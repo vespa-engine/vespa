@@ -99,7 +99,7 @@ ChangedBucketOwnershipHandler::Metrics::~Metrics() { }
 ChangedBucketOwnershipHandler::OwnershipState::OwnershipState(const ContentBucketSpaceRepo &contentBucketSpaceRepo,
                                                               std::shared_ptr<const lib::ClusterStateBundle> state)
     : _distributions(),
-      _state(state)
+      _state(std::move(state))
 {
     for (const auto &elem : contentBucketSpaceRepo) {
         auto distribution = elem.second->getDistribution();
@@ -185,12 +185,15 @@ class StateDiffLazyAbortPredicate
     bool _allDistributorsHaveGoneDown;
     uint16_t _nodeIndex;
 
+    bool contentNodeUpInBucketSpace(document::BucketSpace bucketSpace) const {
+        return _newState.storageNodeUp(bucketSpace, _nodeIndex);
+    }
+
     bool doShouldAbort(const document::Bucket &bucket) const override {
         if (_allDistributorsHaveGoneDown) {
             return true;
         }
-        bool storageNodeUp = _newState.storageNodeUp(bucket.getBucketSpace(), _nodeIndex);
-        if (!storageNodeUp) {
+        if (!contentNodeUpInBucketSpace(bucket.getBucketSpace())) {
             return true;
         }
         uint16_t oldOwner(_oldState.ownerOf(bucket));
