@@ -89,7 +89,8 @@ public class LbServicesProducerTest {
     private LbServicesConfig createModelAndGetLbServicesConfig(RegionName regionName) throws IOException, SAXException {
         final Zone zone = new Zone(Environment.prod, regionName);
         Map<TenantName, Map<ApplicationId, ApplicationInfo>> testModel = createTestModel(new DeployState.Builder()
-                                                                                                 .properties(new DeployProperties.Builder().zone(zone).build())
+                                                                                                 .zone(zone)
+                                                                                                 .properties(new DeployProperties.Builder().build())
                                                                                                  .zone(zone));
         return getLbServicesConfig(new Zone(Environment.prod, regionName), testModel);
     }
