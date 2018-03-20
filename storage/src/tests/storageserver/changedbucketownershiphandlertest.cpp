@@ -51,6 +51,7 @@ class ChangedBucketOwnershipHandlerTest : public CppUnit::TestFixture
     CPPUNIT_TEST(testIdealStateAbortUpdatesMetric);
     CPPUNIT_TEST(testExternalLoadOpAbortUpdatesMetric);
     CPPUNIT_TEST(testExternalLoadOpAbortsAreConfigurable);
+    CPPUNIT_TEST(testAbortCommandsWhenStorageNodeIsDown);
     CPPUNIT_TEST_SUITE_END();
 
     // TODO test: down edge triggered on cluster state with cluster down?
@@ -88,10 +89,16 @@ class ChangedBucketOwnershipHandlerTest : public CppUnit::TestFixture
     template <typename MsgType, typename... MsgParams>
     bool changeAbortsMessage(MsgParams&&... params);
 
+    template <typename MsgType, typename... MsgParams>
+    bool downAbortsMessage(MsgParams&&... params);
+
     lib::ClusterState getDefaultTestClusterState() const {
         return lib::ClusterState("distributor:4 storage:1");
     }
 
+    lib::ClusterState getStorageDownTestClusterState() const {
+        return lib::ClusterState("distributor:4 storage:1 .0.s:d");
+    }
 public:
     void testEnumerateBucketsBelongingOnChangedNodes();
     void testNoPreExistingClusterState();
@@ -116,6 +123,7 @@ public:
     void testIdealStateAbortUpdatesMetric();
     void testExternalLoadOpAbortUpdatesMetric();
     void testExternalLoadOpAbortsAreConfigurable();
+    void testAbortCommandsWhenStorageNodeIsDown();
 
     void setUp() override;
 };
@@ -447,6 +455,30 @@ ChangedBucketOwnershipHandlerTest::changeAbortsMessage(MsgParams&&... params)
 }
 
 /**
+ * Generate and dispatch a message of the given type with the provided
+ * aruments as if that message was sent from distributor 1. Messages will
+ * be checked as if the state contains 4 distributors in Up state and storage
+ * node is down. This means that any abortable message will trigger an abort.
+ */
+template <typename MsgType, typename... MsgParams>
+bool
+ChangedBucketOwnershipHandlerTest::downAbortsMessage(MsgParams&&... params)
+{
+    (void) _top->getRepliesOnce();
+    (void) _bottom->getCommandsOnce();
+    CPPUNIT_ASSERT((!changeAbortsMessage<MsgType, MsgParams...>(std::forward<MsgParams>(params) ...)));
+    _top->sendDown(createStateCmd(getStorageDownTestClusterState()));
+    CPPUNIT_ASSERT_EQUAL(size_t(3), _bottom->getNumCommands());
+    auto setSystemStateCommand = std::dynamic_pointer_cast<api::SetSystemStateCommand>(_bottom->getCommand(2));
+    CPPUNIT_ASSERT(setSystemStateCommand);
+    auto abortBucketOperationsCommand = std::dynamic_pointer_cast<AbortBucketOperationsCommand>(_bottom->getCommand(1));
+    CPPUNIT_ASSERT(abortBucketOperationsCommand);
+    auto testCommand = _bottom->getCommand(0);
+    CPPUNIT_ASSERT(testCommand);
+    return abortBucketOperationsCommand->shouldAbort(testCommand->getBucket());
+}
+
+/**
  * Returns a bucket that is not owned by the sending distributor (1). More
  * specifically, it returns a bucket that is owned by distributor 2.
  */
@@ -632,6 +664,16 @@ ChangedBucketOwnershipHandlerTest::testExternalLoadOpAbortsAreConfigurable()
     document::DocumentId docId("id:foo:testdoctype1::bar");
     CPPUNIT_ASSERT(!changeAbortsMessage<api::RemoveCommand>(
             getBucketToAbort(), docId, api::Timestamp(1234)));
+}
+
+void
+ChangedBucketOwnershipHandlerTest::testAbortCommandsWhenStorageNodeIsDown()
+{
+    document::Document::SP doc(_testDocRepo.createRandomDocumentAtLocation(1));
+    CPPUNIT_ASSERT(downAbortsMessage<api::PutCommand>(
+            getBucketToAllow(), doc, api::Timestamp(1234)));
+    CPPUNIT_ASSERT(downAbortsMessage<api::SetBucketStateCommand>(
+            getBucketToAllow(), api::SetBucketStateCommand::ACTIVE));
 }
 
 } // storage
