@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -395,9 +396,26 @@ public class DeploymentTriggerTest {
         assertTrue(tester.deploymentQueue().jobs().isEmpty());
 
         // Deploy the new application version, even though the platform version is already deployed in us-central-1.
-        tester.deployCompletely(application, applicationPackage, BuildJob.defaultBuildNumber + 1);
+        // Let it fail in us-central-1 after deployment, so we can test this zone is later skipped.
+        tester.completeDeploymentWithError(application, applicationPackage, BuildJob.defaultBuildNumber + 1, productionUsCentral1);
+        tester.deploy(productionUsCentral1, application, Optional.empty(), false);
+
         assertEquals(ApplicationVersion.from(BuildJob.defaultSourceRevision, BuildJob.defaultBuildNumber + 1),
                      app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
+
+        // Exhaust the automatic retry.
+        tester.clock().advance(Duration.ofHours(1));
+        tester.deployAndNotify(application, Optional.empty(), false, true, productionUsCentral1);
+        assertTrue(tester.deploymentQueue().jobs().isEmpty());
+
+        // Let the ReadyJobTrigger get what it thinks is the next job -- should be the last job.
+        tester.readyJobTrigger().maintain();
+        assertEquals(Collections.singletonList(new BuildService.BuildJob(1, productionEuWest1.jobName())),
+                     tester.deploymentQueue().jobs());
+        tester.deploy(productionEuWest1, application, Optional.empty(), false);
+        tester.deployAndNotify(application, Optional.empty(), false, true, productionEuWest1);
+        assertFalse(app.get().change().isPresent());
+        assertTrue(tester.deploymentQueue().jobs().isEmpty());
     }
 
     @Test
