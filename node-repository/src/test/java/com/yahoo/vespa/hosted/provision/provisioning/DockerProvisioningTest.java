@@ -191,11 +191,11 @@ public class DockerProvisioningTest {
         assertEquals(dockerFlavor, nodes.asList().get(0).flavor().canonicalName());
     }
 
-    private Set setOf(String ... strings) {
+    private Set<String> setOf(String ... strings) {
         return Stream.of(strings).collect(Collectors.toSet());
     }
 
-    private Set hostsOf(NodeList nodes) {
+    private Set<String> hostsOf(NodeList nodes) {
         return nodes.asList().stream().map(Node::parentHostname).map(Optional::get).collect(Collectors.toSet());
     }
 
