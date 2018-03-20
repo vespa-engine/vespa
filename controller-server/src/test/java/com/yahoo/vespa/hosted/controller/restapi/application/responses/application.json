@@ -150,7 +150,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Immediate retry on failure",
+        "reason": "staging-test completed",
         "at": "(ignore)"
       },
       "lastCompleted": {
