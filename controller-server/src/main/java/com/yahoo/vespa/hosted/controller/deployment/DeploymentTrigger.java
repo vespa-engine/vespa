@@ -208,43 +208,32 @@ public class DeploymentTrigger {
         if ( ! application.change().isPresent()) return false;
         if (next == null) return true;
 
-        if (application.change().platform().isPresent()) { // Propagate upgrade while making sure we never downgrade
-            Version targetVersion = application.change().platform().get();
+        if (next.type().isTest()) {
+            // Is it not yet this job's turn to upgrade?
+            if ( ! lastSuccessfulIs(application.change(), previous.type(), application))
+                return false;
 
-            if (next.type().isTest()) {
-                // Is it not yet this job's turn to upgrade?
-                if ( ! lastSuccessfulIs(targetVersion, previous.type(), application))
-                    return false;
-
-                // Has the upgrade test already been done?
-                if (lastSuccessfulIs(targetVersion, next.type(), application))
-                    return false;
-            }
-            else if (next.type().isProduction()) {
-                // Is the target version tested?
-                if ( ! lastSuccessfulIs(targetVersion, JobType.stagingTest, application))
-                    return false;
-
-                // Is the previous a job production which neither succeed with the target version, nor has a higher version?
-                if (previous.type().isProduction() && ! alreadyDeployed(targetVersion, application, previous.type()))
-                    return false;
-
-                // Did the next job already succeed on the target version, or does it already have a higher version?
-                // TODO: Breaks logic when there are both kinds of changes?
-                if (alreadyDeployed(targetVersion, application, next.type()))
-                    return false;
-            }
-            else
-                throw new IllegalStateException("Unclassified type of next job: " + next);
-
-            return true;
+            // Has the upgrade test already been done?
+            if (lastSuccessfulIs(application.change(), next.type(), application))
+                return false;
         }
-        else { // Application version changes do not need to handle downgrading
-            if ( ! previous.lastSuccess().isPresent()) return false;
-            if ( ! next.lastSuccess().isPresent()) return true;
-            return previous.lastSuccess().get().applicationVersion() != ApplicationVersion.unknown &&
-                   ! previous.lastSuccess().get().applicationVersion().equals(next.lastSuccess().get().applicationVersion());
+        else if (next.type().isProduction()) {
+            // Is the target version tested?
+            if ( ! lastSuccessfulIs(application.change(), JobType.stagingTest, application))
+                return false;
+
+            // Is the previous a job production which neither succeed with the target version, nor has a higher version?
+            if (previous.type().isProduction() && ! alreadyDeployed(application, previous.type()))
+                return false;
+
+            // Did the next job already succeed on the target version, or does it already have a higher version?
+            if (alreadyDeployed(application, next.type()))
+                return false;
         }
+        else
+            throw new IllegalStateException("Unclassified type of next job: " + next);
+
+        return true;
     }
 
     /**
@@ -376,8 +365,7 @@ public class DeploymentTrigger {
             application.change().blockedBy(application.deploymentSpec(), clock.instant())) return false;
 
         // Don't downgrade or redeploy the same version in production needlessly
-        if (application.change().platform().isPresent() &&
-            jobType.isProduction() && alreadyDeployed((application.change().platform().get()), application, jobType)) return false;
+        if (jobType.isProduction() && alreadyDeployed(application, jobType)) return false;
 
         if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) return false;
         if  ( ! hasJob(jobType, application)) return false;
@@ -398,14 +386,21 @@ public class DeploymentTrigger {
      * Returns whether the currently deployed application in the zone for the given production job already
      * has the given changes, in which case we should avoid an unsupported downgrade, or an unnecessary redeploy.
      */
-    private boolean alreadyDeployed(Version version, Application application, JobType job) {
+    private boolean alreadyDeployed(Application application, JobType job) {
         if ( ! job.isProduction())
             throw new IllegalArgumentException(job + " is not a production job!");
 
-        return job.zone(controller.system())
-                  .map(zone -> application.deployments().get(zone))
-                  .map(deployment -> deployment.version().isAfter(version))
-                  .orElse(false);
+        Deployment deployment = application.deployments().get(job.zone(controller.system()).get());
+        if (deployment == null)
+            return false;
+
+        if (application.change().platform().filter(version -> version.isAfter(deployment.version())).isPresent())
+            return false;
+
+        if (application.change().application().filter(version -> version.compareTo(deployment.applicationVersion()) > 0).isPresent())
+            return false;
+
+        return true;
     }
 
     private boolean acceptNewApplicationVersionNow(LockedApplication application) {
@@ -422,12 +417,21 @@ public class DeploymentTrigger {
         return false;
     }
 
-    private boolean lastSuccessfulIs(Version version, JobType jobType, Application application) {
+    private boolean lastSuccessfulIs(Change change, JobType jobType, Application application) {
         JobStatus status = application.deploymentJobs().jobStatus().get(jobType);
-        if (status == null) return false;
+        if (status == null)
+            return false;
+
         Optional<JobStatus.JobRun> lastSuccessfulRun = status.lastSuccess();
         if ( ! lastSuccessfulRun.isPresent()) return false;
-        return lastSuccessfulRun.get().version().equals(version);
+
+        if (change.platform().isPresent() && ! change.platform().get().equals(lastSuccessfulRun.get().version()))
+            return false;
+
+        if (change.application().isPresent() && ! change.application().get().equals(lastSuccessfulRun.get().applicationVersion()))
+            return false;
+
+        return true;
     }
 
 }
