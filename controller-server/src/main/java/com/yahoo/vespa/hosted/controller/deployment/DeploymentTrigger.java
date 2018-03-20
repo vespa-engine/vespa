@@ -83,8 +83,8 @@ public class DeploymentTrigger {
             application = application.withProjectId(report.projectId());
 
             // Handle successful starting and ending
-            if (report.success()) {
-                if (report.jobType() == JobType.component) {
+            if (report.jobType() == JobType.component) {
+                if (report.success()) {
                     if ( ! acceptNewApplicationVersionNow(application)) {
                         applications().store(application.withOutstandingChange(Change.of(applicationVersion)));
                         return;
@@ -93,10 +93,14 @@ public class DeploymentTrigger {
                     // change being deployed together
                     application = application.withChange(application.change().with(applicationVersion));
                 }
-                else if (deploymentComplete(application)) {
-                    // change completed
-                    application = application.withChange(Change.empty());
+                else { // don't re-trigger component on failure
+                    applications().store(application);
+                    return;
                 }
+            }
+            else if (report.success() && deploymentComplete(application)) {
+                // change completed
+                application = application.withChange(Change.empty());
             }
 
             // Trigger next
