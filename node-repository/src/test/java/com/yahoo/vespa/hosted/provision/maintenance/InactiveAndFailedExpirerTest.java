@@ -52,8 +52,8 @@ public class InactiveAndFailedExpirerTest {
 
         // Allocate then deallocate 2 nodes
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
-        tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
-        tester.activate(applicationId, ProvisioningTester.toHostSpecs(nodes));
+        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
+        tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
         tester.deactivate(applicationId);
         List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();
@@ -93,8 +93,8 @@ public class InactiveAndFailedExpirerTest {
                                                   ClusterSpec.Id.from("test"), 
                                                   Version.fromString("6.42"),
                                                   false);
-        tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
-        tester.activate(applicationId, ProvisioningTester.toHostSpecs(nodes));
+        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
+        tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
         tester.deactivate(applicationId);
         List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();

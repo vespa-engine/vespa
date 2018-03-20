@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -286,17 +287,17 @@ public class FailedExpirerTest {
         }
 
         public FailureScenario allocate(ClusterSpec.Type clusterType, Flavor flavor, String... hostname) {
-            Set<HostSpec> hosts = Stream.of(hostname)
-                                        .map(h -> new HostSpec(h, Optional.empty()))
-                                        .collect(Collectors.toSet());
             ClusterSpec clusterSpec = ClusterSpec.request(clusterType,
                                                           ClusterSpec.Id.from("test"),
                                                           Version.fromString("6.42"),
                                                           false);
-            provisioner.prepare(applicationId, clusterSpec, Capacity.fromNodeCount(hostname.length, Optional.of(flavor.name()), false),
+            List<HostSpec> preparedNodes = provisioner.prepare(applicationId,
+                                                               clusterSpec,
+                                                               Capacity.fromNodeCount(hostname.length, Optional.of(flavor.name()),
+                                                                                      false),
                                 1, null);
             NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-            provisioner.activate(transaction, applicationId, hosts);
+            provisioner.activate(transaction, applicationId, new HashSet<>(preparedNodes));
             transaction.commit();
             return this;
         }
