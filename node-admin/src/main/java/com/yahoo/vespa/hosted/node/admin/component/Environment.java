@@ -61,6 +61,7 @@ public class Environment {
     private final NodeType nodeType;
     private final String defaultFlavor;
     private final String cloud;
+    private final String jvmArgs;
 
     static {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -128,6 +129,7 @@ public class Environment {
         this.nodeType = nodeType;
         this.defaultFlavor = defaultFlavor;
         this.cloud = cloud;
+        this.jvmArgs = configServerConfig.jvmargs();
     }
 
     public List<String> getConfigServerHostNames() { return configServerHostNames; }
@@ -271,6 +273,8 @@ public class Environment {
     public String getDefaultFlavor() { return defaultFlavor; }
 
     public String getCloud() { return cloud; }
+
+    public String getJvmArgs() { return jvmArgs; }
 
     public static class Builder {
         private ConfigServerConfig configServerConfig;

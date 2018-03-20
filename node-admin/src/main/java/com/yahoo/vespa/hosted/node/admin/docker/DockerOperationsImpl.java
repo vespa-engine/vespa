@@ -343,6 +343,7 @@ public class DockerOperationsImpl implements DockerOperations {
         settings.set("configServerAddresses", environment.getConfigServerHostNames());
         settings.set("nodeType", nodeSpec.nodeType);
         settings.set("cloud", environment.getCloud());
+        settings.set("jvmArgs", environment.getJvmArgs());
 
         try {
             return objectMapper.writeValueAsString(settings);
