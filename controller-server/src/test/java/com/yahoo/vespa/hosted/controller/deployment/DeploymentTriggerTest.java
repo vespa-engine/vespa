@@ -394,8 +394,10 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, Optional.empty(), false, true, productionEuWest1);
         assertTrue(tester.deploymentQueue().jobs().isEmpty());
 
-        // The below should now deploy the new application version, even though the platform version is already deployed.
+        // Deploy the new application version, even though the platform version is already deployed in us-central-1.
         tester.deployCompletely(application, applicationPackage, BuildJob.defaultBuildNumber + 1);
+        assertEquals(ApplicationVersion.from(BuildJob.defaultSourceRevision, BuildJob.defaultBuildNumber + 1),
+                     app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
     }
 
     @Test
