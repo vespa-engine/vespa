@@ -57,6 +57,7 @@ public class ContentClusterHtmlRendrerTest {
                 new FakeTimer(),
                 state,
                 statsAggregator,
+                1.0,
                 10,
                 eventLog,
                 "pathPrefix",

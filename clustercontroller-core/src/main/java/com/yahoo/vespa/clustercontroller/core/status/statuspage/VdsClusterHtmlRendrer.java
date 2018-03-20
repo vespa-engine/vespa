@@ -66,6 +66,7 @@ public class VdsClusterHtmlRendrer {
                 final Timer timer,
                 final ClusterState state,
                 final ClusterStatsAggregator statsAggregator,
+                final double minMergeCompletionRatio,
                 final int maxPrematureCrashes,
                 final EventLog eventLog,
                 final String pathPrefix,
@@ -78,6 +79,7 @@ public class VdsClusterHtmlRendrer {
                     timer,
                     state,
                     statsAggregator,
+                    minMergeCompletionRatio,
                     maxPrematureCrashes,
                     eventLog,
                     pathPrefix,
@@ -88,6 +90,7 @@ public class VdsClusterHtmlRendrer {
                     timer,
                     state,
                     statsAggregator,
+                    minMergeCompletionRatio,
                     maxPrematureCrashes,
                     eventLog,
                     pathPrefix,
@@ -138,7 +141,9 @@ public class VdsClusterHtmlRendrer {
                     .addCell(new HtmlTable.Cell("SSV<sup>4)</sup>"))
                     .addCell(new HtmlTable.Cell("PC<sup>5)</sup>"))
                     .addCell(new HtmlTable.Cell("ELW<sup>6)</sup>"))
-                    .addCell(new HtmlTable.Cell("Buckets pending")
+                    .addCell(new HtmlTable.Cell(FixedBucketSpaces.defaultSpace() + " buckets")
+                            .addProperties(new HtmlTable.CellProperties().setColSpan(2).setRowSpan(1)))
+                    .addCell(new HtmlTable.Cell(FixedBucketSpaces.globalSpace() + " buckets")
                             .addProperties(new HtmlTable.CellProperties().setColSpan(2).setRowSpan(1)))
                     .addCell(new HtmlTable.Cell("Start Time"))
                     .addCell(new HtmlTable.Cell("RPC Address")));
@@ -146,8 +151,10 @@ public class VdsClusterHtmlRendrer {
                     .addCell(new HtmlTable.Cell("Reported"))
                     .addCell(new HtmlTable.Cell("Wanted"))
                     .addCell(new HtmlTable.Cell("System"))
-                    .addCell(new HtmlTable.Cell(FixedBucketSpaces.defaultSpace()))
-                    .addCell(new HtmlTable.Cell(FixedBucketSpaces.globalSpace())));
+                    .addCell(new HtmlTable.Cell("Pending"))
+                    .addCell(new HtmlTable.Cell("Total"))
+                    .addCell(new HtmlTable.Cell("Pending"))
+                    .addCell(new HtmlTable.Cell("Total")));
         }
 
         private void renderNodesOneType(
@@ -156,6 +163,7 @@ public class VdsClusterHtmlRendrer {
                 final Timer timer,
                 final ClusterState state,
                 final ClusterStatsAggregator statsAggregator,
+                final double minMergeCompletionRatio,
                 final int maxPrematureCrashes,
                 final EventLog eventLog,
                 final String pathPrefix,
@@ -265,13 +273,17 @@ public class VdsClusterHtmlRendrer {
                     row.getLastCell().addProperties(WARNING_PROPERTY);
                 }
 
-                // Buckets pending ('default' and 'global' spaces)
+                // Bucket stats for 'default' and 'global' spaces
                 if (nodeType.equals(NodeType.STORAGE)) {
-                    addBucketsPending(row, getStatsForContentNode(statsAggregator, nodeInfo, FixedBucketSpaces.defaultSpace()));
-                    addBucketsPending(row, getStatsForContentNode(statsAggregator, nodeInfo, FixedBucketSpaces.globalSpace()));
+                    addBucketStats(row, getStatsForContentNode(statsAggregator, nodeInfo, FixedBucketSpaces.defaultSpace()),
+                            minMergeCompletionRatio);
+                    addBucketStats(row, getStatsForContentNode(statsAggregator, nodeInfo, FixedBucketSpaces.globalSpace()),
+                            minMergeCompletionRatio);
                 } else {
-                    addBucketsPending(row, getStatsForDistributorNode(statsAggregator, nodeInfo, FixedBucketSpaces.defaultSpace()));
-                    addBucketsPending(row, getStatsForDistributorNode(statsAggregator, nodeInfo, FixedBucketSpaces.globalSpace()));
+                    addBucketStats(row, getStatsForDistributorNode(statsAggregator, nodeInfo, FixedBucketSpaces.defaultSpace()),
+                            minMergeCompletionRatio);
+                    addBucketStats(row, getStatsForDistributorNode(statsAggregator, nodeInfo, FixedBucketSpaces.globalSpace()),
+                            minMergeCompletionRatio);
                 }
 
                 // Start time
@@ -313,18 +325,24 @@ public class VdsClusterHtmlRendrer {
             return nodeStats.getBucketSpace(bucketSpace);
         }
 
-        private static void addBucketsPending(HtmlTable.Row row, ContentNodeStats.BucketSpaceStats bucketSpaceStats) {
+        private static void addBucketStats(HtmlTable.Row row, ContentNodeStats.BucketSpaceStats bucketSpaceStats,
+                                           double minMergeCompletionRatio) {
             if (bucketSpaceStats != null) {
                 long bucketsPending = bucketSpaceStats.getBucketsPending();
-                String cellValue = String.valueOf(bucketsPending);
+                long bucketsTotal = bucketSpaceStats.getBucketsTotal();
+                String cellValuePending = String.valueOf(bucketsPending);
+                String cellValueTotal = String.valueOf(bucketsTotal);
                 if (!bucketSpaceStats.valid()) {
-                    cellValue += "?";
+                    cellValuePending += "?";
+                    cellValueTotal += "?";
                 }
-                row.addCell(new HtmlTable.Cell(cellValue));
-                if (bucketsPending > 0 || !bucketSpaceStats.valid()) {
+                row.addCell(new HtmlTable.Cell(cellValuePending));
+                if (bucketSpaceStats.mayHaveBucketsPending(minMergeCompletionRatio)) {
                     row.getLastCell().addProperties(WARNING_PROPERTY);
                 }
+                row.addCell(new HtmlTable.Cell(cellValueTotal));
             } else {
+                row.addCell(new HtmlTable.Cell("-").addProperties(CENTERED_PROPERTY));
                 row.addCell(new HtmlTable.Cell("-").addProperties(CENTERED_PROPERTY));
             }
         }
