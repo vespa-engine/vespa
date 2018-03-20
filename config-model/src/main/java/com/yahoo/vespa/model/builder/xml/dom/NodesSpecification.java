@@ -38,16 +38,20 @@ public class NodesSpecification {
     /** The flavor the nodes should have, or empty to use the default */        
     private final Optional<String> flavor;
 
+    private final boolean exclusive;
+
     /** The identifier of the custom docker image layer to use (not supported yet) */
     private final Optional<String> dockerImage;
 
     private NodesSpecification(boolean dedicated, int count, int groups, Version version, boolean required,
+                               boolean exclusive,
                                Optional<String> flavor, Optional<String> dockerImage) {
         this.dedicated = dedicated;
         this.count = count;
         this.groups = groups;
         this.version = version;
         this.required = required;
+        this.exclusive = exclusive;
         this.flavor = flavor;
         this.dockerImage = dockerImage;
     }
@@ -58,6 +62,7 @@ public class NodesSpecification {
              nodesElement.getIntegerAttribute("groups", 1),
              version,
              nodesElement.getBooleanAttribute("required", false),
+             nodesElement.getBooleanAttribute("exclusive", false),
              Optional.ofNullable(nodesElement.getStringAttribute("flavor")),
              Optional.ofNullable(nodesElement.getStringAttribute("docker-image")));
     }
@@ -90,12 +95,14 @@ public class NodesSpecification {
         if (parentElement == null) return Optional.empty();
         ModelElement nodesElement = parentElement.getChild("nodes");
         if (nodesElement == null) return Optional.empty();
-        return Optional.of(new NodesSpecification(nodesElement.getBooleanAttribute("dedicated", false), version, nodesElement));
+        return Optional.of(new NodesSpecification(nodesElement.getBooleanAttribute("dedicated", false),
+                                                  version, nodesElement));
     }
 
     /** Returns a requirement from <code>count</code> nondedicated nodes in one group */
     public static NodesSpecification nonDedicated(int count, Version version) {
-        return new NodesSpecification(false, count, 1, version, false, Optional.empty(), Optional.empty());
+        return new NodesSpecification(false, count, 1, version, false, false,
+                                      Optional.empty(), Optional.empty());
     }
 
     /**
@@ -104,6 +111,13 @@ public class NodesSpecification {
      */
     public boolean isDedicated() { return dedicated; }
 
+    /**
+     * Returns whether the physical hosts running the nodes of this application can
+     * also run nodes of other applications. Using exclusive nodes for containers increases security
+     * and increases cost.
+     */
+    public boolean isExclusive() { return exclusive; }
+
     /** Returns the number of nodes required */
     public int count() { return count; }
 
@@ -111,7 +125,7 @@ public class NodesSpecification {
     public int groups() { return groups; }
 
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem, ClusterSpec.Type clusterType, ClusterSpec.Id clusterId, DeployLogger logger) {
-        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version);
+        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive);
         return hostSystem.allocateHosts(cluster, Capacity.fromNodeCount(count, flavor, required), groups, logger);
     }
 

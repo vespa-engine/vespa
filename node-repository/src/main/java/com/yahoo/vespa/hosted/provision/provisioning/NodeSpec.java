@@ -19,6 +19,12 @@ public interface NodeSpec {
     /** The node type this requests */
     NodeType type();
 
+    /**
+     * Returns whether the physical hosts running the nodes of this application can
+     * also run nodes of other applications.
+     */
+    boolean isExclusive();
+
     /** Returns whether the given flavor is compatible with this spec */
     boolean isCompatible(Flavor flavor);
 
@@ -47,8 +53,8 @@ public interface NodeSpec {
      */
     Node assignRequestedFlavor(Node node);
 
-    static NodeSpec from(int nodeCount, Flavor flavor) {
-        return new CountNodeSpec(nodeCount, flavor);
+    static NodeSpec from(int nodeCount, Flavor flavor, boolean exclusive) {
+        return new CountNodeSpec(nodeCount, flavor, exclusive);
     }
 
     static NodeSpec from(NodeType type) {
@@ -60,11 +66,13 @@ public interface NodeSpec {
 
         private final int count;
         private final Flavor requestedFlavor;
+        private final boolean exclusive;
 
-        public CountNodeSpec(int count, Flavor flavor) {
+        public CountNodeSpec(int count, Flavor flavor, boolean exclusive) {
             Objects.requireNonNull(flavor, "A flavor must be specified");
             this.count = count;
             this.requestedFlavor = flavor;
+            this.exclusive = exclusive;
         }
 
         // TODO: Remove usage of this
@@ -74,6 +82,9 @@ public interface NodeSpec {
 
         // TODO: Remove usage of this
         public int getCount()  { return count; }
+
+        @Override
+        public boolean isExclusive() { return exclusive; }
 
         @Override
         public NodeType type() { return NodeType.tenant; }
@@ -100,7 +111,7 @@ public interface NodeSpec {
         public int idealRetiredCount(int acceptedCount, int currentRetiredCount) { return acceptedCount - this.count; }
 
         @Override
-        public NodeSpec fraction(int divisor) { return new CountNodeSpec(count/divisor, requestedFlavor); }
+        public NodeSpec fraction(int divisor) { return new CountNodeSpec(count/divisor, requestedFlavor, exclusive); }
 
         @Override
         public Node assignRequestedFlavor(Node node) {
@@ -135,6 +146,9 @@ public interface NodeSpec {
 
         @Override
         public NodeType type() { return type; }
+
+        @Override
+        public boolean isExclusive() { return false; }
 
         @Override
         public boolean isCompatible(Flavor flavor) { return true; }

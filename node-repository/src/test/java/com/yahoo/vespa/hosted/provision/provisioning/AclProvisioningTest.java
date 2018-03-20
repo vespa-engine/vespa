@@ -222,7 +222,7 @@ public class AclProvisioningTest {
 
     private List<Node> allocateNodes(Capacity capacity, ApplicationId applicationId) {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
-                                                  Version.fromString("6.42"));
+                                                  Version.fromString("6.42"), false);
         List<HostSpec> prepared = tester.prepare(applicationId, cluster, capacity, 1);
         tester.activate(applicationId, new HashSet<>(prepared));
         return tester.getNodes(applicationId, Node.State.active).asList();

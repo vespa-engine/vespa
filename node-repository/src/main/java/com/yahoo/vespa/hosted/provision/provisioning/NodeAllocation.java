@@ -6,15 +6,17 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -44,6 +46,9 @@ class NodeAllocation {
     /** The number of nodes rejected because of clashing parentHostname */
     private int rejectedWithClashingParentHost = 0;
 
+    /** The number of nodes rejected due to exclusivity constraints */
+    private int rejectedDueToExclusivity = 0;
+
     /** The number of nodes that just now was changed to retired */
     private int wasRetiredJustNow = 0;
 
@@ -53,15 +58,15 @@ class NodeAllocation {
     /** The next membership index to assign to a new node */
     private final MutableInteger highestIndex;
 
-    /** Used to record event timestamps **/
-    private final Clock clock;
+    private final NodeRepository nodeRepository;
 
-    NodeAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, MutableInteger highestIndex, Clock clock) {
+    NodeAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, MutableInteger highestIndex,
+                   NodeRepository nodeRepository) {
         this.application = application;
         this.cluster = cluster;
         this.requestedNodes = requestedNodes;
         this.highestIndex = highestIndex;
-        this.clock = clock;
+        this.nodeRepository = nodeRepository;
     }
 
     /**
@@ -93,6 +98,7 @@ class NodeAllocation {
                 if ( ! hasCompatibleFlavor(offered)) wantToRetireNode = true;
                 if ( offered.flavor().isRetired()) wantToRetireNode = true;
                 if ( offered.status().wantToRetire()) wantToRetireNode = true;
+                if ( requestedNodes.isExclusive() &&  ! hostHasOnly(application, offered.parentHostname())) wantToRetireNode = true;
 
                 if (( ! saturated() && hasCompatibleFlavor(offered)) || acceptToRetire(offered) ) {
                     accepted.add(acceptNode(offeredPriority, wantToRetireNode));
@@ -103,13 +109,23 @@ class NodeAllocation {
                     ++rejectedWithClashingParentHost;
                     continue;
                 }
+                if ( ! hostCanHost(application, offered.parentHostname())) {
+                    ++rejectedDueToExclusivity;
+                    continue;
+                }
+                if ( requestedNodes.isExclusive() && ! hostHasOnly(application, offered.parentHostname())) {
+                    ++rejectedDueToExclusivity;
+                    continue;
+                }
                 if (offered.flavor().isRetired()) {
                     continue;
                 }
                 if (offered.status().wantToRetire()) {
                     continue;
                 }
-                offeredPriority.node = offered.allocate(application, ClusterMembership.from(cluster, highestIndex.add(1)), clock.instant());
+                offeredPriority.node = offered.allocate(application,
+                                                        ClusterMembership.from(cluster, highestIndex.add(1)),
+                                                        nodeRepository.clock().instant());
                 accepted.add(acceptNode(offeredPriority, false));
             }
         }
@@ -125,6 +141,33 @@ class NodeAllocation {
             }
         }
         return false;
+    }
+
+    /**
+     * If a parent host is given, and it hosts another application which requires exclusive access to the physical
+     * host, then we cannot host this application on it.
+     */
+    private boolean hostCanHost(ApplicationId application, Optional<String> parentHostname) {
+        if ( ! parentHostname.isPresent()) return true;
+        for (Node nodeOnHost : nodeRepository.getChildNodes(parentHostname.get())) {
+            if ( ! nodeOnHost.allocation().isPresent()) continue;
+
+            if ( nodeOnHost.allocation().get().membership().cluster().isExclusive() &&
+                 ! nodeOnHost.allocation().get().owner().equals(application))
+                return false;
+        }
+        return true;
+    }
+
+    private boolean hostHasOnly(ApplicationId application, Optional<String> parentHostname) {
+        if ( ! parentHostname.isPresent()) return true; // yes, as host is exclusive
+
+        for (Node nodeOnHost : nodeRepository.getChildNodes(parentHostname.get())) {
+            if ( ! nodeOnHost.allocation().isPresent()) continue;
+            if ( ! nodeOnHost.allocation().get().owner().equals(application))
+                return false;
+        }
+        return true;
     }
 
     /**
@@ -166,7 +209,7 @@ class NodeAllocation {
         } else {
             ++wasRetiredJustNow;
             // Retire nodes which are of an unwanted flavor, retired flavor or have an overlapping parent host
-            node = node.retire(clock.instant());
+            node = node.retire(nodeRepository.clock().instant());
             prioritizableNode.node= node;
         }
         if ( ! node.allocation().get().membership().cluster().equals(cluster)) {
@@ -181,7 +224,7 @@ class NodeAllocation {
     }
 
     private Node setCluster(ClusterSpec cluster, Node node) {
-        ClusterMembership membership = node.allocation().get().membership().changeCluster(cluster);
+        ClusterMembership membership = node.allocation().get().membership().with(cluster);
         return node.with(node.allocation().get().with(membership));
     }
 
@@ -203,6 +246,10 @@ class NodeAllocation {
         return requestedNodes.fulfilledBy(acceptedOfRequestedFlavor + rejectedWithClashingParentHost);
     }
 
+    boolean wouldBeFulfilledWithoutExclusivity() {
+        return requestedNodes.fulfilledBy(acceptedOfRequestedFlavor + rejectedDueToExclusivity);
+    }
+
     /**
      * Make the number of <i>non-retired</i> nodes in the list equal to the requested number
      * of nodes, and retire the rest of the list. Only retire currently active nodes.
@@ -219,7 +266,7 @@ class NodeAllocation {
         if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0, prefer to retire higher indexes to minimize redistribution
             for (PrioritizableNode node : byDecreasingIndex(nodes)) {
                 if ( ! node.node.allocation().get().membership().retired() && node.node.state().equals(Node.State.active)) {
-                    node.node = node.node.retire(Agent.application, clock.instant());
+                    node.node = node.node.retire(Agent.application, nodeRepository.clock().instant());
                     surplusNodes.add(node.node); // offer this node to other groups
                     if (--deltaRetiredCount == 0) break;
                 }
@@ -234,10 +281,13 @@ class NodeAllocation {
             }
         }
         
-        // Update flavor of allocated docker nodes as we can change it in place
         for (PrioritizableNode node : nodes) {
-            if (node.node.allocation().isPresent())
-                node.node = requestedNodes.assignRequestedFlavor(node.node);
+            node.node = requestedNodes.assignRequestedFlavor(node.node);
+
+            // Set whether the node is exclusive
+            Allocation allocation = node.node.allocation().get();
+            node.node = node.node.with(allocation.with(allocation.membership()
+                           .with(allocation.membership().cluster().exclusive(requestedNodes.isExclusive()))));
         }
 
         return nodes.stream().map(n -> n.node).collect(Collectors.toList());

@@ -8,7 +8,7 @@ import static com.yahoo.container.core.AccessLogConfig.FileHandler.RotateScheme.
 import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 class AccessLogHandler {
 

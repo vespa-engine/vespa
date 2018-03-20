@@ -218,7 +218,7 @@ public class FailedExpirerTest {
             this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                      new MockNameResolver().mockAnyLookup(),
                                                      new DockerImage("docker-image"));
-            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), clock,
+            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(),
                                                              (x, y) -> {});
             this.expirer = new FailedExpirer(nodeRepository, zone, clock, Duration.ofMinutes(30),
                                              new JobControl(nodeRepository.database()));
@@ -289,9 +289,11 @@ public class FailedExpirerTest {
             Set<HostSpec> hosts = Stream.of(hostname)
                                         .map(h -> new HostSpec(h, Optional.empty()))
                                         .collect(Collectors.toSet());
-            ClusterSpec clusterSpec = ClusterSpec.request(clusterType, ClusterSpec.Id.from("test"),
-                                                          Version.fromString("6.42"));
-            provisioner.prepare(applicationId, clusterSpec, Capacity.fromNodeCount(hostname.length, flavor.name()),
+            ClusterSpec clusterSpec = ClusterSpec.request(clusterType,
+                                                          ClusterSpec.Id.from("test"),
+                                                          Version.fromString("6.42"),
+                                                          false);
+            provisioner.prepare(applicationId, clusterSpec, Capacity.fromNodeCount(hostname.length, Optional.of(flavor.name()), false),
                                 1, null);
             NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
             provisioner.activate(transaction, applicationId, hosts);

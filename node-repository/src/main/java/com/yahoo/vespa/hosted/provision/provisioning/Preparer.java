@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -23,15 +22,13 @@ import java.util.Optional;
 class Preparer {
 
     private final NodeRepository nodeRepository;
-    private final Clock clock;
     private final GroupPreparer groupPreparer;
     private final int spareCount;
 
-    public Preparer(NodeRepository nodeRepository, Clock clock, int spareCount) {
+    public Preparer(NodeRepository nodeRepository, int spareCount) {
         this.nodeRepository = nodeRepository;
-        this.clock = clock;
         this.spareCount = spareCount;
-        this.groupPreparer = new GroupPreparer(nodeRepository, clock);
+        this.groupPreparer = new GroupPreparer(nodeRepository);
     }
 
     /**
@@ -48,7 +45,7 @@ class Preparer {
         MutableInteger highestIndex = new MutableInteger(findHighestIndex(application, cluster));
         List<Node> acceptedNodes = new ArrayList<>();
         for (int groupIndex = 0; groupIndex < wantedGroups; groupIndex++) {
-            ClusterSpec clusterGroup = cluster.changeGroup(Optional.of(ClusterSpec.Group.from(groupIndex)));
+            ClusterSpec clusterGroup = cluster.with(Optional.of(ClusterSpec.Group.from(groupIndex)));
             List<Node> accepted = groupPreparer.prepare(application, clusterGroup,
                                                         requestedNodes.fraction(wantedGroups), surplusNodes,
                                                         highestIndex, spareCount);
@@ -83,7 +80,7 @@ class Preparer {
             ClusterSpec cluster = membership.cluster();
             if (cluster.group().get().index() >= wantedGroups) {
                 ClusterSpec.Group newGroup = targetGroup.orElse(ClusterSpec.Group.from(0));
-                ClusterMembership newGroupMembership = membership.changeCluster(cluster.changeGroup(Optional.of(newGroup)));
+                ClusterMembership newGroupMembership = membership.with(cluster.with(Optional.of(newGroup)));
                 i.set(node.with(node.allocation().get().with(newGroupMembership)));
             }
         }
@@ -122,7 +119,7 @@ class Preparer {
         List<Node> retired = new ArrayList<>(nodes.size());
         for (Node node : nodes) {
             if ( ! node.allocation().get().isRemovable())
-                retired.add(node.retire(Agent.application, clock.instant()));
+                retired.add(node.retire(Agent.application, nodeRepository.clock().instant()));
         }
         return retired;
     }

@@ -509,7 +509,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 return singleContentHost.get();
             }
             else { // request 1 node
-                ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()), context.getDeployState().getWantedNodeVespaVersion());
+                ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
+                                                              ClusterSpec.Id.from(cluster.getName()),
+                                                              context.getDeployState().getWantedNodeVespaVersion(),
+                                                              false);
                 return cluster.getHostSystem().allocateHosts(clusterSpec, Capacity.fromNodeCount(1), 1, logger).keySet().iterator().next();
             }
         } else {
@@ -531,7 +534,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         NodeType type = NodeType.valueOf(nodesElement.getAttribute("type"));
         ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, 
                                                       ClusterSpec.Id.from(cluster.getName()), 
-                                                      context.getDeployState().getWantedNodeVespaVersion());
+                                                      context.getDeployState().getWantedNodeVespaVersion(),
+                                                      false);
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().getHostSystem().allocateHosts(clusterSpec, 
                                                                 Capacity.fromRequiredNodeType(type), 1, log);

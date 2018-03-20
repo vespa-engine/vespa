@@ -111,8 +111,8 @@ public class NodeRetirerTester {
 
         for (int i = 0; i < flavorIds.length; i++) {
             Flavor flavor = flavors.get(flavorIds[i]);
-            ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("cluster-" + i), Version.fromString("6.99"));
-            Capacity capacity = Capacity.fromNodeCount(numNodes[i], flavor.name());
+            ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("cluster-" + i), Version.fromString("6.99"), false);
+            Capacity capacity = Capacity.fromNodeCount(numNodes[i], Optional.of(flavor.name()), false);
             // If the number of node the app wants is divisible by 2, make it into 2 groups, otherwise as 1
             int numGroups = numNodes[i] % 2 == 0 ? 2 : 1;
             clusterContexts.add(new MockDeployer.ClusterContext(applicationId, cluster, capacity, numGroups));

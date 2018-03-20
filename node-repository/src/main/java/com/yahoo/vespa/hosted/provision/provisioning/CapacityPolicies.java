@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.Flavor;
@@ -52,6 +53,14 @@ public class CapacityPolicies {
             case dev : case test : case staging : return flavors.getFlavorOrThrow(defaultFlavorName);
             default : return flavors.getFlavorOrThrow(requestedFlavor.orElse(defaultFlavorName));
         }
+    }
+
+    /**
+     * Whether or not the nodes requested can share physical host with other applications.
+     * A security feature which only makes sense for prod.
+     */
+    public boolean decideExclusivity(boolean requestedExclusivity) {
+        return requestedExclusivity && zone.environment() == Environment.prod;
     }
 
     /**

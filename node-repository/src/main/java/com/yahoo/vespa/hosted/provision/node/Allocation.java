@@ -43,10 +43,14 @@ public class Allocation {
     public Generation restartGeneration() { return restartGeneration; }
 
     /** Returns a copy of this which is retired */
-    public Allocation retire() { return new Allocation(owner, clusterMembership.retire(), restartGeneration, removable); }
+    public Allocation retire() {
+        return new Allocation(owner, clusterMembership.retire(), restartGeneration, removable);
+    }
 
     /** Returns a copy of this which is not retired */
-    public Allocation unretire() { return new Allocation(owner, clusterMembership.unretire(), restartGeneration, removable); }
+    public Allocation unretire() {
+        return new Allocation(owner, clusterMembership.unretire(), restartGeneration, removable);
+    }
 
     /** Return whether this node is ready to be removed from the application */
     public boolean isRemovable() { return removable; }

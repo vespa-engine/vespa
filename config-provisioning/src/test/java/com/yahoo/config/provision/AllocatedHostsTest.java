@@ -18,7 +18,7 @@ public class AllocatedHostsTest {
 
     private final HostSpec h1 = new HostSpec("host1", Optional.empty());
     private final HostSpec h2 = new HostSpec("host2", Optional.empty());
-    private final HostSpec h3 = new HostSpec("host3", Optional.of(ClusterMembership.from("container/test/0", com.yahoo.component.Version.fromString("6.73.1"))));
+    private final HostSpec h3 = new HostSpec("host3", Optional.of(ClusterMembership.from("container/test/0/0", com.yahoo.component.Version.fromString("6.73.1"))));
 
     @Test
     public void testAllocatedHostsSerialization() throws IOException {
@@ -37,7 +37,7 @@ public class AllocatedHostsTest {
         assertTrue(serializedAllocatedHosts.getHosts().contains(h2));
         assertTrue(serializedAllocatedHosts.getHosts().contains(h3));
         assertTrue(!getHost(h1.hostname(), serializedAllocatedHosts.getHosts()).membership().isPresent());
-        assertEquals("container/test/0", getHost(h3.hostname(), serializedAllocatedHosts.getHosts()).membership().get().stringValue());
+        assertEquals("container/test/0/0", getHost(h3.hostname(), serializedAllocatedHosts.getHosts()).membership().get().stringValue());
         assertEquals(h3.membership().get().cluster().vespaVersion(), getHost(h3.hostname(), 
                                                                              serializedAllocatedHosts.getHosts()).membership().get().cluster().vespaVersion());
     }

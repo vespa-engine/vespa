@@ -24,11 +24,9 @@ import java.util.stream.Collectors;
 class Activator {
 
     private final NodeRepository nodeRepository;
-    private final Clock clock;
 
-    public Activator(NodeRepository nodeRepository, Clock clock) {
+    public Activator(NodeRepository nodeRepository) {
         this.nodeRepository = nodeRepository;
-        this.clock = clock;
     }
 
     /**
@@ -97,7 +95,7 @@ class Activator {
         List<Node> updated = new ArrayList<>();
         for (Node node : nodes) {
             HostSpec hostSpec = getHost(node.hostname(), hosts);
-            node = hostSpec.membership().get().retired() ? node.retire(clock.instant()) : node.unretire();
+            node = hostSpec.membership().get().retired() ? node.retire(nodeRepository.clock().instant()) : node.unretire();
             node = node.with(node.allocation().get().with(hostSpec.membership().get()));
             if (hostSpec.flavor().isPresent()) // Docker nodes may change flavor
                 node = node.with(hostSpec.flavor().get());

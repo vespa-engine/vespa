@@ -20,11 +20,9 @@ import java.util.List;
 public class GroupPreparer {
 
     private final NodeRepository nodeRepository;
-    private final Clock clock;
 
-    public GroupPreparer(NodeRepository nodeRepository, Clock clock) {
+    public GroupPreparer(NodeRepository nodeRepository) {
         this.nodeRepository = nodeRepository;
-        this.clock = clock;
     }
 
     /**
@@ -65,7 +63,7 @@ public class GroupPreparer {
                 prioritizer.addNewDockerNodes();
 
                 // Allocate from the prioritized list
-                NodeAllocation allocation = new NodeAllocation(application, cluster, requestedNodes, highestIndex, clock);
+                NodeAllocation allocation = new NodeAllocation(application, cluster, requestedNodes, highestIndex, nodeRepository);
                 allocation.offer(prioritizer.prioritize());
                 if (! allocation.fullfilled())
                     throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
@@ -84,9 +82,11 @@ public class GroupPreparer {
     }
 
     private String outOfCapacityDetails(NodeAllocation allocation) {
-        if (allocation.wouldBeFulfilledWithClashingParentHost())
+        if (allocation.wouldBeFulfilledWithoutExclusivity())
+            return ": Not enough nodes available due to host exclusivity constraints.";
+        else if (allocation.wouldBeFulfilledWithClashingParentHost())
             return ": Not enough nodes available on separate physical hosts.";
-        if (allocation.wouldBeFulfilledWithRetiredNodes())
+        else if (allocation.wouldBeFulfilledWithRetiredNodes())
             return ": Not enough nodes available due to retirement.";
         else
             return ".";

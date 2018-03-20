@@ -129,7 +129,7 @@ public class SerializationTest {
                 "      \"applicationId\" : \"myApplication\",\n" +
                 "      \"tenantId\" : \"myTenant\",\n" +
                 "      \"instanceId\" : \"myInstance\",\n" +
-                "      \"serviceId\" : \"content/myId/0\",\n" +
+                "      \"serviceId\" : \"content/myId/0/0\",\n" +
                 "      \"restartGeneration\" : 3,\n" +
                 "      \"currentRestartGeneration\" : 4,\n" +
                 "      \"removable\" : true,\n" +
@@ -162,7 +162,7 @@ public class SerializationTest {
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                                                 ApplicationName.from("myApplication"),
                                                 InstanceName.from("myInstance")),
-                             ClusterMembership.from("content/myId/0", Vtag.currentVersion),
+                             ClusterMembership.from("content/myId/0/0", Vtag.currentVersion),
                              clock.instant());
         assertEquals(1, node.history().events().size());
         clock.advance(Duration.ofMinutes(2));
@@ -332,7 +332,7 @@ public class SerializationTest {
                         "   \"hostname\" : \"myHostname\",\n" +
                         "   \"ipAddresses\" : [\"127.0.0.1\"],\n" +
                         "   \"instance\": {\n" +
-                        "     \"serviceId\": \"content/myId/0\",\n" +
+                        "     \"serviceId\": \"content/myId/0/0\",\n" +
                         "     \"wantedVespaVersion\": \"6.42.2\"\n" +
                         "   }\n" +
                         "}";

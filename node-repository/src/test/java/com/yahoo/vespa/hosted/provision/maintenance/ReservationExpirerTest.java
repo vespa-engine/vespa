@@ -43,7 +43,7 @@ public class ReservationExpirerTest {
         NodeRepository nodeRepository = new NodeRepository(flavors, curator, clock, Zone.defaultZone(),
                                                            new MockNameResolver().mockAnyLookup(),
                                                            new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
-        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, Zone.defaultZone(), clock, (x,y) -> {});
+        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, Zone.defaultZone(), (x,y) -> {});
 
         List<Node> nodes = new ArrayList<>(2);
         nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
@@ -56,7 +56,7 @@ public class ReservationExpirerTest {
         assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
         ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("bar").instanceName("fuz").build();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
         provisioner.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1, null);
         assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.reserved).size());
 

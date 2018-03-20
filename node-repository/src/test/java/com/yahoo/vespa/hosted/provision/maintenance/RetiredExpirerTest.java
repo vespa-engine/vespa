@@ -80,7 +80,7 @@ public class RetiredExpirerTest {
 
         // Allocate content cluster of sizes 7 -> 2 -> 3:
         // Should end up with 3 nodes in the cluster (one previously retired), and 4 retired
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
         int wantedNodes;
         activate(applicationId, cluster, wantedNodes=7, 1, provisioner);
         activate(applicationId, cluster, wantedNodes=2, 1, provisioner);
@@ -92,7 +92,7 @@ public class RetiredExpirerTest {
         clock.advance(Duration.ofHours(30)); // Retire period spent
         MockDeployer deployer =
             new MockDeployer(provisioner,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(wantedNodes, Optional.of("default")), 1)));
+                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(wantedNodes, Optional.of("default"), false), 1)));
         createRetiredExpirer(deployer).run();
         assertEquals(3, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(4, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
@@ -110,7 +110,7 @@ public class RetiredExpirerTest {
 
         ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
 
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
         activate(applicationId, cluster, 8, 8, provisioner);
         activate(applicationId, cluster, 2, 2, provisioner);
         assertEquals(8, nodeRepository.getNodes(applicationId, Node.State.active).size());
@@ -120,7 +120,7 @@ public class RetiredExpirerTest {
         clock.advance(Duration.ofHours(30)); // Retire period spent
         MockDeployer deployer =
             new MockDeployer(provisioner,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(2, Optional.of("default")), 1)));
+                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(2, Optional.of("default"), false), 1)));
         createRetiredExpirer(deployer).run();
         assertEquals(2, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(6, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
@@ -140,7 +140,7 @@ public class RetiredExpirerTest {
 
         // Allocate content cluster of sizes 7 -> 2 -> 3:
         // Should end up with 3 nodes in the cluster (one previously retired), and 4 retired
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
         int wantedNodes;
         activate(applicationId, cluster, wantedNodes=7, 1, provisioner);
         activate(applicationId, cluster, wantedNodes=2, 1, provisioner);
@@ -153,7 +153,7 @@ public class RetiredExpirerTest {
                 new MockDeployer(provisioner,
                         Collections.singletonMap(
                                 applicationId,
-                                new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(wantedNodes, Optional.of("default")), 1)));
+                                new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(wantedNodes, Optional.of("default"), false), 1)));
 
 
         // Allow the 1st and 3rd retired nodes permission to inactivate

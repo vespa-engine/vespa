@@ -4,9 +4,24 @@ package com.yahoo.config.model.provision;
 import com.yahoo.collections.ListMap;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.provision.*;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * In memory host provisioner. NB! ATM cannot be reused after allocate has been called.
@@ -111,11 +126,14 @@ public class InMemoryProvisioner implements HostProvisioner {
 
         List<HostSpec> allocation = new ArrayList<>();
         if (groups == 1) {
-            allocation.addAll(allocateHostGroup(cluster, flavor, capacity, startIndexForClusters));
+            allocation.addAll(allocateHostGroup(cluster.with(Optional.of(ClusterSpec.Group.from(0))),
+                                                flavor,
+                                                capacity,
+                                                startIndexForClusters));
         }
         else {
             for (int i = 0; i < groups; i++) {
-                allocation.addAll(allocateHostGroup(cluster.changeGroup(Optional.of(ClusterSpec.Group.from(i))),
+                allocation.addAll(allocateHostGroup(cluster.with(Optional.of(ClusterSpec.Group.from(i))),
                                                     flavor,
                                                     capacity / groups,
                                                     allocation.size()));

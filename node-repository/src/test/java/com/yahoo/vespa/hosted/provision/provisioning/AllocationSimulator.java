@@ -34,7 +34,7 @@ import java.util.Set;
 public class AllocationSimulator {
 
     private AllocationVisualizer visualizer;
-    private NodeList nodes = new NodeList(new ArrayList<>());
+    private NodeList nodes;
     private NodeFlavors flavors;
 
     private AllocationSimulator(AllocationVisualizer visualizer) {
@@ -94,7 +94,10 @@ public class AllocationSimulator {
 
     private Optional<Allocation> allocation(Optional<String> tenant) {
         if (tenant.isPresent()) {
-            Allocation allocation = new Allocation(app(tenant.get()), ClusterMembership.from("container/id1/3", new Version()), Generation.inital(), false);
+            Allocation allocation = new Allocation(app(tenant.get()),
+                                                   ClusterMembership.from("container/id1/3", new Version()),
+                                                   Generation.inital(),
+                                                   false);
             return Optional.of(allocation);
         }
         return Optional.empty();
@@ -108,35 +111,31 @@ public class AllocationSimulator {
     }
 
     private ClusterSpec cluster() {
-        return ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), ClusterSpec.Group.from(1), Version.fromString("6.41"));
+        return ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), ClusterSpec.Group.from(1), Version.fromString("6.41"), false);
     }
 
     /* ------------ Methods to add events to the system ----------------*/
 
     public void addCluster(String task, int count, Flavor flavor, String id) {
-        NodeSpec.CountNodeSpec nodeSpec = new NodeSpec.CountNodeSpec(count, flavor);
-        NodeAllocation allocation = new NodeAllocation(app(id), cluster(), nodeSpec, new MutableInteger(0), Clock.systemUTC());
-
-        List<Node> accepted = new ArrayList<>(); //TODO adpot the new allocation algoritm
-
-        accepted.addAll(nodes.asList());
-        nodes = new NodeList(accepted);
+        // TODO: Implement
+        NodeSpec.CountNodeSpec nodeSpec = new NodeSpec.CountNodeSpec(count, flavor, false);
+        nodes = new NodeList(nodes.asList());
     }
 
 
     public static void main(String[] args) {
 
-        AllocationVisualizer visualisator = new AllocationVisualizer();
+        AllocationVisualizer visualizer = new AllocationVisualizer();
 
         javax.swing.SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Allocation Simulator");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setContentPane(visualisator);
+            frame.setContentPane(visualizer);
             frame.pack();
             frame.setVisible(true);
         });
 
-        AllocationSimulator simulator = new AllocationSimulator(visualisator);
+        AllocationSimulator simulator = new AllocationSimulator(visualizer);
         simulator.addCluster("App1 : 3 * d-1 nodes", 3, simulator.flavors.getFlavorOrThrow("d-1"), "App1");
         simulator.addCluster("App2 : 2 * d-2 nodes", 2, simulator.flavors.getFlavorOrThrow("d-2"), "App2");
         simulator.addCluster("App3 : 3 * d-2 nodes", 3, simulator.flavors.getFlavorOrThrow("d-2"), "App3");
@@ -144,4 +143,5 @@ public class AllocationSimulator {
         simulator.addCluster("App5 : 3 * d-3 nodes", 3, simulator.flavors.getFlavorOrThrow("d-3"), "App5");
         simulator.addCluster("App6 : 5 * d-2 nodes", 5, simulator.flavors.getFlavorOrThrow("d-2"), "App6");
     }
+
 }

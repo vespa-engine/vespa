@@ -18,30 +18,20 @@ public class ClusterMembershipTest {
 
     @Test
     public void testContainerServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Version.fromString("6.42"));
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Version.fromString("6.42"), false);
         assertContainerService(ClusterMembership.from(cluster, 3));
     }
 
     @Test
-    public void testContainerServiceInstanceFromString() {
-        assertContainerService(ClusterMembership.from("container/id1/3", Vtag.currentVersion));
-    }
-
-    @Test
     public void testServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Version.fromString("6.42"));
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Version.fromString("6.42"), false);
         assertContentService(ClusterMembership.from(cluster, 37));
-    }
-
-    @Test
-    public void testServiceInstanceFromString() {
-        assertContentService(ClusterMembership.from("content/id1/37", Vtag.currentVersion));
     }
 
     @Test
     public void testServiceInstanceWithGroup() {
         ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"),
-                                               ClusterSpec.Group.from(4), Version.fromString("6.42"));
+                                               ClusterSpec.Group.from(4), Version.fromString("6.42"), false);
         assertContentServiceWithGroup(ClusterMembership.from(cluster, 37));
     }
 
@@ -52,19 +42,14 @@ public class ClusterMembershipTest {
 
     @Test
     public void testServiceInstanceWithRetire() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Version.fromString("6.42"));
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"), Version.fromString("6.42"), false);
         assertContentServiceWithRetire(ClusterMembership.retiredFrom(cluster, 37));
-    }
-
-    @Test
-    public void testServiceInstanceWithRetireFromString() {
-        assertContentServiceWithRetire(ClusterMembership.from("content/id1/37/retired", Vtag.currentVersion));
     }
 
     @Test
     public void testServiceInstanceWithGroupAndRetire() {
         ClusterSpec cluster = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"),
-                                               ClusterSpec.Group.from(4), Version.fromString("6.42"));
+                                               ClusterSpec.Group.from(4), Version.fromString("6.42"), false);
         assertContentServiceWithGroupAndRetire(ClusterMembership.retiredFrom(cluster, 37));
     }
 
@@ -76,7 +61,7 @@ public class ClusterMembershipTest {
     private void assertContainerService(ClusterMembership instance) {
         assertEquals(ClusterSpec.Type.container, instance.cluster().type());
         assertEquals("id1", instance.cluster().id().value());
-        assertEquals(Optional.<ClusterSpec.Group>empty(), instance.cluster().group());
+        assertFalse(instance.cluster().group().isPresent());
         assertEquals(3, instance.index());
         assertEquals("container/id1/3", instance.stringValue());
     }
@@ -84,7 +69,7 @@ public class ClusterMembershipTest {
     private void assertContentService(ClusterMembership instance) {
         assertEquals(ClusterSpec.Type.content, instance.cluster().type());
         assertEquals("id1", instance.cluster().id().value());
-        assertFalse("gr4", instance.cluster().group().isPresent());
+        assertFalse(instance.cluster().group().isPresent());
         assertEquals(37, instance.index());
         assertFalse(instance.retired());
         assertEquals("content/id1/37", instance.stringValue());
@@ -99,6 +84,7 @@ public class ClusterMembershipTest {
         assertEquals("content/id1/4/37", instance.stringValue());
     }
 
+    /** Serializing a spec without a group assigned works, but not deserialization */
     private void assertContentServiceWithRetire(ClusterMembership instance) {
         assertEquals(ClusterSpec.Type.content, instance.cluster().type());
         assertEquals("id1", instance.cluster().id().value());

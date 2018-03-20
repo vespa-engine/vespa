@@ -56,17 +56,17 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone) {
-        this(nodeRepository, flavors, zone, Clock.systemUTC(), (x, y) -> {});
+        this(nodeRepository, flavors, zone, (x, y) -> {});
     }
 
-    public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone, Clock clock, BiConsumer<List<Node>, String> debugRecorder) {
+    public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone, BiConsumer<List<Node>, String> debugRecorder) {
         this.nodeRepository = nodeRepository;
         this.capacityPolicies = new CapacityPolicies(zone, flavors);
         this.zone = zone;
-        this.preparer = new Preparer(nodeRepository, clock, zone.environment().equals(Environment.prod)
+        this.preparer = new Preparer(nodeRepository, zone.environment().equals(Environment.prod)
                 ? SPARE_CAPACITY_PROD
                 : SPARE_CAPACITY_NONPROD);
-        this.activator = new Activator(nodeRepository, clock);
+        this.activator = new Activator(nodeRepository);
         this.debugRecorder = debugRecorder;
     }
 
@@ -95,8 +95,9 @@ public class NodeRepositoryProvisioner implements Provisioner {
             Optional<String> defaultFlavorOverride = nodeRepository.getDefaultFlavorOverride(application);
             Flavor flavor = capacityPolicies.decideFlavor(requestedCapacity, cluster, defaultFlavorOverride);
             log.log(LogLevel.DEBUG, () -> "Decided flavor for requested tenant nodes: " + flavor);
+            boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
             effectiveGroups = wantedGroups > nodeCount ? nodeCount : wantedGroups; // cannot have more groups than nodes
-            requestedNodes = NodeSpec.from(nodeCount, flavor);
+            requestedNodes = NodeSpec.from(nodeCount, flavor, exclusive);
         }
         else {
             requestedNodes = NodeSpec.from(requestedCapacity.type());
@@ -132,4 +133,5 @@ public class NodeRepositoryProvisioner implements Provisioner {
         }
         return hosts;
     }
+
 }

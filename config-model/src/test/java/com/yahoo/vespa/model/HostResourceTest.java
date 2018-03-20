@@ -144,7 +144,7 @@ public class HostResourceTest {
     }
 
     private static ClusterSpec clusterSpec(ClusterSpec.Type type, String id) {
-        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(0), Version.fromString("6.42"));
+        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(0), Version.fromString("6.42"), false);
     }
 
     private HostResource mockHostResource() {
