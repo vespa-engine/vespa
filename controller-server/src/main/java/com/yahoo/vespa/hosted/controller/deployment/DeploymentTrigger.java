@@ -85,15 +85,13 @@ public class DeploymentTrigger {
             // Handle successful starting and ending
             if (report.success()) {
                 if (report.jobType() == JobType.component) {
-                    if (acceptNewApplicationVersionNow(application)) {
-                        // Note that in case of an ongoing upgrade this may result in both the upgrade and application
-                        // change being deployed together
-                        application = application.withChange(application.change().with(applicationVersion));
-                    }
-                    else { // postpone
+                    if ( ! acceptNewApplicationVersionNow(application)) {
                         applications().store(application.withOutstandingChange(Change.of(applicationVersion)));
                         return;
                     }
+                    // Note that in case of an ongoing upgrade this may result in both the upgrade and application
+                    // change being deployed together
+                    application = application.withChange(application.change().with(applicationVersion));
                 }
                 else if (deploymentComplete(application)) {
                     // change completed
@@ -228,6 +226,7 @@ public class DeploymentTrigger {
                     return false;
 
                 // Did the next job already succeed on the target version, or does it already have a higher version?
+                // TODO: Breaks logic when there are both kinds of changes?
                 if (alreadyDeployed(targetVersion, application, next.type()))
                     return false;
             }
@@ -271,6 +270,7 @@ public class DeploymentTrigger {
     public void cancelChange(ApplicationId applicationId) {
         applications().lockOrThrow(applicationId, application -> {
             deploymentQueue.removeJobs(application.id());
+            // TODO: Cancel only platform change?
             applications().store(application.withChange(Change.empty()));
         });
     }

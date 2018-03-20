@@ -173,7 +173,8 @@ public class Application {
                                                                     boolean currentVersion) {
         // Use last successful version if currentVersion is requested (staging deployment) or when we're not deploying
         // a new application version
-        if (currentVersion || !change().application().isPresent()) {
+        // TODO: Use currently deployed if undetermined.
+        if (currentVersion || ! change().application().isPresent()) {
             Optional<ApplicationVersion> version = deploymentJobs().lastSuccessfulApplicationVersionFor(jobType);
             if (version.isPresent()) {
                 return version;

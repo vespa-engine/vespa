@@ -3,13 +3,16 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
@@ -20,8 +23,12 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionEuWest1;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
@@ -362,6 +369,71 @@ public class DeploymentTriggerTest {
         assertFalse("Change has been deployed",
                     tester.applications().require(application.id()).change().isPresent());
         assertTrue("All jobs consumed", deploymentQueue.jobs().isEmpty());
+    }
+
+    @Test
+    public void dualChangesAreNotSkippedWhenOnePartIsDeployedAlready() {
+        DeploymentTester tester = new DeploymentTester();
+        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Supplier<Application> app = () -> tester.application(application.id());
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-central-1")
+                .region("eu-west-1")
+                .build();
+
+        tester.deployCompletely(application, applicationPackage);
+
+        // Platform upgrade which doesn't succeed, allowing a dual change.
+        Version version1 = new Version("7.1");
+        tester.upgradeSystem(version1);
+        tester.completeUpgradeWithError(application, version1, applicationPackage, productionEuWest1);
+
+        // Exhaust the retry, so productionEuWest1 is no longer running.
+        tester.clock().advance(Duration.ofHours(1));
+        tester.deployAndNotify(application, Optional.empty(), false, true, productionEuWest1);
+        assertTrue(tester.deploymentQueue().jobs().isEmpty());
+
+        // The below should now deploy the new application version, even though the platform version is already deployed.
+        tester.deployCompletely(application, applicationPackage, BuildJob.defaultBuildNumber + 1);
+    }
+
+    @Test
+    public void applicationVersionIsNotDowngraded() {
+        DeploymentTester tester = new DeploymentTester();
+        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Supplier<Application> app = () -> tester.application(application.id());
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-central-1")
+                .region("eu-west-1")
+                .build();
+
+        tester.deployCompletely(application, applicationPackage);
+
+        // productionUsCentral1 fails after deployment, causing a mismatch between deployed and successful state.
+        tester.completeDeploymentWithError(application, applicationPackage, BuildJob.defaultBuildNumber + 1, productionUsCentral1);
+
+        // deployAndNotify doesn't actually deploy if the job fails, so we need to do that manually.
+        tester.deployAndNotify(application, Optional.empty(), false, true, productionUsCentral1);
+        tester.deploy(productionUsCentral1, application, Optional.empty(), false);
+
+        // Exhaust the automatic retry.
+        tester.clock().advance(Duration.ofHours(1));
+        tester.deployAndNotify(application, Optional.empty(), false, true, productionUsCentral1);
+        assertTrue(tester.deploymentQueue().jobs().isEmpty());
+
+        ApplicationVersion appVersion1 = ApplicationVersion.from(BuildJob.defaultSourceRevision, BuildJob.defaultBuildNumber + 1);
+        assertEquals(appVersion1, app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
+
+        // Now cancel the change -- this should not normally happen.
+        tester.deploymentTrigger().cancelChange(application.id());
+
+        // A new version is released, which should now deploy the currently deployed application version to avoid downgrades.
+        Version version1 = new Version("6.2");
+        tester.upgradeSystem(version1);
+        tester.completeUpgrade(application, version1, applicationPackage);
+        assertEquals(appVersion1, app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
     }
 
 }
