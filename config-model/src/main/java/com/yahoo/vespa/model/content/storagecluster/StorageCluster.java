@@ -94,12 +94,6 @@ public class StorageCluster extends AbstractConfigProducer<StorageNode>
     @Override
     public void getConfig(MetricsmanagerConfig.Builder builder) {
         ContentCluster.getMetricBuilder("fleetcontroller", builder).
-                addedmetrics("vds.filestor.*.allthreads.put.sum").
-                addedmetrics("vds.filestor.*.allthreads.get.sum").
-                addedmetrics("vds.filestor.*.allthreads.multi.sum").
-                addedmetrics("vds.filestor.*.allthreads.update.sum").
-                addedmetrics("vds.filestor.*.allthreads.remove.sum").
-                addedmetrics("vds.filestor.*.allthreads.operations").
                 addedmetrics("vds.datastored.alldisks.docs").
                 addedmetrics("vds.datastored.alldisks.bytes").
                 addedmetrics("vds.datastored.alldisks.buckets");
