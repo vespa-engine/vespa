@@ -33,7 +33,7 @@ public class StateVersionTrackerTest {
     }
 
     private static StateVersionTracker createWithMockedMetrics() {
-        return new StateVersionTracker();
+        return new StateVersionTracker(1.0);
     }
 
     private static void updateAndPromote(final StateVersionTracker versionTracker,

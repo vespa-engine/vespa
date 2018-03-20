@@ -54,8 +54,18 @@ public class ContentNodeStats {
             return bucketsPending;
         }
 
-        public boolean mayHaveBucketsPending() {
-            return (bucketsPending > 0) || (invalidCount > 0);
+        public boolean mayHaveBucketsPending(double minMergeCompletionRatio) {
+            if (invalidCount > 0) {
+                return true;
+            }
+            if (bucketsTotal == 0) {
+                return bucketsPending > 0;
+            }
+            return calcMergeCompletionRatio() < minMergeCompletionRatio;
+        }
+
+        private double calcMergeCompletionRatio() {
+            return ((double) Math.max(0, (bucketsTotal - bucketsPending)) / (double) bucketsTotal);
         }
 
         public boolean valid() {

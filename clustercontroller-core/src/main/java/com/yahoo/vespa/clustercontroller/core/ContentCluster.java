@@ -73,6 +73,7 @@ public class ContentCluster {
                     timer,
                     state,
                     statsAggregator,
+                    options.minMergeCompletionRatio,
                     options.maxPrematureCrashes,
                     eventLog,
                     clusterName,
