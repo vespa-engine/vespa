@@ -296,7 +296,7 @@ FileStorHandlerImpl::abortQueuedCommandsForBuckets(
     typedef PriorityQueue::iterator iter_t;
     api::ReturnCode abortedCode(api::ReturnCode::ABORTED,
                                 "Sending distributor no longer owns "
-                                "bucket operation was bound to");
+                                "bucket operation was bound to or storage node went down");
     for (iter_t it(t.queue.begin()), e(t.queue.end()); it != e;) {
         api::StorageMessage& msg(*it->_command);
         if (messageMayBeAborted(msg) && cmd.shouldAbort(it->_bucket)) {
