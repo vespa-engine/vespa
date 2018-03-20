@@ -120,27 +120,10 @@ public class DeploymentTrigger {
 
     /** Returns whether all production zones listed in deployment spec has this change (or a newer version, if upgrade) */
     private boolean deploymentComplete(LockedApplication application) {
-        if ( ! application.change().isPresent()) return true;
-        Change change = application.change();
-
-        for (JobType job : order.jobsFrom(application.deploymentSpec())) {
-            if ( ! job.isProduction()) continue;
-
-            Optional<ZoneId> zone = job.zone(this.controller.system());
-            if ( ! zone.isPresent()) continue;
-
-            Deployment deployment = application.deployments().get(zone.get());
-            if (deployment == null) return false;
-
-            // Check actual job outcome (the deployment)
-            if (change.platform().isPresent()) {
-                if (change.platform().get().isAfter(deployment.version())) return false; // later is ok
-            }
-            if (change.application().isPresent()) {
-                if ( ! change.application().get().equals(deployment.applicationVersion())) return false;
-            }
-        }
-        return true;
+        return order.jobsFrom(application.deploymentSpec()).stream()
+                .filter(JobType::isProduction)
+                .filter(job -> job.zone(controller.system()).isPresent())
+                .allMatch(job -> alreadyDeployed(application, job));
     }
 
     /**
