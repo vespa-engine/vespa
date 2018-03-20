@@ -172,6 +172,7 @@ private:
     const Value &_value;
 public:
     ConstValue(const Value &value_in) : Leaf(value_in.type()), _value(value_in) {}
+    const Value &value() const { return _value; }
     bool result_is_mutable() const override { return false; }
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
