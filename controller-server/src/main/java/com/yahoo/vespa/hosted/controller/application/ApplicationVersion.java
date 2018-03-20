@@ -90,9 +90,9 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     @Override
     public int compareTo(ApplicationVersion o) {
-        if (!buildNumber().isPresent() || !o.buildNumber().isPresent()) {
-            return 0; // No sorting for application package hash
-        }
+        if ( ! buildNumber().isPresent() || ! o.buildNumber().isPresent())
+            return Boolean.compare(buildNumber().isPresent(), o.buildNumber.isPresent()); // Application package hash sorts first
+
         return buildNumber().get().compareTo(o.buildNumber().get());
     }
 }
