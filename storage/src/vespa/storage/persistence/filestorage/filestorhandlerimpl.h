@@ -37,6 +37,8 @@ class FileStorDiskMetrics;
 class StorBucketDatabase;
 class AbortBucketOperationsCommand;
 
+namespace bmi = boost::multi_index;
+
 class FileStorHandlerImpl : private framework::MetricUpdateHook,
                             private ResumeGuard::Callback,
                             public MessageSender {
@@ -61,25 +63,13 @@ public:
         }
     };
 
-    typedef boost::multi_index::ordered_non_unique<
-        boost::multi_index::identity<MessageEntry> > PriorityOrder;
+    using PriorityOrder = bmi::ordered_non_unique<bmi::identity<MessageEntry> >;
+    using BucketOrder = bmi::ordered_non_unique<bmi::member<MessageEntry, document::Bucket, &MessageEntry::_bucket>>;
 
-    typedef boost::multi_index::ordered_non_unique<
-        boost::multi_index::member<MessageEntry,
-                                   document::Bucket,
-                                   &MessageEntry::_bucket> > BucketOrder;
+    using PriorityQueue = bmi::multi_index_container<MessageEntry, bmi::indexed_by<bmi::sequenced<>, PriorityOrder, BucketOrder>>;
 
-    typedef boost::multi_index::multi_index_container<
-        MessageEntry,
-        boost::multi_index::indexed_by<
-            boost::multi_index::sequenced<>,
-            PriorityOrder,
-            BucketOrder
-            >
-        > PriorityQueue;
-
-    typedef boost::multi_index::nth_index<PriorityQueue, 1>::type PriorityIdx;
-    typedef boost::multi_index::nth_index<PriorityQueue, 2>::type BucketIdx;
+    using PriorityIdx = bmi::nth_index<PriorityQueue, 1>::type;
+    using BucketIdx = bmi::nth_index<PriorityQueue, 2>::type;
 
     struct Disk {
         vespalib::Monitor lock;
