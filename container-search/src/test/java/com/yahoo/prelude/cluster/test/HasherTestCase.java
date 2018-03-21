@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.cluster.test;
 
-import com.yahoo.container.handler.VipStatus;
 import com.yahoo.fs4.QueryPacket;
 import com.yahoo.prelude.cluster.Hasher;
 import com.yahoo.prelude.fastsearch.CacheKey;
@@ -9,6 +8,12 @@ import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the Hashing/failover/whatever functionality.
@@ -16,12 +21,9 @@ import com.yahoo.search.searchchain.Execution;
  * @author bratseth
  * @author Steinar Knutsen
  */
-public class HasherTestCase extends junit.framework.TestCase {
+public class HasherTestCase {
 
-    public HasherTestCase (String name) {
-        super(name);
-    }
-
+    @Test
     public void testEmptyHasher() {
         Hasher hasher=new Hasher();
         assertNull(hasher.select(0));
@@ -40,6 +42,7 @@ public class HasherTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testOneHasher() {
         Hasher hasher = new Hasher();
         VespaBackEndSearcher o1 = new MockBackend();
@@ -51,6 +54,7 @@ public class HasherTestCase extends junit.framework.TestCase {
         assertNull(hasher.select(0));
     }
 
+    @Test
     public void testAddAndRemove() {
         Hasher hasher = new Hasher();
         VespaBackEndSearcher v0 = new MockBackend();
@@ -84,6 +88,7 @@ public class HasherTestCase extends junit.framework.TestCase {
         assertSame(v0, hasher.select(0));
     }
 
+    @Test
     public void testPreferLocal() {
         Hasher hasher = new Hasher();
         VespaBackEndSearcher v0 = new MockBackend();
@@ -102,7 +107,6 @@ public class HasherTestCase extends junit.framework.TestCase {
         hasher.add(v0);
         hasher.add(v2);
         assertTrue(hasher.select(0).isLocalDispatching());
-
 
         hasher = new Hasher();
         hasher.add(v0);

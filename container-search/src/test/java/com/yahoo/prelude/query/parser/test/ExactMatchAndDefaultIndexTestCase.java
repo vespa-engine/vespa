@@ -1,27 +1,25 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser.test;
 
-
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.search.Query;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.search.test.QueryTestCase;
+import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Check default index propagates correctly to the tokenizer.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class ExactMatchAndDefaultIndexTestCase extends junit.framework.TestCase {
+public class ExactMatchAndDefaultIndexTestCase {
 
-    public ExactMatchAndDefaultIndexTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testExactMatchTokenization() {
         Index index = new Index("testexact");
         index.setExact(true, null);
@@ -34,8 +32,7 @@ public class ExactMatchAndDefaultIndexTestCase extends junit.framework.TestCase 
         assertEquals("AND \"a b\" \"foo com\"", q.getModel().getQueryTree().getRoot().toString());
     }
 
-    // From Flickr, which had problems with this as they didn't use a default-index
-    // (query is dog & cat)
+    @Test
     public void testDefaultIndexSpecialChars() {
         Query q = new Query("?query=" + enc("dog & cat") + "&default-index=textsearch");
         assertEquals("AND textsearch:dog textsearch:cat", q.getModel().getQueryTree().getRoot().toString());
@@ -50,5 +47,3 @@ public class ExactMatchAndDefaultIndexTestCase extends junit.framework.TestCase 
     }
 
 }
-
-

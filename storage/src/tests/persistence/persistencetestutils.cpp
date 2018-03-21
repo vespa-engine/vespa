@@ -52,21 +52,13 @@ PersistenceTestEnvironment::PersistenceTestEnvironment(DiskCount numDisks, const
     _node.setupDummyPersistence();
     _metrics.initDiskMetrics(
             numDisks, _node.getLoadTypes()->getMetricLoadTypes(), 1);
-    _handler.reset(new FileStorHandler(
-            _messageKeeper, _metrics,
-            _node.getPersistenceProvider().getPartitionStates().getList(),
-            _node.getComponentRegister(), 255, 0));
+    _handler.reset(new FileStorHandler(_messageKeeper, _metrics,
+                                       _node.getPersistenceProvider().getPartitionStates().getList(),
+                                       _node.getComponentRegister()));
     for (uint32_t i = 0; i < numDisks; i++) {
         _diskEnvs.push_back(
-                std::unique_ptr<PersistenceUtil>(
-                        new PersistenceUtil(
-                                _config.getConfigId(),
-                                _node.getComponentRegister(),
-                                *_handler,
-                                *_metrics.disks[i]->threads[0],
-                                i,
-                                255,
-                                _node.getPersistenceProvider())));
+                std::make_unique<PersistenceUtil>(_config.getConfigId(), _node.getComponentRegister(), *_handler,
+                                                  *_metrics.disks[i]->threads[0], i, _node.getPersistenceProvider()));
     }
 }
 
@@ -79,8 +71,7 @@ PersistenceTestUtils::~PersistenceTestUtils()
 }
 
 std::string
-PersistenceTestUtils::dumpBucket(const document::BucketId& bid,
-                                 uint16_t disk) {
+PersistenceTestUtils::dumpBucket(const document::BucketId& bid, uint16_t disk) {
     return dynamic_cast<spi::dummy::DummyPersistence&>(_env->_node.getPersistenceProvider()).dumpBucket(makeSpiBucket(bid, spi::PartitionId(disk)));
 }
 
@@ -92,14 +83,9 @@ PersistenceTestUtils::setupDisks(uint32_t numDisks) {
 std::unique_ptr<PersistenceThread>
 PersistenceTestUtils::createPersistenceThread(uint32_t disk)
 {
-    return std::unique_ptr<PersistenceThread>(
-            new PersistenceThread(_env->_node.getComponentRegister(),
-                              _env->_config.getConfigId(),
-                              getPersistenceProvider(),
-                              getEnv()._fileStorHandler,
-                              getEnv()._metrics,
-                              disk,
-                              255));
+    return std::make_unique<PersistenceThread>(_env->_node.getComponentRegister(), _env->_config.getConfigId(),
+                                               getPersistenceProvider(), getEnv()._fileStorHandler,
+                                               getEnv()._metrics, disk);
 }
 
 document::Document::SP

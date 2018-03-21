@@ -27,6 +27,12 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChain;
 import com.yahoo.search.searchchain.SearchChainRegistry;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the BlendingSearcher class
@@ -36,19 +42,16 @@ import com.yahoo.search.searchchain.SearchChainRegistry;
  */
 // The SuppressWarnings is to shut up the compiler about using
 // deprecated FastHit constructor in the tests.
-@SuppressWarnings({ "unchecked", "rawtypes" })
-public class BlendingSearcherTestCase extends junit.framework.TestCase {
+@SuppressWarnings({ "rawtypes" })
+public class BlendingSearcherTestCase {
 
-    public BlendingSearcherTestCase(String name) {
-        super(name);
-    }
+    private static final double delta = 0.00000001;
 
     public static class BlendingSearcherWrapper extends Searcher {
 
         private SearchChain blendingChain;
         private final FederationConfig.Builder builder = new FederationConfig.Builder();
-        private final Map<String, Searcher> searchers
-                = new HashMap<>();
+        private final Map<String, Searcher> searchers = new HashMap<>();
         private SearchChainRegistry chainRegistry;
 
         private final String blendingDocumentId;
@@ -108,7 +111,7 @@ public class BlendingSearcherTestCase extends junit.framework.TestCase {
             StrictContractsConfig contracts = new StrictContractsConfig(new StrictContractsConfig.Builder());
 
             FederationSearcher fedSearcher =
-                    new FederationSearcher(new FederationConfig(builder), contracts, new ComponentRegistry<TargetSelector>());
+                    new FederationSearcher(new FederationConfig(builder), contracts, new ComponentRegistry<>());
             BlendingSearcher blendingSearcher = new BlendingSearcher(blendingDocumentId);
             blendingChain = new SearchChain(ComponentId.createAnonymousComponentId("blendingChain"), blendingSearcher, fedSearcher);
             return true;
@@ -119,7 +122,7 @@ public class BlendingSearcherTestCase extends junit.framework.TestCase {
         }
     }
 
-    @SuppressWarnings("serial")
+    @Test
     public void testitTwoPhase() {
 
         DocumentSourceSearcher chain1 = new DocumentSourceSearcher();
@@ -202,6 +205,7 @@ public class BlendingSearcherTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testMultipleBackendsWithDuplicateRemoval() {
         DocumentSourceSearcher chain1 = new DocumentSourceSearcher();
         DocumentSourceSearcher chain2 = new DocumentSourceSearcher();
@@ -226,6 +230,7 @@ public class BlendingSearcherTestCase extends junit.framework.TestCase {
         assertEquals(101, ((int) cr.hits().get(0).getRelevance().getScore()));
     }
 
+    @Test
     public void testMultipleBackendsWithErrorMerging() {
         DocumentSourceSearcher chain1 = new DocumentSourceSearcher();
         DocumentSourceSearcher chain2 = new DocumentSourceSearcher();
@@ -260,6 +265,7 @@ public class BlendingSearcherTestCase extends junit.framework.TestCase {
         assertEquals(com.yahoo.container.protect.Error.NO_BACKENDS_IN_SERVICE.code, cr.hits().getError().getCode());
     }
 
+    @Test
     public void testBlendingWithSortSpec() {
         DocumentSourceSearcher chain1 = new DocumentSourceSearcher();
         DocumentSourceSearcher chain2 = new DocumentSourceSearcher();
@@ -318,6 +324,7 @@ public class BlendingSearcherTestCase extends junit.framework.TestCase {
      * document sumaries for hits it did not create (it will insert the wrong values).
      * But are we sure fsearch handles this case correctly?
      */
+    @Test
     public void testBlendingWithSortSpecAnd2Phase() {
         DocumentSourceSearcher chain1 = new DocumentSourceSearcher();
         DocumentSourceSearcher chain2 = new DocumentSourceSearcher();
@@ -391,47 +398,52 @@ public class BlendingSearcherTestCase extends junit.framework.TestCase {
         return blender;
     }
 
+    @Test
     public void testOnlyFirstBackend() {
         BlendingSearcherWrapper searcher = setupFirstAndSecond();
         Query query = new Query("/search?query=banana&search=first");
 
         Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
         assertEquals(1, result.getHitCount());
-        assertEquals(200.0, result.hits().get(0).getRelevance().getScore());
+        assertEquals(200.0, result.hits().get(0).getRelevance().getScore(), delta);
     }
 
+    @Test
     public void testOnlySecondBackend() {
         BlendingSearcherWrapper searcher = setupFirstAndSecond();
         Query query = new Query("/search?query=banana&search=second");
 
         Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
         assertEquals(2, result.getHitCount());
-        assertEquals(300.0, result.hits().get(0).getRelevance().getScore());
-        assertEquals(100.0, result.hits().get(1).getRelevance().getScore());
+        assertEquals(300.0, result.hits().get(0).getRelevance().getScore(), delta);
+        assertEquals(100.0, result.hits().get(1).getRelevance().getScore(), delta);
     }
 
+    @Test
     public void testBothBackendsExplicitly() {
         BlendingSearcherWrapper searcher = setupFirstAndSecond();
         Query query = new Query("/search?query=banana&search=first,second");
 
         Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
         assertEquals(3, result.getHitCount());
-        assertEquals(300.0, result.hits().get(0).getRelevance().getScore());
-        assertEquals(200.0, result.hits().get(1).getRelevance().getScore());
-        assertEquals(100.0, result.hits().get(2).getRelevance().getScore());
+        assertEquals(300.0, result.hits().get(0).getRelevance().getScore(), delta);
+        assertEquals(200.0, result.hits().get(1).getRelevance().getScore(), delta);
+        assertEquals(100.0, result.hits().get(2).getRelevance().getScore(), delta);
     }
 
+    @Test
     public void testBothBackendsImplicitly() {
         BlendingSearcherWrapper searcher = setupFirstAndSecond();
         Query query = new Query("/search?query=banana");
 
         Result result = new Execution(searcher, Execution.Context.createContextStub()).search(query);
         assertEquals(3, result.getHitCount());
-        assertEquals(300.0, result.hits().get(0).getRelevance().getScore());
-        assertEquals(200.0, result.hits().get(1).getRelevance().getScore());
-        assertEquals(100.0, result.hits().get(2).getRelevance().getScore());
+        assertEquals(300.0, result.hits().get(0).getRelevance().getScore(), delta);
+        assertEquals(200.0, result.hits().get(1).getRelevance().getScore(), delta);
+        assertEquals(100.0, result.hits().get(2).getRelevance().getScore(), delta);
     }
 
+    @Test
     public void testNonexistingBackendCausesError() {
         BlendingSearcherWrapper searcher = setupFirstAndSecond();
         Query query = new Query("/search?query=banana&search=nonesuch");
@@ -445,6 +457,7 @@ public class BlendingSearcherTestCase extends junit.framework.TestCase {
         //             e.getDetailedMessage());
     }
 
+    @Test
     public void testNonexistingBackendsCausesErrorOnFirst() {
         // Feel free to change to include all in the detail message...
         BlendingSearcherWrapper searcher = setupFirstAndSecond();
@@ -460,21 +473,21 @@ public class BlendingSearcherTestCase extends junit.framework.TestCase {
                      e.toString());
     }
 
+    @Test
     public void testExistingAndNonExistingBackendCausesBothErrorAndResult() {
         BlendingSearcherWrapper searcher = setupFirstAndSecond();
         Query query = new Query("/search?query=banana&search=first,nonesuch,second");
 
         Result result = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts())).search(query);
         assertEquals(3, result.getConcreteHitCount());
-        assertEquals(300.0, result.hits().get(1).getRelevance().getScore());
-        assertEquals(200.0, result.hits().get(2).getRelevance().getScore());
-        assertEquals(100.0, result.hits().get(3).getRelevance().getScore());
+        assertEquals(300.0, result.hits().get(1).getRelevance().getScore(), delta);
+        assertEquals(200.0, result.hits().get(2).getRelevance().getScore(), delta);
+        assertEquals(100.0, result.hits().get(3).getRelevance().getScore(), delta);
         assertNotNull(result.hits().getError());
         ErrorMessage e = result.hits().getError();
         //TODO: Do not depend on sources order
         assertEquals("Could not resolve source ref 'nonesuch'. Valid source refs are first, second.",
-                e.getDetailedMessage());
-
-
+                     e.getDetailedMessage());
     }
+
 }

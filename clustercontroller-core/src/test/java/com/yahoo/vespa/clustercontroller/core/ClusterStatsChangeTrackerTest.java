@@ -37,19 +37,22 @@ public class ClusterStatsChangeTrackerTest {
         private final Set<Integer> contentNodeIndices;
         private ClusterStatsAggregator aggregator;
         private final ClusterStatsChangeTracker tracker;
+        private final double minMergeCompletionRatio;
 
-        private Fixture(Integer... contentNodeIndices) {
-            this.contentNodeIndices = Sets.newHashSet(contentNodeIndices);
+        private Fixture(Set<Integer> contentNodeIndices,
+                        double minMergeCompletionRatio) {
+            this.contentNodeIndices = contentNodeIndices;
+            this.minMergeCompletionRatio = minMergeCompletionRatio;
             aggregator = new ClusterStatsAggregator(Sets.newHashSet(1), this.contentNodeIndices);
-            tracker = new ClusterStatsChangeTracker(aggregator.getAggregatedStats());
+            tracker = new ClusterStatsChangeTracker(aggregator.getAggregatedStats(), minMergeCompletionRatio);
         }
 
         public static Fixture empty() {
-            return new Fixture(0, 1);
+            return new Fixture(Sets.newHashSet(0, 1), 1.0);
         }
 
         public static Fixture fromStats(StatsBuilder builder) {
-            Fixture result = new Fixture(0, 1);
+            Fixture result = new Fixture(Sets.newHashSet(0, 1), 1.0);
             result.updateStats(builder);
             return result;
         }
@@ -57,7 +60,7 @@ public class ClusterStatsChangeTrackerTest {
         public void newAggregatedStats(StatsBuilder builder) {
             aggregator = new ClusterStatsAggregator(Sets.newHashSet(1), contentNodeIndices);
             updateStats(builder);
-            tracker.updateAggregatedStats(aggregator.getAggregatedStats());
+            tracker.updateAggregatedStats(aggregator.getAggregatedStats(), minMergeCompletionRatio);
         }
 
         private void updateStats(StatsBuilder builder) {
@@ -77,14 +80,14 @@ public class ClusterStatsChangeTrackerTest {
     }
 
     @Test
-    public void stats_have_not_changed_if_all_nodes_in_sync_and_nothing_previous() {
-        Fixture f = Fixture.fromStats(stats().inSync(0).inSync(1));
-        assertFalse(f.statsHaveChanged());
+    public void stats_have_changed_if_in_sync_node_not_found_in_previous_stats() {
+        Fixture f = Fixture.fromStats(stats().inSync(0));
+        assertTrue(f.statsHaveChanged());
     }
 
     @Test
-    public void stats_have_changed_if_one_node_with_buckets_pending_and_nothing_previous() {
-        Fixture f = Fixture.fromStats(stats().inSync(0).bucketsPending(1));
+    public void stats_have_changed_if_buckets_pending_node_not_found_in_previous_stats() {
+        Fixture f = Fixture.fromStats(stats().bucketsPending(0));
         assertTrue(f.statsHaveChanged());
     }
 

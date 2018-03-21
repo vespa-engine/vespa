@@ -94,7 +94,7 @@ public class MultigroupProvisioningTest {
 
     @Test
     public void test_one_node_and_group_to_two() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")));
 
         ApplicationId application1 = tester.makeApplicationId();
 
@@ -106,7 +106,7 @@ public class MultigroupProvisioningTest {
 
     @Test
     public void test_one_node_and_group_to_two_with_flavor_migration() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")));
 
         ApplicationId application1 = tester.makeApplicationId();
 

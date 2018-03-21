@@ -10,7 +10,7 @@ package com.yahoo.prelude.query;
 public interface IndexedItem extends HasIndexItem {
 
     /** Sets the name of the index to search */
-    public void setIndexName(String index);
+    void setIndexName(String index);
 
     /**
      * Return the searchable term contents of this item.
@@ -18,6 +18,6 @@ public interface IndexedItem extends HasIndexItem {
      * @return a string representation of what is presumably stored in an index
      *         which will match this item
      */
-    public String getIndexedString();
+    String getIndexedString();
 
 }

@@ -42,8 +42,6 @@ public:
         fprintf(stderr, "getProtonStatus\n");
         fprintf(stderr, "getState\n");
         fprintf(stderr, "monitor\n");
-        fprintf(stderr, "enableSearching\n");
-        fprintf(stderr, "disableSearching\n");
         fprintf(stderr, "triggerFlush\n");
         fprintf(stderr, "prepareRestart\n");
         return 1;
@@ -258,11 +256,7 @@ public:
 
         bool invoked = false;
 
-        if (strcmp(_argv[2], "enableSearching") == 0) {
-            _req->SetMethodName("proton.enableSearching");
-        } else if (strcmp(_argv[2], "disableSearching") == 0) {
-            _req->SetMethodName("proton.disableSearching");
-        } else if (strcmp(_argv[2], "getState") == 0 &&
+        if (strcmp(_argv[2], "getState") == 0 &&
                    _argc >= 3) {
             _req->SetMethodName("pandora.rtc.getState");
 

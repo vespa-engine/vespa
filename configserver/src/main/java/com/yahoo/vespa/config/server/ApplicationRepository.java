@@ -55,7 +55,6 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -153,6 +152,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     @Override
     public Optional<com.yahoo.config.provision.Deployment> deployFromLocalActive(ApplicationId application, Duration timeout) {
         Tenant tenant = tenants.getTenant(application.tenant());
+        if (tenant == null) return Optional.empty();
         LocalSession activeSession = getActiveSession(tenant, application);
         if (activeSession == null) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);

@@ -10,11 +10,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test of TextualQueryRepresentation.
@@ -22,7 +23,8 @@ import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
  * @author tonytv
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class TextualQueryRepresentationTestCase extends TestCase {
+public class TextualQueryRepresentationTestCase {
+
     private enum ExampleEnum {
         example;
     }
@@ -99,12 +101,14 @@ public class TextualQueryRepresentationTestCase extends TestCase {
         return new TextualQueryRepresentation(item).toString();
     }
 
+    @Test
     public void testBasic() throws Exception {
         String basicText = getTextualQueryRepresentation(basic);
         assertEquals(getCorrect("basic.txt"), basicText);
 
     }
 
+    @Test
     public void testComposite() throws Exception {
         String compositeText = getTextualQueryRepresentation(composite);
         assertEquals(getCorrect("composite.txt"), compositeText);
@@ -118,4 +122,5 @@ public class TextualQueryRepresentationTestCase extends TestCase {
             result.append(line).append('\n');
         return result.toString();
     }
+
 }

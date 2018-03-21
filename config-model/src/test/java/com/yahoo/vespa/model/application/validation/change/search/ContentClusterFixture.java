@@ -22,6 +22,7 @@ import static org.junit.Assert.assertThat;
  * @author geirst
  */
 public abstract class ContentClusterFixture {
+
     protected ContentCluster currentCluster;
     protected ContentCluster nextCluster;
 

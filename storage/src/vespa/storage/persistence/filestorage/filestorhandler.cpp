@@ -7,12 +7,8 @@ namespace storage {
 FileStorHandler::FileStorHandler(MessageSender& sender,
                                  FileStorMetrics& metrics,
                                  const spi::PartitionStateList& partitions,
-                                 ServiceLayerComponentRegister& compReg,
-                                 uint8_t maxPriorityToBlock,
-                                 uint8_t minPriorityToBeBlocking)
-    : _impl(new FileStorHandlerImpl(
-                sender, metrics, partitions, compReg,
-                maxPriorityToBlock, minPriorityToBeBlocking))
+                                 ServiceLayerComponentRegister& compReg)
+    : _impl(new FileStorHandlerImpl(sender, metrics, partitions, compReg))
 {
 }
 
@@ -57,23 +53,16 @@ FileStorHandler::schedule(const api::StorageMessage::SP& msg, uint16_t thread)
     return _impl->schedule(msg, thread);
 }
 
-void
-FileStorHandler::pause(uint16_t disk, uint8_t priority) const {
-    return _impl->pause(disk, priority);
-}
-
 FileStorHandler::LockedMessage
-FileStorHandler::getNextMessage(uint16_t thread, uint8_t lowestPriority)
+FileStorHandler::getNextMessage(uint16_t thread)
 {
-    return _impl->getNextMessage(thread, lowestPriority);
+    return _impl->getNextMessage(thread);
 }
 
 FileStorHandler::LockedMessage &
-FileStorHandler::getNextMessage(uint16_t thread,
-                                LockedMessage& lck,
-                                uint8_t lowestPriority)
+FileStorHandler::getNextMessage(uint16_t thread, LockedMessage& lck)
 {
-    return _impl->getNextMessage(thread, lck, lowestPriority);
+    return _impl->getNextMessage(thread, lck);
 }
 
 FileStorHandler::BucketLockInterface::SP
@@ -89,30 +78,23 @@ FileStorHandler::remapQueueAfterDiskMove(
 {
     RemapInfo target(bucket, targetDisk);
 
-    _impl->remapQueue(RemapInfo(bucket, sourceDisk), target,
-                      FileStorHandlerImpl::MOVE);
+    _impl->remapQueue(RemapInfo(bucket, sourceDisk), target, FileStorHandlerImpl::MOVE);
 }
 
 void
-FileStorHandler::remapQueueAfterJoin(
-        const RemapInfo& source,
-        RemapInfo& target)
+FileStorHandler::remapQueueAfterJoin(const RemapInfo& source,RemapInfo& target)
 {
     _impl->remapQueue(source, target, FileStorHandlerImpl::JOIN);
 }
 
 void
-FileStorHandler::remapQueueAfterSplit(
-        const RemapInfo& source,
-        RemapInfo& target1,
-        RemapInfo& target2)
+FileStorHandler::remapQueueAfterSplit(const RemapInfo& source,RemapInfo& target1, RemapInfo& target2)
 {
     _impl->remapQueue(source, target1, target2, FileStorHandlerImpl::SPLIT);
 }
 
 void
-FileStorHandler::failOperations(const document::Bucket &bucket,
-                                uint16_t fromDisk, const api::ReturnCode& err)
+FileStorHandler::failOperations(const document::Bucket &bucket, uint16_t fromDisk, const api::ReturnCode& err)
 {
     _impl->failOperations(bucket, fromDisk, err);
 }
@@ -130,8 +112,7 @@ FileStorHandler::sendReply(const api::StorageReply::SP& msg)
 }
 
 void
-FileStorHandler::getStatus(std::ostream& out,
-                           const framework::HttpUrlPath& path) const
+FileStorHandler::getStatus(std::ostream& out, const framework::HttpUrlPath& path) const
 {
     _impl->getStatus(out, path);
 }
@@ -149,8 +130,7 @@ FileStorHandler::getQueueSize(uint16_t disk) const
 }
 
 void
-FileStorHandler::addMergeStatus(const document::Bucket& bucket,
-                                MergeStatus::SP ms)
+FileStorHandler::addMergeStatus(const document::Bucket& bucket, MergeStatus::SP ms)
 {
     return _impl->addMergeStatus(bucket, ms);
 }

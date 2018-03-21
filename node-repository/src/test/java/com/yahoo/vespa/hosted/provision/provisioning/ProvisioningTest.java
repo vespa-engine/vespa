@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -728,6 +729,16 @@ public class ProvisioningTest {
         assertEquals(4, tester.getNodes(application, Node.State.active).size());
     }
 
+    @Test
+    public void required_capacity_respects_prod_redundancy_requirement() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        ApplicationId application = tester.makeApplicationId();
+        try {
+            prepare(application, 1, 0, 1, 0, true, "default", Version.fromString("6.42"), tester);
+            fail("Expected exception");
+        } catch (IllegalArgumentException ignored) {}
+    }
+
     private void assertCorrectFlavorPreferences(boolean largeIsStock) {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10).stock(largeIsStock);
@@ -762,21 +773,31 @@ public class ProvisioningTest {
         tester.assertNumberOfNodesWithFlavor(contentNodes, "large-variant-variant", 3);
     }
 
-    private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size, int content1Size, String flavor, ProvisioningTester tester) {
-        return prepare(application, container0Size, container1Size, content0Size, content1Size, flavor, Version.fromString("6.42"), tester);
+    private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
+                                int content1Size, String flavor, ProvisioningTester tester) {
+        return prepare(application, container0Size, container1Size, content0Size, content1Size, flavor,
+                       Version.fromString("6.42"), tester);
     }
 
-    private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size, int content1Size, String flavor, Version wantedVersion, ProvisioningTester tester) {
+    private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
+                                int content1Size, String flavor, Version wantedVersion, ProvisioningTester tester) {
+        return prepare(application, container0Size, container1Size, content0Size, content1Size, false, flavor,
+                       wantedVersion, tester);
+    }
+
+    private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
+                                int content1Size, boolean required, String flavor, Version wantedVersion,
+                                ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
         ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), wantedVersion, false);
         ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), wantedVersion, false);
         ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), wantedVersion, false);
         ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), wantedVersion, false);
 
-        Set<HostSpec> container0 = prepare(application, containerCluster0, container0Size, 1, flavor, tester);
-        Set<HostSpec> container1 = prepare(application, containerCluster1, container1Size, 1, flavor, tester);
-        Set<HostSpec> content0 = prepare(application, contentCluster0, content0Size, 1, flavor, tester);
-        Set<HostSpec> content1 = prepare(application, contentCluster1, content1Size, 1, flavor, tester);
+        Set<HostSpec> container0 = prepare(application, containerCluster0, container0Size, 1, required, flavor, tester);
+        Set<HostSpec> container1 = prepare(application, containerCluster1, container1Size, 1, required, flavor, tester);
+        Set<HostSpec> content0 = prepare(application, contentCluster0, content0Size, 1, required, flavor, tester);
+        Set<HostSpec> content1 = prepare(application, contentCluster1, content1Size, 1, required, flavor, tester);
 
         Set<HostSpec> allHosts = new HashSet<>();
         allHosts.addAll(container0);
@@ -784,10 +805,11 @@ public class ProvisioningTest {
         allHosts.addAll(content0);
         allHosts.addAll(content1);
 
-        int expectedContainer0Size = tester.capacityPolicies().decideSize(Capacity.fromNodeCount(container0Size));
-        int expectedContainer1Size = tester.capacityPolicies().decideSize(Capacity.fromNodeCount(container1Size));
-        int expectedContent0Size = tester.capacityPolicies().decideSize(Capacity.fromNodeCount(content0Size));
-        int expectedContent1Size = tester.capacityPolicies().decideSize(Capacity.fromNodeCount(content1Size));
+        Function<Integer, Capacity> capacity = count -> Capacity.fromNodeCount(count, Optional.empty(), required);
+        int expectedContainer0Size = tester.capacityPolicies().decideSize(capacity.apply(container0Size));
+        int expectedContainer1Size = tester.capacityPolicies().decideSize(capacity.apply(container1Size));
+        int expectedContent0Size = tester.capacityPolicies().decideSize(capacity.apply(content0Size));
+        int expectedContent1Size = tester.capacityPolicies().decideSize(capacity.apply(content1Size));
 
         assertEquals("Hosts in each group cluster is disjunct and the total number of unretired nodes is correct",
                      expectedContainer0Size + expectedContainer1Size + expectedContent0Size + expectedContent1Size,
@@ -806,9 +828,10 @@ public class ProvisioningTest {
         return new SystemState(allHosts, container0, container1, content0, content1);
     }
 
-    private Set<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, String flavor, ProvisioningTester tester) {
+    private Set<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups,
+                                  boolean required, String flavor, ProvisioningTester tester) {
         if (nodeCount == 0) return Collections.emptySet(); // this is a shady practice
-        return new HashSet<>(tester.prepare(application, cluster, nodeCount, groups, flavor));
+        return new HashSet<>(tester.prepare(application, cluster, nodeCount, groups, required, flavor));
     }
 
     private static class SystemState {

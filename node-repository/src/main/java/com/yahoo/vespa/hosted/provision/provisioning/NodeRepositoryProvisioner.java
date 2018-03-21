@@ -27,7 +27,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,7 +47,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private final Zone zone;
     private final Preparer preparer;
     private final Activator activator;
-    private final BiConsumer<List<Node>, String> debugRecorder;
 
     int getSpareCapacityProd() {
         return SPARE_CAPACITY_PROD;
@@ -56,10 +54,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone) {
-        this(nodeRepository, flavors, zone, (x, y) -> {});
-    }
-
-    public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone, BiConsumer<List<Node>, String> debugRecorder) {
         this.nodeRepository = nodeRepository;
         this.capacityPolicies = new CapacityPolicies(zone, flavors);
         this.zone = zone;
@@ -67,7 +61,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
                 ? SPARE_CAPACITY_PROD
                 : SPARE_CAPACITY_NONPROD);
         this.activator = new Activator(nodeRepository);
-        this.debugRecorder = debugRecorder;
     }
 
     /**

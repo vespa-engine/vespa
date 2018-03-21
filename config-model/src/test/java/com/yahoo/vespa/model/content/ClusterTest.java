@@ -647,16 +647,10 @@ public class ClusterTest extends ContentBaseTest {
         assertEquals(6, config.consumer().size());
 
         assertEquals("fleetcontroller", config.consumer(4).name());
-        assertEquals(9, config.consumer(4).addedmetrics().size());
-        assertEquals("vds.filestor.*.allthreads.put.sum", config.consumer(4).addedmetrics(0));
-        assertEquals("vds.filestor.*.allthreads.get.sum", config.consumer(4).addedmetrics(1));
-        assertEquals("vds.filestor.*.allthreads.multi.sum", config.consumer(4).addedmetrics(2));
-        assertEquals("vds.filestor.*.allthreads.update.sum", config.consumer(4).addedmetrics(3));
-        assertEquals("vds.filestor.*.allthreads.remove.sum", config.consumer(4).addedmetrics(4));
-        assertEquals("vds.filestor.*.allthreads.operations", config.consumer(4).addedmetrics(5));
-        assertEquals("vds.datastored.alldisks.docs", config.consumer(4).addedmetrics(6));
-        assertEquals("vds.datastored.alldisks.bytes", config.consumer(4).addedmetrics(7));
-        assertEquals("vds.datastored.alldisks.buckets", config.consumer(4).addedmetrics(8));
+        assertEquals(3, config.consumer(4).addedmetrics().size());
+        assertEquals("vds.datastored.alldisks.docs", config.consumer(4).addedmetrics(0));
+        assertEquals("vds.datastored.alldisks.bytes", config.consumer(4).addedmetrics(1));
+        assertEquals("vds.datastored.alldisks.buckets", config.consumer(4).addedmetrics(2));
     }
 
     public MetricsmanagerConfig.Consumer getConsumer(String consumer, MetricsmanagerConfig config) {
@@ -731,12 +725,6 @@ public class ClusterTest extends ContentBaseTest {
             assertEquals("[logdefault]", getConsumer("log", config).tags().toString());
             expected =
                     "[extraextra\n" +
-                    "vds.filestor.*.allthreads.put.sum\n" +
-                    "vds.filestor.*.allthreads.get.sum\n" +
-                    "vds.filestor.*.allthreads.multi.sum\n" +
-                    "vds.filestor.*.allthreads.update.sum\n" +
-                    "vds.filestor.*.allthreads.remove.sum\n" +
-                    "vds.filestor.*.allthreads.operations\n" +
                     "vds.datastored.alldisks.docs\n" +
                     "vds.datastored.alldisks.bytes\n" +
                     "vds.datastored.alldisks.buckets]";

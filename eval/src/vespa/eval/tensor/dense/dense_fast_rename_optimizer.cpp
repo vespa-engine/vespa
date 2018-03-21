@@ -48,11 +48,7 @@ DenseFastRenameOptimizer::optimize(const eval::TensorFunction &expr, Stash &stas
         const ValueType &from_type = rename->child().result_type();
         const ValueType &to_type = expr.result_type();
         if (is_concrete_dense_stable_rename(from_type, to_type, rename->from(), rename->to())) {
-            if (auto replace = as<DenseReplaceTypeFunction>(rename->child())) {
-                return stash.create<DenseReplaceTypeFunction>(to_type, replace->child());
-            } else {
-                return stash.create<DenseReplaceTypeFunction>(to_type, rename->child());
-            }
+            return DenseReplaceTypeFunction::create_compact(to_type, rename->child(), stash);
         }
     }
     return expr;

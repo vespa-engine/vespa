@@ -16,12 +16,19 @@ import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.RecallSearcher;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class RecallSearcherTestCase extends junit.framework.TestCase {
+public class RecallSearcherTestCase {
 
+    @Test
     public void testIgnoreEmptyProperty() {
         RecallSearcher searcher = new RecallSearcher();
         Query query = new Query();
@@ -30,6 +37,7 @@ public class RecallSearcherTestCase extends junit.framework.TestCase {
         assertTrue(query.getModel().getQueryTree().getRoot() instanceof NullItem);
     }
 
+    @Test
     public void testDenyRankItems() {
         RecallSearcher searcher = new RecallSearcher();
         Query query = new Query("?recall=foo");
@@ -37,6 +45,7 @@ public class RecallSearcherTestCase extends junit.framework.TestCase {
         assertNotNull(result.hits().getError());
     }
 
+    @Test
     public void testParse() {
         List<String> empty = new ArrayList<>();
         assertQueryTree("?query=foo", Arrays.asList("foo"), empty);

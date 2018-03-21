@@ -9,30 +9,29 @@ import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.CollapsePhraseSearcher;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.search.test.QueryTestCase;
+import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Check CollapsePhraseSearcher works and only is triggered when it
  * should.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class CollapsePhraseSearcherTestCase extends junit.framework.TestCase {
+public class CollapsePhraseSearcherTestCase {
 
-    public CollapsePhraseSearcherTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testSimplePositive() {
         PhraseItem root = new PhraseItem();
         root.addItem(new WordItem("abc"));
-        assertEquals("abc",
-                     transformQuery(root));
+        assertEquals("abc", transformQuery(root));
     }
 
+    @Test
     public void testPositive1() {
         AndItem root = new AndItem();
         root.addItem(new WordItem("a"));
@@ -44,6 +43,7 @@ public class CollapsePhraseSearcherTestCase extends junit.framework.TestCase {
                      transformQuery(root));
     }
 
+    @Test
     public void testPositive2() {
         AndItem root = new AndItem();
         root.addItem(new WordItem("a"));
@@ -57,14 +57,18 @@ public class CollapsePhraseSearcherTestCase extends junit.framework.TestCase {
         assertEquals("AND a (AND bcd def) e",
                      transformQuery(root));
     }
+
+    @Test
     public void testNoTerms() {
         assertEquals("NULL", transformQuery("?query=" + enc("\"\"")));
     }
 
+    @Test
     public void testNegative1() {
         assertEquals("\"abc def\"", transformQuery("?query=" + enc("\"abc def\"")));
     }
 
+    @Test
     public void testNegative2() {
         assertEquals("AND a \"abc def\" b", transformQuery("?query=" + enc("a \"abc def\" b")));
     }
@@ -78,6 +82,7 @@ public class CollapsePhraseSearcherTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testNegative3() {
         AndItem root = new AndItem();
         root.addItem(new WordItem("a"));
@@ -92,6 +97,7 @@ public class CollapsePhraseSearcherTestCase extends junit.framework.TestCase {
         assertEquals("AND a (AND bcd \"def ghi\") e",
                      transformQuery(root));
     }
+
     private String transformQuery(String rawQuery) {
         CollapsePhraseSearcher searcher = new CollapsePhraseSearcher();
         Query query = new Query(rawQuery);

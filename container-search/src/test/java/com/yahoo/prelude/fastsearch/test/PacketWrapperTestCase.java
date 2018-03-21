@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch.test;
 
-
 import java.util.Iterator;
 import java.util.List;
 
@@ -12,14 +11,20 @@ import com.yahoo.fs4.QueryResultPacket;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.fastsearch.CacheKey;
 import com.yahoo.prelude.fastsearch.PacketWrapper;
+import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * Tests the logic wrapping cache entries.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class PacketWrapperTestCase extends junit.framework.TestCase {
+public class PacketWrapperTestCase {
+
+    @Test
     public void testPartialOverlap() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
@@ -77,6 +82,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testPacketTrimming1() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
@@ -92,6 +98,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         assertEquals(10, ((QueryResultPacket) l.get(1)).getOffset());
     }
 
+    @Test
     public void testPacketTrimming2() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
@@ -108,6 +115,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         assertEquals(50, ((QueryResultPacket) l.get(2)).getOffset());
     }
 
+    @Test
     public void testPacketTrimming3() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
@@ -124,6 +132,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         assertEquals(25, ((QueryResultPacket) l.get(2)).getOffset());
     }
 
+    @Test
     public void testPacketTrimming4() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
@@ -144,6 +153,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         assertEquals(20, ((QueryResultPacket) l.get(2)).getOffset());
     }
 
+    @Test
     public void testPacketTrimming5() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
@@ -168,6 +178,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         assertEquals(15, ((QueryResultPacket) l.get(2)).getOffset());
     }
 
+    @Test
     public void testPacketTrimming6() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
@@ -191,6 +202,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         assertEquals(70, ((QueryResultPacket) l.get(3)).getOffset());
     }
 
+    @Test
     public void testPacketTrimming7() {
         final Query query = new Query("/?query=key");
         query.setWindow(50, 10);
@@ -218,6 +230,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         assertEquals(50, ((QueryResultPacket) l.get(5)).getOffset());
     }
 
+    @Test
     public void testPacketTrimming8() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
@@ -234,6 +247,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         assertEquals(90, ((QueryResultPacket) l.get(2)).getOffset());
     }
 
+    @Test
     public void testPacketTrimming9() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
@@ -252,6 +266,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         assertEquals(20, ((QueryResultPacket) l.get(2)).getOffset());
     }
 
+    @Test
     public void testPacketTrimming10() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
@@ -271,6 +286,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         assertEquals(20, ((QueryResultPacket) l.get(2)).getOffset());
     }
 
+    @Test
     public void testPacketTrimming11() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
@@ -298,6 +314,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         assertEquals(2, w.getResultPackets().size());
     }
 
+    @Test
     public void testPacketTrimming12() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
@@ -319,6 +336,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         assertEquals(16, ((QueryResultPacket) l.get(2)).getOffset());
     }
 
+    @Test
     public void testPacketTrimming13() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
@@ -341,6 +359,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         assertEquals(16, ((QueryResultPacket) l.get(3)).getOffset());
     }
 
+    @Test
     public void testPacketTrimming14() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 100);
@@ -363,6 +382,7 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         assertEquals(16, ((QueryResultPacket) l.get(3)).getOffset());
     }
 
+    @Test
     public void testZeroHits() {
         CacheKey key = new CacheKey(QueryPacket.create(new Query("/?query=key")));
         PacketWrapper w = createResult(key, 0, 10, 0);
@@ -405,4 +425,5 @@ public class PacketWrapperTestCase extends junit.framework.TestCase {
         }
         return r;
     }
+
 }

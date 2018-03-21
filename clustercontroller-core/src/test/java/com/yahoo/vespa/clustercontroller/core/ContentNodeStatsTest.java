@@ -53,17 +53,25 @@ public class ContentNodeStatsTest {
 
     @Test
     public void invalid_bucket_space_stats_may_have_pending_buckets() {
-        assertTrue(BucketSpaceStats.invalid().mayHaveBucketsPending());
+        assertTrue(BucketSpaceStats.invalid().mayHaveBucketsPending(1.0));
     }
 
     @Test
-    public void valid_bucket_space_stats_may_have_pending_buckets() {
-        assertTrue(BucketSpaceStats.of(5, 1).mayHaveBucketsPending());
+    public void bucket_space_stats_without_buckets_total_use_buckets_pending_to_calculate_may_have_buckets_pending() {
+        assertTrue(BucketSpaceStats.of(0, 2).mayHaveBucketsPending(0.6));
+        assertTrue(BucketSpaceStats.of(0, 1).mayHaveBucketsPending(0.6));
+        assertFalse(BucketSpaceStats.of(0, 0).mayHaveBucketsPending(0.6));
     }
 
     @Test
-    public void valid_bucket_space_stats_may_have_no_pending_buckets() {
-        assertFalse(BucketSpaceStats.of(5, 0).mayHaveBucketsPending());
+    public void min_merge_completion_ratio_is_used_to_calculate_bucket_space_stats_may_have_buckets_pending() {
+        assertTrue(BucketSpaceStats.of(5, 6).mayHaveBucketsPending(0.6));
+        assertTrue(BucketSpaceStats.of(5, 5).mayHaveBucketsPending(0.6));
+        assertTrue(BucketSpaceStats.of(5, 4).mayHaveBucketsPending(0.6));
+        assertTrue(BucketSpaceStats.of(5, 3).mayHaveBucketsPending(0.6));
+        assertFalse(BucketSpaceStats.of(5, 2).mayHaveBucketsPending(0.6));
+        assertFalse(BucketSpaceStats.of(5, 1).mayHaveBucketsPending(0.6));
+        assertFalse(BucketSpaceStats.of(5, 0).mayHaveBucketsPending(0.6));
     }
 
 }

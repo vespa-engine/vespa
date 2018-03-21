@@ -6,6 +6,9 @@ import java.util.List;
 
 import com.yahoo.prelude.hitfield.HitField;
 import com.yahoo.prelude.hitfield.StringFieldPart;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests the HitField class
@@ -13,12 +16,9 @@ import com.yahoo.prelude.hitfield.StringFieldPart;
  * @author Lars Chr Jensen
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class HitFieldTestCase extends junit.framework.TestCase {
+public class HitFieldTestCase {
 
-    public HitFieldTestCase (String name) {
-        super(name);
-    }
-
+    @Test
     public void testHitField() {
         HitField hf = new HitField("boo", "hei paa deg");
         assertEquals(3, hf.getTokenizedContent().size());
@@ -31,6 +31,7 @@ public class HitFieldTestCase extends junit.framework.TestCase {
         assertEquals("hei paa deg", hf.getRawContent());
     }
 
+    @Test
     public void testCjk() {
         HitField hf = new HitField("boo", "hmm\u001fgr");
         assertEquals(2, hf.getTokenizedContent().size());
@@ -42,6 +43,7 @@ public class HitFieldTestCase extends junit.framework.TestCase {
         assertEquals("foobar", hf.getContent());
     }
 
+    @Test
     public void testAnnotateField() {
         HitField hf = new HitField("boo", "The <hi>Eclipse</hi> SDK \uFFF9include\uFFFAincludes\uFFFB the <hi>Eclipse</hi> Platform");
         assertEquals(11, hf.getTokenizedContent().size());
@@ -67,12 +69,12 @@ public class HitFieldTestCase extends junit.framework.TestCase {
         assertEquals(6, hf.getTokenizedContent().size());
         hf = new HitField("boo", "The <hi>Eclipse</hi> SDK \uFFF9include\uFFFAincludes\uFFFB the <hi>Eclipse</hi> \uFFF9platform\uFFFAPlatforms\uFFFB test");
         assertEquals(12, hf.getTokenizedContent().size());
-
-
-        //hf = new HitField("boo", "The <hi>Eclipse</hi> SDK \uFFF9include\uFFFAincludes\uFFFB the <hi>Eclipse</hi> Platform");
     }
+
+    @Test
     public void testEmptyField() {
         HitField hf = new HitField("boo", "");
         assertEquals(0, hf.getTokenizedContent().size());
     }
+
 }

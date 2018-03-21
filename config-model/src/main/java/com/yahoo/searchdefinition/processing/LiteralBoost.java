@@ -64,7 +64,7 @@ public class LiteralBoost extends Processor {
 
     private void reduceFieldLiteralBoosts(Search search) {
         for (SDField field : search.allConcreteFields()) {
-            if (field.getLiteralBoost()<0) continue;
+            if (field.getLiteralBoost() < 0) continue;
             reduceFieldLiteralBoost(field,search);
         }
     }

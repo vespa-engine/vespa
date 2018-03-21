@@ -122,6 +122,9 @@ public class FleetControllerOptions implements Cloneable {
     // TODO replace this flag with a set of bucket spaces instead
     public boolean enableMultipleBucketSpaces = false;
 
+    // TODO: Choose a default value
+    public double minMergeCompletionRatio = 1.0;
+
     // TODO: Replace usage of this by usage where the nodes are explicitly passed (below)
     public FleetControllerOptions(String clusterName) {
         this.clusterName = clusterName;

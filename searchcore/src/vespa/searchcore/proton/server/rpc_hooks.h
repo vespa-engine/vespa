@@ -72,8 +72,6 @@ private:
 
     void triggerFlush(FRT_RPCRequest *req);
     void prepareRestart(FRT_RPCRequest *req);
-    void enableSearching(FRT_RPCRequest * req);
-    void disableSearching(FRT_RPCRequest * req);
     void checkState(StateArg::UP arg);
     void reportState(Session & session, FRT_RPCRequest * req) __attribute__((noinline));
     void getProtonStatus(FRT_RPCRequest * req);
@@ -97,8 +95,6 @@ public:
     virtual ~RPCHooksBase();
     void close();
 
-    void rpc_enableSearching(FRT_RPCRequest *req);
-    void rpc_disableSearching(FRT_RPCRequest *req);
     void rpc_GetState(FRT_RPCRequest *req);
     void rpc_GetProtonStatus(FRT_RPCRequest *req);
     void rpc_getIncrementalState(FRT_RPCRequest *req);

@@ -274,14 +274,16 @@ ReferenceNode feature() :
     { return new ReferenceNode(name, args, out); }
 }
 
-// Query features can be referenced as "$name" instead of "query(name)". TODO: Warn this is deprecated
+// Rank properties are referenced by $propertyname
 ReferenceNode legacyQueryFeature() :
 {
     String name;
 }
 {
     ( <DOLLAR> name = identifier() )
-    { return new ReferenceNode("query", Arrays.asList((ExpressionNode)new NameNode(name)), null); }
+    {
+        return new ReferenceNode("query", Arrays.asList((ExpressionNode)new NameNode(name)), null);
+    }
 }
 
 String outs() :

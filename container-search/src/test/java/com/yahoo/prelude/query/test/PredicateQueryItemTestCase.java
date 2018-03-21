@@ -9,13 +9,14 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  */
 public class PredicateQueryItemTestCase {
+
     @Test
     public void requireThatItemConstantsAreSet() {
         PredicateQueryItem item = new PredicateQueryItem();
@@ -133,4 +134,5 @@ public class PredicateQueryItemTestCase {
         assertArrayEquals(expectedPrefix, Arrays.copyOfRange(actual, 0, expectedPrefix.length));
 
     }
+
 }

@@ -19,13 +19,15 @@ public class ClusterStatsChangeTracker {
     private AggregatedStatsMergePendingChecker checker;
     private Map<Integer, Boolean> prevMayHaveMergesPending = null;
 
-    public ClusterStatsChangeTracker(AggregatedClusterStats aggregatedStats) {
-        setAggregatedStats(aggregatedStats);
+    public ClusterStatsChangeTracker(AggregatedClusterStats aggregatedStats,
+                                     double minMergeCompletionRatio) {
+        setAggregatedStats(aggregatedStats, minMergeCompletionRatio);
     }
 
-    private void setAggregatedStats(AggregatedClusterStats aggregatedStats) {
+    private void setAggregatedStats(AggregatedClusterStats aggregatedStats,
+                                    double minMergeCompletionRatio) {
         this.aggregatedStats = aggregatedStats;
-        checker = new AggregatedStatsMergePendingChecker(this.aggregatedStats);
+        checker = new AggregatedStatsMergePendingChecker(this.aggregatedStats, minMergeCompletionRatio);
     }
 
     public void syncAggregatedStats() {
@@ -36,9 +38,10 @@ public class ClusterStatsChangeTracker {
         }
     }
 
-    public void updateAggregatedStats(AggregatedClusterStats newAggregatedStats) {
+    public void updateAggregatedStats(AggregatedClusterStats newAggregatedStats,
+                                      double minMergeCompletionRatio) {
         syncAggregatedStats();
-        setAggregatedStats(newAggregatedStats);
+        setAggregatedStats(newAggregatedStats, minMergeCompletionRatio);
     }
 
     public boolean statsHaveChanged() {
@@ -53,7 +56,7 @@ public class ClusterStatsChangeTracker {
                 if (prevValue != currValue) {
                     return true;
                 }
-            } else if (currValue) {
+            } else {
                 return true;
             }
         }

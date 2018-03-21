@@ -45,9 +45,7 @@ MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t di
       _handlers(),
       _executor(std::max(size_t(1), numThreads / threadsPerSearch), 256 * 1024),
       _threadBundlePool(std::max(size_t(1), threadsPerSearch)),
-      _online(false),
-      _nodeUp(false),
-      _inService(false)
+      _nodeUp(false)
 {
     // empty
 }
@@ -145,28 +143,8 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
     client.searchDone(std::move(ret));
 }
 
-void MatchEngine::setOnline()
-{
-    _online = true;
-}
-
-void MatchEngine::setOffline()
-{
-    _online = false;
-}
-
-void MatchEngine::setInService()
-{
-    _inService = true;
-}
-
-void MatchEngine::setOutOfService()
-{
-    _inService = false;
-}
-
 bool MatchEngine::isOnline() const {
-    return _online && _nodeUp && _inService;
+    return _nodeUp;
 }
 
 

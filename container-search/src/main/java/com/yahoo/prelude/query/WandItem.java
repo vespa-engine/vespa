@@ -13,7 +13,6 @@ import java.nio.ByteBuffer;
  * and the weights associated with the tokens of this WandItem.
  * The resulting dot product will be available as a raw score in the rank framework.
  *
- * @since 5.1.27
  * @author geirst
  */
 public class WandItem extends WeightedSetItem {
@@ -24,6 +23,7 @@ public class WandItem extends WeightedSetItem {
 
     /**
      * Creates an empty WandItem.
+     *
      * @param fieldName The name of the weighted set field to search with this WandItem.
      * @param targetNumHits The target for minimum number of hits to produce by the backend search operator handling this WandItem.
      */
@@ -36,6 +36,7 @@ public class WandItem extends WeightedSetItem {
      * Sets the initial score threshold used by the backend search operator handling this WandItem.
      * The score of a document must be larger than this threshold in order to be considered a match.
      * Default value is 0.0.
+     *
      * @param scoreThreshold the initial score threshold.
      */
     public void setScoreThreshold(double scoreThreshold) {
@@ -49,6 +50,7 @@ public class WandItem extends WeightedSetItem {
      * Similarly, a gain in performance might be expected. Default value is 1.0.
      *
      * NOTE: This boost factor is only used when this WandItem is searching a Vespa field.
+     *
      * @param thresholdBoostFactor the boost factor.
      */
     public void setThresholdBoostFactor(double thresholdBoostFactor) {
@@ -100,4 +102,5 @@ public class WandItem extends WeightedSetItem {
         discloser.addProperty("scoreThreshold", scoreThreshold);
         discloser.addProperty("thresholdBoostFactor", thresholdBoostFactor);
     }
+
 }

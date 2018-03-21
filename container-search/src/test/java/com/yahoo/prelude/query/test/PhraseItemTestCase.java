@@ -4,18 +4,18 @@ package com.yahoo.prelude.query.test;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.WordItem;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test methods changing phrase items.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class PhraseItemTestCase extends junit.framework.TestCase {
+public class PhraseItemTestCase {
 
-    public PhraseItemTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testAddItem() {
         PhraseItem p = new PhraseItem();
         PhraseSegmentItem pp = new PhraseSegmentItem("", false, false);
@@ -31,6 +31,7 @@ public class PhraseItemTestCase extends junit.framework.TestCase {
         assertEquals("\"a 'b c' d e f\"", p.toString());
     }
 
+    @Test
     public void testAddItemWithIndex() {
         PhraseItem p = new PhraseItem();
         PhraseSegmentItem pp = new PhraseSegmentItem("", false, false);
@@ -46,6 +47,7 @@ public class PhraseItemTestCase extends junit.framework.TestCase {
         assertEquals("\"'a b' c d e f\"", p.toString());
     }
 
+    @Test
     public void testSetItem() {
         PhraseItem backup = new PhraseItem();
         PhraseSegmentItem segment = new PhraseSegmentItem("", false, false);

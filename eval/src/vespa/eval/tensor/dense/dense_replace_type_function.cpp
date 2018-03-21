@@ -10,6 +10,8 @@ using CellsRef = DenseTensorView::CellsRef;
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
+using eval::as;
+using namespace eval::tensor_function;
 
 namespace {
 
@@ -40,6 +42,18 @@ eval::InterpretedFunction::Instruction
 DenseReplaceTypeFunction::compile_self(Stash &) const
 {
     return eval::InterpretedFunction::Instruction(my_replace_type_op, (uint64_t)&(result_type()));
+}
+
+const DenseReplaceTypeFunction &
+DenseReplaceTypeFunction::create_compact(const eval::ValueType &result_type,
+                                         const eval::TensorFunction &child,
+                                         Stash &stash)
+{
+    if (auto replace = as<DenseReplaceTypeFunction>(child)) {
+        return stash.create<DenseReplaceTypeFunction>(result_type, replace->child());
+    } else {
+        return stash.create<DenseReplaceTypeFunction>(result_type, child);
+    }
 }
 
 } // namespace vespalib::tensor

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser.test;
 
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
@@ -9,21 +8,38 @@ import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
 import com.yahoo.prelude.query.parser.SpecialTokens;
 import com.yahoo.prelude.query.parser.Token;
 import com.yahoo.prelude.query.parser.Tokenizer;
+import org.junit.Test;
 
 import java.util.Collections;
 import java.util.List;
 
-import static com.yahoo.prelude.query.parser.Token.Kind.*;
+import static com.yahoo.prelude.query.parser.Token.Kind.COLON;
+import static com.yahoo.prelude.query.parser.Token.Kind.COMMA;
+import static com.yahoo.prelude.query.parser.Token.Kind.DOT;
+import static com.yahoo.prelude.query.parser.Token.Kind.EXCLAMATION;
+import static com.yahoo.prelude.query.parser.Token.Kind.LBRACE;
+import static com.yahoo.prelude.query.parser.Token.Kind.NOISE;
+import static com.yahoo.prelude.query.parser.Token.Kind.NUMBER;
+import static com.yahoo.prelude.query.parser.Token.Kind.PLUS;
+import static com.yahoo.prelude.query.parser.Token.Kind.RBRACE;
+import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
+import static com.yahoo.prelude.query.parser.Token.Kind.STAR;
+import static com.yahoo.prelude.query.parser.Token.Kind.UNDERSCORE;
+import static com.yahoo.prelude.query.parser.Token.Kind.WORD;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the tokenizer
  *
  * @author  bratseth
  */
-public class TokenizerTestCase extends junit.framework.TestCase {
+public class TokenizerTestCase {
 
     private SpecialTokenRegistry defaultRegistry = new SpecialTokenRegistry("file:src/test/java/com/yahoo/prelude/query/parser/test/replacingtokens.cfg");
 
+    @Test
     public void testPlainTokenization() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
@@ -53,12 +69,14 @@ public class TokenizerTestCase extends junit.framework.TestCase {
         assertEquals(new Token(NUMBER, "1"), tokens.get(20));
     }
 
+    @Test
     public void testOutsideBMPCodepoints() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
         List<?> tokens = tokenizer.tokenize("\ud841\udd47");
         assertEquals(new Token(WORD, "\ud841\udd47"), tokens.get(0));
     }
 
+    @Test
     public void testOneSpecialToken() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
@@ -68,6 +86,7 @@ public class TokenizerTestCase extends junit.framework.TestCase {
         assertEquals(new Token(WORD, "c++"), tokens.get(0));
     }
 
+    @Test
     public void testSpecialTokenCombination() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
@@ -95,6 +114,7 @@ public class TokenizerTestCase extends junit.framework.TestCase {
      * In cjk languages, special tokens must be recognized as substrings of strings not
      * separated by space, as special token recognition happens before tokenization
      */
+    @Test
     public void testSpecialTokenCJK() {
         assertEquals("Special tokens configured", 6, defaultRegistry.getSpecialTokens("default").size());
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
@@ -120,6 +140,7 @@ public class TokenizerTestCase extends junit.framework.TestCase {
         assertEquals(new Token(WORD, "knuwww"), tokens.get(15));
     }
 
+    @Test
     public void testSpecialTokenCaseInsensitive() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
@@ -135,6 +156,7 @@ public class TokenizerTestCase extends junit.framework.TestCase {
         assertEquals(new Token(WORD, "great"), tokens.get(6));
     }
 
+    @Test
     public void testSpecialTokenNonMatch() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
@@ -159,33 +181,7 @@ public class TokenizerTestCase extends junit.framework.TestCase {
         assertEquals(new Token(WORD, ".net"), tokens.get(15));
     }
 
-    // Re-add if underscore becomes some sort of word character again
-    // public void testUnderscores() {
-    //     Tokenizer tokenizer = new Tokenizer(linguistics);
-    //     List<Token> tokens = tokenizer.tokenize("_a __a ___a ____a");
-    //     assertEquals("<WORD>: _a, \" \":  , <WORD>: __a, \" \":  , <WORD>: ___a, \" \":  , <NOISE>: ____, <WORD>: a, <EOF>: <EOF>",
-    //             Tokenizer.formatTokenList(tokens));
-    //     tokens = tokenizer.tokenize("a_b a__b a___b a____b");
-    //     assertEquals("<WORD>: a_b, \" \":  , <WORD>: a__b, \" \":  , <WORD>: a___b, \" \":  , <WORD>: a, <NOISE>: ____, <WORD>: b, <EOF>: <EOF>",
-    //             Tokenizer.formatTokenList(tokens));
-    //     tokens = tokenizer.tokenize("a_ a__ a___ a____");
-    //     assertEquals("<WORD>: a_, \" \":  , <WORD>: a__, \" \":  , <WORD>: a___, \" \":  , <WORD>: a, <NOISE>: ____, <EOF>: <EOF>",
-    //             Tokenizer.formatTokenList(tokens));
-    //     tokens = tokenizer.tokenize("_a_ __a__ ___a___ ____a____");
-    //     assertEquals("<WORD>: _a_, \" \":  , <WORD>: __a__, \" \":  , <WORD>: ___a___, \" \":  , <NOISE>: ____, <WORD>: a, <NOISE>: ____, <EOF>: <EOF>",
-    //             Tokenizer.formatTokenList(tokens));
-    //     tokens = tokenizer.tokenize("____a___ ___a____");
-    //     assertEquals("<NOISE>: ____, <WORD>: a___, \" \":  , <WORD>: ___a, <NOISE>: ____, <EOF>: <EOF>",
-    //             Tokenizer.formatTokenList(tokens));
-    //     tokens = tokenizer.tokenize("_ __ ___ ____");
-    //     assertEquals("<NOISE>: _, \" \":  , <NOISE>: __, \" \":  , <NOISE>: ___, \" \":  , <NOISE>: ____, <EOF>: <EOF>",
-    //             Tokenizer.formatTokenList(tokens));
-    //     tokens = tokenizer.tokenize("_a_ba__ba____ba____b");
-    //     assertEquals("<WORD>: _a_ba__ba, <NOISE>: ____, <WORD>: ba, <NOISE>: ____, <WORD>: b, <EOF>: <EOF>",
-    //             Tokenizer.formatTokenList(tokens));
-    //     SpecialTokenRegistry.set(new SpecialTokenRegistry()); // Reset
-    // }
-
+    @Test
     public void testSpecialTokenConfigurationDefault() {
         String tokenFile = "file:src/test/java/com/yahoo/prelude/query/parser/test/specialtokens.cfg";
 
@@ -219,6 +215,7 @@ public class TokenizerTestCase extends junit.framework.TestCase {
         assertEquals(new Token(WORD, "b.s.d."), tokens.get(14));
     }
 
+    @Test
     public void testSpecialTokenConfigurationOther() {
         String tokenFile = "file:src/test/java/com/yahoo/prelude/query/parser/test/specialtokens.cfg";
 
@@ -262,6 +259,7 @@ public class TokenizerTestCase extends junit.framework.TestCase {
         assertTrue(((Token) tokens.get(10)).isSpecial());
     }
 
+    @Test
     public void testSpecialTokenConfigurationMissing() {
         String tokenFile = "file:source/bogus/specialtokens.cfg";
 
@@ -277,6 +275,7 @@ public class TokenizerTestCase extends junit.framework.TestCase {
         assertEquals(new Token(PLUS, "+"), tokens.get(2));
     }
 
+    @Test
     public void testTokenReplacing() {
         assertEquals("Special tokens configured", 6, defaultRegistry.getSpecialTokens("default").size());
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
@@ -303,6 +302,7 @@ public class TokenizerTestCase extends junit.framework.TestCase {
         assertFalse(((Token) tokens.get(12)).isSpecial());
     }
 
+    @Test
     public void testExactMatchTokenization() {
         Index index1=new Index("testexact1");
         index1.setExact(true,null);
@@ -342,6 +342,7 @@ public class TokenizerTestCase extends junit.framework.TestCase {
         assertTrue(((Token) tokens.get(17)).isSpecial());
     }
 
+    @Test
     public void testExactMatchTokenizationTerminatorTerminatesQuery() {
         Index index1=new Index("testexact1");
         index1.setExact(true,null);
@@ -374,6 +375,7 @@ public class TokenizerTestCase extends junit.framework.TestCase {
         assertTrue(((Token) tokens.get(17)).isSpecial());
     }
 
+    @Test
     public void testExactMatchTokenizationWithTerminatorTerminatedByEndOfString() {
         Index index1=new Index("testexact1");
         index1.setExact(true,null);
@@ -406,6 +408,7 @@ public class TokenizerTestCase extends junit.framework.TestCase {
         assertTrue(((Token) tokens.get(17)).isSpecial());
     }
 
+    @Test
     public void testExactMatchTokenizationEndsByColon() {
         Index index1=new Index("testexact1");
         index1.setExact(true,null);
@@ -439,6 +442,7 @@ public class TokenizerTestCase extends junit.framework.TestCase {
         assertEquals(new Token(COLON, ":"), tokens.get(19));
     }
 
+    @Test
     public void testExactMatchHeuristics() {
         Index index1=new Index("testexact1");
         index1.setExact(true, null);
@@ -710,6 +714,7 @@ public class TokenizerTestCase extends junit.framework.TestCase {
         assertEquals(new Token(WORD, "bar"),        tokens.get(9));
     }
 
+    @Test
     public void testSingleQuoteAsWordCharacter() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 

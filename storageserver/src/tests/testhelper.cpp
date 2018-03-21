@@ -7,23 +7,6 @@ LOG_SETUP(".testhelper");
 
 namespace storage {
 
-namespace {
-    bool useNewStorageCore() {
-        if (  // Unit test directory
-            vespalib::fileExists("use_new_storage_core") ||
-              // src/cpp directory
-            vespalib::fileExists("../use_new_storage_core") ||
-              // Top build directory where storage-HEAD remains
-            vespalib::fileExists("../../../../../use_new_storage_core"))
-        {
-            std::cerr << "Using new storage core for unit tests\n";
-            return true;
-        }
-        return false;
-    }
-    bool newStorageCore(useNewStorageCore());
-}
-
 void addStorageDistributionConfig(vdstestlib::DirConfig& dc)
 {
     vdstestlib::DirConfig::Config* config;
@@ -72,18 +55,13 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     config->set("threads[0].lowestpri 255");
     config->set("dir_spread", "4");
     config->set("dir_levels", "0");
-    config->set("use_new_core", newStorageCore ? "true" : "false");
     config->set("maximum_versions_of_single_document_stored", "0");
     //config->set("enable_slotfile_cache", "false");
     // Unit tests typically use fake low time values, so don't complain
     // about them or compact/delete them by default. Override in tests testing that
     // behavior
-    config->set("time_future_limit", "5");
-    config->set("time_past_limit", "2000000000");
     config->set("keep_remove_time_period", "2000000000");
     config->set("revert_time_period", "2000000000");
-    // Don't want test to call exit()
-    config->set("fail_disk_after_error_count", "0");
     config = &dc.addConfig("stor-memfilepersistence");
     // Easier to see what goes wrong with only 1 thread per disk.
     config->set("minimum_file_meta_slots", "2");
@@ -94,6 +72,7 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     config = &dc.addConfig("persistence");
     config->set("keep_remove_time_period", "2000000000");
     config->set("revert_time_period", "2000000000");
+    config->set("fail_disk_after_error_count", "0");
     config = &dc.addConfig("stor-bouncer");
     config = &dc.addConfig("stor-integritychecker");
     config = &dc.addConfig("stor-bucketmover");
