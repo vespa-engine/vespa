@@ -190,7 +190,8 @@ TEST("requireThatStateIsReported")
     EXPECT_EQUAL(
             "{\n"
             "    \"status\": {\n"
-            "        \"state\": \"ONLINE\"\n"
+            "        \"state\": \"OFFLINE\",\n"
+            "        \"message\": \"Search interface is offline\"\n"
             "    }\n"
             "}\n",
             slime.toString());
