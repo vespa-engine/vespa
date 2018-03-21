@@ -2,16 +2,23 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca;
 
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.athenz.tls.Extension;
-import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
-import com.yahoo.vespa.athenz.tls.KeyUtils;
-import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
-import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.ExtensionsGenerator;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
+import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.junit.Test;
 
-import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Collection;
@@ -28,6 +35,8 @@ import static org.junit.Assert.fail;
  */
 public class CertificateSignerTest {
 
+    private final KeyPair clientKeyPair = getKeyPair();
+
     private final long startTime = 1234567890000L;
     private final KeyPair caKeyPair = getKeyPair();
     private final String cfgServerHostname = "cfg1.us-north-1.vespa.domain.tld";
@@ -38,21 +47,22 @@ public class CertificateSignerTest {
 
     @Test
     public void test_signing() throws Exception {
-        String subject = String.format("CN=%s,OU=Vespa,C=NO", requestersHostname);
-        Pkcs10Csr csr = createCsrBuilder(subject).build();
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
+        String subject = "C=NO,OU=Vespa,CN=" + requestersHostname;
+        PKCS10CertificationRequest request = makeRequest(subject, extGen.generate());
 
-        X509Certificate certificate = signer.generateX509Certificate(csr, requestersHostname);
-        assertCertificate(certificate, subject, Collections.singleton(Extension.BASIC_CONSTRAINS.getOId()));
+        X509Certificate certificate = signer.generateX509Certificate(request, requestersHostname);
+        assertCertificate(certificate, subject, Collections.singleton(Extension.basicConstraints.getId()));
     }
 
     @Test
     public void common_name_test() throws Exception {
         CertificateSigner.verifyCertificateCommonName(
-                new X500Principal("CN=" + requestersHostname), requestersHostname);
+                new X500Name("CN=" + requestersHostname), requestersHostname);
         CertificateSigner.verifyCertificateCommonName(
-                new X500Principal("C=NO,OU=Vespa,CN=" + requestersHostname), requestersHostname);
+                new X500Name("C=NO,OU=Vespa,CN=" + requestersHostname), requestersHostname);
         CertificateSigner.verifyCertificateCommonName(
-                new X500Principal("C=NO+OU=org,CN=" + requestersHostname), requestersHostname);
+                new X500Name("C=NO+OU=org,CN=" + requestersHostname), requestersHostname);
 
         assertCertificateCommonNameException("C=NO", "Only 1 common name should be set");
         assertCertificateCommonNameException("C=US+CN=abc123.domain.tld,C=NO+CN=" + requestersHostname, "Only 1 common name should be set");
@@ -62,15 +72,26 @@ public class CertificateSignerTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void extensions_test_subject_alternative_names() throws Exception {
-        Pkcs10Csr csr = createCsrBuilder("OU=Vespa")
-                .addSubjectAlternativeName("some.other.domain.tld")
-                .build();
-        CertificateSigner.verifyCertificateExtensions(csr);
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
+        extGen.addExtension(Extension.subjectAlternativeName, false, new GeneralNames(new GeneralName[] {
+                new GeneralName(GeneralName.dNSName, "some.other.domain.tld")}));
+        PKCS10CertificationRequest request = makeRequest("OU=Vespa", extGen.generate());
+
+        CertificateSigner.verifyCertificateExtensions(request);
+    }
+
+    @Test
+    public void extensions_allowed() throws Exception {
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
+        extGen.addExtension(Extension.certificateIssuer, true, new byte[0]);
+        PKCS10CertificationRequest request = makeRequest("OU=Vespa", extGen.generate());
+
+        CertificateSigner.verifyCertificateExtensions(request);
     }
 
     private void assertCertificateCommonNameException(String subject, String expectedMessage) {
         try {
-            CertificateSigner.verifyCertificateCommonName(new X500Principal(subject), requestersHostname);
+            CertificateSigner.verifyCertificateCommonName(new X500Name(subject), requestersHostname);
             fail("Expected to fail");
         } catch (IllegalArgumentException e) {
             assertEquals(expectedMessage, e.getMessage());
@@ -82,8 +103,8 @@ public class CertificateSignerTest {
         assertEquals(BigInteger.valueOf(startTime), certificate.getSerialNumber());
         assertEquals(startTime, certificate.getNotBefore().getTime());
         assertEquals(startTime + CertificateSigner.CERTIFICATE_EXPIRATION.toMillis(), certificate.getNotAfter().getTime());
-        assertEquals(CertificateSigner.SIGNER_ALGORITHM.getAlgorithmName(), certificate.getSigAlgName());
-        assertEquals(new X500Principal(expectedSubjectName), certificate.getSubjectX500Principal());
+        assertEquals(CertificateSigner.SIGNER_ALGORITHM, certificate.getSigAlgName());
+        assertEquals(expectedSubjectName, certificate.getSubjectDN().getName());
         assertEquals("CN=" + cfgServerHostname, certificate.getIssuerX500Principal().getName());
 
         Set<String> extensions = Stream.of(certificate.getNonCriticalExtensionOIDs(),
@@ -95,11 +116,20 @@ public class CertificateSignerTest {
         certificate.verify(caKeyPair.getPublic());
     }
 
-    private Pkcs10CsrBuilder createCsrBuilder(String subject) {
-        return Pkcs10CsrBuilder.fromKeypair(new X500Principal(subject), caKeyPair, CertificateSigner.SIGNER_ALGORITHM);
+    private PKCS10CertificationRequest makeRequest(String subject, Extensions extensions) throws Exception {
+        PKCS10CertificationRequestBuilder builder = new JcaPKCS10CertificationRequestBuilder(
+                new X500Name(subject), clientKeyPair.getPublic());
+        builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extensions);
+
+        ContentSigner signGen = new JcaContentSignerBuilder(CertificateSigner.SIGNER_ALGORITHM).build(caKeyPair.getPrivate());
+        return builder.build(signGen);
     }
 
     private static KeyPair getKeyPair() {
-        return KeyUtils.generateKeypair(KeyAlgorithm.RSA);
+        try {
+            return KeyPairGenerator.getInstance("RSA").genKeyPair();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

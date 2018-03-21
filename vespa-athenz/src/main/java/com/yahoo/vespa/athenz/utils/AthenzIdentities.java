@@ -5,10 +5,10 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
 
+import javax.naming.NamingException;
+import javax.naming.ldap.LdapName;
 import java.security.cert.X509Certificate;
-import java.util.List;
 
 /**
  * @author bjorncs
@@ -53,11 +53,15 @@ public class AthenzIdentities {
     }
 
     private static String getCommonName(X509Certificate certificate) {
-        List<String> commonNames = X509CertificateUtils.getCommonNames(certificate);
-        if (commonNames.size() != 1) {
-            String subjectName = certificate.getSubjectX500Principal().getName();
-            throw new IllegalArgumentException("Expected single CN in certificate's subject: " + subjectName);
+        try {
+            String subjectPrincipal = certificate.getSubjectX500Principal().getName();
+            return new LdapName(subjectPrincipal).getRdns().stream()
+                    .filter(rdn -> rdn.getType().equalsIgnoreCase("cn"))
+                    .map(rdn -> rdn.getValue().toString())
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Could not find CN in certificate: " + subjectPrincipal));
+        } catch (NamingException e) {
+            throw new IllegalArgumentException("Invalid CN: " + e, e);
         }
-        return commonNames.get(0);
     }
 }

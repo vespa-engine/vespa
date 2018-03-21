@@ -7,9 +7,12 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.util.io.pem.PemObject;
 
 import java.io.IOException;
+import java.io.StringWriter;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -53,7 +56,13 @@ public class CertificateSerializedPayload {
         @Override
         public void serialize(
                 X509Certificate certificate, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeString(X509CertificateUtils.toPem(certificate));
+            try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
+                pemWriter.writeObject(new PemObject("CERTIFICATE", certificate.getEncoded()));
+                pemWriter.flush();
+                gen.writeString(stringWriter.toString());
+            } catch (CertificateEncodingException e) {
+                throw new RuntimeException("Failed to encode X509Certificate", e);
+            }
         }
     }
 }

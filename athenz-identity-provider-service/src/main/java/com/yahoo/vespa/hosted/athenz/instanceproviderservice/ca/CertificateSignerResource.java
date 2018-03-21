@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.ca;
 import com.google.inject.Inject;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
@@ -45,7 +45,7 @@ public class CertificateSignerResource {
         try {
             InetAddress addr = InetAddress.getByName(req.getRemoteAddr());
             String remoteHostname = addr.getHostName();
-            Pkcs10Csr csr = csrPayload.csr;
+            PKCS10CertificationRequest csr = csrPayload.csr;
             log.log(LogLevel.DEBUG, "Certification request from " + remoteHostname + ": " + csr);
             X509Certificate certificate = certificateSigner.generateX509Certificate(csr, remoteHostname);
             return new CertificateSerializedPayload(certificate);

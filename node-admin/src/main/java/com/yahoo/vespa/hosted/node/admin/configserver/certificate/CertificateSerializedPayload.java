@@ -7,9 +7,13 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.openssl.PEMParser;
 
 import java.io.IOException;
+import java.io.StringReader;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -54,7 +58,12 @@ public class CertificateSerializedPayload {
         @Override
         public X509Certificate deserialize(
                 JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
-            return X509CertificateUtils.fromPem(jsonParser.getValueAsString());
+            try (PEMParser pemParser = new PEMParser(new StringReader(jsonParser.getValueAsString()))) {
+                X509CertificateHolder x509CertificateHolder = (X509CertificateHolder) pemParser.readObject();
+                return new JcaX509CertificateConverter().getCertificate(x509CertificateHolder);
+            } catch (CertificateException e) {
+                throw new RuntimeException("Failed to deserialize X509Certificate", e);
+            }
         }
     }
 }

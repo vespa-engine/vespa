@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identity;
 
+import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
@@ -8,24 +9,18 @@ import com.yahoo.vespa.athenz.api.AthenzIdentityCertificate;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder;
 import com.yahoo.vespa.athenz.tls.KeyStoreType;
-import com.yahoo.vespa.athenz.tls.KeyUtils;
-import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static java.util.stream.Collectors.joining;
 
 /**
  * @author mortent
@@ -68,21 +63,13 @@ public class SiaIdentityProvider extends AbstractComponent implements AthenzIden
     }
 
     private SSLContext createIdentitySslContext() {
-        try {
-            String certPem = Files.lines(Paths.get(path, "certs", String.format("%s.%s.cert.pem", getDomain(), getService())))
-                    .collect(joining());
-            X509Certificate certificate = X509CertificateUtils.fromPem(certPem);
-            String keyPem = Files.lines(Paths.get(path, "keys", String.format("%s.%s.key.pem", getDomain(), getService())))
-                    .collect(joining());
-            PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(keyPem);
+        X509Certificate certificate = Crypto.loadX509Certificate(Paths.get(path, "certs", String.format("%s.%s.cert.pem", getDomain(),getService())).toFile());
+        PrivateKey privateKey = Crypto.loadPrivateKey(Paths.get(path, "keys", String.format("%s.%s.key.pem", getDomain(),getService())).toFile());
 
-            return new AthenzSslContextBuilder()
-                    .withTrustStore(new File(trustStorePath), KeyStoreType.JKS)
-                    .withIdentityCertificate(new AthenzIdentityCertificate(certificate, privateKey))
-                    .build();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return new AthenzSslContextBuilder()
+                .withTrustStore(new File(trustStorePath), KeyStoreType.JKS)
+                .withIdentityCertificate(new AthenzIdentityCertificate(certificate, privateKey))
+                .build();
     }
 
     private void reloadSslContext() {

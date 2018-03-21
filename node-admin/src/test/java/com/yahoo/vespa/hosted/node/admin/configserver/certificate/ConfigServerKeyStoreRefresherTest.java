@@ -2,19 +2,24 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.certificate;
 
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.athenz.tls.X509CertificateBuilder;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.util.KeyStoreOptions;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.time.Instant;
+import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -136,13 +141,22 @@ public class ConfigServerKeyStoreRefresherTest {
                 .thenThrow(exception);
     }
 
-    private X509Certificate makeCertificate(int serial) {
-        KeyPair keyPair = ConfigServerKeyStoreRefresher.generateKeyPair();
-        X500Principal subject = new X500Principal("CN=" + commonName);
-        Instant notBefore = clock.instant();
-        Instant notAfter = clock.instant().plus(certificateExpiration);
+    private X509Certificate makeCertificate(int serial) throws Exception {
+        try {
+            KeyPair keyPair = ConfigServerKeyStoreRefresher.generateKeyPair();
+            X500Name subject = new X500Name("CN=" + commonName);
+            Date notBefore = Date.from(clock.instant());
+            Date notAfter = Date.from(clock.instant().plus(certificateExpiration));
 
-        return X509CertificateBuilder.fromKeypair(keyPair, subject, notBefore, notAfter, ConfigServerKeyStoreRefresher.SIGNER_ALGORITHM, serial)
-                .build();
+            JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(subject,
+                    BigInteger.valueOf(serial), notBefore, notAfter, subject, keyPair.getPublic());
+            ContentSigner sigGen = new JcaContentSignerBuilder(ConfigServerKeyStoreRefresher.SIGNER_ALGORITHM)
+                    .build(keyPair.getPrivate());
+            return new JcaX509CertificateConverter()
+                    .setProvider(new BouncyCastleProvider())
+                    .getCertificate(certGen.build(sigGen));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
