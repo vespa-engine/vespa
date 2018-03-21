@@ -155,9 +155,9 @@ public class DeploymentTester {
 
     public void completeDeploymentWithError(Application application, ApplicationPackage applicationPackage, long buildNumber, JobType failOnJob) {
         jobCompletion(JobType.component).application(application)
-                .buildNumber(buildNumber)
-                .uploadArtifact(applicationPackage)
-                .submit();
+                                        .buildNumber(buildNumber)
+                                        .uploadArtifact(applicationPackage)
+                                        .submit();
         completeDeployment(application, applicationPackage, Optional.of(failOnJob), true);
         assertTrue(applications().require(application.id()).change().isPresent());
     }

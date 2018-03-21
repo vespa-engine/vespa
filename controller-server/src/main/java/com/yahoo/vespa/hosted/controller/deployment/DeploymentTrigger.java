@@ -8,7 +8,6 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -121,9 +120,9 @@ public class DeploymentTrigger {
     /** Returns whether all production zones listed in deployment spec has this change (or a newer version, if upgrade) */
     private boolean deploymentComplete(LockedApplication application) {
         return order.jobsFrom(application.deploymentSpec()).stream()
-                .filter(JobType::isProduction)
-                .filter(job -> job.zone(controller.system()).isPresent())
-                .allMatch(job -> alreadyDeployed(application, job));
+                    .filter(JobType::isProduction)
+                    .filter(job -> job.zone(controller.system()).isPresent())
+                    .allMatch(job -> changeDeployed(application, job));
     }
 
     /**
@@ -206,11 +205,11 @@ public class DeploymentTrigger {
                 return false;
 
             // Is the previous a job production which neither succeed with the target version, nor has a higher version?
-            if (previous.type().isProduction() && ! alreadyDeployed(application, previous.type()))
+            if (previous.type().isProduction() && ! changeDeployed(application, previous.type()))
                 return false;
 
             // Did the next job already succeed on the target version, or does it already have a higher version?
-            if (alreadyDeployed(application, next.type()))
+            if (changeDeployed(application, next.type()))
                 return false;
         }
         else
@@ -348,7 +347,7 @@ public class DeploymentTrigger {
             application.change().blockedBy(application.deploymentSpec(), clock.instant())) return false;
 
         // Don't downgrade or redeploy the same version in production needlessly
-        if (jobType.isProduction() && alreadyDeployed(application, jobType)) return false;
+        if (jobType.isProduction() && changeDeployed(application, jobType)) return false;
 
         if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) return false;
         if  ( ! hasJob(jobType, application)) return false;
@@ -360,16 +359,16 @@ public class DeploymentTrigger {
 
     private boolean isRunningProductionJob(Application application) {
         return ! JobList.from(application)
-                .production()
-                .running(jobTimeoutLimit())
-                .isEmpty();
+                        .production()
+                        .running(jobTimeoutLimit())
+                        .isEmpty();
     }
 
     /**
      * Returns whether the currently deployed application in the zone for the given production job already
-     * has the given changes, in which case we should avoid an unsupported downgrade, or an unnecessary redeploy.
+     * has the current changes, in which case we should avoid an unsupported downgrade, or an unnecessary redeploy.
      */
-    private boolean alreadyDeployed(Application application, JobType job) {
+    private boolean changeDeployed(Application application, JobType job) {
         if ( ! job.isProduction())
             throw new IllegalArgumentException(job + " is not a production job!");
 
