@@ -635,8 +635,7 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd)
     for (uint32_t i = 0; i < cmd.getSourceBuckets().size(); i++) {
         document::Bucket srcBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[i]);
         uint16_t disk = (i == 0) ? lock1.disk : lock2.disk;
-        FileStorHandler::RemapInfo target(cmd.getBucket(),
-                                          _env._partition);
+        FileStorHandler::RemapInfo target(cmd.getBucket(), _env._partition);
         _env._fileStorHandler.remapQueueAfterJoin(
                 FileStorHandler::RemapInfo(srcBucket, disk),
                 target);
@@ -645,8 +644,7 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd)
                 _env.getBucketDatabase(srcBucket.getBucketSpace()).get(
                         srcBucket.getBucketId(), "join-remove-source"));
         if (entry.exist()) {
-            lastModified = std::max(lastModified,
-                                    entry->info.getLastModified());
+            lastModified = std::max(lastModified, entry->info.getLastModified());
             entry.remove();
         }
     }

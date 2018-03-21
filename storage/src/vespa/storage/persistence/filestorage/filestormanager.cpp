@@ -14,8 +14,6 @@
 #include <vespa/storage/storageutil/log.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
