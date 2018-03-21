@@ -35,7 +35,8 @@ public class Pkcs10CsrTest {
         Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(subject, keypair, SignatureAlgorithm.SHA256_WITH_RSA)
                 .setBasicConstraints(true, true)
                 .build();
-        assertTrue(csr.getBasicConstraints());
+        assertTrue(csr.getBasicConstraints().isPresent());
+        assertTrue(csr.getBasicConstraints().get());
     }
 
     @Test
