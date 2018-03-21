@@ -4,8 +4,8 @@ package com.yahoo.config.provision;
 import com.yahoo.component.Version;
 
 /**
- * A node's membership in a cluster.
- * This is a value object.
+ * A node's membership in a cluster. This is a value object.
+ * The format is "clusterType/clusterId/groupId/index[/exclusive][/retired]
  *
  * @author bratseth
  */
@@ -19,26 +19,20 @@ public class ClusterMembership {
     protected ClusterMembership() {}
 
     private ClusterMembership(String stringValue, Version vespaVersion) {
-        String restValue;
-        if (stringValue.endsWith("/retired")) {
-            retired = true;
-            restValue = stringValue.substring(0, stringValue.length() - "/retired".length());
-        }
-        else {
-            retired = false;
-            restValue = stringValue;
-        }
-
-        String[] components = restValue.split("/");
-
-        if ( components.length == 3) // Aug 2016: This should never happen any more
-            initWithoutGroup(components, vespaVersion);
-        else if (components.length == 4)
-            initWithGroup(components, vespaVersion);
-        else
+        String[] components = stringValue.split("/");
+        if (components.length < 4 || components.length > 6)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
-                                       "Expected 'id/type.index[/group]'");
+                                       "Expected 'clusterType/clusterId/groupId/index[/retired][/exclusive]'");
 
+        boolean exclusive = false;
+        if (components.length > 4) {
+            exclusive = components[4].equals("exclusive");
+            retired = components[components.length-1].equals("retired");
+        }
+
+        this.cluster = ClusterSpec.from(ClusterSpec.Type.valueOf(components[0]), ClusterSpec.Id.from(components[1]),
+                                        ClusterSpec.Group.from(Integer.valueOf(components[2])), vespaVersion, exclusive);
+        this.index = Integer.parseInt(components[3]);
         this.stringValue = toStringValue();
     }
 
@@ -49,23 +43,14 @@ public class ClusterMembership {
         this.stringValue = toStringValue();
     }
 
-    private void initWithoutGroup(String[] components, Version vespaVersion) {
-        this.cluster = ClusterSpec.request(ClusterSpec.Type.valueOf(components[0]),
-                                           ClusterSpec.Id.from(components[1]),
-                                           vespaVersion);
-        this.index = Integer.parseInt(components[2]);
-    }
-
-    private void initWithGroup(String[] components, Version vespaVersion) {
-        this.cluster = ClusterSpec.from(ClusterSpec.Type.valueOf(components[0]), ClusterSpec.Id.from(components[1]),
-                                        ClusterSpec.Group.from(Integer.valueOf(components[2])), vespaVersion);
-        this.index = Integer.parseInt(components[3]);
-    }
-
     protected String toStringValue() {
-        return cluster.type().name() + "/" + cluster.id().value() +
-                ( cluster.group().isPresent() ? "/" + cluster.group().get().index() : "") + "/" + index +
-                ( retired ? "/retired" : "");
+        return cluster.type().name() +
+               "/" + cluster.id().value() +
+               (cluster.group().isPresent() ? "/" + cluster.group().get().index() : "") +
+               "/" + index +
+               ( cluster.isExclusive() ? "/exclusive" : "") +
+               ( retired ? "/retired" : "");
+
     }
 
     /** Returns the cluster this node is a member of */
@@ -87,7 +72,12 @@ public class ClusterMembership {
         return new ClusterMembership(cluster, index, false);
     }
 
+    // TODO: Remove after April 2018
     public ClusterMembership changeCluster(ClusterSpec newCluster) {
+        return with(newCluster);
+    }
+
+    public ClusterMembership with(ClusterSpec newCluster) {
         return new ClusterMembership(newCluster, index, retired);
     }
 

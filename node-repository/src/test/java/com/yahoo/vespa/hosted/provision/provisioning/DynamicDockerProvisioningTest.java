@@ -68,13 +68,13 @@ public class DynamicDockerProvisioningTest {
 
         // Application 1
         ApplicationId application1 = makeApplicationId("t1", "a1");
-        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false);
         addAndAssignNode(application1, "1a", dockerHosts.get(2).hostname(), flavor, 0, tester);
         addAndAssignNode(application1, "1b", dockerHosts.get(3).hostname(), flavor, 1, tester);
 
         // Application 2
         ApplicationId application2 = makeApplicationId("t2", "a2");
-        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false);
         addAndAssignNode(application2, "2a", dockerHosts.get(2).hostname(), flavor, 0, tester);
         addAndAssignNode(application2, "2b", dockerHosts.get(3).hostname(), flavor, 1, tester);
 
@@ -115,13 +115,13 @@ public class DynamicDockerProvisioningTest {
 
         // Application 1
         ApplicationId application1 = makeApplicationId("t1", "a1");
-        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false);
         addAndAssignNode(application1, "1a", dockerHosts.get(0).hostname(), flavor, 0, tester);
         addAndAssignNode(application1, "1b", dockerHosts.get(1).hostname(), flavor, 1, tester);
 
         // Application 2
         ApplicationId application2 = makeApplicationId("t2", "a2");
-        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false);
         addAndAssignNode(application2, "2a", dockerHosts.get(2).hostname(), flavor, 0, tester);
         addAndAssignNode(application2, "2b", dockerHosts.get(3).hostname(), flavor, 1, tester);
 
@@ -162,7 +162,7 @@ public class DynamicDockerProvisioningTest {
 
         // Application 1
         ApplicationId application1 = makeApplicationId("t1", "1");
-        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false);
         String hostParent2 = dockerHosts.get(2).hostname();
         String hostParent3 = dockerHosts.get(3).hostname();
         addAndAssignNode(application1, "1a", hostParent2, flavorD2, 0, tester);
@@ -170,7 +170,7 @@ public class DynamicDockerProvisioningTest {
 
         // Application 2
         ApplicationId application2 = makeApplicationId("t2", "2");
-        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false);
         addAndAssignNode(application2, "2a", hostParent2, flavorD1, 0, tester);
         addAndAssignNode(application2, "2b", hostParent3, flavorD1, 1, tester);
 
@@ -217,7 +217,7 @@ public class DynamicDockerProvisioningTest {
 
         // Application 1
         ApplicationId application1 = makeApplicationId("t1", "1");
-        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false);
         String hostParent2 = dockerHosts.get(2).hostname();
         String hostParent3 = dockerHosts.get(3).hostname();
         addAndAssignNode(application1, "1a", hostParent2, flavorD2, 0, tester);
@@ -225,7 +225,7 @@ public class DynamicDockerProvisioningTest {
 
         // Application 2
         ApplicationId application2 = makeApplicationId("t2", "2");
-        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false);
         addAndAssignNode(application2, "2a", hostParent2, flavorD1, 0, tester);
         addAndAssignNode(application2, "2b", hostParent3, flavorD1, 1, tester);
 
@@ -284,17 +284,17 @@ public class DynamicDockerProvisioningTest {
 
         // Application 1
         ApplicationId application1 = makeApplicationId("t1", "a1");
-        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false);
         deployapp(application1, clusterSpec1, flavor, tester, 3);
 
         // Application 2
         ApplicationId application2 = makeApplicationId("t2", "a2");
-        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false);
         deployapp(application2, clusterSpec2, flavor, tester, 2);
 
         // Application 3
         ApplicationId application3 = makeApplicationId("t3", "a3");
-        ClusterSpec clusterSpec3 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        ClusterSpec clusterSpec3 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false);
         deployapp(application3, clusterSpec3, flavor, tester, 2);
 
         // App 2 and 3 should have been allocated to the same nodes - fail on of the parent hosts from there
@@ -342,7 +342,7 @@ public class DynamicDockerProvisioningTest {
 
         // Application 1
         ApplicationId application1 = makeApplicationId("t1", "a1");
-        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false);
         addAndAssignNode(application1, "1a", dockerHosts.get(0).hostname(), flavor, 0, tester);
         addAndAssignNode(application1, "1b", dockerHosts.get(1).hostname(), flavor, 1, tester);
 
@@ -369,7 +369,7 @@ public class DynamicDockerProvisioningTest {
         //Deploy an application of 6 nodes of 3 nodes in each cluster. We only have 3 docker hosts available
         ApplicationId application1 = tester.makeApplicationId();
         tester.prepare(application1,
-                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100")),
+                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false),
                 6, 2, flavor.canonicalName());
 
         fail("Two groups have been allocated to the same parent host");
@@ -397,7 +397,7 @@ public class DynamicDockerProvisioningTest {
 
         // Deploy initial state (can max deploy 3 nodes due to redundancy requirements)
         List<HostSpec> hosts = tester.prepare(application1,
-                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100")),
+                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false),
                 3, 1, flavor.canonicalName());
         tester.activate(application1, ImmutableSet.copyOf(hosts));
 
@@ -409,7 +409,7 @@ public class DynamicDockerProvisioningTest {
 
         try {
             hosts = tester.prepare(application1,
-                    ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100")),
+                    ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false),
                     4, 1, flavor.canonicalName());
             fail("Was able to deploy with 4 nodes, should not be able to use spare capacity");
         } catch (OutOfCapacityException e) {
@@ -417,7 +417,7 @@ public class DynamicDockerProvisioningTest {
 
         tester.fail(hosts.get(0));
         hosts = tester.prepare(application1,
-                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100")),
+                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false),
                 3, 1, flavor.canonicalName());
         tester.activate(application1, ImmutableSet.copyOf(hosts));
 
@@ -435,7 +435,7 @@ public class DynamicDockerProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
         List<HostSpec> hosts = tester.prepare(application1,
-                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100")),
+                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false),
                 3, 1, flavor.canonicalName());
         tester.activate(application1, ImmutableSet.copyOf(hosts));
 
@@ -452,7 +452,7 @@ public class DynamicDockerProvisioningTest {
 
         ApplicationId application = tester.makeApplicationId();
         Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-3");
-        tester.prepare(application, ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100")),
+        tester.prepare(application, ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false),
                        2, 1, flavor.canonicalName());
     }
 
@@ -467,7 +467,7 @@ public class DynamicDockerProvisioningTest {
 
     private Node addAndAssignNode(ApplicationId id, String hostname, String parentHostname, Flavor flavor, int index, ProvisioningTester tester) {
         Node node1a = Node.create("open1", Collections.singleton("127.0.0.100"), new HashSet<>(), hostname, Optional.of(parentHostname), flavor, NodeType.tenant);
-        ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100")).changeGroup(Optional.of(ClusterSpec.Group.from(0)));
+        ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"), false).with(Optional.of(ClusterSpec.Group.from(0)));
         ClusterMembership clusterMembership1 = ClusterMembership.from(clusterSpec, index);
         Node node1aAllocation = node1a.allocate(id, clusterMembership1, Instant.now());
 
@@ -523,7 +523,8 @@ public class DynamicDockerProvisioningTest {
         List<HostSpec> list = tester.prepare(applicationId,
                 ClusterSpec.request(ClusterSpec.Type.container,
                         ClusterSpec.Id.from("node-admin"),
-                        Version.fromString("6.42")),
+                        Version.fromString("6.42"),
+                                    false),
                 Capacity.fromRequiredNodeType(NodeType.host),
                 1);
         tester.activate(applicationId, ImmutableSet.copyOf(list));

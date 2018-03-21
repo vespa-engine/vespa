@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -218,7 +219,7 @@ public class FailedExpirerTest {
             this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                      new MockNameResolver().mockAnyLookup(),
                                                      new DockerImage("docker-image"));
-            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), clock);
+            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone());
             this.expirer = new FailedExpirer(nodeRepository, zone, clock, Duration.ofMinutes(30),
                                              new JobControl(nodeRepository.database()));
         }
@@ -285,15 +286,17 @@ public class FailedExpirerTest {
         }
 
         public FailureScenario allocate(ClusterSpec.Type clusterType, Flavor flavor, String... hostname) {
-            Set<HostSpec> hosts = Stream.of(hostname)
-                                        .map(h -> new HostSpec(h, Optional.empty()))
-                                        .collect(Collectors.toSet());
-            ClusterSpec clusterSpec = ClusterSpec.request(clusterType, ClusterSpec.Id.from("test"),
-                                                          Version.fromString("6.42"));
-            provisioner.prepare(applicationId, clusterSpec, Capacity.fromNodeCount(hostname.length, flavor.name()),
+            ClusterSpec clusterSpec = ClusterSpec.request(clusterType,
+                                                          ClusterSpec.Id.from("test"),
+                                                          Version.fromString("6.42"),
+                                                          false);
+            List<HostSpec> preparedNodes = provisioner.prepare(applicationId,
+                                                               clusterSpec,
+                                                               Capacity.fromNodeCount(hostname.length, Optional.of(flavor.name()),
+                                                                                      false),
                                 1, null);
             NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-            provisioner.activate(transaction, applicationId, hosts);
+            provisioner.activate(transaction, applicationId, new HashSet<>(preparedNodes));
             transaction.commit();
             return this;
         }

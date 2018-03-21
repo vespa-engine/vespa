@@ -19,6 +19,7 @@ import java.util.List;
  * @author smorgrav
  */
 public class AllocationVisualizer extends JPanel {
+
     // Container box's width and height
     private static final int BOX_WIDTH = 1024;
     private static final int BOX_HEIGHT = 480;
@@ -141,4 +142,5 @@ public class AllocationVisualizer extends JPanel {
             }
         }
     }
+
 }

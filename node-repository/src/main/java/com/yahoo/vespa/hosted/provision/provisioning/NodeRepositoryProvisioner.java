@@ -54,17 +54,13 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone) {
-        this(nodeRepository, flavors, zone, Clock.systemUTC());
-    }
-
-    public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone, Clock clock) {
         this.nodeRepository = nodeRepository;
         this.capacityPolicies = new CapacityPolicies(zone, flavors);
         this.zone = zone;
-        this.preparer = new Preparer(nodeRepository, clock, zone.environment().equals(Environment.prod)
+        this.preparer = new Preparer(nodeRepository, zone.environment().equals(Environment.prod)
                 ? SPARE_CAPACITY_PROD
                 : SPARE_CAPACITY_NONPROD);
-        this.activator = new Activator(nodeRepository, clock);
+        this.activator = new Activator(nodeRepository);
     }
 
     /**
@@ -92,8 +88,9 @@ public class NodeRepositoryProvisioner implements Provisioner {
             Optional<String> defaultFlavorOverride = nodeRepository.getDefaultFlavorOverride(application);
             Flavor flavor = capacityPolicies.decideFlavor(requestedCapacity, cluster, defaultFlavorOverride);
             log.log(LogLevel.DEBUG, () -> "Decided flavor for requested tenant nodes: " + flavor);
+            boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
             effectiveGroups = wantedGroups > nodeCount ? nodeCount : wantedGroups; // cannot have more groups than nodes
-            requestedNodes = NodeSpec.from(nodeCount, flavor);
+            requestedNodes = NodeSpec.from(nodeCount, flavor, exclusive);
         }
         else {
             requestedNodes = NodeSpec.from(requestedCapacity.type());
@@ -105,6 +102,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Override
     public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
+        validate(hosts);
         activator.activate(application, hosts, transaction);
     }
 
@@ -129,4 +127,14 @@ public class NodeRepositoryProvisioner implements Provisioner {
         }
         return hosts;
     }
+
+    private void validate(Collection<HostSpec> hosts) {
+        for (HostSpec host : hosts) {
+            if ( ! host.membership().isPresent())
+                throw new IllegalArgumentException("Hosts must be assigned a cluster when activating, but got " + host);
+            if ( ! host.membership().get().cluster().group().isPresent())
+                throw new IllegalArgumentException("Hosts must be assigned a group when activating, but got " + host);
+        }
+    }
+
 }

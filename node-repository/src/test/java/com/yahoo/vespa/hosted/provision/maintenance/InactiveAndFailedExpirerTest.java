@@ -51,9 +51,9 @@ public class InactiveAndFailedExpirerTest {
         List<Node> nodes = tester.makeReadyNodes(2, "default");
 
         // Allocate then deallocate 2 nodes
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
-        tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
-        tester.activate(applicationId, ProvisioningTester.toHostSpecs(nodes));
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
+        tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
         tester.deactivate(applicationId);
         List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();
@@ -91,9 +91,10 @@ public class InactiveAndFailedExpirerTest {
         // Allocate and deallocate a single node
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
                                                   ClusterSpec.Id.from("test"), 
-                                                  Version.fromString("6.42"));
-        tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
-        tester.activate(applicationId, ProvisioningTester.toHostSpecs(nodes));
+                                                  Version.fromString("6.42"),
+                                                  false);
+        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
+        tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
         tester.deactivate(applicationId);
         List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();
@@ -118,7 +119,7 @@ public class InactiveAndFailedExpirerTest {
     public void node_that_wants_to_retire_is_moved_to_parked() throws OrchestrationException {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), 
-                                                  Version.fromString("6.42"));
+                                                  Version.fromString("6.42"), false);
         tester.makeReadyNodes(5, "default");
 
         // Allocate two nodes
@@ -144,7 +145,9 @@ public class InactiveAndFailedExpirerTest {
                 Collections.singletonMap(
                         applicationId,
                         new MockDeployer.ApplicationContext(applicationId, cluster,
-                                                            Capacity.fromNodeCount(2, Optional.of("default")),
+                                                            Capacity.fromNodeCount(2,
+                                                                                   Optional.of("default"),
+                                                                                   false),
                                                             1)
                 )
         );

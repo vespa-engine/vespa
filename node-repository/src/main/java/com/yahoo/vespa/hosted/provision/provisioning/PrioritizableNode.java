@@ -99,4 +99,5 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         if (nodePri.isNewNode) return false;
         return nodePri.node.state().equals(Node.State.reserved);
     }
+
 }

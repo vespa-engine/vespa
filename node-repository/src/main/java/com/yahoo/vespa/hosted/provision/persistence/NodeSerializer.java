@@ -328,6 +328,7 @@ public class NodeSerializer {
             default : throw new IllegalArgumentException("Unknown node type '" + typeString + "'");
         }
     }
+
     private String toString(NodeType type) {
         switch (type) {
             case tenant: return "tenant";

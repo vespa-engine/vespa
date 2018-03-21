@@ -188,7 +188,10 @@ public class MetricsReporterTest {
 
     private Optional<Allocation> allocation(Optional<String> tenant) {
         if (tenant.isPresent()) {
-            Allocation allocation = new Allocation(app(tenant.get()), ClusterMembership.from("container/id1/3", new Version()), Generation.inital(), false);
+            Allocation allocation = new Allocation(app(tenant.get()),
+                                                   ClusterMembership.from("container/id1/0/3", new Version()),
+                                                   Generation.inital(),
+                                                   false);
             return Optional.of(allocation);
         }
         return Optional.empty();

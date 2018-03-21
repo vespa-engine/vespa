@@ -100,8 +100,8 @@ public class MultigroupProvisioningTest {
 
         tester.makeReadyNodes(10, "small");
 
-        deploy(application1, Capacity.fromRequiredNodeCount(1, "small"), 1, tester);
-        deploy(application1, Capacity.fromRequiredNodeCount(2, "small"), 2, tester);
+        deploy(application1, Capacity.fromNodeCount(1, Optional.of("small"), true), 1, tester);
+        deploy(application1, Capacity.fromNodeCount(2, Optional.of("small"), true), 2, tester);
     }
 
     @Test
@@ -113,8 +113,8 @@ public class MultigroupProvisioningTest {
         tester.makeReadyNodes(10, "small");
         tester.makeReadyNodes(10, "large");
 
-        deploy(application1, Capacity.fromRequiredNodeCount(1, "small"), 1, tester);
-        deploy(application1, Capacity.fromRequiredNodeCount(2, "large"), 2, tester);
+        deploy(application1, Capacity.fromNodeCount(1, Optional.of("small"), true), 1, tester);
+        deploy(application1, Capacity.fromNodeCount(2, Optional.of("large"), true), 2, tester);
     }
 
     @Test
@@ -135,7 +135,7 @@ public class MultigroupProvisioningTest {
             new MockDeployer(tester.provisioner(),
                              Collections.singletonMap(application1, 
                                                       new MockDeployer.ApplicationContext(application1, cluster(), 
-                                                                                          Capacity.fromNodeCount(8, Optional.of("large")), 1)));
+                                                                                          Capacity.fromNodeCount(8, Optional.of("large"), false), 1)));
         new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, tester.clock(), Duration.ofDays(30),
                 Duration.ofHours(12), new JobControl(tester.nodeRepository().database())).run();
 
@@ -144,10 +144,10 @@ public class MultigroupProvisioningTest {
     }
 
     private void deploy(ApplicationId application, int nodeCount, int groupCount, String flavor, ProvisioningTester tester) {
-        deploy(application, Capacity.fromNodeCount(nodeCount, Optional.of(flavor)), groupCount, tester);
+        deploy(application, Capacity.fromNodeCount(nodeCount, Optional.of(flavor), false), groupCount, tester);
     }
     private void deploy(ApplicationId application, int nodeCount, int groupCount, ProvisioningTester tester) {
-        deploy(application, Capacity.fromNodeCount(nodeCount, "default"), groupCount, tester);
+        deploy(application, Capacity.fromNodeCount(nodeCount, Optional.of("default"), false), groupCount, tester);
     }
     private void deploy(ApplicationId application, Capacity capacity, int wantedGroups, ProvisioningTester tester) {
         int nodeCount = capacity.nodeCount();
@@ -199,7 +199,7 @@ public class MultigroupProvisioningTest {
         assertEquals("No additional groups are retained containing retired nodes", wantedGroups, allGroups.size());
     }
 
-    private ClusterSpec cluster() { return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42")); }
+    private ClusterSpec cluster() { return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false); }
 
     private Set<HostSpec> prepare(ApplicationId application, Capacity capacity, int groupCount, ProvisioningTester tester) {
         return new HashSet<>(tester.prepare(application, cluster(), capacity, groupCount));

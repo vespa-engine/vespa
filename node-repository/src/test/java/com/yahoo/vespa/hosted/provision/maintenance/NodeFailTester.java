@@ -99,8 +99,8 @@ public class NodeFailTester {
         tester.createHostNodes(3);
 
         // Create applications
-        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
-        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
+        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
         int wantedNodesApp1 = 5;
         int wantedNodesApp2 = 7;
         tester.activate(app1, clusterApp1, wantedNodesApp1);
@@ -109,8 +109,8 @@ public class NodeFailTester {
         assertEquals(wantedNodesApp2, tester.nodeRepository.getNodes(app2, Node.State.active).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
-        apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default")), 1));
-        apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default")), 1));
+        apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default"), false), 1));
+        apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default"), false), 1));
         tester.deployer = new MockDeployer(tester.provisioner, apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
         tester.metric = new MetricsReporterTest.TestMetric();
@@ -129,12 +129,12 @@ public class NodeFailTester {
         }
 
         // Create applications
-        ClusterSpec clusterNodeAdminApp = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Version.fromString("6.42"));
-        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.75.0"));
-        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.75.0"));
+        ClusterSpec clusterNodeAdminApp = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Version.fromString("6.42"), false);
+        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.75.0"), false);
+        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.75.0"), false);
         Capacity allHosts = Capacity.fromRequiredNodeType(NodeType.host);
-        Capacity capacity1 = Capacity.fromNodeCount(3, Optional.of("docker"));
-        Capacity capacity2 = Capacity.fromNodeCount(5, Optional.of("docker"));
+        Capacity capacity1 = Capacity.fromNodeCount(3, Optional.of("docker"), false);
+        Capacity capacity2 = Capacity.fromNodeCount(5, Optional.of("docker"), false);
         tester.activate(nodeAdminApp, clusterNodeAdminApp, allHosts);
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);
@@ -163,7 +163,8 @@ public class NodeFailTester {
         Capacity allProxies = Capacity.fromRequiredNodeType(NodeType.proxy);
         ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, 
                                                       ClusterSpec.Id.from("test"), 
-                                                      Version.fromString("6.42"));
+                                                      Version.fromString("6.42"),
+                                                      false);
         tester.activate(app1, clusterApp1, allProxies);
         assertEquals(16, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
 

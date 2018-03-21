@@ -111,21 +111,31 @@ public class MockNodeRepository extends NodeRepository {
 
         ApplicationId zoneApp = ApplicationId.from(TenantName.from("zoneapp"), ApplicationName.from("zoneapp"), InstanceName.from("zoneapp"));
         ClusterSpec zoneCluster = ClusterSpec.request(ClusterSpec.Type.container,
-                ClusterSpec.Id.from("node-admin"),
-                Version.fromString("6.42"));
+                                                      ClusterSpec.Id.from("node-admin"),
+                                                      Version.fromString("6.42"),
+                                                      false);
         activate(provisioner.prepare(zoneApp, zoneCluster, Capacity.fromRequiredNodeType(NodeType.host), 1, null), zoneApp, provisioner);
 
         ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
-        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Version.fromString("6.42"));
+        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container,
+                                                   ClusterSpec.Id.from("id1"),
+                                                   Version.fromString("6.42"),
+                                                   false);
         provisioner.prepare(app1, cluster1, Capacity.fromNodeCount(2), 1, null);
 
         ApplicationId app2 = ApplicationId.from(TenantName.from("tenant2"), ApplicationName.from("application2"), InstanceName.from("instance2"));
-        ClusterSpec cluster2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id2"), Version.fromString("6.42"));
+        ClusterSpec cluster2 = ClusterSpec.request(ClusterSpec.Type.content,
+                                                   ClusterSpec.Id.from("id2"),
+                                                   Version.fromString("6.42"),
+                                                   false);
         activate(provisioner.prepare(app2, cluster2, Capacity.fromNodeCount(2), 1, null), app2, provisioner);
 
         ApplicationId app3 = ApplicationId.from(TenantName.from("tenant3"), ApplicationName.from("application3"), InstanceName.from("instance3"));
-        ClusterSpec cluster3 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id3"), Version.fromString("6.42"));
-        activate(provisioner.prepare(app3, cluster3, Capacity.fromNodeCount(2, "docker"), 1, null), app3, provisioner);
+        ClusterSpec cluster3 = ClusterSpec.request(ClusterSpec.Type.content,
+                                                   ClusterSpec.Id.from("id3"),
+                                                   Version.fromString("6.42"),
+                                                   false);
+        activate(provisioner.prepare(app3, cluster3, Capacity.fromNodeCount(2, Optional.of("docker"), false), 1, null), app3, provisioner);
     }
 
     private void activate(List<HostSpec> hosts, ApplicationId application, NodeRepositoryProvisioner provisioner) {

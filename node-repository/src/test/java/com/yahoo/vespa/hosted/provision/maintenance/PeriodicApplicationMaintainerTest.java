@@ -154,8 +154,8 @@ public class PeriodicApplicationMaintainerTest {
 
         final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
-        final ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
-        final ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
+        final ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        final ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
         final int wantedNodesApp1 = 5;
         final int wantedNodesApp2 = 7;
 
@@ -192,9 +192,9 @@ public class PeriodicApplicationMaintainerTest {
         void runApplicationMaintainer(Optional<List<Node>> overriddenNodesNeedingMaintenance) {
             Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
             apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, 
-                                                               Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default")), 1));
+                                                               Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default"), false), 1));
             apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, 
-                                                               Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default")), 1));
+                                                               Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default"), false), 1));
             MockDeployer deployer = new MockDeployer(provisioner, apps);
             new TestablePeriodicApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30), overriddenNodesNeedingMaintenance).run();
         }

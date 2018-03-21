@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -85,7 +87,7 @@ public class ProvisioningTester {
                                                      new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
             this.orchestrator = mock(Orchestrator.class);
             doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
-            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock);
+            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
             this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
             this.provisionLogger = new NullProvisionLogger();
         }
@@ -132,10 +134,7 @@ public class ProvisioningTester {
     }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, boolean required, String flavor) {
-        Capacity capacity = required
-                ? Capacity.fromRequiredNodeCount(nodeCount)
-                : Capacity.fromNodeCount(nodeCount, Optional.ofNullable(flavor));
-        return prepare(application, cluster, capacity, groups);
+        return prepare(application, cluster, Capacity.fromNodeCount(nodeCount, Optional.ofNullable(flavor), required), groups);
     }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, int groups) {
@@ -290,9 +289,20 @@ public class ProvisioningTester {
 
     /** Creates a set of virtual nodes on a single parent host */
     List<Node> makeReadyVirtualNodes(int n, String flavor, Optional<String> parentHostId) {
-        List<Node> nodes = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            final String hostname = UUID.randomUUID().toString();
+        return makeReadyVirtualNodes(n, 0, flavor, parentHostId, index -> UUID.randomUUID().toString());
+    }
+
+    /** Creates a set of virtual nodes on a single parent host */
+    List<Node> makeReadyVirtualNode(int index, String flavor, String parentHostId) {
+        return makeReadyVirtualNodes(1, index, flavor, Optional.of(parentHostId), i -> String.format("node%03d", i));
+    }
+
+    /** Creates a set of virtual nodes on a single parent host */
+    List<Node> makeReadyVirtualNodes(int count, int startIndex, String flavor, Optional<String> parentHostId,
+                                     Function<Integer, String> nodeNamer) {
+        List<Node> nodes = new ArrayList<>(count);
+        for (int i = startIndex; i < count + startIndex; i++) {
+            String hostname = nodeNamer.apply(i);
             nodes.add(nodeRepository.createNode("openstack-id", hostname, parentHostId,
                                                 nodeFlavors.getFlavorOrThrow(flavor), NodeType.tenant));
         }
