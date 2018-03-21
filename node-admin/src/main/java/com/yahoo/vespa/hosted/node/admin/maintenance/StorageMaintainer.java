@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.collections.Pair;
 import com.yahoo.io.IOUtils;
-import com.yahoo.net.HostName;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
@@ -237,7 +236,7 @@ public class StorageMaintainer {
 
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("hostname", nodeSpec.hostname);
-        attributes.put("parent_hostname", HostName.getLocalhost());
+        attributes.put("parent_hostname", environment.getParentHostHostname());
         attributes.put("region", environment.getRegion());
         attributes.put("environment", environment.getEnvironment());
         attributes.put("flavor", nodeSpec.nodeFlavor);

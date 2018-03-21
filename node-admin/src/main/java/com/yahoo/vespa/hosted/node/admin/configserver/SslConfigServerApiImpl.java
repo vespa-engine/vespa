@@ -46,7 +46,7 @@ public class SslConfigServerApiImpl implements ConfigServerApi {
                     makeSslConnectionSocketFactory(Optional.of(keyStoreOptions)));
 
             ConfigServerKeyStoreRefresher keyStoreRefresher = new ConfigServerKeyStoreRefresher(
-                    keyStoreOptions, connectionFactoryRefresher, configServerApi);
+                    keyStoreOptions, connectionFactoryRefresher, configServerApi, environment.getParentHostHostname());
 
             // Run the refresh once manually to make sure that we have a valid certificate, otherwise fail.
             try {
