@@ -3,10 +3,12 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -168,12 +170,9 @@ public class DockerProvisioningTest {
                          e.getMessage());
         }
 
-        // Adding 3 nodes of another cluster for the same application works:
-        Set<HostSpec> hosts = new HashSet<>(tester.prepare(application1,
-                                                           ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer2"), Version.fromString("6.39"), false),
-                                                           Capacity.fromNodeCount(3, Optional.of(dockerFlavor), false),
-                                                           1));
-        tester.activate(application1, hosts);
+        // Adding 3 nodes of another application for the same tenant works
+        ApplicationId application3 = ApplicationId.from(application1.tenant(), ApplicationName.from("app3"), InstanceName.from("default"));
+        prepareAndActivate(application3, 2, true, tester);
     }
 
     // In dev, test and staging you get nodes with default flavor, but we should get specified flavor for docker nodes
