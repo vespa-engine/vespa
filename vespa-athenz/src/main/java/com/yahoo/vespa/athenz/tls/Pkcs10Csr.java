@@ -17,6 +17,7 @@ import javax.security.auth.x500.X500Principal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
@@ -50,14 +51,13 @@ public class Pkcs10Csr {
     }
 
     /**
-     * @return true if CA certificate
+     * @return If basic constraints extension is present: returns true if CA cert, false otherwise. Returns empty if the extension is not present.
      */
-    public boolean getBasicConstraints() {
+    public Optional<Boolean> getBasicConstraints() {
         return getExtensions()
                 .map(BasicConstraints::fromExtensions)
                 .findAny()
-                .map(BasicConstraints::isCA)
-                .orElse(false);
+                .map(BasicConstraints::isCA);
     }
 
     public List<String> getExtensionOIds() {
