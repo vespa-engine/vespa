@@ -16,10 +16,9 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import javax.security.auth.x500.X500Principal;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -44,10 +43,10 @@ public class Pkcs10Csr {
     public List<String> getSubjectAlternativeNames() {
         return getExtensions()
                 .map(extensions -> GeneralNames.fromExtensions(extensions, Extension.subjectAlternativeName))
-                .filter(Objects::nonNull)
-                .flatMap(generalNames -> Arrays.stream(generalNames.getNames()))
-                .map(Pkcs10Csr::toString)
-                .collect(toList());
+                .map(generalNames -> Arrays.stream(generalNames.getNames())
+                        .map(Pkcs10Csr::toString)
+                        .collect(toList()))
+                .orElse(emptyList());
     }
 
     /**
@@ -56,21 +55,22 @@ public class Pkcs10Csr {
     public Optional<Boolean> getBasicConstraints() {
         return getExtensions()
                 .map(BasicConstraints::fromExtensions)
-                .findAny()
                 .map(BasicConstraints::isCA);
     }
 
     public List<String> getExtensionOIds() {
         return getExtensions()
-                .flatMap(extensions -> Arrays.stream(extensions.getExtensionOIDs()))
-                .map(ASN1ObjectIdentifier::getId)
-                .collect(toList());
+                .map(extensions -> Arrays.stream(extensions.getExtensionOIDs())
+                        .map(ASN1ObjectIdentifier::getId)
+                        .collect(toList()))
+                .orElse(emptyList());
 
     }
 
-    private Stream<Extensions> getExtensions() {
-        return Arrays
-                .stream(csr.getAttributes(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest))
+    private Optional<Extensions> getExtensions() {
+        return Optional.of(csr.getAttributes(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest))
+                .filter(attributes -> attributes.length > 0)
+                .map(attributes -> attributes[0])
                 .map(attribute -> Extensions.getInstance(attribute.getAttrValues().getObjectAt(0)));
     }
 
