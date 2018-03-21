@@ -7,11 +7,9 @@ import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.certificate.ConfigServerKeyStoreRefresher;
 import com.yahoo.vespa.hosted.node.admin.util.KeyStoreOptions;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import java.security.Security;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -28,8 +26,6 @@ public class SslConfigServerApiImpl implements ConfigServerApi {
     private final Optional<ConfigServerKeyStoreRefresher> keyStoreRefresher;
 
     public SslConfigServerApiImpl(Environment environment) {
-        Security.addProvider(new BouncyCastleProvider());
-
         this.environment = environment;
 
         // At this point we don't know the state of the keystore, it may not exist at all, or the keystore

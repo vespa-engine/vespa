@@ -3,8 +3,14 @@ package com.yahoo.vespa.athenz.identityprovider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.core.identity.IdentityConfig;
-import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
+import com.yahoo.vespa.athenz.tls.KeyUtils;
+import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
+import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
+import com.yahoo.vespa.athenz.tls.Pkcs10CsrUtils;
+import com.yahoo.vespa.athenz.tls.SignatureAlgorithm;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.security.KeyPair;
@@ -34,20 +40,20 @@ class AthenzCredentialsService {
     }
 
     AthenzCredentials registerInstance() {
-        KeyPair keyPair = CryptoUtils.createKeyPair();
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         String rawDocument = identityDocumentService.getSignedIdentityDocument();
         SignedIdentityDocument document = parseSignedIdentityDocument(rawDocument);
-        PKCS10CertificationRequest csr = CryptoUtils.createCSR(identityConfig.domain(),
-                                                               identityConfig.service(),
-                                                               document.dnsSuffix,
-                                                               document.providerUniqueId,
-                                                               keyPair);
+        Pkcs10Csr csr = createCSR(identityConfig.domain(),
+                                  identityConfig.service(),
+                                  document.dnsSuffix,
+                                  document.providerUniqueId,
+                                  keyPair);
         InstanceRegisterInformation instanceRegisterInformation =
                 new InstanceRegisterInformation(document.providerService,
                                                 identityConfig.domain(),
                                                 identityConfig.service(),
                                                 rawDocument,
-                                                CryptoUtils.toPem(csr));
+                                                Pkcs10CsrUtils.toPem(csr));
         InstanceIdentity instanceIdentity = athenzService.sendInstanceRegisterRequest(instanceRegisterInformation,
                                                                                       document.ztsEndpoint);
         return toAthenzCredentials(instanceIdentity, keyPair, document);
@@ -55,13 +61,13 @@ class AthenzCredentialsService {
 
     AthenzCredentials updateCredentials(AthenzCredentials currentCredentials) {
         SignedIdentityDocument document = currentCredentials.getIdentityDocument();
-        KeyPair newKeyPair = CryptoUtils.createKeyPair();
-        PKCS10CertificationRequest csr = CryptoUtils.createCSR(identityConfig.domain(),
-                                                               identityConfig.service(),
-                                                               document.dnsSuffix,
-                                                               document.providerUniqueId,
-                                                               newKeyPair);
-        InstanceRefreshInformation refreshInfo = new InstanceRefreshInformation(CryptoUtils.toPem(csr));
+        KeyPair newKeyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
+        Pkcs10Csr csr = createCSR(identityConfig.domain(),
+                                  identityConfig.service(),
+                                  document.dnsSuffix,
+                                  document.providerUniqueId,
+                                  newKeyPair);
+        InstanceRefreshInformation refreshInfo = new InstanceRefreshInformation(Pkcs10CsrUtils.toPem(csr));
         InstanceIdentity instanceIdentity =
                 athenzService.sendInstanceRefreshRequest(document.providerService,
                                                          identityConfig.domain(),
@@ -90,4 +96,22 @@ class AthenzCredentialsService {
         }
     }
 
+    private static Pkcs10Csr createCSR(String identityDomain,
+                                       String identityService,
+                                       String dnsSuffix,
+                                       String providerUniqueId,
+                                       KeyPair keyPair) {
+        X500Principal subject = new X500Principal(String.format("CN=%s.%s", identityDomain, identityService));
+        // Add SAN dnsname <service>.<domain-with-dashes>.<provider-dnsname-suffix>
+        // and SAN dnsname <provider-unique-instance-id>.instanceid.athenz.<provider-dnsname-suffix>
+        return Pkcs10CsrBuilder.fromKeypair(subject, keyPair, SignatureAlgorithm.SHA256_WITH_RSA)
+                .addSubjectAlternativeName(String.format("%s.%s.%s",
+                                                         identityService,
+                                                         identityDomain.replace(".", "-"),
+                                                         dnsSuffix))
+                .addSubjectAlternativeName(String.format("%s.instanceid.athenz.%s",
+                                                         providerUniqueId,
+                                                         dnsSuffix))
+                .build();
+    }
 }
