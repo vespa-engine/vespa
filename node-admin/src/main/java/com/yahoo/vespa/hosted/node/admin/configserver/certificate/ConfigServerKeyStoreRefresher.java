@@ -3,19 +3,24 @@ package com.yahoo.vespa.hosted.node.admin.configserver.certificate;
 
 import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
 import com.yahoo.vespa.athenz.tls.KeyStoreBuilder;
-import com.yahoo.vespa.athenz.tls.KeyUtils;
-import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
-import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
-import com.yahoo.vespa.athenz.tls.SignatureAlgorithm;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.util.KeyStoreOptions;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 
-import javax.security.auth.x500.X500Principal;
+import java.io.IOException;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.util.concurrent.Executors;
@@ -35,7 +40,7 @@ public class ConfigServerKeyStoreRefresher {
     private static final Logger logger = Logger.getLogger(ConfigServerKeyStoreRefresher.class.getName());
     private static final String KEY_STORE_ALIAS = "alias";
     static final long MINIMUM_SECONDS_BETWEEN_REFRESH_RETRY = 3600;
-    static final SignatureAlgorithm SIGNER_ALGORITHM = SignatureAlgorithm.SHA256_WITH_RSA;
+    static final String SIGNER_ALGORITHM = "SHA256withRSA";
     static final String CONFIG_SERVER_CERTIFICATE_SIGNING_PATH = "/athenz/v1/provider/sign";
 
     private final ScheduledExecutorService executor;
@@ -96,11 +101,12 @@ public class ConfigServerKeyStoreRefresher {
         } while (!executor.isTerminated());
     }
 
-    public boolean refreshKeyStoreIfNeeded() {
+    public boolean refreshKeyStoreIfNeeded() throws
+            IOException, NoSuchAlgorithmException, OperatorCreationException, CertificateException, KeyStoreException, NoSuchProviderException {
         if (!shouldRefreshCertificate()) return false;
 
         KeyPair keyPair = generateKeyPair();
-        Pkcs10Csr csr = generateCsr(keyPair, hostname);
+        PKCS10CertificationRequest csr = generateCsr(keyPair, hostname);
         X509Certificate certificate = sendCsr(csr);
 
         storeCertificate(keyPair, certificate);
@@ -135,7 +141,8 @@ public class ConfigServerKeyStoreRefresher {
      * well before the certificate actually expires so that we have enough time to retry without
      * overloading config server.
      */
-    private long getSecondsUntilCertificateShouldBeRefreshed() throws KeyStoreException{
+    private long getSecondsUntilCertificateShouldBeRefreshed()
+            throws NoSuchAlgorithmException, CertificateException, NoSuchProviderException, KeyStoreException, IOException {
         X509Certificate cert = getConfigServerCertificate();
         long notBefore = cert.getNotBefore().getTime() / 1000;
         long notAfter = cert.getNotAfter().getTime() / 1000;
@@ -145,11 +152,12 @@ public class ConfigServerKeyStoreRefresher {
         return Math.max(0, notBefore + thirdOfLifetime - now);
     }
 
-    X509Certificate getConfigServerCertificate() throws KeyStoreException {
+    X509Certificate getConfigServerCertificate() throws NoSuchAlgorithmException, CertificateException, NoSuchProviderException, KeyStoreException, IOException {
         return (X509Certificate) keyStoreOptions.loadKeyStore().getCertificate(KEY_STORE_ALIAS);
     }
 
-    private void storeCertificate(KeyPair keyPair, X509Certificate certificate) {
+    private void storeCertificate(KeyPair keyPair, X509Certificate certificate)
+            throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException, NoSuchProviderException {
         keyStoreOptions.path.getParent().toFile().mkdirs();
 
         KeyStore keyStore = KeyStoreBuilder.withType(keyStoreOptions.keyStoreType)
@@ -159,7 +167,7 @@ public class ConfigServerKeyStoreRefresher {
         keyStoreOptions.storeKeyStore(keyStore);
     }
 
-    private X509Certificate sendCsr(Pkcs10Csr csr) {
+    private X509Certificate sendCsr(PKCS10CertificationRequest csr) {
         CertificateSerializedPayload certificateSerializedPayload = configServerApi.post(
                 CONFIG_SERVER_CERTIFICATE_SIGNING_PATH,
                 new CsrSerializedPayload(csr),
@@ -168,12 +176,17 @@ public class ConfigServerKeyStoreRefresher {
         return certificateSerializedPayload.certificate;
     }
 
-    static KeyPair generateKeyPair() {
-        return KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
+    static KeyPair generateKeyPair() throws NoSuchAlgorithmException {
+        KeyPairGenerator rsa = KeyPairGenerator.getInstance("RSA");
+        rsa.initialize(2048);
+        return rsa.genKeyPair();
     }
 
-    private static Pkcs10Csr generateCsr(KeyPair keyPair, String commonName) {
-        return Pkcs10CsrBuilder.fromKeypair(new X500Principal("CN=" + commonName), keyPair, SIGNER_ALGORITHM)
-                .build();
+    private static PKCS10CertificationRequest generateCsr(KeyPair keyPair, String commonName)
+            throws NoSuchAlgorithmException, OperatorCreationException {
+        ContentSigner signer = new JcaContentSignerBuilder(SIGNER_ALGORITHM).build(keyPair.getPrivate());
+
+        return new JcaPKCS10CertificationRequestBuilder(new X500Name("CN=" + commonName), keyPair.getPublic())
+                .build(signer);
     }
 }

@@ -10,6 +10,7 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 
 import static com.yahoo.vespa.athenz.tls.TestUtils.createCertificate;
+import static com.yahoo.vespa.athenz.tls.TestUtils.createKeyPair;
 import static com.yahoo.vespa.athenz.tls.TestUtils.createKeystore;
 import static com.yahoo.vespa.athenz.tls.TestUtils.createKeystoreFile;
 
@@ -47,7 +48,7 @@ public class AthenzSslContextBuilderTest {
 
     @Test
     public void can_build_sslcontext_with_keystore_from_private_key_and_certificate() throws Exception {
-        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
+        KeyPair keyPair = createKeyPair();
         X509Certificate certificate = createCertificate(keyPair);
         new AthenzSslContextBuilder()
                 .withKeyStore(keyPair.getPrivate(), certificate)

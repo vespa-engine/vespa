@@ -7,10 +7,11 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
-import com.yahoo.vespa.athenz.tls.Pkcs10CsrUtils;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import java.io.IOException;
+import java.io.StringReader;
 
 /**
  * Contains PEM formatted Certificate Signing Request (CSR)
@@ -19,11 +20,11 @@ import java.io.IOException;
  */
 public class CsrSerializedPayload {
 
-    @JsonProperty("csr") public final Pkcs10Csr csr;
+    @JsonProperty("csr") public final PKCS10CertificationRequest csr;
 
     @JsonCreator
     public CsrSerializedPayload(@JsonProperty("csr") @JsonDeserialize(using = CertificateRequestDeserializer.class)
-                                        Pkcs10Csr csr) {
+                                            PKCS10CertificationRequest csr) {
         this.csr = csr;
     }
 
@@ -49,11 +50,13 @@ public class CsrSerializedPayload {
                 '}';
     }
 
-    public static class CertificateRequestDeserializer extends JsonDeserializer<Pkcs10Csr> {
+    public static class CertificateRequestDeserializer extends JsonDeserializer<PKCS10CertificationRequest> {
         @Override
-        public Pkcs10Csr deserialize(
+        public PKCS10CertificationRequest deserialize(
                 JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
-            return Pkcs10CsrUtils.fromPem(jsonParser.getValueAsString());
+            try (PEMParser pemParser = new PEMParser(new StringReader(jsonParser.getValueAsString()))) {
+                return (PKCS10CertificationRequest) pemParser.readObject();
+            }
         }
     }
 }

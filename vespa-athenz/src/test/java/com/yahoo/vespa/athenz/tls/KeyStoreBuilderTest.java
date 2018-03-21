@@ -9,6 +9,7 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 
 import static com.yahoo.vespa.athenz.tls.TestUtils.createCertificate;
+import static com.yahoo.vespa.athenz.tls.TestUtils.createKeyPair;
 import static com.yahoo.vespa.athenz.tls.TestUtils.createKeystoreFile;
 
 /**
@@ -23,7 +24,7 @@ public class KeyStoreBuilderTest {
 
     @Test
     public void can_create_jks_keystore_from_privatekey_and_certificate() throws Exception {
-        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 4096);
+        KeyPair keyPair = createKeyPair();
         X509Certificate certificate = createCertificate(keyPair);
         KeyStoreBuilder.withType(KeyStoreType.JKS)
                 .withKeyEntry("key", keyPair.getPrivate(), certificate)
