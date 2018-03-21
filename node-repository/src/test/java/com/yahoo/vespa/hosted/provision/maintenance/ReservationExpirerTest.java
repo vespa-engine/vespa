@@ -43,7 +43,7 @@ public class ReservationExpirerTest {
         NodeRepository nodeRepository = new NodeRepository(flavors, curator, clock, Zone.defaultZone(),
                                                            new MockNameResolver().mockAnyLookup(),
                                                            new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
-        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, Zone.defaultZone(), clock, (x,y) -> {});
+        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, Zone.defaultZone(), clock);
 
         List<Node> nodes = new ArrayList<>(2);
         nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));

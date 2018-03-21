@@ -64,7 +64,6 @@ public class ProvisioningTester {
     private final NodeRepositoryProvisioner provisioner;
     private final CapacityPolicies capacityPolicies;
     private final ProvisionLogger provisionLogger;
-    private final List<AllocationSnapshot> allocationSnapshots = new ArrayList<>();
 
     private int nextHost = 0;
     private int nextIP = 0;
@@ -86,8 +85,7 @@ public class ProvisioningTester {
                                                      new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
             this.orchestrator = mock(Orchestrator.class);
             doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
-            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock,
-                    (x,y) -> allocationSnapshots.add(new AllocationSnapshot(new NodeList(x), "Provision tester", y)));
+            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock);
             this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
             this.provisionLogger = new NullProvisionLogger();
         }
@@ -130,7 +128,14 @@ public class ProvisioningTester {
     public void patchNode(Node node) { nodeRepository.write(node); }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, String flavor) {
-        return prepare(application, cluster, Capacity.fromNodeCount(nodeCount, Optional.ofNullable(flavor)), groups);
+        return prepare(application, cluster, nodeCount, groups, false, flavor);
+    }
+
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, boolean required, String flavor) {
+        Capacity capacity = required
+                ? Capacity.fromRequiredNodeCount(nodeCount)
+                : Capacity.fromNodeCount(nodeCount, Optional.ofNullable(flavor));
+        return prepare(application, cluster, capacity, groups);
     }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, int groups) {
