@@ -614,6 +614,8 @@ FileStorManagerTest::testHandlerPriority()
 
     FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50);
+    uint32_t stripeId = filestorHandler.getNextStripeId(0);
+    CPPUNIT_ASSERT_EQUAL(0u, stripeId);
 
     std::string content("Here is some content which is in all documents");
     std::ostringstream uri;
@@ -632,11 +634,11 @@ FileStorManagerTest::testHandlerPriority()
         filestorHandler.schedule(cmd, 0);
     }
 
-    CPPUNIT_ASSERT_EQUAL(15, (int)filestorHandler.getNextMessage(0).second->getPriority());
-    CPPUNIT_ASSERT_EQUAL(30, (int)filestorHandler.getNextMessage(0).second->getPriority());
-    CPPUNIT_ASSERT_EQUAL(45, (int)filestorHandler.getNextMessage(0).second->getPriority());
-    CPPUNIT_ASSERT_EQUAL(60, (int)filestorHandler.getNextMessage(0).second->getPriority());
-    CPPUNIT_ASSERT_EQUAL(75, (int)filestorHandler.getNextMessage(0).second->getPriority());
+    CPPUNIT_ASSERT_EQUAL(15, (int)filestorHandler.getNextMessage(0, stripeId).second->getPriority());
+    CPPUNIT_ASSERT_EQUAL(30, (int)filestorHandler.getNextMessage(0, stripeId).second->getPriority());
+    CPPUNIT_ASSERT_EQUAL(45, (int)filestorHandler.getNextMessage(0, stripeId).second->getPriority());
+    CPPUNIT_ASSERT_EQUAL(60, (int)filestorHandler.getNextMessage(0, stripeId).second->getPriority());
+    CPPUNIT_ASSERT_EQUAL(75, (int)filestorHandler.getNextMessage(0, stripeId).second->getPriority());
 }
 
 class MessagePusherThread : public document::Runnable
@@ -671,6 +673,7 @@ MessagePusherThread::~MessagePusherThread() = default;
 
 class MessageFetchingThread : public document::Runnable {
 public:
+    const uint32_t _threadId;
     FileStorHandler& _handler;
     std::atomic<uint32_t> _config;
     uint32_t _fetchedCount;
@@ -679,12 +682,13 @@ public:
     bool _threadDone;
 
     MessageFetchingThread(FileStorHandler& handler)
-        : _handler(handler), _config(0), _fetchedCount(0), _done(false),
-          _failed(false), _threadDone(false) {}
+        : _threadId(handler.getNextStripeId(0)), _handler(handler), _config(0), _fetchedCount(0), _done(false),
+          _failed(false), _threadDone(false)
+    {}
 
     void run() override {
         while (!_done) {
-            FileStorHandler::LockedMessage msg = _handler.getNextMessage(0);
+            FileStorHandler::LockedMessage msg = _handler.getNextMessage(0, _threadId);
             if (msg.second.get()) {
                 uint32_t originalConfig = _config.load();
                 _fetchedCount++;
@@ -760,8 +764,7 @@ FileStorManagerTest::testHandlerPause()
     // Setup a filestorthread to test
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(
-                          dummyManager = new DummyStorageLink));
+    top.push_back(std::unique_ptr<StorageLink>(dummyManager = new DummyStorageLink));
     top.open();
     ForwardingMessageSender messageSender(*dummyManager);
     // Since we fake time with small numbers, we need to make sure we dont
@@ -773,6 +776,7 @@ FileStorManagerTest::testHandlerPause()
 
     FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50);
+    uint32_t stripeId = filestorHandler.getNextStripeId(0);
 
     std::string content("Here is some content which is in all documents");
     std::ostringstream uri;
@@ -780,8 +784,7 @@ FileStorManagerTest::testHandlerPause()
     Document::SP doc(createDocument(content, "userdoc:footype:1234:bar").release());
 
     document::BucketIdFactory factory;
-    document::BucketId bucket(16, factory.getBucketId(
-            doc->getId()).getRawId());
+    document::BucketId bucket(16, factory.getBucketId(doc->getId()).getRawId());
 
     // Populate bucket with the given data
     for (uint32_t i = 1; i < 6; i++) {
@@ -792,15 +795,15 @@ FileStorManagerTest::testHandlerPause()
         filestorHandler.schedule(cmd, 0);
     }
 
-    CPPUNIT_ASSERT_EQUAL(15, (int)filestorHandler.getNextMessage(0).second->getPriority());
+    CPPUNIT_ASSERT_EQUAL(15, (int)filestorHandler.getNextMessage(0, stripeId).second->getPriority());
 
     {
         ResumeGuard guard = filestorHandler.pause();
         (void)guard;
-        CPPUNIT_ASSERT(filestorHandler.getNextMessage(0).second.get() == NULL);
+        CPPUNIT_ASSERT(filestorHandler.getNextMessage(0, stripeId).second.get() == NULL);
     }
 
-    CPPUNIT_ASSERT_EQUAL(30, (int)filestorHandler.getNextMessage(0).second->getPriority());
+    CPPUNIT_ASSERT_EQUAL(30, (int)filestorHandler.getNextMessage(0, stripeId).second->getPriority());
 }
 
 namespace {
@@ -897,9 +900,9 @@ FileStorManagerTest::testHandlerMulti()
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1);
 
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(),
-                                    _node->getComponentRegister());
+    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50);
+    uint32_t stripeId = filestorHandler.getNextStripeId(0);
 
     std::string content("Here is some content which is in all documents");
 
@@ -920,21 +923,21 @@ FileStorManagerTest::testHandlerMulti()
     }
 
     {
-        FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0);
+        FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0, 0);
         CPPUNIT_ASSERT_EQUAL((uint64_t)1, getPutTime(lock.second));
 
-        lock = filestorHandler.getNextMessage(0, lock);
+        lock = filestorHandler.getNextMessage(0, stripeId, lock);
         CPPUNIT_ASSERT_EQUAL((uint64_t)2, getPutTime(lock.second));
 
-        lock = filestorHandler.getNextMessage(0, lock);
+        lock = filestorHandler.getNextMessage(0, stripeId, lock);
         CPPUNIT_ASSERT_EQUAL((uint64_t)3, getPutTime(lock.second));
     }
 
     {
-        FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0);
+        FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0, stripeId);
         CPPUNIT_ASSERT_EQUAL((uint64_t)11, getPutTime(lock.second));
 
-        lock = filestorHandler.getNextMessage(0, lock);
+        lock = filestorHandler.getNextMessage(0, stripeId, lock);
         CPPUNIT_ASSERT_EQUAL((uint64_t)12, getPutTime(lock.second));
     }
 }
@@ -958,9 +961,9 @@ FileStorManagerTest::testHandlerTimeout()
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
     metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1);
 
-    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(),
-                                    _node->getComponentRegister());
+    FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
     filestorHandler.setGetNextMessageTimeout(50);
+    uint32_t stripeId = filestorHandler.getNextStripeId(0);
 
     std::string content("Here is some content which is in all documents");
     std::ostringstream uri;
@@ -968,16 +971,12 @@ FileStorManagerTest::testHandlerTimeout()
     Document::SP doc(createDocument(content, "userdoc:footype:1234:bar").release());
 
     document::BucketIdFactory factory;
-    document::BucketId bucket(16, factory.getBucketId(
-                                      doc->getId()).getRawId());
+    document::BucketId bucket(16, factory.getBucketId(doc->getId()).getRawId());
 
     // Populate bucket with the given data
     {
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bucket), doc, 100));
-        std::unique_ptr<api::StorageMessageAddress> address(
-                new api::StorageMessageAddress(
-                        "storage", lib::NodeType::STORAGE, 3));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), doc, 100);
+        auto address = std::make_unique<api::StorageMessageAddress>("storage", lib::NodeType::STORAGE, 3);
         cmd->setAddress(*address);
         cmd->setPriority(0);
         cmd->setTimeout(50);
@@ -985,11 +984,8 @@ FileStorManagerTest::testHandlerTimeout()
     }
 
     {
-        std::shared_ptr<api::PutCommand> cmd(
-                new api::PutCommand(makeDocumentBucket(bucket), doc, 100));
-        std::unique_ptr<api::StorageMessageAddress> address(
-                new api::StorageMessageAddress(
-                        "storage", lib::NodeType::STORAGE, 3));
+        auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), doc, 100);
+        auto address = std::make_unique<api::StorageMessageAddress>("storage", lib::NodeType::STORAGE, 3);
         cmd->setAddress(*address);
         cmd->setPriority(200);
         cmd->setTimeout(10000);
@@ -998,7 +994,7 @@ FileStorManagerTest::testHandlerTimeout()
 
     FastOS_Thread::Sleep(51);
     for (;;) {
-        auto lock = filestorHandler.getNextMessage(0);
+        auto lock = filestorHandler.getNextMessage(0, stripeId);
         if (lock.first.get()) {
             CPPUNIT_ASSERT_EQUAL(uint8_t(200), lock.second->getPriority());
             break;
@@ -1007,8 +1003,7 @@ FileStorManagerTest::testHandlerTimeout()
 
     CPPUNIT_ASSERT_EQUAL(size_t(1), top.getNumReplies());
     CPPUNIT_ASSERT_EQUAL(api::ReturnCode::TIMEOUT,
-                         static_cast<api::StorageReply&>(*top.getReply(0))
-                            .getResult().getResult());
+                         static_cast<api::StorageReply&>(*top.getReply(0)).getResult().getResult());
 }
 
 void
