@@ -100,7 +100,7 @@ class NodeAllocation {
                 if ( offered.flavor().isRetired()) wantToRetireNode = true;
                 if ( offered.status().wantToRetire()) wantToRetireNode = true;
                 if ( requestedNodes.isExclusive() &&
-                     ! hostHasOnly(application.tenant(), offered.parentHostname())) wantToRetireNode = true;
+                     ! hostsOnly(application.tenant(), offered.parentHostname())) wantToRetireNode = true;
 
                 if (( ! saturated() && hasCompatibleFlavor(offered)) || acceptToRetire(offered) ) {
                     accepted.add(acceptNode(offeredPriority, wantToRetireNode));
@@ -111,11 +111,11 @@ class NodeAllocation {
                     ++rejectedWithClashingParentHost;
                     continue;
                 }
-                if ( ! hostCanHost(application.tenant(), offered.parentHostname())) {
+                if ( ! exclusiveTo(application.tenant(), offered.parentHostname())) {
                     ++rejectedDueToExclusivity;
                     continue;
                 }
-                if ( requestedNodes.isExclusive() && ! hostHasOnly(application.tenant(), offered.parentHostname())) {
+                if ( requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), offered.parentHostname())) {
                     ++rejectedDueToExclusivity;
                     continue;
                 }
@@ -149,7 +149,7 @@ class NodeAllocation {
      * If a parent host is given, and it hosts another tenant with an application which requires exclusive access
      * to the physical host, then we cannot host this application on it.
      */
-    private boolean hostCanHost(TenantName tenant, Optional<String> parentHostname) {
+    private boolean exclusiveTo(TenantName tenant, Optional<String> parentHostname) {
         if ( ! parentHostname.isPresent()) return true;
         for (Node nodeOnHost : nodeRepository.getChildNodes(parentHostname.get())) {
             if ( ! nodeOnHost.allocation().isPresent()) continue;
@@ -161,12 +161,12 @@ class NodeAllocation {
         return true;
     }
 
-    private boolean hostHasOnly(TenantName tenant, Optional<String> parentHostname) {
+    private boolean hostsOnly(TenantName tenant, Optional<String> parentHostname) {
         if ( ! parentHostname.isPresent()) return true; // yes, as host is exclusive
 
         for (Node nodeOnHost : nodeRepository.getChildNodes(parentHostname.get())) {
             if ( ! nodeOnHost.allocation().isPresent()) continue;
-            if ( ! nodeOnHost.allocation().get().owner().tenant().equals(application.tenant()))
+            if ( ! nodeOnHost.allocation().get().owner().tenant().equals(tenant))
                 return false;
         }
         return true;
