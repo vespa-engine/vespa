@@ -64,4 +64,34 @@ public final class Capacity {
         return new Capacity(0,  Optional.empty(), true, type);
     }
 
+    /** Creates this from a desired node count: The request may be satisfied with a smaller number of nodes. */
+    // TODO: Remove after April 2018
+    public static Capacity fromNodeCount(int nodeCount, String flavor) {
+        return fromNodeCount(nodeCount, Optional.of(flavor));
+    }
+
+    /** Creates this from a desired node count: The request may be satisfied with a smaller number of nodes. */
+    // TODO: Remove after April 2018
+    public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor) {
+        return new Capacity(nodeCount, flavor, false, NodeType.tenant);
+    }
+
+    /** Creates this from a required node count: Requests must fail unless the node count can be satisfied exactly */
+    // TODO: Remove after April 2018
+    public static Capacity fromRequiredNodeCount(int nodeCount) {
+        return fromRequiredNodeCount(nodeCount, Optional.empty());
+    }
+
+    /** Creates this from a required node count: Requests must fail unless the node count can be satisfied exactly */
+    // TODO: Remove after April 2018
+    public static Capacity fromRequiredNodeCount(int nodeCount, String flavor) {
+        return fromRequiredNodeCount(nodeCount, Optional.of(flavor));
+    }
+
+    /** Creates this from a required node count: Requests must fail unless the node count can be satisfied exactly */
+    // TODO: Remove after April 2018
+    public static Capacity fromRequiredNodeCount(int nodeCount, Optional<String> flavor) {
+        return new Capacity(nodeCount, flavor, true, NodeType.tenant);
+    }
+
 }
