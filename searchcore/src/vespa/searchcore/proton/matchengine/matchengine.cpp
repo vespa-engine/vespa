@@ -45,7 +45,7 @@ MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t di
       _handlers(),
       _executor(std::max(size_t(1), numThreads / threadsPerSearch), 256 * 1024),
       _threadBundlePool(std::max(size_t(1), threadsPerSearch)),
-      _nodeUp(false)
+      _nodeUp(true)
 {
     // empty
 }
@@ -151,7 +151,7 @@ bool MatchEngine::isOnline() const {
 void
 MatchEngine::setNodeUp(bool nodeUp)
 {
-    _nodeUp = nodeUp;
+    _nodeUp = nodeUp || true;
 }
 
 
