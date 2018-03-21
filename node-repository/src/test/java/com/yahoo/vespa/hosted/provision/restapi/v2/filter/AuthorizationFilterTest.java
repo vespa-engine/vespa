@@ -2,9 +2,11 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
 import com.yahoo.application.container.handler.Request.Method;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.hosted.provision.restapi.v2.Authorizer;
 import com.yahoo.vespa.hosted.provision.restapi.v2.filter.FilterTester.Request;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
@@ -20,10 +22,7 @@ public class AuthorizationFilterTest {
 
     @Before
     public void before() {
-        tester = new FilterTester(new AuthorizationFilter(new Authorizer(SystemName.main,
-                                                                         new MockNodeRepository(new MockCurator(),
-                                                                                                new MockNodeFlavors())),
-                                                          FilterUtils::write));
+        tester = filterTester(SystemName.cd);
     }
 
     @Test
@@ -42,6 +41,20 @@ public class AuthorizationFilterTest {
                                    "denied for remote-addr: Invalid credentials\"}");
 
         tester.assertSuccess(new Request(Method.GET, "/nodes/v2/node/foo").commonName("foo"));
+    }
+
+    // TODO: Remove once filter applies to all systems
+    @Test
+    public void filter_does_nothing_in_main_system() {
+        FilterTester tester = filterTester(SystemName.main);
+        tester.assertSuccess(new Request(Method.GET, "/").commonName("foo"));
+        tester.assertSuccess(new Request(Method.GET, "/nodes/v2/node/bar").commonName("foo"));
+    }
+
+    private static FilterTester filterTester(SystemName system) {
+        Zone zone = new Zone(system, Environment.prod, RegionName.defaultName());
+        return new FilterTester(new AuthorizationFilter(zone, new MockNodeRepository(new MockCurator(),
+                                                                                     new MockNodeFlavors())));
     }
 
 }

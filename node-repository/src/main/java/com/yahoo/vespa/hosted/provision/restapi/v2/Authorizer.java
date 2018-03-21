@@ -56,7 +56,7 @@ public class Authorizer implements BiPredicate<Principal, URI> {
         }
 
         // Nodes of a specific type can access whitelisted resources
-        if (canAccess(nodeTypesFrom(uri), principal, this::isNodeType)) {
+        if (canAccess(nodeTypesFor(uri), principal, this::isNodeType)) {
             return true;
         }
 
@@ -151,7 +151,7 @@ public class Authorizer implements BiPredicate<Principal, URI> {
     }
 
     /** Returns node types which can access given URI */
-    private static List<NodeType> nodeTypesFrom(URI uri) {
+    private static List<NodeType> nodeTypesFor(URI uri) {
         if (isChildOf("/routing/v1/", uri.getPath())) {
             return Collections.singletonList(NodeType.proxy);
         }
