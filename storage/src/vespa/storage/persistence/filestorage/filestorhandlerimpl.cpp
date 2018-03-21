@@ -949,7 +949,7 @@ FileStorHandlerImpl::Stripe::getNextMessage(Disk & disk, FileStorHandler::Locked
 
     api::StorageMessage & m(*range.first->_command);
 
-    uint64_t waitTime(const_cast<metrics::MetricTimer&>(range.first->_timer).stop(disk.metrics->averageQueueWaitingTime[m.getLoadType()]));
+    uint64_t waitTime(range.first->_timer.stop(disk.metrics->averageQueueWaitingTime[m.getLoadType()]));
 
     if (!messageTimedOutInQueue(m, waitTime)) {
         std::shared_ptr<api::StorageMessage> msg = std::move(range.first->_command);
@@ -973,7 +973,7 @@ FileStorHandler::LockedMessage
 FileStorHandlerImpl::Stripe::getMessage(vespalib::MonitorGuard & guard, Disk & disk, PriorityIdx & idx, PriorityIdx::iterator iter) {
 
     api::StorageMessage & m(*iter->_command);
-    uint64_t waitTime(const_cast<metrics::MetricTimer &>(iter->_timer).stop(disk.metrics->averageQueueWaitingTime[m.getLoadType()]));
+    uint64_t waitTime(iter->_timer.stop(disk.metrics->averageQueueWaitingTime[m.getLoadType()]));
 
     std::shared_ptr<api::StorageMessage> msg = std::move(iter->_command);
     document::Bucket bucket(iter->_bucket);
