@@ -144,12 +144,16 @@ public class AdminTestCase {
 
     @Test
     public void testTenantAndAppInSentinelConfig() {
-        DeployState state = new DeployState.Builder().properties(
-                new DeployProperties.Builder().
-                        zone(new Zone(Environment.dev, RegionName.from("baz"))).
-                applicationId(new ApplicationId.Builder().
-                        tenant("quux").
-                        applicationName("foo").instanceName("bim").build()).build()).build(true);
+        DeployState state = new DeployState.Builder()
+                .zone(new Zone(Environment.dev, RegionName.from("baz")))
+                .properties(new DeployProperties.Builder()
+                                    .applicationId(new ApplicationId.Builder()
+                                                           .tenant("quux")
+                                                           .applicationName("foo")
+                                                           .instanceName("bim")
+                                                           .build())
+                                    .build())
+                .build(true);
         TestRoot root = new TestDriver().buildModel(state);
         String localhost = HostName.getLocalhost();
         SentinelConfig config = root.getConfig(SentinelConfig.class, "hosts/" + localhost);
@@ -305,12 +309,15 @@ public class AdminTestCase {
     @Test
     public void testDisableFileDistributorForAllApps() {
         DeployState state = new DeployState.Builder()
+                .zone(new Zone(Environment.dev, RegionName.from("baz")))
                 .properties(
                         new DeployProperties.Builder().
-                                zone(new Zone(Environment.dev, RegionName.from("baz"))).
                                 applicationId(new ApplicationId.Builder().
                                         tenant("quux").
-                                        applicationName("foo").instanceName("bim").build()).build()).build(true);
+                                        applicationName("foo").instanceName("bim")
+                                                      .build())
+                                .build())
+                .build(true);
         TestRoot root = new TestDriver().buildModel(state);
         String localhost = HostName.getLocalhost();
         SentinelConfig sentinelConfig = root.getConfig(SentinelConfig.class, "hosts/" + localhost);

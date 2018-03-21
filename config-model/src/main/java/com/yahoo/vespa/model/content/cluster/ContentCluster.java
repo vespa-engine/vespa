@@ -112,7 +112,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
             ContentCluster c = new ContentCluster(context.getParentProducer(), getClusterName(contentElement), documentDefinitions, 
                                                   globallyDistributedDocuments, routingSelection, redundancy,
-                                                  context.getDeployState().getProperties().zone());
+                                                  context.getDeployState().zone());
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterName(contentElement), contentElement).build(c, contentElement.getXml());
             c.search = new ContentSearchCluster.Builder(documentDefinitions, globallyDistributedDocuments).build(c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);

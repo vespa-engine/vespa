@@ -5,7 +5,7 @@ import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.model.api.ConfigServerSpec;
-import com.yahoo.config.model.deploy.DeployProperties;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
@@ -176,17 +176,17 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     /**
      * Adds services to all hosts in the system.
      */
-    public void addPerHostServices(List<HostResource> hosts, DeployProperties properties) {
+    public void addPerHostServices(List<HostResource> hosts, DeployState deployState) {
         if (slobroks.isEmpty()) // TODO: Move to caller
             slobroks.addAll(createDefaultSlobrokSetup());
         for (HostResource host : hosts) {
             if (!host.getHost().runsConfigServer()) {
-                addCommonServices(host, properties);
+                addCommonServices(host, deployState);
             }
         }
     }
-    private void addCommonServices(HostResource host, DeployProperties properties) {
-        addConfigSentinel(host, properties.applicationId(), properties.zone());
+    private void addCommonServices(HostResource host, DeployState deployState) {
+        addConfigSentinel(host, deployState.getProperties().applicationId(), deployState.zone());
         addLogd(host);
         addConfigProxy(host);
         addFileDistribution(host);

@@ -149,7 +149,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs()); // must happen after the two lines above
             setupRouting();
             this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
-            getAdmin().addPerHostServices(getHostSystem().getHosts(), deployState.getProperties());
+            getAdmin().addPerHostServices(getHostSystem().getHosts(), deployState);
             freezeModelTopology();
             root.prepare(configModelRepo);
             configModelRepo.prepareConfigModels();
