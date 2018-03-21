@@ -25,7 +25,8 @@ OptionalDedicatedNodes = element nodes {
     attribute flavor { xsd:string }? &
     attribute required { xsd:boolean }? &
     attribute docker-image { xsd:string }? &
-    attribute dedicated { xsd:boolean }?
+    attribute dedicated { xsd:boolean }? &
+    attribute exclusive { xsd:boolean }?
 }
 
 GenericConfig = element config {

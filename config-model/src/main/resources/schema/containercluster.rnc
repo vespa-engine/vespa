@@ -210,6 +210,7 @@ NodesOfContainerCluster = element nodes {
         attribute count { xsd:positiveInteger } &
         attribute flavor { xsd:string }? &
         attribute required { xsd:boolean }? &
+        attribute exclusive { xsd:boolean }? &
         attribute docker-image { xsd:string }?
       )
       |
