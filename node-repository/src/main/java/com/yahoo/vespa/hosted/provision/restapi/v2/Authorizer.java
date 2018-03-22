@@ -13,6 +13,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -51,12 +52,12 @@ public class Authorizer implements BiPredicate<Principal, URI> {
         }
 
         // Individual nodes can only access their own resources
-        if (canAccess(hostnamesFrom(uri), principal, this::isSelfOrParent)) {
+        if (canAccessAll(hostnamesFrom(uri), principal, this::isSelfOrParent)) {
             return true;
         }
 
-        // Nodes of a specific type can access whitelisted resources
-        if (canAccess(nodeTypesFor(uri), principal, this::isNodeType)) {
+        // Nodes can access this resource if its type matches any of the valid node types
+        if (canAccessAny(nodeTypesFor(uri), principal, this::isNodeType)) {
             return true;
         }
 
@@ -93,8 +94,13 @@ public class Authorizer implements BiPredicate<Principal, URI> {
     }
 
     /** Returns whether principal can access all given resources */
-    private <T> boolean canAccess(List<T> resources, Principal principal, BiPredicate<T, Principal> predicate) {
+    private <T> boolean canAccessAll(List<T> resources, Principal principal, BiPredicate<T, Principal> predicate) {
         return !resources.isEmpty() && resources.stream().allMatch(resource -> predicate.test(resource, principal));
+    }
+
+    /** Returns whether principal can access any of the given resources */
+    private <T> boolean canAccessAny(List<T> resources, Principal principal, BiPredicate<T, Principal> predicate) {
+        return !resources.isEmpty() && resources.stream().anyMatch(resource -> predicate.test(resource, principal));
     }
 
     /** Trusted service name for this system */
@@ -153,7 +159,7 @@ public class Authorizer implements BiPredicate<Principal, URI> {
     /** Returns node types which can access given URI */
     private static List<NodeType> nodeTypesFor(URI uri) {
         if (isChildOf("/routing/v1/", uri.getPath())) {
-            return Collections.singletonList(NodeType.proxy);
+            return Arrays.asList(NodeType.proxy, NodeType.proxyhost);
         }
         return Collections.emptyList();
     }
