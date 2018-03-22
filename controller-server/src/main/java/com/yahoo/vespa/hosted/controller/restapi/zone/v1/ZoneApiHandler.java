@@ -21,7 +21,7 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
- * REST API that provides information about Hosted Vespa zones (version 1)
+ * REST API that provides information about zones in hosted Vespa (version 1)
  *
  * @author mpolden
  */
