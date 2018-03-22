@@ -5,6 +5,7 @@ import com.google.common.annotations.Beta;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInstanceUtil;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.Utf8;
@@ -34,7 +35,6 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
     private static final long serialVersionUID = 1L;
     public static final Logger log = Logger.getLogger(AbstractConfigProducer.class.getPackage().toString());
     private final String subId;
-    private final boolean hostedVespa;
     private String configId = null;
 
     private List<Service> descendantServices = new ArrayList<>();
@@ -45,11 +45,14 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
 
     private final FreezableMap<String, CHILD> childrenBySubId = new FreezableMap<>(LinkedHashMap.class);
 
-    private static boolean isHostedVespa(AbstractConfigProducer parent) {
-        return (parent != null)
-                && (parent.getRoot() != null)
-                && (parent.getRoot().getDeployState() != null)
-                && parent.getRoot().getDeployState().isHosted();
+    protected static boolean stateIsHosted(DeployState deployState) {
+        return (deployState != null) && deployState.isHosted();
+    }
+
+    protected static DeployState deployStateFrom(AbstractConfigProducer parent) {
+        if (parent == null) return null;
+        if (parent.getRoot() == null) return null;
+        return parent.getRoot().getDeployState();
     }
 
     /**
@@ -60,8 +63,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
      * @param subId   The fragment of the config id for the producer
      */
     public AbstractConfigProducer(AbstractConfigProducer parent, String subId) {
-        this(subId, isHostedVespa(parent));
-
+        this(subId);
         if (parent != null) {
             parent.addChild(this);
         }
@@ -69,9 +71,6 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
 
     protected final void setParent(AbstractConfigProducer parent) { this.parent = parent; }
     public final String getSubId() { return subId; }
-    
-    /** Whether this is hosted Vespa: NOTE: This cannot be trusted to be correct  :-/  */
-    public final boolean isHostedVespa() { return hostedVespa; }
 
     /**
      * Create an config producer with a configId only. Used e.g. to create root nodes, and producers
@@ -80,15 +79,10 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
      * @param subId The sub configId. Note that this can be prefixed when calling addChild with this producer as arg.
      */
     public AbstractConfigProducer(String subId) {
-        this(subId, false);
-    }
-
-    private AbstractConfigProducer(String subId, boolean hostedVespa) {
         if (subId.indexOf('/') != -1) {
             throw new IllegalArgumentException("A subId might not contain '/' : '" + subId + "'");
         }
         this.subId = subId;
-        this.hostedVespa = hostedVespa;
     }
 
     /**

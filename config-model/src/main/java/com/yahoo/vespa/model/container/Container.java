@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
@@ -55,6 +56,8 @@ public class Container extends AbstractService implements
 
     private final AbstractConfigProducer parent;
     private final String name;
+    private final DeployState deployState;
+
     private String clusterName = null;
     private boolean rpcServerEnabled = true;
     
@@ -93,6 +96,7 @@ public class Container extends AbstractService implements
         super(parent, name);
         this.name = name;
         this.parent = parent;
+        this.deployState = deployStateFrom(parent);
         this.portOverrides = Collections.unmodifiableList(new ArrayList<>(portOverrides));
         this.retired = retired;
         this.index = index;
@@ -307,6 +311,10 @@ public class Container extends AbstractService implements
         } else {
             builder.discriminator(name);
         }
+    }
+
+    private boolean isHostedVespa() {
+        return stateIsHosted(deployState);
     }
 
     /** Returns the jvm arguments this should start with */

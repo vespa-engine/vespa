@@ -39,6 +39,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    private final DeployState deployState;
     private final Monitoring monitoring;
     private final Metrics metrics;
     private final Map<String, MetricsConsumer> legacyMetricsConsumers;
@@ -72,6 +73,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
                  boolean multitenant,
                  FileDistributionConfigProducer fileDistributionConfigProducer) {
         super(parent, "admin");
+        this.deployState = deployStateFrom(parent);
         this.monitoring = monitoring;
         this.metrics = metrics;
         this.legacyMetricsConsumers = legacyMetricsConsumers;
@@ -136,6 +138,10 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
     public ZooKeepersConfigProvider getZooKeepersConfigProvider() {
         return zooKeepersConfigProvider;
+    }
+
+    public boolean isHostedVespa() {
+        return stateIsHosted(deployState);
     }
 
     public void getConfig(LogdConfig.Builder builder) {

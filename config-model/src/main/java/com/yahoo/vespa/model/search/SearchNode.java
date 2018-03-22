@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.searchlib.TranslogserverConfig;
@@ -49,6 +50,7 @@ public class SearchNode extends AbstractService implements
         TranslogserverConfig.Producer {
 
     private static final long serialVersionUID = 1L;
+    private final DeployState deployState;
     private final boolean flushOnShutdown;
     private NodeSpec nodeSpec;
     private int distributionKey;
@@ -103,6 +105,7 @@ public class SearchNode extends AbstractService implements
 
     private SearchNode(AbstractConfigProducer parent, String name, NodeSpec nodeSpec, String clusterName, boolean flushOnShutdown, Optional<Tuning> tuning) {
         super(parent, name);
+        this.deployState = deployStateFrom(parent);
         this.nodeSpec = nodeSpec;
         this.clusterName = clusterName;
         this.flushOnShutdown = flushOnShutdown;
@@ -231,6 +234,10 @@ public class SearchNode extends AbstractService implements
             FileDistributionConfigProvider configProducer = fileDistribution.getConfigProducer(getHost());
             configProducer.getConfig(builder);
         }
+    }
+
+    private boolean isHostedVespa() {
+        return stateIsHosted(deployState);
     }
 
     @Override
