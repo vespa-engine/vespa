@@ -5,33 +5,22 @@ import com.yahoo.application.container.handler.Request.Method;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.cert.X509v3CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import com.yahoo.vespa.athenz.tls.X509CertificateBuilder;
 
-import java.io.IOException;
-import java.math.BigInteger;
+import javax.security.auth.x500.X500Principal;
 import java.net.URI;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -95,24 +84,13 @@ public class FilterTester {
 
     /** Create a self signed certificate for commonName using given public/private key pair */
     private static X509Certificate certificateFor(String commonName, KeyPair keyPair) {
-        try {
-            ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSA")
-                    .build(keyPair.getPrivate());
-            X500Name x500Name = new X500Name("CN=" + commonName);
-            Instant now = Instant.now();
-            Date notBefore = Date.from(now);
-            Date notAfter = Date.from(now.plus(Duration.ofDays(30)));
-            X509v3CertificateBuilder certificateBuilder =
-                    new JcaX509v3CertificateBuilder(
-                            x500Name,
-                            BigInteger.valueOf(now.toEpochMilli()), notBefore, notAfter, x500Name, keyPair.getPublic()
-                    ).addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
-            return new JcaX509CertificateConverter()
-                    .setProvider(new BouncyCastleProvider())
-                    .getCertificate(certificateBuilder.build(contentSigner));
-        } catch (OperatorCreationException |IOException |CertificateException e) {
-            throw new RuntimeException(e);
-        }
+        Instant now = Instant.now();
+        X500Principal subject = new X500Principal("CN=" + commonName);
+        return X509CertificateBuilder
+                .fromKeypair(
+                        keyPair, subject, now, now.plus(Duration.ofDays(30)), SHA256_WITH_RSA, now.toEpochMilli())
+                .setBasicConstraints(true, true)
+                .build();
     }
 
     private static class Response {

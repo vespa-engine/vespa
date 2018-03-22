@@ -7,18 +7,13 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
+import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.restapi.v2.Authorizer;
 import com.yahoo.vespa.hosted.provision.restapi.v2.ErrorResponse;
-import org.bouncycastle.asn1.x500.RDN;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x500.style.BCStyle;
-import org.bouncycastle.asn1.x500.style.IETFUtils;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 
 import java.net.URI;
 import java.security.Principal;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -84,13 +79,7 @@ public class AuthorizationFilter implements SecurityRequestFilter {
 
     /** Read common name (CN) from certificate */
     private static String commonName(X509Certificate certificate) {
-        try {
-            X500Name subject = new JcaX509CertificateHolder(certificate).getSubject();
-            RDN cn = subject.getRDNs(BCStyle.CN)[0];
-            return IETFUtils.valueToString(cn.getFirst().getValue());
-        } catch (CertificateEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return X509CertificateUtils.getCommonNames(certificate).get(0);
     }
 
 }
