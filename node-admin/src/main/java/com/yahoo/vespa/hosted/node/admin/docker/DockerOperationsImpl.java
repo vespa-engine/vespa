@@ -374,6 +374,7 @@ public class DockerOperationsImpl implements DockerOperations {
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/zpe"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("tmp"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/container-data"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/vespa-hosted/routing"), true);
 
         return Collections.unmodifiableMap(directoriesToMount);
     }
