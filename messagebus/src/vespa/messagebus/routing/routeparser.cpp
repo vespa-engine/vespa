@@ -129,9 +129,9 @@ RouteParser::createRoute(stringref str)
                 if (hop.hasDirectives() &&
                     hop.getDirective(0)->getType() == IHopDirective::TYPE_ERROR)
                 {
-                    return Route().addHop(hop);
+                    return std::move(Route().addHop(std::move(hop)));
                 }
-                ret.addHop(hop);
+                ret.addHop(std::move(hop));
             }
             from = at + 1;
         } else if (str[at] == '[') {

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distributortestutil.h"
-#include <tests/common/dummystoragelink.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
