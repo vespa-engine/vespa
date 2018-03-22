@@ -30,8 +30,7 @@ RoutingTable::RoutingTable(const RoutingTableSpec &spec) :
 {
     for (uint32_t i = 0; i < spec.getNumHops(); ++i) {
         const HopSpec& hopSpec = spec.getHop(i);
-        _hops.insert(std::map<string, HopBlueprint>::value_type(hopSpec.getName(),
-                                                                     HopBlueprint(hopSpec)));
+        _hops.insert(std::map<string, HopBlueprint>::value_type(hopSpec.getName(), HopBlueprint(hopSpec)));
     }
     for (uint32_t i = 0; i < spec.getNumRoutes(); ++i) {
         Route route;
@@ -39,8 +38,7 @@ RoutingTable::RoutingTable(const RoutingTableSpec &spec) :
         for (uint32_t j = 0; j < routeSpec.getNumHops(); ++j) {
             route.addHop(Hop(routeSpec.getHop(j)));
         }
-        _routes.insert(std::map<string, Route>::value_type(routeSpec.getName(),
-                                                                route));
+        _routes.insert(std::map<string, Route>::value_type(routeSpec.getName(), std::move(route)));
     }
 }
 

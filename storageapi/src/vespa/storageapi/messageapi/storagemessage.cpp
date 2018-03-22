@@ -237,25 +237,21 @@ createAddress(const vespalib::stringref & cluster, const lib::NodeType& type, ui
     return os.str();
 }
 
-StorageMessageAddress::StorageMessageAddress(
-        const vespalib::stringref & cluster, const lib::NodeType& type,
-        uint16_t index, Protocol protocol)
-    : _retryEnabled(false),
+StorageMessageAddress::StorageMessageAddress(const vespalib::stringref & cluster, const lib::NodeType& type,
+                                             uint16_t index, Protocol protocol)
+    : _route(),
+      _retryEnabled(false),
       _protocol(protocol),
       _cluster(cluster),
       _type(&type),
       _index(index)
 {
-    mbus::IHopDirective::SP directive(new mbus::VerbatimDirective(
-                                              createAddress(cluster, type, index)));
-
     std::vector<mbus::IHopDirective::SP> directives;
-    directives.push_back(directive);
-    mbus::Hop hop(directives, false);
-    _route.addHop(hop);
+    directives.emplace_back(std::make_shared<mbus::VerbatimDirective>(createAddress(cluster, type, index)));
+    _route.addHop(mbus::Hop(std::move(directives), false));
 }
 
-StorageMessageAddress::~StorageMessageAddress() { }
+StorageMessageAddress::~StorageMessageAddress() = default;
 
 uint16_t
 StorageMessageAddress::getIndex() const
@@ -332,7 +328,7 @@ StorageMessageAddress::print(vespalib::asciistream & out) const
     }
 }
 
-TransportContext::~TransportContext() { }
+TransportContext::~TransportContext() = default;
 
 StorageMessage::Id StorageMessage::_lastMsgId = 1000;
 

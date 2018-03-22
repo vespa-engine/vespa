@@ -38,7 +38,7 @@ RoutingNode::RoutingNode(MessageBus &mbus, INetwork &net, Resender *resender,
       _shouldRetry(false)
 { }
 
-RoutingNode::RoutingNode(RoutingNode &parent, const Route &route)
+RoutingNode::RoutingNode(RoutingNode &parent, Route route)
     : _mbus(parent._mbus),
       _net(parent._net),
       _resender(parent._resender),
@@ -51,7 +51,7 @@ RoutingNode::RoutingNode(RoutingNode &parent, const Route &route)
       _pending(0),
       _msg(parent._msg),
       _reply(),
-      _route(route),
+      _route(std::move(route)),
       _policy(),
       _routingContext(),
       _serviceAddress(),
@@ -126,7 +126,7 @@ RoutingNode::prepareForRetry()
 void
 RoutingNode::notifyParent()
 {
-    if (_serviceAddress.get() != nullptr) {
+    if (_serviceAddress) {
         _net.freeServiceAddress(*this);
     }
     tryIgnoreResult();
@@ -141,9 +141,9 @@ RoutingNode::notifyParent()
 }
 
 void
-RoutingNode::addChild(const Route &route)
+RoutingNode::addChild(Route route)
 {
-    RoutingNode *child = new RoutingNode(*this, route);
+    RoutingNode *child = new RoutingNode(*this, std::move(route));
     if (shouldIgnoreResult()) {
         child->_route.getHop(0).setIgnoreResult(true);
     }
@@ -404,9 +404,8 @@ RoutingNode::lookupRoute()
     Hop &hop = _route.getHop(0);
     if (hop.getDirective(0)->getType() == IHopDirective::TYPE_ROUTE) {
         RouteDirective &dir = static_cast<RouteDirective&>(*hop.getDirective(0));
-        if (table.get() == nullptr || !table->hasRoute(dir.getName())) {
-            setError(ErrorCode::ILLEGAL_ROUTE,
-                     make_string("Route '%s' does not exist.", dir.getName().c_str()));
+        if (!table || !table->hasRoute(dir.getName())) {
+            setError(ErrorCode::ILLEGAL_ROUTE, make_string("Route '%s' does not exist.", dir.getName().c_str()));
             return false;
         }
         insertRoute(*table->getRoute(dir.getName()));
@@ -415,7 +414,7 @@ RoutingNode::lookupRoute()
                                  dir.getName().c_str(), _route.toString().c_str()));
         return true;
     }
-    if (table.get() != nullptr) {
+    if (table) {
         string name = hop.getServiceName();
         if (table->hasRoute(name)) {
             insertRoute(*table->getRoute(name));
@@ -428,16 +427,15 @@ RoutingNode::lookupRoute()
 }
 
 void
-RoutingNode::insertRoute(const Route &ins)
+RoutingNode::insertRoute(Route route)
 {
-    Route route = ins;
     if (shouldIgnoreResult()) {
         route.getHop(0).setIgnoreResult(true);        
     }
     for (uint32_t i = 1; i < _route.getNumHops(); ++i) {
-        route.addHop(_route.getHop(i));
+        route.addHop(std::move(_route.getHop(i)));
     }
-    _route = route;
+    _route = std::move(route);
 }
 
 bool

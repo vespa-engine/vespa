@@ -18,9 +18,8 @@ Hop::Hop(const string &selector) :
     _ignoreResult = hop._ignoreResult;
 }
 
-Hop::Hop(const std::vector<IHopDirective::SP> &selector,
-         bool ignoreResult) :
-    _selector(selector),
+Hop::Hop(std::vector<IHopDirective::SP> selector, bool ignoreResult) :
+    _selector(std::move(selector)),
     _ignoreResult(ignoreResult)
 { }
 
