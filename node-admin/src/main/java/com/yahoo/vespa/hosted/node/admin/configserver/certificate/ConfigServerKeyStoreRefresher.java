@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.certificate;
 
 import com.yahoo.log.LogLevel;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.athenz.tls.KeyStoreBuilder;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.util.KeyStoreOptions;
@@ -51,9 +50,9 @@ public class ConfigServerKeyStoreRefresher {
     private final String hostname;
 
     public ConfigServerKeyStoreRefresher(
-            KeyStoreOptions keyStoreOptions, Runnable keyStoreUpdatedCallback, ConfigServerApi configServerApi) {
+            KeyStoreOptions keyStoreOptions, Runnable keyStoreUpdatedCallback, ConfigServerApi configServerApi, String hostname) {
         this(keyStoreOptions, keyStoreUpdatedCallback, configServerApi, Executors.newScheduledThreadPool(1),
-                Clock.systemUTC(), HostName.getLocalhost());
+                Clock.systemUTC(), hostname);
     }
 
     ConfigServerKeyStoreRefresher(KeyStoreOptions keyStoreOptions,

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.component;
 
 import com.yahoo.concurrent.classlock.ClassLocking;
-import com.yahoo.net.HostName;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
@@ -87,7 +86,7 @@ public class DockerAdminComponent implements AdminComponent {
         }
 
         Clock clock = Clock.systemUTC();
-        String dockerHostHostName = HostName.getLocalhost();
+        String dockerHostHostName = environment.get().getParentHostHostname();
         ProcessExecuter processExecuter = new ProcessExecuter();
 
         docker.start();
