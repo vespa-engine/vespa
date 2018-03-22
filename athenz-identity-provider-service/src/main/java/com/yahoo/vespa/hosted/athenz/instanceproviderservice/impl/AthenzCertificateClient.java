@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 
-import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.athenz.zts.InstanceRefreshRequest;
 import com.yahoo.athenz.zts.ZTSClient;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
+import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 
 import javax.net.ssl.SSLContext;
@@ -34,7 +34,7 @@ public class AthenzCertificateClient {
         req.setKeyId(Integer.toString(zoneConfig.secretVersion()));
         String pemEncoded = ztsClient.postInstanceRefreshRequest(zoneConfig.domain(), zoneConfig.serviceName(), req)
                 .getCertificate();
-        return Crypto.loadX509Certificate(pemEncoded);
+        return X509CertificateUtils.fromPem(pemEncoded);
     }
 
 }

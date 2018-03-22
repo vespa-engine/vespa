@@ -8,32 +8,18 @@ import com.yahoo.jdisc.http.ssl.SslTrustStoreContext;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.tls.KeyStoreBuilder;
 import com.yahoo.vespa.athenz.tls.KeyStoreType;
+import com.yahoo.vespa.athenz.tls.SignatureAlgorithm;
+import com.yahoo.vespa.athenz.tls.X509CertificateBuilder;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.cert.X509v3CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.File;
-import java.io.IOException;
-import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.Provider;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
 import java.util.logging.Logger;
 
 /**
@@ -44,7 +30,6 @@ public class AthenzSslTrustStoreConfigurator implements SslTrustStoreConfigurato
     private static final Logger log = Logger.getLogger(AthenzSslTrustStoreConfigurator.class.getName());
     private static final String CERTIFICATE_ALIAS = "cfgselfsigned";
 
-    private static final Provider provider = new BouncyCastleProvider();
     private final KeyStore trustStore;
 
     @Inject
@@ -89,29 +74,20 @@ public class AthenzSslTrustStoreConfigurator implements SslTrustStoreConfigurato
         return keyProvider.getKeyPair(zoneConfig.secretVersion());
     }
 
-    private static X509Certificate createSelfSignedCertificate(KeyPair keyPair, ConfigserverConfig config)
-            throws IOException, CertificateException, OperatorCreationException {
-        ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSA").build(keyPair.getPrivate());
-        X500Name x500Name = new X500Name("CN="+ config.loadBalancerAddress());
+    private static X509Certificate createSelfSignedCertificate(KeyPair keyPair, ConfigserverConfig config)  {
+        X500Principal subject = new X500Principal("CN="+ config.loadBalancerAddress());
         Instant now = Instant.now();
-        Date notBefore = Date.from(now);
-        Date notAfter = Date.from(now.plus(Duration.ofDays(30)));
-
-        GeneralNames generalNames = new GeneralNames(
-                config.zookeeperserver().stream()
-                        .map(server -> new GeneralName(GeneralName.dNSName, server.hostname()))
-                        .toArray(GeneralName[]::new));
-
-        X509v3CertificateBuilder certificateBuilder =
-                new JcaX509v3CertificateBuilder(
-                        x500Name, BigInteger.valueOf(now.toEpochMilli()), notBefore, notAfter, x500Name, keyPair.getPublic()
-                )
-                        .addExtension(Extension.basicConstraints, true, new BasicConstraints(true))
-                        .addExtension(Extension.subjectAlternativeName, false, generalNames);
-
-        return new JcaX509CertificateConverter()
-                .setProvider(provider)
-                .getCertificate(certificateBuilder.build(contentSigner));
+        X509CertificateBuilder builder = X509CertificateBuilder
+                .fromKeypair(
+                        keyPair,
+                        subject,
+                        now,
+                        now.plus(Duration.ofDays(30)),
+                        SignatureAlgorithm.SHA256_WITH_RSA,
+                        now.toEpochMilli())
+                .setBasicConstraints(true, true);
+        config.zookeeperserver().forEach(server -> builder.addSubjectAlternativeName(server.hostname()));
+        return builder.build();
     }
 
 }

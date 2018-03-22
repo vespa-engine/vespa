@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
@@ -41,7 +42,7 @@ public class InstanceIdentity {
     public static class X509CertificateDeserializer extends JsonDeserializer<X509Certificate> {
         @Override
         public X509Certificate deserialize(JsonParser parser, DeserializationContext context) throws IOException {
-            return CryptoUtils.parseCertificate(parser.getValueAsString());
+            return X509CertificateUtils.fromPem(parser.getValueAsString());
         }
     }
 
