@@ -167,7 +167,6 @@ public:
         std::vector<std::shared_ptr<api::StorageReply>> abort(const AbortBucketOperationsCommand& cmd);
         void waitInactive(const AbortBucketOperationsCommand& cmd) const;
         FileStorHandler::LockedMessage getNextMessage(uint32_t stripeId, uint32_t timeout) {
-            assert(_nextStripeId >= _stripes.size());
             return _stripes[stripeId].getNextMessage(timeout, *this);
         }
         FileStorHandler::LockedMessage & getNextMessage(uint32_t stripeId, FileStorHandler::LockedMessage & lck) {
