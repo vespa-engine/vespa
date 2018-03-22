@@ -36,6 +36,7 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  * @author mpolden
+ * @author jvenstad
  */
 public class DeploymentTrigger {
 
@@ -99,6 +100,7 @@ public class DeploymentTrigger {
             }
             else if (report.jobType().isProduction() && deploymentComplete(application)) {
                 // change completed
+                // TODO jvenstad: Check for and remove individual parts of Change.
                 application = application.withChange(Change.empty());
             }
 
@@ -242,12 +244,14 @@ public class DeploymentTrigger {
      *
      * @param applicationId the application to trigger
      */
-    public void cancelChange(ApplicationId applicationId) {
+    public void cancelChange(ApplicationId applicationId, boolean keepApplicationChange) {
         applications().lockOrThrow(applicationId, application -> {
-            deploymentQueue.removeJobs(application.id());
             applications().store(application.withChange(application.change().application()
-                                                                .map(Change::of)
-                                                                .orElse(Change.empty())));
+                                                                   .map(Change::of)
+                                                                   .filter(change -> keepApplicationChange)
+                                                                   .orElse(Change.empty())));
+            if ( ! applications().require(applicationId).change().isPresent())
+                deploymentQueue.removeJobs(application.id());
         });
     }
 
@@ -365,8 +369,11 @@ public class DeploymentTrigger {
     }
 
     /**
-     * Returns whether the currently deployed application in the zone for the given production job already
-     * has the current changes, in which case we should avoid an unsupported downgrade, or an unnecessary redeploy.
+     * Returns whether the given application should skip deployment of its current change to the given production job zone.
+     *
+     * If the currently deployed application has a newer platform or application version than the application's
+     * current change, the method returns {@code true}, to avoid a downgrade.
+     * Otherwise, it returns whether the current change is redundant, i.e., all its components are already deployed.
      */
     private boolean changeDeployed(Application application, JobType job) {
         if ( ! job.isProduction())
@@ -376,13 +383,18 @@ public class DeploymentTrigger {
         if (deployment == null)
             return false;
 
-        if (application.change().platform().filter(version -> version.isAfter(deployment.version())).isPresent())
-            return false;
+        int applicationComparison = application.change().application()
+                                               .map(version -> version.compareTo(deployment.applicationVersion()))
+                                               .orElse(0);
 
-        if (application.change().application().filter(version -> version.compareTo(deployment.applicationVersion()) > 0).isPresent())
-            return false;
+        int platformComparion = application.change().platform()
+                                           .map(version -> version.compareTo(deployment.version()))
+                                           .orElse(0);
 
-        return true;
+        if (applicationComparison == -1 || platformComparion == -1)
+            return true; // Avoid downgrades!
+
+        return applicationComparison == 0 && platformComparion == 0;
     }
 
     private boolean acceptNewApplicationVersionNow(LockedApplication application) {

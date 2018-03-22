@@ -447,7 +447,7 @@ public class DeploymentTriggerTest {
         assertEquals(appVersion1, app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
 
         // Verify the application change is not removed when change is cancelled.
-        tester.deploymentTrigger().cancelChange(application.id());
+        tester.deploymentTrigger().cancelChange(application.id(), true);
         assertEquals(Change.of(appVersion1), app.get().change());
 
         // Now cancel the change -- this should not normally happen.

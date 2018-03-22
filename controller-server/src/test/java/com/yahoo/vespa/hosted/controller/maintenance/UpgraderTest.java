@@ -438,10 +438,10 @@ public class UpgraderTest {
 
         // We "manually" cancel upgrades to V1 so that we can use the applications to make V2 fail instead
         // But we keep one (default4) to avoid V1 being garbage collected
-        tester.deploymentTrigger().cancelChange(default0.id());
-        tester.deploymentTrigger().cancelChange(default1.id());
-        tester.deploymentTrigger().cancelChange(default2.id());
-        tester.deploymentTrigger().cancelChange(default3.id());
+        tester.deploymentTrigger().cancelChange(default0.id(), false);
+        tester.deploymentTrigger().cancelChange(default1.id(), false);
+        tester.deploymentTrigger().cancelChange(default2.id(), false);
+        tester.deploymentTrigger().cancelChange(default3.id(), false);
         tester.clock().advance(Duration.ofHours(13)); // Currently we don't cancel running jobs, so this is necessary to allow a new triggering below
 
         // Canaries upgrade and raise confidence of V2
