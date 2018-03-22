@@ -42,6 +42,7 @@ public:
     }
 
     void setClusterState(lib::ClusterState::CSP c);
+    void setClusterStateBundle(std::shared_ptr<const lib::ClusterStateBundle> clusterStateBundle);
 
     size_t explicit_node_state_reply_send_invocations() const noexcept {
         return _explicit_node_state_reply_send_invocations;

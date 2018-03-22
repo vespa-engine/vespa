@@ -9,6 +9,7 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/config/common/exceptions.h>
@@ -38,6 +39,7 @@ struct BouncerTest : public CppUnit::TestFixture {
     void readOnlyOperationsAreNotRejected();
     void internalOperationsAreNotRejected();
     void outOfBoundsConfigValuesThrowException();
+    void abortOnlyOnDefaultBucketSpace();
 
     CPPUNIT_TEST_SUITE(BouncerTest);
     CPPUNIT_TEST(testFutureTimestamp);
@@ -50,6 +52,7 @@ struct BouncerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(readOnlyOperationsAreNotRejected);
     CPPUNIT_TEST(internalOperationsAreNotRejected);
     CPPUNIT_TEST(outOfBoundsConfigValuesThrowException);
+    CPPUNIT_TEST(abortOnlyOnDefaultBucketSpace);
     CPPUNIT_TEST_SUITE_END();
 
     using Priority = api::StorageMessage::Priority;
@@ -64,7 +67,12 @@ struct BouncerTest : public CppUnit::TestFixture {
             api::Timestamp timestamp,
             Priority priority = 0);
 
+    std::shared_ptr<api::StorageCommand> createDummyFeedMessage(
+            api::Timestamp timestamp,
+            document::BucketSpace bucketSpace);
+
     void assertMessageBouncedWithRejection();
+    void assertMessageBouncedWithAbort();
     void assertMessageNotBounced();
 };
 
@@ -117,6 +125,18 @@ BouncerTest::createDummyFeedMessage(api::Timestamp timestamp,
             document::DocumentId("doc:foo:bar"),
             timestamp);
     cmd->setPriority(priority);
+    return cmd;
+}
+
+std::shared_ptr<api::StorageCommand>
+BouncerTest::createDummyFeedMessage(api::Timestamp timestamp,
+                                    document::BucketSpace bucketSpace)
+{
+    auto cmd = std::make_shared<api::RemoveCommand>(
+            document::Bucket(bucketSpace, document::BucketId(0)),
+            document::DocumentId("doc:foo:bar"),
+            timestamp);
+    cmd->setPriority(Priority(0));
     return cmd;
 }
 
@@ -183,6 +203,17 @@ BouncerTest::assertMessageBouncedWithRejection()
     CPPUNIT_ASSERT_EQUAL(size_t(1), _upper->getNumReplies());
     CPPUNIT_ASSERT_EQUAL(size_t(0), _upper->getNumCommands());
     CPPUNIT_ASSERT_EQUAL(api::ReturnCode::REJECTED,
+            static_cast<api::RemoveReply&>(*_upper->getReply(0)).
+            getResult().getResult());
+    CPPUNIT_ASSERT_EQUAL(size_t(0), _lower->getNumCommands());
+}
+
+void
+BouncerTest::assertMessageBouncedWithAbort()
+{
+    CPPUNIT_ASSERT_EQUAL(size_t(1), _upper->getNumReplies());
+    CPPUNIT_ASSERT_EQUAL(size_t(0), _upper->getNumCommands());
+    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::ABORTED,
             static_cast<api::RemoveReply&>(*_upper->getReply(0)).
             getResult().getResult());
     CPPUNIT_ASSERT_EQUAL(size_t(0), _lower->getNumCommands());
@@ -281,6 +312,33 @@ BouncerTest::outOfBoundsConfigValuesThrowException()
         configureRejectionThreshold(-2);
         CPPUNIT_FAIL("Lower bound violation not caught");
     } catch (config::InvalidConfigException) {}
+}
+
+
+namespace {
+
+std::shared_ptr<const lib::ClusterStateBundle>
+makeClusterStateBundle(const vespalib::string &baselineState, const std::map<document::BucketSpace, vespalib::string> &derivedStates)
+{
+    lib::ClusterStateBundle::BucketSpaceStateMapping derivedBucketSpaceStates;
+    for (const auto &entry : derivedStates) {
+        derivedBucketSpaceStates[entry.first] = std::make_shared<const lib::ClusterState>(entry.second);
+    }
+    return std::make_shared<const lib::ClusterStateBundle>(lib::ClusterState(baselineState), std::move(derivedBucketSpaceStates));
+}
+
+}
+
+void
+BouncerTest::abortOnlyOnDefaultBucketSpace()
+{
+    auto state = makeClusterStateBundle("distributor:3 storage:3", {{ document::FixedBucketSpaces::default_space(), "distributor:3 storage:3 .2.s:d" }});
+    _node->getNodeStateUpdater().setClusterStateBundle(state);
+    _upper->sendDown(createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::default_space()));
+    assertMessageBouncedWithAbort();
+    _upper->reset();
+    _upper->sendDown(createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::global_space()));
+    assertMessageNotBounced();
 }
 
 } // storage
