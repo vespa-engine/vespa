@@ -5,11 +5,8 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/log/log.h>
 #include <vespa/storage/distributor/activecopy.h>
-#include <vespa/storage/distributor/distributorcomponent.h>
-#include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/operationtargetresolverimpl.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
-#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>

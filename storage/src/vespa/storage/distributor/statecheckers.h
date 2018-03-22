@@ -3,9 +3,7 @@
 
 #include "idealstatemanager.h"
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 class SynchronizeAndMoveStateChecker : public StateChecker
 {
@@ -114,7 +112,5 @@ public:
     Result check(Context& c) override;
     const char* getName() const override { return "GarbageCollection"; }
 };
-
-}
 
 }

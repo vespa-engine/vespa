@@ -4,25 +4,27 @@
 
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 
-namespace storage {
-namespace lib {
-    class Distribution;
-}
-namespace distributor {
+namespace storage::lib { class Distribution; }
+namespace storage::distributor {
 
 class ActiveList;
 
 struct ActiveCopy {
+public:
+    ActiveCopy() : nodeIndex(-1), _ideal(-1), _ready(false), _trusted(false), _active(false) { }
+    ActiveCopy(uint16_t node, BucketDatabase::Entry& e, const std::vector<uint16_t>& idealState);
+
+    vespalib::string getReason() const;
+    friend std::ostream& operator<<(std::ostream& out, const ActiveCopy& e);
+
+    static ActiveList calculate(const std::vector<uint16_t>& idealState,
+                                const lib::Distribution&, BucketDatabase::Entry&);
+
     uint16_t nodeIndex;
-    vespalib::string reason;
-
-    ActiveCopy() : nodeIndex(0xffff), reason(0) {}
-    ActiveCopy(uint16_t index, vespalib::stringref r)
-        : nodeIndex(index), reason(r) {}
-
-    static ActiveList calculate(
-            const std::vector<uint16_t>& idealState,
-            const lib::Distribution&, BucketDatabase::Entry&);
+    uint16_t _ideal;
+    bool     _ready;
+    bool     _trusted;
+    bool     _active;
 };
 
 class ActiveList : public vespalib::Printable {
@@ -40,5 +42,4 @@ public:
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
 };
 
-} // distributor
-} // storage
+}
