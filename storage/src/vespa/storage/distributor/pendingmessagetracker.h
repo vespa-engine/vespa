@@ -22,8 +22,7 @@
 #include <chrono>
 #include <mutex>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class PendingMessageTracker : public framework::HtmlStatusReporter
 {
@@ -106,15 +105,13 @@ private:
         uint64_t msgId;
         document::Bucket bucket;
         uint16_t nodeIdx;
-        vespalib::string msgText;
 
         MessageEntry(TimePoint timeStamp,
                      uint32_t msgType,
                      uint32_t priority,
                      uint64_t msgId,
                      document::Bucket bucket,
-                     uint16_t nodeIdx,
-                     const vespalib::string & msgText);
+                     uint16_t nodeIdx);
     };
 
     struct MessageIdKey
@@ -194,5 +191,4 @@ private:
     TimePoint currentTime() const;
 };
 
-}
 }
