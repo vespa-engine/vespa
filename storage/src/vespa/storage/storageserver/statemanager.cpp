@@ -2,25 +2,29 @@
 
 #include "statemanager.h"
 #include <vespa/defaults.h>
-#include <fstream>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
-#include <vespa/storage/config/config-stor-server.h>
-#include <vespa/storageapi/messageapi/storagemessage.h>
-#include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
+#include <vespa/storage/config/config-stor-server.h>
+#include <vespa/storage/storageserver/storagemetricsset.h>
+#include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
+#include <fstream>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".state.manager");
 
 namespace storage {
+
+using lib::ClusterStateBundle;
 
 StateManager::StateManager(StorageComponentRegister& compReg,
                            metrics::MetricManager& metricManager,
@@ -352,6 +356,83 @@ StateManager::enableNextClusterState()
     _systemStateHistory.emplace_back(_component.getClock().getTimeInMillis(), _systemState);
 }
 
+namespace {
+
+using BucketSpaceToTransitionString = std::unordered_map<document::BucketSpace,
+                                                         vespalib::string,
+                                                         document::BucketSpace::hash>;
+
+void
+considerInsertTransitionString(const document::BucketSpace &bucketSpace,
+                               const lib::State &lhsDerived,
+                               const lib::State &rhsDerived,
+                               BucketSpaceToTransitionString &transitions)
+{
+    if (transitions.find(bucketSpace) == transitions.end()) {
+        transitions[bucketSpace] = vespalib::make_string("%s space: '%s' to '%s'",
+                                                         document::FixedBucketSpaces::to_string(bucketSpace).c_str(),
+                                                         lhsDerived.getName().c_str(),
+                                                         rhsDerived.getName().c_str());
+    }
+}
+
+bool
+considerDerivedTransition(const lib::State &currentBaseline,
+                          const lib::State &newBaseline,
+                          const lib::State &currentDerived,
+                          const lib::State &newDerived)
+{
+    return ((currentDerived != newDerived) &&
+            ((currentDerived != currentBaseline) || (newDerived != newBaseline)));
+}
+
+BucketSpaceToTransitionString
+calculateDerivedClusterStateTransitions(const ClusterStateBundle &currentState,
+                                        const ClusterStateBundle &newState,
+                                        const lib::Node node)
+{
+    BucketSpaceToTransitionString result;
+    const lib::State &currentBaseline = currentState.getBaselineClusterState()->getNodeState(node).getState();
+    const lib::State &newBaseline = newState.getBaselineClusterState()->getNodeState(node).getState();
+    for (const auto &entry : currentState.getDerivedClusterStates()) {
+        const lib::State &currentDerived = entry.second->getNodeState(node).getState();
+        const lib::State &newDerived = newState.getDerivedClusterState(entry.first)->getNodeState(node).getState();
+        if (considerDerivedTransition(currentBaseline, newBaseline, currentDerived, newDerived)) {
+            considerInsertTransitionString(entry.first, currentDerived, newDerived, result);
+        }
+    }
+    for (const auto &entry : newState.getDerivedClusterStates()) {
+        const lib::State &newDerived = entry.second->getNodeState(node).getState();
+        const lib::State &currentDerived = currentState.getDerivedClusterState(entry.first)->getNodeState(node).getState();
+        if (considerDerivedTransition(currentBaseline, newBaseline, currentDerived, newDerived)) {
+            considerInsertTransitionString(entry.first, currentDerived, newDerived, result);
+        }
+    }
+    return result;
+}
+
+vespalib::string
+transitionsToString(const BucketSpaceToTransitionString &transitions)
+{
+    if (transitions.empty()) {
+        return "";
+    }
+    vespalib::asciistream stream;
+    stream << "[";
+    bool first = true;
+    for (const auto &entry : transitions) {
+        if (!first) {
+            stream << ", ";
+        }
+        stream << entry.second;
+        first = false;
+    }
+    stream << "] ";
+    return stream.str();
+}
+
+}
+
 void
 StateManager::logNodeClusterStateTransition(
         const ClusterStateBundle& currentState,
@@ -360,11 +441,13 @@ StateManager::logNodeClusterStateTransition(
     lib::Node self(thisNode());
     const lib::State& before(currentState.getBaselineClusterState()->getNodeState(self).getState());
     const lib::State& after(newState.getBaselineClusterState()->getNodeState(self).getState());
-    if (before != after) {
-        LOG(info, "Transitioning from state '%s' to '%s' "
+    auto derivedTransitions = calculateDerivedClusterStateTransitions(currentState, newState, self);
+    if ((before != after) || !derivedTransitions.empty()) {
+        LOG(info, "Transitioning from baseline state '%s' to '%s' %s"
                   "(cluster state version %u)",
             before.getName().c_str(),
             after.getName().c_str(),
+            transitionsToString(derivedTransitions).c_str(),
             newState.getVersion());
     }
 }
