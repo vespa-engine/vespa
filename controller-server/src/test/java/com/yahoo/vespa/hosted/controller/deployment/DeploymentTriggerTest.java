@@ -451,9 +451,8 @@ public class DeploymentTriggerTest {
         assertEquals(Change.of(appVersion1), app.get().change());
 
         // Now cancel the change -- this should not normally happen.
-        tester.applications().lockOrThrow(application.id(), lockedApplication -> {
-            tester.applications().store(lockedApplication.withChange(Change.empty()));
-        });
+        tester.deploymentTrigger().cancelChange(application.id(), false);
+        assertEquals(Change.empty(), app.get().change());
 
         // A new version is released, which should now deploy the currently deployed application version to avoid downgrades.
         Version version1 = new Version("6.2");
