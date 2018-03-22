@@ -1,20 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributorcomponent.h"
-#include <vespa/storage/common/bucketoperationlogger.h>
-#include <vespa/storageapi/messageapi/storagereply.h>
-#include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
+#include <vespa/storage/common/bucketoperationlogger.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributorstoragelink");
 
 using document::BucketSpace;
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 DistributorComponent::DistributorComponent(
         DistributorInterface& distributor,
@@ -353,8 +350,6 @@ DistributorComponent::createAppropriateBucket(const document::Bucket &bucket)
 bool
 DistributorComponent::initializing() const {
     return _distributor.initializing();
-}
-
 }
 
 }

@@ -11,8 +11,7 @@ LOG_SETUP(".distributor.distributor_bucket_space_repo");
 
 using document::BucketSpace;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 DistributorBucketSpaceRepo::DistributorBucketSpaceRepo()
     : _map()
@@ -45,5 +44,4 @@ DistributorBucketSpaceRepo::get(BucketSpace bucketSpace) const
     return *itr->second;
 }
 
-}
 }

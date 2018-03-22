@@ -8,7 +8,6 @@
 #include <vespa/storage/distributor/operations/idealstate/setbucketstateoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
-#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
@@ -17,8 +16,7 @@ LOG_SETUP(".distributor.operation.checkers");
 
 using document::BucketSpace;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 bool
 SplitBucketStateChecker::validForSplit(StateChecker::Context& c)
@@ -1058,7 +1056,7 @@ BucketStateStateChecker::check(StateChecker::Context& c)
         }
         operationNodes.push_back(activeNodes[i].nodeIndex);
         reason << "[Setting node " << activeNodes[i].nodeIndex << " as active: "
-               << activeNodes[i].reason << "]";
+               << activeNodes[i].getReason() << "]";
     }
 
     // Deactivate all copies that are currently marked as active.
@@ -1148,5 +1146,4 @@ GarbageCollectionStateChecker::check(Context& c)
     }
 }
 
-} // distributor
-} // storage
+}
