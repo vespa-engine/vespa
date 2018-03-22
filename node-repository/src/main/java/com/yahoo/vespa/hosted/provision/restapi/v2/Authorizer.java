@@ -13,6 +13,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -153,7 +154,7 @@ public class Authorizer implements BiPredicate<Principal, URI> {
     /** Returns node types which can access given URI */
     private static List<NodeType> nodeTypesFor(URI uri) {
         if (isChildOf("/routing/v1/", uri.getPath())) {
-            return Collections.singletonList(NodeType.proxy);
+            return Arrays.asList(NodeType.proxy, NodeType.proxyhost);
         }
         return Collections.emptyList();
     }
