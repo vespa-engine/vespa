@@ -466,7 +466,7 @@ FileStorHandlerImpl::takeDiskBucketLockOwnership(
         const document::Bucket &bucket,
         const api::StorageMessage& msg)
 {
-    return std::make_unique<BucketLock>(guard, disk, bucket, msg.getPriority(), msg.getSummary());
+    return std::make_unique<BucketLock>(guard, disk, bucket, msg.getPriority());
 }
 
 std::unique_ptr<api::StorageReply>
@@ -568,7 +568,7 @@ FileStorHandlerImpl::lock(const document::Bucket &bucket, uint16_t disk)
         lockGuard.wait(100);
     }
 
-    auto locker = std::make_shared<BucketLock>(lockGuard, t, bucket, 255, "External lock");
+    auto locker = std::make_shared<BucketLock>(lockGuard, t, bucket, 255);
 
     lockGuard.broadcast();
     return locker;
@@ -1157,12 +1157,8 @@ FileStorHandlerImpl::getQueueSize(uint16_t disk) const
     return t.getQueueSize();
 }
 
-FileStorHandlerImpl::BucketLock::BucketLock(
-        const vespalib::MonitorGuard & guard,
-        Disk& disk,
-        const document::Bucket &bucket,
-        uint8_t priority,
-        const vespalib::stringref & statusString)
+FileStorHandlerImpl::BucketLock::BucketLock(const vespalib::MonitorGuard & guard, Disk& disk,
+                                            const document::Bucket &bucket, uint8_t priority)
     : _disk(disk),
       _bucket(bucket)
 {
@@ -1170,16 +1166,11 @@ FileStorHandlerImpl::BucketLock::BucketLock(
     if (_bucket.getBucketId().getRawId() != 0) {
         // Lock the bucket and wait until it is not the current operation for
         // the disk itself.
-        _disk.lockedBuckets.insert(
-                std::make_pair(_bucket, Disk::LockEntry(priority, statusString)));
-        LOG(debug,
-            "Locked bucket %s with priority %u",
-            bucket.getBucketId().toString().c_str(),
-            priority);
+        _disk.lockedBuckets.insert(std::make_pair(_bucket, Disk::LockEntry(priority)));
+        LOG(debug, "Locked bucket %s with priority %u", bucket.getBucketId().toString().c_str(), priority);
 
-        LOG_BUCKET_OPERATION_SET_LOCK_STATE(
-                _bucket.getBucketId(), "acquired filestor lock", false,
-                debug::BucketOperationLogger::State::BUCKET_LOCKED);
+        LOG_BUCKET_OPERATION_SET_LOCK_STATE(_bucket.getBucketId(), "acquired filestor lock", false,
+                                            debug::BucketOperationLogger::State::BUCKET_LOCKED);
     }
 }
 
@@ -1218,8 +1209,7 @@ FileStorHandlerImpl::dumpQueue(uint16_t disk) const
 }
 
 void
-FileStorHandlerImpl::getStatus(std::ostream& out,
-                               const framework::HttpUrlPath& path) const
+FileStorHandlerImpl::getStatus(std::ostream& out, const framework::HttpUrlPath& path) const
 {
     bool verbose = path.hasAttribute("verbose");
     out << "<h1>Filestor handler</h1>\n";
@@ -1236,11 +1226,9 @@ FileStorHandlerImpl::getStatus(std::ostream& out,
         }
         out << "<h4>Active operations</h4>\n";
         for (const auto& lockedBucket : t.lockedBuckets) {
-            out << lockedBucket.second.statusString
-                << " (" << lockedBucket.first.getBucketId()
+            out << " (" << lockedBucket.first.getBucketId()
                 << ") Running for "
-                << (_component.getClock().getTimeInSeconds().getTime()
-                    - lockedBucket.second.timestamp)
+                << (_component.getClock().getTimeInSeconds().getTime() - lockedBucket.second.timestamp)
                 << " secs<br/>\n";
         }
         if (!verbose) continue;
@@ -1248,10 +1236,7 @@ FileStorHandlerImpl::getStatus(std::ostream& out,
 
         out << "<ul>\n";
         const PriorityIdx& idx = boost::multi_index::get<1>(t.queue);
-        for (PriorityIdx::const_iterator it = idx.begin();
-             it != idx.end();
-             it++)
-        {
+        for (PriorityIdx::const_iterator it = idx.begin(); it != idx.end(); it++) {
             out << "<li>" << it->_command->toString() << " (priority: "
                 << (int)it->_command->getPriority() << ")</li>\n";
         }
