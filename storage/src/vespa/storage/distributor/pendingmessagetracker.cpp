@@ -20,27 +20,17 @@ PendingMessageTracker::PendingMessageTracker(framework::ComponentRegister& cr)
     _component.registerStatusPage(*this);
 }
 
-PendingMessageTracker::~PendingMessageTracker()
-{
-}
+PendingMessageTracker::~PendingMessageTracker() = default;
 
-PendingMessageTracker::MessageEntry::MessageEntry(
-        TimePoint timeStamp_,
-        uint32_t msgType_,
-        uint32_t priority_,
-        uint64_t msgId_,
-        document::Bucket bucket_,
-        uint16_t nodeIdx_,
-        const vespalib::string & msgText_)
+PendingMessageTracker::MessageEntry::MessageEntry(TimePoint timeStamp_, uint32_t msgType_, uint32_t priority_,
+                                                  uint64_t msgId_, document::Bucket bucket_, uint16_t nodeIdx_)
     : timeStamp(timeStamp_),
       msgType(msgType_),
       priority(priority_),
       msgId(msgId_),
       bucket(bucket_),
-      nodeIdx(nodeIdx_),
-      msgText(msgText_)
-{
-}
+      nodeIdx(nodeIdx_)
+{ }
 
 PendingMessageTracker::TimePoint
 PendingMessageTracker::currentTime() const
@@ -88,19 +78,13 @@ PendingMessageTracker::clearMessagesForNode(uint16_t node)
 }
 
 void
-PendingMessageTracker::insert(
-        const std::shared_ptr<api::StorageMessage>& msg)
+PendingMessageTracker::insert(const std::shared_ptr<api::StorageMessage>& msg)
 {
     std::lock_guard<std::mutex> guard(_lock);
     if (msg->getAddress()) {
         _messages.insert(
-                MessageEntry(currentTime(),
-                             msg->getType().getId(),
-                             msg->getPriority(),
-                             msg->getMsgId(),
-                             msg->getBucket(),
-                             msg->getAddress()->getIndex(),
-                             msg->getSummary()));
+                MessageEntry(currentTime(), msg->getType().getId(), msg->getPriority(), msg->getMsgId(),
+                             msg->getBucket(), msg->getAddress()->getIndex()));
 
         _nodeInfo.incPending(msg->getAddress()->getIndex());
 
@@ -210,8 +194,7 @@ PendingMessageTracker::getStatusPerBucket(std::ostream& out) const
            << msg.nodeIdx << "</i>: "
            << "<b>"
            << framework::MilliSecTime(msg.timeStamp.count()).toString()
-           << "</b> "
-           << msg.msgText << "</li>\n";
+           << "</b> </li>\n";
 
         perBucketMsgs[msg.bucket].emplace_back(ss.str());
     }
@@ -256,8 +239,7 @@ PendingMessageTracker::getStatusPerNode(std::ostream& out) const
 
         out << "<li><b>"
             << framework::MilliSecTime(iter->timeStamp.count()).toString()
-            << "</b> "
-            << iter->msgText << "</li>\n";
+            << "</b> </li>\n";
     }
 
     if (lastNode != -1) {
@@ -266,8 +248,7 @@ PendingMessageTracker::getStatusPerNode(std::ostream& out) const
 }
 
 void
-PendingMessageTracker::reportHtmlStatus(
-        std::ostream& out, const framework::HttpUrlPath& path) const
+PendingMessageTracker::reportHtmlStatus(std::ostream& out, const framework::HttpUrlPath& path) const
 {
     if (!path.hasAttribute("order")) {
         getStatusStartPage(out);
