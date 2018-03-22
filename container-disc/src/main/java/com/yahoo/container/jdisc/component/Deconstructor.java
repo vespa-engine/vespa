@@ -8,7 +8,8 @@ import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
 import com.yahoo.log.LogLevel;
 
-import java.security.SecureRandom;
+import java.time.Duration;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -27,21 +28,21 @@ public class Deconstructor implements ComponentDeconstructor {
     private final ScheduledExecutorService executor =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getThreadFactory("deconstructor"));
 
-    private final int delay;
+    private final Duration delay;
 
     public Deconstructor(boolean delayDeconstruction) {
-        delay = delayDeconstruction ? 60 : 0;
+        this.delay = delayDeconstruction ? Duration.ofSeconds(60) : Duration.ZERO;
     }
 
 
     @Override
     public void deconstruct(Object component) {
-        // The mix of deconstructing some components on separate thread and some on caller thread could in theory violate
+        // The mix of deconstructing some components on dedicated thread and some on caller thread could in theory violate
         // ordering contraints between components.
         if (component instanceof AbstractComponent) {
             AbstractComponent abstractComponent = (AbstractComponent) component;
             if (abstractComponent.isDeconstructable()) {
-                executor.schedule(new DestructComponentTask(abstractComponent), delay, TimeUnit.SECONDS);
+                executor.schedule(new DestructComponentTask(abstractComponent), delay.getSeconds(), TimeUnit.SECONDS);
             }
         } else if (component instanceof Provider) {
             // TODO Providers should most likely be deconstructed similarily to AbstractComponent
@@ -57,17 +58,23 @@ public class Deconstructor implements ComponentDeconstructor {
 
     private static class DestructComponentTask implements Runnable {
 
+        private final Random random = new Random(System.currentTimeMillis());
         private final AbstractComponent component;
 
         DestructComponentTask(AbstractComponent component) {
             this.component = component;
         }
 
-        /** Returns a random value which will be different across identical containers invoking this at the same time */
-        private long random() {
-            return new SecureRandom().nextLong();
+        /**
+        * Returns a random delay betweeen 0 and 10 minutes which will be different across identical containers invoking this at the same time.
+        * Used to randomize restart to avoid simultaneous cluster restarts.
+        */
+        private Duration getRandomizedShutdownDelay() {
+            long seconds = (long) random.nextDouble() * 60 * 10;
+            return Duration.ofSeconds(seconds);
         }
 
+        @Override
         public void run() {
             log.info("Starting deconstruction of component " + component);
             try {
@@ -79,11 +86,10 @@ public class Deconstructor implements ComponentDeconstructor {
             }
             catch (Error e) {
                 try {
-                    // Randomize restart over 10 minutes to avoid simultaneous cluster restarts
-                    long randomSleepSeconds = random() * 60 * 10;
+                    Duration shutdownDelay = getRandomizedShutdownDelay();
                     log.log(LogLevel.FATAL, "Error when deconstructing component " + component + ". Will sleep for " +
-                                            randomSleepSeconds + " seconds then restart", e);
-                    Thread.sleep(randomSleepSeconds * 1000);
+                                            shutdownDelay.getSeconds() + " seconds then restart", e);
+                    Thread.sleep(shutdownDelay.toMillis());
                 }
                 catch (InterruptedException exception) {
                     log.log(WARNING, "Randomized wait before dying disrupted. Dying now.");
