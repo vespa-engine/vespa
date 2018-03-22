@@ -174,7 +174,7 @@ RoutingNode::addError(uint32_t code, const string &msg)
 void
 RoutingNode::addError(const Error &err)
 {
-    if (_reply.get() != nullptr) {
+    if (_reply) {
         _reply->getTrace().swap(_trace);
         _reply->addError(err);
         _reply->getTrace().swap(_trace);
@@ -186,9 +186,9 @@ RoutingNode::addError(const Error &err)
 void
 RoutingNode::setReply(Reply::UP reply)
 {
-    if (reply.get() != nullptr) {
+    if (reply) {
         _shouldRetry = _resender != nullptr && _resender->shouldRetry(*reply);
-        _trace.getRoot().addChild(reply->getTrace().getRoot());
+        _trace.getRoot().addChild(std::move(reply->getTrace().getRoot()));
         reply->getTrace().clear();
     }
     _reply = std::move(reply);
