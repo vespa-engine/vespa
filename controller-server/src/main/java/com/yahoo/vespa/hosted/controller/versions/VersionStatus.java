@@ -120,7 +120,7 @@ public class VersionStatus {
         List<URI> configServers = controller.zoneRegistry().zones()
                 .controllerManaged()
                 // TODO jvenstad: Remove this when AWS is automatically upgraded.
-                .not().among(ZoneId.from("prod.aws-us-east-1a"))
+                .not().among(ZoneId.from("prod.cd-us-east-1a"), ZoneId.from("prod.aws-us-east-1a"))
                 .ids().stream()
                 .flatMap(zoneId -> controller.zoneRegistry().getConfigServerUris(zoneId).stream())
                 .collect(Collectors.toList());
