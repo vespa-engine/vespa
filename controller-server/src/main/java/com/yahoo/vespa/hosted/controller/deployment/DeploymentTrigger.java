@@ -8,7 +8,6 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -37,6 +36,7 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  * @author mpolden
+ * @author jvenstad
  */
 public class DeploymentTrigger {
 
@@ -83,22 +83,25 @@ public class DeploymentTrigger {
             application = application.withProjectId(report.projectId());
 
             // Handle successful starting and ending
-            if (report.success()) {
-                if (report.jobType() == JobType.component) {
-                    if (acceptNewApplicationVersionNow(application)) {
-                        // Note that in case of an ongoing upgrade this may result in both the upgrade and application
-                        // change being deployed together
-                        application = application.withChange(application.change().with(applicationVersion));
-                    }
-                    else { // postpone
+            if (report.jobType() == JobType.component) {
+                if (report.success()) {
+                    if ( ! acceptNewApplicationVersionNow(application)) {
                         applications().store(application.withOutstandingChange(Change.of(applicationVersion)));
                         return;
                     }
+                    // Note that in case of an ongoing upgrade this may result in both the upgrade and application
+                    // change being deployed together
+                    application = application.withChange(application.change().with(applicationVersion));
                 }
-                else if (deploymentComplete(application)) {
-                    // change completed
-                    application = application.withChange(Change.empty());
+                else { // don't re-trigger component on failure
+                    applications().store(application);
+                    return;
                 }
+            }
+            else if (report.jobType().isProduction() && deploymentComplete(application)) {
+                // change completed
+                // TODO jvenstad: Check for and remove individual parts of Change.
+                application = application.withChange(Change.empty());
             }
 
             // Trigger next
@@ -118,27 +121,10 @@ public class DeploymentTrigger {
 
     /** Returns whether all production zones listed in deployment spec has this change (or a newer version, if upgrade) */
     private boolean deploymentComplete(LockedApplication application) {
-        if ( ! application.change().isPresent()) return true;
-        Change change = application.change();
-
-        for (JobType job : order.jobsFrom(application.deploymentSpec())) {
-            if ( ! job.isProduction()) continue;
-
-            Optional<ZoneId> zone = job.zone(this.controller.system());
-            if ( ! zone.isPresent()) continue;
-
-            Deployment deployment = application.deployments().get(zone.get());
-            if (deployment == null) return false;
-
-            // Check actual job outcome (the deployment)
-            if (change.platform().isPresent()) {
-                if (change.platform().get().isAfter(deployment.version())) return false; // later is ok
-            }
-            if (change.application().isPresent()) {
-                if ( ! change.application().get().equals(deployment.applicationVersion())) return false;
-            }
-        }
-        return true;
+        return order.jobsFrom(application.deploymentSpec()).stream()
+                    .filter(JobType::isProduction)
+                    .filter(job -> job.zone(controller.system()).isPresent())
+                    .allMatch(job -> changeDeployed(application, job));
     }
 
     /**
@@ -206,42 +192,32 @@ public class DeploymentTrigger {
         if ( ! application.change().isPresent()) return false;
         if (next == null) return true;
 
-        if (application.change().platform().isPresent()) { // Propagate upgrade while making sure we never downgrade
-            Version targetVersion = application.change().platform().get();
+        if (next.type().isTest()) {
+            // Is it not yet this job's turn to upgrade?
+            if ( ! lastSuccessfulIs(application.change(), previous.type(), application))
+                return false;
 
-            if (next.type().isTest()) {
-                // Is it not yet this job's turn to upgrade?
-                if ( ! lastSuccessfulIs(targetVersion, previous.type(), application))
-                    return false;
-
-                // Has the upgrade test already been done?
-                if (lastSuccessfulIs(targetVersion, next.type(), application))
-                    return false;
-            }
-            else if (next.type().isProduction()) {
-                // Is the target version tested?
-                if ( ! lastSuccessfulIs(targetVersion, JobType.stagingTest, application))
-                    return false;
-
-                // Is the previous a job production which neither succeed with the target version, nor has a higher version?
-                if (previous.type().isProduction() && ! alreadyDeployed(targetVersion, application, previous.type()))
-                    return false;
-
-                // Did the next job already succeed on the target version, or does it already have a higher version?
-                if (alreadyDeployed(targetVersion, application, next.type()))
-                    return false;
-            }
-            else
-                throw new IllegalStateException("Unclassified type of next job: " + next);
-
-            return true;
+            // Has the upgrade test already been done?
+            if (lastSuccessfulIs(application.change(), next.type(), application))
+                return false;
         }
-        else { // Application version changes do not need to handle downgrading
-            if ( ! previous.lastSuccess().isPresent()) return false;
-            if ( ! next.lastSuccess().isPresent()) return true;
-            return previous.lastSuccess().get().applicationVersion() != ApplicationVersion.unknown &&
-                   ! previous.lastSuccess().get().applicationVersion().equals(next.lastSuccess().get().applicationVersion());
+        else if (next.type().isProduction()) {
+            // Is the target version tested?
+            if ( ! lastSuccessfulIs(application.change(), JobType.stagingTest, application))
+                return false;
+
+            // Is the previous a job production which neither succeed with the target version, nor has a higher version?
+            if (previous.type().isProduction() && ! changeDeployed(application, previous.type()))
+                return false;
+
+            // Did the next job already succeed on the target version, or does it already have a higher version?
+            if (changeDeployed(application, next.type()))
+                return false;
         }
+        else
+            throw new IllegalStateException("Unclassified type of next job: " + next);
+
+        return true;
     }
 
     /**
@@ -268,10 +244,14 @@ public class DeploymentTrigger {
      *
      * @param applicationId the application to trigger
      */
-    public void cancelChange(ApplicationId applicationId) {
+    public void cancelChange(ApplicationId applicationId, boolean keepApplicationChange) {
         applications().lockOrThrow(applicationId, application -> {
-            deploymentQueue.removeJobs(application.id());
-            applications().store(application.withChange(Change.empty()));
+            applications().store(application.withChange(application.change().application()
+                                                                   .map(Change::of)
+                                                                   .filter(change -> keepApplicationChange)
+                                                                   .orElse(Change.empty())));
+            if ( ! applications().require(applicationId).change().isPresent())
+                deploymentQueue.removeJobs(application.id());
         });
     }
 
@@ -371,8 +351,7 @@ public class DeploymentTrigger {
             application.change().blockedBy(application.deploymentSpec(), clock.instant())) return false;
 
         // Don't downgrade or redeploy the same version in production needlessly
-        if (application.change().platform().isPresent() &&
-            jobType.isProduction() && alreadyDeployed((application.change().platform().get()), application, jobType)) return false;
+        if (jobType.isProduction() && changeDeployed(application, jobType)) return false;
 
         if (application.deploymentJobs().isRunning(jobType, jobTimeoutLimit())) return false;
         if  ( ! hasJob(jobType, application)) return false;
@@ -384,25 +363,38 @@ public class DeploymentTrigger {
 
     private boolean isRunningProductionJob(Application application) {
         return ! JobList.from(application)
-                .production()
-                .running(jobTimeoutLimit())
-                .isEmpty();
+                        .production()
+                        .running(jobTimeoutLimit())
+                        .isEmpty();
     }
 
     /**
-     * Returns whether the currently deployed version in the zone for the given production job is newer
-     * than the given version, in which case we should avoid an unsupported downgrade, or if it is the
-     * same version, and was successfully deployed, in which case it is unnecessary to redeploy it.
+     * Returns whether the given application should skip deployment of its current change to the given production job zone.
+     *
+     * If the currently deployed application has a newer platform or application version than the application's
+     * current change, the method returns {@code true}, to avoid a downgrade.
+     * Otherwise, it returns whether the current change is redundant, i.e., all its components are already deployed.
      */
-    private boolean alreadyDeployed(Version version, Application application, JobType job) {
+    private boolean changeDeployed(Application application, JobType job) {
         if ( ! job.isProduction())
             throw new IllegalArgumentException(job + " is not a production job!");
 
-        return lastSuccessfulIs(version, job, application) ||
-               job.zone(controller.system())
-                  .map(zone -> application.deployments().get(zone))
-                  .map(deployment -> deployment.version().isAfter(version))
-                  .orElse(false);
+        Deployment deployment = application.deployments().get(job.zone(controller.system()).get());
+        if (deployment == null)
+            return false;
+
+        int applicationComparison = application.change().application()
+                                               .map(version -> version.compareTo(deployment.applicationVersion()))
+                                               .orElse(0);
+
+        int platformComparion = application.change().platform()
+                                           .map(version -> version.compareTo(deployment.version()))
+                                           .orElse(0);
+
+        if (applicationComparison == -1 || platformComparion == -1)
+            return true; // Avoid downgrades!
+
+        return applicationComparison == 0 && platformComparion == 0;
     }
 
     private boolean acceptNewApplicationVersionNow(LockedApplication application) {
@@ -419,12 +411,21 @@ public class DeploymentTrigger {
         return false;
     }
 
-    private boolean lastSuccessfulIs(Version version, JobType jobType, Application application) {
+    private boolean lastSuccessfulIs(Change change, JobType jobType, Application application) {
         JobStatus status = application.deploymentJobs().jobStatus().get(jobType);
-        if (status == null) return false;
+        if (status == null)
+            return false;
+
         Optional<JobStatus.JobRun> lastSuccessfulRun = status.lastSuccess();
         if ( ! lastSuccessfulRun.isPresent()) return false;
-        return lastSuccessfulRun.get().version().equals(version);
+
+        if (change.platform().isPresent() && ! change.platform().get().equals(lastSuccessfulRun.get().version()))
+            return false;
+
+        if (change.application().isPresent() && ! change.application().get().equals(lastSuccessfulRun.get().applicationVersion()))
+            return false;
+
+        return true;
     }
 
 }

@@ -712,7 +712,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             return new MessageResponse("No deployment in progress for " + application + " at this time");
 
         controller.applications().lockOrThrow(id, lockedApplication ->
-            controller.applications().deploymentTrigger().cancelChange(id));
+            controller.applications().deploymentTrigger().cancelChange(id, false));
 
         return new MessageResponse("Cancelled " + change + " for " + application);
     }

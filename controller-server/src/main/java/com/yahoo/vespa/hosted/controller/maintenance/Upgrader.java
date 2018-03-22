@@ -109,7 +109,7 @@ public class Upgrader extends Maintainer {
         if (applications.isEmpty()) return;
         log.info("Cancelling upgrading of " + applications.asList().size() + " applications: " + reason);
         for (Application application : applications.asList())
-            controller().applications().deploymentTrigger().cancelChange(application.id());
+            controller().applications().deploymentTrigger().cancelChange(application.id(), true);
     }
 
     /** Returns the number of applications to upgrade in this run */
