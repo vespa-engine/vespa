@@ -135,8 +135,12 @@ public final class AccessControl {
     }
 
     private boolean shouldHandlerBeProtected(Handler<?> handler) {
-        return ! UNPROTECTED_HANDLERS.contains(handler.getClassId().getName())
+        return ! isBuiltinGetOnly(handler)
                 && handler.getServerBindings().stream().noneMatch(excludedBindings::contains);
+    }
+
+    public static boolean isBuiltinGetOnly(Handler<?> handler) {
+        return UNPROTECTED_HANDLERS.contains(handler.getClassId().getName());
     }
 
     private boolean shouldServletBeProtected(Servlet servlet) {

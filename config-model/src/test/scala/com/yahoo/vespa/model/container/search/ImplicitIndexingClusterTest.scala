@@ -22,8 +22,8 @@ class ImplicitIndexingClusterTest {
         <jdisc version="1.0" id="jdisc">
           <search />
           <nodes count="1" />
+          {accessControlXml}
         </jdisc>
-
         <content id="music" version="1.0">
           <redundancy>1</redundancy>
           <documents>
@@ -39,6 +39,14 @@ class ImplicitIndexingClusterTest {
     assertNotNull("Docproc not added to jdisc", jdisc.getDocproc)
     assertNotNull("Indexing chain not added to jdisc", jdisc.getDocprocChains.allChains().getComponent("indexing"))
   }
+
+  private val accessControlXml =
+    <http>
+      <filtering>
+        <access-control domain="foo" />
+      </filtering>
+      <server id="bar" port="4080" />
+    </http>
 
 
   def buildMultiTenantVespaModel(servicesXml: Elem) = {

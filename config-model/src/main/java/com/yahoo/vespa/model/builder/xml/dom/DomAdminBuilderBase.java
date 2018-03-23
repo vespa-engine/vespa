@@ -72,6 +72,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent);
 
         Admin admin = new Admin(parent, monitoring, metrics, legacyMetricsConsumers, multitenant, fileDistributionConfigProducer);
+        admin.setApplicationType(applicationType);
         doBuildAdmin(admin, adminElement);
         new ModelConfigProvider(admin);
 

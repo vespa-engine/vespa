@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.admin;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
+import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -48,6 +49,8 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     private Configserver defaultConfigserver;
     private Logserver logserver;
     private LogForwarder.Config logForwarderConfig = null;
+
+    private ApplicationType applicationType = ApplicationType.DEFAULT;
 
     public void setLogForwarderConfig(LogForwarder.Config cfg) {
         this.logForwarderConfig = cfg;
@@ -272,5 +275,11 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     public boolean multitenant() {
         return multitenant;
     }
+
+    public void setApplicationType(ApplicationType applicationType) {
+        this.applicationType = applicationType;
+    }
+
+    public ApplicationType getApplicationType() { return applicationType; }
 
 }
