@@ -49,15 +49,6 @@ public interface Model {
 
 
     /**
-     * Tells file distributor to rescan all files. At the moment this is a very expensive operation, so should only be done
-     * once per deployment.
-     * @param fileDistribution {@link com.yahoo.config.model.api.FileDistribution} instance.
-     */
-    // TODO: Remove when 6.206 is the oldest version in use
-    @Deprecated
-    default void reloadDeployFileDistributor(FileDistribution fileDistribution) { }
-
-    /**
      * Gets the allocated hosts for this model.
      * 
      * @return {@link AllocatedHosts} instance, if available.
