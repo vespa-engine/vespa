@@ -3,20 +3,27 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.ClusterState;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class ClusterStateHistoryEntry {
 
-    private final ClusterState state;
+    private final ClusterStateBundle state;
     private final long time;
 
-    ClusterStateHistoryEntry(final ClusterState state, final long time) {
+    ClusterStateHistoryEntry(final ClusterStateBundle state, final long time) {
         this.state = state;
         this.time = time;
     }
 
-    public ClusterState state() {
-        return state;
+    public ClusterState getBaselineState() {
+        return state.getBaselineClusterState();
+    }
+
+    public Map<String, ClusterState> getDerivedBucketSpaceStates() {
+        return state.getDerivedBucketSpaceStates().entrySet().stream()
+                .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue().getClusterState()));
     }
 
     public long time() {
