@@ -88,14 +88,16 @@ public:
         struct LockEntry {
             uint32_t timestamp;
             uint8_t priority;
+            vespalib::string statusString;
 
             LockEntry()
-                : timestamp(0), priority(0)
+                : timestamp(0), priority(0), statusString()
             { }
 
-            LockEntry(uint8_t priority_)
-                : timestamp(time(nullptr)),
-                  priority(priority_)
+            LockEntry(uint8_t priority_, vespalib::stringref status)
+                : timestamp(time(NULL)),
+                  priority(priority_),
+                  statusString(status)
             { }
         };
 
@@ -129,7 +131,8 @@ public:
 
     class BucketLock : public FileStorHandler::BucketLockInterface {
     public:
-        BucketLock(const vespalib::MonitorGuard & guard, Disk& disk, const document::Bucket &bucket, uint8_t priority);
+        BucketLock(const vespalib::MonitorGuard & guard, Disk& disk, const document::Bucket &bucket, uint8_t priority,
+                   const vespalib::stringref & statusString);
         ~BucketLock();
 
         const document::Bucket &getBucket() const override { return _bucket; }
