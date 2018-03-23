@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFact
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
 import com.yahoo.yolean.chain.After;
+import com.yahoo.yolean.chain.Provides;
 
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
@@ -47,6 +48,7 @@ import static com.yahoo.vespa.hosted.controller.restapi.filter.SecurityFilterUti
  * @author bjorncs
  */
 @After("com.yahoo.vespa.hosted.controller.athenz.filter.UserAuthWithAthenzPrincipalFilter")
+@Provides("ControllerAuthorizationFilter")
 public class ControllerAuthorizationFilter implements SecurityRequestFilter {
 
     private static final List<Method> WHITELISTED_METHODS = Arrays.asList(GET, OPTIONS, HEAD);

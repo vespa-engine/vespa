@@ -12,6 +12,7 @@ import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsKeystore;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
+import com.yahoo.yolean.chain.After;
 
 import java.security.Principal;
 import java.util.Optional;
@@ -29,6 +30,7 @@ import static com.yahoo.vespa.hosted.controller.restapi.filter.SecurityFilterUti
  * @author bjorncs
  */
 // TODO Remove this filter once migrated to Okta
+@After({"AccessControlRequestFilter", "BouncerFilter"})
 public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
 
     private static final Logger log = Logger.getLogger(UserAuthWithAthenzPrincipalFilter.class.getName());

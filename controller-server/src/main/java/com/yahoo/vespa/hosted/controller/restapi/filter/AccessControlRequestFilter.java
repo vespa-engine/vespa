@@ -11,6 +11,7 @@ import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.vespa.hosted.controller.restapi.filter.config.HttpAccessControlConfig;
 import com.yahoo.yolean.chain.After;
 import com.yahoo.yolean.chain.Before;
+import com.yahoo.yolean.chain.Provides;
 
 import java.util.Collections;
 import java.util.Set;
@@ -38,7 +39,8 @@ import static com.yahoo.vespa.hosted.controller.restapi.filter.AccessControlHead
  * @author gv
  */
 @After({"InputValidationFilter","RemoteIPFilter", "DoNotTrackRequestFilter", "CookieDataRequestFilter"})
-@Before("BouncerFilter")
+@Before({"BouncerFilter", "ControllerAuthorizationFilter"})
+@Provides("AccessControlRequestFilter")
 public class AccessControlRequestFilter implements SecurityRequestFilter {
     private final Set<String> allowedUrls;
 

@@ -16,7 +16,7 @@ import static com.yahoo.vespa.hosted.controller.restapi.filter.SecurityFilterUti
 /**
  * @author bjorncs
  */
-@Before("com.yahoo.vespa.hosted.controller.restapi.filter.ControllerAuthorizationFilter")
+@Before("ControllerAuthorizationFilter")
 public class AthenzFilterMock implements SecurityRequestFilter {
 
     public static final String IDENTITY_HEADER_NAME = "Athenz-Identity";
