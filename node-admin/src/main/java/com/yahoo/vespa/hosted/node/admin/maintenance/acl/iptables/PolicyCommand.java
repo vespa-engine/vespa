@@ -13,7 +13,7 @@ public class PolicyCommand implements Command {
         this.chain = chain;
         this.policy = policy;
     }
-
+    
     @Override
     public String asString() {
         return String.format("-P %s %s", chain.name, policy.name);
