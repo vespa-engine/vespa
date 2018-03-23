@@ -8,7 +8,7 @@ import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
 import com.yahoo.log.LogLevel;
 
-import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -26,12 +26,12 @@ public class Deconstructor implements ComponentDeconstructor {
     private static final Logger log = Logger.getLogger(Deconstructor.class.getName());
 
     private final ScheduledExecutorService executor =
-            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getThreadFactory("deconstructor"));
+            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
 
-    private final int delay;
+    private final Duration delay;
 
     public Deconstructor(boolean delayDeconstruction) {
-        delay = delayDeconstruction ? 60 : 0;
+        this.delay = delayDeconstruction ? Duration.ofSeconds(60) : Duration.ZERO;
     }
 
 
@@ -40,57 +40,62 @@ public class Deconstructor implements ComponentDeconstructor {
         if (component instanceof AbstractComponent) {
             AbstractComponent abstractComponent = (AbstractComponent) component;
             if (abstractComponent.isDeconstructable()) {
-                executor.schedule(new DestructComponentTask(abstractComponent), delay, TimeUnit.SECONDS);
+                executor.schedule(new DestructComponentTask(abstractComponent), delay.getSeconds(), TimeUnit.SECONDS);
             }
         } else if (component instanceof Provider) {
-            log.info("Starting deconstruction of " + component);
+            // TODO Providers should most likely be deconstructed similarily to AbstractComponent
+            log.info("Starting deconstruction of provider " + component);
             ((Provider)component).deconstruct();
-            log.info("Finished deconstructing " + component);
+            log.info("Finished deconstruction of provider " + component);
         } else if (component instanceof SharedResource) {
+            log.info("Releasing container reference to resource " + component);
             // No need to delay release, as jdisc does ref-counting
-            log.info("Starting deconstruction of " + component);
             ((SharedResource)component).release();
-            log.info("Finished deconstructing " + component);
         }
     }
 
     private static class DestructComponentTask implements Runnable {
 
+        private final Random random = new Random(System.nanoTime());
         private final AbstractComponent component;
 
         DestructComponentTask(AbstractComponent component) {
             this.component = component;
         }
 
-        /** Returns a random value which will be different across identical containers invoking this at the same time */
-        private long random() {
-            return new SecureRandom().nextLong();
+        /**
+        * Returns a random delay betweeen 0 and 10 minutes which will be different across identical containers invoking this at the same time.
+        * Used to randomize restart to avoid simultaneous cluster restarts.
+        */
+        private Duration getRandomizedShutdownDelay() {
+            long seconds = (long) random.nextDouble() * 60 * 10;
+            return Duration.ofSeconds(seconds);
         }
 
+        @Override
         public void run() {
-            log.info("Starting deconstruction of " + component);
+            log.info("Starting deconstruction of component " + component);
             try {
                 component.deconstruct();
-                log.info("Finished deconstructing " + component);
+                log.info("Finished deconstructing of component " + component);
             }
             catch (Exception | NoClassDefFoundError e) { // May get class not found due to it being already unloaded
-                log.log(WARNING, "Exception thrown when deconstructing " + component, e);
+                log.log(WARNING, "Exception thrown when deconstructing component " + component, e);
             }
             catch (Error e) {
                 try {
-                    // Randomize restart over 10 minutes to avoid simultaneous cluster restarts
-                    long randomSleepSeconds = random() * 60 * 10;
-                    log.log(LogLevel.FATAL, "Error when deconstructing " + component + ". Will sleep for " +
-                                            randomSleepSeconds + " seconds then restart", e);
-                    Thread.sleep(randomSleepSeconds * 1000);
+                    Duration shutdownDelay = getRandomizedShutdownDelay();
+                    log.log(LogLevel.FATAL, "Error when deconstructing component " + component + ". Will sleep for " +
+                                            shutdownDelay.getSeconds() + " seconds then restart", e);
+                    Thread.sleep(shutdownDelay.toMillis());
                 }
                 catch (InterruptedException exception) {
                     log.log(WARNING, "Randomized wait before dying disrupted. Dying now.");
                 }
-                com.yahoo.protect.Process.logAndDie("Shutting down due to error when deconstructing " + component);
+                com.yahoo.protect.Process.logAndDie("Shutting down due to error when deconstructing component " + component);
             }
             catch (Throwable e) {
-                log.log(WARNING, "Non-error not exception throwable thrown when deconstructing " + component, e);
+                log.log(WARNING, "Non-error not exception throwable thrown when deconstructing component  " + component, e);
             }
         }
     }
