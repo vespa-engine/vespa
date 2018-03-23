@@ -45,9 +45,11 @@ public class AuthorizationFilter implements SecurityRequestFilter {
 
     @Override
     public void filter(DiscFilterRequest request, ResponseHandler handler) {
-        Optional<X509Certificate> cert = request.getClientCertificateChain().stream().findFirst();
-        if (cert.isPresent()) {
-            if (!authorizer.test(() -> commonName(cert.get()), request.getUri())) {
+        Optional<String> commonName = request.getClientCertificateChain().stream()
+                .findFirst()
+                .flatMap(AuthorizationFilter::commonName);
+        if (commonName.isPresent()) {
+            if (!authorizer.test(commonName::get, request.getUri())) {
                 rejectAction.accept(ErrorResponse.forbidden(
                         String.format("%s %s denied for %s: Invalid credentials", request.getMethod(),
                                       request.getUri().getPath(), request.getRemoteAddr())), handler
@@ -78,8 +80,9 @@ public class AuthorizationFilter implements SecurityRequestFilter {
     }
 
     /** Read common name (CN) from certificate */
-    private static String commonName(X509Certificate certificate) {
-        return X509CertificateUtils.getCommonNames(certificate).get(0);
+    private static Optional<String> commonName(X509Certificate certificate) {
+        return X509CertificateUtils.getCommonNames(certificate).stream()
+                .findFirst();
     }
 
 }
