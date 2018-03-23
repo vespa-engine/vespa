@@ -37,8 +37,6 @@ public class Deconstructor implements ComponentDeconstructor {
 
     @Override
     public void deconstruct(Object component) {
-        // The mix of deconstructing some components on dedicated thread and some on caller thread could in theory violate
-        // ordering contraints between components.
         if (component instanceof AbstractComponent) {
             AbstractComponent abstractComponent = (AbstractComponent) component;
             if (abstractComponent.isDeconstructable()) {
@@ -48,7 +46,7 @@ public class Deconstructor implements ComponentDeconstructor {
             // TODO Providers should most likely be deconstructed similarily to AbstractComponent
             log.info("Starting deconstruction of provider " + component);
             ((Provider)component).deconstruct();
-            log.info("Finished deconstructing of provider " + component);
+            log.info("Finished deconstruction of provider " + component);
         } else if (component instanceof SharedResource) {
             log.info("Releasing container reference to resource " + component);
             // No need to delay release, as jdisc does ref-counting
