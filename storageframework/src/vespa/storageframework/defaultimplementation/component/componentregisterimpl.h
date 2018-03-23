@@ -49,7 +49,6 @@ class ComponentRegisterImpl : public virtual ComponentRegister,
     metrics::MetricSet _topMetricSet;
     std::vector<std::unique_ptr<metrics::UpdateHook>> _hooks;
     metrics::MetricManager* _metricManager;
-    MemoryManagerInterface* _memoryManager;
     Clock* _clock;
     ThreadPool* _threadPool;
     UpgradeFlags _upgradeFlag;
@@ -62,10 +61,7 @@ public:
     ~ComponentRegisterImpl();
 
     bool hasMetricManager() const { return (_metricManager != 0); }
-    metrics::MetricManager& getMetricManager() {
-        assert(_metricManager != 0);
-        return *_metricManager;
-    }
+    metrics::MetricManager& getMetricManager() { return *_metricManager; }
 
     void registerComponent(ManagedComponent&) override;
     void requestShutdown(vespalib::stringref reason) override;
@@ -79,9 +75,7 @@ public:
     std::vector<const StatusReporter*> getStatusReporters() override;
 
     void registerMetric(metrics::Metric&) override;
-    void registerUpdateHook(vespalib::stringref name,
-                            MetricUpdateHook& hook,
-                            SecondTime period) override;
+    void registerUpdateHook(vespalib::stringref name, MetricUpdateHook& hook, SecondTime period) override;
     vespalib::MonitorGuard getMetricManagerLock() override;
     void registerShutdownListener(ShutdownListener&);
 

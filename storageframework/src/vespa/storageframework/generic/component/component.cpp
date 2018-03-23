@@ -26,7 +26,6 @@ Component::Component(ComponentRegister& cr, vespalib::stringref name)
       _metric(0),
       _threadPool(0),
       _metricReg(0),
-      _memoryManager(0),
       _clock(0),
       _listener(0)
 {
@@ -97,21 +96,7 @@ Component::getThreadPool() const
     return *_threadPool;
 }
 
-MemoryManagerInterface&
-Component::getMemoryManager() const
-{
-    assert(_memoryManager != 0);
-    return *_memoryManager;
-}
-
-Clock&
-Component::getClock() const
-{
-    assert(_clock != 0);
-    return *_clock;
-}
-
-    // Helper functions for components wanting to start a single thread.
+// Helper functions for components wanting to start a single thread.
 Thread::UP
 Component::startThread(Runnable& runnable, MilliSecTime waitTime, MilliSecTime maxProcessTime, int ticksBeforeWait)
 {
