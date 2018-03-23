@@ -87,7 +87,7 @@ private:
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
 
     void handleNewState() override;
-    const lib::NodeState &getDerivedNodeState(document::BucketSpace bucketSpace);
+    const lib::NodeState &getDerivedNodeState(document::BucketSpace bucketSpace) const;
 
 };
 

@@ -288,15 +288,12 @@ namespace {
 
 lib::NodeState
 deriveNodeState(const lib::NodeState &reportedNodeState,
-                const lib::NodeState &currentNodeState,
-                bool useWantedStateIfPossible)
+                const lib::NodeState &currentNodeState)
 {
-    if (useWantedStateIfPossible) {
-        // If current node state is more strict than our own reported state,
-        // set node state to our current state
-        if (reportedNodeState.getState().maySetWantedStateForThisNodeState(currentNodeState.getState())) {
-            return currentNodeState;
-        }
+    // If current node state is more strict than our own reported state,
+    // set node state to our current state
+    if (reportedNodeState.getState().maySetWantedStateForThisNodeState(currentNodeState.getState())) {
+        return currentNodeState;
     }
     return reportedNodeState;
 }
@@ -312,17 +309,16 @@ Bouncer::handleNewState()
     const auto &clusterState = *clusterStateBundle->getBaselineClusterState();
     _clusterState = &clusterState.getClusterState();
     const lib::Node node(_component.getNodeType(), _component.getIndex());
-    const bool useWantedStateIfPossible = _config->useWantedStateIfPossible;
-    _baselineNodeState = deriveNodeState(reportedNodeState, clusterState.getNodeState(node),  useWantedStateIfPossible);
+    _baselineNodeState = deriveNodeState(reportedNodeState, clusterState.getNodeState(node));
     _derivedNodeStates.clear();
     for (const auto &derivedClusterState : clusterStateBundle->getDerivedClusterStates()) {
         _derivedNodeStates[derivedClusterState.first] =
-            deriveNodeState(reportedNodeState, derivedClusterState.second->getNodeState(node), useWantedStateIfPossible);
+            deriveNodeState(reportedNodeState, derivedClusterState.second->getNodeState(node));
     }
 }
 
 const lib::NodeState &
-Bouncer::getDerivedNodeState(document::BucketSpace bucketSpace)
+Bouncer::getDerivedNodeState(document::BucketSpace bucketSpace) const
 {
     auto itr = _derivedNodeStates.find(bucketSpace);
     if (itr != _derivedNodeStates.end()) {
