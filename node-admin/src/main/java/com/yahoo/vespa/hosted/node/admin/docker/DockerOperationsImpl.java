@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.NATCommand;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
@@ -184,23 +183,6 @@ public class DockerOperationsImpl implements DockerOperations {
 
         logger.info("Deleting container " + containerName.asString());
         docker.deleteContainer(containerName);
-
-        if (docker.networkNPTed()) {
-            logger.info("Delete iptables NAT rules for " + containerName.asString());
-            try {
-                InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname);
-                String ipv6Str = docker.getGlobalIPv6Address(containerName);
-                String drop = NATCommand.drop(nodeInetAddress, InetAddress.getByName(ipv6Str));
-                Pair<Integer, String> result = processExecuter.exec(drop);
-                if (result.getFirst() != 0) {
-                    // Might be because the one or two (out of three) rules where not present - debug log and ignore
-                    // Trailing rules will always be overridden by a new one due the fact that we insert
-                    logger.debug("Unable to drop NAT rule - error message: " + result.getSecond());
-                }
-            } catch (IOException e) {
-                logger.warning("Unable to drop NAT rule for container " + containerName, e);
-            }
-        }
     }
 
     @Override
