@@ -39,7 +39,7 @@ struct BouncerTest : public CppUnit::TestFixture {
     void readOnlyOperationsAreNotRejected();
     void internalOperationsAreNotRejected();
     void outOfBoundsConfigValuesThrowException();
-    void abortOnlyOnDefaultBucketSpace();
+    void abort_request_when_derived_bucket_space_node_state_is_marked_down();
 
     CPPUNIT_TEST_SUITE(BouncerTest);
     CPPUNIT_TEST(testFutureTimestamp);
@@ -52,7 +52,7 @@ struct BouncerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(readOnlyOperationsAreNotRejected);
     CPPUNIT_TEST(internalOperationsAreNotRejected);
     CPPUNIT_TEST(outOfBoundsConfigValuesThrowException);
-    CPPUNIT_TEST(abortOnlyOnDefaultBucketSpace);
+    CPPUNIT_TEST(abort_request_when_derived_bucket_space_node_state_is_marked_down);
     CPPUNIT_TEST_SUITE_END();
 
     using Priority = api::StorageMessage::Priority;
@@ -330,7 +330,7 @@ makeClusterStateBundle(const vespalib::string &baselineState, const std::map<doc
 }
 
 void
-BouncerTest::abortOnlyOnDefaultBucketSpace()
+BouncerTest::abort_request_when_derived_bucket_space_node_state_is_marked_down()
 {
     auto state = makeClusterStateBundle("distributor:3 storage:3", {{ document::FixedBucketSpaces::default_space(), "distributor:3 storage:3 .2.s:d" }});
     _node->getNodeStateUpdater().setClusterStateBundle(state);
