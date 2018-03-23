@@ -38,7 +38,7 @@ import static com.yahoo.vespa.hosted.controller.restapi.filter.AccessControlHead
  * @author gv
  */
 @After({"InputValidationFilter","RemoteIPFilter", "DoNotTrackRequestFilter", "CookieDataRequestFilter"})
-@Before("BouncerFilter")
+@Before({"BouncerFilter", "ControllerAuthorizationFilter"})
 public class AccessControlRequestFilter implements SecurityRequestFilter {
     private final Set<String> allowedUrls;
 
