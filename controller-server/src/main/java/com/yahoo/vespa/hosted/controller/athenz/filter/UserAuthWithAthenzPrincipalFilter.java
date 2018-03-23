@@ -30,7 +30,7 @@ import static com.yahoo.vespa.hosted.controller.restapi.filter.SecurityFilterUti
  * @author bjorncs
  */
 // TODO Remove this filter once migrated to Okta
-@After({"com.yahoo.vespa.hosted.controller.restapi.filter.AccessControlRequestFilter", "BouncerFilter"})
+@After({"AccessControlRequestFilter", "BouncerFilter"})
 public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
 
     private static final Logger log = Logger.getLogger(UserAuthWithAthenzPrincipalFilter.class.getName());
