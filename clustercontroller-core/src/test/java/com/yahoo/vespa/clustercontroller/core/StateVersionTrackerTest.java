@@ -24,8 +24,7 @@ import static org.mockito.Mockito.when;
 public class StateVersionTrackerTest {
 
     private static AnnotatedClusterState stateWithoutAnnotations(String stateStr) {
-        final ClusterState state = ClusterState.stateFromString(stateStr);
-        return new AnnotatedClusterState(state, Optional.empty(), AnnotatedClusterState.emptyNodeStateReasons());
+        return AnnotatedClusterState.withoutAnnotations(ClusterState.stateFromString(stateStr));
     }
 
     private static ClusterStateBundle stateBundleWithoutAnnotations(String stateStr) {
@@ -184,7 +183,7 @@ public class StateVersionTrackerTest {
     }
 
     private static ClusterStateHistoryEntry historyEntry(final String state, final long time) {
-        return new ClusterStateHistoryEntry(ClusterState.stateFromString(state), time);
+        return new ClusterStateHistoryEntry(stateBundleWithoutAnnotations(state), time);
     }
 
     @Test

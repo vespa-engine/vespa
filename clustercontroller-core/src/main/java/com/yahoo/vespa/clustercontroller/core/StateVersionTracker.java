@@ -141,7 +141,7 @@ public class StateVersionTracker {
 
     private void recordCurrentStateInHistoryAtTime(final long currentTimeMs) {
         clusterStateHistory.addFirst(new ClusterStateHistoryEntry(
-                currentClusterState.getBaselineClusterState(), currentTimeMs));
+                currentClusterState, currentTimeMs));
         while (clusterStateHistory.size() > maxHistoryEntryCount) {
             clusterStateHistory.removeLast();
         }

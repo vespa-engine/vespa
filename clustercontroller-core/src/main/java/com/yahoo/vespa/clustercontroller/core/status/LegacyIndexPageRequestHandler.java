@@ -3,12 +3,12 @@ package com.yahoo.vespa.clustercontroller.core.status;
 
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vespa.clustercontroller.core.*;
+import com.yahoo.vespa.clustercontroller.core.Timer;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageResponse;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRendrer;
 
-import java.util.Iterator;
-import java.util.TimeZone;
+import java.util.*;
 
 /**
 * @author Haakon Humberset
@@ -106,6 +106,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             }
             sb.append("<table border=\"1\" cellspacing=\"0\"><tr>\n")
               .append("  <th>Creation date (").append(tz.getDisplayName(false, TimeZone.SHORT)).append(")</th>\n")
+              .append("  <th>Bucket space</th>\n")
               .append("  <th>Cluster state</th>\n")
               .append("</tr>\n");
             // Write cluster state history in reverse order (newest on top)
@@ -113,7 +114,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             ClusterStateHistoryEntry current = null;
             while (stateIterator.hasNext()) {
                 ClusterStateHistoryEntry nextEntry = stateIterator.next();
-                if (nextEntry.state().isOfficial() || showLocal) {
+                if (nextEntry.getBaselineState().isOfficial() || showLocal) {
                     if (current != null) writeClusterStateEntry(current, nextEntry, sb, tz);
                     current = nextEntry;
                 }
@@ -125,21 +126,64 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
 
     private static void writeClusterStates(StringBuilder sb, ClusterStateBundle clusterStates) {
         sb.append("<p>Baseline cluster state:<br><code>").append(clusterStates.getBaselineClusterState().toString()).append("</code></p>\n");
-        clusterStates.getDerivedBucketSpaceStates().entrySet().forEach(entry -> {
-            String bucketSpace = entry.getKey();
-            ClusterState clusterState = entry.getValue().getClusterState();
-            sb.append("<p>" + bucketSpace + " cluster state:<br><code>").append(clusterState.toString()).append("</code></p>\n");
+        clusterStates.getDerivedBucketSpaceStates().forEach((bucketSpace, state) -> {
+            sb.append("<p>" + bucketSpace + " cluster state:<br><code>").append(state.getClusterState().toString()).append("</code></p>\n");
         });
     }
 
     private void writeClusterStateEntry(ClusterStateHistoryEntry entry, ClusterStateHistoryEntry last, StringBuilder sb, TimeZone tz) {
-        sb.append("<tr><td>").append(RealTimer.printDate(entry.time(), tz))
-                .append("</td><td>").append(entry.state().isOfficial() ? "" : "<font color=\"grey\">");
-        sb.append(entry.state());
-        if (last != null) {
-            sb.append("<br><b>Diff</b>: ").append(last.state().getHtmlDifference(entry.state()));
+        List<ClusterStateTransition> derivedTransitions = calculateDerivedClusterStateTransitions(entry, last);
+        sb.append("<tr><td rowspan=\"" + (derivedTransitions.size() + 1) + "\">").append(RealTimer.printDate(entry.time(), tz)).append("</td>");
+        writeClusterStateTransition(ClusterStateTransition.forBaseline(entry.getBaselineState(),
+                (last != null ? last.getBaselineState() : null)), entry.getBaselineState().isOfficial(), sb);
+        derivedTransitions.forEach(transition -> {
+            sb.append("<tr>");
+            writeClusterStateTransition(transition, entry.getBaselineState().isOfficial(), sb);
+        });
+    }
+
+    private void writeClusterStateTransition(ClusterStateTransition transition, boolean isOfficial, StringBuilder sb) {
+        sb.append("<td align=\"center\">").append(transition.bucketSpace).append("</td>");
+        sb.append("<td>").append(isOfficial ? "" : "<font color=\"grey\">");
+        sb.append(transition.current);
+        if (transition.last != null) {
+            sb.append("<br><b>Diff</b>: ").append(transition.last.getHtmlDifference(transition.current));
         }
-        sb.append(entry.state().isOfficial() ? "" : "</font>").append("</td></tr>\n");
+        sb.append(isOfficial ? "" : "</font>").append("</td></tr>\n");
+    }
+
+    private List<ClusterStateTransition> calculateDerivedClusterStateTransitions(ClusterStateHistoryEntry currentEntry,
+                                                                                 ClusterStateHistoryEntry lastEntry) {
+        List<ClusterStateTransition> result = new ArrayList<>();
+        currentEntry.getDerivedBucketSpaceStates().forEach((bucketSpace, currentState) -> {
+            ClusterState lastState = (lastEntry != null ? lastEntry.getDerivedBucketSpaceStates().get(bucketSpace) : null);
+            if ((!currentState.equals(currentEntry.getBaselineState())) ||
+                    ((lastState != null) && (!lastState.equals(lastEntry.getBaselineState())))) {
+                result.add(ClusterStateTransition.forBucketSpace(currentState, lastState, bucketSpace));
+            }
+        });
+        return result;
+    }
+
+    private static class ClusterStateTransition {
+        public final ClusterState current;
+        public final ClusterState last;
+        public final String bucketSpace;
+
+        private ClusterStateTransition(ClusterState current, ClusterState last, String bucketSpace) {
+            this.current = current;
+            this.last = last;
+            this.bucketSpace = bucketSpace;
+        }
+
+        public static ClusterStateTransition forBaseline(ClusterState current, ClusterState last) {
+            return new ClusterStateTransition(current, last, "-");
+        }
+
+        public static ClusterStateTransition forBucketSpace(ClusterState current, ClusterState last, String bucketSpace) {
+            return new ClusterStateTransition(current, last, bucketSpace);
+        }
+
     }
 
 }
