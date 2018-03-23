@@ -383,12 +383,12 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         }
         TensorType expandDimensionsType = typeBuilder.build();
         if (expandDimensionsType.dimensions().size() > 0) {
-            ExpressionNode generatedExpression = new ConstantNode(new DoubleValue(0));
+            ExpressionNode generatedExpression = new ConstantNode(new DoubleValue(1.0));
             Generate generatedFunction = new Generate(expandDimensionsType,
                                                       new GeneratorLambdaFunctionNode(expandDimensionsType,
                                                                                       generatedExpression)
                                                               .asLongListToDoubleOperator());
-            Join expand = new Join(TensorFunctionNode.wrapArgument(node), generatedFunction, ScalarFunctions.add());
+            Join expand = new Join(TensorFunctionNode.wrapArgument(node), generatedFunction, ScalarFunctions.multiply());
             return new TensorFunctionNode(expand);
         }
         return node;
