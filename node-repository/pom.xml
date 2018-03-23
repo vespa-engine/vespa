@@ -78,13 +78,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespa-athenz</artifactId>
+            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
 
