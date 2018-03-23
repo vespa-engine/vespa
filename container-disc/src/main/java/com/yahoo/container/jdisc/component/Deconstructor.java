@@ -26,7 +26,7 @@ public class Deconstructor implements ComponentDeconstructor {
     private static final Logger log = Logger.getLogger(Deconstructor.class.getName());
 
     private final ScheduledExecutorService executor =
-            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getThreadFactory("deconstructor"));
+            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
 
     private final Duration delay;
 
