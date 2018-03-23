@@ -56,7 +56,7 @@ public class Deconstructor implements ComponentDeconstructor {
 
     private static class DestructComponentTask implements Runnable {
 
-        private final Random random = new Random(System.currentTimeMillis());
+        private final Random random = new Random(System.nanoTime());
         private final AbstractComponent component;
 
         DestructComponentTask(AbstractComponent component) {
