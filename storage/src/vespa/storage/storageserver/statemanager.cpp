@@ -363,27 +363,21 @@ using BucketSpaceToTransitionString = std::unordered_map<document::BucketSpace,
                                                          document::BucketSpace::hash>;
 
 void
-considerInsertTransitionString(const document::BucketSpace &bucketSpace,
-                               const lib::State &lhsDerived,
-                               const lib::State &rhsDerived,
-                               BucketSpaceToTransitionString &transitions)
+considerInsertDerivedTransition(const lib::State &currentBaseline,
+                                const lib::State &newBaseline,
+                                const lib::State &currentDerived,
+                                const lib::State &newDerived,
+                                const document::BucketSpace &bucketSpace,
+                                BucketSpaceToTransitionString &transitions)
 {
-    if (transitions.find(bucketSpace) == transitions.end()) {
+    bool considerDerivedTransition = ((currentDerived != newDerived) &&
+            ((currentDerived != currentBaseline) || (newDerived != newBaseline)));
+    if (considerDerivedTransition && (transitions.find(bucketSpace) == transitions.end())) {
         transitions[bucketSpace] = vespalib::make_string("%s space: '%s' to '%s'",
                                                          document::FixedBucketSpaces::to_string(bucketSpace).c_str(),
-                                                         lhsDerived.getName().c_str(),
-                                                         rhsDerived.getName().c_str());
+                                                         currentDerived.getName().c_str(),
+                                                         newDerived.getName().c_str());
     }
-}
-
-bool
-considerDerivedTransition(const lib::State &currentBaseline,
-                          const lib::State &newBaseline,
-                          const lib::State &currentDerived,
-                          const lib::State &newDerived)
-{
-    return ((currentDerived != newDerived) &&
-            ((currentDerived != currentBaseline) || (newDerived != newBaseline)));
 }
 
 BucketSpaceToTransitionString
@@ -397,16 +391,12 @@ calculateDerivedClusterStateTransitions(const ClusterStateBundle &currentState,
     for (const auto &entry : currentState.getDerivedClusterStates()) {
         const lib::State &currentDerived = entry.second->getNodeState(node).getState();
         const lib::State &newDerived = newState.getDerivedClusterState(entry.first)->getNodeState(node).getState();
-        if (considerDerivedTransition(currentBaseline, newBaseline, currentDerived, newDerived)) {
-            considerInsertTransitionString(entry.first, currentDerived, newDerived, result);
-        }
+        considerInsertDerivedTransition(currentBaseline, newBaseline, currentDerived, newDerived, entry.first, result);
     }
     for (const auto &entry : newState.getDerivedClusterStates()) {
         const lib::State &newDerived = entry.second->getNodeState(node).getState();
         const lib::State &currentDerived = currentState.getDerivedClusterState(entry.first)->getNodeState(node).getState();
-        if (considerDerivedTransition(currentBaseline, newBaseline, currentDerived, newDerived)) {
-            considerInsertTransitionString(entry.first, currentDerived, newDerived, result);
-        }
+        considerInsertDerivedTransition(currentBaseline, newBaseline, currentDerived, newDerived, entry.first, result);
     }
     return result;
 }
