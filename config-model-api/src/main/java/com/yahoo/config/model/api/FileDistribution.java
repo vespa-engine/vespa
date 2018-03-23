@@ -5,7 +5,6 @@ import com.yahoo.config.FileReference;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -14,10 +13,6 @@ import java.util.Set;
  * @author Ulf Lilleengen
  */
 public interface FileDistribution {
-
-    // TODO: Remove when 6.223 is oldest version used
-    default void sendDeployedFiles(String hostName, Set<FileReference> fileReferences) {}
-
     /**
      * Notifies client which file references to download. Used to start downloading early (while
      * preparing application package).
@@ -27,12 +22,6 @@ public interface FileDistribution {
      * @param fileReferences set of file references to start downloading
      */
     void startDownload(String hostName, int port, Set<FileReference> fileReferences);
-
-    // TODO: Remove when 6.223 is oldest version used
-    default void reloadDeployFileDistributor() {}
-
-    // TODO: Remove when 6.223 is oldest version used
-    default void removeDeploymentsThatHaveDifferentApplicationId(Collection<String> targetHostnames) {}
 
     static String getDefaultFileDBRoot() {
         return Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution");
