@@ -18,6 +18,7 @@
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/config/config-stor-bouncer.h>
 #include <vespa/vespalib/util/sync.h>
+#include <unordered_map>
 
 namespace config { class ConfigUri; }
 
@@ -32,7 +33,9 @@ class Bouncer : public StorageLink,
     std::unique_ptr<vespa::config::content::core::StorBouncerConfig> _config;
     StorageComponent _component;
     vespalib::Lock _lock;
-    lib::NodeState _nodeState;
+    lib::NodeState _baselineNodeState;
+    using BucketSpaceNodeStateMapping = std::unordered_map<document::BucketSpace, lib::NodeState, document::BucketSpace::hash>;
+    BucketSpaceNodeStateMapping _derivedNodeStates;
     const lib::State* _clusterState;
     config::ConfigFetcher _configFetcher;
     std::unique_ptr<BouncerMetrics> _metrics;
@@ -84,6 +87,7 @@ private:
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
 
     void handleNewState() override;
+    const lib::NodeState &getDerivedNodeState(document::BucketSpace bucketSpace) const;
 
 };
 

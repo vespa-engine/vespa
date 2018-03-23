@@ -24,7 +24,13 @@ TestNodeStateUpdater::getClusterStateBundle() const
 void
 TestNodeStateUpdater::setClusterState(lib::ClusterState::CSP c)
 {
-    _clusterStateBundle = std::make_shared<const lib::ClusterStateBundle>(*c);
+    setClusterStateBundle(std::make_shared<const lib::ClusterStateBundle>(*c));
+}
+
+void
+TestNodeStateUpdater::setClusterStateBundle(std::shared_ptr<const lib::ClusterStateBundle> clusterStateBundle)
+{
+    _clusterStateBundle = std::move(clusterStateBundle);
     for (uint32_t i = 0; i < _listeners.size(); ++i) {
         _listeners[i]->handleNewState();
     }

@@ -20,7 +20,8 @@ Bouncer::Bouncer(StorageComponentRegister& compReg, const config::ConfigUri & co
       _config(new vespa::config::content::core::StorBouncerConfig()),
       _component(compReg, "bouncer"),
       _lock(),
-      _nodeState("s:i"),
+      _baselineNodeState("s:i"),
+      _derivedNodeStates(),
       _clusterState(&lib::State::UP),
       _configFetcher(configUri.getContext()),
       _metrics(std::make_unique<BouncerMetrics>())
@@ -55,7 +56,7 @@ Bouncer::print(std::ostream& out, bool verbose,
                const std::string& indent) const
 {
     (void) verbose; (void) indent;
-    out << "Bouncer(" << _nodeState << ")";
+    out << "Bouncer(" << _baselineNodeState << ")";
 }
 
 void
@@ -233,7 +234,7 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     int feedPriorityLowerBound;
     {
         vespalib::LockGuard lock(_lock);
-        state = &_nodeState.getState();
+        state = &getDerivedNodeState(msg->getBucket().getBucketSpace()).getState();
         maxClockSkewInSeconds = _config->maxClockSkewSeconds;
         abortLoadWhenClusterDown = _config->stopExternalLoadWhenClusterDown;
         isInAvailableState = state->oneOf(
@@ -283,25 +284,47 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     return false;
 }
 
+namespace {
+
+lib::NodeState
+deriveNodeState(const lib::NodeState &reportedNodeState,
+                const lib::NodeState &currentNodeState)
+{
+    // If current node state is more strict than our own reported state,
+    // set node state to our current state
+    if (reportedNodeState.getState().maySetWantedStateForThisNodeState(currentNodeState.getState())) {
+        return currentNodeState;
+    }
+    return reportedNodeState;
+}
+
+}
+
 void
 Bouncer::handleNewState()
 {
     vespalib::LockGuard lock(_lock);
-    _nodeState = *_component.getStateUpdater().getReportedNodeState();
+    const auto reportedNodeState = *_component.getStateUpdater().getReportedNodeState();
     const auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
     const auto &clusterState = *clusterStateBundle->getBaselineClusterState();
     _clusterState = &clusterState.getClusterState();
-    if (_config->useWantedStateIfPossible) {
-        // If current node state is more strict than our own reported state,
-        // set node state to our current state
-        lib::NodeState currState = clusterState.
-                getNodeState(lib::Node(_component.getNodeType(),
-                                       _component.getIndex()));
-        if (_nodeState.getState().maySetWantedStateForThisNodeState(
-                    currState.getState()))
-        {
-            _nodeState = currState;
-        }
+    const lib::Node node(_component.getNodeType(), _component.getIndex());
+    _baselineNodeState = deriveNodeState(reportedNodeState, clusterState.getNodeState(node));
+    _derivedNodeStates.clear();
+    for (const auto &derivedClusterState : clusterStateBundle->getDerivedClusterStates()) {
+        _derivedNodeStates[derivedClusterState.first] =
+            deriveNodeState(reportedNodeState, derivedClusterState.second->getNodeState(node));
+    }
+}
+
+const lib::NodeState &
+Bouncer::getDerivedNodeState(document::BucketSpace bucketSpace) const
+{
+    auto itr = _derivedNodeStates.find(bucketSpace);
+    if (itr != _derivedNodeStates.end()) {
+        return itr->second;
+    } else {
+        return _baselineNodeState;
     }
 }
 
