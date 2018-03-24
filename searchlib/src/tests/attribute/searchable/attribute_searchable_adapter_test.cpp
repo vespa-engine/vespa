@@ -64,6 +64,7 @@ using search::queryeval::PostingInfo;
 using search::queryeval::SearchIterator;
 using std::vector;
 using vespalib::string;
+using vespalib::make_string;
 using namespace search::attribute;
 using namespace search;
 
@@ -318,17 +319,13 @@ TEST("requireThatLocationTermsWork") {
     // 0xcc is z-curve for (10, 10).
     MyAttributeManager attribute_manager = makeAttributeManager(int64_t(0xcc));
 
-    SimpleLocationTerm node(Location(Point(10, 10), 3, 0),
-                            field, 0, Weight(0));
+    SimpleLocationTerm node(Location(Point(10, 10), 3, 0), field, 0, Weight(0));
     EXPECT_TRUE(search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(100, 100), 3, 0),
-                              field, 0, Weight(0));
+    node = SimpleLocationTerm(Location(Point(100, 100), 3, 0), field, 0, Weight(0));
     EXPECT_TRUE(!search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(13, 13), 4, 0),
-                              field, 0, Weight(0));
+    node = SimpleLocationTerm(Location(Point(13, 13), 4, 0), field, 0, Weight(0));
     EXPECT_TRUE(!search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(10, 13), 3, 0),
-                              field, 0, Weight(0));
+    node = SimpleLocationTerm(Location(Point(10, 13), 3, 0), field, 0, Weight(0));
     EXPECT_TRUE(search(node, attribute_manager));
 }
 
@@ -336,17 +333,13 @@ TEST("requireThatOptimizedLocationTermsWork") {
     // 0xcc is z-curve for (10, 10).
     MyAttributeManager attribute_manager = makeFastSearchLongAttributeManager(int64_t(0xcc));
 
-    SimpleLocationTerm node(Location(Point(10, 10), 3, 0),
-                            field, 0, Weight(0));
+    SimpleLocationTerm node(Location(Point(10, 10), 3, 0), field, 0, Weight(0));
     EXPECT_TRUE(search(node, attribute_manager, true));
-    node = SimpleLocationTerm(Location(Point(100, 100), 3, 0),
-                              field, 0, Weight(0));
+    node = SimpleLocationTerm(Location(Point(100, 100), 3, 0), field, 0, Weight(0));
     EXPECT_TRUE(!search(node, attribute_manager, true));
-    node = SimpleLocationTerm(Location(Point(13, 13), 4, 0),
-                              field, 0, Weight(0));
+    node = SimpleLocationTerm(Location(Point(13, 13), 4, 0), field, 0, Weight(0));
     EXPECT_TRUE(!search(node, attribute_manager, true));
-    node = SimpleLocationTerm(Location(Point(10, 13), 3, 0),
-                              field, 0, Weight(0));
+    node = SimpleLocationTerm(Location(Point(10, 13), 3, 0), field, 0, Weight(0));
     EXPECT_TRUE(search(node, attribute_manager, true));
 }
 
@@ -368,7 +361,7 @@ TEST("require that optimized location search works with wrapped bounding box (no
 }
 
 void set_weights(StringAttribute *attr, uint32_t docid,
-                int32_t foo_weight, int32_t bar_weight, int32_t baz_weight)
+                 int32_t foo_weight, int32_t bar_weight, int32_t baz_weight)
 {
     attr->clearDoc(docid);
     if (foo_weight > 0) attr->append(docid, "foo", foo_weight);
@@ -456,13 +449,11 @@ TEST("require that direct attribute iterators work") {
             EXPECT_TRUE(result.has_minmax);
             EXPECT_EQUAL(100, result.min_weight);
             EXPECT_EQUAL(1000, result.max_weight);
-            EXPECT_TRUE(result.iterator_dump.find("DocumentWeightSearchIterator")
-                        != vespalib::string::npos);
+            EXPECT_TRUE(result.iterator_dump.find("DocumentWeightSearchIterator") != vespalib::string::npos);
         } else {
             EXPECT_EQUAL(num_docs, result.est_hits);
             EXPECT_FALSE(result.has_minmax);
-            EXPECT_TRUE(result.iterator_dump.find("DocumentWeightSearchIterator")
-                        == vespalib::string::npos);
+            EXPECT_TRUE(result.iterator_dump.find("DocumentWeightSearchIterator") == vespalib::string::npos);
         }
         ASSERT_EQUAL(3u, result.hits.size());
         EXPECT_FALSE(result.est_empty);
@@ -551,10 +542,7 @@ TEST("require that predicate query in non-predicate field yields empty.") {
 }
 
 TEST("require that predicate query in predicate field yields results.") {
-    PredicateAttribute *attr =
-        new PredicateAttribute(
-                field, Config(BasicType::PREDICATE,
-                              CollectionType::SINGLE));
+    PredicateAttribute *attr = new PredicateAttribute(field, Config(BasicType::PREDICATE, CollectionType::SINGLE));
     add_docs(attr, num_docs);
     attr->getIndex().indexEmptyDocument(2);  // matches anything
     attr->getIndex().commit();
@@ -611,10 +599,8 @@ void set_attr_value(AttributeVector &attr, uint32_t docid, size_t value) {
     }
 }
 
-MyAttributeManager make_diversity_setup(BasicType::Type field_type,
-                                        bool field_fast_search,
-                                        BasicType::Type other_type,
-                                        bool other_fast_search)
+MyAttributeManager make_diversity_setup(BasicType::Type field_type, bool field_fast_search,
+                                        BasicType::Type other_type, bool other_fast_search)
 {
     Config field_cfg(field_type, CollectionType::SINGLE);
     field_cfg.setFastSearch(field_fast_search);
@@ -663,9 +649,9 @@ TEST("require that diversity range searches work for various types") {
             for (bool other_fast_search: std::vector<bool>({true, false})) {
                 MyAttributeManager manager = make_diversity_setup(field_type, true, other_type, other_fast_search);
                 for (bool strict: std::vector<bool>({true, false})) {
-                    TEST_STATE(vespalib::make_string("field_type: %s, other_type: %s, other_fast_search: %s, strict: %s",
-                                    BasicType(field_type).asString(), BasicType(other_type).asString(),
-                                    other_fast_search ? "true" : "false", strict ? "true" : "false").c_str());
+                    TEST_STATE(make_string("field_type: %s, other_type: %s, other_fast_search: %s, strict: %s",
+                                           BasicType(field_type).asString(), BasicType(other_type).asString(),
+                                           other_fast_search ? "true" : "false", strict ? "true" : "false").c_str());
                     EXPECT_EQUAL(999u, diversity_hits(manager, "[;;1000;other;10]", strict));
                     EXPECT_EQUAL(999u, diversity_hits(manager, "[;;-1000;other;10]", strict));
                     EXPECT_EQUAL(100u, diversity_hits(manager, "[;;1000;other;1]", strict));
