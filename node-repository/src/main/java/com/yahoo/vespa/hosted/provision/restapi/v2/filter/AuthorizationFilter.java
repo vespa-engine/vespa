@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2.filter;
 
 import com.google.inject.Inject;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
@@ -34,7 +33,7 @@ public class AuthorizationFilter implements SecurityRequestFilter {
 
     @Inject
     public AuthorizationFilter(Zone zone, NodeRepository nodeRepository) {
-        this(new Authorizer(zone.system(), nodeRepository), rejectActionIn(zone.system()));
+        this(new Authorizer(zone.system(), nodeRepository), AuthorizationFilter::logAndReject);
     }
 
     AuthorizationFilter(BiPredicate<Principal, URI> authorizer,
@@ -63,17 +62,6 @@ public class AuthorizationFilter implements SecurityRequestFilter {
         }
     }
 
-    private static BiConsumer<ErrorResponse, ResponseHandler> rejectActionIn(SystemName system) {
-        if (system == SystemName.cd) {
-            return AuthorizationFilter::logAndReject;
-        }
-        return AuthorizationFilter::log;
-    }
-
-    private static void log(ErrorResponse response, @SuppressWarnings("unused") ResponseHandler handler) {
-        log.warning("Would reject request: " + response.getStatus() + " - " + response.message());
-    }
-
     private static void logAndReject(ErrorResponse response, ResponseHandler handler) {
         log.warning(response.message());
         FilterUtils.write(response, handler);
@@ -81,8 +69,7 @@ public class AuthorizationFilter implements SecurityRequestFilter {
 
     /** Read common name (CN) from certificate */
     private static Optional<String> commonName(X509Certificate certificate) {
-        return X509CertificateUtils.getCommonNames(certificate).stream()
-                .findFirst();
+        return X509CertificateUtils.getCommonNames(certificate).stream().findFirst();
     }
 
 }

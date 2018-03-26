@@ -87,8 +87,7 @@ public class FilterTester {
         Instant now = Instant.now();
         X500Principal subject = new X500Principal("CN=" + commonName);
         return X509CertificateBuilder
-                .fromKeypair(
-                        keyPair, subject, now, now.plus(Duration.ofDays(30)), SHA256_WITH_RSA, now.toEpochMilli())
+                .fromKeypair(keyPair, subject, now, now.plus(Duration.ofDays(30)), SHA256_WITH_RSA, now.toEpochMilli())
                 .setBasicConstraints(true, true)
                 .build();
     }
