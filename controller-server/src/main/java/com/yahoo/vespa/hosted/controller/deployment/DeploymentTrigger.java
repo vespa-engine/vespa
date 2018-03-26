@@ -430,4 +430,37 @@ public class DeploymentTrigger {
         return true;
     }
 
+
+    class Triggering {
+
+        private final ApplicationId id;
+        private final JobType jobType;
+        private final boolean retry;
+        private final String reason;
+
+        public Triggering(ApplicationId id, JobType jobType, boolean retry, String reason) {
+            this.id = id;
+            this.jobType = jobType;
+            this.retry = retry;
+            this.reason = reason;
+        }
+
+        public ApplicationId id() {
+            return id;
+        }
+
+        public JobType jobType() {
+            return jobType;
+        }
+
+        public boolean isRetry() {
+            return retry;
+        }
+
+        public String reason() {
+            return reason;
+        }
+
+    }
+
 }
