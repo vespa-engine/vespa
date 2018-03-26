@@ -146,11 +146,13 @@ public class ControllerTest {
         tester.jobCompletion(productionCorpUsEast1).application(app1).unsuccessful().submit();
 
         // system and staging test job - succeeding
-        tester.jobCompletion(component).application(app1).submit();
+        tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        applicationVersion = tester.application("app1").change().application().get();
         tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
         assertStatus(JobStatus.initial(systemTest)
                               .withTriggering(version1, applicationVersion, "", tester.clock().instant().minus(Duration.ofMillis(1)))
-                              .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
+                              .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()),
+                     app1.id(), tester.controller());
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
 
         // production job succeeding now
@@ -186,7 +188,7 @@ public class ControllerTest {
         JobStatus jobStatus = applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1);
         assertNotNull("Deployment job was not removed", jobStatus);
         assertEquals(42, jobStatus.lastCompleted().get().id());
-        assertEquals("staging-test completed", jobStatus.lastCompleted().get().reason());
+        assertEquals("Available change in staging-test", jobStatus.lastCompleted().get().reason());
 
         // prod zone removal is allowed with override
         applicationPackage = new ApplicationPackageBuilder()
@@ -661,7 +663,7 @@ public class ControllerTest {
                     .environment(Environment.prod)
                     .allow(ValidationId.deploymentRemoval)
                     .build();
-            tester.jobCompletion(component).application(app1).uploadArtifact(applicationPackage).submit();
+            tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
             tester.deployAndNotify(app1, applicationPackage, true, systemTest);
             tester.applications().deactivate(app1, ZoneId.from(Environment.test, RegionName.from("us-east-1")));
             tester.applications().deactivate(app1, ZoneId.from(Environment.staging, RegionName.from("us-east-3")));

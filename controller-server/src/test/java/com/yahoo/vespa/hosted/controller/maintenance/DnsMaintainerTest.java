@@ -74,7 +74,7 @@ public class DnsMaintainerTest {
                 .environment(Environment.prod)
                 .allow(ValidationId.deploymentRemoval)
                 .build();
-        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
 
         tester.deployAndNotify(application, applicationPackage, true, systemTest);
         tester.applications().deactivate(application, ZoneId.from(Environment.test, RegionName.from("us-east-1")));

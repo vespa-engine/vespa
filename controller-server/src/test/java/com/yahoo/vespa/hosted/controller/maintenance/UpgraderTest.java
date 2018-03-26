@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
@@ -152,7 +153,7 @@ public class UpgraderTest {
 
         // --- Failing application is repaired by changing the application, causing confidence to move above 'high' threshold
         // Deploy application change
-        tester.deployCompletely("default0");
+        tester.deployCompletely(tester.application("default0"), DeploymentTester.applicationPackage("default"), BuildJob.defaultBuildNumber + 1);
 
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.high, tester.controller().versionStatus().systemVersion().get().confidence());

@@ -109,9 +109,8 @@ public class DeploymentTrigger {
             // TODO jvenstad: Don't trigger.
             // Trigger next
             if (report.success()) {
-                List<JobType> jobs = order.nextAfter(report.jobType(), application);
-                for (JobType job : jobs)
-                     application = trigger(new Triggering(application, job, false, report.jobType().jobName() + " completed"), jobs, false);
+                triggerReadyJobs(application);
+                return; // Don't overwrite below.
             }
             else if (retryBecauseOutOfCapacity(application, report.jobType())) {
                 triggerReadyJobs(application);
@@ -138,8 +137,6 @@ public class DeploymentTrigger {
 
     /** Find the next step to trigger if any, and triggers it */
     public void triggerReadyJobs(LockedApplication application) {
-        if ( ! application.change().isPresent()) return;
-
         List<JobType> jobs =  order.jobsFrom(application.deploymentSpec());
 
         // Should the first step be triggered?

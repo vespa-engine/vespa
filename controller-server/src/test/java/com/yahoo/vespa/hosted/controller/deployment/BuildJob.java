@@ -104,6 +104,7 @@ public class BuildJob {
     /** Upload given application package to artifact repository as part of this job */
     public BuildJob uploadArtifact(ApplicationPackage applicationPackage) {
         Objects.requireNonNull(job, "job cannot be null");
+        Objects.requireNonNull(applicationId, "applicationId cannot be null");
         if (job != DeploymentJobs.JobType.component) {
             throw new IllegalStateException(job + " cannot upload artifact");
         }

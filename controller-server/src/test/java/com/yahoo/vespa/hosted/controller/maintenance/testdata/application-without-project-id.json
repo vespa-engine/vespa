@@ -1,6 +1,6 @@
 {
   "id": "tenant1:app1:default",
-  "deploymentSpecField": "<deployment version='1.0'>\n  <test />\n  <staging />\n  <prod>\n     <region active=\"true\">cd-us-central-1</region>\n     <region active=\"true\">cd-us-central-2</region>\n  </prod>\n</deployment>\n",
+  "deploymentSpecField": "<deployment version='1.0'>\n  <test />\n  <staging />\n  <prod>\n     <region active=\"true\">us-central-1</region>\n     <region active=\"true\">us-west-1</region>\n  </prod>\n</deployment>\n",
   "validationOverrides": "<deployment version='1.0'/>",
   "deployments": [],
   "deploymentJobs": {
