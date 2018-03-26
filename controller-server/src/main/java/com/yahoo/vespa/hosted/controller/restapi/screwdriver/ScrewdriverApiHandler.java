@@ -11,6 +11,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
@@ -18,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -89,10 +91,9 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
         controller.applications().lockOrThrow(applicationId, application -> {
             // Since this is a manual operation we likely want it to trigger as soon as possible so we add it at to the
             // front of the queue
-            application = controller.applications().deploymentTrigger().triggerAllowParallel(
-                    jobType, application, true, true,
-                    "Triggered from screwdriver/v1"
-            );
+            application = controller.applications().deploymentTrigger().trigger(
+                    new DeploymentTrigger.Triggering(application, jobType, true, "Triggered from screwdriver/v1"), Collections.emptySet(), true
+                                                                               );
             controller.applications().store(application);
         });
 

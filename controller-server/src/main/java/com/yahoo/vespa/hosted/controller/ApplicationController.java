@@ -307,9 +307,12 @@ public class ApplicationController {
                 // Clean up deployment jobs that are no longer referenced by deployment spec
                 application = deleteUnreferencedDeploymentJobs(application);
 
+                // TODO jvenstad: Store triggering information here, including versions, when job status is read from the build service.
+
                 store(application); // store missing information even if we fail deployment below
             }
 
+            // TODO jvenstad: Use code from DeploymentTrigger? Also, validate application version.
             // Validate the change being deployed
             if (!canDeployDirectly) {
                 validateChange(application, zone, version);

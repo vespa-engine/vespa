@@ -22,7 +22,8 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -104,27 +105,20 @@ public class DeploymentTrigger {
                 application = application.withChange(Change.empty());
             }
 
+            // TODO jvenstad: Don't trigger.
             // Trigger next
-            if (report.success())
-                application = trigger(order.nextAfter(report.jobType(), application), application,
-                                      report.jobType().jobName() + " completed");
+            if (report.success()) {
+                List<JobType> jobs = order.nextAfter(report.jobType(), application);
+                for (JobType job : jobs)
+                     application = trigger(new Triggering(application, job, false, report.jobType().jobName() + " completed"), jobs, false);
+            }
             else if (retryBecauseOutOfCapacity(application, report.jobType()))
-                application = trigger(report.jobType(), application, true,
-                                      "Retrying on out of capacity");
+                application = trigger(new Triggering(application, report.jobType(), true, "Retrying on out of capacity"), Collections.emptySet(), false);
             else if (retryBecauseNewFailure(application, report.jobType()))
-                application = trigger(report.jobType(), application, false,
-                                      "Immediate retry on failure");
+                application = trigger(new Triggering(application, report.jobType(), false, "Immediate retry on failure"), Collections.emptySet(), false);
 
             applications().store(application);
         });
-    }
-
-    /** Returns whether all production zones listed in deployment spec has this change (or a newer version, if upgrade) */
-    private boolean deploymentComplete(LockedApplication application) {
-        return order.jobsFrom(application.deploymentSpec()).stream()
-                    .filter(JobType::isProduction)
-                    .filter(job -> job.zone(controller.system()).isPresent())
-                    .allMatch(job -> changeDeployed(application, job));
     }
 
     /**
@@ -152,14 +146,14 @@ public class DeploymentTrigger {
                     || ! systemTestStatus.isSuccess()
                     || ! systemTestStatus.lastTriggered().get().version().equals(target)
                     || systemTestStatus.isHanging(jobTimeoutLimit())) {
-                    application = trigger(JobType.systemTest, application, false, "Upgrade to " + target);
+                    application = trigger(new Triggering(application, JobType.systemTest, false, "Upgrade to " + target), Collections.emptySet(), false);
                     controller.applications().store(application);
                 }
             }
             else {
                 JobStatus componentStatus = application.deploymentJobs().jobStatus().get(JobType.component);
                 if (componentStatus != null && changesAvailable(application, componentStatus, systemTestStatus)) {
-                    application = trigger(JobType.systemTest, application, false, "Available change in component");
+                    application = trigger(new Triggering(application, JobType.systemTest, false, "Available change in component"), Collections.emptySet(), false);
                     controller.applications().store(application);
                 }
             }
@@ -172,52 +166,54 @@ public class DeploymentTrigger {
             if (jobStatus.isRunning(jobTimeoutLimit())) continue;
 
             // Collect the subset of next jobs which have not run with the last changes
-            List<JobType> nextToTrigger = new ArrayList<>();
-            for (JobType nextJobType : order.nextAfter(jobType, application)) {
+            // TODO jvenstad: Change to be step-centric.
+            List<JobType> nextJobs = order.nextAfter(jobType, application);
+            for (JobType nextJobType : nextJobs) {
                 JobStatus nextStatus = application.deploymentJobs().jobStatus().get(nextJobType);
                 if (changesAvailable(application, jobStatus, nextStatus) || nextStatus.isHanging(jobTimeoutLimit()))
-                    nextToTrigger.add(nextJobType);
+                    application = trigger(new Triggering(application, nextJobType, false, "Available change in " + jobType.jobName()), nextJobs, false);
             }
-            // Trigger them in parallel
-            application = trigger(nextToTrigger, application, "Available change in " + jobType.jobName());
             controller.applications().store(application);
         }
     }
 
     /**
-     * Returns true if the previous job has completed successfully with a application version and/or  Vespa version
-     * which is newer (different) than the one last completed successfully in next
+     * Trigger a job for an application, if allowed
+     *
+     * @param triggering the triggering to execute, i.e., application, job type and reason
+     * @param concurrentlyWith production jobs that may run concurrently with the job to trigger
+     * @param force true to disable checks which should normally prevent this triggering from happening
+     * @return the application in the triggered state, if actually triggered. This *must* be stored by the caller
      */
-    private boolean changesAvailable(Application application, JobStatus previous, JobStatus next) {
-        if ( ! application.change().isPresent()) return false;
-        if (next == null) return true;
+    // TODO jvenstad: Replace with (Collection<JobType> concurrentlyWith) to allow, e.g., concurrent retries.
+    public LockedApplication trigger(Triggering triggering, Collection<JobType> concurrentlyWith, boolean force) {
+        if (triggering.jobType == null) return triggering.application; // we are passed null when the last job has been reached
 
-        if (next.type().isTest()) {
-            // Is it not yet this job's turn to upgrade?
-            if ( ! lastSuccessfulIs(application.change(), previous.type(), application))
-                return false;
+        List<JobType> runningProductionJobs = JobList.from(triggering.application)
+                                                     .production()
+                                                     .running(jobTimeoutLimit())
+                                                     .mapToList(JobStatus::type);
+        if ( ! force && triggering.jobType().isProduction() && ! concurrentlyWith.containsAll(runningProductionJobs))
+            return triggering.application;
 
-            // Has the upgrade test already been done?
-            if (lastSuccessfulIs(application.change(), next.type(), application))
-                return false;
+        // Never allow untested changes to go through
+        // Note that this may happen because a new change catches up and prevents an older one from continuing
+        if ( ! triggering.application.deploymentJobs().isDeployableTo(triggering.jobType.environment(), triggering.application.change())) {
+            log.warning(String.format("Want to trigger %s for %s with reason %s, but change is untested", triggering.jobType,
+                                      triggering.application, triggering.reason));
+            return triggering.application;
         }
-        else if (next.type().isProduction()) {
-            // Is the target version tested?
-            if ( ! lastSuccessfulIs(application.change(), JobType.stagingTest, application))
-                return false;
 
-            // Is the previous a job production which neither succeed with the target version, nor has a higher version?
-            if (previous.type().isProduction() && ! changeDeployed(application, previous.type()))
-                return false;
-
-            // Did the next job already succeed on the target version, or does it already have a higher version?
-            if (changeDeployed(application, next.type()))
-                return false;
-        }
-        else
-            throw new IllegalStateException("Unclassified type of next job: " + next);
-
-        return true;
+        if ( ! force && ! allowedTriggering(triggering.jobType, triggering.application)) return triggering.application;
+        log.info(triggering.toString());
+        deploymentQueue.addJob(triggering.application.id(), triggering.jobType, triggering.retry);
+        // TODO jvenstad: Let triggering set only time of triggering (and reason, for debugging?) when build system is polled for job status.
+        return triggering.application.withJobTriggering(triggering.jobType,
+                                             clock.instant(),
+                                             triggering.application.deployVersionFor(triggering.jobType, controller),
+                                             triggering.application.deployApplicationVersionFor(triggering.jobType, controller, false)
+                                                        .orElse(ApplicationVersion.unknown),
+                                             triggering.reason);
     }
 
     /**
@@ -234,7 +230,8 @@ public class DeploymentTrigger {
             application = application.withChange(change);
             if (change.application().isPresent())
                 application = application.withOutstandingChange(Change.empty());
-            application = trigger(JobType.systemTest, application, false, change.toString());
+            // TODO jvenstad: Don't trigger.
+            application = trigger(new Triggering(application, JobType.systemTest, false, change.toString()), Collections.emptySet(), false);
             applications().store(application);
         });
     }
@@ -278,62 +275,6 @@ public class DeploymentTrigger {
         if ( ! jobType.isProduction()) return true; // Deployment spec only determines this for production jobs.
         return application.deploymentSpec().includes(jobType.environment(), jobType.region(controller.system()));
     }
-
-    /**
-     * Trigger a job for an application
-     *
-     * @param jobType the type of the job to trigger, or null to trigger nothing
-     * @param application the application to trigger the job for
-     * @param first whether to put the job at the front of the build system queue (or the back)
-     * @param reason describes why the job is triggered
-     * @return the application in the triggered state, which *must* be stored by the caller
-     */
-    private LockedApplication trigger(JobType jobType, LockedApplication application, boolean first, String reason) {
-        if (jobType.isProduction() && isRunningProductionJob(application)) return application;
-        return triggerAllowParallel(jobType, application, first, false, reason);
-    }
-
-    private LockedApplication trigger(List<JobType> jobs, LockedApplication application, String reason) {
-        if (jobs.stream().anyMatch(JobType::isProduction) && isRunningProductionJob(application)) return application;
-        for (JobType job : jobs)
-            application = triggerAllowParallel(job, application, false, false, reason);
-        return application;
-    }
-
-    /**
-     * Trigger a job for an application, if allowed
-     *
-     * @param jobType the type of the job to trigger, or null to trigger nothing
-     * @param application the application to trigger the job for
-     * @param first whether to trigger the job before other jobs
-     * @param force true to disable checks which should normally prevent this triggering from happening
-     * @param reason describes why the job is triggered
-     * @return the application in the triggered state, if actually triggered. This *must* be stored by the caller
-     */
-    public LockedApplication triggerAllowParallel(JobType jobType, LockedApplication application,
-                                                  boolean first, boolean force, String reason) {
-        if (jobType == null) return application; // we are passed null when the last job has been reached
-        // Never allow untested changes to go through
-        // Note that this may happen because a new change catches up and prevents an older one from continuing
-        if ( ! application.deploymentJobs().isDeployableTo(jobType.environment(), application.change())) {
-            log.warning(String.format("Want to trigger %s for %s with reason %s, but change is untested", jobType,
-                                      application, reason));
-            return application;
-        }
-
-        if ( ! force && ! allowedTriggering(jobType, application)) return application;
-        log.info(String.format("Triggering %s for %s, %s: %s", jobType, application,
-                               application.change().isPresent() ? "deploying " + application.change() : "restarted deployment",
-                               reason));
-        deploymentQueue.addJob(application.id(), jobType, first);
-        return application.withJobTriggering(jobType,
-                                             clock.instant(),
-                                             application.deployVersionFor(jobType, controller),
-                                             application.deployApplicationVersionFor(jobType, controller, false)
-                                                        .orElse(ApplicationVersion.unknown),
-                                             reason);
-    }
-
     /** Create application version from job report */
     private ApplicationVersion applicationVersionFrom(JobReport report) {
         return report.sourceRevision().map(sr -> ApplicationVersion.from(sr, report.buildNumber()))
@@ -361,11 +302,48 @@ public class DeploymentTrigger {
         return true;
     }
 
-    private boolean isRunningProductionJob(Application application) {
-        return ! JobList.from(application)
-                        .production()
-                        .running(jobTimeoutLimit())
-                        .isEmpty();
+    /**
+     * Returns true if the previous job has completed successfully with a application version and/or  Vespa version
+     * which is newer (different) than the one last completed successfully in next
+     */
+    private boolean changesAvailable(Application application, JobStatus previous, JobStatus next) {
+        if ( ! application.change().isPresent()) return false;
+        if (next == null) return true;
+
+        if (next.type().isTest()) {
+            // Is it not yet this job's turn to upgrade?
+            if ( ! lastSuccessfulIs(application.change(), previous.type(), application))
+                return false;
+
+            // Has the upgrade test already been done?
+            if (lastSuccessfulIs(application.change(), next.type(), application))
+                return false;
+        }
+        else if (next.type().isProduction()) {
+            // Is the target version tested?
+            if ( ! lastSuccessfulIs(application.change(), JobType.stagingTest, application))
+                return false;
+
+            // Is the previous a job production which neither succeed with the target version, nor has a higher version?
+            if (previous.type().isProduction() && ! changeDeployed(application, previous.type()))
+                return false;
+
+            // Did the next job already succeed on the target version, or does it already have a higher version?
+            if (changeDeployed(application, next.type()))
+                return false;
+        }
+        else
+            throw new IllegalStateException("Unclassified type of next job: " + next);
+
+        return true;
+    }
+
+    /** Returns whether all production zones listed in deployment spec has this change (or a newer version, if upgrade) */
+    private boolean deploymentComplete(LockedApplication application) {
+        return order.jobsFrom(application.deploymentSpec()).stream()
+                    .filter(JobType::isProduction)
+                    .filter(job -> job.zone(controller.system()).isPresent())
+                    .allMatch(job -> changeDeployed(application, job));
     }
 
     /**
@@ -426,6 +404,47 @@ public class DeploymentTrigger {
             return false;
 
         return true;
+    }
+
+
+    public static class Triggering {
+
+        private final LockedApplication application; // TODO jvenstad: Consider passing an ID instead.
+        private final JobType jobType;
+        private final boolean retry;
+        private final String reason;
+
+        public Triggering(LockedApplication application, JobType jobType, boolean retry, String reason) {
+            this.application = application;
+            this.jobType = jobType;
+            this.retry = retry;
+            this.reason = reason;
+        }
+
+        public LockedApplication application() {
+            return application;
+        }
+
+        public JobType jobType() {
+            return jobType;
+        }
+
+        public boolean isRetry() {
+            return retry;
+        }
+
+        public String reason() {
+            return reason;
+        }
+
+        public String toString() {
+            return String.format("Triggering %s for %s, %s: %s",
+                                 jobType,
+                                 application,
+                                 application.change().isPresent() ? "deploying " + application.change() : "restarted deployment",
+                                 reason);
+        }
+
     }
 
 }

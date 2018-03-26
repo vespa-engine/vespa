@@ -33,6 +33,7 @@ public class DeploymentQueue {
 
     /** Add the given application to the queue of the given job type -- in front if first, at the back otherwise. */
     public void addJob(ApplicationId applicationId, JobType jobType, boolean first) {
+        // TODO jvenstad: Replace with direct triggering.
         locked(jobType, queue -> {
             if ( ! queue.contains(applicationId)) {
                 if (first)
