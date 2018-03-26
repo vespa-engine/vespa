@@ -14,12 +14,13 @@ class DenseDotProductFunction : public eval::tensor_function::Op2
 {
 private:
     hwaccelrated::IAccelrated::UP _hwAccelerator;
-
+    using ValueType = eval::ValueType;
 public:
     DenseDotProductFunction(const eval::TensorFunction &lhs_in,
                             const eval::TensorFunction &rhs_in);
     eval::InterpretedFunction::Instruction compile_self(Stash &stash) const override;
     bool result_is_mutable() const override { return true; }
+    static bool compatible_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs);
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };
 

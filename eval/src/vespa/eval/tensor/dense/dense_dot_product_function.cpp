@@ -33,17 +33,6 @@ void my_dot_product_op(eval::InterpretedFunction::State &state, uint64_t param) 
     state.pop_pop_push(state.stash.create<eval::DoubleValue>(result));
 }
 
-bool is1dDenseTensor(const ValueType &type) {
-    return (type.is_dense() && (type.dimensions().size() == 1));
-}
-
-bool isDenseDotProduct(const ValueType &res, const ValueType &lhsType, const ValueType &rhsType) {
-    return (res.is_double() &&
-            is1dDenseTensor(lhsType) &&
-            is1dDenseTensor(rhsType) &&
-            (lhsType.dimensions()[0].name == rhsType.dimensions()[0].name));
-}
-
 } // namespace vespalib::tensor::<unnamed>
 
 DenseDotProductFunction::DenseDotProductFunction(const eval::TensorFunction &lhs_in,
@@ -59,16 +48,38 @@ DenseDotProductFunction::compile_self(Stash &) const
     return eval::InterpretedFunction::Instruction(my_dot_product_op, (uint64_t)(_hwAccelerator.get()));
 }
 
+bool
+DenseDotProductFunction::compatible_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs)
+{
+    if (!res.is_double() || !lhs.is_dense() || !rhs.is_dense() ||
+        (lhs.dimensions().size() != rhs.dimensions().size()) ||
+        (lhs.dimensions().empty()))
+    {
+        return false;
+    }
+    for (size_t i = 0; i < lhs.dimensions().size(); ++i) {
+        const auto &ldim = lhs.dimensions()[i];
+        const auto &rdim = rhs.dimensions()[i];
+        bool first = (i == 0);
+        bool name_mismatch = (ldim.name != rdim.name);
+        bool size_mismatch = ((ldim.size != rdim.size) || !ldim.is_bound());
+        if (name_mismatch || (!first && size_mismatch)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 const TensorFunction &
 DenseDotProductFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
 {
-    const Reduce *reduce = as<Reduce>(expr);
+    auto reduce = as<Reduce>(expr);
     if (reduce && (reduce->aggr() == Aggr::SUM)) {
-        const Join *join = as<Join>(reduce->child());
+        auto join = as<Join>(reduce->child());
         if (join && (join->function() == Mul::f)) {
             const TensorFunction &lhs = join->lhs();
             const TensorFunction &rhs = join->rhs();
-            if (isDenseDotProduct(expr.result_type(), lhs.result_type(), rhs.result_type())) {
+            if (compatible_types(expr.result_type(), lhs.result_type(), rhs.result_type())) {
                 return stash.create<DenseDotProductFunction>(lhs, rhs);
             }
         }
