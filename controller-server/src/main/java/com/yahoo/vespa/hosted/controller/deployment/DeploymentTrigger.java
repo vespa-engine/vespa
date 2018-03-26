@@ -22,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -111,12 +110,12 @@ public class DeploymentTrigger {
             if (report.success()) {
                 List<JobType> jobs = order.nextAfter(report.jobType(), application);
                 for (JobType job : jobs)
-                     application = triggerAllowParallel(new Triggering(application, job, false, report.jobType().jobName() + " completed"), jobs, false);
+                     application = trigger(new Triggering(application, job, false, report.jobType().jobName() + " completed"), jobs, false);
             }
             else if (retryBecauseOutOfCapacity(application, report.jobType()))
-                application = triggerAllowParallel(new Triggering(application, report.jobType(), true, "Retrying on out of capacity"), Collections.emptySet(), false);
+                application = trigger(new Triggering(application, report.jobType(), true, "Retrying on out of capacity"), Collections.emptySet(), false);
             else if (retryBecauseNewFailure(application, report.jobType()))
-                application = triggerAllowParallel(new Triggering(application, report.jobType(), false, "Immediate retry on failure"), Collections.emptySet(), false);
+                application = trigger(new Triggering(application, report.jobType(), false, "Immediate retry on failure"), Collections.emptySet(), false);
 
             applications().store(application);
         });
@@ -147,14 +146,14 @@ public class DeploymentTrigger {
                     || ! systemTestStatus.isSuccess()
                     || ! systemTestStatus.lastTriggered().get().version().equals(target)
                     || systemTestStatus.isHanging(jobTimeoutLimit())) {
-                    application = triggerAllowParallel(new Triggering(application, JobType.systemTest, false, "Upgrade to " + target), Collections.emptySet(), false);
+                    application = trigger(new Triggering(application, JobType.systemTest, false, "Upgrade to " + target), Collections.emptySet(), false);
                     controller.applications().store(application);
                 }
             }
             else {
                 JobStatus componentStatus = application.deploymentJobs().jobStatus().get(JobType.component);
                 if (componentStatus != null && changesAvailable(application, componentStatus, systemTestStatus)) {
-                    application = triggerAllowParallel(new Triggering(application, JobType.systemTest, false, "Available change in component"), Collections.emptySet(), false);
+                    application = trigger(new Triggering(application, JobType.systemTest, false, "Available change in component"), Collections.emptySet(), false);
                     controller.applications().store(application);
                 }
             }
@@ -172,7 +171,7 @@ public class DeploymentTrigger {
             for (JobType nextJobType : nextJobs) {
                 JobStatus nextStatus = application.deploymentJobs().jobStatus().get(nextJobType);
                 if (changesAvailable(application, jobStatus, nextStatus) || nextStatus.isHanging(jobTimeoutLimit()))
-                    application = triggerAllowParallel(new Triggering(application, nextJobType, false, "Available change in " + jobType.jobName()), nextJobs, false);
+                    application = trigger(new Triggering(application, nextJobType, false, "Available change in " + jobType.jobName()), nextJobs, false);
             }
             controller.applications().store(application);
         }
@@ -182,18 +181,19 @@ public class DeploymentTrigger {
      * Trigger a job for an application, if allowed
      *
      * @param triggering the triggering to execute, i.e., application, job type and reason
+     * @param concurrentlyWith production jobs that may run concurrently with the job to trigger
      * @param force true to disable checks which should normally prevent this triggering from happening
      * @return the application in the triggered state, if actually triggered. This *must* be stored by the caller
      */
     // TODO jvenstad: Replace with (Collection<JobType> concurrentlyWith) to allow, e.g., concurrent retries.
-    public LockedApplication triggerAllowParallel(Triggering triggering, Collection<JobType> concurrentlyWith, boolean force) {
+    public LockedApplication trigger(Triggering triggering, Collection<JobType> concurrentlyWith, boolean force) {
         if (triggering.jobType == null) return triggering.application; // we are passed null when the last job has been reached
 
         List<JobType> runningProductionJobs = JobList.from(triggering.application)
                                                      .production()
                                                      .running(jobTimeoutLimit())
                                                      .mapToList(JobStatus::type);
-        if (triggering.jobType().isProduction() && ! concurrentlyWith.containsAll(runningProductionJobs))
+        if ( ! force && triggering.jobType().isProduction() && ! concurrentlyWith.containsAll(runningProductionJobs))
             return triggering.application;
 
         // Never allow untested changes to go through
@@ -231,7 +231,7 @@ public class DeploymentTrigger {
             if (change.application().isPresent())
                 application = application.withOutstandingChange(Change.empty());
             // TODO jvenstad: Don't trigger.
-            application = triggerAllowParallel(new Triggering(application, JobType.systemTest, false, change.toString()), Collections.emptySet(), false);
+            application = trigger(new Triggering(application, JobType.systemTest, false, change.toString()), Collections.emptySet(), false);
             applications().store(application);
         });
     }
