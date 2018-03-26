@@ -104,6 +104,7 @@ public class DeploymentTrigger {
                 application = application.withChange(Change.empty());
             }
 
+            // TODO jvenstad: Don't trigger.
             // Trigger next
             if (report.success())
                 application = trigger(order.nextAfter(report.jobType(), application), application,
@@ -234,6 +235,7 @@ public class DeploymentTrigger {
             application = application.withChange(change);
             if (change.application().isPresent())
                 application = application.withOutstandingChange(Change.empty());
+            // TODO jvenstad: Don't trigger.
             application = trigger(JobType.systemTest, application, false, change.toString());
             applications().store(application);
         });
