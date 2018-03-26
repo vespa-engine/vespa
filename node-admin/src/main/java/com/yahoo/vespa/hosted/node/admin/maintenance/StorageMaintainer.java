@@ -97,7 +97,6 @@ public class StorageMaintainer {
             vespaSchedule.writeTo(yamasAgentFolder);
             hostLifeSchedule.writeTo(yamasAgentFolder);
             final String[] restartYamasAgent = new String[]{"service", "yamas-agent", "restart"};
-            writeSecretAgentConfig(containerName);
             dockerOperations.executeCommandInContainerAsRoot(containerName, restartYamasAgent);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write secret-agent schedules for " + containerName, e);
@@ -433,34 +432,5 @@ public class StorageMaintainer {
             nextRemoveOldFilesAt = Instant.EPOCH;
             nextHandleOldCoredumpsAt = Instant.EPOCH;
         }
-    }
-
-    private void writeSecretAgentConfig(ContainerName containerName) {
-        String config = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
-                "<log4j:configuration xmlns:log4j=\"http://jakarta.apache.org/log4j/\">\n" +
-                "    <appender name=\"AppLog\" class=\"org.apache.log4j.rolling.RollingFileAppender\">\n" +
-                "        <param name=\"Threshold\" value=\"Debug\" />\n" +
-                "        <rollingPolicy class=\"org.apache.log4j.rolling.FixedWindowRollingPolicy\">\n" +
-                "            <param name=\"FileNamePattern\" value=\"/var/log/secret-agent/collector-writer.%i\"/>\n" +
-                "            <param name=\"MinIndex\" value=\"0\"/>\n" +
-                "            <param name=\"MaxIndex\" value=\"100\"/>\n" +
-                "        </rollingPolicy>\n" +
-                "        <triggeringPolicy class=\"org.apache.log4j.rolling.SizeBasedTriggeringPolicy\">\n" +
-                "            <param name=\"maxFileSize\" value=\"10MB\"/>\n" +
-                "        </triggeringPolicy>\n" +
-                "        <layout class=\"org.apache.log4j.PatternLayout\">\n" +
-                "            <param name=\"ConversionPattern\" value=\"%d %-5p [%c] - %m%n\" />\n" +
-                "        </layout>\n" +
-                "    </appender>\n" +
-                "\n" +
-                "    <root>\n" +
-                "        <priority value=\"all\" />\n" +
-                "        <appender-ref ref=\"AppLog\" />\n" +
-                "    </root>\n" +
-                "</log4j:configuration>";
-
-        Path configPath = Paths.get("/etc/secret-agent/log4cxx.collector-writer.xml");
-        String writeConfigCommand = String.format("echo '%s' > %s", config, configPath);
-        dockerOperations.executeCommandInContainerAsRoot(containerName, "/bin/sh", "-c", writeConfigCommand);
     }
 }
