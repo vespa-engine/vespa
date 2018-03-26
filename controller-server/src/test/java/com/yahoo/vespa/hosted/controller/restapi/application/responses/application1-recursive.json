@@ -181,6 +181,24 @@
         "reason": "staging-test completed",
         "at": "(ignore)"
       }
+    },
+    {
+      "type": "production-us-east-3",
+      "success": false,
+      "lastTriggered": {
+        "id": -1,
+        "version": "(ignore)",
+        "revision": {
+          "hash": "(ignore)",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "reason": "Available change in production-corp-us-east-1",
+        "at": "(ignore)"
+      }
     }
   ],
   "changeBlockers": [

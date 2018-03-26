@@ -392,7 +392,7 @@ public class ControllerTest {
         // Initial failure
         tester.clock().advance(Duration.ofMillis(1000));
         initialFailure = tester.clock().instant();
-        tester.jobCompletion(component).application(app).submit();
+        tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at initial failure",
                      initialFailure.plus(Duration.ofMillis(2)), firstFailing(app, tester).get().at());

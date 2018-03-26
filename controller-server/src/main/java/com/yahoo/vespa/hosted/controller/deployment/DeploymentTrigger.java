@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 /**
  * Responsible for scheduling deployment jobs in a build system and keeping
@@ -114,8 +115,10 @@ public class DeploymentTrigger {
             }
             else if (retryBecauseOutOfCapacity(application, report.jobType()))
                 application = trigger(new Triggering(application, report.jobType(), true, "Retrying on out of capacity"), Collections.emptySet(), false);
-            else if (retryBecauseNewFailure(application, report.jobType()))
-                application = trigger(new Triggering(application, report.jobType(), false, "Immediate retry on failure"), Collections.emptySet(), false);
+            else if (retryBecauseNewFailure(application, report.jobType())) {
+                triggerReadyJobs(application);
+                return; // Don't overwrite below.
+            }
 
             applications().store(application);
         });
@@ -134,6 +137,7 @@ public class DeploymentTrigger {
     /** Find the next step to trigger if any, and triggers it */
     public void triggerReadyJobs(LockedApplication application) {
         if ( ! application.change().isPresent()) return;
+
         List<JobType> jobs =  order.jobsFrom(application.deploymentSpec());
 
         // Should the first step be triggered?
@@ -147,23 +151,15 @@ public class DeploymentTrigger {
                     || ! systemTestStatus.lastTriggered().get().version().equals(target)
                     || systemTestStatus.isHanging(jobTimeoutLimit())) {
                     application = trigger(new Triggering(application, JobType.systemTest, false, "Upgrade to " + target), Collections.emptySet(), false);
-                    controller.applications().store(application);
-                }
-            }
-            else {
-                JobStatus componentStatus = application.deploymentJobs().jobStatus().get(JobType.component);
-                if (componentStatus != null && changesAvailable(application, componentStatus, systemTestStatus)) {
-                    application = trigger(new Triggering(application, JobType.systemTest, false, "Available change in component"), Collections.emptySet(), false);
-                    controller.applications().store(application);
+                    applications().store(application);
                 }
             }
         }
 
         // Find next steps to trigger based on the state of the previous step
-        for (JobType jobType : jobs) {
+        for (JobType jobType : (Iterable<JobType>) Stream.concat(Stream.of(JobType.component), jobs.stream())::iterator) {
             JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
             if (jobStatus == null) continue; // job has never run
-            if (jobStatus.isRunning(jobTimeoutLimit())) continue;
 
             // Collect the subset of next jobs which have not run with the last changes
             // TODO jvenstad: Change to be step-centric.
@@ -173,7 +169,7 @@ public class DeploymentTrigger {
                 if (changesAvailable(application, jobStatus, nextStatus) || nextStatus.isHanging(jobTimeoutLimit()))
                     application = trigger(new Triggering(application, nextJobType, false, "Available change in " + jobType.jobName()), nextJobs, false);
             }
-            controller.applications().store(application);
+            applications().store(application);
         }
     }
 
@@ -185,7 +181,6 @@ public class DeploymentTrigger {
      * @param force true to disable checks which should normally prevent this triggering from happening
      * @return the application in the triggered state, if actually triggered. This *must* be stored by the caller
      */
-    // TODO jvenstad: Replace with (Collection<JobType> concurrentlyWith) to allow, e.g., concurrent retries.
     public LockedApplication trigger(Triggering triggering, Collection<JobType> concurrentlyWith, boolean force) {
         if (triggering.jobType == null) return triggering.application; // we are passed null when the last job has been reached
 
@@ -209,11 +204,11 @@ public class DeploymentTrigger {
         deploymentQueue.addJob(triggering.application.id(), triggering.jobType, triggering.retry);
         // TODO jvenstad: Let triggering set only time of triggering (and reason, for debugging?) when build system is polled for job status.
         return triggering.application.withJobTriggering(triggering.jobType,
-                                             clock.instant(),
-                                             triggering.application.deployVersionFor(triggering.jobType, controller),
-                                             triggering.application.deployApplicationVersionFor(triggering.jobType, controller, false)
-                                                        .orElse(ApplicationVersion.unknown),
-                                             triggering.reason);
+                                                        clock.instant(),
+                                                        triggering.application.deployVersionFor(triggering.jobType, controller),
+                                                        triggering.application.deployApplicationVersionFor(triggering.jobType, controller, false)
+                                                                              .orElse(ApplicationVersion.unknown),
+                                                        triggering.reason);
     }
 
     /**
