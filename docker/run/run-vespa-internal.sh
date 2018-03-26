@@ -14,7 +14,7 @@ cd $DIR
 # Workaround until we figure out why rpm does not set the ownership.
 chown -R vespa:vespa /opt/vespa
 
-export VESPA_CONFIG_SERVERS=$(hostname)
+export VESPA_CONFIGSERVERS=$(hostname)
 
 /opt/vespa/bin/vespa-start-configserver
 # Give config server some time to come up before starting services
