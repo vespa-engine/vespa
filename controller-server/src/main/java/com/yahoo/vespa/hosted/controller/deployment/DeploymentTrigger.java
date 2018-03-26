@@ -113,8 +113,10 @@ public class DeploymentTrigger {
                 for (JobType job : jobs)
                      application = trigger(new Triggering(application, job, false, report.jobType().jobName() + " completed"), jobs, false);
             }
-            else if (retryBecauseOutOfCapacity(application, report.jobType()))
-                application = trigger(new Triggering(application, report.jobType(), true, "Retrying on out of capacity"), Collections.emptySet(), false);
+            else if (retryBecauseOutOfCapacity(application, report.jobType())) {
+                triggerReadyJobs(application);
+                return; // Don't overwrite below.
+            }
             else if (retryBecauseNewFailure(application, report.jobType())) {
                 triggerReadyJobs(application);
                 return; // Don't overwrite below.
@@ -166,8 +168,10 @@ public class DeploymentTrigger {
             List<JobType> nextJobs = order.nextAfter(jobType, application);
             for (JobType nextJobType : nextJobs) {
                 JobStatus nextStatus = application.deploymentJobs().jobStatus().get(nextJobType);
-                if (changesAvailable(application, jobStatus, nextStatus) || nextStatus.isHanging(jobTimeoutLimit()))
-                    application = trigger(new Triggering(application, nextJobType, false, "Available change in " + jobType.jobName()), nextJobs, false);
+                if (changesAvailable(application, jobStatus, nextStatus) || nextStatus.isHanging(jobTimeoutLimit())) {
+                    boolean isRetry = nextStatus != null && nextStatus.jobError().filter(JobError.outOfCapacity::equals).isPresent();
+                    application = trigger(new Triggering(application, nextJobType, isRetry, isRetry ? "Retrying on out of capacity" : "Available change in " + jobType.jobName()), nextJobs, false);
+                }
             }
             applications().store(application);
         }

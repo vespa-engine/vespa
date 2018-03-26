@@ -470,14 +470,14 @@ public class ControllerTest {
         assertEquals(2, deploymentQueue.jobs().size());
 
         // app1: 4 hours pass in total, staging-test job for app1 is re-queued by periodic trigger mechanism and added at the
-        // back of the queue
+        // front of the queue
         tester.clock().advance(Duration.ofHours(3));
         tester.clock().advance(Duration.ofMinutes(50));
         tester.readyJobTrigger().maintain();
 
+        assertEquals(Collections.singletonList(new BuildService.BuildJob(project1, stagingTest.jobName())), deploymentQueue.takeJobsToRun());
         assertEquals(Collections.singletonList(new BuildService.BuildJob(project2, stagingTest.jobName())), deploymentQueue.takeJobsToRun());
         assertEquals(Collections.singletonList(new BuildService.BuildJob(project3, stagingTest.jobName())), deploymentQueue.takeJobsToRun());
-        assertEquals(Collections.singletonList(new BuildService.BuildJob(project1, stagingTest.jobName())), deploymentQueue.takeJobsToRun());
         assertEquals(Collections.emptyList(), deploymentQueue.takeJobsToRun());
     }
 
