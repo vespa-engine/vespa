@@ -275,7 +275,7 @@ public class DeploymentTester {
             assertEquals(job.jobName(), buildJob.jobName());
         }
         if (expectOnlyTheseJobs)
-            assertEquals(jobs.length, countJobsOf(application));
+            assertEquals("Unexpected job queue: " + jobsOf(application), jobs.length, jobsOf(application).size());
         deploymentQueue().removeJobs(application.id());
     }
 
@@ -286,15 +286,17 @@ public class DeploymentTester {
         throw new IllegalArgumentException(jobType + " is not scheduled for " + application);
     }
 
-    private int countJobsOf(Application application) {
-        return (int) deploymentQueue().jobs().stream()
-                .filter(job -> job.projectId() == application.deploymentJobs().projectId().get())
-                .count();
+    private List<JobType> jobsOf(Application application) {
+        return  deploymentQueue().jobs().stream()
+                                 .filter(job -> job.projectId() == application.deploymentJobs().projectId().get())
+                                 .map(buildJob -> JobType.fromJobName(buildJob.jobName()))
+                                 .collect(Collectors.toList());
     }
 
     private void notifyJobCompletion(DeploymentJobs.JobReport report) {
         clock().advance(Duration.ofMillis(1));
         applications().notifyJobCompletion(report);
+        applications().deploymentTrigger().triggerReadyJobs();
     }
 
     public static ApplicationPackage applicationPackage(String upgradePolicy) {

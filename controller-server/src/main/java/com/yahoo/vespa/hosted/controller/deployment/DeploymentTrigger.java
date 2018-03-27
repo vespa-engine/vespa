@@ -87,38 +87,18 @@ public class DeploymentTrigger {
             // Handle successful starting and ending
             if (report.jobType() == JobType.component) {
                 if (report.success()) {
-                    if ( ! acceptNewApplicationVersionNow(application)) {
-                        applications().store(application.withOutstandingChange(Change.of(applicationVersion)));
-                        return;
-                    }
-                    // Note that in case of an ongoing upgrade this may result in both the upgrade and application
-                    // change being deployed together
-                    application = application.withChange(application.change().with(applicationVersion));
-                }
-                else { // don't re-trigger component on failure
-                    applications().store(application);
-                    return;
+                    if ( ! acceptNewApplicationVersionNow(application))
+                        application = application.withOutstandingChange(Change.of(applicationVersion));
+                    else
+                        // Note that in case of an ongoing upgrade this may result in both the upgrade and application
+                        // change being deployed together
+                        application = application.withChange(application.change().with(applicationVersion));
                 }
             }
             else if (report.jobType().isProduction() && deploymentComplete(application)) {
                 // change completed
                 // TODO jvenstad: Check for and remove individual parts of Change.
                 application = application.withChange(Change.empty());
-            }
-
-            // TODO jvenstad: Don't trigger.
-            // Trigger next
-            if (report.success()) {
-                triggerReadyJobs(application);
-                return; // Don't overwrite below.
-            }
-            else if (retryBecauseOutOfCapacity(application, report.jobType())) {
-                triggerReadyJobs(application);
-                return; // Don't overwrite below.
-            }
-            else if (retryBecauseNewFailure(application, report.jobType())) {
-                triggerReadyJobs(application);
-                return; // Don't overwrite below.
             }
 
             applications().store(application);
@@ -226,7 +206,6 @@ public class DeploymentTrigger {
             application = application.withChange(change);
             if (change.application().isPresent())
                 application = application.withOutstandingChange(Change.empty());
-            // TODO jvenstad: Don't trigger.
             triggerReadyJobs(application);
         });
     }

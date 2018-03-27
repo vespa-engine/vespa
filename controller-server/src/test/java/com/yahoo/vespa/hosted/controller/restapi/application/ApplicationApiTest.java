@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
+import com.google.common.base.Functions;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.component.Version;
@@ -791,7 +792,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         Version vespaVersion = new Version("6.1"); // system version from mock config server client
 
-        BuildJob job = new BuildJob(this::notifyCompletion, tester.artifactRepository())
+        BuildJob job = new BuildJob(report -> notifyCompletion(report, tester), tester.artifactRepository())
                 .application(app)
                 .projectId(projectId);
         job.type(DeploymentJobs.JobType.component).uploadArtifact(applicationPackage).submit();
@@ -845,7 +846,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .build();
 
         // Report job failing with out of capacity
-        BuildJob job = new BuildJob(this::notifyCompletion, tester.artifactRepository())
+        BuildJob job = new BuildJob(report -> notifyCompletion(report, tester), tester.artifactRepository())
                 .application(app)
                 .projectId(projectId);
         job.type(DeploymentJobs.JobType.component).uploadArtifact(applicationPackage).submit();
@@ -865,12 +866,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         assertEquals(DeploymentJobs.JobError.outOfCapacity, jobStatus.jobError().get());
     }
 
-    private void notifyCompletion(DeploymentJobs.JobReport report) {
+    private void notifyCompletion(DeploymentJobs.JobReport report, ContainerControllerTester tester) {
         assertResponse(request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
                                .userIdentity(HOSTED_VESPA_OPERATOR)
                                .data(asJson(report))
                                .get(),
                        200, "{\"message\":\"ok\"}");
+        tester.controller().applications().deploymentTrigger().triggerReadyJobs();
     }
 
     private static byte[] asJson(DeploymentJobs.JobReport report) {

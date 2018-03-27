@@ -69,14 +69,7 @@ public class DeploymentTriggerTest {
 
         // system-test fails and is retried
         tester.deployAndNotify(app, applicationPackage, false, JobType.systemTest);
-        assertEquals("Retried immediately", 1, tester.deploymentQueue().jobs().size());
-        tester.clock().advance(Duration.ofHours(1));
-        tester.deployAndNotify(app, applicationPackage, false, JobType.systemTest);
-        tester.clock().advance(Duration.ofHours(1));
-        assertEquals("Nothing scheduled", 0, tester.deploymentQueue().jobs().size());
-        tester.readyJobTrigger().maintain(); // Causes retry of systemTests
-
-        assertEquals("Scheduled retry", 1, tester.deploymentQueue().jobs().size());
+        assertEquals("Job is retried on failure", 1, tester.deploymentQueue().jobs().size());
         tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
 
         // staging-test times out and is retried
@@ -390,28 +383,22 @@ public class DeploymentTriggerTest {
         tester.upgradeSystem(version1);
         tester.completeUpgradeWithError(application, version1, applicationPackage, productionEuWest1);
 
-        // Exhaust the retry, so productionEuWest1 is no longer running.
-        tester.clock().advance(Duration.ofHours(1));
-        tester.deployAndNotify(application, Optional.empty(), false, true, productionEuWest1);
-        assertTrue(tester.deploymentQueue().jobs().isEmpty());
-
         // Deploy the new application version, even though the platform version is already deployed in us-central-1.
         // Let it fail in us-central-1 after deployment, so we can test this zone is later skipped.
-        tester.completeDeploymentWithError(application, applicationPackage, BuildJob.defaultBuildNumber + 1, productionUsCentral1);
+        tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        tester.deployAndNotify(application, applicationPackage, true, false, systemTest);
+        tester.deployAndNotify(application, applicationPackage, true, false, stagingTest);
+        tester.jobCompletion(productionEuWest1).application(application).unsuccessful().submit();
         tester.deploy(productionUsCentral1, application, Optional.empty(), false);
+        // Deploying before notifying here makes the job not re-trigger, but instead triggers the next job (because of triggerReadyJobs() in notification.)
+        tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
 
         assertEquals(ApplicationVersion.from(BuildJob.defaultSourceRevision, BuildJob.defaultBuildNumber + 1),
                      app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
 
-        // Exhaust the automatic retry.
-        tester.clock().advance(Duration.ofHours(1));
-        tester.deployAndNotify(application, Optional.empty(), false, true, productionUsCentral1);
-        assertTrue(tester.deploymentQueue().jobs().isEmpty());
-
-        // Let the ReadyJobTrigger get what it thinks is the next job -- should be the last job.
-        tester.readyJobTrigger().maintain();
         assertEquals(Collections.singletonList(new BuildService.BuildJob(1, productionEuWest1.jobName())),
                      tester.deploymentQueue().jobs());
+
         tester.deploy(productionEuWest1, application, Optional.empty(), false);
         tester.deployAndNotify(application, Optional.empty(), false, true, productionEuWest1);
         assertFalse(app.get().change().isPresent());
@@ -438,11 +425,6 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, Optional.empty(), false, true, productionUsCentral1);
         tester.deploy(productionUsCentral1, application, Optional.empty(), false);
 
-        // Exhaust the automatic retry.
-        tester.clock().advance(Duration.ofHours(1));
-        tester.deployAndNotify(application, Optional.empty(), false, true, productionUsCentral1);
-        assertTrue(tester.deploymentQueue().jobs().isEmpty());
-
         ApplicationVersion appVersion1 = ApplicationVersion.from(BuildJob.defaultSourceRevision, BuildJob.defaultBuildNumber + 1);
         assertEquals(appVersion1, app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
 
@@ -450,13 +432,14 @@ public class DeploymentTriggerTest {
         tester.deploymentTrigger().cancelChange(application.id(), true);
         assertEquals(Change.of(appVersion1), app.get().change());
 
-        // Now cancel the change -- this should not normally happen.
+        // Now cancel the change as is done through the web API.
         tester.deploymentTrigger().cancelChange(application.id(), false);
         assertEquals(Change.empty(), app.get().change());
 
         // A new version is released, which should now deploy the currently deployed application version to avoid downgrades.
         Version version1 = new Version("6.2");
         tester.upgradeSystem(version1);
+        tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
         tester.completeUpgrade(application, version1, applicationPackage);
         assertEquals(appVersion1, app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
     }

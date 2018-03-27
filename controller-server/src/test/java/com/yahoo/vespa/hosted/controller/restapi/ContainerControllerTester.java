@@ -126,6 +126,7 @@ public class ContainerControllerTester {
             throw new RuntimeException(e);
         }
         controller().applications().notifyJobCompletion(jobReport);
+        controller().applications().deploymentTrigger().triggerReadyJobs();
     }
 
     private AthenzDomain addTenantAthenzDomain(String domainName, String userName) {

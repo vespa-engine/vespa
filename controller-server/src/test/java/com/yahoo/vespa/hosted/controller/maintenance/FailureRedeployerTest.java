@@ -23,6 +23,7 @@ import java.util.Collections;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsEast3;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -68,14 +69,13 @@ public class FailureRedeployerTest {
         // Another version is released, which cancels any pending upgrades to lower versions
         version = Version.fromString("5.2");
         tester.updateVersionStatus(version);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3); // Finish previous production job.
         tester.upgrader().maintain();
         assertEquals("Application starts upgrading to new version", 1, tester.deploymentQueue().jobs().size());
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
-        // Failure redeployer does not retry failing job for prod.us-east-3 as there's an ongoing deployment
+        // Failure re-deployer does not retry failing job for prod.us-east-3, since it no longer has an available change
         tester.clock().advance(Duration.ofMinutes(1));
-        tester.readyJobTrigger().maintain();
+        tester.jobCompletion(DeploymentJobs.JobType.productionUsEast3).application(app).unsuccessful().submit();
         assertFalse("Job is not retried", tester.deploymentQueue().jobs().stream()
                 .anyMatch(j -> j.jobName().equals(DeploymentJobs.JobType.productionUsEast3.jobName())));
 
@@ -83,16 +83,8 @@ public class FailureRedeployerTest {
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
 
-        // Production job fails again and exhausts all immediate retries
+        // Production job fails again, and is retried
         tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.productionUsEast3);
-        tester.deploymentQueue().takeJobsToRun();
-        tester.clock().advance(Duration.ofMinutes(10));
-        tester.jobCompletion(DeploymentJobs.JobType.productionUsEast3).application(app).unsuccessful().submit();
-        assertTrue("Retries exhausted", tester.deploymentQueue().jobs().isEmpty());
-        assertTrue("Failure is recorded", tester.application(app.id()).deploymentJobs().hasFailures());
-
-        // Failure redeployer retries job
-        tester.clock().advance(Duration.ofMinutes(5));
         tester.readyJobTrigger().maintain();
         assertEquals("Job is retried", Collections.singletonList(new BuildService.BuildJob(app.deploymentJobs().projectId().get(), productionUsEast3.jobName())), tester.deploymentQueue().jobs());
 
@@ -156,27 +148,21 @@ public class FailureRedeployerTest {
         tester.upgrader().maintain();
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
-        // system-test fails and exhausts all immediate retries
+        // system-test fails and is left with a retry
         tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.systemTest);
-        tester.deploymentQueue().takeJobsToRun();
-        tester.clock().advance(Duration.ofMinutes(10));
-        tester.jobCompletion(DeploymentJobs.JobType.systemTest).application(app).unsuccessful().submit();
-        assertTrue("Retries exhausted", tester.deploymentQueue().jobs().isEmpty());
 
         // Another version is released
         version = Version.fromString("5.2");
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
+
+        // Job is left "running", so needs to time out before it can be retried.
+        tester.clock().advance(Duration.ofHours(13));
         tester.upgrader().maintain();
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
-        // Consume system-test job for 5.2
-        tester.deploymentQueue().takeJobsToRun();
-
-        // Failure re-deployer does not retry failing system-test job as it failed for an older change
-        tester.clock().advance(Duration.ofMinutes(5));
-        tester.readyJobTrigger().maintain();
-        assertTrue("No jobs retried", tester.deploymentQueue().jobs().isEmpty());
+        // Cancellation of outdated version and triggering on a new version is done by the upgrader.
+        assertEquals(version, tester.application(app.id()).deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().version());
     }
 
     @Test

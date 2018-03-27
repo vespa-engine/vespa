@@ -21,6 +21,8 @@ import java.time.Duration;
 import java.time.Instant;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionEuWest1;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
@@ -99,23 +101,14 @@ public class UpgraderTest {
         assertEquals("New system version: Should upgrade Canaries", 2, tester.deploymentQueue().jobs().size());
         tester.completeUpgradeWithError(canary0, version, "canary", DeploymentJobs.JobType.stagingTest);
         assertEquals("Other Canary was cancelled", 2, tester.deploymentQueue().jobs().size());
-        // TODO: Cancelled would mean it was triggerd, removed from the build system, but never reported in.
-        //       Thus, the expected number of jobs should be 1, above: the retrying canary0.
-        //       Further, canary1 should be retried after the timeout period of 12 hours, but verifying this is
-        //       not possible when jobs are consumed form the build system on notification, rather than on deploy.
 
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
         assertEquals("Version broken, but Canaries should keep trying", 2, tester.deploymentQueue().jobs().size());
 
-        // Exhaust canary retries.
-        tester.jobCompletion(systemTest).application(canary1).unsuccessful().submit();
-        tester.clock().advance(Duration.ofHours(1));
-        tester.deployAndNotify(canary0, DeploymentTester.applicationPackage("canary"), false, DeploymentJobs.JobType.stagingTest);
-        tester.jobCompletion(systemTest).application(canary1).unsuccessful().submit();
-
         // --- A new version is released - which repairs the Canary app and fails a default
+        tester.clock().advance(Duration.ofHours(13));
         version = Version.fromString("5.3");
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
@@ -147,13 +140,16 @@ public class UpgraderTest {
 
         assertEquals("Upgrade with error should retry", 1, tester.deploymentQueue().jobs().size());
 
-        // Finish previous run, with exhausted retry.
-        tester.clock().advance(Duration.ofHours(1));
-        tester.jobCompletion(stagingTest).application(default0).unsuccessful().submit();
 
         // --- Failing application is repaired by changing the application, causing confidence to move above 'high' threshold
         // Deploy application change
-        tester.deployCompletely(tester.application("default0"), DeploymentTester.applicationPackage("default"), BuildJob.defaultBuildNumber + 1);
+        tester.deploymentQueue().takeJobsToRun();
+        tester.jobCompletion(component).application(default0).nextBuildNumber().uploadArtifact(DeploymentTester.applicationPackage("default")).submit();
+        tester.jobCompletion(stagingTest).application(default0).unsuccessful().submit();
+        tester.deployAndNotify(default0, "default", true, systemTest);
+        tester.deployAndNotify(default0, "default", true, stagingTest);
+        tester.deployAndNotify(default0, "default", true, productionUsWest1);
+        tester.deployAndNotify(default0, "default", true, productionUsEast3);
 
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.high, tester.controller().versionStatus().systemVersion().get().confidence());
@@ -206,12 +202,10 @@ public class UpgraderTest {
         tester.completeUpgrade(default2, version54, "default");
 
         tester.completeUpgradeWithError(default3, version54, "default", DeploymentJobs.JobType.stagingTest);
-        // Exhaust immediate retries for upgrade
-        tester.clock().advance(Duration.ofHours(1));
-        tester.jobCompletion(stagingTest).application(default3).unsuccessful().submit();
 
         tester.completeUpgradeWithError(default4, version54, "default", DeploymentJobs.JobType.productionUsWest1);
         // State: Default applications started upgrading to 5.5
+        tester.clock().advance(Duration.ofHours(13));
         tester.upgrader().maintain();
         tester.completeUpgradeWithError(default0, version55, "default", DeploymentJobs.JobType.stagingTest);
         tester.completeUpgradeWithError(default1, version55, "default", DeploymentJobs.JobType.stagingTest);
@@ -325,12 +319,8 @@ public class UpgraderTest {
         // system-test completes successfully
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
 
-        // staging-test fails multiple times, exhausts retries and failure is recorded
+        // staging-test fails and failure is recorded
         tester.deployAndNotify(app, applicationPackage, false, DeploymentJobs.JobType.stagingTest);
-        tester.deploymentQueue().takeJobsToRun();
-        tester.clock().advance(Duration.ofMinutes(10));
-        tester.jobCompletion(stagingTest).application(app).unsuccessful().submit();
-        assertTrue("Retries exhausted", tester.deploymentQueue().jobs().isEmpty());
         assertTrue("Failure is recorded", tester.application(app.id()).deploymentJobs().hasFailures());
         assertTrue("Application has pending change", tester.application(app.id()).change().isPresent());
 
@@ -752,8 +742,7 @@ public class UpgraderTest {
 
         tester.upgrader().maintain();
 
-        // Exhaust retries and finish runs
-        tester.clock().advance(Duration.ofHours(1));
+        // Finish runs
         tester.jobCompletion(systemTest).application(default0).unsuccessful().submit();
         tester.jobCompletion(systemTest).application(default1).unsuccessful().submit();
         tester.jobCompletion(systemTest).application(default2).unsuccessful().submit();
@@ -863,10 +852,6 @@ public class UpgraderTest {
 
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-
-        // Production job fails and exhausts retries, new application changes are now accepted
-        tester.deployAndNotify(app, applicationPackage, false, productionUsWest1);
-        tester.clock().advance(Duration.ofHours(1));
         tester.deployAndNotify(app, applicationPackage, false, productionUsWest1);
 
         // New application change
@@ -880,8 +865,9 @@ public class UpgraderTest {
                    app.change().application().get().id().equals(applicationVersion));
 
         // Deployment completes
-        tester.deployAndNotify(app, applicationPackage, true, systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, false, systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, false, stagingTest);
+        tester.jobCompletion(productionUsWest1).application(app).unsuccessful().submit();
         tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
         assertTrue("All jobs consumed", tester.deploymentQueue().jobs().isEmpty());
 
