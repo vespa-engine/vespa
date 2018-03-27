@@ -206,25 +206,6 @@ public class DeploymentTrigger {
     private void triggerReadyJobs(LockedApplication application) {
         List<JobType> jobs =  order.jobsFrom(application.deploymentSpec());
 
-        // Should the first step be triggered?
-        if ( ! jobs.isEmpty() && jobs.get(0).equals(JobType.systemTest) ) {
-            JobStatus systemTestStatus = application.deploymentJobs().jobStatus().get(JobType.systemTest);
-            if (application.change().platform().isPresent()) {
-                Version target = application.change().platform().get();
-                if (     systemTestStatus == null
-                    || ! systemTestStatus.lastTriggered().isPresent()
-                    || ! systemTestStatus.isSuccess()
-                    || ! systemTestStatus.lastTriggered().get().version().equals(target)
-                    ||   systemTestStatus.isHanging(jobTimeoutLimit())) {
-                    Triggering triggering = new Triggering(application, JobType.systemTest, false, "Upgrade to " + target);
-                    if (allowedToTriggerNow(triggering)) {
-                        application = trigger(triggering);
-                        applications().store(application);
-                    }
-                }
-            }
-        }
-
         // Find next steps to trigger based on the state of the previous step
         for (JobType jobType : (Iterable<JobType>) Stream.concat(Stream.of(JobType.component), jobs.stream())::iterator) {
             if ( ! application.deploymentJobs().jobStatus().containsKey(jobType))
@@ -238,7 +219,9 @@ public class DeploymentTrigger {
                 JobStatus nextStatus = application.deploymentJobs().jobStatus().get(nextJobType);
                 if (changesAvailable(application, jobType, nextJobType) || nextStatus != null && nextStatus.isHanging(jobTimeoutLimit())) {
                     boolean isRetry = nextStatus != null && nextStatus.jobError().filter(JobError.outOfCapacity::equals).isPresent();
-                    Triggering triggering = new Triggering(application, nextJobType, isRetry, isRetry ? "Retrying on out of capacity" : "Available change in " + jobType.jobName());
+                    String reason = isRetry ? "Retrying on out of capacity"
+                                            : "Available change in " + jobType.jobName();
+                    Triggering triggering = new Triggering(application, nextJobType, isRetry, reason);
                     if (allowedToTriggerNow(triggering, nextJobs))
                         application = trigger(triggering);
                 }
