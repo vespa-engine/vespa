@@ -134,7 +134,7 @@ public class DeploymentIssueReporterTest {
 
 
         // app3 now has a new failure past max failure age; see that a new issue is filed.
-        tester.jobCompletion(component).application(app3).submit();
+        tester.jobCompletion(component).application(app3).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app3, applicationPackage, false, systemTest);
         tester.clock().advance(maxInactivity.plus(maxFailureAge));
 

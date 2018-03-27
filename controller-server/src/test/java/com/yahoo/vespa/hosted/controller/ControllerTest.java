@@ -146,11 +146,13 @@ public class ControllerTest {
         tester.jobCompletion(productionCorpUsEast1).application(app1).unsuccessful().submit();
 
         // system and staging test job - succeeding
-        tester.jobCompletion(component).application(app1).submit();
+        tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        applicationVersion = tester.application("app1").change().application().get();
         tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
         assertStatus(JobStatus.initial(systemTest)
                               .withTriggering(version1, applicationVersion, "", tester.clock().instant().minus(Duration.ofMillis(1)))
-                              .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()), app1.id(), tester.controller());
+                              .withCompletion(42, Optional.empty(), tester.clock().instant(), tester.controller()),
+                     app1.id(), tester.controller());
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
 
         // production job succeeding now
@@ -186,7 +188,7 @@ public class ControllerTest {
         JobStatus jobStatus = applications.require(app1.id()).deploymentJobs().jobStatus().get(productionCorpUsEast1);
         assertNotNull("Deployment job was not removed", jobStatus);
         assertEquals(42, jobStatus.lastCompleted().get().id());
-        assertEquals("staging-test completed", jobStatus.lastCompleted().get().reason());
+        assertEquals("Available change in staging-test", jobStatus.lastCompleted().get().reason());
 
         // prod zone removal is allowed with override
         applicationPackage = new ApplicationPackageBuilder()
@@ -392,7 +394,7 @@ public class ControllerTest {
         // Initial failure
         tester.clock().advance(Duration.ofMillis(1000));
         initialFailure = tester.clock().instant();
-        tester.jobCompletion(component).application(app).submit();
+        tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app, applicationPackage, false, systemTest);
         assertEquals("Failure age is right at initial failure",
                      initialFailure.plus(Duration.ofMillis(2)), firstFailing(app, tester).get().at());
@@ -470,14 +472,14 @@ public class ControllerTest {
         assertEquals(2, deploymentQueue.jobs().size());
 
         // app1: 4 hours pass in total, staging-test job for app1 is re-queued by periodic trigger mechanism and added at the
-        // back of the queue
+        // front of the queue
         tester.clock().advance(Duration.ofHours(3));
         tester.clock().advance(Duration.ofMinutes(50));
         tester.readyJobTrigger().maintain();
 
+        assertEquals(Collections.singletonList(new BuildService.BuildJob(project1, stagingTest.jobName())), deploymentQueue.takeJobsToRun());
         assertEquals(Collections.singletonList(new BuildService.BuildJob(project2, stagingTest.jobName())), deploymentQueue.takeJobsToRun());
         assertEquals(Collections.singletonList(new BuildService.BuildJob(project3, stagingTest.jobName())), deploymentQueue.takeJobsToRun());
-        assertEquals(Collections.singletonList(new BuildService.BuildJob(project1, stagingTest.jobName())), deploymentQueue.takeJobsToRun());
         assertEquals(Collections.emptyList(), deploymentQueue.takeJobsToRun());
     }
 
@@ -661,7 +663,7 @@ public class ControllerTest {
                     .environment(Environment.prod)
                     .allow(ValidationId.deploymentRemoval)
                     .build();
-            tester.jobCompletion(component).application(app1).uploadArtifact(applicationPackage).submit();
+            tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
             tester.deployAndNotify(app1, applicationPackage, true, systemTest);
             tester.applications().deactivate(app1, ZoneId.from(Environment.test, RegionName.from("us-east-1")));
             tester.applications().deactivate(app1, ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
