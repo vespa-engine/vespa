@@ -142,9 +142,6 @@ public class ControllerTest {
 
         tester.clock().advance(Duration.ofHours(1));
 
-        // Need to complete the job, or new jobs won't start.
-        tester.jobCompletion(productionCorpUsEast1).application(app1).unsuccessful().submit();
-
         // system and staging test job - succeeding
         tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         applicationVersion = tester.application("app1").change().application().get();
@@ -156,6 +153,7 @@ public class ControllerTest {
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
 
         // production job succeeding now
+        tester.jobCompletion(productionCorpUsEast1).application(app1).unsuccessful().submit();
         tester.deployAndNotify(app1, applicationPackage, true, productionCorpUsEast1);
         expectedJobStatus = expectedJobStatus
                 .withTriggering(version1, applicationVersion, "", tester.clock().instant().minus(Duration.ofMillis(1)))
@@ -280,6 +278,7 @@ public class ControllerTest {
 
         // Version upgrade changes system version
         applications.deploymentTrigger().triggerChange(app1.id(), Change.of(newSystemVersion));
+        tester.deploymentTrigger().triggerReadyJobs();
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
@@ -450,17 +449,6 @@ public class ControllerTest {
         tester.deployAndNotify(app3, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app3, applicationPackage, true, productionCorpUsEast1);
 
-        // app1: 15 minutes pass, staging-test job is still failing due out of capacity, but is no longer re-queued by
-        // out of capacity retry mechanism
-        tester.clock().advance(Duration.ofMinutes(15));
-        tester.jobCompletion(stagingTest).application(app1).error(JobError.outOfCapacity).submit(); // Clear the previous staging test
-        tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app1, applicationPackage, true, false, systemTest);
-        tester.deploy(stagingTest, app1, applicationPackage);
-        assertEquals(1, deploymentQueue.takeJobsToRun().size());
-        tester.jobCompletion(stagingTest).application(app1).error(JobError.outOfCapacity).submit();
-        assertTrue("No jobs queued", deploymentQueue.jobs().isEmpty());
-
         // app2 and app3: New change triggers system-test jobs
         // Provide a changed application package, too, or the deployment is a no-op.
         tester.jobCompletion(component).application(app2).nextBuildNumber().uploadArtifact(applicationPackage).submit();
@@ -468,14 +456,6 @@ public class ControllerTest {
 
         tester.jobCompletion(component).application(app3).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app3, applicationPackage2, true, systemTest);
-
-        assertEquals(2, deploymentQueue.jobs().size());
-
-        // app1: 4 hours pass in total, staging-test job for app1 is re-queued by periodic trigger mechanism and added at the
-        // front of the queue
-        tester.clock().advance(Duration.ofHours(3));
-        tester.clock().advance(Duration.ofMinutes(50));
-        tester.readyJobTrigger().maintain();
 
         assertEquals(Collections.singletonList(new BuildService.BuildJob(project1, stagingTest.jobName())), deploymentQueue.takeJobsToRun());
         assertEquals(Collections.singletonList(new BuildService.BuildJob(project2, stagingTest.jobName())), deploymentQueue.takeJobsToRun());
@@ -578,6 +558,7 @@ public class ControllerTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         // Test environments pass
         tester.deploy(DeploymentJobs.JobType.systemTest, application, applicationPackage);

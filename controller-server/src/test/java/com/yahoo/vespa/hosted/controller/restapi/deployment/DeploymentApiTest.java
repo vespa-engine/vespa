@@ -69,6 +69,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
 
         // Applications upgrade, 1/2 succeed
         tester.upgrader().maintain();
+        tester.controller().applications().deploymentTrigger().triggerReadyJobs();
         deployCompletely(failingApplication, applicationPackage, projectId, false);
         deployCompletely(productionApplication, applicationPackage, projectId, true);
 

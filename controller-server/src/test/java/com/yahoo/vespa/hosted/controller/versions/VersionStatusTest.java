@@ -156,12 +156,6 @@ public class VersionStatusTest {
         assertEquals("One canary failed: Broken",
                      Confidence.broken, confidence(tester.controller(), version1));
 
-        // Finish running jobs
-        tester.deployAndNotify(canary2, DeploymentTester.applicationPackage("canary"), false, systemTest);
-        tester.clock().advance(Duration.ofHours(1));
-        tester.deployAndNotify(canary1, DeploymentTester.applicationPackage("canary"), false, productionUsWest1);
-        tester.deployAndNotify(canary2, DeploymentTester.applicationPackage("canary"), false, systemTest);
-
         // New version is released
         Version version2 = new Version("5.2");
         tester.upgradeSystem(version2);
@@ -170,6 +164,7 @@ public class VersionStatusTest {
 
         // All canaries upgrade successfully
         tester.completeUpgrade(canary0, version2, "canary");
+        tester.jobCompletion(productionUsWest1).application(canary1).unsuccessful().submit();
         tester.completeUpgrade(canary1, version2, "canary");
 
         assertEquals("Confidence for remains unchanged for version1: Broken",
@@ -178,6 +173,7 @@ public class VersionStatusTest {
                      Confidence.low, confidence(tester.controller(), version2));
 
         // Remaining canary upgrades to version2 which raises confidence to normal and more apps upgrade
+        tester.jobCompletion(systemTest).application(canary2).unsuccessful().submit();
         tester.completeUpgrade(canary2, version2, "canary");
         tester.upgradeSystem(version2);
         assertEquals("Canaries have upgraded: Normal",
