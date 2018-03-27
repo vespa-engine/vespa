@@ -230,20 +230,6 @@ public class DeploymentTrigger {
 
     private ApplicationController applications() { return controller.applications(); }
 
-    /** Retry immediately only if this job just started failing. Otherwise retry periodically */
-    private boolean retryBecauseNewFailure(Application application, JobType jobType) {
-        JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
-        return (jobStatus != null && jobStatus.firstFailing().get().at().isAfter(clock.instant().minus(Duration.ofSeconds(10))));
-    }
-
-    /** Decide whether to retry due to capacity restrictions */
-    private boolean retryBecauseOutOfCapacity(Application application, JobType jobType) {
-        JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
-        if (jobStatus == null || ! jobStatus.jobError().equals(Optional.of(JobError.outOfCapacity))) return false;
-        // Retry the job if it failed recently
-        return jobStatus.firstFailing().get().at().isAfter(clock.instant().minus(Duration.ofMinutes(15)));
-    }
-
     /** Returns whether the given job type should be triggered according to deployment spec */
     private boolean hasJob(JobType jobType, Application application) {
         if ( ! jobType.isProduction()) return true; // Deployment spec only determines this for production jobs.
