@@ -44,6 +44,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
 
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("No applications: Nothing to do", 0, tester.deploymentQueue().jobs().size());
 
         // Setup applications
@@ -55,6 +56,7 @@ public class UpgraderTest {
         Application conservative0 = tester.createAndDeploy("conservative0", 6, "conservative");
 
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("All already on the right version: Nothing to do", 0, tester.deploymentQueue().jobs().size());
 
         // --- 5.1 is released - everything goes smoothly
@@ -62,6 +64,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         assertEquals("New system version: Should upgrade Canaries", 2, tester.deploymentQueue().jobs().size());
         tester.completeUpgrade(canary0, version, "canary");
@@ -69,6 +72,7 @@ public class UpgraderTest {
 
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("One canary pending; nothing else", 1, tester.deploymentQueue().jobs().size());
 
         tester.completeUpgrade(canary1, version, "canary");
@@ -76,6 +80,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Canaries done: Should upgrade defaults", 3, tester.deploymentQueue().jobs().size());
 
         tester.completeUpgrade(default0, version, "default");
@@ -85,11 +90,13 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.high, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Normals done: Should upgrade conservatives", 1, tester.deploymentQueue().jobs().size());
         tester.completeUpgrade(conservative0, version, "conservative");
 
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Nothing to do", 0, tester.deploymentQueue().jobs().size());
 
         // --- 5.2 is released - which fails a Canary
@@ -97,6 +104,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         assertEquals("New system version: Should upgrade Canaries", 2, tester.deploymentQueue().jobs().size());
         tester.completeUpgradeWithError(canary0, version, "canary", DeploymentJobs.JobType.stagingTest);
@@ -105,6 +113,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Version broken, but Canaries should keep trying", 2, tester.deploymentQueue().jobs().size());
 
         // --- A new version is released - which repairs the Canary app and fails a default
@@ -113,6 +122,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         assertEquals("New system version: Should upgrade Canaries", 2, tester.deploymentQueue().jobs().size());
         tester.completeUpgrade(canary0, version, "canary");
@@ -120,6 +130,7 @@ public class UpgraderTest {
 
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("One canary pending; nothing else", 1, tester.deploymentQueue().jobs().size());
 
         tester.completeUpgrade(canary1, version, "canary");
@@ -127,6 +138,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         assertEquals("Canaries done: Should upgrade defaults", 3, tester.deploymentQueue().jobs().size());
 
@@ -154,11 +166,13 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.high, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Normals done: Should upgrade conservatives", 1, tester.deploymentQueue().jobs().size());
         tester.completeUpgrade(conservative0, version, "conservative");
 
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Applications are on 5.3 - nothing to do", 0, tester.deploymentQueue().jobs().size());
         
         // --- Starting upgrading to a new version which breaks, causing upgrades to commence on the previous version
@@ -167,11 +181,13 @@ public class UpgraderTest {
         Application default4 = tester.createAndDeploy("default4", 5, "default");
         tester.updateVersionStatus(version54);
         tester.upgrader().maintain(); // cause canary upgrades to 5.4
+        tester.readyJobTrigger().maintain();
         tester.completeUpgrade(canary0, version54, "canary");
         tester.completeUpgrade(canary1, version54, "canary");
         tester.updateVersionStatus(version54);
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         assertEquals("Upgrade of defaults are scheduled", 5, tester.deploymentQueue().jobs().size());
         assertEquals(version54, tester.application(default0.id()).change().platform().get());
@@ -185,11 +201,13 @@ public class UpgraderTest {
         Version version55 = Version.fromString("5.5");
         tester.updateVersionStatus(version55);
         tester.upgrader().maintain(); // cause canary upgrades to 5.5
+        tester.readyJobTrigger().maintain();
         tester.completeUpgrade(canary0, version55, "canary");
         tester.completeUpgrade(canary1, version55, "canary");
         tester.updateVersionStatus(version55);
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         assertEquals("Upgrade of defaults are scheduled", 5, tester.deploymentQueue().jobs().size());
         assertEquals(version55, tester.application(default0.id()).change().platform().get());
@@ -207,6 +225,7 @@ public class UpgraderTest {
         // State: Default applications started upgrading to 5.5
         tester.clock().advance(Duration.ofHours(13));
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         tester.completeUpgradeWithError(default0, version55, "default", DeploymentJobs.JobType.stagingTest);
         tester.completeUpgradeWithError(default1, version55, "default", DeploymentJobs.JobType.stagingTest);
         tester.completeUpgradeWithError(default2, version55, "default", DeploymentJobs.JobType.stagingTest);
@@ -219,6 +238,7 @@ public class UpgraderTest {
         tester.jobCompletion(DeploymentJobs.JobType.productionUsWest1).application(default3).unsuccessful().submit();
 
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Upgrade of defaults are scheduled on 5.4 instead, since 5.5 broken: " +
                      "This is default3 since it failed upgrade on both 5.4 and 5.5",
                      1, tester.deploymentQueue().jobs().size());
@@ -230,12 +250,14 @@ public class UpgraderTest {
         // --- Setup
         DeploymentTester tester = new DeploymentTester();
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("No system version: Nothing to do", 0, tester.deploymentQueue().jobs().size());
 
         Version version = Version.fromString("5.0"); // (lower than the hardcoded version in the config server client)
         tester.updateVersionStatus(version);
 
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("No applications: Nothing to do", 0, tester.deploymentQueue().jobs().size());
 
         // Setup applications
@@ -253,6 +275,7 @@ public class UpgraderTest {
         Application default9 = tester.createAndDeploy("default9", 12, "default");
 
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("All already on the right version: Nothing to do", 0, tester.deploymentQueue().jobs().size());
 
         // --- A new version is released
@@ -260,6 +283,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         assertEquals("New system version: Should upgrade Canaries", 2, tester.deploymentQueue().jobs().size());
         tester.completeUpgrade(canary0, version, "canary");
@@ -267,6 +291,7 @@ public class UpgraderTest {
 
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("One canary pending; nothing else", 1, tester.deploymentQueue().jobs().size());
 
         tester.completeUpgrade(canary1, version, "canary");
@@ -274,6 +299,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Canaries done: Should upgrade defaults", 10, tester.deploymentQueue().jobs().size());
 
         tester.completeUpgrade(default0, version, "default");
@@ -285,6 +311,7 @@ public class UpgraderTest {
         // > 40% and at least 4 failed - version is broken
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
         assertEquals("Upgrades are cancelled", 0, tester.deploymentQueue().jobs().size());
     }
@@ -307,6 +334,7 @@ public class UpgraderTest {
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
 
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Application is on expected version: Nothing to do", 0,
                      tester.deploymentQueue().jobs().size());
 
@@ -315,6 +343,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         // system-test completes successfully
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
@@ -331,12 +360,14 @@ public class UpgraderTest {
 
         // Upgrade is scheduled. system-tests starts, but does not complete
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertTrue("Application still has failures", tester.application(app.id()).deploymentJobs().hasFailures());
         assertEquals(1, tester.deploymentQueue().jobs().size());
         tester.deploymentQueue().takeJobsToRun();
 
         // Upgrader runs again, nothing happens as there's already a job in progress for this change
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertTrue("No more jobs triggered at this time", tester.deploymentQueue().jobs().isEmpty());
     }
 
@@ -360,6 +391,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         // Canaries upgrade and raise confidence
         tester.completeUpgrade(canary0, version, "canary");
@@ -369,6 +401,7 @@ public class UpgraderTest {
 
         // Applications with default policy start upgrading
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Upgrade scheduled for remaining apps", 5, tester.deploymentQueue().jobs().size());
 
         // 4/5 applications fail and lowers confidence
@@ -379,6 +412,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         // 5th app passes system-test, but does not trigger next job as upgrade is cancelled
         assertFalse("No change present", tester.applications().require(default4.id()).change().isPresent());
@@ -414,6 +448,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(v1);
         assertEquals(v1, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         // Canaries upgrade and raise confidence of V+1 (other apps are not upgraded)
         tester.completeUpgrade(canary0, v1, "canary");
@@ -426,6 +461,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(v2);
         assertEquals(v2, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         // We "manually" cancel upgrades to V1 so that we can use the applications to make V2 fail instead
         // But we keep one (default4) to avoid V1 being garbage collected
@@ -443,6 +479,7 @@ public class UpgraderTest {
 
         // Applications with default policy start upgrading to V2
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Upgrade scheduled for remaining apps", 5, tester.deploymentQueue().jobs().size());
 
         // 4/5 applications fail (in the last prod zone) and lowers confidence
@@ -456,6 +493,7 @@ public class UpgraderTest {
         assertEquals(v2, tester.application("default0").deployments().get(ZoneId.from("prod.us-west-1")).version());
         assertEquals(v0, tester.application("default0").deployments().get(ZoneId.from("prod.us-east-3")).version());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Upgrade to 5.1 scheduled for apps not completely on 5.1 or 5.2", 5, tester.deploymentQueue().jobs().size());
 
         tester.deploymentTrigger().triggerReadyJobs();
@@ -504,6 +542,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         // Canaries upgrade and raise confidence
         tester.completeUpgrade(canary0, version, "canary");
@@ -513,6 +552,7 @@ public class UpgraderTest {
 
         // All applications upgrade successfully
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         tester.completeUpgrade(default0, version, "default");
         tester.completeUpgrade(default1, version, "default");
         tester.completeUpgrade(default2, version, "default");
@@ -555,16 +595,19 @@ public class UpgraderTest {
 
         // Application is not upgraded at this time
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertTrue("No jobs scheduled", tester.deploymentQueue().jobs().isEmpty());
 
         // One hour passes, time is 19:00, still no upgrade
         tester.clock().advance(Duration.ofHours(1));
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertTrue("No jobs scheduled", tester.deploymentQueue().jobs().isEmpty());
 
         // Two hours pass in total, time is 20:00 and application upgrades
         tester.clock().advance(Duration.ofHours(1));
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertFalse("Job is scheduled", tester.deploymentQueue().jobs().isEmpty());
         tester.completeUpgrade(app, version, applicationPackage);
         assertTrue("All jobs consumed", tester.deploymentQueue().jobs().isEmpty());
@@ -598,6 +641,7 @@ public class UpgraderTest {
 
         // Application upgrade starts
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
         clock.advance(Duration.ofHours(1)); // Entering block window after prod job is triggered
@@ -628,9 +672,6 @@ public class UpgraderTest {
     public void testBlockVersionChangeHalfwayThoughThenNewVersion() {
         ManualClock clock = new ManualClock(Instant.parse("2017-09-29T16:00:00.00Z")); // Friday, 16:00
         DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
-        ReadyJobsTrigger readyJobsTrigger = new ReadyJobsTrigger(tester.controller(),
-                                                                 Duration.ofHours(1),
-                                                                 new JobControl(tester.controllerTester().curator()));
 
         Version version = Version.fromString("5.0");
         tester.updateVersionStatus(version);
@@ -653,6 +694,7 @@ public class UpgraderTest {
 
         // Application upgrade starts
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
         tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
@@ -665,14 +707,14 @@ public class UpgraderTest {
         version = Version.fromString("5.2");
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
-        readyJobsTrigger.maintain();
+        tester.readyJobTrigger().maintain();
         assertTrue("Nothing is scheduled", tester.deploymentQueue().jobs().isEmpty());
 
         // Monday morning: We are not blocked
         tester.clock().advance(Duration.ofDays(1)); // Sunday, 17:00
         tester.clock().advance(Duration.ofHours(17)); // Monday, 10:00
         tester.upgrader().maintain();
-        readyJobsTrigger.maintain();
+        tester.readyJobTrigger().maintain();
         // We proceed with the new version in the expected order, not starting with the previously blocked version:
         // Test jobs are run with the new version, but not production as we are in the block window
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
@@ -720,6 +762,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         // Canaries upgrade and raise confidence
         tester.completeUpgrade(canary0, version, canaryApplicationPackage);
@@ -730,6 +773,7 @@ public class UpgraderTest {
         // Applications with default policy start upgrading
         tester.clock().advance(Duration.ofMinutes(1));
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Upgrade scheduled for remaining apps", 5, tester.deploymentQueue().jobs().size());
 
         // 4/5 applications fail, confidence is lowered and upgrade is cancelled
@@ -741,6 +785,7 @@ public class UpgraderTest {
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
 
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         // Finish runs
         tester.jobCompletion(systemTest).application(default0).unsuccessful().submit();
@@ -769,6 +814,7 @@ public class UpgraderTest {
         assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
 
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         assertEquals("Upgrade scheduled for previously failing apps", 4, tester.deploymentQueue().jobs().size());
         tester.completeUpgrade(default0, version, defaultApplicationPackageV2);
@@ -811,6 +857,7 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         upgrader.maintain();
+        tester.readyJobTrigger().maintain();
 
         assertEquals(2, tester.deploymentQueue().jobs().size());
         tester.completeUpgrade(canary0, version, "canary");
@@ -819,16 +866,19 @@ public class UpgraderTest {
 
         // Next run upgrades a subset
         upgrader.maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals(2, tester.deploymentQueue().jobs().size());
         tester.completeUpgrade(default0, version, "default");
         tester.completeUpgrade(default2, version, "default");
 
         // Remaining applications upgraded
         upgrader.maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals(2, tester.deploymentQueue().jobs().size());
         tester.completeUpgrade(default1, version, "default");
         tester.completeUpgrade(default3, version, "default");
         upgrader.maintain();
+        tester.readyJobTrigger().maintain();
         assertTrue("All jobs consumed", tester.deploymentQueue().jobs().isEmpty());
     }
 
@@ -849,6 +899,7 @@ public class UpgraderTest {
         version = Version.fromString("5.1");
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);

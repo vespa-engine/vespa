@@ -148,6 +148,7 @@ public class DeploymentIssueReporterTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         tester.completeUpgradeWithError(app2, version, canaryPackage, systemTest);
         tester.updateVersionStatus(version);

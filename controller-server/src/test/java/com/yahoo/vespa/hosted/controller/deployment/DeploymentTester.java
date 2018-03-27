@@ -101,6 +101,7 @@ public class DeploymentTester {
         configServer().setDefaultVersion(version);
         updateVersionStatus(version);
         upgrader().maintain();
+        readyJobTrigger().maintain();
     }
 
     public Version defaultVespaVersion() {

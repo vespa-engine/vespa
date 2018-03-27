@@ -278,6 +278,7 @@ public class ControllerTest {
 
         // Version upgrade changes system version
         applications.deploymentTrigger().triggerChange(app1.id(), Change.of(newSystemVersion));
+        tester.deploymentTrigger().triggerReadyJobs();
         tester.deployAndNotify(app1, applicationPackage, true, systemTest);
         tester.deployAndNotify(app1, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
@@ -557,6 +558,7 @@ public class ControllerTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         // Test environments pass
         tester.deploy(DeploymentJobs.JobType.systemTest, application, applicationPackage);

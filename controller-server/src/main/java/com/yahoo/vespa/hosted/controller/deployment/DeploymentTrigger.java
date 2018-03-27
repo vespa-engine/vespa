@@ -115,45 +115,6 @@ public class DeploymentTrigger {
             applications().lockIfPresent(application.id(), this::triggerReadyJobs);
     }
 
-    /** Find the next step to trigger if any, and triggers it */
-    public void triggerReadyJobs(LockedApplication application) {
-        List<JobType> jobs =  order.jobsFrom(application.deploymentSpec());
-
-        // Should the first step be triggered?
-        if ( ! jobs.isEmpty() && jobs.get(0).equals(JobType.systemTest) ) {
-            JobStatus systemTestStatus = application.deploymentJobs().jobStatus().get(JobType.systemTest);
-            if (application.change().platform().isPresent()) {
-                Version target = application.change().platform().get();
-                if (systemTestStatus == null
-                    || ! systemTestStatus.lastTriggered().isPresent()
-                    || ! systemTestStatus.isSuccess()
-                    || ! systemTestStatus.lastTriggered().get().version().equals(target)
-                    || systemTestStatus.isHanging(jobTimeoutLimit())) {
-                    application = trigger(new Triggering(application, JobType.systemTest, false, "Upgrade to " + target), Collections.emptySet(), false);
-                    applications().store(application);
-                }
-            }
-        }
-
-        // Find next steps to trigger based on the state of the previous step
-        for (JobType jobType : (Iterable<JobType>) Stream.concat(Stream.of(JobType.component), jobs.stream())::iterator) {
-            JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
-            if (jobStatus == null) continue; // job has never run
-
-            // Collect the subset of next jobs which have not run with the last changes
-            // TODO jvenstad: Change to be step-centric.
-            List<JobType> nextJobs = order.nextAfter(jobType, application);
-            for (JobType nextJobType : nextJobs) {
-                JobStatus nextStatus = application.deploymentJobs().jobStatus().get(nextJobType);
-                if (changesAvailable(application, jobStatus, nextStatus) || nextStatus.isHanging(jobTimeoutLimit())) {
-                    boolean isRetry = nextStatus != null && nextStatus.jobError().filter(JobError.outOfCapacity::equals).isPresent();
-                    application = trigger(new Triggering(application, nextJobType, isRetry, isRetry ? "Retrying on out of capacity" : "Available change in " + jobType.jobName()), nextJobs, false);
-                }
-            }
-            applications().store(application);
-        }
-    }
-
     /**
      * Trigger a job for an application, if allowed
      *
@@ -206,7 +167,8 @@ public class DeploymentTrigger {
             application = application.withChange(change);
             if (change.application().isPresent())
                 application = application.withOutstandingChange(Change.empty());
-            triggerReadyJobs(application);
+
+            applications().store(application);
         });
     }
 
@@ -227,6 +189,45 @@ public class DeploymentTrigger {
     }
 
     //--- End of methods which triggers deployment jobs ----------------------------
+
+    /** Find the next step to trigger if any, and triggers it */
+    private void triggerReadyJobs(LockedApplication application) {
+        List<JobType> jobs =  order.jobsFrom(application.deploymentSpec());
+
+        // Should the first step be triggered?
+        if ( ! jobs.isEmpty() && jobs.get(0).equals(JobType.systemTest) ) {
+            JobStatus systemTestStatus = application.deploymentJobs().jobStatus().get(JobType.systemTest);
+            if (application.change().platform().isPresent()) {
+                Version target = application.change().platform().get();
+                if (systemTestStatus == null
+                    || ! systemTestStatus.lastTriggered().isPresent()
+                    || ! systemTestStatus.isSuccess()
+                    || ! systemTestStatus.lastTriggered().get().version().equals(target)
+                    || systemTestStatus.isHanging(jobTimeoutLimit())) {
+                    application = trigger(new Triggering(application, JobType.systemTest, false, "Upgrade to " + target), Collections.emptySet(), false);
+                    applications().store(application);
+                }
+            }
+        }
+
+        // Find next steps to trigger based on the state of the previous step
+        for (JobType jobType : (Iterable<JobType>) Stream.concat(Stream.of(JobType.component), jobs.stream())::iterator) {
+            JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
+            if (jobStatus == null) continue; // job has never run
+
+            // Collect the subset of next jobs which have not run with the last changes
+            // TODO jvenstad: Change to be step-centric.
+            List<JobType> nextJobs = order.nextAfter(jobType, application);
+            for (JobType nextJobType : nextJobs) {
+                JobStatus nextStatus = application.deploymentJobs().jobStatus().get(nextJobType);
+                if (changesAvailable(application, jobStatus, nextStatus) || nextStatus.isHanging(jobTimeoutLimit())) {
+                    boolean isRetry = nextStatus != null && nextStatus.jobError().filter(JobError.outOfCapacity::equals).isPresent();
+                    application = trigger(new Triggering(application, nextJobType, isRetry, isRetry ? "Retrying on out of capacity" : "Available change in " + jobType.jobName()), nextJobs, false);
+                }
+            }
+            applications().store(application);
+        }
+    }
 
     private ApplicationController applications() { return controller.applications(); }
 

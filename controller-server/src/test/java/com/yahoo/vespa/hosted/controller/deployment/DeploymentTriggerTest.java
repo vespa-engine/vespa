@@ -55,6 +55,7 @@ public class DeploymentTriggerTest {
         Version version = new Version(5, 1);
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         // Deploy completely once
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
@@ -66,6 +67,7 @@ public class DeploymentTriggerTest {
         version = new Version(5, 2);
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         // system-test fails and is retried
         tester.deployAndNotify(app, applicationPackage, false, JobType.systemTest);

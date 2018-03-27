@@ -55,6 +55,7 @@ public class FailureRedeployerTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         // Test environments pass
         tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
@@ -70,6 +71,7 @@ public class FailureRedeployerTest {
         version = Version.fromString("5.2");
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Application starts upgrading to new version", 1, tester.deploymentQueue().jobs().size());
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
@@ -146,6 +148,7 @@ public class FailureRedeployerTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
         // system-test fails and is left with a retry
@@ -159,6 +162,7 @@ public class FailureRedeployerTest {
         // Job is left "running", so needs to time out before it can be retried.
         tester.clock().advance(Duration.ofHours(13));
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
         // Cancellation of outdated version and triggering on a new version is done by the upgrader.
@@ -193,6 +197,7 @@ public class FailureRedeployerTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
+        tester.readyJobTrigger().maintain();
 
         // Test environments pass
         tester.deploy(DeploymentJobs.JobType.systemTest, application, applicationPackage);
