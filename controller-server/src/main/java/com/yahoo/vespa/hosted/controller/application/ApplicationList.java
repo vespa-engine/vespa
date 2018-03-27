@@ -76,6 +76,11 @@ public class ApplicationList {
         return notUpgradingTo(version.get());
     }
 
+    /** Returns the subset of applications which are currently deploying a change */
+    public ApplicationList deploying() {
+        return listOf(list.stream().filter(application -> application.change().isPresent()));
+    }
+
     /** Returns the subset of applications which is currently not deploying a change */
     public ApplicationList notDeploying() {
         return listOf(list.stream().filter(application -> ! application.change().isPresent()));
@@ -139,6 +144,11 @@ public class ApplicationList {
      */
     public ApplicationList notPullRequest() {
         return listOf(list.stream().filter(a -> ! a.id().instance().value().matches("^(default-pr)?\\d+$")));
+    }
+
+    /** Returns the subset of applications which have a project ID */
+    public ApplicationList withProjectId() {
+        return listOf(list.stream().filter(a -> a.deploymentJobs().projectId().isPresent()));
     }
 
     /** Returns the subset of applications which have at least one production deployment */

@@ -553,11 +553,6 @@ public class ApplicationController {
     }
 
     public void notifyJobCompletion(JobReport report) {
-        log.log(Level.INFO, String.format("Notified of %s of %s %d for '%s'.",
-                                          report.jobError().map(error -> error + " failure").orElse("success"),
-                                          report.jobType(),
-                                          report.buildNumber(),
-                                          report.applicationId()));
         if ( ! get(report.applicationId()).isPresent()) {
             log.log(Level.WARNING, "Ignoring completion of job of project '" + report.projectId() +
                                    "': Unknown application '" + report.applicationId() + "'");
