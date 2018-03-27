@@ -227,8 +227,7 @@ public class DeploymentTrigger {
             if (change.application().isPresent())
                 application = application.withOutstandingChange(Change.empty());
             // TODO jvenstad: Don't trigger.
-            application = trigger(new Triggering(application, JobType.systemTest, false, change.toString()), Collections.emptySet(), false);
-            applications().store(application);
+            triggerReadyJobs(application);
         });
     }
 

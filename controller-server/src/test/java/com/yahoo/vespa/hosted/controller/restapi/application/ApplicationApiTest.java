@@ -173,22 +173,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
 
-        // POST triggering of a full deployment to an application (if version is omitted, current system version is used)
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", POST)
-                                      .userIdentity(HOSTED_VESPA_OPERATOR)
-                                      .data("6.1.0"),
-                              new File("application-deployment.json"));
-
-        // DELETE (cancel) ongoing change
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", DELETE)
-                                      .userIdentity(HOSTED_VESPA_OPERATOR),
-                              new File("application-deployment-cancelled.json"));
-
-        // DELETE (cancel) again is a no-op
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", DELETE)
-                                      .userIdentity(HOSTED_VESPA_OPERATOR),
-                              new File("application-deployment-cancelled-no-op.json"));
-
         // POST (deploy) an application to a zone - manual user deployment
         HttpEntity entity = createApplicationDeployData(applicationPackage, Optional.empty());
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/default/deploy", POST)
@@ -285,6 +269,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .recursive("true"),
                               new File("application1-recursive.json"));
 
+        // DELETE (cancel) ongoing change
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", DELETE)
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                              new File("application-deployment-cancelled.json"));
+
+        // DELETE (cancel) again is a no-op
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", DELETE)
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                              new File("application-deployment-cancelled-no-op.json"));
+
+        // POST triggering of a full deployment to an application (if version is omitted, current system version is used)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", POST)
+                                      .userIdentity(HOSTED_VESPA_OPERATOR)
+                                      .data("6.1.0"),
+                              new File("application-deployment.json"));
 
         // POST a 'restart application' command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/restart", POST)
