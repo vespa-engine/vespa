@@ -231,11 +231,12 @@ public class DeploymentTrigger {
                 continue; // job has never run
 
             // Collect the subset of next jobs which have not run with the last changes
+            // TODO jvenstad: This is flimsy as long as it isn't step-centric, as completion of any job in one step may enable the next step.
             // TODO jvenstad: Change to be step-centric.
             List<JobType> nextJobs = order.nextAfter(jobType, application);
             for (JobType nextJobType : nextJobs) {
                 JobStatus nextStatus = application.deploymentJobs().jobStatus().get(nextJobType);
-                if (changesAvailable(application, jobType, nextJobType) || nextStatus.isHanging(jobTimeoutLimit())) {
+                if (changesAvailable(application, jobType, nextJobType) || nextStatus != null && nextStatus.isHanging(jobTimeoutLimit())) {
                     boolean isRetry = nextStatus != null && nextStatus.jobError().filter(JobError.outOfCapacity::equals).isPresent();
                     Triggering triggering = new Triggering(application, nextJobType, isRetry, isRetry ? "Retrying on out of capacity" : "Available change in " + jobType.jobName());
                     if (allowedToTriggerNow(triggering, nextJobs))
@@ -259,13 +260,12 @@ public class DeploymentTrigger {
      * which is newer (different) than the one last completed successfully in next
      */
     private boolean changesAvailable(Application application, JobType previousType, JobType nextType) {
+        if ( ! application.deploymentJobs().isDeployableTo(nextType.environment(), application.change()))
+            return false;
 
         JobStatus next = application.deploymentJobs().jobStatus().get(nextType);
 
         if (next == null) return true;
-        
-        if ( ! application.deploymentJobs().isDeployableTo(nextType.environment(), application.change()))
-            return false;
 
         if (next.type().isTest()) {
             // Has the upgrade test already been done?
