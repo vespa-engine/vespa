@@ -19,7 +19,6 @@ public class ConfigServerContainerData {
 
     public void writeTo(ContainerData containerData) {
         containerData.addFile(getPath("configserver-config.xml"), createConfigServerConfigXml());
-        containerData.addFile(getPath("node-repository-config.xml"), createNodeRepoConfigXml());
     }
 
     private Path getPath(String fileName) {
@@ -42,12 +41,4 @@ public class ConfigServerContainerData {
                 "  <nodeAdminInContainer>false</nodeAdminInContainer>\n" +
                 "</config>\n";
     }
-
-    // TODO: Avoid hardcoded Docker registry
-    private String createNodeRepoConfigXml() {
-        return "<config name=\"config.provisioning.node-repository\">\n" +
-                "    <dockerImage>658543512185.dkr.ecr.us-east-2.amazonaws.com/vespa/aws</dockerImage>\n" +
-                "</config>\n";
-    }
-
 }
