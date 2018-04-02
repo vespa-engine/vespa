@@ -13,12 +13,16 @@ import java.util.Map;
 /**
  * @author hmusum
  * <p>
- * File distribution config producer, delegates getting config to {@link DummyFileDistributionConfigProducer} (one per host)
+ * File distribution config producer, delegates getting config to {@link FileDistributionConfigProvider} (one per host)
  */
 public class FileDistributionConfigProducer extends AbstractConfigProducer {
 
-    private final Map<Host, AbstractConfigProducer> fileDistributionConfigProducers = new IdentityHashMap<>();
+    private final Map<Host, FileDistributionConfigProvider> fileDistributionConfigProviders = new IdentityHashMap<>();
     private final FileDistributor fileDistributor;
+
+    public FileDistributionConfigProducer(AbstractConfigProducer ancestor, FileRegistry fileRegistry, List<ConfigServerSpec> configServerSpec) {
+        this(ancestor, new FileDistributor(fileRegistry, configServerSpec));
+    }
 
     private FileDistributionConfigProducer(AbstractConfigProducer parent, FileDistributor fileDistributor) {
         super(parent, "filedistribution");
@@ -29,20 +33,12 @@ public class FileDistributionConfigProducer extends AbstractConfigProducer {
         return fileDistributor;
     }
 
-    public void addFileDistributionConfigProducer(Host host, AbstractConfigProducer fileDistributionConfigProducer) {
-        fileDistributionConfigProducers.put(host, fileDistributionConfigProducer);
+    public void addFileDistributionConfigProducer(Host host, FileDistributionConfigProvider fileDistributionConfigProvider) {
+        fileDistributionConfigProviders.put(host, fileDistributionConfigProvider);
     }
 
-    public static class Builder {
-
-        public FileDistributionConfigProducer build(AbstractConfigProducer ancestor, FileRegistry fileRegistry, List<ConfigServerSpec> configServerSpec) {
-            FileDistributor fileDistributor = new FileDistributor(fileRegistry, configServerSpec);
-            return new FileDistributionConfigProducer(ancestor, fileDistributor);
-        }
-    }
-
-    public AbstractConfigProducer getConfigProducer(Host host) {
-        return fileDistributionConfigProducers.get(host);
+    public FileDistributionConfigProvider getConfigProducer(Host host) {
+        return fileDistributionConfigProviders.get(host);
     }
 
 }

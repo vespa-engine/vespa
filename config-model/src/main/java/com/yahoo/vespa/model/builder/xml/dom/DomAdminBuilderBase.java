@@ -25,9 +25,8 @@ import static com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSet
 /**
  * A base class for admin model builders, to support common functionality across versions.
  *
- * @author lulf
- * @author vegardh
- * @since 5.12
+ * @author Ulf Lilleengen
+ * @author Vegard Havdal
  */
 public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProducerBuilder<Admin> {
 
@@ -80,7 +79,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     }
 
     private FileDistributionConfigProducer getFileDistributionConfigProducer(AbstractConfigProducer parent) {
-        return new FileDistributionConfigProducer.Builder().build(parent, fileRegistry, configServerSpecs);
+        return new FileDistributionConfigProducer(parent, fileRegistry, configServerSpecs);
     }
 
     private Element getChildWithFallback(Element parent, String childName, String alternativeChildName) {

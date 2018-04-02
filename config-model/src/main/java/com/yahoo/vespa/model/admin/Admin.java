@@ -19,7 +19,6 @@ import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.filedistribution.DummyFileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProvider;
 import com.yahoo.vespa.model.filedistribution.FileDistributor;
@@ -230,14 +229,11 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         }
 
         FileDistributionConfigProvider configProvider =
-                new FileDistributionConfigProvider(fileDistributor,
+                new FileDistributionConfigProvider(fileDistribution,
+                                                   fileDistributor,
                                                    host == deployHost,
                                                    host.getHost());
-        DummyFileDistributionConfigProducer dummyFileDistributionConfigProducer =
-                new DummyFileDistributionConfigProducer(fileDistribution,
-                                                        host.getHost().getHostname(),
-                                                        configProvider);
-        fileDistribution.addFileDistributionConfigProducer(host.getHost(), dummyFileDistributionConfigProducer);
+        fileDistribution.addFileDistributionConfigProducer(host.getHost(), configProvider);
     }
 
     private boolean deployHostIsMissing(HostResource deployHost) {
