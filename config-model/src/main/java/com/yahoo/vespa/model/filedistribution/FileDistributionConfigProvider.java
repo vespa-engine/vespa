@@ -4,29 +4,35 @@ package com.yahoo.vespa.model.filedistribution;
 import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
 import com.yahoo.cloud.config.filedistribution.FilereferencesConfig;
 import com.yahoo.config.FileReference;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.ConfigProxy;
 import com.yahoo.vespa.model.Host;
 
 import java.util.Collection;
 
-public class FileDistributionConfigProvider {
+public class FileDistributionConfigProvider extends AbstractConfigProducer
+        implements FiledistributorrpcConfig.Producer, FilereferencesConfig.Producer {
 
     private final FileDistributor fileDistributor;
     private final boolean sendAllFiles;
     private final Host host;
 
-    public FileDistributionConfigProvider(FileDistributor fileDistributor,
+    public FileDistributionConfigProvider(AbstractConfigProducer parent,
+                                          FileDistributor fileDistributor,
                                           boolean sendAllFiles,
                                           Host host) {
+        super(parent, host.getHostname());
         this.fileDistributor = fileDistributor;
         this.sendAllFiles = sendAllFiles;
         this.host = host;
     }
 
+    @Override
     public void getConfig(FiledistributorrpcConfig.Builder builder) {
         builder.connectionspec("tcp/" + host.getHostname() + ":" + ConfigProxy.BASEPORT);
     }
 
+    @Override
     public void getConfig(FilereferencesConfig.Builder builder) {
         for (FileReference reference : getFileReferences()) {
             builder.filereferences(reference.value());

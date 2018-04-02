@@ -19,8 +19,8 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.ContentNode;
-import com.yahoo.vespa.model.filedistribution.DummyFileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
+import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProvider;
 import org.w3c.dom.Element;
 
 import java.util.HashMap;
@@ -228,8 +228,8 @@ public class SearchNode extends AbstractService implements
     public void getConfig(FiledistributorrpcConfig.Builder builder) {
         FileDistributionConfigProducer fileDistribution = getRoot().getFileDistributionConfigProducer();
         if (fileDistribution != null) {
-            AbstractConfigProducer configProducer = fileDistribution.getConfigProducer(getHost());
-            ((DummyFileDistributionConfigProducer) configProducer).getConfig(builder);
+            FileDistributionConfigProvider configProducer = fileDistribution.getConfigProducer(getHost());
+            configProducer.getConfig(builder);
         }
     }
 
