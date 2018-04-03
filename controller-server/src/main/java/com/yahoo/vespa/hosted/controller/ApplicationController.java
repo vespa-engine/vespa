@@ -314,7 +314,7 @@ public class ApplicationController {
 
             // TODO jvenstad: Use code from DeploymentTrigger? Also, validate application version.
             // Validate the change being deployed
-            if (!canDeployDirectly) {
+            if ( ! canDeployDirectly) {
                 validateChange(application, zone, version);
             }
 
@@ -360,9 +360,8 @@ public class ApplicationController {
             if (!job.isPresent()) {
                 throw new IllegalArgumentException("No job found for zone " + zone);
             }
-            version = application
-                    .deployApplicationVersionFor(job.get(), controller, deployCurrentVersion)
-                    .orElseThrow(() -> new IllegalArgumentException("Cannot determine application version to use for " +
+            version = application.deployApplicationVersionFor(job.get(), controller, deployCurrentVersion)
+                                 .orElseThrow(() -> new IllegalArgumentException("Cannot determine application version to use for " +
                                                                     job.get()));
             pkg = new ApplicationPackage(artifactRepository.getApplicationPackage(application.id(), version.id()));
         }
@@ -650,6 +649,7 @@ public class ApplicationController {
 
     /** Verify that change is tested and that we aren't downgrading */
     private void validateChange(Application application, ZoneId zone, Version version) {
+        // TODO jvenstad: Hmmm ... Make it possible to deploy only the legal parts of the Change.
         if (!application.deploymentJobs().isDeployableTo(zone.environment(), application.change())) {
             throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
                                                " as " + application.change() + " is not tested");

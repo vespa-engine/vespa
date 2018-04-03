@@ -151,6 +151,7 @@ public class Application {
 
     /** Returns the version a new deployment to this zone should use for this application */
     public Version deployVersionIn(ZoneId zone, Controller controller) {
+        // TODO jvenstad: Return max of current and change.
         return change.platform().orElse(versionIn(zone, controller));
     }
 
@@ -176,6 +177,7 @@ public class Application {
     public Optional<ApplicationVersion> deployApplicationVersionFor(DeploymentJobs.JobType jobType,
                                                                     Controller controller,
                                                                     boolean currentVersion) {
+        // TODO jvenstad: Return max of current and change's.
         if (jobType == DeploymentJobs.JobType.component)
             return Optional.empty();
 

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
@@ -158,27 +157,6 @@ public class DeploymentTrigger {
                                                         triggering.reason);
     }
 
-    private boolean allowedToTriggerNow(Triggering triggering, Application application) {
-        if (application.deploymentJobs().isRunning(triggering.jobType, jobTimeoutLimit()))
-            return false;
-
-        if ( ! triggering.jobType.isProduction())
-            return true;
-
-        if ( ! triggering.concurrentlyWith.containsAll(JobList.from(application)
-                                                              .production()
-                                                              .running(jobTimeoutLimit())
-                                                              .mapToList(JobStatus::type)))
-            return false;
-
-        // TODO jvenstad: This blocks all changes when dual, and in block window. Should rather remove the blocked component.
-        // TODO jvenstad: If the above is implemented, take care not to deploy untested stuff?
-        if (application.change().blockedBy(application.deploymentSpec(), clock.instant()))
-            return false;
-
-        return true;
-    }
-
     /**
      * Triggers a change of this application
      *
@@ -217,31 +195,22 @@ public class DeploymentTrigger {
     //--- End of methods which triggers deployment jobs ----------------------------
 
     /**
-     * Finds the next step to trigger, if any, and triggers it
+     * Finds the next step to trigger for the given application, if any, and triggers it
      */
     private void triggerReadyJobs(LockedApplication application) {
         List<Triggering> triggerings = new ArrayList<>();
         Change change = application.change();
 
-        List<DeploymentSpec.Step> steps = application.deploymentSpec().steps();
         // Urgh. Empty spec means unknown spec. Should we write it at component completion?
+        List<DeploymentSpec.Step> steps = application.deploymentSpec().steps();
         if (steps.isEmpty()) steps = Collections.singletonList(new DeploymentSpec.DeclaredZone(Environment.test));
-
-        // Find next steps to trigger based on what can be propagated from the previous step.
-
-        // for step:
-        // if deployableHere
-        // if deployableNow
-        // trigger
-        // else
-        // deployableNextStep
 
         Optional<Instant> completedAt = Optional.of(clock.instant());
         String reason = "Deploying " + change.toString();
         for (DeploymentSpec.Step step : steps) {
 
-            Set<JobType> stepJobs = step.zones().stream().map(this::toJob).collect(Collectors.toSet());
-            if (reason != null)
+            Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(Collectors.toSet());
+            if (completedAt.isPresent())
                 for (JobType jobType : stepJobs) {
                     JobStatus status = application.deploymentJobs().jobStatus().get(jobType);
 
@@ -268,7 +237,7 @@ public class DeploymentTrigger {
 
                 // TODO jvenstad: Merge this with tests above for whether to do anything in this step -- exactly one step should trigger each time (counting deleting the Change as the last step.)
             if (step.deploysTo(Environment.test) || step.deploysTo(Environment.staging)) {
-                completedAt = Optional.ofNullable(application.deploymentJobs().jobStatus().get(toJob(step.zones().get(0))))
+                completedAt = Optional.ofNullable(application.deploymentJobs().jobStatus().get(order.toJob(step.zones().get(0))))
                                       .flatMap(JobStatus::lastSuccess)
                                       .filter(run -> change.platform().map(run.version()::equals).orElse(true))
                                       .filter(run -> change.application().map(run.applicationVersion()::equals).orElse(true))
@@ -284,9 +253,7 @@ public class DeploymentTrigger {
                 completedAt = completedAt.map(at -> at.plus(((DeploymentSpec.Delay) step).duration()))
                                          .filter(at -> ! at.isAfter(clock.instant()));
 
-            reason = completedAt.isPresent()
-                    ? "Available change in " + stepJobs.stream().map(JobType::jobName).collect(Collectors.joining(", "))
-                    : null;
+            reason = "Available change in " + stepJobs.stream().map(JobType::jobName).collect(Collectors.joining(", "));
         }
 
         for (Triggering triggering : triggerings)
@@ -296,12 +263,25 @@ public class DeploymentTrigger {
         applications().store(application);
     }
 
-    /**
-     * Resolve job from deployment step
-     */
-    private JobType toJob(DeploymentSpec.DeclaredZone zone) {
-        return JobType.from(controller.system(), zone.environment(), zone.region().orElse(null))
-                      .orElseThrow(() -> new IllegalArgumentException("Invalid zone " + zone));
+    private boolean allowedToTriggerNow(Triggering triggering, Application application) {
+        if (application.deploymentJobs().isRunning(triggering.jobType, jobTimeoutLimit()))
+            return false;
+
+        if ( ! triggering.jobType.isProduction())
+            return true;
+
+        if ( ! triggering.concurrentlyWith.containsAll(JobList.from(application)
+                                                              .production()
+                                                              .running(jobTimeoutLimit())
+                                                              .mapToList(JobStatus::type)))
+            return false;
+
+        // TODO jvenstad: This blocks all changes when dual, and in block window. Should rather remove the blocked component.
+        // TODO jvenstad: If the above is implemented, take care not to deploy untested stuff?
+        if (application.change().blockedBy(application.deploymentSpec(), clock.instant()))
+            return false;
+
+        return true;
     }
 
     private ApplicationController applications() {
