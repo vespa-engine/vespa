@@ -4,6 +4,7 @@ package com.yahoo.vespa.http.client.core.operationProcessor;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ArrayListMultimap;
 import com.yahoo.vespa.http.client.FeedClient;
+import com.yahoo.vespa.http.client.FeedEndpointException;
 import com.yahoo.vespa.http.client.Result;
 import com.yahoo.vespa.http.client.config.Cluster;
 import com.yahoo.vespa.http.client.config.SessionParams;
@@ -202,6 +203,11 @@ public class OperationProcessor {
             }
         }
     }
+
+    public void onEndpointError(FeedEndpointException e) {
+        resultCallback.onEndpointException(e);
+    }
+
     public List<Exception> closeClusters() {
         List<Exception> exceptions = new ArrayList<>();
         // first, close cluster sessions and allow connections to drain normally
@@ -297,5 +303,4 @@ public class OperationProcessor {
             throw new RuntimeException("Did not manage to shut down retry threads. Please report problem.");
         }
     }
-
 }

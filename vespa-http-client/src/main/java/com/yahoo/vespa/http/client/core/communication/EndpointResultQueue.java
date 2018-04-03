@@ -4,6 +4,7 @@ package com.yahoo.vespa.http.client.core.communication;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+import com.yahoo.vespa.http.client.FeedEndpointException;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.core.operationProcessor.EndPointResultFactory;
 import com.yahoo.vespa.http.client.core.EndpointResult;
@@ -56,6 +57,10 @@ class EndpointResultQueue {
 
     public synchronized void resultReceived(EndpointResult result, int clusterId) {
         resultReceived(result, clusterId, true);
+    }
+
+    void onEndpointError(FeedEndpointException e) {
+        operationProcessor.onEndpointError(e);
     }
 
     private synchronized void resultReceived(EndpointResult result, int clusterId, boolean duplicateGivesWarning) {

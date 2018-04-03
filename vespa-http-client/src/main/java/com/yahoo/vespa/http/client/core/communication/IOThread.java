@@ -2,6 +2,8 @@
 package com.yahoo.vespa.http.client.core.communication;
 
 import com.google.common.annotations.Beta;
+import com.yahoo.vespa.http.client.FeedConnectException;
+import com.yahoo.vespa.http.client.FeedProtocolException;
 import com.yahoo.vespa.http.client.Result;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.core.Document;
@@ -321,9 +323,11 @@ class IOThread implements Runnable, AutoCloseable {
                     executeProblemsCounter.incrementAndGet();
                     log.info("Handshake did not work out " + endpoint + ": " + Exceptions.toMessageString(ser));
                     drainFirstDocumentsInQueueIfOld();
+                    resultQueue.onEndpointError(new FeedProtocolException(ser.getResponseCode(), ser.getResponseString(), ser, endpoint));
                     return ThreadState.CONNECTED;
                 } catch (Throwable throwable) { // This cover IOException as well
                     executeProblemsCounter.incrementAndGet();
+                    resultQueue.onEndpointError(new FeedConnectException(throwable, endpoint));
                     log.info("Problem with Handshake " + endpoint + ": " + Exceptions.toMessageString(throwable));
                     drainFirstDocumentsInQueueIfOld();
                     client.close();
