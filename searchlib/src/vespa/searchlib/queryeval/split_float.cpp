@@ -23,3 +23,4 @@ SplitFloat::SplitFloat(const vespalib::string &input)
 }
 
 }
+
