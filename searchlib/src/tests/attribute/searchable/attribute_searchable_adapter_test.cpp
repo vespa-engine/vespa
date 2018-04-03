@@ -476,7 +476,7 @@ TEST("require that single weighted set turns filter on filter fields") {
         Result result = do_search(attribute_manager, node, strict);
         EXPECT_EQUAL(3u, result.est_hits);
         EXPECT_TRUE(result.iterator_dump.find("DocumentWeightSearchIterator") == vespalib::string::npos);
-        EXPECT_TRUE(result.iterator_dump.find("FilterAttributePostingListIteratorT") == vespalib::string::npos);
+        EXPECT_TRUE(result.iterator_dump.find("FilterAttributePostingListIteratorT") != vespalib::string::npos);
         ASSERT_EQUAL(3u, result.hits.size());
         EXPECT_FALSE(result.est_empty);
         EXPECT_EQUAL(20u, result.hits[0].docid);
