@@ -32,9 +32,7 @@ public:
     public:
         virtual ~Checker() {}
 
-        virtual bool check(uint32_t messageType,
-                           uint16_t node,
-                           uint8_t priority) = 0;
+        virtual bool check(uint32_t messageType, uint16_t node, uint8_t priority) = 0;
     };
 
     /**
@@ -59,25 +57,20 @@ public:
      * passing it to the given type checker.
      * Breaks when the checker returns false.
      */
-    void checkPendingMessages(uint16_t node,
-                              const document::Bucket &bucket,
-                              Checker& checker) const;
+    void checkPendingMessages(uint16_t node, const document::Bucket &bucket, Checker& checker) const;
 
     /**
      * Goes through each pending message (across all nodes) for the given bucket
      * and invokes the given checker with the node, message type and priority.
      * Breaks when the checker returns false.
      */
-    void checkPendingMessages(const document::Bucket &bucket,
-                              Checker& checker) const;
+    void checkPendingMessages(const document::Bucket &bucket, Checker& checker) const;
 
     /**
      * Utility function for checking if there's a message of type
      * messageType pending to bucket bid on the given node.
      */
-    bool hasPendingMessage(uint16_t node,
-                           const document::Bucket &bucket,
-                           uint32_t messageType) const;
+    bool hasPendingMessage(uint16_t node, const document::Bucket &bucket, uint32_t messageType) const;
 
     /**
      * Returns a vector containing the number of pending messages to each storage node.
@@ -99,25 +92,19 @@ public:
 
 private:
     struct MessageEntry {
-        TimePoint timeStamp;
-        uint32_t msgType;
-        uint32_t priority;
-        uint64_t msgId;
+        TimePoint        timeStamp;
+        uint32_t         msgType;
+        uint32_t         priority;
+        uint64_t         msgId;
         document::Bucket bucket;
-        uint16_t nodeIdx;
+        uint16_t         nodeIdx;
 
-        MessageEntry(TimePoint timeStamp,
-                     uint32_t msgType,
-                     uint32_t priority,
-                     uint64_t msgId,
-                     document::Bucket bucket,
-                     uint16_t nodeIdx);
+        MessageEntry(TimePoint timeStamp, uint32_t msgType, uint32_t priority,
+                     uint64_t msgId, document::Bucket bucket, uint16_t nodeIdx);
+        vespalib::string toHtml() const;
     };
 
-    struct MessageIdKey
-        : boost::multi_index::member<MessageEntry, uint64_t, &MessageEntry::msgId>
-    {
-    };
+    struct MessageIdKey : boost::multi_index::member<MessageEntry, uint64_t, &MessageEntry::msgId> {};
 
     /**
      * Each entry has a separate composite keyed index on node+bucket id+type.
@@ -127,12 +114,9 @@ private:
     struct CompositeNodeBucketKey
         : boost::multi_index::composite_key<
               MessageEntry,
-              boost::multi_index::member<MessageEntry, uint16_t,
-                                         &MessageEntry::nodeIdx>,
-              boost::multi_index::member<MessageEntry, document::Bucket,
-                                         &MessageEntry::bucket>,
-              boost::multi_index::member<MessageEntry, uint32_t,
-                                         &MessageEntry::msgType>
+              boost::multi_index::member<MessageEntry, uint16_t, &MessageEntry::nodeIdx>,
+              boost::multi_index::member<MessageEntry, document::Bucket, &MessageEntry::bucket>,
+              boost::multi_index::member<MessageEntry, uint32_t, &MessageEntry::msgType>
           >
     {
     };
@@ -140,12 +124,9 @@ private:
     struct CompositeBucketMsgNodeKey
         : boost::multi_index::composite_key<
               MessageEntry,
-              boost::multi_index::member<MessageEntry, document::Bucket,
-                                         &MessageEntry::bucket>,
-              boost::multi_index::member<MessageEntry, uint32_t,
-                                         &MessageEntry::msgType>,
-              boost::multi_index::member<MessageEntry, uint16_t,
-                                         &MessageEntry::nodeIdx>
+              boost::multi_index::member<MessageEntry, document::Bucket, &MessageEntry::bucket>,
+              boost::multi_index::member<MessageEntry, uint32_t, &MessageEntry::msgType>,
+              boost::multi_index::member<MessageEntry, uint16_t, &MessageEntry::nodeIdx>
           >
     {
     };
