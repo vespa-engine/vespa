@@ -3,7 +3,6 @@
 #include "putoperation.h"
 
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/log/log.h>
 #include <vespa/storage/distributor/activecopy.h>
 #include <vespa/storage/distributor/operationtargetresolverimpl.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
@@ -11,6 +10,7 @@
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.put");
 
 
@@ -18,22 +18,17 @@ using namespace storage::distributor;
 using namespace storage;
 using document::BucketSpace;
 
-PutOperation::PutOperation(DistributorComponent& manager,
-                           DistributorBucketSpace &bucketSpace,
-                           const std::shared_ptr<api::PutCommand> & msg,
-                           PersistenceOperationMetricSet& metric,
-                           SequencingHandle sequencingHandle)
+PutOperation::PutOperation(DistributorComponent& manager, DistributorBucketSpace &bucketSpace,
+                           std::shared_ptr<api::PutCommand> msg,
+                           PersistenceOperationMetricSet& metric, SequencingHandle sequencingHandle)
     : SequencedOperation(std::move(sequencingHandle)),
-      _trackerInstance(metric,
-               std::shared_ptr<api::BucketInfoReply>(new api::PutReply(*msg)),
-               manager,
-               msg->getTimestamp()),
+      _trackerInstance(metric, std::make_shared<api::PutReply>(*msg), manager, msg->getTimestamp()),
       _tracker(_trackerInstance),
-      _msg(msg),
+      _msg(std::move(msg)),
       _manager(manager),
       _bucketSpace(bucketSpace)
 {
-};
+}
 
 namespace {
 
@@ -50,11 +45,8 @@ bool hasNode(const std::vector<uint16_t>& vec, uint16_t value) {
 }
 
 void
-PutOperation::getTargetNodes(const std::vector<uint16_t>& idealNodes,
-                             std::vector<uint16_t>& targetNodes,
-                             std::vector<uint16_t>& createNodes,
-                             const BucketInfo& bucketInfo,
-                             uint32_t redundancy)
+PutOperation::getTargetNodes(const std::vector<uint16_t>& idealNodes, std::vector<uint16_t>& targetNodes,
+                             std::vector<uint16_t>& createNodes, const BucketInfo& bucketInfo, uint32_t redundancy)
 {
     // First insert all nodes that are trusted or already in the ideal state.
     for (uint32_t i = 0; i < bucketInfo.getNodeCount(); i++) {
@@ -78,8 +70,7 @@ PutOperation::getTargetNodes(const std::vector<uint16_t>& idealNodes,
     for (uint32_t i = 0; targetNodes.size() < redundancy && i < idealNodes.size(); i++) {
         if (!hasNode(targetNodes, idealNodes[i])) {
             targetNodes.push_back(idealNodes[i]);
-            LOG(spam, "Adding target+create node %u it's in ideal state",
-                idealNodes[i]);
+            LOG(spam, "Adding target+create node %u it's in ideal state", idealNodes[i]);
             createNodes.push_back(idealNodes[i]);
         }
     }
@@ -88,100 +79,23 @@ PutOperation::getTargetNodes(const std::vector<uint16_t>& idealNodes,
     std::sort(createNodes.begin(), createNodes.end());
 }
 
-// FIXME: deprecated! remove as soon as multoperationoperation is merely
-// a haunting memory of the past since it's only used by that component!
-bool
-PutOperation::checkCreateBucket(const lib::Distribution& dist,
-                                const lib::ClusterState& state,
-                                BucketDatabase::Entry& entry,
-                                std::vector<uint16_t>& targetNodes,
-                                std::vector<MessageTracker::ToSend>& messagesToSend,
-                                const api::StorageCommand& originalCommand)
-{
-    BucketInfo& info = entry.getBucketInfo();
-
-    std::vector<uint16_t> createNodes;
-    std::vector<uint16_t> idealNodes(
-            dist.getIdealStorageNodes(state, entry.getBucketId(), "ui"));
-
-    getTargetNodes(idealNodes,
-                   targetNodes,
-                   createNodes,
-                   info,
-                   dist.getRedundancy());
-
-    ActiveList active(ActiveCopy::calculate(idealNodes, dist, entry));
-    LOG(debug, "Active copies for bucket %s: %s",
-        entry.getBucketId().toString().c_str(), active.toString().c_str());
-    // Send create buckets for all nodes in ideal state where we don't
-    // currently have copies.
-    for (uint32_t i = 0; i < createNodes.size(); i++) {
-        document::Bucket bucket(originalCommand.getBucket().getBucketSpace(), entry.getBucketId());
-        std::shared_ptr<api::CreateBucketCommand> cbc(
-                new api::CreateBucketCommand(bucket));
-        if (active.contains(createNodes[i])) {
-            BucketCopy copy(*entry->getNode(createNodes[i]));
-            copy.setActive(true);
-            entry->updateNode(copy);
-            cbc->setActive(true);
-        }
-        LOG(debug, "Creating bucket on node %u: %s",
-            createNodes[i], cbc->toString().c_str());
-
-        copyMessageSettings(originalCommand, *cbc);
-        messagesToSend.push_back(MessageTracker::ToSend(cbc, createNodes[i]));
-    }
-
-    // All nodes that we are not feeding to now will no longer be trusted.
-    // TODO: Refactor?
-    bool mustWrite = false;
-    for (uint32_t i = 0; i < info.getNodeCount(); i++) {
-        bool found = false;
-        for (uint32_t j = 0; j < targetNodes.size(); j++) {
-            if (info.getNodeRef(i).getNode() == targetNodes[j]) {
-                LOG(spam,
-                    "Found matching target node %u in %s",
-                    targetNodes[i],
-                    info.getNodeRef(i).toString().c_str());
-                found = true;
-                break;
-            }
-        }
-
-        if (!found && info.getNodeRef(i).trusted()) {
-            LOG(spam,
-                "Setting mustWrite=true since %s is trusted",
-                info.getNodeRef(i).toString().c_str());
-
-            info.clearTrusted(info.getNodeRef(i).getNode());
-            mustWrite = true;
-        }
-    }
-
-    return mustWrite;
-}
-
 void
-PutOperation::insertDatabaseEntryAndScheduleCreateBucket(
-        const OperationTargetList& copies,
-        bool setOneActive,
-        const api::StorageCommand& originalCommand,
-        std::vector<MessageTracker::ToSend>& messagesToSend)
+PutOperation::insertDatabaseEntryAndScheduleCreateBucket(const OperationTargetList& copies, bool setOneActive,
+                                                         const api::StorageCommand& originalCommand,
+                                                         std::vector<MessageTracker::ToSend>& messagesToSend)
 {
     document::BucketId lastBucket;
     bool multipleBuckets = false;
     for (uint32_t i=0, n=copies.size(); i<n; ++i) {
         if (!copies[i].isNewCopy()) continue;
-        if (lastBucket.getRawId() != 0 && copies[i].getBucketId() != lastBucket)
-        {
+        if (lastBucket.getRawId() != 0 && copies[i].getBucketId() != lastBucket) {
             multipleBuckets = true;
         }
         lastBucket = copies[i].getBucketId();
         // Fake that we have a non-empty bucket so it isn't deleted.
         // Copy is inserted with timestamp 0 such that any actual bucket info
         // subsequently arriving from the storage node will always overwrite it.
-        BucketCopy copy(BucketCopy::recentlyCreatedCopy(
-                0, copies[i].getNode().getIndex()));
+        BucketCopy copy(BucketCopy::recentlyCreatedCopy(0, copies[i].getNode().getIndex()));
         _manager.updateBucketDatabase(document::Bucket(originalCommand.getBucket().getBucketSpace(), lastBucket), copy,
                                       DatabaseUpdate::CREATE_IF_NONEXISTING);
     }
@@ -189,17 +103,13 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(
     if (setOneActive) {
         assert(!multipleBuckets);
         (void) multipleBuckets;
-        BucketDatabase::Entry entry(
-                _bucketSpace.getBucketDatabase().get(lastBucket));
+        BucketDatabase::Entry entry(_bucketSpace.getBucketDatabase().get(lastBucket));
         std::vector<uint16_t> idealState(
-                _bucketSpace.getDistribution().getIdealStorageNodes(
-                    _bucketSpace.getClusterState(), lastBucket, "ui"));
-        active = ActiveCopy::calculate(idealState, _bucketSpace.getDistribution(),
-                                       entry);
-        LOG(debug, "Active copies for bucket %s: %s",
-            entry.getBucketId().toString().c_str(), active.toString().c_str());
+                _bucketSpace.getDistribution().getIdealStorageNodes(_bucketSpace.getClusterState(), lastBucket, "ui"));
+        active = ActiveCopy::calculate(idealState, _bucketSpace.getDistribution(), entry);
+        LOG(debug, "Active copies for bucket %s: %s", entry.getBucketId().toString().c_str(), active.toString().c_str());
         for (uint32_t i=0; i<active.size(); ++i) {
-            BucketCopy copy(*entry->getNode(active[i].nodeIndex));
+            BucketCopy copy(*entry->getNode(active[i]._nodeIndex));
             copy.setActive(true);
             entry->updateNode(copy);
         }
@@ -208,8 +118,7 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(
     for (uint32_t i=0, n=copies.size(); i<n; ++i) {
         if (!copies[i].isNewCopy()) continue;
         document::Bucket bucket(originalCommand.getBucket().getBucketSpace(), copies[i].getBucketId());
-        std::shared_ptr<api::CreateBucketCommand> cbc(
-                new api::CreateBucketCommand(bucket));
+        auto cbc = std::make_shared<api::CreateBucketCommand>(bucket);
         if (setOneActive && active.contains(copies[i].getNode().getIndex())) {
             cbc->setActive(true);
         }
@@ -217,33 +126,22 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(
             copies[i].getNode().getIndex(), cbc->toString().c_str());
 
         copyMessageSettings(originalCommand, *cbc);
-        messagesToSend.push_back(MessageTracker::ToSend(
-                cbc, copies[i].getNode().getIndex()));
+        messagesToSend.emplace_back(std::move(cbc), copies[i].getNode().getIndex());
     }
 }
 
 void
-PutOperation::sendPutToBucketOnNode(
-        document::BucketSpace bucketSpace,
-        const document::BucketId& bucketId,
-        const uint16_t node,
-        std::vector<PersistenceMessageTracker::ToSend>& putBatch)
+PutOperation::sendPutToBucketOnNode(document::BucketSpace bucketSpace, const document::BucketId& bucketId,
+                                    const uint16_t node, std::vector<PersistenceMessageTracker::ToSend>& putBatch)
 {
     document::Bucket bucket(bucketSpace, bucketId);
-    std::shared_ptr<api::PutCommand> command(
-            new api::PutCommand(
-                    bucket,
-                    _msg->getDocument(),
-                    _msg->getTimestamp()));
-    LOG(debug,
-        "Sending %s to node %u",
-        command->toString().c_str(),
-        node);
+    auto command = std::make_shared<api::PutCommand>(bucket, _msg->getDocument(), _msg->getTimestamp());
+    LOG(debug, "Sending %s to node %u", command->toString().c_str(), node);
 
     copyMessageSettings(*_msg, *command);
     command->setUpdateTimestamp(_msg->getUpdateTimestamp());
     command->setCondition(_msg->getCondition());
-    putBatch.push_back(MessageTracker::ToSend(command, node));
+    putBatch.emplace_back(std::move(command), node);
 
 }
 
@@ -253,10 +151,7 @@ PutOperation::onStart(DistributorMessageSender& sender)
     document::BucketIdFactory bucketIdFactory;
     document::BucketId bid = bucketIdFactory.getBucketId(_msg->getDocumentId());
 
-    LOG(debug,
-        "Received PUT %s for bucket %s",
-        _msg->getDocumentId().toString().c_str(),
-        bid.toString().c_str());
+    LOG(debug, "Received PUT %s for bucket %s", _msg->getDocumentId().toString().c_str(), bid.toString().c_str());
 
     lib::ClusterState systemState = _bucketSpace.getClusterState();
 
@@ -276,24 +171,19 @@ PutOperation::onStart(DistributorMessageSender& sender)
         lib::IdealNodeCalculatorImpl idealNodeCalculator;
         idealNodeCalculator.setDistribution(_bucketSpace.getDistribution());
         idealNodeCalculator.setClusterState(_bucketSpace.getClusterState());
-        OperationTargetResolverImpl targetResolver(
-                _bucketSpace.getBucketDatabase(),
-                idealNodeCalculator,
+        OperationTargetResolverImpl targetResolver(_bucketSpace.getBucketDatabase(), idealNodeCalculator,
                 _manager.getDistributor().getConfig().getMinimalBucketSplit(),
                 _bucketSpace.getDistribution().getRedundancy(),
                 _msg->getBucket().getBucketSpace());
-        OperationTargetList targets(targetResolver.getTargets(
-                OperationTargetResolver::PUT, bid));
+        OperationTargetList targets(targetResolver.getTargets(OperationTargetResolver::PUT, bid));
 
         for (size_t i = 0; i < targets.size(); ++i) {
             if (_manager.getDistributor().getPendingMessageTracker().
-                hasPendingMessage(targets[i].getNode().getIndex(),
-                                  targets[i].getBucket(),
+                hasPendingMessage(targets[i].getNode().getIndex(), targets[i].getBucket(),
                                   api::MessageType::DELETEBUCKET_ID))
             {
                 _tracker.fail(sender, api::ReturnCode(api::ReturnCode::BUCKET_DELETED,
-                                "Bucket was being deleted while we got a PUT, failing "
-                                "operation to be safe"));
+                                "Bucket was being deleted while we got a PUT, failing operation to be safe"));
                 return;
             }
         }
@@ -304,11 +194,8 @@ PutOperation::onStart(DistributorMessageSender& sender)
 
         std::vector<PersistenceMessageTracker::ToSend> createBucketBatch;
         if (targets.hasAnyNewCopies()) {
-            insertDatabaseEntryAndScheduleCreateBucket(
-                    targets,
-                    shouldImplicitlyActivateReplica(targets),
-                    *_msg,
-                    createBucketBatch);
+            insertDatabaseEntryAndScheduleCreateBucket(targets, shouldImplicitlyActivateReplica(targets),
+                                                       *_msg, createBucketBatch);
         }
 
         if (!createBucketBatch.empty()) {
@@ -320,9 +207,8 @@ PutOperation::onStart(DistributorMessageSender& sender)
         // Now send PUTs
         for (uint32_t i = 0; i < targets.size(); i++) {
             const OperationTarget& target(targets[i]);
-            sendPutToBucketOnNode(_msg->getBucket().getBucketSpace(),
-                                  target.getBucketId(), target.getNode().getIndex(),
-                                  putBatch);
+            sendPutToBucketOnNode(_msg->getBucket().getBucketSpace(), target.getBucketId(),
+                                  target.getNode().getIndex(), putBatch);
         }
 
         if (putBatch.size()) {
@@ -330,18 +216,15 @@ PutOperation::onStart(DistributorMessageSender& sender)
         } else {
             const char* error = "Can't store document: No storage nodes available";
             LOG(debug, "%s", error);
-            _tracker.fail(sender,
-                          api::ReturnCode(api::ReturnCode::NOT_CONNECTED, error));
+            _tracker.fail(sender, api::ReturnCode(api::ReturnCode::NOT_CONNECTED, error));
             return;
         }
 
         // Check whether buckets are large enough to be split.
         // TODO(vekterli): only check entries for sendToExisting?
         for (uint32_t i = 0; i < entries.size(); ++i) {
-            _manager.getDistributor().checkBucketForSplit(
-                    _msg->getBucket().getBucketSpace(),
-                    entries[i],
-                    _msg->getPriority());
+            _manager.getDistributor().checkBucketForSplit(_msg->getBucket().getBucketSpace(),
+                                                          entries[i], _msg->getPriority());
         }
 
         _tracker.flushQueue(sender);
@@ -355,8 +238,7 @@ PutOperation::onStart(DistributorMessageSender& sender)
 }
 
 bool
-PutOperation::shouldImplicitlyActivateReplica(
-        const OperationTargetList& targets) const
+PutOperation::shouldImplicitlyActivateReplica(const OperationTargetList& targets) const
 {
     const auto& config(_manager.getDistributor().getConfig());
     if (config.isBucketActivationDisabled()) {
@@ -366,8 +248,7 @@ PutOperation::shouldImplicitlyActivateReplica(
 }
 
 void
-PutOperation::onReceive(DistributorMessageSender& sender,
-                        const std::shared_ptr<api::StorageReply> & msg)
+PutOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
 {
     LOG(debug, "Received %s", msg->toString(true).c_str());
     _tracker.receiveReply(sender, static_cast<api::BucketInfoReply&>(*msg));
@@ -380,4 +261,3 @@ PutOperation::onClose(DistributorMessageSender& sender)
     LOG(debug, "%s", error);
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED, error));
 }
-

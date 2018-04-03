@@ -51,9 +51,7 @@ struct IntermediateMessageSender : DistributorMessageSender {
     DistributorMessageSender& forward;
     std::shared_ptr<api::StorageReply> _reply;
 
-    IntermediateMessageSender(SentMessageMap& mm,
-                              const std::shared_ptr<Operation>& cb,
-                              DistributorMessageSender & fwd);
+    IntermediateMessageSender(SentMessageMap& mm, std::shared_ptr<Operation> cb, DistributorMessageSender & fwd);
     ~IntermediateMessageSender();
 
     void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override {
@@ -79,14 +77,13 @@ struct IntermediateMessageSender : DistributorMessageSender {
 };
 
 IntermediateMessageSender::IntermediateMessageSender(SentMessageMap& mm,
-                                                     const std::shared_ptr<Operation>& cb,
+                                                     std::shared_ptr<Operation> cb,
                                                      DistributorMessageSender & fwd)
     : msgMap(mm),
-      callback(cb),
+      callback(std::move(cb)),
       forward(fwd)
-{
-}
-IntermediateMessageSender::~IntermediateMessageSender() { }
+{ }
+IntermediateMessageSender::~IntermediateMessageSender() = default;
 
 }
 
@@ -161,13 +158,10 @@ void
 TwoPhaseUpdateOperation::startFastPathUpdate(DistributorMessageSender& sender)
 {
     _mode = Mode::FAST_PATH;
-    std::shared_ptr<UpdateOperation> updateOperation(
-            new UpdateOperation(_manager, _bucketSpace, _updateCmd, _updateMetric));
-
-    IntermediateMessageSender intermediate(
-            _sentMessageMap, updateOperation, sender);
-    updateOperation->start(intermediate,
-            _manager.getClock().getTimeInMillis());
+    auto updateOperation = std::make_shared<UpdateOperation>(_manager, _bucketSpace, _updateCmd, _updateMetric);
+    UpdateOperation & op = *updateOperation;
+    IntermediateMessageSender intermediate(_sentMessageMap, std::move(updateOperation), sender);
+    op.start(intermediate, _manager.getClock().getTimeInMillis());
     transitionTo(SendState::UPDATES_SENT);
 
     if (intermediate._reply.get()) {
@@ -178,30 +172,21 @@ TwoPhaseUpdateOperation::startFastPathUpdate(DistributorMessageSender& sender)
 void
 TwoPhaseUpdateOperation::startSafePathUpdate(DistributorMessageSender& sender)
 {
-    LOG(debug, "Update(%s) safe path: sending Get commands",
-        _updateCmd->getDocumentId().toString().c_str());
+    LOG(debug, "Update(%s) safe path: sending Get commands", _updateCmd->getDocumentId().toString().c_str());
 
     _mode = Mode::SLOW_PATH;
     document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), document::BucketId(0));
-    std::shared_ptr<api::GetCommand> get(
-            std::make_shared<api::GetCommand>(
-                bucket,
-                _updateCmd->getDocumentId(),
-                "[all]"));
+    auto get = std::make_shared<api::GetCommand>(bucket, _updateCmd->getDocumentId(),"[all]");
     copyMessageSettings(*_updateCmd, *get);
-    std::shared_ptr<GetOperation> getOperation(
-            std::make_shared<GetOperation>(_manager, _bucketSpace, get, _getMetric));
-
-    IntermediateMessageSender intermediate(
-            _sentMessageMap, getOperation, sender);
-    getOperation->start(intermediate,
-            _manager.getClock().getTimeInMillis());
+    auto getOperation = std::make_shared<GetOperation>(_manager, _bucketSpace, get, _getMetric);
+    GetOperation & op = *getOperation;
+    IntermediateMessageSender intermediate(_sentMessageMap, std::move(getOperation), sender);
+    op.start(intermediate, _manager.getClock().getTimeInMillis());
     transitionTo(SendState::GETS_SENT);
 
     if (intermediate._reply.get()) {
         assert(intermediate._reply->getType() == api::MessageType::GET_REPLY);
-        handleSafePathReceivedGet(
-                sender, static_cast<api::GetReply&>(*intermediate._reply));
+        handleSafePathReceivedGet(sender, static_cast<api::GetReply&>(*intermediate._reply));
     }
 }
 
@@ -226,17 +211,14 @@ bool
 TwoPhaseUpdateOperation::lostBucketOwnershipBetweenPhases() const
 {
     document::Bucket updateDocBucket(_updateCmd->getBucket().getBucketSpace(), _updateDocBucketId);
-    BucketOwnership bo(_manager.checkOwnershipInPendingAndCurrentState(
-            updateDocBucket));
+    BucketOwnership bo(_manager.checkOwnershipInPendingAndCurrentState(updateDocBucket));
     return !bo.isOwned();
 }
 
 void
-TwoPhaseUpdateOperation::sendLostOwnershipTransientErrorReply(
-        DistributorMessageSender& sender)
+TwoPhaseUpdateOperation::sendLostOwnershipTransientErrorReply(DistributorMessageSender& sender)
 {
-    sendReplyWithResult(
-            sender,
+    sendReplyWithResult(sender,
             api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND,
                             "Distributor lost ownership of bucket between "
                             "executing the read and write phases of a two-"
@@ -244,31 +226,24 @@ TwoPhaseUpdateOperation::sendLostOwnershipTransientErrorReply(
 }
 
 void
-TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(
-        std::shared_ptr<document::Document> doc,
-        api::Timestamp putTimestamp,
-        DistributorMessageSender& sender)
+TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(std::shared_ptr<document::Document> doc,
+                                                         api::Timestamp putTimestamp, DistributorMessageSender& sender)
 {
     if (lostBucketOwnershipBetweenPhases()) {
         sendLostOwnershipTransientErrorReply(sender);
         return;
     }
     document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), document::BucketId(0));
-    std::shared_ptr<api::PutCommand> put(
-            new api::PutCommand(bucket, doc, putTimestamp));
+    auto put = std::make_shared<api::PutCommand>(bucket, doc, putTimestamp);
     copyMessageSettings(*_updateCmd, *put);
-    std::shared_ptr<PutOperation> putOperation(
-            new PutOperation(_manager, _bucketSpace, put, _putMetric));
-
-    IntermediateMessageSender intermediate(
-            _sentMessageMap, putOperation, sender);
-    putOperation->start(intermediate,
-            _manager.getClock().getTimeInMillis());
+    auto putOperation = std::make_shared<PutOperation>(_manager, _bucketSpace, std::move(put), _putMetric);
+    PutOperation & op = *putOperation;
+    IntermediateMessageSender intermediate(_sentMessageMap, std::move(putOperation), sender);
+    op.start(intermediate, _manager.getClock().getTimeInMillis());
     transitionTo(SendState::PUTS_SENT);
 
     LOG(debug, "Update(%s): sending Put commands with doc %s",
-        _updateCmd->getDocumentId().toString().c_str(),
-        doc->toString(true).c_str());
+        _updateCmd->getDocumentId().toString().c_str(), doc->toString(true).c_str());
 
     if (intermediate._reply.get()) {
         sendReplyWithResult(sender, intermediate._reply->getResult());
@@ -276,9 +251,7 @@ TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(
 }
 
 void
-TwoPhaseUpdateOperation::onReceive(
-    DistributorMessageSender& sender,
-    const std::shared_ptr<api::StorageReply>& msg)
+TwoPhaseUpdateOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg)
 {
     if (_mode == Mode::FAST_PATH) {
         handleFastPathReceive(sender, msg);
@@ -288,9 +261,8 @@ TwoPhaseUpdateOperation::onReceive(
 }
 
 void
-TwoPhaseUpdateOperation::handleFastPathReceive(
-        DistributorMessageSender& sender,
-        const std::shared_ptr<api::StorageReply>& msg)
+TwoPhaseUpdateOperation::handleFastPathReceive(DistributorMessageSender& sender,
+                                               const std::shared_ptr<api::StorageReply>& msg)
 {
     if (msg->getType() == api::MessageType::GET_REPLY) {
         assert(_sendState == SendState::GETS_SENT);
@@ -308,50 +280,40 @@ TwoPhaseUpdateOperation::handleFastPathReceive(
 
         if (!getReply.getDocument().get()) {
             // Weird, document is no longer there ... Just fail.
-            sendReplyWithResult(sender, api::ReturnCode(
-                api::ReturnCode::INTERNAL_FAILURE, ""));
+            sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, ""));
             return;
         }
-        schedulePutsWithUpdatedDocument(getReply.getDocument(),
-                                        _manager.getUniqueTimestamp(),
-                                        sender);
+        schedulePutsWithUpdatedDocument(getReply.getDocument(), _manager.getUniqueTimestamp(), sender);
         return;
     }
 
     std::shared_ptr<Operation> callback = _sentMessageMap.pop(msg->getMsgId());
     assert(callback.get());
-    IntermediateMessageSender intermediate(_sentMessageMap, callback, sender);
-    callback->receive(intermediate, msg);
+    Operation & callbackOp = *callback;
+    IntermediateMessageSender intermediate(_sentMessageMap, std::move(callback), sender);
+    callbackOp.receive(intermediate, msg);
 
     if (msg->getType() == api::MessageType::UPDATE_REPLY) {
         if (intermediate._reply.get()) {
             assert(_sendState == SendState::UPDATES_SENT);
             addTraceFromReply(*intermediate._reply);
-            UpdateOperation& cb = static_cast<UpdateOperation&> (*callback);
+            UpdateOperation& cb = static_cast<UpdateOperation&> (callbackOp);
 
-            std::pair<document::BucketId, uint16_t> bestNode =
-                cb.getNewestTimestampLocation();
+            std::pair<document::BucketId, uint16_t> bestNode = cb.getNewestTimestampLocation();
 
             if (!intermediate._reply->getResult().success() ||
                 bestNode.first == document::BucketId(0)) {
                 // Failed or was consistent
                 sendReply(sender, intermediate._reply);
             } else {
-                LOG(debug, "Update(%s) fast path: was inconsistent!",
-                    _updateCmd->getDocumentId().toString().c_str());
+                LOG(debug, "Update(%s) fast path: was inconsistent!", _updateCmd->getDocumentId().toString().c_str());
 
                 _updateReply = intermediate._reply;
                 document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), bestNode.first);
-                std::shared_ptr<api::GetCommand> cmd(
-                    new api::GetCommand(bucket,
-                    _updateCmd->getDocumentId(),
-                    "[all]"));
+                auto cmd = std::make_shared<api::GetCommand>(bucket, _updateCmd->getDocumentId(), "[all]");
                 copyMessageSettings(*_updateCmd, *cmd);
 
-                sender.sendToNode(
-                    lib::NodeType::STORAGE,
-                    bestNode.second,
-                    cmd);
+                sender.sendToNode(lib::NodeType::STORAGE, bestNode.second, cmd);
                 transitionTo(SendState::GETS_SENT);
             }
         }
@@ -365,15 +327,15 @@ TwoPhaseUpdateOperation::handleFastPathReceive(
 }
 
 void
-TwoPhaseUpdateOperation::handleSafePathReceive(
-        DistributorMessageSender& sender,
-        const std::shared_ptr<api::StorageReply>& msg)
+TwoPhaseUpdateOperation::handleSafePathReceive(DistributorMessageSender& sender,
+                                               const std::shared_ptr<api::StorageReply>& msg)
 {
     std::shared_ptr<Operation> callback = _sentMessageMap.pop(msg->getMsgId());
     assert(callback.get());
+    Operation & callbackOp = *callback;
 
-    IntermediateMessageSender intermediate(_sentMessageMap, callback, sender);
-    callback->receive(intermediate, msg);
+    IntermediateMessageSender intermediate(_sentMessageMap, std::move(callback), sender);
+    callbackOp.receive(intermediate, msg);
 
     if (!intermediate._reply.get()) {
         return; // Not enough replies received yet or we're draining callbacks.
@@ -381,21 +343,17 @@ TwoPhaseUpdateOperation::handleSafePathReceive(
     addTraceFromReply(*intermediate._reply);
     if (_sendState == SendState::GETS_SENT) {
         assert(intermediate._reply->getType() == api::MessageType::GET_REPLY);
-        handleSafePathReceivedGet(
-                sender, static_cast<api::GetReply&>(*intermediate._reply));
+        handleSafePathReceivedGet(sender, static_cast<api::GetReply&>(*intermediate._reply));
     } else if (_sendState == SendState::PUTS_SENT) {
         assert(intermediate._reply->getType() == api::MessageType::PUT_REPLY);
-        handleSafePathReceivedPut(
-                sender, static_cast<api::PutReply&>(*intermediate._reply));
+        handleSafePathReceivedPut(sender, static_cast<api::PutReply&>(*intermediate._reply));
     } else {
         assert(!"Unknown state");
     }
 }
 
 void
-TwoPhaseUpdateOperation::handleSafePathReceivedGet(
-        DistributorMessageSender& sender,
-        api::GetReply& reply)
+TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorMessageSender& sender, api::GetReply& reply)
 {
     LOG(debug, "Update(%s): got Get reply with code %s",
         _updateCmd->getDocumentId().toString().c_str(),
@@ -411,9 +369,8 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(
     if (reply.getDocument().get()) {
         api::Timestamp receivedTimestamp = reply.getLastModifiedTimestamp();
         if (!satisfiesUpdateTimestampConstraint(receivedTimestamp)) {
-            sendReplyWithResult(sender, api::ReturnCode(
-                    api::ReturnCode::OK,
-                    "No document with requested timestamp found"));
+            sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::OK,
+                                                        "No document with requested timestamp found"));
             return;
         }
         if (!processAndMatchTasCondition(sender, *reply.getDocument())) {
@@ -425,9 +382,7 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(
         replyWithTasFailure(sender, "Document did not exist");
         return;
     } else if (shouldCreateIfNonExistent()) {
-        LOG(debug,
-            "No existing documents found for %s, creating blank "
-            "document to update",
+        LOG(debug, "No existing documents found for %s, creating blank document to update",
             _updateCmd->getUpdate()->getId().toString().c_str());
         docToUpdate = createBlankDocument();
         setUpdatedForTimestamp(putTimestamp);
@@ -439,22 +394,19 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(
         applyUpdateToDocument(*docToUpdate);
         schedulePutsWithUpdatedDocument(docToUpdate, putTimestamp, sender);
     } catch (vespalib::Exception& e) {
-        sendReplyWithResult(sender, api::ReturnCode(
-                api::ReturnCode::INTERNAL_FAILURE, e.getMessage()));
+        sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, e.getMessage()));
     }
 }
 
 bool
-TwoPhaseUpdateOperation::processAndMatchTasCondition(
-        DistributorMessageSender& sender,
-        const document::Document& candidateDoc)
+TwoPhaseUpdateOperation::processAndMatchTasCondition(DistributorMessageSender& sender,
+                                                     const document::Document& candidateDoc)
 {
     if (!hasTasCondition()) {
         return true; // No condition; nothing to do here.
     }
 
-    document::select::Parser parser(*_manager.getTypeRepo(),
-                                    _manager.getBucketIdFactory());
+    document::select::Parser parser(*_manager.getTypeRepo(), _manager.getBucketIdFactory());
     std::unique_ptr<document::select::Node> selection;
     try {
          selection = parser.parse(_updateCmd->getCondition().getSelection());
@@ -479,12 +431,9 @@ TwoPhaseUpdateOperation::hasTasCondition() const noexcept
 }
 
 void
-TwoPhaseUpdateOperation::replyWithTasFailure(
-        DistributorMessageSender& sender,
-        vespalib::stringref message)
+TwoPhaseUpdateOperation::replyWithTasFailure(DistributorMessageSender& sender, vespalib::stringref message)
 {
-    sendReplyWithResult(sender, api::ReturnCode(
-                api::ReturnCode::TEST_AND_SET_CONDITION_FAILED, message));
+    sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED, message));
 }
 
 void
@@ -502,9 +451,7 @@ TwoPhaseUpdateOperation::createBlankDocument() const
 }
 
 void
-TwoPhaseUpdateOperation::handleSafePathReceivedPut(
-        DistributorMessageSender& sender,
-        const api::PutReply& reply)
+TwoPhaseUpdateOperation::handleSafePathReceivedPut(DistributorMessageSender& sender, const api::PutReply& reply)
 {
     sendReplyWithResult(sender, reply.getResult());
 }
@@ -522,11 +469,9 @@ TwoPhaseUpdateOperation::shouldCreateIfNonExistent() const
 }
 
 bool
-TwoPhaseUpdateOperation::satisfiesUpdateTimestampConstraint(
-        api::Timestamp ts) const
+TwoPhaseUpdateOperation::satisfiesUpdateTimestampConstraint(api::Timestamp ts) const
 {
-    return (_updateCmd->getOldTimestamp() == 0
-            || _updateCmd->getOldTimestamp() == ts);
+    return (_updateCmd->getOldTimestamp() == 0 || _updateCmd->getOldTimestamp() == ts);
 }
 
 void
@@ -540,11 +485,8 @@ TwoPhaseUpdateOperation::onClose(DistributorMessageSender& sender) {
     while (true) {
         std::shared_ptr<Operation> cb = _sentMessageMap.pop();
 
-        if (cb.get()) {
-            IntermediateMessageSender intermediate(
-                _sentMessageMap,
-                std::shared_ptr<Operation > (),
-                sender);
+        if (cb) {
+            IntermediateMessageSender intermediate(_sentMessageMap, std::shared_ptr<Operation > (), sender);
             cb->onClose(intermediate);
             // We will _only_ forward UpdateReply instances up, since those
             // are created by UpdateOperation and are bound to the original
@@ -552,9 +494,7 @@ TwoPhaseUpdateOperation::onClose(DistributorMessageSender& sender) {
             // to synthetic commands created for gets/puts and should never be
             // propagated to the outside world.
             auto candidateReply = std::move(intermediate._reply);
-            if (candidateReply
-                && candidateReply->getType() == api::MessageType::UPDATE_REPLY)
-            {
+            if (candidateReply && candidateReply->getType() == api::MessageType::UPDATE_REPLY) {
                 assert(_mode == Mode::FAST_PATH);
                 sendReply(sender, candidateReply); // Sets _replySent
             }

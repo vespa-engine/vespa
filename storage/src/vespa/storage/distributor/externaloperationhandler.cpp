@@ -25,22 +25,18 @@ LOG_SETUP(".distributor.manager");
 
 namespace storage::distributor {
 
-ExternalOperationHandler::ExternalOperationHandler(
-        Distributor& owner,
-        DistributorBucketSpaceRepo& bucketSpaceRepo,
-        const MaintenanceOperationGenerator& gen,
-        DistributorComponentRegister& compReg)
+ExternalOperationHandler::ExternalOperationHandler(Distributor& owner, DistributorBucketSpaceRepo& bucketSpaceRepo,
+                                                   const MaintenanceOperationGenerator& gen,
+                                                   DistributorComponentRegister& compReg)
     : DistributorComponent(owner, bucketSpaceRepo, compReg, "External operation handler"),
       _operationGenerator(gen),
       _rejectFeedBeforeTimeReached() // At epoch
 { }
 
-ExternalOperationHandler::~ExternalOperationHandler() { }
+ExternalOperationHandler::~ExternalOperationHandler() = default;
 
 bool
-ExternalOperationHandler::handleMessage(
-        const std::shared_ptr<api::StorageMessage>& msg,
-        Operation::SP& op)
+ExternalOperationHandler::handleMessage(const std::shared_ptr<api::StorageMessage>& msg, Operation::SP& op)
 {
     _op = Operation::SP();
     bool retVal = msg->callHandler(*this, msg);
@@ -52,10 +48,8 @@ api::ReturnCode
 ExternalOperationHandler::makeSafeTimeRejectionResult(TimePoint unsafeTime)
 {
     std::ostringstream ss;
-    auto now_sec(std::chrono::duration_cast<std::chrono::seconds>(
-                unsafeTime.time_since_epoch()));
-    auto future_sec(std::chrono::duration_cast<std::chrono::seconds>(
-                _rejectFeedBeforeTimeReached.time_since_epoch()));
+    auto now_sec(std::chrono::duration_cast<std::chrono::seconds>(unsafeTime.time_since_epoch()));
+    auto future_sec(std::chrono::duration_cast<std::chrono::seconds>(_rejectFeedBeforeTimeReached.time_since_epoch()));
     ss << "Operation received at time " << now_sec.count()
        << ", which is before bucket ownership transfer safe time of "
        << future_sec.count();
@@ -65,8 +59,7 @@ ExternalOperationHandler::makeSafeTimeRejectionResult(TimePoint unsafeTime)
 bool
 ExternalOperationHandler::checkSafeTimeReached(api::StorageCommand& cmd)
 {
-    const auto now = TimePoint(std::chrono::seconds(
-            getClock().getTimeInSeconds().getTime()));
+    const auto now = TimePoint(std::chrono::seconds(getClock().getTimeInSeconds().getTime()));
     if (now < _rejectFeedBeforeTimeReached) {
         api::StorageReply::UP reply(cmd.makeReply());
         reply->setResult(makeSafeTimeRejectionResult(now));
@@ -77,18 +70,14 @@ ExternalOperationHandler::checkSafeTimeReached(api::StorageCommand& cmd)
 }
 
 bool
-ExternalOperationHandler::checkTimestampMutationPreconditions(
-        api::StorageCommand& cmd,
-        const document::BucketId &bucketId,
-        PersistenceOperationMetricSet& persistenceMetrics)
+ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageCommand& cmd,
+                                                              const document::BucketId &bucketId,
+                                                              PersistenceOperationMetricSet& persistenceMetrics)
 {
     document::Bucket bucket(cmd.getBucket().getBucketSpace(), bucketId);
     if (!checkDistribution(cmd, bucket)) {
-        LOG(debug,
-            "Distributor manager received %s, bucket %s with wrong "
-            "distribution",
-            cmd.toString().c_str(),
-            bucket.toString().c_str());
+        LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
+            cmd.toString().c_str(), bucket.toString().c_str());
 
         persistenceMetrics.failures.wrongdistributor++;
         return false;
@@ -101,13 +90,12 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(
 }
 
 std::shared_ptr<api::StorageMessage>
-ExternalOperationHandler::makeConcurrentMutationRejectionReply(
-        api::StorageCommand& cmd,
-        const document::DocumentId& docId,
-        PersistenceOperationMetricSet& persistenceMetrics) const {
-    auto err_msg = vespalib::make_string(
-            "A mutating operation for document '%s' is already in progress",
-            docId.toString().c_str());
+ExternalOperationHandler::makeConcurrentMutationRejectionReply(api::StorageCommand& cmd,
+                                                               const document::DocumentId& docId,
+                                                               PersistenceOperationMetricSet& persistenceMetrics) const
+{
+    auto err_msg = vespalib::make_string("A mutating operation for document '%s' is already in progress",
+                                         docId.toString().c_str());
     LOG(debug, "Aborting incoming %s operation: %s", cmd.getType().toString().c_str(), err_msg.c_str());
     persistenceMetrics.failures.concurrent_mutations++;
     api::StorageReply::UP reply(cmd.makeReply());
@@ -184,12 +172,8 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Remove)
     auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
     if (allowMutation(handle)) {
         auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
-        _op = std::make_shared<RemoveOperation>(
-                *this,
-                distributorBucketSpace,
-                cmd,
-                getMetrics().removes[cmd->getLoadType()],
-                std::move(handle));
+        _op = std::make_shared<RemoveOperation>(*this, distributorBucketSpace, cmd,
+                                                getMetrics().removes[cmd->getLoadType()], std::move(handle));
     } else {
         sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
@@ -204,20 +188,14 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
     document::Bucket bucket(cmd->getBucket().getBucketSpace(), bid);
 
     if (!checkDistribution(*cmd, bucket)) {
-        LOG(debug,
-            "Distributor manager received %s with wrong distribution",
-            cmd->toString().c_str());
+        LOG(debug, "Distributor manager received %s with wrong distribution", cmd->toString().c_str());
 
-        getMetrics().removelocations[cmd->getLoadType()].
-            failures.wrongdistributor++;
+        getMetrics().removelocations[cmd->getLoadType()].failures.wrongdistributor++;
         return true;
     }
 
-    _op = Operation::SP(new RemoveLocationOperation(
-                                *this,
-                                _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
-                                cmd,
-                                getMetrics().removelocations[cmd->getLoadType()]));
+    _op = std::make_shared<RemoveLocationOperation>(*this, _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
+                                                    cmd, getMetrics().removelocations[cmd->getLoadType()]);
     return true;
 }
 
@@ -225,21 +203,15 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
 {
     document::Bucket bucket(cmd->getBucket().getBucketSpace(), getBucketId(cmd->getDocumentId()));
     if (!checkDistribution(*cmd, bucket)) {
-        LOG(debug,
-            "Distributor manager received get for %s, "
-            "bucket %s with wrong distribution",
-            cmd->getDocumentId().toString().c_str(),
-            bucket.toString().c_str());
+        LOG(debug, "Distributor manager received get for %s, bucket %s with wrong distribution",
+            cmd->getDocumentId().toString().c_str(), bucket.toString().c_str());
 
         getMetrics().gets[cmd->getLoadType()].failures.wrongdistributor++;
         return true;
     }
 
-    _op = Operation::SP(new GetOperation(
-                                *this,
-                                _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
-                                cmd,
-                                getMetrics().gets[cmd->getLoadType()]));
+    _op = std::make_shared<GetOperation>(*this, _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
+                                        cmd, getMetrics().gets[cmd->getLoadType()]);
     return true;
 }
 
@@ -249,7 +221,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, StatBucket)
         return true;
     }
     auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
-    _op = Operation::SP(new StatBucketOperation(*this, distributorBucketSpace, cmd));
+    _op = std::make_shared<StatBucketOperation>(*this, distributorBucketSpace, cmd);
     return true;
 }
 
@@ -261,16 +233,14 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, GetBucketList)
     auto bucketSpace(cmd->getBucket().getBucketSpace());
     auto &distributorBucketSpace(_bucketSpaceRepo.get(bucketSpace));
     auto &bucketDatabase(distributorBucketSpace.getBucketDatabase());
-    _op = Operation::SP(new StatBucketListOperation(
-            bucketDatabase, _operationGenerator, getIndex(), cmd));
+    _op = std::make_shared<StatBucketListOperation>(bucketDatabase, _operationGenerator, getIndex(), cmd);
     return true;
 }
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, CreateVisitor)
 {
     const DistributorConfiguration& config(getDistributor().getConfig());
-    VisitorOperation::Config visitorConfig(config.getMinBucketsPerVisitor(),
-                                           config.getMaxVisitorsPerNodePerClientVisitor());
+    VisitorOperation::Config visitorConfig(config.getMinBucketsPerVisitor(), config.getMaxVisitorsPerNodePerClientVisitor());
     auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
     _op = Operation::SP(new VisitorOperation(*this, distributorBucketSpace, cmd, visitorConfig, getMetrics().visits[cmd->getLoadType()]));
     return true;

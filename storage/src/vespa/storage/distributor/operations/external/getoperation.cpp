@@ -14,9 +14,7 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-GetOperation::GroupId::GroupId(const document::BucketId& id,
-                               uint32_t checksum,
-                               int node)
+GetOperation::GroupId::GroupId(const document::BucketId& id, uint32_t checksum, int node)
     : _id(id),
       _checksum(checksum),
       _node(node)
@@ -48,12 +46,12 @@ GetOperation::GroupId::operator==(const GroupId& other) const
 
 GetOperation::GetOperation(DistributorComponent& manager,
                            DistributorBucketSpace &bucketSpace,
-                           const std::shared_ptr<api::GetCommand> & msg,
+                           std::shared_ptr<api::GetCommand> msg,
                            PersistenceOperationMetricSet& metric)
     : Operation(),
       _manager(manager),
       _bucketSpace(bucketSpace),
-      _msg(msg),
+      _msg(std::move(msg)),
       _returnCode(api::ReturnCode::OK),
       _doc((document::Document*)NULL),
       _lastModified(0),
@@ -66,8 +64,7 @@ GetOperation::GetOperation(DistributorComponent& manager,
 void
 GetOperation::onClose(DistributorMessageSender& sender)
 {
-    _returnCode = api::ReturnCode(api::ReturnCode::ABORTED,
-                                  "Process is shutting down");
+    _returnCode = api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down");
     sendReply(sender);
 }
 
@@ -96,30 +93,19 @@ GetOperation::findBestUnsentTarget(const GroupVector& candidates) const
 }
 
 bool
-GetOperation::sendForChecksum(DistributorMessageSender& sender,
-                              const document::BucketId& id,
-                              GroupVector& res)
+GetOperation::sendForChecksum(DistributorMessageSender& sender, const document::BucketId& id, GroupVector& res)
 {
     const int best = findBestUnsentTarget(res);
 
     if (best != -1) {
         document::Bucket bucket(_msg->getBucket().getBucketSpace(), id);
-        std::shared_ptr<api::GetCommand> command(
-                std::make_shared<api::GetCommand>(
-                        bucket,
-                        _msg->getDocumentId(),
-                        _msg->getFieldSet(),
-                        _msg->getBeforeTimestamp()));
+        auto command = std::make_shared<api::GetCommand>(bucket, _msg->getDocumentId(),
+                                                         _msg->getFieldSet(), _msg->getBeforeTimestamp());
         copyMessageSettings(*_msg, *command);
 
-        LOG(spam,
-            "Sending %s to node %d",
-            command->toString(true).c_str(),
-            res[best].copy.getNode());
+        LOG(spam, "Sending %s to node %d", command->toString(true).c_str(), res[best].copy.getNode());
 
-        res[best].sent = sender.sendToNode(lib::NodeType::STORAGE,
-                                           res[best].copy.getNode(),
-                                           command);
+        res[best].sent = sender.sendToNode(lib::NodeType::STORAGE, res[best].copy.getNode(), command);
         return true;
     }
 
@@ -145,8 +131,7 @@ GetOperation::onStart(DistributorMessageSender& sender)
 };
 
 void
-GetOperation::onReceive(DistributorMessageSender& sender,
-                        const std::shared_ptr<api::StorageReply>& msg)
+GetOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg)
 {
     api::GetReply* getreply = dynamic_cast<api::GetReply*>(msg.get());
     assert(getreply != nullptr);
@@ -179,9 +164,7 @@ GetOperation::onReceive(DistributorMessageSender& sender,
                     }
 
                     // Try to send to another node in this checksum group.
-                    bool sent = sendForChecksum(sender,
-                                                iter->first.getBucketId(),
-                                                iter->second);
+                    bool sent = sendForChecksum(sender, iter->first.getBucketId(), iter->second);
                     if (sent) {
                         allDone = false;
                     }
@@ -197,8 +180,7 @@ GetOperation::onReceive(DistributorMessageSender& sender,
 
     if (allDone) {
         LOG(debug, "Get on %s done, returning reply %s",
-            _msg->getDocumentId().toString().c_str(),
-            _returnCode.toString().c_str());
+            _msg->getDocumentId().toString().c_str(), _returnCode.toString().c_str());
         sendReply(sender);
     }
 }
@@ -207,8 +189,7 @@ void
 GetOperation::sendReply(DistributorMessageSender& sender)
 {
     if (_msg.get()) {
-        std::shared_ptr<api::GetReply> repl(
-                std::make_shared<api::GetReply>(*_msg, _doc, _lastModified));
+        auto repl = std::make_shared<api::GetReply>(*_msg, _doc, _lastModified);
         repl->setResult(_returnCode);
 
         if (_returnCode.success()) {
@@ -271,11 +252,9 @@ GetOperation::assignTargetNodeGroups()
             const BucketCopy& copy = e->getNodeRef(i);
 
             if (!copy.valid()) {
-                _responses[GroupId(e.getBucketId(), copy.getChecksum(), copy.getNode())].
-                    push_back(copy);
+                _responses[GroupId(e.getBucketId(), copy.getChecksum(), copy.getNode())].push_back(copy);
             } else if (!copy.empty()) {
-                _responses[GroupId(e.getBucketId(), copy.getChecksum(), -1)].
-                    push_back(copy);
+                _responses[GroupId(e.getBucketId(), copy.getChecksum(), -1)].push_back(copy);
             }
         }
     }

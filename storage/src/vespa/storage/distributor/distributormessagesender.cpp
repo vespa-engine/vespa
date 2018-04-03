@@ -6,20 +6,14 @@
 namespace storage::distributor {
 
 uint64_t
-DistributorMessageSender::sendToNode(
-                     const lib::NodeType& nodeType,
-                     uint16_t node,
-                     const std::shared_ptr<api::StorageCommand> & cmd,
-                     bool useDocumentAPI)
+DistributorMessageSender::sendToNode(const lib::NodeType& nodeType, uint16_t node,
+                                     const std::shared_ptr<api::StorageCommand> & cmd, bool useDocumentAPI)
 {
     cmd->setSourceIndex(getDistributorIndex());
-    cmd->setAddress(api::StorageMessageAddress(
-                            getClusterName(),
-                            nodeType,
-                            node,
-                            (useDocumentAPI
-                             ? api::StorageMessageAddress::DOCUMENT 
-                             : api::StorageMessageAddress::STORAGE)));
+    cmd->setAddress(api::StorageMessageAddress(getClusterName(), nodeType, node,
+                                               (useDocumentAPI
+                                                ? api::StorageMessageAddress::DOCUMENT
+                                                : api::StorageMessageAddress::STORAGE)));
     uint64_t msgId = cmd->getMsgId();
     sendCommand(cmd);
     return msgId;

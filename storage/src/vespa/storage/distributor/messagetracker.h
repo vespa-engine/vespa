@@ -16,8 +16,8 @@ class MessageTracker {
 public:
     class ToSend {
     public:
-        ToSend(const std::shared_ptr<api::BucketCommand>& msg, uint16_t target) :
-            _msg(msg), _target(target) {};
+        ToSend(std::shared_ptr<api::BucketCommand> msg, uint16_t target) :
+            _msg(std::move(msg)), _target(target) {};
 
         std::shared_ptr<api::BucketCommand> _msg;
         uint16_t _target;
@@ -29,7 +29,7 @@ public:
     ~MessageTracker();
 
     void queueCommand(std::shared_ptr<api::BucketCommand> msg, uint16_t target) {
-        _commandQueue.push_back(ToSend(msg, target));
+        _commandQueue.emplace_back(std::move(msg), target);
     }
 
     void flushQueue(MessageSender& sender);

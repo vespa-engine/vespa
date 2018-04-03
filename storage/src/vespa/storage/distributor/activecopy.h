@@ -10,9 +10,8 @@ namespace storage::distributor {
 class ActiveList;
 
 struct ActiveCopy {
-public:
-    ActiveCopy() : nodeIndex(-1), _ideal(-1), _ready(false), _trusted(false), _active(false) { }
-    ActiveCopy(uint16_t node, BucketDatabase::Entry& e, const std::vector<uint16_t>& idealState);
+    ActiveCopy() : _nodeIndex(-1), _ideal(-1), _ready(false), _trusted(false), _active(false) { }
+    ActiveCopy(uint16_t node, const BucketDatabase::Entry& e, const std::vector<uint16_t>& idealState);
 
     vespalib::string getReason() const;
     friend std::ostream& operator<<(std::ostream& out, const ActiveCopy& e);
@@ -20,7 +19,7 @@ public:
     static ActiveList calculate(const std::vector<uint16_t>& idealState,
                                 const lib::Distribution&, BucketDatabase::Entry&);
 
-    uint16_t nodeIndex;
+    uint16_t _nodeIndex;
     uint16_t _ideal;
     bool     _ready;
     bool     _trusted;
@@ -32,7 +31,7 @@ class ActiveList : public vespalib::Printable {
 
 public:
     ActiveList() {}
-    ActiveList(std::vector<ActiveCopy>& v) { _v.swap(v); }
+    ActiveList(std::vector<ActiveCopy>&& v) : _v(std::move(v)) { }
 
     ActiveCopy& operator[](size_t i) { return _v[i]; }
     const ActiveCopy& operator[](size_t i) const { return _v[i]; }

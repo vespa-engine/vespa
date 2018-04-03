@@ -22,8 +22,8 @@ namespace std {
 
 namespace storage::distributor {
 
-ActiveCopy::ActiveCopy(uint16_t node, BucketDatabase::Entry& e, const std::vector<uint16_t>& idealState) :
-    nodeIndex(node),
+ActiveCopy::ActiveCopy(uint16_t node, const BucketDatabase::Entry& e, const std::vector<uint16_t>& idealState) :
+    _nodeIndex(node),
     _ideal(0xffff)
 {
     const BucketCopy* copy = e->getNode(node);
@@ -32,7 +32,10 @@ ActiveCopy::ActiveCopy(uint16_t node, BucketDatabase::Entry& e, const std::vecto
     _trusted = copy->trusted();
     _active = copy->active();
     for (uint32_t i=0; i<idealState.size(); ++i) {
-        if (idealState[i] == node) _ideal = i;
+        if (idealState[i] == node) {
+            _ideal = i;
+            break;
+        }
     }
 }
 
@@ -63,7 +66,7 @@ ActiveCopy::getReason() const {
 
 std::ostream&
 operator<<(std::ostream& out, const ActiveCopy & e) {
-    out << "Entry(Node " << e.nodeIndex;
+    out << "Entry(Node " << e._nodeIndex;
     if (e._ready) out << ", ready";
     if (e._trusted) out << ", trusted";
     if (e._ideal < 0xffff) out << ", ideal pri " << e._ideal;
@@ -79,7 +82,7 @@ namespace {
             if (e1._trusted != e2._trusted) return e1._trusted;
             if (e1._ideal != e2._ideal) return e1._ideal < e2._ideal;
             if (e1._active != e2._active) return e1._active;
-            return e1.nodeIndex < e2.nodeIndex;
+            return e1._nodeIndex < e2._nodeIndex;
         }
     };
 
@@ -96,8 +99,8 @@ namespace {
                        const std::vector<uint16_t>& idealState,
                        std::vector<ActiveCopy>& result)
     {
-        for (uint32_t i=0; i<nodeIndexes.size(); ++i) {
-            result.push_back(ActiveCopy(nodeIndexes[i], e, idealState));
+        for (uint16_t nodeIndex : nodeIndexes) {
+            result.emplace_back(nodeIndex, e, idealState);
         }
     }
 }
@@ -115,11 +118,10 @@ ActiveCopy::calculate(const std::vector<uint16_t>& idealState,
                       BucketDatabase::Entry& e)
 {
     DEBUG(std::cerr << "Ideal state is " << idealState << "\n");
-    std::vector<ActiveCopy> result;
     std::vector<uint16_t> validNodesWithCopy;
     buildValidNodeIndexList(e, validNodesWithCopy);
     if (validNodesWithCopy.empty()) {
-        return result;
+        return ActiveList();
     }
     typedef std::vector<uint16_t> IndexList;
     std::vector<IndexList> groups;
@@ -128,6 +130,7 @@ ActiveCopy::calculate(const std::vector<uint16_t>& idealState,
     } else {
         groups.push_back(validNodesWithCopy);
     }
+    std::vector<ActiveCopy> result;
     for (uint32_t i=0; i<groups.size(); ++i) {
         std::vector<ActiveCopy> entries;
         buildNodeList(e, groups[i], idealState, entries);
@@ -136,7 +139,7 @@ ActiveCopy::calculate(const std::vector<uint16_t>& idealState,
         DEBUG(std::cerr << "Best copy " << *best << "\n");
         result.push_back(ActiveCopy(*best));
     }
-    return ActiveList(result);
+    return ActiveList(std::move(result));
 }
 
 void
@@ -147,13 +150,13 @@ ActiveList::print(std::ostream& out, bool verbose,
     if (verbose) {
         for (size_t i=0; i<_v.size(); ++i) {
             out << "\n" << indent << "  "
-                << _v[i].nodeIndex << " " << _v[i].getReason();
+                << _v[i]._nodeIndex << " " << _v[i].getReason();
         }
         if (!_v.empty()) out << "\n" << indent;
     } else {
-        if (!_v.empty()) out << _v[0].nodeIndex;
+        if (!_v.empty()) out << _v[0]._nodeIndex;
         for (size_t i=1; i<_v.size(); ++i) {
-            out << " " << _v[i].nodeIndex;
+            out << " " << _v[i]._nodeIndex;
         }
     }
     out << "]";
@@ -163,7 +166,7 @@ bool
 ActiveList::contains(uint16_t node) const
 {
     for (uint32_t i=0; i<_v.size(); ++i) {
-        if (node == _v[i].nodeIndex) return true;
+        if (node == _v[i]._nodeIndex) return true;
     }
     return false;
 }
