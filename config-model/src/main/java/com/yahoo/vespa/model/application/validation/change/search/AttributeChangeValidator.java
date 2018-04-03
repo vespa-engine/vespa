@@ -89,9 +89,32 @@ public class AttributeChangeValidator {
                 validateAttributeSetting(currAttr, nextAttr, Attribute::isFastAccess, "fast-access", result);
                 validateAttributeSetting(currAttr, nextAttr, Attribute::isHuge, "huge", result);
                 validateAttributeSetting(currAttr, nextAttr, Attribute::densePostingListThreshold, "dense-posting-list-threshold", result);
+                validateAttributeSetting(currAttr, nextAttr, Attribute::isEnabledOnlyBitVector, "rank: filter", result);
             }
         }
         return result;
+    }
+
+    private static void validateAttributeSetting(Attribute currentAttr, Attribute nextAttr,
+                                                 Predicate<Attribute> predicate, String setting,
+                                                 List<VespaConfigChangeAction> result) {
+        final boolean nextValue = predicate.test(nextAttr);
+        if (predicate.test(currentAttr) != nextValue) {
+            String change = nextValue ? "add" : "remove";
+            result.add(new VespaRestartAction(new ChangeMessageBuilder(nextAttr.getName()).
+                    addChange(change + " attribute '" + setting + "'").build()));
+        }
+    }
+
+    private static <T> void validateAttributeSetting(Attribute currentAttr, Attribute nextAttr,
+                                                     Function<Attribute, T> settingValueProvider, String setting,
+                                                     List<VespaConfigChangeAction> result) {
+        T currentValue = settingValueProvider.apply(currentAttr);
+        T nextValue = settingValueProvider.apply(nextAttr);
+        if ( ! Objects.equals(currentValue, nextValue)) {
+            String message = String.format("change property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
+            result.add(new VespaRestartAction(new ChangeMessageBuilder(nextAttr.getName()).addChange(message).build()));
+        }
     }
 
     private List<VespaConfigChangeAction> validateTensorTypes(final ValidationOverrides overrides, Instant now) {
@@ -126,28 +149,6 @@ public class AttributeChangeValidator {
                                 "tensor type",
                                 currentAttr.tensorType().get().toString(),
                                 nextAttr.tensorType().get().toString()).build(), now);
-    }
-
-    private static void validateAttributeSetting(Attribute currentAttr, Attribute nextAttr,
-                                                 Predicate<Attribute> predicate, String setting,
-                                                 List<VespaConfigChangeAction> result) {
-        final boolean nextValue = predicate.test(nextAttr);
-        if (predicate.test(currentAttr) != nextValue) {
-            String change = nextValue ? "add" : "remove";
-            result.add(new VespaRestartAction(new ChangeMessageBuilder(nextAttr.getName()).
-                    addChange(change + " attribute '" + setting + "'").build()));
-        }
-    }
-
-    private static <T> void validateAttributeSetting(Attribute currentAttr, Attribute nextAttr,
-                                                     Function<Attribute, T> settingValueProvider, String setting,
-                                                     List<VespaConfigChangeAction> result) {
-        T currentValue = settingValueProvider.apply(currentAttr);
-        T nextValue = settingValueProvider.apply(nextAttr);
-        if ( ! Objects.equals(currentValue, nextValue)) {
-            String message = String.format("change property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
-            result.add(new VespaRestartAction(new ChangeMessageBuilder(nextAttr.getName()).addChange(message).build()));
-        }
     }
 
 }

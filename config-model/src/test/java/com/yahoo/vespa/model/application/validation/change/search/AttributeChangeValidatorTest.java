@@ -141,4 +141,20 @@ public class AttributeChangeValidatorTest {
         }
     }
 
+    @Test
+    public void adding_rank_filter_requires_restart() throws Exception {
+        new Fixture("field f1 type string { indexing: attribute }",
+                "field f1 type string { indexing: attribute \n rank: filter }").
+                assertValidation(newRestartAction(
+                        "Field 'f1' changed: add attribute 'rank: filter'"));
+    }
+
+    @Test
+    public void removing_rank_filter_requires_restart() throws Exception {
+        new Fixture("field f1 type string { indexing: attribute \n rank: filter }",
+                "field f1 type string { indexing: attribute }").
+                assertValidation(newRestartAction(
+                        "Field 'f1' changed: remove attribute 'rank: filter'"));
+    }
+
 }
