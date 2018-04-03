@@ -59,11 +59,10 @@ public class CuratorDatabaseClient {
     
     private final Zone zone;
 
-    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone) {
+    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache) {
         this.nodeSerializer = new NodeSerializer(flavors);
         this.zone = zone;
-        boolean useCache = zone.system().equals(SystemName.cd);
-        this.curatorDatabase = new CuratorDatabase(curator, root, useCache);
+        this.curatorDatabase = new CuratorDatabase(curator, root, useCache || zone.system().equals(SystemName.cd));
         this.clock = clock;
         initZK();
     }
