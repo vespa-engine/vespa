@@ -84,7 +84,7 @@ public class ProvisioningTester {
             this.clock = new ManualClock();
             this.curator = curator;
             this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, nameResolver,
-                                                     new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
+                                                     new DockerImage("docker-registry.domain.tld:8080/dist/vespa"), true);
             this.orchestrator = mock(Orchestrator.class);
             doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
             this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);

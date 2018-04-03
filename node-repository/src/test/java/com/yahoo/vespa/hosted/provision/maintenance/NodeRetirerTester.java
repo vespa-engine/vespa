@@ -72,7 +72,7 @@ public class NodeRetirerTester {
     NodeRetirerTester(NodeFlavors nodeFlavors) {
         Curator curator = new MockCurator();
         nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, new MockNameResolver().mockAnyLookup(),
-                                            new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
+                                            new DockerImage("docker-registry.domain.tld:8080/dist/vespa"), true);
         jobControl = new JobControl(nodeRepository.database());
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
         deployer = new MockDeployer(provisioner, apps);

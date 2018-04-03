@@ -79,21 +79,21 @@ public class NodeRepository extends AbstractComponent {
     private final DockerImage dockerImage;
 
     /**
-     * Creates a node repository form a zookeeper provider.
+     * Creates a node repository from a zookeeper provider.
      * This will use the system time to make time-sensitive decisions
      */
     @Inject
     public NodeRepository(NodeRepositoryConfig config, NodeFlavors flavors, Curator curator, Zone zone) {
-        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver(), new DockerImage(config.dockerImage()));
+        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver(), new DockerImage(config.dockerImage()), config.useCuratorClientCache());
     }
 
     /**
-     * Creates a node repository form a zookeeper provider and a clock instance
+     * Creates a node repository from a zookeeper provider and a clock instance
      * which will be used for time-sensitive decisions.
      */
     public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver,
-                          DockerImage dockerImage) {
-        this.db = new CuratorDatabaseClient(flavors, curator, clock, zone);
+                          DockerImage dockerImage, boolean useCuratorClientCache) {
+        this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache);
         this.curator = curator;
         this.clock = clock;
         this.flavors = flavors;

@@ -48,7 +48,8 @@ public class MockNodeRepository extends NodeRepository {
               new MockNameResolver()
                       .addRecord("test-container-1", "::2")
                       .mockAnyLookup(),
-              new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
+              new DockerImage("docker-registry.domain.tld:8080/dist/vespa"),
+              true);
         this.flavors = flavors;
 
         curator.setZooKeeperEnsembleConnectionSpec("cfg1:1234,cfg2:1234,cfg3:1234");

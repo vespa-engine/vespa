@@ -4,3 +4,5 @@ namespace=config.provisioning
 # Docker image to use in REST API responses. This must be a fully qualified name, including registry, but excluding
 # version. Example: my-docker-registry.domain.tld:8080/dist/vespa
 dockerImage string default="dummyImage"
+
+useCuratorClientCache bool default=false

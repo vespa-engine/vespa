@@ -56,7 +56,8 @@ public class OperatorChangeApplicationMaintainerTest {
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                  new MockNameResolver().mockAnyLookup(),
-                                                 new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
+                                                 new DockerImage("docker-registry.domain.tld:8080/dist/vespa"),
+                                                 true);
         this.fixture = new Fixture(zone, nodeRepository, nodeFlavors, curator);
 
         createReadyNodes(15, nodeRepository, nodeFlavors);

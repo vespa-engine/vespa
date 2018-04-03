@@ -26,8 +26,7 @@ public class CuratorDatabaseClientTest {
 
     private final Curator curator = new MockCurator();
     private final CuratorDatabaseClient zkClient = new CuratorDatabaseClient(
-            FlavorConfigBuilder.createDummies("default"), curator, Clock.systemUTC(), Zone.defaultZone()
-    );
+            FlavorConfigBuilder.createDummies("default"), curator, Clock.systemUTC(), Zone.defaultZone(), true);
 
     @Test
     public void can_read_stored_host_information() throws Exception {

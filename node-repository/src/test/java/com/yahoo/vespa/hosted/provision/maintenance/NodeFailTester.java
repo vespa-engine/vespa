@@ -81,7 +81,7 @@ public class NodeFailTester {
         clock = new ManualClock();
         curator = new MockCurator();
         nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, new MockNameResolver().mockAnyLookup(),
-                new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
+                new DockerImage("docker-registry.domain.tld:8080/dist/vespa"), true);
         provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
         hostLivenessTracker = new TestHostLivenessTracker(clock);
         orchestrator = new OrchestratorMock();
