@@ -717,7 +717,6 @@ public class NodeAgentImplTest {
         inOrder.verify(orchestrator).resume(hostName);
 
         // Files written in createContainerData()
-        assertFileExists(containerName, tempDirectory, "node-repository-config.xml");
         assertFileExists(containerName, tempDirectory, "configserver-config.xml");
     }
 
