@@ -7,8 +7,7 @@
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 class ResolveViewVisitor
     : public search::query::TemplateTermVisitor<ResolveViewVisitor,
@@ -31,6 +30,5 @@ public:
     }
 };
 
-}  // namespace matching
-}  // namespace proton
+}
 

@@ -8,11 +8,8 @@
 #include <vespa/vespalib/util/ptrholder.h>
 #include <vector>
 
-namespace vespalib {
-    class asciistream;
-}
-namespace search {
-namespace index {
+namespace vespalib { class asciistream; }
+namespace search::index {
 
 /**
  * Schema class used to give a high-level description of the content
@@ -419,5 +416,4 @@ public:
     bool empty() const;
 };
 
-} // namespace search::index
-} // namespace search
+}

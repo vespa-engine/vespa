@@ -4,8 +4,7 @@
 #include "leaf_blueprints.h"
 #include "intermediate_blueprints.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 Blueprint::UP
 Searchable::createBlueprint(const IRequestContext & requestContext,
@@ -26,5 +25,4 @@ Searchable::createBlueprint(const IRequestContext & requestContext,
     return result;
 }
 
-} // namespace queryeval
-} // namespace search
+}

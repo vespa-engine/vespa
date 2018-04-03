@@ -5,8 +5,7 @@
 #include "simplesearch.h"
 #include "fake_search.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 //-----------------------------------------------------------------------------
 
@@ -14,7 +13,7 @@ SearchIterator::UP
 EmptyBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &,
                                  bool) const
 {
-    return SearchIterator::UP(new EmptySearch());
+    return std::make_unique<EmptySearch>();
 }
 
 EmptyBlueprint::EmptyBlueprint(const FieldSpecBase &field)
@@ -35,8 +34,7 @@ EmptyBlueprint::EmptyBlueprint()
 //-----------------------------------------------------------------------------
 
 SearchIterator::UP
-SimpleBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &,
-                                  bool) const
+SimpleBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const
 {
     SimpleSearch *ss = new SimpleSearch(_result);
     SearchIterator::UP search(ss);
@@ -49,13 +47,10 @@ SimpleBlueprint::SimpleBlueprint(const SimpleResult &result)
       _tag(),
       _result(result)
 {
-    setEstimate(HitEstimate(result.getHitCount(),
-                            (result.getHitCount() == 0)));
+    setEstimate(HitEstimate(result.getHitCount(), (result.getHitCount() == 0)));
 }
 
-SimpleBlueprint::~SimpleBlueprint()
-{
-}
+SimpleBlueprint::~SimpleBlueprint() = default;
 
 SimpleBlueprint &
 SimpleBlueprint::tag(const vespalib::string &t)
@@ -67,30 +62,22 @@ SimpleBlueprint::tag(const vespalib::string &t)
 //-----------------------------------------------------------------------------
 
 SearchIterator::UP
-FakeBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda,
-                                bool) const
+FakeBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const
 {
-    return SearchIterator::UP(new FakeSearch(_tag, _field.getName(), _term,
-                                         _result, tfmda));
+    return std::make_unique<FakeSearch>(_tag, _field.getName(), _term, _result, tfmda);
 }
 
-FakeBlueprint::FakeBlueprint(const FieldSpec &field,
-                             const FakeResult &result)
+FakeBlueprint::FakeBlueprint(const FieldSpec &field, const FakeResult &result)
     : SimpleLeafBlueprint(field),
       _tag("<tag>"),
       _term("<term>"),
       _field(field),
       _result(result)
 {
-    setEstimate(HitEstimate(result.inspect().size(),
-                            result.inspect().empty()));
+    setEstimate(HitEstimate(result.inspect().size(), result.inspect().empty()));
 }
 
-FakeBlueprint::~FakeBlueprint()
-{
+FakeBlueprint::~FakeBlueprint() = default;
+
+
 }
-
-//-----------------------------------------------------------------------------
-
-} // namespace queryeval
-} // namespace search

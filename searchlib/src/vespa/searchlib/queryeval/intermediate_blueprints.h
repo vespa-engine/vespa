@@ -3,11 +3,9 @@
 #pragma once
 
 #include "blueprint.h"
-#include "searchable.h"
-#include <vespa/searchlib/queryeval/multisearch.h>
+#include "multisearch.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 class ISourceSelector;
 
@@ -174,5 +172,4 @@ public:
     bool isCompatibleWith(const SourceBlenderBlueprint &other) const;
 };
 
-}
 }

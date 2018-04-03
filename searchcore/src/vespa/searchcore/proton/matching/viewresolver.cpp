@@ -3,8 +3,7 @@
 #include "viewresolver.h"
 #include <vespa/searchcommon/common/schema.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 ViewResolver &
 ViewResolver::add(const vespalib::stringref &view,
@@ -43,5 +42,4 @@ ViewResolver::createFromSchema(const search::index::Schema &schema)
     return resolver;
 }
 
-} // namespace matching
-} // namespace proton
+}

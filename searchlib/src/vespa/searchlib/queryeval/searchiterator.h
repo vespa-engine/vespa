@@ -9,13 +9,11 @@
 #include <memory>
 #include <vector>
 
-namespace vespalib { class ObjectVisitor; };
+namespace vespalib { class ObjectVisitor; }
 
-namespace search {
+namespace search { class BitVector; }
 
-class BitVector;
-
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * This is the abstract superclass of all search objects. Each search
@@ -342,8 +340,7 @@ public:
 
 };
 
-} // namespace queryeval
-} // namespace search
+}
 
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
            const search::queryeval::SearchIterator &obj);

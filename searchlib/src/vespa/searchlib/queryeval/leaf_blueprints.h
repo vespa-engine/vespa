@@ -15,8 +15,7 @@ class EmptyBlueprint : public SimpleLeafBlueprint
 {
 protected:
     SearchIterator::UP
-    createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                     bool strict) const override;
+    createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
 
 public:
     EmptyBlueprint(const FieldSpecBaseList &fields);
@@ -34,8 +33,7 @@ private:
 
 protected:
     SearchIterator::UP
-    createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                     bool strict) const override;
+    createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
 
 public:
     SimpleBlueprint(const SimpleResult &result);
@@ -56,12 +54,10 @@ private:
 
 protected:
     SearchIterator::UP
-    createLeafSearch(const fef::TermFieldMatchDataArray &tfmda,
-                     bool strict) const override;
+    createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
 
 public:
-    FakeBlueprint(const FieldSpec &field,
-                  const FakeResult &result);
+    FakeBlueprint(const FieldSpec &field, const FakeResult &result);
     ~FakeBlueprint();
 
     FakeBlueprint &tag(const vespalib::string &t) {

@@ -5,13 +5,9 @@
 #include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
+namespace search::attribute { class IAttributeVector; }
 
-namespace attribute {
-class IAttributeVector;
-}
-
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * Provides a context that follows the life of a query.
@@ -35,5 +31,4 @@ public:
     virtual const attribute::IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const = 0;
 };
 
-} // namespace queryeval
-} // namespace search
+}

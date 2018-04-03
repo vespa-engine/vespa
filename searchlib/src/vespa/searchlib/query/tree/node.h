@@ -3,8 +3,7 @@
 
 #include <memory>
 
-namespace search {
-namespace query {
+namespace search::query {
 
 class QueryVisitor;
 
@@ -21,6 +20,5 @@ class Node {
     virtual void accept(QueryVisitor &visitor) = 0;
 };
 
-}  // namespace query
-}  // namespace search
+}
 

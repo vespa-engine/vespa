@@ -10,8 +10,7 @@ using search::query::SimpleQueryNodeTypes;
 using search::query::TemplateTermVisitor;
 using search::query::Weight;
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 namespace {
 
 struct WeightExtractor : public TemplateTermVisitor<WeightExtractor,
@@ -38,5 +37,4 @@ getWeightFromNode(const Node &node)
     return extractor.weight;
 }
 
-} // namespace search::queryeval
-} // namespace search
+}

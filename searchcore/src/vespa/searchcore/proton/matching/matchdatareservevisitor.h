@@ -6,8 +6,7 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * Visits all terms of a node tree, and allocates MatchData space for
@@ -34,6 +33,5 @@ public:
     MatchDataReserveVisitor(search::fef::MatchDataLayout &mdl) : _mdl(mdl) {}
 };
 
-}  // namespace matching
-}  // namespace proton
+}
 

@@ -4,12 +4,10 @@
 
 #include <vespa/searchlib/query/weight.h>
 
-namespace search {
-namespace query { class Node; }
-namespace queryeval {
+namespace search::query { class Node; }
+namespace search::queryeval {
 
 search::query::Weight getWeightFromNode(const search::query::Node &node);
 
-} // namespace search::queryeval
-} // namespace search
+}
 

@@ -6,10 +6,9 @@
 #include <vespa/searchlib/query/tree/range.h>
 #include <string>
 
-namespace search {
-namespace query { class Node; }
+namespace search::query { class Node; }
 
-namespace queryeval {
+namespace search::queryeval {
 
 inline const vespalib::string &termAsString(const vespalib::string &term) {
     return term;
@@ -25,6 +24,4 @@ vespalib::string termAsString(const search::query::Location &term);
 
 vespalib::string termAsString(const search::query::Node &term_node);
 
-} // namespace search::queryeval
-} // namespace search
-
+}

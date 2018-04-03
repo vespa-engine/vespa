@@ -3,8 +3,7 @@
 #include "split_float.h"
 #include <cctype>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 SplitFloat::SplitFloat(const vespalib::string &input)
 {
@@ -23,5 +22,4 @@ SplitFloat::SplitFloat(const vespalib::string &input)
     }
 }
 
-} // namespace search::queryeval
-} // namespace search
+}

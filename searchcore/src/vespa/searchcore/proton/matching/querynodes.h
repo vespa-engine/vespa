@@ -16,8 +16,7 @@
 #include <memory>
 #include <vector>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 class ViewResolver;
 
@@ -157,6 +156,4 @@ struct ProtonNodeTypes {
     typedef ProtonRegExpTerm      RegExpTerm;
 };
 
-}  // namespace matching
-}  // namespace proton
-
+}

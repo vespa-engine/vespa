@@ -2,11 +2,9 @@
 
 #include "iterator_pack.h"
 #include "termwise_helper.h"
-#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/fef/matchdata.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 SearchIteratorPack::~SearchIteratorPack() { }
 
@@ -61,5 +59,3 @@ SearchIteratorPack::or_hits_into(BitVector &result, uint32_t begin_id) const {
 
 
 }
-} // namespace search
-

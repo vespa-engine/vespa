@@ -6,8 +6,7 @@
 #include <vespa/searchlib/query/tree/node.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 struct BlueprintBuilder {
     /**
@@ -20,6 +19,5 @@ struct BlueprintBuilder {
           ISearchContext &context);
 };
 
-}  // namespace matching
-}  // namespace proton
+}
 

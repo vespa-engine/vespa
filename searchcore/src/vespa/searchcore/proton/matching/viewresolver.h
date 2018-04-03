@@ -6,12 +6,9 @@
 #include <vector>
 #include <map>
 
-namespace search {
-namespace index { class Schema; }
-} // namespace search
+namespace search::index { class Schema; }
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * A small utility class used to resolve views into fields when
@@ -66,6 +63,4 @@ public:
     static ViewResolver createFromSchema(const search::index::Schema &schema);
 };
 
-} // namespace matching
-} // namespace proton
-
+}

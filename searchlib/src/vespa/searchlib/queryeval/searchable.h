@@ -7,11 +7,9 @@
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vector>
 
-namespace search {
+namespace search::query { class Node; }
 
-namespace query { class Node; }
-
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * Abstract class extended by components to expose content that can be
@@ -56,5 +54,4 @@ public:
     virtual ~Searchable() {}
 };
 
-} // namespace queryeval
-} // namespace search
+}

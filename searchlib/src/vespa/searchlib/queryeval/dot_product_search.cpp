@@ -9,8 +9,7 @@ using search::fef::TermFieldMatchData;
 using search::fef::MatchData;
 using vespalib::ObjectVisitor;
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 
 template <typename HEAP, typename IteratorPack>
@@ -182,5 +181,4 @@ DotProductSearch::create(TermFieldMatchData &tmd,
 
 //-----------------------------------------------------------------------------
 
-}  // namespace search::queryeval
-}  // namespace search
+}

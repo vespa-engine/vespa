@@ -37,8 +37,7 @@ using search::query::DotProduct;
 using search::query::WandTerm;
 using vespalib::string;
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 vespalib::string termAsString(double float_term) {
     vespalib::asciistream os;
@@ -114,5 +113,4 @@ string termAsString(const Node &term_node) {
     return visitor.term;
 }
 
-} // namespace search::queryeval
-} // namespace search
+}

@@ -4,13 +4,11 @@
 
 #include "searchable.h"
 #include <vespa/searchlib/fef/matchdatalayout.h>
-#include <memory>
 #include <vector>
 
-namespace search {
-namespace fef { class TermFieldMatchData; }
+namespace search::fef { class TermFieldMatchData; }
 
-namespace queryeval {
+namespace search::queryeval {
 
 class WeightedSetTermBlueprint : public ComplexLeafBlueprint
 {
@@ -35,13 +33,12 @@ public:
     // used by create visitor
     void addTerm(Blueprint::UP term, int32_t weight);
 
-    SearchIteratorUP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
+    SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 
 private:
     void fetchPostings(bool strict) override;
 };
 
-}  // namespace search::queryeval
-}  // namespace search
+}
 
