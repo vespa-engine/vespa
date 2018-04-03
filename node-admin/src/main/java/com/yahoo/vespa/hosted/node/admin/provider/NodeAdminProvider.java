@@ -2,35 +2,38 @@
 package com.yahoo.vespa.hosted.node.admin.provider;
 
 import com.google.inject.Inject;
-import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.classlock.ClassLocking;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.vespa.hosted.node.admin.component.DockerAdminComponent;
+import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
-import com.yahoo.vespa.hosted.node.admin.component.AdminComponent;
-import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminMain;
+import com.yahoo.vespa.hosted.node.admin.configserver.RealConfigServerClients;
 
 public class NodeAdminProvider implements Provider<NodeAdminStateUpdater> {
-    private final NodeAdminMain nodeAdminMain;
+    private final DockerAdminComponent dockerAdmin;
 
     @Inject
-    public NodeAdminProvider(ComponentRegistry<AdminComponent> adminRegistry,
-                             ConfigServerConfig configServerConfig,
+    public NodeAdminProvider(ConfigServerConfig configServerConfig,
                              Docker docker,
                              MetricReceiverWrapper metricReceiver,
                              ClassLocking classLocking) {
-        nodeAdminMain = new NodeAdminMain(adminRegistry, configServerConfig, docker, metricReceiver, classLocking);
-        nodeAdminMain.start();
+        dockerAdmin = new DockerAdminComponent(configServerConfig,
+                docker,
+                metricReceiver,
+                classLocking,
+                new RealConfigServerClients(new Environment(configServerConfig)));
+        dockerAdmin.enable();
     }
 
     @Override
     public NodeAdminStateUpdater get() {
-        return nodeAdminMain.getNodeAdminStateUpdater();
+        return dockerAdmin.getNodeAdminStateUpdater();
     }
 
     @Override
     public void deconstruct() {
-        nodeAdminMain.close();
+        dockerAdmin.disable();
     }
 }
