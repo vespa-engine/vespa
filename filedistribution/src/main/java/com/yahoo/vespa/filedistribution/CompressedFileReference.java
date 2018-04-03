@@ -64,9 +64,11 @@ public class CompressedFileReference {
 
     static void decompress(File inputFile, File outputDir) throws IOException {
         log.log(LogLevel.DEBUG, () -> "Decompressing '" + inputFile + "' into '" + outputDir + "'");
-        ArchiveInputStream ais = new TarArchiveInputStream(new GZIPInputStream(new FileInputStream(inputFile)));
-        decompress(ais, outputDir);
-        ais.close();
+        try (ArchiveInputStream ais = new TarArchiveInputStream(new GZIPInputStream(new FileInputStream(inputFile)))) {
+            decompress(ais, outputDir);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Unable to decompress '" + inputFile.getAbsolutePath() + "': " + e.getMessage());
+        }
     }
 
     private static void decompress(ArchiveInputStream archiveInputStream, File outputFile) throws IOException {
@@ -95,7 +97,8 @@ public class CompressedFileReference {
             entries++;
         }
         if (entries == 0) {
-            log.log(LogLevel.WARNING, "Not able to read any entries from " + outputFile.getName());
+            throw new IllegalArgumentException("Not able to read any entries from stream (" +
+                                                       archiveInputStream.getBytesRead() + " bytes read from stream)");
         }
     }
 
