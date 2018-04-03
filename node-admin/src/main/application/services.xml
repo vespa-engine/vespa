@@ -4,10 +4,6 @@
   <jdisc id="node-admin" jetty="true" version="1.0">
     <!-- Please update container test when changing this file -->
     <accesslog type="vespa" fileNamePattern="logs/vespa/node-admin/access.log.%Y%m%d%H%M%S" rotationScheme="date" symlinkName="access.log" />
-    <handler id="com.yahoo.vespa.hosted.node.admin.restapi.RestApiHandler" bundle="node-admin">
-      <binding>http://*/rest/*</binding>
-    </handler>
-    <component id="node-admin" class="com.yahoo.vespa.hosted.node.admin.provider.NodeAdminProvider" bundle="node-admin"/>
     <component id="docker-api" class="com.yahoo.vespa.hosted.dockerapi.DockerImpl" bundle="docker-api"/>
     <component id="metrics-wrapper" class="com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper" bundle="docker-api"/>
 
