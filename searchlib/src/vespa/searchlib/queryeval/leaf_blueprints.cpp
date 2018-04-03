@@ -79,5 +79,4 @@ FakeBlueprint::FakeBlueprint(const FieldSpec &field, const FakeResult &result)
 
 FakeBlueprint::~FakeBlueprint() = default;
 
-
 }
