@@ -35,7 +35,7 @@ public class AttributeChangeValidatorTest {
     }
 
     @Test
-    public void requireThatAddingAttributeAspectRequireRestart() throws Exception {
+    public void adding_attribute_aspect_require_restart() throws Exception {
         Fixture f = new Fixture("field f1 type string { indexing: summary }",
                 "field f1 type string { indexing: attribute | summary }");
         f.assertValidation(newRestartAction(
@@ -43,7 +43,7 @@ public class AttributeChangeValidatorTest {
     }
 
     @Test
-    public void requireThatRemovingAttributeAspectRequireRestart() throws Exception {
+    public void removing_attribute_aspect_require_restart() throws Exception {
         Fixture f = new Fixture("field f1 type string { indexing: attribute | summary }",
                 "field f1 type string { indexing: summary }");
         f.assertValidation(newRestartAction(
@@ -51,19 +51,19 @@ public class AttributeChangeValidatorTest {
     }
 
     @Test
-    public void requireThatAddingAttributeFieldIsOk() throws Exception {
+    public void adding_attribute_field_is_ok() throws Exception {
         Fixture f = new Fixture("", "field f1 type string { indexing: attribute | summary \n attribute: fast-search }");
         f.assertValidation();
     }
 
     @Test
-    public void requireThatRemovingAttributeFieldIsOk() throws Exception {
+    public void removing_attribute_field_is_ok() throws Exception {
         Fixture f = new Fixture("field f1 type string { indexing: attribute | summary }", "");
         f.assertValidation();
     }
 
     @Test
-    public void requireThatChangingFastSearchRequireRestart() throws Exception {
+    public void changing_fast_search_require_restart() throws Exception {
         new Fixture("field f1 type string { indexing: attribute }",
                 "field f1 type string { indexing: attribute \n attribute: fast-search }").
                 assertValidation(newRestartAction(
@@ -71,7 +71,7 @@ public class AttributeChangeValidatorTest {
     }
 
     @Test
-    public void requireThatChangingFastAccessRequireRestart() throws Exception {
+    public void changing_fast_access_require_restart() throws Exception {
         new Fixture("field f1 type string { indexing: attribute \n attribute: fast-access }",
                 "field f1 type string { indexing: attribute }").
                 assertValidation(newRestartAction(
@@ -79,7 +79,7 @@ public class AttributeChangeValidatorTest {
     }
 
     @Test
-    public void requireThatChangingHugeRequireRestart() throws Exception {
+    public void changing_huge_require_restart() throws Exception {
         new Fixture("field f1 type string { indexing: attribute }",
                 "field f1 type string { indexing: attribute \n attribute: huge }").
                 assertValidation(newRestartAction(
@@ -87,7 +87,7 @@ public class AttributeChangeValidatorTest {
     }
 
     @Test
-    public void requireThatChangingDensePostingListThresholdRequireRestart() throws Exception {
+    public void changing_dense_posting_list_threshold_require_restart() throws Exception {
         new Fixture(
                 "field f1 type predicate { indexing: attribute \n index { arity: 8 \n dense-posting-list-threshold: 0.2 } }",
                 "field f1 type predicate { indexing: attribute \n index { arity: 8 \n dense-posting-list-threshold: 0.4 } }").
@@ -96,21 +96,21 @@ public class AttributeChangeValidatorTest {
     }
 
     @Test
-    public void requireThatRemovingAttributeAspectFromIndexFieldIsOk() throws Exception {
+    public void removing_attribute_aspect_from_index_field_is_ok() throws Exception {
         Fixture f = new Fixture("field f1 type string { indexing: index | attribute }",
                 "field f1 type string { indexing: index }");
         f.assertValidation();
     }
 
     @Test
-    public void requireThatRemovingAttributeAspectFromIndexAndSummaryFieldIsOk() throws Exception {
+    public void removing_attribute_aspect_from_index_and_summary_field_is_ok() throws Exception {
         Fixture f = new Fixture("field f1 type string { indexing: index | attribute | summary }",
                 "field f1 type string { indexing: index | summary }");
         f.assertValidation();
     }
 
     @Test
-    public void requireThatChangingTensorTypeOfTensorFieldRequiresRefeed() throws Exception {
+    public void changing_tensor_type_of_tensor_field_requires_refeed() throws Exception {
         new Fixture(
                 "field f1 type tensor(x[]) { indexing: attribute \n attribute: tensor(x[100]) }",
                 "field f1 type tensor(y[]) { indexing: attribute \n attribute: tensor(y[]) }")
@@ -121,7 +121,7 @@ public class AttributeChangeValidatorTest {
     }
 
     @Test
-    public void requireThatCompatibleTensorTypeChangeIsOk() throws Exception {
+    public void compatible_tensor_type_change_is_ok() throws Exception {
         new Fixture(
                 "field f1 type tensor(x[],y[]) { indexing: attribute \n attribute: tensor(x[104], y[52]) }",
                 "field f1 type tensor(x[200],y[]) { indexing: attribute \n attribute: tensor(x[104], y[52]) }")
@@ -129,7 +129,7 @@ public class AttributeChangeValidatorTest {
     }
 
     @Test
-    public void requireIncompatibleTensorTypeChangeIsNotOk() throws Exception {
+    public void incompatible_tensor_type_change_is_not_ok() throws Exception {
         try {
             new Fixture(
                     "field f1 type tensor(x[],y[]) { indexing: attribute \n attribute: tensor(x[104], y[52]) }",
@@ -139,6 +139,22 @@ public class AttributeChangeValidatorTest {
         catch (IllegalArgumentException e) {
             assertEquals("For search 'test', field 'f1': Incompatible types. Expected tensor(x[100],y[]) for attribute 'f1', got tensor(x[104],y[52]).", e.getMessage());
         }
+    }
+
+    @Test
+    public void adding_rank_filter_requires_restart() throws Exception {
+        new Fixture("field f1 type string { indexing: attribute }",
+                "field f1 type string { indexing: attribute \n rank: filter }").
+                assertValidation(newRestartAction(
+                        "Field 'f1' changed: add attribute 'rank: filter'"));
+    }
+
+    @Test
+    public void removing_rank_filter_requires_restart() throws Exception {
+        new Fixture("field f1 type string { indexing: attribute \n rank: filter }",
+                "field f1 type string { indexing: attribute }").
+                assertValidation(newRestartAction(
+                        "Field 'f1' changed: remove attribute 'rank: filter'"));
     }
 
 }
