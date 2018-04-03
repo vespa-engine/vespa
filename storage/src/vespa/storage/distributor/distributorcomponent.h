@@ -10,9 +10,7 @@
 #include <vespa/storageapi/buckets/bucketinfo.h>
 #include <vespa/vdslib/state/clusterstate.h>
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 class DistributorBucketSpaceRepo;
 
@@ -186,6 +184,3 @@ protected:
 };
 
 }
-
-}
-

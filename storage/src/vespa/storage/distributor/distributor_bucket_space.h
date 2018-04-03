@@ -4,14 +4,12 @@
 #include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <memory>
 
-namespace storage {
-
-namespace lib {
-class ClusterState;
-class Distribution;
+namespace storage::lib {
+    class ClusterState;
+    class Distribution;
 }
 
-namespace distributor {
+namespace storage::distributor {
 
 /**
  * A distributor bucket space holds specific state and information required for
@@ -57,5 +55,4 @@ public:
 
 };
 
-}
 }

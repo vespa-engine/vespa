@@ -53,8 +53,8 @@ RoutingContext::getMatchedRecipients(std::vector<Route> &ret) const
             if (done.find(key) == done.end()) {
                 Route add = *it;
                 add.setHop(0, hop);
-                add.getHop(0).setDirective(_directive, dir);
-                ret.push_back(add);
+                add.getHop(0).setDirective(_directive, std::move(dir));
+                ret.push_back(std::move(add));
                 done.insert(key);
             }
         }
@@ -199,18 +199,16 @@ RoutingContext::getChildIterator()
 }
 
 void
-RoutingContext::addChild(const Route &route)
+RoutingContext::addChild(Route route)
 {
-    _node.addChild(route);
+    _node.addChild(std::move(route));
 }
 
 void
-RoutingContext::addChildren(const std::vector<Route> &routes)
+RoutingContext::addChildren(std::vector<Route> routes)
 {
-    for (std::vector<Route>::const_iterator it = routes.begin();
-         it != routes.end(); ++it)
-    {
-        addChild(*it);
+    for (auto & route : routes) {
+        addChild(std::move(route));
     }
 }
 

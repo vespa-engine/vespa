@@ -29,6 +29,8 @@ public:
      * Constructs a new instance of this class.
      */
     Message();
+    Message(Message &&) noexcept = default;
+    Message & operator = (Message &&) noexcept = default;
 
     /**
      * If a message is deleted with elements on the callstack, this destructor
@@ -131,7 +133,7 @@ public:
      * @param route The new route.
      * @return This, to allow chaining.
      */
-    Message &setRoute(const Route &route) { _route = route; return *this; }
+    Message &setRoute(Route route) { _route = std::move(route); return *this; }
 
     /**
      * Inherited from Routable. Classifies this object as 'not a reply'.

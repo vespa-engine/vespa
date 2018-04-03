@@ -8,30 +8,30 @@ Route::Route() :
     _hops()
 { }
 
-Route::Route(const std::vector<Hop> &lst) :
-    _hops(lst)
+Route::Route(std::vector<Hop> lst) :
+    _hops(std::move(lst))
 { }
 
 Route::~Route() { }
 
 Route &
-Route::addHop(const Hop &hop)
+Route::addHop(Hop hop)
 {
-    _hops.push_back(hop);
+    _hops.emplace_back(std::move(hop));
     return *this;
 }
 
 Route &
-Route::setHop(uint32_t i, const Hop &hop)
+Route::setHop(uint32_t i, Hop hop)
 {
-    _hops[i] = hop;
+    _hops[i] = std::move(hop);
     return *this;
 }
 
 Hop
 Route::removeHop(uint32_t i)
 {
-    Hop ret = _hops[i];
+    Hop ret = std::move(_hops[i]);
     _hops.erase(_hops.begin() + i);
     return ret;
 }

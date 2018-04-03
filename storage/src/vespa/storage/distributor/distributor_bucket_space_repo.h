@@ -5,11 +5,9 @@
 #include <memory>
 #include <unordered_map>
 
-namespace storage {
+namespace storage::lib { class Distribution; }
 
-namespace lib { class Distribution; }
-
-namespace distributor {
+namespace storage::distributor {
 
 class DistributorBucketSpace;
 
@@ -37,5 +35,4 @@ public:
     void add(document::BucketSpace bucketSpace, std::unique_ptr<DistributorBucketSpace> distributorBucketSpace);
 };
 
-}
 }

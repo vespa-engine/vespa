@@ -20,7 +20,7 @@ Trace::Trace(uint32_t level) :
     // empty
 }
 
-Trace::~Trace() { }
+Trace::~Trace() = default;
 
 Trace &
 Trace::clear()

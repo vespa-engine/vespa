@@ -38,6 +38,10 @@ public:
      * Create a Route that contains no hops
      */
     Route();
+    Route(const Route &) = default;
+    Route & operator = (const Route &) = default;
+    Route(Route &&) noexcept = default;
+    Route & operator = (Route && ) noexcept = default;
     ~Route();
 
     /**
@@ -45,7 +49,7 @@ public:
      *
      * @param hops The hops to instantiate with.
      */
-    Route(const std::vector<Hop> &hops);
+    Route(std::vector<Hop> hops);
 
     /**
      * Returns whether or not there are any hops in this route.
@@ -83,7 +87,7 @@ public:
      * @param hop The hop to add.
      * @return This, to allow chaining.
      */
-    Route &addHop(const Hop &hop);
+    Route &addHop(Hop hop);
 
     /**
      * Sets the hop at a given index.
@@ -92,7 +96,7 @@ public:
      * @param hop The hop to set.
      * @return This, to allow chaining.
      */
-    Route &setHop(uint32_t i, const Hop &hop);
+    Route &setHop(uint32_t i, Hop hop);
 
     /**
      * Removes the hop at a given index.
