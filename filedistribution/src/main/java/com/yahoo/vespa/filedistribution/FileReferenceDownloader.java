@@ -43,14 +43,11 @@ public class FileReferenceDownloader {
     private final Map<FileReference, Double> downloadStatus = new HashMap<>();  // between 0 and 1
     private final Duration downloadTimeout;
     private final Duration sleepBetweenRetries;
-    private final FileReceiver fileReceiver;
 
-    FileReferenceDownloader(File downloadDirectory, File tmpDirectory, ConnectionPool connectionPool,
-                            Duration timeout, Duration sleepBetweenRetries) {
+    FileReferenceDownloader(ConnectionPool connectionPool, Duration timeout, Duration sleepBetweenRetries) {
         this.connectionPool = connectionPool;
         this.downloadTimeout = timeout;
         this.sleepBetweenRetries = sleepBetweenRetries;
-        this.fileReceiver = new FileReceiver(connectionPool.getSupervisor(), this, downloadDirectory, tmpDirectory);
     }
 
     private void startDownload(Duration timeout, FileReferenceDownload fileReferenceDownload) {
@@ -84,10 +81,6 @@ public class FileReferenceDownloader {
             downloadStatus.put(fileReference, 0.0);
         }
         downloadExecutor.submit(() -> startDownload(downloadTimeout, fileReferenceDownload));
-    }
-
-    void receiveFile(FileReferenceData fileReferenceData) {
-        fileReceiver.receiveFile(fileReferenceData);
     }
 
     void completedDownloading(FileReference fileReference, File file) {

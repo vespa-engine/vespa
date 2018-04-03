@@ -185,38 +185,6 @@ public class FileReceiver {
         return methods;
     }
 
-    void receiveFile(FileReferenceData fileReferenceData) {
-        long xxHashFromContent = fileReferenceData.xxhash();
-        if (xxHashFromContent != fileReferenceData.xxhash()) {
-            throw new RuntimeException("xxhash from content (" + xxHashFromContent + ") is not equal to xxhash in request (" + fileReferenceData.xxhash() + ")");
-        }
-
-        File fileReferenceDir = new File(downloadDirectory, fileReferenceData.fileReference().value());
-        // file might be a directory (and then type is compressed)
-        File file = new File(fileReferenceDir, fileReferenceData.filename());
-        try {
-            File tempDownloadedDir = Files.createTempDirectory(tmpDirectory.toPath(), "downloaded").toFile();
-            File tempFile = new File(tempDownloadedDir, fileReferenceData.filename());
-            Files.write(tempFile.toPath(), fileReferenceData.content().array());
-
-            // Unpack if necessary
-            if (fileReferenceData.type() == FileReferenceData.Type.compressed) {
-                File decompressedDir = Files.createTempDirectory(tempDownloadedDir.toPath(), "decompressed").toFile();
-                log.log(LogLevel.DEBUG, () -> "Compressed file, unpacking " + tempFile + " to " + decompressedDir);
-                CompressedFileReference.decompress(tempFile, decompressedDir);
-                moveFileToDestination(decompressedDir, fileReferenceDir);
-            } else {
-                log.log(LogLevel.DEBUG, () -> "Uncompressed file, moving to " + file.getAbsolutePath());
-                Files.createDirectories(fileReferenceDir.toPath());
-                moveFileToDestination(tempFile, file);
-            }
-            downloader.completedDownloading(fileReferenceData.fileReference(), file);
-        } catch (IOException e) {
-            log.log(LogLevel.ERROR, "Failed writing file: " + e.getMessage(), e);
-            throw new RuntimeException("Failed writing file: ", e);
-        }
-    }
-
     private static void moveFileToDestination(File tempFile, File destination) {
         try {
             Files.move(tempFile.toPath(), destination.toPath());

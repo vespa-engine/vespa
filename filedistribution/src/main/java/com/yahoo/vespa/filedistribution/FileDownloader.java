@@ -35,15 +35,14 @@ public class FileDownloader {
     public FileDownloader(ConnectionPool connectionPool) {
         this(connectionPool,
              new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution")),
-             new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution")),
              Duration.ofMinutes(15),
              Duration.ofSeconds(10));
     }
 
-    FileDownloader(ConnectionPool connectionPool, File downloadDirectory, File tmpDirectory, Duration timeout, Duration sleepBetweenRetries) {
+    FileDownloader(ConnectionPool connectionPool, File downloadDirectory, Duration timeout, Duration sleepBetweenRetries) {
         this.downloadDirectory = downloadDirectory;
         this.timeout = timeout;
-        this.fileReferenceDownloader = new FileReferenceDownloader(downloadDirectory, tmpDirectory, connectionPool, timeout, sleepBetweenRetries);
+        this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool, timeout, sleepBetweenRetries);
     }
 
     public Optional<File> getFile(FileReference fileReference) {
@@ -76,10 +75,6 @@ public class FileDownloader {
                     directory.getAbsolutePath() + ", starting download");
             return queueForAsyncDownload(fileReferenceDownload, timeout);
         }
-    }
-
-    void receiveFile(FileReferenceData fileReferenceData) {
-        fileReferenceDownloader.receiveFile(fileReferenceData);
     }
 
     double downloadStatus(FileReference fileReference) {
