@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
-import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
@@ -125,11 +124,8 @@ public class FileReferenceDownloader {
             }
         } else {
             log.log(LogLevel.DEBUG, "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
-                    ", error code: " + request.errorCode());
-            if (request.isError() && request.errorCode() == ErrorCode.CONNECTION || request.errorCode() == ErrorCode.TIMEOUT) {
-                log.log(LogLevel.DEBUG, "Mark connection " + connection.getAddress() + " with error");
-                connectionPool.setError(connection, request.errorCode());
-            }
+                    ", error code: " + request.errorCode() + ", set error for connection and use another for next request");
+            connectionPool.setError(connection, request.errorCode());
             return false;
         }
     }
