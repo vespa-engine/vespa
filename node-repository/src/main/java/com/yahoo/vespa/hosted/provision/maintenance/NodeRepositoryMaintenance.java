@@ -38,7 +38,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final NodeFailer nodeFailer;
     private final PeriodicApplicationMaintainer periodicApplicationMaintainer;
     private final OperatorChangeApplicationMaintainer operatorChangeApplicationMaintainer;
-    private final ZooKeeperAccessMaintainer zooKeeperAccessMaintainer;
     private final ReservationExpirer reservationExpirer;
     private final InactiveExpirer inactiveExpirer;
     private final RetiredExpirer retiredExpirer;
@@ -70,7 +69,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv("throttle_policy").orElse(defaults.throttlePolicy), metric, jobControl, configserverConfig);
         periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, nodeRepository, durationFromEnv("periodic_redeploy_interval").orElse(defaults.periodicRedeployInterval), jobControl);
         operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, nodeRepository, clock, durationFromEnv("operator_change_redeploy_interval").orElse(defaults.operatorChangeRedeployInterval), jobControl);
-        zooKeeperAccessMaintainer = new ZooKeeperAccessMaintainer(nodeRepository, curator, durationFromEnv("zookeeper_access_maintenance_interval").orElse(defaults.zooKeeperAccessMaintenanceInterval), jobControl);
         reservationExpirer = new ReservationExpirer(nodeRepository, clock, durationFromEnv("reservation_expiry").orElse(defaults.reservationExpiry), jobControl);
         retiredExpirer = new RetiredExpirer(nodeRepository, orchestrator, deployer, clock, durationFromEnv("retired_interval").orElse(defaults.retiredInterval), durationFromEnv("retired_expiry").orElse(defaults.retiredExpiry), jobControl);
         inactiveExpirer = new InactiveExpirer(nodeRepository, clock, durationFromEnv("inactive_expiry").orElse(defaults.inactiveExpiry), jobControl);
@@ -91,7 +89,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         nodeFailer.deconstruct();
         periodicApplicationMaintainer.deconstruct();
         operatorChangeApplicationMaintainer.deconstruct();
-        zooKeeperAccessMaintainer.deconstruct();
         reservationExpirer.deconstruct();
         inactiveExpirer.deconstruct();
         retiredExpirer.deconstruct();
