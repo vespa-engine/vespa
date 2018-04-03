@@ -16,6 +16,7 @@ import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.metrics.MetricsmanagerConfig;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Service;
@@ -64,6 +65,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
     // TODO: Make private
     private String documentSelection;
     ContentSearchCluster search;
+    private final DeployState deployState;
     private final Map<String, NewDocumentType> documentDefinitions;
     private final Set<NewDocumentType> globallyDistributedDocuments;
     // Experimental flag (TODO: remove when feature is enabled by default)
@@ -488,6 +490,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                            Redundancy redundancy,
                            Zone zone) {
         super(parent, clusterName);
+        this.deployState = deployStateFrom(parent);
         this.clusterName = clusterName;
         this.documentDefinitions = documentDefinitions;
         this.globallyDistributedDocuments = globallyDistributedDocuments;
@@ -629,6 +632,10 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             // self hosted systems: should probably default to 16 bits, but the transition may cause problems
             return DistributionBitCalculator.getDistributionBits(getNodeCountPerGroup(), getDistributionMode());
         }
+    }
+
+    public boolean isHostedVespa() {
+        return stateIsHosted(deployState);
     }
 
     @Override

@@ -12,7 +12,9 @@ import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.ComponentsConfig;
@@ -81,6 +83,7 @@ import com.yahoo.vespa.model.utils.FileSender;
 import com.yahoo.vespaclient.config.FeederConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -171,6 +174,7 @@ public final class ContainerCluster
     private final ConfigProducerGroup<RestApi> restApiGroup;
     private final ConfigProducerGroup<Servlet> servletGroup;
     private final ContainerClusterVerifier clusterVerifier;
+    private final DeployState deployState;
 
     private Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
     private MetricDefaultsConfig.Factory.Enum defaultMetricConsumerFactory;
@@ -203,8 +207,9 @@ public final class ContainerCluster
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, ContainerClusterVerifier verifier) {
         super(parent, subId);
         this.clusterVerifier = verifier;
+        this.deployState = deployStateFrom(parent);
         this.name = name;
-        this.zone = getRoot() != null ? getRoot().getDeployState().zone() : Zone.defaultZone();
+        this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
         componentGroup = new ComponentGroup<>(this, "component");
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
@@ -231,6 +236,8 @@ public final class ContainerCluster
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
         addJaxProviders();
     }
+
+    public DeployState getDeployState() { return deployState; }
 
     public void setZone(Zone zone) {
         this.zone = zone;
@@ -761,6 +768,10 @@ public final class ContainerCluster
     public void setDefaultMetricConsumerFactory(MetricDefaultsConfig.Factory.Enum defaultMetricConsumerFactory) {
         Objects.requireNonNull(defaultMetricConsumerFactory, "defaultMetricConsumerFactory");
         this.defaultMetricConsumerFactory = defaultMetricConsumerFactory;
+    }
+
+    public boolean isHostedVespa() {
+        return stateIsHosted(deployState);
     }
 
     @Override

@@ -7,6 +7,7 @@ import com.yahoo.container.logging.YApacheAccessLog;
 import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import com.yahoo.config.model.deploy.DeployState;
 
 import static com.yahoo.container.core.AccessLogConfig.FileHandler.RotateScheme;
 
@@ -23,12 +24,13 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     private final String rotationInterval;
     private final RotateScheme.Enum rotationScheme;
     private final Boolean compression;
+    private final DeployState deployState;
     private final String symlinkName;
 
     public AccessLogComponent(AccessLogType logType, String clusterName) {
         this(logType,
                 String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName, "%Y%m%d%H%M%S"),
-                null, null, null,
+                null, null, null, null,
                 capitalize(logType.name()) + "." + clusterName);
     }
 
@@ -41,6 +43,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
                               String rotationInterval,
                               RotateScheme.Enum rotationScheme,
                               Boolean compressOnRotation,
+                              DeployState deployState,
                               String symlinkName)
     {
         super(new ComponentModel(accessLogClass(logType), null, "container-core", null));
@@ -48,6 +51,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         this.rotationInterval = rotationInterval;
         this.rotationScheme = rotationScheme;
         this.compression = compressOnRotation;
+        this.deployState = deployState;
         this.symlinkName = symlinkName;
 
         if (fileNamePattern == null)
@@ -70,6 +74,10 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     @Override
     public void getConfig(AccessLogConfig.Builder builder) {
         builder.fileHandler(fileHandlerConfig());
+    }
+
+    private boolean isHostedVespa() {
+        return stateIsHosted(deployState);
     }
 
     private AccessLogConfig.FileHandler.Builder fileHandlerConfig() {
