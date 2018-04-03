@@ -78,10 +78,6 @@ public class FileDownloader {
         }
     }
 
-    void receiveFile(FileReferenceData fileReferenceData) {
-        fileReferenceDownloader.receiveFile(fileReferenceData);
-    }
-
     double downloadStatus(FileReference fileReference) {
         return fileReferenceDownloader.downloadStatus(fileReference.value());
     }

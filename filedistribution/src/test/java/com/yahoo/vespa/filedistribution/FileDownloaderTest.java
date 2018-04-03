@@ -13,11 +13,14 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
+import net.jpountz.xxhash.XXHash64;
+import net.jpountz.xxhash.XXHashFactory;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -225,7 +228,11 @@ public class FileDownloaderTest {
     }
 
     private void receiveFile(FileReference fileReference, String filename, FileReferenceData.Type type, byte[] content) {
-        fileDownloader.receiveFile(new FileReferenceDataBlob(fileReference, filename, type, content));
+        XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
+        FileReceiver.Session session =
+                new FileReceiver.Session(downloadDir, tempDir, 1, fileReference, type, filename, content.length);
+        session.addPart(0, content);
+        session.close(hasher.hash(ByteBuffer.wrap(content), 0));
     }
 
     private static class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Connection {

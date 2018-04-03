@@ -14,14 +14,10 @@ import org.junit.rules.TemporaryFolder;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class FileReceiverTest {
     private File root;
@@ -92,7 +88,7 @@ public class FileReceiverTest {
         assertEquals(all, Utf8.toString(allReadBytes));
     }
 
-    private void transferCompressedData(FileReference ref, String fileName, byte[] data) throws IOException {
+    private void transferCompressedData(FileReference ref, String fileName, byte[] data) {
         FileReceiver.Session session =
                 new FileReceiver.Session(root, tempDir, 1, ref, FileReferenceData.Type.compressed, fileName, data.length);
         session.addPart(0, data);
