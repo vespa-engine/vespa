@@ -117,7 +117,7 @@ public class DeploymentTriggerTest {
                 .environment(Environment.prod)
                 .delay(Duration.ofSeconds(30))
                 .region("us-west-1")
-                .delay(Duration.ofMinutes(1))
+                .delay(Duration.ofMinutes(2))
                 .delay(Duration.ofMinutes(2)) // Multiple delays are summed up
                 .region("us-central-1")
                 .delay(Duration.ofMinutes(10)) // Delays after last region are valid, but have no effect
@@ -154,8 +154,13 @@ public class DeploymentTriggerTest {
         tester.deploymentTrigger().triggerReadyJobs();
         assertTrue("No more jobs triggered at this time", deploymentQueue.jobs().isEmpty());
 
-        // 3 minutes pass, us-central-1 is triggered
+        // 3 minutes pass, us-central-1 is still not triggered
         tester.clock().advance(Duration.ofMinutes(3));
+        tester.deploymentTrigger().triggerReadyJobs();
+        assertTrue("No more jobs triggered at this time", deploymentQueue.jobs().isEmpty());
+
+        // 4 minutes pass, us-central-1 is triggered
+        tester.clock().advance(Duration.ofMinutes(1));
         tester.deploymentTrigger().triggerReadyJobs();
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
         assertTrue("All jobs consumed", deploymentQueue.jobs().isEmpty());

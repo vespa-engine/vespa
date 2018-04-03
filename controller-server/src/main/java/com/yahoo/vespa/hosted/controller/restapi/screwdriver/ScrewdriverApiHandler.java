@@ -91,7 +91,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
         controller.applications().lockOrThrow(applicationId, application -> {
             // Since this is a manual operation we likely want it to trigger as soon as possible so we add it at to the
             // front of the queue
-            application = controller.applications().deploymentTrigger().trigger(new DeploymentTrigger.Triggering(application, jobType, true, "Triggered from screwdriver/v1"));
+            application = controller.applications().deploymentTrigger().trigger(new DeploymentTrigger.Triggering(application, jobType, true, "Triggered from screwdriver/v1"), application);
             controller.applications().store(application);
         });
 

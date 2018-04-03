@@ -118,6 +118,7 @@ public class JobStatus {
 
     /** Returns true if this is running and has been so since before the given limit */
     public boolean isHanging(Instant timeoutLimit) {
+        // TODO jvenstad: This can't possibly ever be true? isRunning(MIN) will always be false, at the 2nd check?
         return isRunning(Instant.MIN) && lastTriggered.get().at().isBefore(timeoutLimit.plusMillis(1));
     }
 

@@ -43,45 +43,6 @@ public class DeploymentOrder {
         this.clock = controller.clock();
     }
 
-    /** Returns a list of jobs to trigger after the given job */
-    // TODO: This does too much - should just tell us the order, as advertised
-    public List<JobType> nextAfter(JobType job, LockedApplication application) {
-        if ( ! application.change().isPresent()) { // Change was cancelled
-            return Collections.emptyList();
-        }
-
-        // Always trigger system test after component as deployment spec might not be available yet
-        // (e.g. if this is a new application with no previous deployments)
-        if (job == JobType.component) {
-            return Collections.singletonList(JobType.systemTest);
-        }
-
-        // At this point we have deployed to system test, so deployment spec is available
-        List<DeploymentSpec.Step> deploymentSteps = deploymentSteps(application);
-        Optional<DeploymentSpec.Step> currentStep = fromJob(job, application);
-        if ( ! currentStep.isPresent()) {
-            return Collections.emptyList();
-        }
-
-        // If this is the last deployment step there's nothing more to trigger
-        int currentIndex = deploymentSteps.indexOf(currentStep.get());
-        if (currentIndex == deploymentSteps.size() - 1) {
-            return Collections.emptyList();
-        }
-
-        // Postpone next job if delay has not passed yet
-        Duration delay = delayAfter(currentStep.get(), application);
-        if (shouldPostponeDeployment(delay, job, application)) {
-            log.info(String.format("Delaying next job after %s of %s by %s", job, application, delay));
-            return Collections.emptyList();
-        }
-
-        DeploymentSpec.Step nextStep = deploymentSteps.get(currentIndex + 1);
-        return nextStep.zones().stream()
-                .map(this::toJob)
-                .collect(collectingAndThen(toList(), Collections::unmodifiableList));
-    }
-
     /** Returns jobs for given deployment spec, in the order they are declared */
     public List<JobType> jobsFrom(DeploymentSpec deploymentSpec) {
         return deploymentSpec.steps().stream()
