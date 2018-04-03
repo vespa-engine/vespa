@@ -370,9 +370,10 @@ void set_weights(StringAttribute *attr, uint32_t docid,
     attr->commit();
 }
 
-MyAttributeManager make_weighted_string_attribute_manager(bool fast_search) {
+MyAttributeManager make_weighted_string_attribute_manager(bool fast_search, bool isFilter = false) {
     Config cfg(BasicType::STRING, CollectionType::WSET);
     cfg.setFastSearch(fast_search);
+    cfg.setIsFilter(isFilter);
     AttributeVector::SP attr_ptr = AttributeFactory::createAttribute(field, cfg);
     StringAttribute *attr = static_cast<StringAttribute *>(attr_ptr.get());
     add_docs(attr, num_docs);
@@ -461,6 +462,26 @@ TEST("require that direct attribute iterators work") {
         EXPECT_EQUAL(40u, result.hits[1].docid);
         EXPECT_EQUAL(50u, result.hits[2].docid);
     }
+}
+
+TEST("require that single weighted set turns filter on filter fields") {
+        bool fast_search = true;
+        bool strict = true;
+        bool isFilter = true;
+        MyAttributeManager attribute_manager = make_weighted_string_attribute_manager(fast_search, isFilter);
+        SimpleStringTerm empty_node("notfoo", "", 0, Weight(1));
+        Result empty_result = do_search(attribute_manager, empty_node, strict);
+        EXPECT_EQUAL(0u, empty_result.hits.size());
+        SimpleStringTerm node("foo", "", 0, Weight(1));
+        Result result = do_search(attribute_manager, node, strict);
+        EXPECT_EQUAL(3u, result.est_hits);
+        EXPECT_TRUE(result.iterator_dump.find("DocumentWeightSearchIterator") == vespalib::string::npos);
+        EXPECT_TRUE(result.iterator_dump.find("FilterAttributePostingListIteratorT") == vespalib::string::npos);
+        ASSERT_EQUAL(3u, result.hits.size());
+        EXPECT_FALSE(result.est_empty);
+        EXPECT_EQUAL(20u, result.hits[0].docid);
+        EXPECT_EQUAL(40u, result.hits[1].docid);
+        EXPECT_EQUAL(50u, result.hits[2].docid);
 }
 
 const char *as_str(bool flag) { return flag? "true" : "false"; }
