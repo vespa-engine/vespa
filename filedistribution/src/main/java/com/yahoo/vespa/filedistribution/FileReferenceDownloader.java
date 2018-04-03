@@ -44,10 +44,12 @@ public class FileReferenceDownloader {
     private final Duration downloadTimeout;
     private final Duration sleepBetweenRetries;
 
-    FileReferenceDownloader(ConnectionPool connectionPool, Duration timeout, Duration sleepBetweenRetries) {
+    FileReferenceDownloader(File downloadDirectory, File tmpDirectory, ConnectionPool connectionPool, Duration timeout, Duration sleepBetweenRetries) {
         this.connectionPool = connectionPool;
         this.downloadTimeout = timeout;
         this.sleepBetweenRetries = sleepBetweenRetries;
+        // Needed to receive RPC calls receiveFile* from server after asking for files
+        new FileReceiver(connectionPool.getSupervisor(), this, downloadDirectory, tmpDirectory);
     }
 
     private void startDownload(Duration timeout, FileReferenceDownload fileReferenceDownload) {
