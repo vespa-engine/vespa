@@ -60,6 +60,7 @@ TraceNode::TraceNode(const TraceNode &rhs) :
     addChildren(rhs._children);
 }
 
+TraceNode::TraceNode(TraceNode &&) noexcept = default;
 TraceNode & TraceNode::operator =(const TraceNode &) = default;
 
 TraceNode::~TraceNode() = default;
