@@ -87,23 +87,31 @@ public class AccessLogBuilder {
         }
     }
 
+    private static AccessLogType logTypeFor(AccessLogTypeLiteral typeLiteral) {
+        switch (typeLiteral) {
+            case DISABLED:
+                return null;
+            case VESPA:
+                return AccessLogType.queryAccessLog;
+            case YAPACHE:
+                return AccessLogType.yApacheAccessLog;
+            case JSON:
+                return AccessLogType.jsonAccessLog;
+            default:
+                throw new InconsistentSchemaAndCodeError();
+        }
+    }
+
     public static Optional<AccessLogComponent> buildIfNotDisabled(ContainerCluster cluster, Element accessLogSpec) {
         AccessLogTypeLiteral typeLiteral =
                 getOptionalAttribute(accessLogSpec, "type").
                         map(AccessLogTypeLiteral::fromAttributeValue).
                         orElse(AccessLogTypeLiteral.VESPA);
-        DeployState deployState = cluster.getDeployState();
-        switch (typeLiteral) {
-            case DISABLED:
-                return Optional.empty();
-            case VESPA:
-                return Optional.of(new DomBuilder(AccessLogType.queryAccessLog, deployState).build(cluster, accessLogSpec));
-            case YAPACHE:
-                return Optional.of(new DomBuilder(AccessLogType.yApacheAccessLog, deployState).build(cluster, accessLogSpec));
-            case JSON:
-                return Optional.of(new DomBuilder(AccessLogType.jsonAccessLog, deployState).build(cluster, accessLogSpec));
-            default:
-                throw new InconsistentSchemaAndCodeError();
+        AccessLogType logType = logTypeFor(typeLiteral);
+        if (logType == null) {
+            return Optional.empty();
         }
+        DeployState deployState = cluster.getDeployState();
+        return Optional.of(new DomBuilder(logType, deployState).build(cluster, accessLogSpec));
     }
 }
