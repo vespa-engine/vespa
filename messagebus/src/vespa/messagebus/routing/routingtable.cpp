@@ -12,16 +12,12 @@ namespace mbus {
 RoutingTable::HopIterator::HopIterator(const std::map<string, HopBlueprint> &hops) :
     _pos(hops.begin()),
     _end(hops.end())
-{
-    // empty
-}
+{ }
 
 RoutingTable::RouteIterator::RouteIterator(const std::map<string, Route> &routes) :
     _pos(routes.begin()),
     _end(routes.end())
-{
-    // empty
-}
+{ }
 
 RoutingTable::RoutingTable(const RoutingTableSpec &spec) :
     _name(spec.getProtocol()),
@@ -30,7 +26,7 @@ RoutingTable::RoutingTable(const RoutingTableSpec &spec) :
 {
     for (uint32_t i = 0; i < spec.getNumHops(); ++i) {
         const HopSpec& hopSpec = spec.getHop(i);
-        _hops.insert(std::map<string, HopBlueprint>::value_type(hopSpec.getName(), HopBlueprint(hopSpec)));
+        _hops.emplace(hopSpec.getName(), HopBlueprint(hopSpec));
     }
     for (uint32_t i = 0; i < spec.getNumRoutes(); ++i) {
         Route route;
@@ -38,7 +34,7 @@ RoutingTable::RoutingTable(const RoutingTableSpec &spec) :
         for (uint32_t j = 0; j < routeSpec.getNumHops(); ++j) {
             route.addHop(Hop(routeSpec.getHop(j)));
         }
-        _routes.insert(std::map<string, Route>::value_type(routeSpec.getName(), std::move(route)));
+        _routes.emplace(routeSpec.getName(), std::move(route));
     }
 }
 
@@ -64,7 +60,7 @@ RoutingTable::hasRoute(const string &name) const
 const Route *
 RoutingTable::getRoute(const string &name) const
 {
-    std::map<string, Route>::const_iterator it = _routes.find(name);
+    auto it = _routes.find(name);
     return it != _routes.end() ? &(it->second) : nullptr;
 }
 
