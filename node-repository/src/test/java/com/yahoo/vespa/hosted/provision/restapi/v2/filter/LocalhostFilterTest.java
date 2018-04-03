@@ -30,7 +30,7 @@ public class LocalhostFilterTest {
         tester.assertSuccess(new Request(Method.GET, "/").remoteAddr("127.127.0.1"));
         tester.assertSuccess(new Request(Method.GET, "/").remoteAddr("0:0:0:0:0:0:0:1"));
 
-        // Allow requests originating from same host
+        // Allow requests originating from self
         tester.assertSuccess(new Request(Method.GET, "/").localAddr("1.3.3.7").remoteAddr("1.3.3.7"));
     }
 

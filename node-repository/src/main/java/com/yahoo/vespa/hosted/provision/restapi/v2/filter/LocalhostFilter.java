@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.provision.restapi.v2.ErrorResponse;
 import java.net.InetAddress;
 
 /**
- * A security filter that only allows local requests.
+ * A security filter that only allows self-originating requests.
  *
  * @author mpolden
  */

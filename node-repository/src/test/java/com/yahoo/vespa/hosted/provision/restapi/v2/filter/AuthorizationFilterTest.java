@@ -22,7 +22,7 @@ public class AuthorizationFilterTest {
 
     @Before
     public void before() {
-        tester = filterTester(SystemName.cd);
+        tester = filterTester(SystemName.main);
     }
 
     @Test
@@ -41,14 +41,6 @@ public class AuthorizationFilterTest {
                                    "denied for remote-addr: Invalid credentials\"}");
 
         tester.assertSuccess(new Request(Method.GET, "/nodes/v2/node/foo").commonName("foo"));
-    }
-
-    // TODO: Remove once filter applies to all systems
-    @Test
-    public void filter_does_nothing_in_main_system() {
-        FilterTester tester = filterTester(SystemName.main);
-        tester.assertSuccess(new Request(Method.GET, "/").commonName("foo"));
-        tester.assertSuccess(new Request(Method.GET, "/nodes/v2/node/bar").commonName("foo"));
     }
 
     private static FilterTester filterTester(SystemName system) {
