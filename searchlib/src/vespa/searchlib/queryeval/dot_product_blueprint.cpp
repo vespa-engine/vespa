@@ -2,13 +2,9 @@
 
 #include "dot_product_blueprint.h"
 #include "dot_product_search.h"
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
-#include <algorithm>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 DotProductBlueprint::DotProductBlueprint(const FieldSpec &field)
     : ComplexLeafBlueprint(field),
@@ -84,5 +80,4 @@ DotProductBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "_terms", _terms);
 }
 
-}  // namespace search::queryeval
-}  // namespace search
+}

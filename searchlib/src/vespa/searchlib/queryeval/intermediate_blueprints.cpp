@@ -12,8 +12,7 @@
 #include "isourceselector.h"
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 //-----------------------------------------------------------------------------
 
@@ -581,5 +580,4 @@ SourceBlenderBlueprint::isCompatibleWith(const SourceBlenderBlueprint &other) co
 
 //-----------------------------------------------------------------------------
 
-} // namespace queryeval
-} // namespace search
+}

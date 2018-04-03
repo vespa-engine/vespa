@@ -4,9 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace index {
-namespace schema {
+namespace search::index::schema {
 
 /**
  * Basic data type for a field.
@@ -45,6 +43,4 @@ vespalib::string getTypeName(CollectionType type);
 std::ostream &operator<<(std::ostream &os, const CollectionType &type);
 
 
-}
-}
 }

@@ -25,8 +25,7 @@ using std::map;
 using std::vector;
 using vespalib::string;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 ProtonTermData::ProtonTermData() = default;
 ProtonTermData::ProtonTermData(const ProtonTermData &) = default;
@@ -124,5 +123,4 @@ ProtonTermData::FieldEntry::getHandle() const
 }
 
 
-}  // namespace matching
-}  // namespace proton
+}

@@ -5,11 +5,9 @@
 #include "searchiterator.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 
-namespace search {
+namespace search::fef { class MatchData; }
 
-namespace fef { class MatchData; }
-
-namespace queryeval {
+namespace search::queryeval {
 
 class SearchIteratorPack
 {
@@ -61,6 +59,5 @@ public:
     void or_hits_into(BitVector &result, uint32_t begin_id) const;
 };
 
-} // namespace queryevel
-} // namespace search
+}
 

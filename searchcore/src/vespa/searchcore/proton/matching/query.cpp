@@ -33,8 +33,7 @@ using search::queryeval::SearchIterator;
 using vespalib::string;
 using std::vector;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 namespace {
 void AddLocationNode(const string &location_str, Node::UP &query_tree, Location &fef_location) {
@@ -168,5 +167,4 @@ Query::createSearch(MatchData &md) const
     return _blueprint->createSearch(md, true);
 }
 
-}  // namespace matching
-}  // namespace proton
+}

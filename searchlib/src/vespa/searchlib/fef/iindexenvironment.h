@@ -4,16 +4,9 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval { class ConstantValue; }
 
-class ConstantValue;
-
-}
-}
-
-namespace search {
-namespace fef {
+namespace search::fef {
 
 class Properties;
 class FieldInfo;
@@ -133,6 +126,5 @@ public:
     virtual ~IIndexEnvironment() {}
 };
 
-} // namespace fef
-} // namespace search
+}
 

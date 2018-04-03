@@ -7,15 +7,10 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/attribute/iterator_pack.h>
-#include <memory>
-#include <vector>
 
-namespace search {
-namespace fef {
-class TermFieldMatchData;
-}  // namespace fef
+namespace search::fef { class TermFieldMatchData; }
 
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * Search iterator for a sparse dot product, based on a set of child
@@ -41,6 +36,5 @@ public:
                                      std::vector<DocumentWeightIterator> &&iterators);
 };
 
-}  // namespace search::queryeval
-}  // namespace search
+}
 

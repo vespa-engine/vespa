@@ -6,8 +6,7 @@
 #include <vector>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 class SplitFloat
 {
@@ -19,6 +18,4 @@ public:
     const vespalib::string &getPart(size_t i) const { return _parts[i]; }
 };
 
-} // namespace search::queryeval
-} // namespace search
-
+}

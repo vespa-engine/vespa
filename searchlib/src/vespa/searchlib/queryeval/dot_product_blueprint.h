@@ -5,10 +5,9 @@
 #include "searchable.h"
 #include <vespa/searchlib/fef/matchdatalayout.h>
 
-namespace search {
-namespace fef { class TermFieldMatchData; }
+namespace search::fef { class TermFieldMatchData; }
 
-namespace queryeval {
+namespace search::queryeval {
 
 class DotProductBlueprint : public ComplexLeafBlueprint
 {
@@ -38,5 +37,4 @@ public:
     void fetchPostings(bool strict) override;
 };
 
-}  // namespace search::queryeval
-}  // namespace search
+}

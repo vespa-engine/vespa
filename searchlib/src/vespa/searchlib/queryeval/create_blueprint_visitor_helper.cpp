@@ -10,8 +10,7 @@
 #include "weighted_set_term_blueprint.h"
 #include "split_float.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 CreateBlueprintVisitorHelper::CreateBlueprintVisitorHelper(Searchable &searchable, const FieldSpec &field, const IRequestContext & requestContext)
     : _requestContext(requestContext),
@@ -99,5 +98,4 @@ CreateBlueprintVisitorHelper::visitWandTerm(search::query::WandTerm &n) {
     createWeightedSet(bp, n);
 }
 
-} // namespace search::queryeval
-} // namespace search
+}

@@ -4,13 +4,10 @@
 
 #include <vector>
 
-namespace search {
-namespace query { class Node; }
-namespace fef { class ITermData; }
-}  // namespace search
+namespace search::query { class Node; }
+namespace search::fef { class ITermData; }
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 struct TermDataExtractor {
     /**
@@ -21,6 +18,4 @@ struct TermDataExtractor {
                              std::vector<const search::fef::ITermData *> &td);
 };
 
-}  // namespace matching
-}  // namespace proton
-
+}

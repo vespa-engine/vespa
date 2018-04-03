@@ -43,34 +43,6 @@ using namespace search;
 
 namespace {
 
-class Test : public vespalib::TestApp {
-    void requireThatIteratorsCanBeCreated();
-    void requireThatRangeTermsWorkToo();
-    void requireThatPrefixTermsWork();
-    void requireThatLocationTermsWork();
-    void requireThatFastSearchLocationTermsWork();
-
-    bool search(const string &term, IAttributeManager &attribute_manager);
-    bool search(const Node &term, IAttributeManager &attribute_manager);
-
-public:
-    int Main() override;
-};
-
-int
-Test::Main()
-{
-    TEST_INIT("attributeblueprint_test");
-
-    TEST_DO(requireThatIteratorsCanBeCreated());
-    TEST_DO(requireThatRangeTermsWorkToo());
-    TEST_DO(requireThatPrefixTermsWork());
-    TEST_DO(requireThatLocationTermsWork());
-    TEST_DO(requireThatFastSearchLocationTermsWork());
-
-    TEST_DONE();
-}
-
 const string field = "field";
 const int32_t weight = 1;
 
@@ -105,16 +77,9 @@ public:
     }
 };
 
-bool Test::search(const string &term, IAttributeManager &attribute_manager) {
-    TEST_STATE(term.c_str());
-    SimpleStringTerm node(term, "field", 0, Weight(0));
-    bool ret = search(node, attribute_manager);
-    return ret;
-}
-
 constexpr uint32_t DOCID_LIMIT = 3;
 
-bool Test::search(const Node &node, IAttributeManager &attribute_manager) {
+bool search(const Node &node, IAttributeManager &attribute_manager) {
     AttributeContext ac(attribute_manager);
     FakeRequestContext requestContext(&ac);
     MatchData::UP md(MatchData::makeTestInstance(1, 1));
@@ -130,6 +95,13 @@ bool Test::search(const Node &node, IAttributeManager &attribute_manager) {
     iterator->initRange(1, 3);
     EXPECT_TRUE(!iterator->seek(1));
     return iterator->seek(2);
+}
+
+bool search(const string &term, IAttributeManager &attribute_manager) {
+    TEST_STATE(term.c_str());
+    SimpleStringTerm node(term, "field", 0, Weight(0));
+    bool ret = search(node, attribute_manager);
+    return ret;
 }
 
 template <typename T> struct AttributeVectorTypeFinder {
@@ -173,13 +145,15 @@ MyAttributeManager makeFastSearchLongAttribute(int64_t value) {
     return fill<FastSearchLongAttribute, int64_t>(attr, value);
 }
 
-void Test::requireThatIteratorsCanBeCreated() {
+}  // namespace
+
+TEST("requireThatIteratorsCanBeCreated") {
     MyAttributeManager attribute_manager = makeAttributeManager("foo");
 
     EXPECT_TRUE(search("foo", attribute_manager));
 }
 
-void Test::requireThatRangeTermsWorkToo() {
+TEST("requireThatRangeTermsWorkToo") {
     MyAttributeManager attribute_manager = makeAttributeManager(int64_t(42));
 
     EXPECT_TRUE(search("[23;46]", attribute_manager));
@@ -188,7 +162,7 @@ void Test::requireThatRangeTermsWorkToo() {
     EXPECT_TRUE(search("[10;]", attribute_manager));
 }
 
-void Test::requireThatPrefixTermsWork()
+TEST("requireThatPrefixTermsWork")
 {
     MyAttributeManager attribute_manager = makeAttributeManager("foo");
 
@@ -196,44 +170,34 @@ void Test::requireThatPrefixTermsWork()
     EXPECT_TRUE(search(node, attribute_manager));
 }
 
-void Test::requireThatLocationTermsWork() {
+TEST("requireThatLocationTermsWork") {
     // 0xcc is z-curve for (10, 10).
     MyAttributeManager attribute_manager = makeAttributeManager(int64_t(0xcc));
 
-    SimpleLocationTerm node(Location(Point(10, 10), 3, 0),
-                            field, 0, Weight(0));
+    SimpleLocationTerm node(Location(Point(10, 10), 3, 0), field, 0, Weight(0));
     EXPECT_TRUE(search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(100, 100), 3, 0),
-                              field, 0, Weight(0));
+    node = SimpleLocationTerm(Location(Point(100, 100), 3, 0), field, 0, Weight(0));
     EXPECT_TRUE(!search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(13, 13), 4, 0),
-                              field, 0, Weight(0));
+    node = SimpleLocationTerm(Location(Point(13, 13), 4, 0), field, 0, Weight(0));
     EXPECT_TRUE(!search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(10, 13), 3, 0),
-                              field, 0, Weight(0));
+    node = SimpleLocationTerm(Location(Point(10, 13), 3, 0), field, 0, Weight(0));
     EXPECT_TRUE(search(node, attribute_manager));
 }
 
-void Test::requireThatFastSearchLocationTermsWork() {
+TEST("requireThatFastSearchLocationTermsWork") {
     // 0xcc is z-curve for (10, 10).
     MyAttributeManager attribute_manager = makeFastSearchLongAttribute(int64_t(0xcc));
 
-    SimpleLocationTerm node(Location(Point(10, 10), 3, 0),
-                            field, 0, Weight(0));
+    SimpleLocationTerm node(Location(Point(10, 10), 3, 0), field, 0, Weight(0));
 #if 0
     EXPECT_TRUE(search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(100, 100), 3, 0),
-                              field, 0, Weight(0));
+    node = SimpleLocationTerm(Location(Point(100, 100), 3, 0),field, 0, Weight(0));
     EXPECT_TRUE(!search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(13, 13), 4, 0),
-                              field, 0, Weight(0));
+    node = SimpleLocationTerm(Location(Point(13, 13), 4, 0),field, 0, Weight(0));
     EXPECT_TRUE(!search(node, attribute_manager));
-    node = SimpleLocationTerm(Location(Point(10, 13), 3, 0),
-                              field, 0, Weight(0));
+    node = SimpleLocationTerm(Location(Point(10, 13), 3, 0),field, 0, Weight(0));
     EXPECT_TRUE(search(node, attribute_manager));
 #endif
 }
-
-}  // namespace
-
-TEST_APPHOOK(Test);
+    
+TEST_MAIN() { TEST_RUN_ALL(); }

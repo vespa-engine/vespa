@@ -10,8 +10,7 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <memory>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 class CreateBlueprintVisitorHelper : public search::query::QueryVisitor
 {
@@ -76,5 +75,4 @@ public:
     void visit(search::query::RegExpTerm &n) override = 0;
 };
 
-} // namespace search::queryeval
-} // namespace search
+}

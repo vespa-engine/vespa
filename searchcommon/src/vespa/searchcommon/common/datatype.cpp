@@ -5,9 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/arraysize.h>
 
-namespace search {
-namespace index {
-namespace schema {
+namespace search::index::schema {
 
 using config::InvalidConfigException;
 
@@ -98,6 +96,4 @@ operator<<(std::ostream &os, const CollectionType &type)
     return os;
 }
 
-}
-}
 }
