@@ -176,7 +176,7 @@ public:
                                std::unique_ptr<mbus::Message> mbusMsg, const mbus::Route& route);
 
     void handleReply(std::unique_ptr<mbus::Reply> msg) override;
-    void updateMessagebusProtocol(const document::DocumentTypeRepo::SP &repo);
+    void updateMessagebusProtocol(const std::shared_ptr<const document::DocumentTypeRepo> &repo);
     void updateBucketSpacesConfig(const BucketspacesConfig&);
 
     const CommunicationManagerMetrics& metrics() const noexcept { return _metrics; }

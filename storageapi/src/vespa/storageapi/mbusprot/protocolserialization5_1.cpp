@@ -44,7 +44,7 @@ ProtocolSerialization5_1::putBucketInfo(
 }
 
 ProtocolSerialization5_1::ProtocolSerialization5_1(
-        const document::DocumentTypeRepo::SP& repo,
+        const std::shared_ptr<const document::DocumentTypeRepo>& repo,
         const documentapi::LoadTypeSet& loadTypes)
     : ProtocolSerialization5_0(repo, loadTypes)
 {

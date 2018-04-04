@@ -59,7 +59,7 @@ class PutOperationTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(replicaNotImplicitlyActivatedWhenActivationIsDisabled);
     CPPUNIT_TEST_SUITE_END();
 
-    DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const DocumentTypeRepo> _repo;
     const DocumentType* _html_type;
     std::unique_ptr<Operation> op;
 

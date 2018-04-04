@@ -90,7 +90,7 @@ Fixture::Fixture()
 {
     DocumentDBConfig::DocumenttypesConfigSP documenttypesConfig(new DocumenttypesConfig());
     DocumentType docType("typea", 0);
-    DocumentTypeRepo::SP repo(new DocumentTypeRepo(docType));
+    std::shared_ptr<const DocumentTypeRepo> repo(new DocumentTypeRepo(docType));
     TuneFileDocumentDB::SP tuneFileDocumentDB(new TuneFileDocumentDB);
     config::DirSpec spec(TEST_PATH("cfg"));
     DocumentDBConfigHelper mgr(spec, "typea");

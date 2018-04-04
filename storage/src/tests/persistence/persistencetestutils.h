@@ -62,7 +62,7 @@ public:
     FileStorHandler& fsHandler() { return *_env->_handler; }
     FileStorMetrics& metrics() { return _env->_metrics; }
     MessageKeeper& messageKeeper() { return _env->_messageKeeper; }
-    document::DocumentTypeRepo::SP getTypeRepo() { return _env->_component.getTypeRepo(); }
+    std::shared_ptr<const document::DocumentTypeRepo> getTypeRepo() { return _env->_component.getTypeRepo(); }
     StorageComponent& getComponent() { return _env->_component; }
     TestServiceLayerApp& getNode() { return _env->_node; }
 

@@ -20,7 +20,7 @@ using document::BucketSpace;
 namespace storage::mbusprot {
 
 ProtocolSerialization4_2::ProtocolSerialization4_2(
-        const document::DocumentTypeRepo::SP& repo)
+        const std::shared_ptr<const document::DocumentTypeRepo>& repo)
     : ProtocolSerialization(repo)
 {
 }

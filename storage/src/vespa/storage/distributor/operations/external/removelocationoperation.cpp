@@ -39,7 +39,7 @@ RemoveLocationOperation::getBucketId(
         DistributorComponent& manager,
         const api::RemoveLocationCommand& cmd, document::BucketId& bid)
 {
-        document::DocumentTypeRepo::SP repo =
+        std::shared_ptr<const document::DocumentTypeRepo> repo =
             manager.getTypeRepo();
         document::select::Parser parser(
                 *repo, manager.getBucketIdFactory());

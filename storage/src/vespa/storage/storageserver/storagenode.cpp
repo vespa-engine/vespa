@@ -249,7 +249,7 @@ StorageNode::initializeStatusWebServer()
     if (DIFFER(a)) { LOG(warning, "Live config failure: %s.", b); }
 
 void
-StorageNode::setNewDocumentRepo(const document::DocumentTypeRepo::SP& repo)
+StorageNode::setNewDocumentRepo(const std::shared_ptr<const document::DocumentTypeRepo>& repo)
 {
     vespalib::LockGuard configLockGuard(_configLock);
     _context.getComponentRegister().setDocumentTypeRepo(repo);

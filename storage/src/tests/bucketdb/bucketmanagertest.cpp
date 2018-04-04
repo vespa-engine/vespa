@@ -199,7 +199,7 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
     assert(system(getMkDirDisk(rootFolder, 0).c_str()) == 0);
     assert(system(getMkDirDisk(rootFolder, 1).c_str()) == 0);
 
-    DocumentTypeRepo::SP repo(new DocumentTypeRepo(
+    std::shared_ptr<const DocumentTypeRepo> repo(new DocumentTypeRepo(
                 *ConfigGetter<DocumenttypesConfig>::getConfig(
                     "config-doctypes", FileSpec(TEST_PATH("config-doctypes.cfg")))));
     _top.reset(new DummyStorageLink);

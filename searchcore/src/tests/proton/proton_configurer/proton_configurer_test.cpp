@@ -70,7 +70,7 @@ struct DBConfigFixture {
 
     DocumentDBConfig::SP getConfig(int64_t generation,
                                    std::shared_ptr<DocumenttypesConfig> documentTypes,
-                                   DocumentTypeRepo::SP repo,
+                                   std::shared_ptr<const DocumentTypeRepo> repo,
                                    const vespalib::string &configId,
                                    const vespalib::string &docTypeName)
     {
@@ -167,7 +167,7 @@ struct ConfigFixture {
     BootstrapConfig::SP getBootstrapConfig(int64_t generation) const {
         return BootstrapConfig::SP(new BootstrapConfig(generation,
                                                        BootstrapConfig::DocumenttypesConfigSP(new DocumenttypesConfig(_documenttypesBuilder)),
-                                                       DocumentTypeRepo::SP(new DocumentTypeRepo(_documenttypesBuilder)),
+                                                       std::shared_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(_documenttypesBuilder)),
                                                        BootstrapConfig::ProtonConfigSP(new ProtonConfig(_protonBuilder)),
                                                        std::make_shared<FiledistributorrpcConfig>(),
                                                        std::make_shared<BucketspacesConfig>(_bucketspacesBuilder),

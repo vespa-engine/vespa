@@ -13,7 +13,7 @@ class ProtocolSerialization5_1 : public ProtocolSerialization5_0
         BUCKET_ACTIVE = 0x2,
     };
 public:
-    ProtocolSerialization5_1(const document::DocumentTypeRepo::SP&,
+    ProtocolSerialization5_1(const std::shared_ptr<const document::DocumentTypeRepo>&,
                              const documentapi::LoadTypeSet& loadTypes);
 
     api::BucketInfo getBucketInfo(document::ByteBuffer& buf) const override;

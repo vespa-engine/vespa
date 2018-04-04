@@ -12,7 +12,7 @@ struct DummyImplTest : public ConformanceTest {
         using Repo = document::DocumentTypeRepo;
 
         PersistenceProvider::UP
-        getPersistenceImplementation(const Repo::SP& repo, const Repo::DocumenttypesConfig&) override {
+        getPersistenceImplementation(const std::shared_ptr<const Repo>& repo, const Repo::DocumenttypesConfig&) override {
             return PersistenceProvider::UP(new dummy::DummyPersistence(repo, 4));
         }
 

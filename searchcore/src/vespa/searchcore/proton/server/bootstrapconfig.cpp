@@ -25,7 +25,7 @@ namespace proton {
 BootstrapConfig::BootstrapConfig(
                int64_t generation,
                const DocumenttypesConfigSP &documenttypes,
-               const DocumentTypeRepo::SP &repo,
+               const std::shared_ptr<const DocumentTypeRepo> &repo,
                const ProtonConfigSP &protonConfig,
                const FiledistributorrpcConfigSP &filedistRpcConfSP,
                const BucketspacesConfigSP &bucketspaces,

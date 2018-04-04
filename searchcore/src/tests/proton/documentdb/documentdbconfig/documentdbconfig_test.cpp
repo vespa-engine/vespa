@@ -30,7 +30,7 @@ const vespalib::string type_name = "test";
 const vespalib::string header_name = type_name + ".header";
 const vespalib::string body_name = type_name + ".body";
 
-DocumentTypeRepo::SP
+std::shared_ptr<const DocumentTypeRepo>
 makeDocTypeRepo(bool hasField)
 {
     DocumenttypesConfigBuilderHelper builder;
@@ -49,7 +49,7 @@ private:
     test::DocumentDBConfigBuilder _builder;
 
 public:
-    MyConfigBuilder(int64_t generation, const Schema::SP &schema, const DocumentTypeRepo::SP &repo)
+    MyConfigBuilder(int64_t generation, const Schema::SP &schema, const std::shared_ptr<const DocumentTypeRepo> &repo)
         : _builder(generation, schema, "client", "test")
     {
         _builder.repo(repo);
@@ -101,7 +101,7 @@ public:
 
 struct Fixture {
     Schema::SP schema;
-    DocumentTypeRepo::SP repo;
+    std::shared_ptr<const DocumentTypeRepo> repo;
     ConfigSP basicCfg;
     ConfigSP fullCfg;
     ConfigSP replayCfg;

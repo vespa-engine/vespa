@@ -7,7 +7,7 @@ namespace storage::mbusprot {
 
 class ProtocolSerialization4_2 : public ProtocolSerialization {
 public:
-    ProtocolSerialization4_2(const document::DocumentTypeRepo::SP&);
+    ProtocolSerialization4_2(const std::shared_ptr<const document::DocumentTypeRepo>&);
 
 protected:
     void onEncode(GBBuf&, const api::GetCommand&) const override;

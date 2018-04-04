@@ -111,7 +111,7 @@ ProtocolSerialization5_0::onDecodeCommand(BBuf& buf,
 
 
 ProtocolSerialization5_0::ProtocolSerialization5_0(
-        const document::DocumentTypeRepo::SP& repo,
+        const std::shared_ptr<const document::DocumentTypeRepo>& repo,
         const documentapi::LoadTypeSet& loadTypes)
     : ProtocolSerialization4_2(repo),
       _loadTypes(loadTypes)

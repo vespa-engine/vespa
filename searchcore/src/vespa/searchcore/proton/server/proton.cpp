@@ -335,7 +335,7 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
     _queryLimiter.configure(protonConfig.search.memory.limiter.maxthreads,
                             protonConfig.search.memory.limiter.mincoverage,
                             protonConfig.search.memory.limiter.minhits);
-    const DocumentTypeRepo::SP repo = configSnapshot->getDocumentTypeRepoSP();
+    const std::shared_ptr<const DocumentTypeRepo> repo = configSnapshot->getDocumentTypeRepoSP();
 
     _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, configSnapshot->getHwInfo()));
     if (_memoryFlushConfigUpdater) {
@@ -353,7 +353,7 @@ Proton::addDocumentDB(const DocTypeName &docTypeName,
                       InitializeThreads initializeThreads)
 {
     try {
-        const DocumentTypeRepo::SP repo = bootstrapConfig->getDocumentTypeRepoSP();
+        const std::shared_ptr<const DocumentTypeRepo> repo = bootstrapConfig->getDocumentTypeRepoSP();
         const document::DocumentType *docType = repo->getDocumentType(docTypeName.getName());
         if (docType != NULL) {
             LOG(info, "Add document database: doctypename(%s), configid(%s)",

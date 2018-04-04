@@ -41,7 +41,7 @@ makeBaseConfigSnapshot()
     DBCM dbcm(spec, "test");
     DocumenttypesConfigSP dtcfg(config::ConfigGetter<DocumenttypesConfig>::getConfig("", spec).release());
     BootstrapConfig::SP b(new BootstrapConfig(1, dtcfg,
-                                              DocumentTypeRepo::SP(new DocumentTypeRepo(*dtcfg)),
+                                              std::shared_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(*dtcfg)),
                                               std::make_shared<ProtonConfig>(),
                                               std::make_shared<FiledistributorrpcConfig>(),
                                               std::make_shared<BucketspacesConfig>(),

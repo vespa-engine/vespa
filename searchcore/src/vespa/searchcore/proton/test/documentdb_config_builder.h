@@ -20,7 +20,7 @@ private:
     DocumentDBConfig::SummarymapConfigSP _summarymap;
     DocumentDBConfig::JuniperrcConfigSP _juniperrc;
     DocumentDBConfig::DocumenttypesConfigSP _documenttypes;
-    document::DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const document::DocumentTypeRepo> _repo;
     DocumentDBConfig::ImportedFieldsConfigSP _importedFields;
     search::TuneFileDocumentDB::SP _tuneFileDocumentDB;
     search::index::Schema::SP _schema;
@@ -38,7 +38,7 @@ public:
 
     DocumentDBConfigBuilder(const DocumentDBConfig &cfg);
 
-    DocumentDBConfigBuilder &repo(const document::DocumentTypeRepo::SP &repo_in) {
+    DocumentDBConfigBuilder &repo(const std::shared_ptr<const document::DocumentTypeRepo> &repo_in) {
         _repo = repo_in;
         return *this;
     }

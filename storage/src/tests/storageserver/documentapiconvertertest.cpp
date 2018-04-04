@@ -61,7 +61,7 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
 {
     std::shared_ptr<MockBucketResolver> _bucketResolver;
     std::unique_ptr<DocumentApiConverter> _converter;
-    const DocumentTypeRepo::SP _repo;
+    const std::shared_ptr<const DocumentTypeRepo> _repo;
     const DataType& _html_type;
 
     DocumentApiConverterTest()

@@ -135,7 +135,7 @@ FieldBlock::~FieldBlock() {}
 class Test : public vespalib::TestApp {
     std::unique_ptr<Schema> _schema;
     std::unique_ptr<SummarymapConfigBuilder> _summarymap;
-    DocumentTypeRepo::SP      _documentRepo;
+    std::shared_ptr<const DocumentTypeRepo>      _documentRepo;
     const DocumentType       *_documentType;
     document::FixedTypeRepo   _fixedRepo;
 

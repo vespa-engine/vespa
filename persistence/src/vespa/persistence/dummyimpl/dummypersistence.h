@@ -127,7 +127,7 @@ private:
 class DummyPersistence : public AbstractPersistenceProvider
 {
 public:
-    DummyPersistence(const document::DocumentTypeRepo::SP& repo,
+    DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo>& repo,
                      uint16_t partitionCount = 1);
     ~DummyPersistence();
 
@@ -211,7 +211,7 @@ private:
     void releaseBucketNoLock(const BucketContent& bc) const;
 
     mutable bool _initialized;
-    document::DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const document::DocumentTypeRepo> _repo;
     PartitionStateList _partitions;
     typedef vespalib::hash_map<Bucket, BucketContent::SP, document::BucketId::hash>
     PartitionContent;

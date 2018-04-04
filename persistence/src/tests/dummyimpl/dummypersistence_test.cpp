@@ -79,7 +79,7 @@ TEST_F("require that setClusterState sets the cluster state", Fixture) {
     lib::Distribution d(lib::Distribution::getDefaultDistributionConfig(3, 3));
     ClusterState state(s, 1, d);
 
-    document::DocumentTypeRepo::SP repo;
+    std::shared_ptr<const document::DocumentTypeRepo> repo;
     dummy::DummyPersistence provider(repo);
     provider.setClusterState(makeBucketSpace(), state);
 

@@ -87,11 +87,11 @@ class MyDocumentSubDB
     uint32_t _subDBId;
     DocumentMetaStore::SP _metaStoreSP;
     DocumentMetaStore & _metaStore;
-    const document::DocumentTypeRepo::SP &_repo;
+    const std::shared_ptr<const document::DocumentTypeRepo> &_repo;
     const DocTypeName &_docTypeName;
 
 public:
-    MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, const document::DocumentTypeRepo::SP &repo,
+    MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                     std::shared_ptr<BucketDBOwner> bucketDB, const DocTypeName &docTypeName);
     ~MyDocumentSubDB();
 
@@ -124,7 +124,7 @@ public:
     const IDocumentMetaStore &getMetaStore() const { return _metaStore; }
 };
 
-MyDocumentSubDB::MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, const document::DocumentTypeRepo::SP &repo,
+MyDocumentSubDB::MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                                  std::shared_ptr<BucketDBOwner> bucketDB, const DocTypeName &docTypeName)
     : _docs(),
       _subDBId(subDBId),

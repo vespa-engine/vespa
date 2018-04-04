@@ -58,7 +58,7 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
     BootstrapConfig::FiledistributorrpcConfigSP newFiledistRpcConfSP;
     TuneFileDocumentDB::SP newTuneFileDocumentDB;
     DocumenttypesConfigSP newDocumenttypesConfig;
-    DocumentTypeRepo::SP newRepo;
+    std::shared_ptr<const DocumentTypeRepo> newRepo;
     BucketspacesConfigSP newBucketspacesConfig;
     int64_t currentGen = -1;
 

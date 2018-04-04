@@ -44,7 +44,7 @@ struct MyFeedView : public test::DummyFeedView
     uint32_t             _heartBeat;
     uint32_t             _handlePrune;
     uint32_t             _wantedLidLimit;
-    MyFeedView(const DocumentTypeRepo::SP &repo,
+    MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &repo,
                std::shared_ptr<BucketDBOwner> bucketDB,
                SubDbType subDbType) :
         test::DummyFeedView(repo),
@@ -94,7 +94,7 @@ struct MyFeedView : public test::DummyFeedView
 struct MySubDb
 {
     MyFeedView::SP _view;
-    MySubDb(const DocumentTypeRepo::SP &repo,
+    MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo,
             std::shared_ptr<BucketDBOwner> bucketDB,
             SubDbType subDbType)
         : _view(new MyFeedView(repo, bucketDB, subDbType))

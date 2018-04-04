@@ -88,16 +88,16 @@ struct SchemaConfigFactory {
 
 class ConfigFactory {
 private:
-    DocumentTypeRepo::SP    _repo;
+    std::shared_ptr<const DocumentTypeRepo>    _repo;
     DocumenttypesConfigSP   _typeCfg;
     SchemaConfigFactory::SP _schemaFactory;
 
 public:
-    ConfigFactory(const DocumentTypeRepo::SP &repo,
+    ConfigFactory(const std::shared_ptr<const DocumentTypeRepo> &repo,
                   const DocumenttypesConfigSP &typeCfg,
                   const SchemaConfigFactory::SP &schemaFactory);
     ~ConfigFactory();
-    const DocumentTypeRepo::SP getTypeRepo() const { return _repo; }
+    const std::shared_ptr<const DocumentTypeRepo> getTypeRepo() const { return _repo; }
     const DocumenttypesConfigSP getTypeCfg() const { return _typeCfg; }
     DocTypeVector getDocTypes() const {
         DocTypeVector types;
@@ -140,7 +140,7 @@ public:
 };
 
 
-ConfigFactory::ConfigFactory(const DocumentTypeRepo::SP &repo, const DocumenttypesConfigSP &typeCfg,
+ConfigFactory::ConfigFactory(const std::shared_ptr<const DocumentTypeRepo> &repo, const DocumenttypesConfigSP &typeCfg,
                              const SchemaConfigFactory::SP &schemaFactory)
     : _repo(repo),
       _typeCfg(typeCfg),
@@ -373,7 +373,7 @@ public:
           _writeFilter()
     {
     }
-    virtual PersistenceProvider::UP getPersistenceImplementation(const DocumentTypeRepo::SP &repo,
+    virtual PersistenceProvider::UP getPersistenceImplementation(const std::shared_ptr<const DocumentTypeRepo> &repo,
                                                                  const DocumenttypesConfig &typesCfg) override {
         ConfigFactory cfgFactory(repo, DocumenttypesConfigSP(new DocumenttypesConfig(typesCfg)), _schemaFactory);
         _docDbRepo.reset(new DocumentDBRepo(cfgFactory, _docDbFactory));

@@ -162,7 +162,7 @@ struct MyFrozenBucketHandler : public IFrozenBucketHandler
 
 struct MyFeedView : public test::DummyFeedView
 {
-    MyFeedView(const DocumentTypeRepo::SP &repo)
+    MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &repo)
         : test::DummyFeedView(repo)
     {
     }
@@ -189,8 +189,8 @@ struct MySummaryManager : public test::DummySummaryManager
 
 struct MySubDb : public test::DummyDocumentSubDb
 {
-    DocumentTypeRepo::SP _repo;
-    MySubDb(const DocumentTypeRepo::SP &repo, std::shared_ptr<BucketDBOwner> bucketDB);
+    std::shared_ptr<const DocumentTypeRepo> _repo;
+    MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<BucketDBOwner> bucketDB);
     ~MySubDb();
     virtual IFeedView::SP getFeedView() const override {
         return IFeedView::SP(new MyFeedView(_repo));
@@ -198,7 +198,7 @@ struct MySubDb : public test::DummyDocumentSubDb
 };
 
 
-MySubDb::MySubDb(const DocumentTypeRepo::SP &repo, std::shared_ptr<BucketDBOwner> bucketDB)
+MySubDb::MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<BucketDBOwner> bucketDB)
     : test::DummyDocumentSubDb(bucketDB, SUBDB_ID),
       _repo(repo)
 {

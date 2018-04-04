@@ -21,7 +21,7 @@ class ReprocessDocumentsTask : public IReprocessingTask,
                                public search::IDocumentStoreVisitorProgress
 {
     proton::ISummaryManager::SP          _sm;
-    document::DocumentTypeRepo::SP       _docTypeRepo;
+    std::shared_ptr<const document::DocumentTypeRepo>       _docTypeRepo;
     vespalib::string                     _subDbName;
     double                               _visitorProgress;
     double                               _visitorCost;
@@ -33,7 +33,7 @@ class ReprocessDocumentsTask : public IReprocessingTask,
 public:
     ReprocessDocumentsTask(IReprocessingInitializer &initializer,
                            const proton::ISummaryManager::SP &sm,
-                           const document::DocumentTypeRepo::SP &docTypeRepo,
+                           const std::shared_ptr<const document::DocumentTypeRepo> &docTypeRepo,
                            const vespalib::string &subDbName,
                            uint32_t docIdLimit);
 

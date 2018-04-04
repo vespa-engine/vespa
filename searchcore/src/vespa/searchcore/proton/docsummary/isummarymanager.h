@@ -51,7 +51,7 @@ public:
     createSummarySetup(const vespa::config::search::SummaryConfig &summaryCfg,
                        const vespa::config::search::SummarymapConfig &summarymapCfg,
                        const vespa::config::search::summary::JuniperrcConfig &juniperCfg,
-                       const document::DocumentTypeRepo::SP &repo,
+                       const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                        const std::shared_ptr<search::IAttributeManager> &attributeMgr) = 0;
 
     virtual search::IDocumentStore &getBackingStore() = 0;

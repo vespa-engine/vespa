@@ -187,7 +187,7 @@ FastAccessDocSubDB::reconfigureAttributeMetrics(const proton::IAttributeManager 
 
 IReprocessingTask::UP
 FastAccessDocSubDB::createReprocessingTask(IReprocessingInitializer &initializer,
-                                           const document::DocumentTypeRepo::SP &docTypeRepo) const
+                                           const std::shared_ptr<const document::DocumentTypeRepo> &docTypeRepo) const
 {
     uint32_t docIdLimit = _metaStoreCtx->get().getCommittedDocIdLimit();
     assert(docIdLimit > 0);

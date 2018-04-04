@@ -43,7 +43,7 @@ class GetOperationTest : public CppUnit::TestFixture, public DistributorTestUtil
     CPPUNIT_TEST(canGetDocumentsWhenAllReplicaNodesRetired);
     CPPUNIT_TEST_SUITE_END();
 
-    document::DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const document::DocumentTypeRepo> _repo;
 
 public:
     document::DocumentId docId;

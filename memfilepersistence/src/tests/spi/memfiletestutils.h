@@ -191,7 +191,7 @@ public:
             const document::DocumentId& id,
             const document::FieldValue& updateValue);
 
-    virtual const document::DocumentTypeRepo::SP getTypeRepo() const
+    virtual const std::shared_ptr<const document::DocumentTypeRepo> getTypeRepo() const
     { return document::TestDocMan::getTypeRepoSP(); }
 
     /**

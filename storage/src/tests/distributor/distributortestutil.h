@@ -35,7 +35,7 @@ public:
      * Sets up the storage link chain.
      */
     void createLinks();
-    void setTypeRepo(const document::DocumentTypeRepo::SP &repo);
+    void setTypeRepo(const std::shared_ptr<const document::DocumentTypeRepo> &repo);
 
     void close();
 

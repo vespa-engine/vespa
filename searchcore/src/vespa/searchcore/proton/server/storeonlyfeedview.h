@@ -74,7 +74,7 @@ public:
         const search::index::Schema::SP         &_schema;
         const IDocumentMetaStoreContext::SP     &_documentMetaStoreContext;
         IGidToLidChangeHandler                  &_gidToLidChangeHandler;
-        const document::DocumentTypeRepo::SP    &_repo;
+        const std::shared_ptr<const document::DocumentTypeRepo>    &_repo;
         searchcorespi::index::IThreadingService &_writeService;
         documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
         CommitTimeTracker                       &_commitTimeTracker;
@@ -83,7 +83,7 @@ public:
                 const search::index::Schema::SP &schema,
                 const IDocumentMetaStoreContext::SP &documentMetaStoreContext,
                 IGidToLidChangeHandler &gidToLidChangeHandler,
-                const document::DocumentTypeRepo::SP &repo,
+                const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                 searchcorespi::index::IThreadingService &writeService,
                 documentmetastore::ILidReuseDelayer &lidReuseDelayer,
                 CommitTimeTracker &commitTimeTracker)
@@ -137,7 +137,7 @@ protected:
 private:
     const ISummaryAdapter::SP                _summaryAdapter;
     const IDocumentMetaStoreContext::SP      _documentMetaStoreContext;
-    const document::DocumentTypeRepo::SP     _repo;
+    const std::shared_ptr<const document::DocumentTypeRepo>     _repo;
     const document::DocumentType            *_docType;
     documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
     CommitTimeTracker                       &_commitTimeTracker;
@@ -232,7 +232,7 @@ public:
     CommitTimeTracker &getCommitTimeTracker() { return _commitTimeTracker; }
     IGidToLidChangeHandler &getGidToLidChangeHandler() const { return _gidToLidChangeHandler; }
 
-    const document::DocumentTypeRepo::SP &getDocumentTypeRepo() const override { return _repo; }
+    const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepo() const override { return _repo; }
     const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override;
 
     void preparePut(PutOperation &putOp) override;

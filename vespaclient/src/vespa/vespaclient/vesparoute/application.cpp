@@ -45,7 +45,7 @@ Application::Main()
             return EXIT_SUCCESS;
         }
 
-        DocumentTypeRepo::SP repo(
+        std::shared_ptr<const DocumentTypeRepo> repo(
                 new DocumentTypeRepo(
                         *ConfigGetter<DocumenttypesConfig>::getConfig(_params.getDocumentTypesConfigId())));
         _net.reset(new MyNetwork(_params.getRPCNetworkParams()));

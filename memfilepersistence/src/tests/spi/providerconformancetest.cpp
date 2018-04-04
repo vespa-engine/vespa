@@ -20,7 +20,7 @@ struct ProviderConformanceTest : public spi::ConformanceTest {
         }
 
         spi::PersistenceProvider::UP
-        getPersistenceImplementation(const document::DocumentTypeRepo::SP& repo,
+        getPersistenceImplementation(const std::shared_ptr<const document::DocumentTypeRepo>& repo,
                                      const document::DocumenttypesConfig&) override
         {
             system("rm -rf vdsroot");

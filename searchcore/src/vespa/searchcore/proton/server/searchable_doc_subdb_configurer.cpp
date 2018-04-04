@@ -39,7 +39,7 @@ SearchableDocSubDBConfigurer::reconfigureFeedView(const IIndexWriter::SP &indexW
                                                   const ISummaryAdapter::SP &summaryAdapter,
                                                   const IAttributeWriter::SP &attrWriter,
                                                   const Schema::SP &schema,
-                                                  const DocumentTypeRepo::SP &repo,
+                                                  const std::shared_ptr<const DocumentTypeRepo> &repo,
                                                   const SearchView::SP &searchView)
 {
     SearchableFeedView::SP curr = _feedView.get();

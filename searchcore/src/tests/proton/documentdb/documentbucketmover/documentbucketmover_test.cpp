@@ -93,9 +93,9 @@ struct MyMoveHandler : public IDocumentMoveHandler
 
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
 {
-    DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const DocumentTypeRepo> _repo;
     DocumentVector       _docs;
-    MyDocumentRetriever(DocumentTypeRepo::SP repo) : _repo(repo), _docs() {
+    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo) : _repo(repo), _docs() {
         _docs.push_back(Document::SP()); // lid 0 invalid
     }
     virtual const document::DocumentTypeRepo &getDocumentTypeRepo() const override { return *_repo; }
@@ -133,7 +133,7 @@ struct MySubDb
     MaintenanceDocumentSubDB _subDb;
     test::UserDocuments        _docs;
     bucketdb::BucketDBHandler _bucketDBHandler;
-    MySubDb(const DocumentTypeRepo::SP &repo, std::shared_ptr<BucketDBOwner> bucketDB,
+    MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<BucketDBOwner> bucketDB,
             uint32_t subDbId, SubDbType subDbType);
     ~MySubDb();
     void insertDocs(const test::UserDocuments &docs_) {
@@ -178,7 +178,7 @@ struct MySubDb
 
 };
 
-MySubDb::MySubDb(const DocumentTypeRepo::SP &repo, std::shared_ptr<BucketDBOwner> bucketDB,
+MySubDb::MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<BucketDBOwner> bucketDB,
                  uint32_t subDbId, SubDbType subDbType)
     : _metaStoreSP(std::make_shared<DocumentMetaStore>(bucketDB,
                                                        DocumentMetaStore::getFixedName(),

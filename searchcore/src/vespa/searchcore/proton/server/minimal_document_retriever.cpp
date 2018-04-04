@@ -12,7 +12,7 @@ namespace proton {
 
 MinimalDocumentRetriever::MinimalDocumentRetriever(
         const DocTypeName &docTypeName,
-        const DocumentTypeRepo::SP repo,
+        const std::shared_ptr<const DocumentTypeRepo> repo,
         const IDocumentMetaStoreContext &meta_store,
         const IDocumentStore &doc_store,
         bool hasFields)

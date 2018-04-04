@@ -83,7 +83,7 @@ DistributorTestUtil::triggerDistributionChange(lib::Distribution::SP distr)
 }
 
 void
-DistributorTestUtil::setTypeRepo(const document::DocumentTypeRepo::SP &repo)
+DistributorTestUtil::setTypeRepo(const std::shared_ptr<const document::DocumentTypeRepo> &repo)
 {
     _node->getComponentRegister().setDocumentTypeRepo(repo);
 }

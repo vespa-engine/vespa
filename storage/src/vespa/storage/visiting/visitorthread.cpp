@@ -497,7 +497,7 @@ VisitorThread::onCreateVisitor(
         // Parse document selection
         try{
             if (cmd->getDocumentSelection() != "") {
-                document::DocumentTypeRepo::SP repo(
+                std::shared_ptr<const document::DocumentTypeRepo> repo(
                         _component.getTypeRepo());
                 const document::BucketIdFactory& idFactory(
                         _component.getBucketIdFactory());

@@ -298,7 +298,7 @@ namespace {
                        public mbus::IReplyHandler
     {
         const vdstestlib::DirConfig& _config;
-        const document::DocumentTypeRepo::SP _repo;
+        const std::shared_ptr<const document::DocumentTypeRepo> _repo;
         documentapi::LoadTypeSet _loadTypes;
         std::unique_ptr<mbus::RPCMessageBus> _mbus;
         mbus::SourceSession::UP _sourceSession;
@@ -309,7 +309,7 @@ namespace {
         bool _startedShutdown;
 
         LoadGiver(const vdstestlib::DirConfig& config,
-                  const document::DocumentTypeRepo::SP repo)
+                  const std::shared_ptr<const document::DocumentTypeRepo> repo)
             : _config(config), _repo(repo), _mbus(), _sourceSession(),
               _maxPending(20), _currentPending(0), _processedOk(0),
               _unexpectedErrors(0), _startedShutdown(false) {}
