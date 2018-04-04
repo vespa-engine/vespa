@@ -116,11 +116,6 @@ public class JobStatus {
         return ! lastTriggered.get().at().isBefore(lastCompleted.get().at());
     }
 
-    /** Returns true if this is running and has been so since before the given limit */
-    public boolean isHanging(Instant timeoutLimit) {
-        return isRunning(Instant.MIN) && lastTriggered.get().at().isBefore(timeoutLimit.plusMillis(1));
-    }
-
     /** The error of the last completion, or empty if the last run succeeded */
     public Optional<DeploymentJobs.JobError> jobError() { return jobError; }
 
