@@ -101,7 +101,7 @@ public class FileDirectory  {
     public FileReference addFile(File source) {
         try {
             Long hash = computeReference(source);
-            verifyExistingFile(hash);
+            verifyExistingFile(source, hash);
             FileReference fileReference = fileReferenceFromHash(hash);
             return addFile(source, fileReference);
         } catch (IOException e) {
@@ -110,12 +110,12 @@ public class FileDirectory  {
     }
 
     // If there exists a directory for a file reference, but it does not have correct hash, delete everything in it
-    private void verifyExistingFile(Long hashOfFileToBeAdded) throws IOException {
+    private void verifyExistingFile(File file, Long hashOfFileToBeAdded) throws IOException {
         FileReference fileReference = fileReferenceFromHash(hashOfFileToBeAdded);
         File destinationDir = destinationDir(fileReference);
         if (!destinationDir.exists()) return;
 
-        Long hashOfExistingFileReference = computeReference(destinationDir);
+        Long hashOfExistingFileReference = computeReference(destinationDir.toPath().resolve(file.getName()).toFile());
         if (hashOfExistingFileReference.longValue() != hashOfFileToBeAdded.longValue()) {
             log.log(LogLevel.ERROR, "Directory for file reference ' " + fileReference.value() +
                     "' has content that does not match its hash, deleting everything in " +
