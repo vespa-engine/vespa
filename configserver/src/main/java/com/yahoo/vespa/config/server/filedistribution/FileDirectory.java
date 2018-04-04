@@ -109,7 +109,7 @@ public class FileDirectory  {
         }
     }
 
-    // If there is exists a directory for a file reference, but it does not have correct hash, we delete everything in it
+    // If there exists a directory for a file reference, but it does not have correct hash, delete everything in it
     private void verifyExistingFile(Long hashOfFileToBeAdded) throws IOException {
         FileReference fileReference = fileReferenceFromHash(hashOfFileToBeAdded);
         File destinationDir = destinationDir(fileReference);
