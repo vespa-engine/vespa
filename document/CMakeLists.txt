@@ -34,6 +34,7 @@ vespa_define_module(
     src/tests/annotation
     src/tests/base
     src/tests/datatype
+    src/tests/document_type_repo_factory
     src/tests/fieldvalue
     src/tests/predicate
     src/tests/repo
