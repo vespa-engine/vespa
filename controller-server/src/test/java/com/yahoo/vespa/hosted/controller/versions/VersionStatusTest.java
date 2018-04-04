@@ -5,10 +5,10 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -138,7 +138,7 @@ public class VersionStatusTest {
         Application ignored0 = tester.createApplication("ignored0", "tenant1", 1000, 1000L);
 
         // Pull request builds
-        tester.controllerTester().createApplication(new TenantId("tenant1"),
+        tester.controllerTester().createApplication(TenantName.from("tenant1"),
                                                     "ignored1",
                                                     "43", 1000);
 

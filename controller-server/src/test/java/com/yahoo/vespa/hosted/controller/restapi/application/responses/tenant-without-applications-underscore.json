@@ -1,0 +1,9 @@
+{
+  "tenant": "my_tenant_2",
+  "type": "ATHENS",
+  "athensDomain": "domain1",
+  "property": "property1",
+  "applications": [
+
+  ]
+}

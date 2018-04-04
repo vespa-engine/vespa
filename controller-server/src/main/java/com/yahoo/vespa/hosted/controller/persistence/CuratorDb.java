@@ -4,12 +4,11 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -64,8 +63,8 @@ public class CuratorDb {
 
     // -------------- Locks --------------------------------------------------
 
-    public Lock lock(TenantId id, Duration timeout) {
-        return lock(lockPath(id), timeout);
+    public Lock lock(TenantName name, Duration timeout) {
+        return lock(lockPath(name), timeout);
     }
 
     public Lock lock(ApplicationId id, Duration timeout) {
@@ -236,9 +235,9 @@ public class CuratorDb {
 
     // -------------- Paths --------------------------------------------------
 
-    private Path lockPath(TenantId tenant) {
+    private Path lockPath(TenantName tenant) {
         Path lockPath = lockRoot
-                .append(tenant.id());
+                .append(tenant.value());
         curator.create(lockPath);
         return lockPath;
     }

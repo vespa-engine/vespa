@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
@@ -17,6 +18,7 @@ import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
+import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
@@ -42,6 +44,7 @@ import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -331,9 +334,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // PUT (create) the authenticated user
         byte[] data = new byte[0];
-        tester.assertResponse(request("/application/v4/user?user=newuser&domain=by", PUT)
+        tester.assertResponse(request("/application/v4/user?user=new_user&domain=by", PUT)
                                       .data(data)
-                                      .userIdentity(new UserId("newuser")),
+                                      .userIdentity(new UserId("new_user")), // Normalized to by-new-user by API
                               new File("create-user-response.json"));
         // OPTIONS return 200 OK
         tester.assertResponse(request("/application/v4/", Request.Method.OPTIONS),
@@ -551,6 +554,22 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'tenant1' already exists\"}",
                               400);
 
+        // POST (add) a Athenz tenant with underscore in name
+        tester.assertResponse(request("/application/v4/tenant/my_tenant_2", POST)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
+                                      .nToken(N_TOKEN),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"New tenant or application names must start with a letter, may contain no more than 20 characters, and may only contain lowercase letters, digits or dashes, but no double-dashes.\"}",
+                              400);
+
+        // POST (add) a Athenz tenant with by- prefix
+        tester.assertResponse(request("/application/v4/tenant/by-tenant2", POST)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
+                                      .nToken(N_TOKEN),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Athenz tenant name cannot have prefix 'by-'\"}",
+                              400);
+
         // POST (create) an (empty) application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
                                       .userIdentity(USER_ID)
@@ -596,7 +615,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // DELETE tenant which has an application
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)
-                                      .userIdentity(USER_ID),
+                                      .userIdentity(USER_ID)
+                                      .nToken(N_TOKEN),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not delete tenant 'tenant1': This tenant has active applications\"}",
                               400);
 
@@ -626,6 +646,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "{\"error-code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"Unable to promote Chef environments for application\"}",
                               500);
+
+        // Create legancy tenant name containing underscores
+        tester.controller().tenants().create(new AthenzTenant(TenantName.from("my_tenant"), ATHENZ_TENANT_DOMAIN,
+                                                              new Property("property1"), Optional.empty()),
+                                             N_TOKEN);
+        // POST (add) a Athenz tenant with dashes duplicates existing one with underscores
+        tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
+                                      .nToken(N_TOKEN),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'my-tenant' already exists\"}",
+                              400);
     }
     
     @Test

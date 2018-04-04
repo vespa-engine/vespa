@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
@@ -11,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -108,7 +108,7 @@ public class DeploymentTester {
     }
 
     public Application createApplication(String applicationName, String tenantName, long projectId, Long propertyId) {
-        TenantId tenant = tester.createTenant(tenantName, UUID.randomUUID().toString(), propertyId);
+        TenantName tenant = tester.createTenant(tenantName, UUID.randomUUID().toString(), propertyId);
         return tester.createApplication(tenant, applicationName, "default", projectId);
     }
 
@@ -121,13 +121,13 @@ public class DeploymentTester {
 
     /** Simulate the full lifecycle of an application deployment as declared in given application package */
     public Application createAndDeploy(String applicationName, int projectId, ApplicationPackage applicationPackage) {
-        TenantId tenantId = tester.createTenant("tenant1", "domain1", 1L);
-        return createAndDeploy(tenantId, applicationName, projectId, applicationPackage);
+        TenantName tenant = tester.createTenant("tenant1", "domain1", 1L);
+        return createAndDeploy(tenant, applicationName, projectId, applicationPackage);
     }
 
     /** Simulate the full lifecycle of an application deployment as declared in given application package */
-    public Application createAndDeploy(TenantId tenantId, String applicationName, int projectId, ApplicationPackage applicationPackage) {
-        Application application = tester.createApplication(tenantId, applicationName, "default", projectId);
+    public Application createAndDeploy(TenantName tenant, String applicationName, int projectId, ApplicationPackage applicationPackage) {
+        Application application = tester.createApplication(tenant, applicationName, "default", projectId);
         deployCompletely(application, applicationPackage);
         return applications().require(application.id());
     }
@@ -138,8 +138,8 @@ public class DeploymentTester {
     }
 
     /** Simulate the full lifecycle of an application deployment to prod.us-west-1 with the given upgrade policy */
-    public Application createAndDeploy(TenantId tenantId, String applicationName, int projectId, String upgradePolicy) {
-        return createAndDeploy(tenantId, applicationName, projectId, applicationPackage(upgradePolicy));
+    public Application createAndDeploy(TenantName tenant, String applicationName, int projectId, String upgradePolicy) {
+        return createAndDeploy(tenant, applicationName, projectId, applicationPackage(upgradePolicy));
     }
 
     /** Complete an ongoing deployment */

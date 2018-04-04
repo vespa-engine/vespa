@@ -5,14 +5,13 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.Tenant;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.TenantType;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -94,17 +93,18 @@ public class DeploymentIssueReporter extends Maintainer {
     }
 
     private Tenant ownerOf(ApplicationId applicationId) {
-        return controller().tenants().tenant(new TenantId(applicationId.tenant().value()))
+        return controller().tenants().tenant(applicationId.tenant())
                 .orElseThrow(() -> new IllegalStateException("No tenant found for application " + applicationId));
     }
 
     private User userFor(Tenant tenant) {
-        return User.from(tenant.getId().id().replaceFirst("by-", ""));
+        return User.from(tenant.name().value().replaceFirst(Tenant.userPrefix, ""));
     }
 
-    private PropertyId propertyIdFor(Tenant tenant) {
-        return tenant.getPropertyId()
-                .orElseThrow(() -> new NoSuchElementException("No PropertyId is listed for non-user tenant " + tenant));
+    private PropertyId propertyIdFor(AthenzTenant tenant) {
+        return tenant.propertyId()
+                     .orElseThrow(() -> new NoSuchElementException("No PropertyId is listed for non-user tenant " +
+                                                                   tenant));
     }
 
     /** File an issue for applicationId, if it doesn't already have an open issue associated with it. */
@@ -112,9 +112,9 @@ public class DeploymentIssueReporter extends Maintainer {
         try {
             Tenant tenant = ownerOf(applicationId);
             Optional<IssueId> ourIssueId = controller().applications().require(applicationId).deploymentJobs().issueId();
-            IssueId issueId = tenant.tenantType() == TenantType.USER
-                              ? deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, userFor(tenant))
-                              : deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, propertyIdFor(tenant));
+            IssueId issueId = tenant instanceof AthenzTenant
+                              ? deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, propertyIdFor((AthenzTenant) tenant))
+                              : deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, userFor(tenant));
             store(applicationId, issueId);
         }
         catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
@@ -126,7 +126,12 @@ public class DeploymentIssueReporter extends Maintainer {
     private void escalateInactiveDeploymentIssues(Collection<Application> applications) {
         applications.forEach(application -> application.deploymentJobs().issueId().ifPresent(issueId -> {
             try {
-                deploymentIssues.escalateIfInactive(issueId, ownerOf(application.id()).getPropertyId(), maxInactivity);
+                Optional<PropertyId> propertyId = Optional.of(application.id())
+                                                          .map(this::ownerOf)
+                                                          .filter(t -> t instanceof AthenzTenant)
+                                                          .map(AthenzTenant.class::cast)
+                                                          .flatMap(AthenzTenant::propertyId);
+                deploymentIssues.escalateIfInactive(issueId, propertyId, maxInactivity);
             }
             catch (RuntimeException e) {
                 log.log(Level.WARNING, "Exception caught when attempting to escalate issue with id " + issueId, e);

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest.Method;
@@ -15,13 +16,13 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
-import com.yahoo.vespa.hosted.controller.api.Tenant;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.yolean.chain.After;
 
 import javax.ws.rs.ForbiddenException;
@@ -89,9 +90,9 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
             } else if (isHostedOperatorOperation(path, method)) {
                 verifyIsHostedOperator(principal);
             } else if (isTenantAdminOperation(path, method)) {
-                verifyIsTenantAdmin(principal, getTenantId(path));
+                verifyIsTenantAdmin(principal, getTenantName(path));
             } else if (isTenantPipelineOperation(path, method)) {
-                verifyIsTenantPipelineOperator(principal, getTenantId(path), getApplicationName(path));
+                verifyIsTenantPipelineOperator(principal, getTenantName(path), getApplicationName(path));
             } else {
                 throw new ForbiddenException("No access control is explicitly declared for this api.");
             }
@@ -147,8 +148,8 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
                 .hasHostedOperatorAccess(identity);
     }
 
-    private void verifyIsTenantAdmin(AthenzPrincipal principal, TenantId tenantId) {
-        tenantController.tenant(tenantId)
+    private void verifyIsTenantAdmin(AthenzPrincipal principal, TenantName name) {
+        tenantController.tenant(name)
                 .ifPresent(tenant -> {
                     if (!isTenantAdmin(principal.getIdentity(), tenant)) {
                         throw new ForbiddenException("Tenant admin or Vespa operator role required");
@@ -157,26 +158,23 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
     }
 
     private boolean isTenantAdmin(AthenzIdentity identity, Tenant tenant) {
-        switch (tenant.tenantType()) {
-            case ATHENS:
-                return clientFactory.createZmsClientWithServicePrincipal()
-                        .hasTenantAdminAccess(identity, tenant.getAthensDomain().get());
-            case USER: {
-                if (!(identity instanceof AthenzUser)) {
-                    return false;
-                }
-                AthenzUser user = (AthenzUser) identity;
-                return tenant.getId().equals(new UserId(user.getName()).toTenantId());
+        if (tenant instanceof AthenzTenant) {
+            return clientFactory.createZmsClientWithServicePrincipal()
+                                .hasTenantAdminAccess(identity, ((AthenzTenant) tenant).domain());
+        } else if (tenant instanceof UserTenant) {
+            if (!(identity instanceof AthenzUser)) {
+                return false;
             }
-            default:
-                throw new InternalServerErrorException("Unknown tenant type: " + tenant.tenantType());
+            AthenzUser user = (AthenzUser) identity;
+            return ((UserTenant) tenant).is(user.getName());
         }
+        throw new InternalServerErrorException("Unknown tenant type: " + tenant.getClass().getSimpleName());
     }
 
     private void verifyIsTenantPipelineOperator(AthenzPrincipal principal,
-                                                TenantId tenantId,
+                                                TenantName name,
                                                 ApplicationName application) {
-        tenantController.tenant(tenantId)
+        tenantController.tenant(name)
                 .ifPresent(tenant -> verifyIsTenantPipelineOperator(principal.getIdentity(), tenant, application));
     }
 
@@ -191,8 +189,8 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
         }
 
         // NOTE: no fine-grained deploy authorization for non-Athenz tenants
-        if (tenant.isAthensTenant()) {
-            AthenzDomain tenantDomain = tenant.getAthensDomain().get();
+        if (tenant instanceof AthenzTenant) {
+            AthenzDomain tenantDomain = ((AthenzTenant) tenant).domain();
             if (!hasDeployerAccess(identity, tenantDomain, application)) {
                 throw new ForbiddenException(String.format(
                         "'%1$s' does not have access to '%2$s'. " +
@@ -216,10 +214,10 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
         }
     }
 
-    private static TenantId getTenantId(Path path) {
+    private static TenantName getTenantName(Path path) {
         if (!path.matches("/application/v4/tenant/{tenant}/{*}"))
             throw new InternalServerErrorException("Unable to handle path: " + path.asString());
-        return new TenantId(path.get("tenant"));
+        return TenantName.from(path.get("tenant"));
     }
 
     private static ApplicationName getApplicationName(Path path) {

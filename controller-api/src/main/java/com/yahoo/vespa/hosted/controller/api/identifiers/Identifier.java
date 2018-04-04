@@ -99,9 +99,5 @@ public abstract class Identifier {
         throw new IllegalArgumentException(String.format("Invalid id: %s. %s", id, explanation));
     }
 
-    public static void throwInvalidId(String id, String explanation, String idName) {
-        throw new IllegalArgumentException(String.format("Invalid %s id: %s. %s", idName, id, explanation));
-    }
-
 }
 

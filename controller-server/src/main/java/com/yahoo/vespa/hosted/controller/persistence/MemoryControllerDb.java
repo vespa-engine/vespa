@@ -2,11 +2,12 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
-import com.yahoo.vespa.hosted.controller.api.Tenant;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,35 +23,57 @@ import java.util.stream.Collectors;
  */
 public class MemoryControllerDb implements ControllerDb {
 
-    private final Map<TenantId, Tenant> tenants = new HashMap<>();
+    private final Map<TenantName, Tenant> tenants = new HashMap<>();
     private final Map<String, Application> applications = new HashMap<>();
 
-    @Override
-    public void createTenant(Tenant tenant) {
-        if (tenants.containsKey(tenant.getId())) {
-            throw new AlreadyExistsException(tenant.getId());
+    private void createTenant(Tenant tenant) {
+        if (tenants.containsKey(tenant.name())) {
+            throw new IllegalArgumentException("Tenant '" + tenant + "' already exists");
         }
-        tenants.put(tenant.getId(), tenant);
+        tenants.put(tenant.name(), tenant);
+    }
+
+    private void updateTenant(Tenant tenant) {
+        if (!tenants.containsKey(tenant.name())) {
+            throw new NotExistsException(tenant.name().value());
+        }
+        tenants.put(tenant.name(), tenant);
     }
 
     @Override
-    public void updateTenant(Tenant tenant) {
-        if (!tenants.containsKey(tenant.getId())) {
-            throw new NotExistsException(tenant.getId());
-        }
-        tenants.put(tenant.getId(), tenant);
+    public void createTenant(UserTenant tenant) {
+        createTenant((Tenant) tenant);
     }
 
     @Override
-    public void deleteTenant(TenantId tenantId) {
-        if (tenants.remove(tenantId) == null) {
-            throw new NotExistsException(tenantId);
+    public void createTenant(AthenzTenant tenant) {
+        createTenant((Tenant) tenant);
+    }
+
+    @Override
+    public void updateTenant(AthenzTenant tenant) {
+        updateTenant((Tenant) tenant);
+    }
+
+    @Override
+    public void deleteTenant(TenantName name) {
+        if (tenants.remove(name) == null) {
+            throw new NotExistsException(name.value());
         }
     }
 
     @Override
-    public Optional<Tenant> getTenant(TenantId tenantId) {
-        return Optional.ofNullable(tenants.get(tenantId));
+    public Optional<Tenant> getTenant(TenantName name) {
+        return getTenant(name, Tenant.class);
+    }
+
+    @Override
+    public Optional<AthenzTenant> getAthenzTenant(TenantName name) {
+        return getTenant(name, AthenzTenant.class);
+    }
+
+    private <T extends Tenant> Optional<T> getTenant(TenantName name, Class<T> type) {
+        return Optional.ofNullable(tenants.get(name)).map(type::cast);
     }
 
     @Override
@@ -79,9 +102,9 @@ public class MemoryControllerDb implements ControllerDb {
     }
 
     @Override
-    public List<Application> listApplications(TenantId tenantId) {
+    public List<Application> listApplications(TenantName name) {
         return applications.values().stream()
-                                    .filter(a -> a.id().tenant().value().equals(tenantId.id()))
+                                    .filter(a -> a.id().tenant().equals(name))
                                     .collect(Collectors.toList());
     }
 

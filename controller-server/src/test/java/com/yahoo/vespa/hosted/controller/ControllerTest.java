@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBuildJob;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
@@ -133,7 +132,7 @@ public class ControllerTest {
         tester.restartController();
         applications = tester.controller().applications();
 
-        assertNotNull(tester.controller().tenants().tenant(new TenantId("tenant1")));
+        assertNotNull(tester.controller().tenants().tenant(TenantName.from("tenant1")));
         assertNotNull(applications.get(ApplicationId.from(TenantName.from("tenant1"),
                                                           ApplicationName.from("application1"),
                                                           InstanceName.from("default"))));
@@ -518,7 +517,7 @@ public class ControllerTest {
     public void testDeployUntestedChangeFails() {
         DeploymentTester tester = new DeploymentTester();
         ApplicationController applications = tester.controller().applications();
-        TenantId tenant = tester.controllerTester().createTenant("tenant1", "domain1", 11L);
+        TenantName tenant = tester.controllerTester().createTenant("tenant1", "domain1", 11L);
         Application app = tester.controllerTester().createApplication(tenant, "app1", "default", 1);
         tester.deployCompletely(app, applicationPackage);
 

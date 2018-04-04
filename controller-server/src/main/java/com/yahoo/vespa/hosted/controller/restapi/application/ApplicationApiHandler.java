@@ -30,7 +30,6 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
-import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.ApplicationResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.TenantResource;
@@ -76,10 +75,12 @@ import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 import com.yahoo.vespa.hosted.controller.restapi.filter.SetBouncerPassthruHeaderFilter;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.yolean.Exceptions;
 
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotAuthorizedException;
@@ -253,7 +254,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor tenantsArray = response.setArray("tenants");
         for (Tenant tenant : tenants)
             tenantInTenantsListToSlime(tenant, request.getUri(), tenantsArray.addObject());
-        response.setBool("tenantExists", tenants.stream().map(Tenant::getId).anyMatch(id -> id.isTenantFor(userId)));
+        response.setBool("tenantExists", tenants.stream().anyMatch(tenant -> tenant instanceof UserTenant &&
+                                                                         ((UserTenant) tenant).is(userId.id())));
         return new SlimeJsonResponse(slime);
     }
 
@@ -314,9 +316,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse tenant(String tenantName, HttpRequest request) {
-        return controller.tenants().tenant(new TenantId((tenantName)))
-                .map(tenant -> tenant(tenant, request, true))
-                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
+        return controller.tenants().tenant(TenantName.from(tenantName))
+                         .map(tenant -> tenant(tenant, request, true))
+                         .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
     }
 
     private HttpResponse tenant(Tenant tenant, HttpRequest request, boolean listApplications) {
@@ -510,7 +512,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse setGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region, boolean inService, HttpRequest request) {
 
         // Check if request is authorized
-        Optional<Tenant> existingTenant = controller.tenants().tenant(new TenantId(tenantName));
+        Optional<Tenant> existingTenant = controller.tenants().tenant(tenantName);
         if (!existingTenant.isPresent())
             return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
 
@@ -611,57 +613,41 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Optional<UserId> user = getUserId(request);
         if ( ! user.isPresent() ) throw new ForbiddenException("Not authenticated or not an user.");
 
+        String username = UserTenant.normalizeUser(user.get().id());
         try {
-            controller.tenants().createUserTenant(user.get().id());
-            return new MessageResponse("Created user '" + user.get() + "'");
+            controller.tenants().create(UserTenant.create(username));
+            return new MessageResponse("Created user '" + username + "'");
         } catch (AlreadyExistsException e) {
             // Ok
-            return new MessageResponse("User '" + user + "' already exists");
+            return new MessageResponse("User '" + username + "' already exists");
         }
     }
 
     private HttpResponse updateTenant(String tenantName, HttpRequest request) {
-        Optional<Tenant> existingTenant = controller.tenants().tenant(new TenantId(tenantName));
+        Optional<AthenzTenant> existingTenant = controller.tenants().athenzTenant(TenantName.from(tenantName));
         if ( ! existingTenant.isPresent()) return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");;
 
         Inspector requestData = toSlime(request.getData()).get();
-
-        Tenant updatedTenant;
-        switch (existingTenant.get().tenantType()) {
-            case USER: {
-                throw new BadRequestException("Cannot set property or OpsDB user group for user tenant");
-            }
-            case ATHENS: {
-                updatedTenant = Tenant.createAthensTenant(new TenantId(tenantName),
-                                                          new AthenzDomain(mandatory("athensDomain", requestData).asString()),
-                                                          new Property(mandatory("property", requestData).asString()),
-                                                          optional("propertyId", requestData).map(PropertyId::new));
-                controller.tenants().updateTenant(updatedTenant, getUserPrincipal(request).getNToken());
-                break;
-            }
-            default: {
-                throw new BadRequestException("Unknown tenant type: " + existingTenant.get().tenantType());
-            }
+        AthenzTenant updatedTenant = existingTenant.get()
+                                                   .with(new AthenzDomain(mandatory("athensDomain", requestData).asString()))
+                                                   .with(new Property(mandatory("property", requestData).asString()));
+        Optional<PropertyId> propertyId = optional("propertyId", requestData).map(PropertyId::new);
+        if (propertyId.isPresent()) {
+            updatedTenant = updatedTenant.with(propertyId.get());
         }
+        controller.tenants().updateTenant(updatedTenant, requireNToken(request, "Could not update " + tenantName));
         return tenant(updatedTenant, request, true);
     }
 
     private HttpResponse createTenant(String tenantName, HttpRequest request) {
-        if (new TenantId(tenantName).isUser())
-            return ErrorResponse.badRequest("Use User API to create user tenants.");
-
         Inspector requestData = toSlime(request.getData()).get();
 
-        Tenant tenant = new Tenant(new TenantId(tenantName),
-                                   optional("property", requestData).map(Property::new),
-                                   optional("athensDomain", requestData).map(AthenzDomain::new),
-                                   optional("propertyId", requestData).map(PropertyId::new));
-        if (tenant.isAthensTenant())
-            throwIfNotAthenzDomainAdmin(new AthenzDomain(mandatory("athensDomain", requestData).asString()), request);
-
-        NToken token = getUserPrincipal(request).getNToken()
-                .orElseThrow(() -> new IllegalArgumentException("Could not create " + tenant + ": No NToken provided"));
-        controller.tenants().createAthenzTenant(tenant, token);
+        AthenzTenant tenant = AthenzTenant.create(TenantName.from(tenantName),
+                                                  new AthenzDomain(mandatory("athensDomain", requestData).asString()),
+                                                  new Property(mandatory("property", requestData).asString()),
+                                                  optional("propertyId", requestData).map(PropertyId::new));
+        throwIfNotAthenzDomainAdmin(tenant.domain(), request);
+        controller.tenants().create(tenant, requireNToken(request, "Could not create " + tenantName));
         return tenant(tenant, request, true);
     }
 
@@ -784,8 +770,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Validate that domain in identity configuration (deployment.xml) is same as tenant domain
         applicationPackage.map(ApplicationPackage::deploymentSpec).flatMap(DeploymentSpec::athenzDomain)
                 .ifPresent(identityDomain -> {
-                    Tenant tenant = controller.tenants().tenant(new TenantId(tenantName)).orElseThrow(() -> new IllegalArgumentException("Tenant does not exist"));
-                    AthenzDomain tenantDomain = tenant.getAthensDomain().orElseThrow(() -> new IllegalArgumentException("Identity provider only available to Athenz onboarded tenants"));
+                    AthenzTenant tenant = controller.tenants().athenzTenant(TenantName.from(tenantName))
+                                                    .orElseThrow(() -> new IllegalArgumentException("Tenant does not exist"));
+                    AthenzDomain tenantDomain = tenant.domain();
                     if (! Objects.equals(tenantDomain.getName(), identityDomain.value())) {
                         throw new ForbiddenException(
                                 String.format(
@@ -798,10 +785,19 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse deleteTenant(String tenantName, HttpRequest request) {
-        Optional<Tenant> tenant = controller.tenants().tenant(new TenantId(tenantName));
+        Optional<Tenant> tenant = controller.tenants().tenant(tenantName);
         if ( ! tenant.isPresent()) return ErrorResponse.notFoundError("Could not delete tenant '" + tenantName + "': Tenant not found"); // NOTE: The Jersey implementation would silently ignore this
 
-        controller.tenants().deleteTenant(new TenantId(tenantName), getUserPrincipal(request).getNToken());
+
+        if (tenant.get() instanceof AthenzTenant) {
+            controller.tenants().deleteTenant((AthenzTenant) tenant.get(),
+                                              requireNToken(request, "Could not delete " + tenantName));
+        } else if (tenant.get() instanceof UserTenant) {
+            controller.tenants().deleteTenant((UserTenant) tenant.get());
+        } else {
+            throw new IllegalArgumentException("Don't know how to delete " + tenant.get() + " of type " +
+                                               tenant.get().getClass().getSimpleName());
+        }
 
         // TODO: Change to a message response saying the tenant was deleted
         return tenant(tenant.get(), request, false);
@@ -901,19 +897,24 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private Tenant getTenantOrThrow(String tenantName) {
-        return controller.tenants().tenant(new TenantId(tenantName))
-                .orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
+        return controller.tenants().tenant(tenantName)
+                         .orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
     }
 
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request, boolean listApplications) {
-        object.setString("tenant", tenant.getId().id());
-        object.setString("type", tenant.tenantType().name());
-        tenant.getAthensDomain().ifPresent(a -> object.setString("athensDomain", a.getName()));
-        tenant.getProperty().ifPresent(p -> object.setString("property", p.id()));
-        tenant.getPropertyId().ifPresent(p -> object.setString("propertyId", p.toString()));
+        object.setString("tenant", tenant.name().value());
+        object.setString("type", tentantType(tenant));
+        Optional<PropertyId> propertyId = Optional.empty();
+        if (tenant instanceof AthenzTenant) {
+            AthenzTenant athenzTenant = (AthenzTenant) tenant;
+            object.setString("athensDomain", athenzTenant.domain().getName());
+            object.setString("property", athenzTenant.property().id());
+            propertyId = athenzTenant.propertyId();
+            propertyId.ifPresent(id -> object.setString("propertyId", id.toString()));
+        }
         Cursor applicationArray = object.setArray("applications");
         if (listApplications) { // This cludge is needed because we call this after deleting the tenant. As this call makes another tenant lookup it will fail. TODO is to support lookup on tenant
-            for (Application application : controller.applications().asList(TenantName.from(tenant.getId().id()))) {
+            for (Application application : controller.applications().asList(tenant.name())) {
                 if (application.id().instance().isDefault()) {// TODO: Skip non-default applications until supported properly
                     if (recurseOverApplications(request))
                         toSlime(applicationArray.addObject(), application, request);
@@ -922,20 +923,20 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 }
             }
         }
-        tenant.getPropertyId().ifPresent(propertyId -> {
+        propertyId.ifPresent(id -> {
             try {
-                object.setString("propertyUrl", controller.organization().propertyUri(propertyId).toString());
-                object.setString("contactsUrl", controller.organization().contactsUri(propertyId).toString());
-                object.setString("issueCreationUrl", controller.organization().issueCreationUri(propertyId).toString());
+                object.setString("propertyUrl", controller.organization().propertyUri(id).toString());
+                object.setString("contactsUrl", controller.organization().contactsUri(id).toString());
+                object.setString("issueCreationUrl", controller.organization().issueCreationUri(id).toString());
                 Cursor lists = object.setArray("contacts");
-                for (List<? extends User> contactList : controller.organization().contactsFor(propertyId)) {
+                for (List<? extends User> contactList : controller.organization().contactsFor(id)) {
                     Cursor list = lists.addArray();
                     for (User contact : contactList)
                         list.addString(contact.displayName());
                 }
             }
             catch (RuntimeException e) {
-                log.log(Level.WARNING, "Error fetching property info for " + tenant + " with propertyId " + propertyId + ": " +
+                log.log(Level.WARNING, "Error fetching property info for " + tenant + " with propertyId " + id + ": " +
                         Exceptions.toMessageString(e));
             }
         });
@@ -943,12 +944,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     // A tenant has different content when in a list ... antipattern, but not solvable before application/v5
     private void tenantInTenantsListToSlime(Tenant tenant, URI requestURI, Cursor object) {
-        object.setString("tenant", tenant.getId().id());
+        object.setString("tenant", tenant.name().value());
         Cursor metaData = object.setObject("metaData");
-        metaData.setString("type", tenant.tenantType().name());
-        tenant.getAthensDomain().ifPresent(a -> metaData.setString("athensDomain", a.getName()));
-        tenant.getProperty().ifPresent(p -> metaData.setString("property", p.id()));
-        object.setString("url", withPath("/application/v4/tenant/" + tenant.getId().id(), requestURI).toString());
+        metaData.setString("type", tentantType(tenant));
+        if (tenant instanceof AthenzTenant) {
+            AthenzTenant athenzTenant = (AthenzTenant) tenant;
+            metaData.setString("athensDomain", athenzTenant.domain().getName());
+            metaData.setString("property", athenzTenant.property().id());
+        }
+        object.setString("url", withPath("/application/v4/tenant/" + tenant.name().value(), requestURI).toString());
     }
 
     /** Returns a copy of the given URI with the host and port from the given URI and the path set to the given path */
@@ -1210,6 +1214,20 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private static boolean recurseOverDeployments(HttpRequest request) {
         return ImmutableSet.of("all", "true", "deployment").contains(request.getProperty("recursive"));
+    }
+
+    private static String tentantType(Tenant tenant) {
+        if (tenant instanceof AthenzTenant) {
+            return "ATHENS";
+        } else if (tenant instanceof UserTenant) {
+            return "USER";
+        }
+        throw new IllegalArgumentException("Unrecognized tenant type: " + tenant.getClass().getSimpleName());
+    }
+
+    private static NToken requireNToken(HttpRequest request, String message) {
+        return getUserPrincipal(request).getNToken().orElseThrow(() -> new IllegalArgumentException(
+                message + ": No NToken provided"));
     }
 
 }

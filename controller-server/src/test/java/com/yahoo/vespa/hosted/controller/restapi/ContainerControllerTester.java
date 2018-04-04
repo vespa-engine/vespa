@@ -4,13 +4,13 @@ package com.yahoo.vespa.hosted.controller.restapi;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TestIdentities;
-import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.GitRevision;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBuildJob;
@@ -20,11 +20,11 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.GitRepository;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
@@ -75,10 +75,10 @@ public class ContainerControllerTester {
 
     public Application createApplication(String athensDomain, String tenant, String application) {
         AthenzDomain domain1 = addTenantAthenzDomain(athensDomain, "mytenant");
-        controller().tenants().createAthenzTenant(Tenant.createAthensTenant(new TenantId(tenant), domain1,
-                                                                            new Property("property1"),
-                                                                            Optional.of(new PropertyId("1234"))),
-                                                  TestIdentities.userNToken);
+        controller().tenants().create(AthenzTenant.create(TenantName.from(tenant), domain1,
+                                                          new Property("property1"),
+                                                          Optional.of(new PropertyId("1234"))),
+                                      TestIdentities.userNToken);
         ApplicationId app = ApplicationId.from(tenant, application, "default");
         return controller().applications().createApplication(app, Optional.of(TestIdentities.userNToken));
     }
