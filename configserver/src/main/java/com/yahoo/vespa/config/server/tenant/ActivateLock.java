@@ -11,8 +11,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * A lock to protect session activation.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class ActivateLock {
 
@@ -35,9 +34,7 @@ public class ActivateLock {
     }
 
     public void release() {
-        if (curatorLock.hasLock()) {
-            curatorLock.unlock();
-        }
+        curatorLock.unlock();
     }
 
     @Override
