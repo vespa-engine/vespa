@@ -29,7 +29,7 @@ makeDocumentTypesConfig(const string &field_name)
     return std::make_shared<const DocumenttypesConfig>(builder.config());
 }
 
-TEST("requireThatEqualConfigsGivesSameRepo")
+TEST("require that equal configs gives same repo")
 {
     auto config1 = makeDocumentTypesConfig("a");
     auto config2 = makeDocumentTypesConfig("b");
