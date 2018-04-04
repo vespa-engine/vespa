@@ -178,7 +178,7 @@ ProtonConfigFetcher::close()
 }
 
 void
-ProtonConfigFetcher::rememberDocumentTypeRepo(std::shared_ptr<document::DocumentTypeRepo> repo)
+ProtonConfigFetcher::rememberDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> repo)
 {
     // Ensure that previous document type repo is kept alive, and also
     // any document type repo that was current within last 10 minutes.

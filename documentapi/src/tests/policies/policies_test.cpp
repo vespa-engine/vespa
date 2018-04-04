@@ -21,6 +21,7 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -42,7 +43,7 @@ using std::make_shared;
 class Test : public vespalib::TestApp {
 private:
     LoadTypeSet          _loadTypes;
-    DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const DocumentTypeRepo> _repo;
     const DataType      *_docType;
 
 private:
@@ -669,7 +670,7 @@ createDocumentRouteSelectorConfigWithTwoRoutes()
 }
 
 std::unique_ptr<TestFrame>
-createFrameWithTwoRoutes(DocumentTypeRepo::SP repo)
+createFrameWithTwoRoutes(std::shared_ptr<const DocumentTypeRepo> repo)
 {
     auto result = std::make_unique<TestFrame>(repo);
     result->setHop(mbus::HopSpec("test", createDocumentRouteSelectorConfigWithTwoRoutes())

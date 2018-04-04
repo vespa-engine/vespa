@@ -63,7 +63,7 @@ TestDocMan::TestDocMan()
 TestDocMan::~TestDocMan() { }
 
 void
-TestDocMan::setTypeRepo(const DocumentTypeRepo::SP &repo)
+TestDocMan::setTypeRepo(const std::shared_ptr<const DocumentTypeRepo> &repo)
 {
     _repo = repo;
     _typeCfg = NULL;

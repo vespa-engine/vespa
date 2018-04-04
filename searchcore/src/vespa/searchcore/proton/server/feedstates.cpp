@@ -5,11 +5,13 @@
 #include "ifeedview.h"
 #include "ireplayconfig.h"
 #include "replaypacketdispatcher.h"
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.feedstates");
@@ -127,7 +129,7 @@ public:
     virtual NewConfigOperation::IStreamHandler &getNewConfigStreamHandler() override {
         return _config_store;
     }
-    virtual document::DocumentTypeRepo &getDeserializeRepo() override {
+    virtual const document::DocumentTypeRepo &getDeserializeRepo() override {
         return *_feed_view_ptr->getDocumentTypeRepo();
     }
 };

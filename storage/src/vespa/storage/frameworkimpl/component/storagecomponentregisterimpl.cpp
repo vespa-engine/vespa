@@ -77,7 +77,7 @@ StorageComponentRegisterImpl::setNodeStateUpdater(NodeStateUpdater& updater)
 }
 
 void
-StorageComponentRegisterImpl::setDocumentTypeRepo(document::DocumentTypeRepo::SP repo)
+StorageComponentRegisterImpl::setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> repo)
 {
     vespalib::LockGuard lock(_componentLock);
     _docTypeRepo = repo;

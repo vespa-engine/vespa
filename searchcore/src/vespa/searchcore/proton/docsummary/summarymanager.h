@@ -32,7 +32,7 @@ public:
         search::IAttributeManager::SP         _attributeMgr;
         search::IDocumentStore::SP            _docStore;
         FieldCacheRepo::UP                    _fieldCacheRepo;
-        const document::DocumentTypeRepo::SP  _repo;
+        const std::shared_ptr<const document::DocumentTypeRepo>  _repo;
         std::set<vespalib::string>            _markupFields;
     public:
         SummarySetup(const vespalib::string & baseDir,
@@ -42,7 +42,7 @@ public:
                      const vespa::config::search::summary::JuniperrcConfig & juniperCfg,
                      const search::IAttributeManager::SP &attributeMgr,
                      const search::IDocumentStore::SP & docStore,
-                     const document::DocumentTypeRepo::SP &repo);
+                     const std::shared_ptr<const document::DocumentTypeRepo> &repo);
 
         search::docsummary::IDocsumWriter & getDocsumWriter() const override { return *_docsumWriter; }
         search::docsummary::ResultConfig & getResultConfig() override { return *_docsumWriter->GetResultConfig(); }
@@ -83,7 +83,7 @@ public:
     createSummarySetup(const vespa::config::search::SummaryConfig &summaryCfg,
                        const vespa::config::search::SummarymapConfig &summarymapCfg,
                        const vespa::config::search::summary::JuniperrcConfig &juniperCfg,
-                       const document::DocumentTypeRepo::SP &repo,
+                       const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                        const search::IAttributeManager::SP &attributeMgr) override;
 
     search::IDocumentStore & getBackingStore() override { return *_docStore; }

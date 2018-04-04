@@ -15,7 +15,7 @@ namespace storage::mbusprot {
 
 mbus::string StorageProtocol::NAME = "StorageProtocol";
 
-StorageProtocol::StorageProtocol(const document::DocumentTypeRepo::SP repo,
+StorageProtocol::StorageProtocol(const std::shared_ptr<const document::DocumentTypeRepo> repo,
                                  const documentapi::LoadTypeSet& loadTypes,
                                  bool activateBucketSpaceSerialization)
     : _serializer5_0(repo, loadTypes),

@@ -34,13 +34,13 @@ namespace {
 
 struct MyFeedView : public test::DummyFeedView {
     TestDocRepo repo;
-    DocumentTypeRepo::SP repo_sp;
+    std::shared_ptr<const DocumentTypeRepo> repo_sp;
     int remove_handled;
 
     MyFeedView();
     ~MyFeedView();
 
-    const DocumentTypeRepo::SP &getDocumentTypeRepo() const override { return repo_sp; }
+    const std::shared_ptr<const DocumentTypeRepo> &getDocumentTypeRepo() const override { return repo_sp; }
     void handleRemove(FeedToken , const RemoveOperation &) override { ++remove_handled; }
 };
 

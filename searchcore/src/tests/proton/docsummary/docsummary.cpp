@@ -84,7 +84,7 @@ class BuildContext
 public:
     DirMaker _dmk;
     DocBuilder _bld;
-    DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const DocumentTypeRepo> _repo;
     DummyFileHeaderContext _fileHeaderContext;
     vespalib::ThreadStackExecutor _summaryExecutor;
     search::transactionlog::NoSyncProxy _noTlSyncer;
@@ -178,14 +178,14 @@ public:
     config::DirSpec _spec;
     DocumentDBConfigHelper _configMgr;
     DocumentDBConfig::DocumenttypesConfigSP _documenttypesConfig;
-    const DocumentTypeRepo::SP _repo;
+    const std::shared_ptr<const DocumentTypeRepo> _repo;
     TuneFileDocumentDB::SP _tuneFileDocumentDB;
     HwInfo _hwInfo;
     std::unique_ptr<DocumentDB> _ddb;
     AttributeWriter::UP _aw;
     ISummaryAdapter::SP _sa;
 
-    DBContext(const DocumentTypeRepo::SP &repo, const char *docTypeName)
+    DBContext(const std::shared_ptr<const DocumentTypeRepo> &repo, const char *docTypeName)
         : _dmk(docTypeName),
           _fileHeaderContext(),
           _tls("tmp", 9013, ".", _fileHeaderContext),

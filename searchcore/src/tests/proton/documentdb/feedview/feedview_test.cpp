@@ -432,7 +432,7 @@ struct SchemaContext
     std::unique_ptr<DocBuilder> _builder;
     SchemaContext();
     ~SchemaContext();
-    const document::DocumentTypeRepo::SP &getRepo() const { return _builder->getDocumentTypeRepo(); }
+    const std::shared_ptr<const document::DocumentTypeRepo> &getRepo() const { return _builder->getDocumentTypeRepo(); }
 };
 
 SchemaContext::SchemaContext() :

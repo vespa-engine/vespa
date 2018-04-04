@@ -767,7 +767,7 @@ CommunicationManager::print(std::ostream& out, bool verbose, const std::string& 
 }
 
 void CommunicationManager::updateMessagebusProtocol(
-        const document::DocumentTypeRepo::SP &repo) {
+        const std::shared_ptr<const document::DocumentTypeRepo> &repo) {
     if (_mbus.get()) {
         framework::SecondTime now(_component.getClock().getTimeInSeconds());
         auto newDocumentProtocol = std::make_shared<documentapi::DocumentProtocol>(*_component.getLoadTypes(), repo);

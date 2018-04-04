@@ -61,7 +61,7 @@ public:
     }
 };
 
-TestFrame::TestFrame(const DocumentTypeRepo::SP &repo, const string &ident) :
+TestFrame::TestFrame(const std::shared_ptr<const DocumentTypeRepo> &repo, const string &ident) :
     _identity(ident),
     _slobrok(new mbus::Slobrok()),
     _set(),

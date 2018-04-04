@@ -144,7 +144,7 @@ namespace {
         MemFileMapper _mapper;
         DeviceManager _deviceManager;
         document::DocumentType _docType;
-        DocumentTypeRepo::SP _repo;
+        std::shared_ptr<const DocumentTypeRepo> _repo;
         vespa::config::storage::StorMemfilepersistenceConfigBuilder _memFileConfig;
         vespa::config::content::PersistenceConfigBuilder _persistenceConfig;
         vespa::config::storage::StorDevicesConfigBuilder _deviceConfig;

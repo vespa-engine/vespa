@@ -27,7 +27,7 @@ struct OperationTargetResolverTest : public CppUnit::TestFixture,
                                      public DistributorTestUtil
 {
 
-    document::DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const document::DocumentTypeRepo> _repo;
     const document::DocumentType* _html_type;
     std::unique_ptr<Operation> op;
 

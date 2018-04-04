@@ -57,7 +57,7 @@ private:
     virtual void handleMessage(mbus::Message::UP message) override;
 
 public:
-    FeedHandler(document::DocumentTypeRepo::SP repo, OutputFile &idx, OutputFile &dat);
+    FeedHandler(std::shared_ptr<const document::DocumentTypeRepo> repo, OutputFile &idx, OutputFile &dat);
     std::string getRoute() { return _session->getConnectionSpec(); }
     virtual ~FeedHandler();
 };
@@ -93,7 +93,7 @@ FeedHandler::handleMessage(mbus::Message::UP message)
     _session->reply(std::move(reply)); // handle all messages synchronously
 }
 
-FeedHandler::FeedHandler(document::DocumentTypeRepo::SP repo, OutputFile &idx, OutputFile &dat)
+FeedHandler::FeedHandler(std::shared_ptr<const document::DocumentTypeRepo> repo, OutputFile &idx, OutputFile &dat)
     : _loadTypes(),
       _mbus(mbus::MessageBusParams().addProtocol(mbus::IProtocol::SP(new documentapi::DocumentProtocol(_loadTypes, repo))),
             mbus::RPCNetworkParams()),
@@ -147,10 +147,10 @@ std::unique_ptr<CFG> getConfig() {
     return ret;
 }
 
-document::DocumentTypeRepo::SP getRepo() {
+std::shared_ptr<const document::DocumentTypeRepo> getRepo() {
     typedef document::DocumenttypesConfig DCFG;
     std::unique_ptr<DCFG> dcfg = getConfig<DCFG>();
-    document::DocumentTypeRepo::SP ret;
+    std::shared_ptr<const document::DocumentTypeRepo> ret;
     if (dcfg.get() != 0) {
         ret.reset(new document::DocumentTypeRepo(*dcfg));
     }
@@ -187,7 +187,7 @@ App::Main()
         fprintf(stderr, "error: could not save config to disk\n");
         return 1;
     }
-    document::DocumentTypeRepo::SP repo = getRepo();
+    std::shared_ptr<const document::DocumentTypeRepo> repo = getRepo();
     if (repo.get() == 0) {
         fprintf(stderr, "error: could not create document type repo\n");
         return 1;

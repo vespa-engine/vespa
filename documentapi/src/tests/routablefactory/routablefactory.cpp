@@ -83,7 +83,7 @@ protected:
 ///////////////////////////////////////////////////////////////////////////////
 
 class TestData {
-    const DocumentTypeRepo::SP _repo;
+    const std::shared_ptr<const DocumentTypeRepo> _repo;
 
 public:
     mbus::Slobrok                _slobrok;

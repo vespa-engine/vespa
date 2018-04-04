@@ -11,7 +11,7 @@ private:
     const documentapi::LoadTypeSet& _loadTypes;
 
 public:
-    ProtocolSerialization5_0(const document::DocumentTypeRepo::SP&,
+    ProtocolSerialization5_0(const std::shared_ptr<const document::DocumentTypeRepo>&,
                              const documentapi::LoadTypeSet& loadTypes);
 
     document::Bucket getBucket(document::ByteBuffer& buf) const override;

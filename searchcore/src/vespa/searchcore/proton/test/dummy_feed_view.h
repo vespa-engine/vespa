@@ -8,15 +8,15 @@ namespace proton::test {
 
 struct DummyFeedView : public IFeedView
 {
-    document::DocumentTypeRepo::SP _docTypeRepo;
+    std::shared_ptr<const document::DocumentTypeRepo> _docTypeRepo;
 
     DummyFeedView()
         : _docTypeRepo()
     {}
-    DummyFeedView(const document::DocumentTypeRepo::SP &docTypeRepo)
+    DummyFeedView(const std::shared_ptr<const document::DocumentTypeRepo> &docTypeRepo)
         : _docTypeRepo(docTypeRepo)
     {}
-    const document::DocumentTypeRepo::SP &getDocumentTypeRepo() const override {
+    const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepo() const override {
         return _docTypeRepo;
     }
     const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override {

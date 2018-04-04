@@ -68,14 +68,14 @@ public:
 
     // Set functions, to be able to modify content while running.
     void setDistribution(Redundancy, NodeCount);
-    void setTypeRepo(document::DocumentTypeRepo::SP repo);
+    void setTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> repo);
     void setClusterState(const lib::ClusterState&);
 
     // Utility functions for getting a hold of currently used bits. Practical
     // to avoid adding extra components in the tests.
     StorageComponentRegisterImpl& getComponentRegister() { return _compReg; }
     document::TestDocMan& getTestDocMan() { return _docMan; }
-    document::DocumentTypeRepo::SP getTypeRepo()
+    std::shared_ptr<const document::DocumentTypeRepo> getTypeRepo()
         { return _compReg.getTypeRepo(); }
     const document::BucketIdFactory& getBucketIdFactory()
         { return _compReg.getBucketIdFactory(); }

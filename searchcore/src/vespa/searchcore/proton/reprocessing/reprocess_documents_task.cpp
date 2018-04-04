@@ -10,7 +10,7 @@ namespace proton {
 ReprocessDocumentsTask::
 ReprocessDocumentsTask(IReprocessingInitializer &initializer,
                        const proton::ISummaryManager::SP &sm,
-                       const document::DocumentTypeRepo::SP &docTypeRepo,
+                       const std::shared_ptr<const document::DocumentTypeRepo> &docTypeRepo,
                        const vespalib::string &subDbName,
                        uint32_t docIdLimit)
     : _sm(sm),

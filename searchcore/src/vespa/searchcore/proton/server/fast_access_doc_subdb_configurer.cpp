@@ -17,7 +17,7 @@ using ARIConfig = AttributeReprocessingInitializer::Config;
 void
 FastAccessDocSubDBConfigurer::reconfigureFeedView(const FastAccessFeedView::SP &curr,
                                                   const Schema::SP &schema,
-                                                  const DocumentTypeRepo::SP &repo,
+                                                  const std::shared_ptr<const DocumentTypeRepo> &repo,
                                                   const IAttributeWriter::SP &writer)
 {
     _feedView.set(FastAccessFeedView::SP(new FastAccessFeedView(

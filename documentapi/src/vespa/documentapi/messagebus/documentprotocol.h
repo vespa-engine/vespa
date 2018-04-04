@@ -29,7 +29,7 @@ private:
     std::unique_ptr<RoutingPolicyRepository>    _routingPolicyRepository;
     std::unique_ptr<RoutableRepository>         _routableRepository;
     std::unique_ptr<SystemState>                _systemState;
-    std::shared_ptr<document::DocumentTypeRepo> _repo;
+    std::shared_ptr<const document::DocumentTypeRepo> _repo;
 
 public:
     /**
@@ -199,7 +199,7 @@ public:
      * @param configId The id to use when subscribing to config.
      */
     DocumentProtocol(const LoadTypeSet& loadTypes,
-                     std::shared_ptr<document::DocumentTypeRepo> repo,
+                     std::shared_ptr<const document::DocumentTypeRepo> repo,
                      const string &configId = "");
     ~DocumentProtocol();
 

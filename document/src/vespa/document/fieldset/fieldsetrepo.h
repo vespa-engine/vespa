@@ -4,9 +4,10 @@
 #include <vespa/document/fieldset/fieldset.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/repo/documenttyperepo.h>
 
 namespace document {
+
+class DocumentTypeRepo;
 
 /**
  * Class that has configuration for all document field sets.

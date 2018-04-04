@@ -56,7 +56,7 @@ DocumentDBConfig::DocumentDBConfig(
                const SummarymapConfigSP &summarymap,
                const JuniperrcConfigSP &juniperrc,
                const DocumenttypesConfigSP &documenttypes,
-               const DocumentTypeRepo::SP &repo,
+               const std::shared_ptr<const DocumentTypeRepo> &repo,
                const ImportedFieldsConfigSP &importedFields,
                const search::TuneFileDocumentDB::SP &tuneFileDocumentDB,
                const Schema::SP &schema,

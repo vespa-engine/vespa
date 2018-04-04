@@ -22,7 +22,7 @@ namespace proton {
 class CombiningFeedView : public IFeedView
 {
 private:
-    const document::DocumentTypeRepo::SP          _repo;
+    const std::shared_ptr<const document::DocumentTypeRepo>          _repo;
     std::vector<IFeedView::SP>                    _views;
     std::vector<const ISimpleDocumentMetaStore *> _metaStores;
     IBucketStateCalculator::SP                    _calc;
@@ -64,7 +64,7 @@ public:
 
     ~CombiningFeedView() override;
 
-    const document::DocumentTypeRepo::SP & getDocumentTypeRepo() const override;
+    const std::shared_ptr<const document::DocumentTypeRepo> & getDocumentTypeRepo() const override;
 
     /**
      * Similar to IPersistenceHandler functions.

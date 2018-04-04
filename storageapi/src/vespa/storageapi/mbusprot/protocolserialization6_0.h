@@ -16,7 +16,7 @@ namespace mbusprot {
 class ProtocolSerialization6_0 : public ProtocolSerialization5_2
 {
 public:
-    ProtocolSerialization6_0(const document::DocumentTypeRepo::SP &repo,
+    ProtocolSerialization6_0(const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                              const documentapi::LoadTypeSet &loadTypes);
 
     document::Bucket getBucket(document::ByteBuffer &buf) const override;

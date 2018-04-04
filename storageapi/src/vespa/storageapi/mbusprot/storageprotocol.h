@@ -14,7 +14,7 @@ public:
 
     static mbus::string NAME;
 
-    StorageProtocol(const document::DocumentTypeRepo::SP,
+    StorageProtocol(const std::shared_ptr<const document::DocumentTypeRepo>,
                     const documentapi::LoadTypeSet& loadTypes,
                     bool activateBucketSpaceSerialization = false);
     ~StorageProtocol();

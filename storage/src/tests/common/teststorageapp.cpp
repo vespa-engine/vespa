@@ -90,7 +90,7 @@ TestStorageApp::setDistribution(Redundancy redundancy, NodeCount nodeCount)
 }
 
 void
-TestStorageApp::setTypeRepo(document::DocumentTypeRepo::SP repo)
+TestStorageApp::setTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> repo)
 {
     _compReg.setDocumentTypeRepo(repo);
 }

@@ -55,10 +55,10 @@ public:
     void heartBeat(SerialNum) override { ++_heartbeatCount; }
 };
 
-DocumentTypeRepo::SP myGetDocumentTypeRepo() {
+std::shared_ptr<const DocumentTypeRepo> myGetDocumentTypeRepo() {
     Schema schema;
     DocBuilder builder(schema);
-    DocumentTypeRepo::SP repo = builder.getDocumentTypeRepo();
+    std::shared_ptr<const DocumentTypeRepo> repo = builder.getDocumentTypeRepo();
     ASSERT_TRUE(repo.get());
     return repo;
 }

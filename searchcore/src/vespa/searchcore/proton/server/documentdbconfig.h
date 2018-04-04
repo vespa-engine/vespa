@@ -112,7 +112,7 @@ private:
     SummarymapConfigSP               _summarymap;
     JuniperrcConfigSP                _juniperrc;
     DocumenttypesConfigSP            _documenttypes;
-    document::DocumentTypeRepo::SP   _repo;
+    std::shared_ptr<const document::DocumentTypeRepo>   _repo;
     ImportedFieldsConfigSP           _importedFields;
     search::TuneFileDocumentDB::SP   _tuneFileDocumentDB;
     search::index::Schema::SP        _schema;
@@ -148,7 +148,7 @@ public:
                      const SummarymapConfigSP &summarymap,
                      const JuniperrcConfigSP &juniperrc,
                      const DocumenttypesConfigSP &documenttypesConfig,
-                     const document::DocumentTypeRepo::SP &repo,
+                     const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                      const ImportedFieldsConfigSP &importedFields,
                      const search::TuneFileDocumentDB::SP &tuneFileDocumentDB,
                      const search::index::Schema::SP &schema,
@@ -183,7 +183,7 @@ public:
     const SummarymapConfigSP &getSummarymapConfigSP() const { return _summarymap; }
     const JuniperrcConfigSP &getJuniperrcConfigSP() const { return _juniperrc; }
     const DocumenttypesConfigSP &getDocumenttypesConfigSP() const { return _documenttypes; }
-    const document::DocumentTypeRepo::SP &getDocumentTypeRepoSP() const { return _repo; }
+    const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepoSP() const { return _repo; }
     const document::DocumentType *getDocumentType() const { return _repo->getDocumentType(getDocTypeName()); }
     const ImportedFieldsConfig &getImportedFieldsConfig() const { return *_importedFields; }
     const ImportedFieldsConfigSP &getImportedFieldsConfigSP() const { return _importedFields; }

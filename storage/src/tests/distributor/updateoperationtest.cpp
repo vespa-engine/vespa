@@ -35,7 +35,7 @@ class UpdateOperation_Test : public CppUnit::TestFixture,
     CPPUNIT_TEST(testMultiNodeInconsistentTimestamp);
     CPPUNIT_TEST_SUITE_END();
 
-    DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const DocumentTypeRepo> _repo;
     const DocumentType *_html_type;
 
 protected:

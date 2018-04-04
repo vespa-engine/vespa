@@ -94,7 +94,7 @@ protected:
     void reconfigureAttributeMetrics(const IAttributeManager &newMgr, const IAttributeManager &oldMgr);
 
     IReprocessingTask::UP createReprocessingTask(IReprocessingInitializer &initializer,
-                                                 const document::DocumentTypeRepo::SP &docTypeRepo) const;
+                                                 const std::shared_ptr<const document::DocumentTypeRepo> &docTypeRepo) const;
 
 public:
     FastAccessDocSubDB(const Config &cfg, const Context &ctx);

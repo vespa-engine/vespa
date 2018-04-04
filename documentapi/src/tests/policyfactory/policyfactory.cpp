@@ -78,7 +78,7 @@ Test::Main()
 {
     TEST_INIT("policyfactory_test");
 
-    DocumentTypeRepo::SP repo(new DocumentTypeRepo);
+    std::shared_ptr<const DocumentTypeRepo> repo(new DocumentTypeRepo);
     mbus::Slobrok slobrok;
     LoadTypeSet loadTypes;
     mbus::TestServer

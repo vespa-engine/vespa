@@ -112,7 +112,7 @@ makeDocTypeRepo()
 
 struct Fixture
 {
-    DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const DocumentTypeRepo> _repo;
     const DocumentType &_docType;
 
 public:

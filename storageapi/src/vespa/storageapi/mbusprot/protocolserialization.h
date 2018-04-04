@@ -64,7 +64,7 @@ class StorageCommand;
 class StorageReply;
 
 class ProtocolSerialization {
-    const document::DocumentTypeRepo::SP _repo;
+    const std::shared_ptr<const document::DocumentTypeRepo> _repo;
 
 public:
     virtual mbus::Blob encode(const api::StorageMessage&) const;
@@ -74,10 +74,10 @@ public:
 
 protected:
     const document::DocumentTypeRepo& getTypeRepo() const { return *_repo; }
-    const document::DocumentTypeRepo::SP getTypeRepoSp() const
+    const std::shared_ptr<const document::DocumentTypeRepo> getTypeRepoSp() const
     { return _repo; }
 
-    ProtocolSerialization(const document::DocumentTypeRepo::SP &repo);
+    ProtocolSerialization(const std::shared_ptr<const document::DocumentTypeRepo> &repo);
     virtual ~ProtocolSerialization() {}
 
     typedef api::StorageCommand SCmd;

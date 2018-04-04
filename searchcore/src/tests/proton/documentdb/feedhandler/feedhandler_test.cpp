@@ -179,7 +179,7 @@ struct MyFeedView : public test::DummyFeedView {
     int prune_removed_count;
     int update_count;
     SerialNum update_serial;
-    MyFeedView(const DocumentTypeRepo::SP &dtr);
+    MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &dtr);
     ~MyFeedView() override;
     void resetPutLatch(uint32_t count) { putLatch.reset(new vespalib::CountDownLatch(count)); }
     void preparePut(PutOperation &op) override {
@@ -229,7 +229,7 @@ struct MyFeedView : public test::DummyFeedView {
     }
 };
 
-MyFeedView::MyFeedView(const DocumentTypeRepo::SP &dtr)
+MyFeedView::MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &dtr)
     : test::DummyFeedView(dtr),
       putRdz(),
       usePutRdz(false),
@@ -260,7 +260,7 @@ struct SchemaContext {
     DocTypeName getDocType() const {
         return DocTypeName(builder->getDocumentType().getName());
     }
-    const document::DocumentTypeRepo::SP &getRepo() const { return builder->getDocumentTypeRepo(); }
+    const std::shared_ptr<const document::DocumentTypeRepo> &getRepo() const { return builder->getDocumentTypeRepo(); }
 };
 
 

@@ -19,7 +19,7 @@ namespace proton
 namespace
 {
 
-DocumentTypeRepo::SP
+std::shared_ptr<const DocumentTypeRepo>
 getRepo(const std::vector<IFeedView::SP> &views)
 {
     for (const auto &view : views) {
@@ -28,7 +28,7 @@ getRepo(const std::vector<IFeedView::SP> &views)
         return view->getDocumentTypeRepo();
     }
     abort();
-    return DocumentTypeRepo::SP();
+    return std::shared_ptr<const DocumentTypeRepo>();
 }
 
 };
@@ -92,7 +92,7 @@ CombiningFeedView::findPrevDbdId(const document::GlobalId &gid,
     }
 }
 
-const DocumentTypeRepo::SP &
+const std::shared_ptr<const DocumentTypeRepo> &
 CombiningFeedView::getDocumentTypeRepo() const
 {
     return _repo;

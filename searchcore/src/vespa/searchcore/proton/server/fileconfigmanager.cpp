@@ -340,7 +340,7 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
     typedef DocumenttypesConfig DTC;
     typedef DocumentDBConfig::DocumenttypesConfigSP DTCSP;
     DTCSP docTypesCfg(config::ConfigGetter<DTC>::getConfig("", spec).release());
-    DocumentTypeRepo::SP repo;
+    std::shared_ptr<const DocumentTypeRepo> repo;
     if (currentSnapshot.getDocumenttypesConfigSP() &&
         currentSnapshot.getDocumentTypeRepoSP() &&
         currentSnapshot.getDocumenttypesConfig() == *docTypesCfg) {

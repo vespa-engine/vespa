@@ -67,11 +67,11 @@ class IndexManagerDummyReconfigurer : public searchcorespi::IIndexManager::Recon
     }
 };
 
-DocumentTypeRepo::SP
+std::shared_ptr<const DocumentTypeRepo>
 createRepo()
 {
     DocumentType docType(DOC_TYPE, 0);
-    return DocumentTypeRepo::SP(new DocumentTypeRepo(docType));
+    return std::shared_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(docType));
 }
 
 struct ViewPtrs
@@ -89,7 +89,7 @@ struct ViewSet
     DummyFileHeaderContext _fileHeaderContext;
     ExecutorThreadingService _writeService;
     SearchableFeedView::SerialNum serialNum;
-    DocumentTypeRepo::SP repo;
+    std::shared_ptr<const DocumentTypeRepo> repo;
     DocTypeName _docTypeName;
     DocIdLimit _docIdLimit;
     search::transactionlog::NoSyncProxy _noTlSyncer;
@@ -267,7 +267,7 @@ struct MyFastAccessFeedView
         Schema::SP schema(new Schema());
         _dmsc = make_shared<DocumentMetaStoreContext>(std::make_shared<BucketDBOwner>());
         _lidReuseDelayer.reset(new documentmetastore::LidReuseDelayer(_writeService, _dmsc->get()));
-        DocumentTypeRepo::SP repo = createRepo();
+        std::shared_ptr<const DocumentTypeRepo> repo = createRepo();
         StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, *_gidToLidChangeHandler, repo,
                                                 _writeService, *_lidReuseDelayer, _commitTimeTracker);
         StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), 0, SubDbType::NOTREADY);

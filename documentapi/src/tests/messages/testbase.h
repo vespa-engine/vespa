@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/messagebus/routable.h>
@@ -23,7 +22,7 @@ typedef bool (TestBase::*TEST_METHOD_PT)();
  * tests to it.
  */
 class TestBase : public vespalib::TestApp {
-    const document::DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const document::DocumentTypeRepo> _repo;
 protected:
     const string                  _dataPath;
     LoadTypeSet                        _loadTypes;
@@ -46,7 +45,7 @@ protected:
 
 public:
     const document::DocumentTypeRepo &getTypeRepo() { return *_repo; }
-    const document::DocumentTypeRepo::SP &getTypeRepoSp() { return _repo; }
+    std::shared_ptr<const document::DocumentTypeRepo> &getTypeRepoSp() { return _repo; }
 
     bool testCoverage(const std::vector<uint32_t> &expected, const std::vector<uint32_t> &actual, bool report = false) const;
     bool writeFile(const string &filename, const mbus::Blob& blob) const;

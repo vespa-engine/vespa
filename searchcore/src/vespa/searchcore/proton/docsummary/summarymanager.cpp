@@ -81,7 +81,7 @@ SummaryManager::SummarySetup::
 SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, const SummaryConfig & summaryCfg,
              const SummarymapConfig & summarymapCfg, const JuniperrcConfig & juniperCfg,
              const search::IAttributeManager::SP &attributeMgr, const search::IDocumentStore::SP & docStore,
-             const DocumentTypeRepo::SP &repo)
+             const std::shared_ptr<const DocumentTypeRepo> &repo)
     : _docsumWriter(),
       _wordFolder(),
       _juniperProps(juniperCfg),
@@ -138,7 +138,7 @@ SummaryManager::SummarySetup::createDocsumStore(const vespalib::string &resultCl
 
 ISummaryManager::ISummarySetup::SP
 SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg, const SummarymapConfig & summarymapCfg,
-                                   const JuniperrcConfig & juniperCfg, const DocumentTypeRepo::SP &repo,
+                                   const JuniperrcConfig & juniperCfg, const std::shared_ptr<const DocumentTypeRepo> &repo,
                                    const search::IAttributeManager::SP &attributeMgr)
 {
     return std::make_shared<SummarySetup>(_baseDir, _docTypeName, summaryCfg, summarymapCfg,

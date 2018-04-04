@@ -54,7 +54,7 @@ private:
                         const ISummaryAdapter::SP &summaryAdapter,
                         const IAttributeWriter::SP &attrWriter,
                         const search::index::Schema::SP &schema,
-                        const document::DocumentTypeRepo::SP &repo,
+                        const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                         const SearchView::SP &searchView);
 
     void

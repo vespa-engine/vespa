@@ -6,7 +6,7 @@
 namespace storage {
 namespace mbusprot {
 
-ProtocolSerialization6_0::ProtocolSerialization6_0(const document::DocumentTypeRepo::SP &repo,
+ProtocolSerialization6_0::ProtocolSerialization6_0(const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                                                    const documentapi::LoadTypeSet &loadTypes)
     : ProtocolSerialization5_2(repo, loadTypes)
 {

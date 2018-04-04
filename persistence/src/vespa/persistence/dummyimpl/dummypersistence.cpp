@@ -294,7 +294,7 @@ BucketContent::eraseEntry(Timestamp t)
 }
 
 DummyPersistence::DummyPersistence(
-        const document::DocumentTypeRepo::SP& repo,
+        const std::shared_ptr<const document::DocumentTypeRepo>& repo,
         uint16_t partitionCount)
     : _initialized(false),
       _repo(repo),

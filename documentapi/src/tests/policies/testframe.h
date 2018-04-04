@@ -9,7 +9,6 @@
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
-#include <vespa/document/repo/documenttyperepo.h>
 
 using documentapi::string;
 
@@ -37,7 +36,7 @@ public:
      *
      * @param identity The identity to use for the server.
      */
-    TestFrame(const document::DocumentTypeRepo::SP &repo,
+    TestFrame(const std::shared_ptr<const document::DocumentTypeRepo> &repo,
               const string &ident = "anonymous");
 
     /**

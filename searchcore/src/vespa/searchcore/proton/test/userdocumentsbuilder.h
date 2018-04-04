@@ -19,7 +19,7 @@ private:
 public:
     UserDocumentsBuilder();
     ~UserDocumentsBuilder();
-    const document::DocumentTypeRepo::SP &getRepo() const {
+    const std::shared_ptr<const document::DocumentTypeRepo> &getRepo() const {
         return _builder.getDocumentTypeRepo();
     }
     UserDocumentsBuilder &createDoc(uint32_t userId, search::DocumentIdT lid);

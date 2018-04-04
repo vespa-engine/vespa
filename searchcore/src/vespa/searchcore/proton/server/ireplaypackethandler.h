@@ -30,7 +30,7 @@ struct IReplayPacketHandler
     virtual void replay(const CompactLidSpaceOperation &op) = 0;
     
     virtual NewConfigOperation::IStreamHandler &getNewConfigStreamHandler() = 0;
-    virtual document::DocumentTypeRepo &getDeserializeRepo() = 0;
+    virtual const document::DocumentTypeRepo &getDeserializeRepo() = 0;
 };
 
 } // namespace proton

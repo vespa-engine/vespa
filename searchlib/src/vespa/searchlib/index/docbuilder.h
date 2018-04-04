@@ -257,7 +257,7 @@ private:
 
     const Schema & _schema;
     document::DocumenttypesConfig _doctypes_config;
-    document::DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const document::DocumentTypeRepo> _repo;
     const document::DocumentType &_docType;
     document::Document::UP _doc;    // the document we are about to generate
 
@@ -302,7 +302,7 @@ public:
     static bool hasAnnotations() { return true; }
 
     const document::DocumentType &getDocumentType() const { return _docType; }
-    const document::DocumentTypeRepo::SP &getDocumentTypeRepo() const { return _repo; }
+    const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepo() const { return _repo; }
     document::DocumenttypesConfig getDocumenttypesConfig() const { return _doctypes_config; }
 };
 

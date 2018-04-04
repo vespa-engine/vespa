@@ -4,9 +4,10 @@
 #include "node.h"
 #include "parsing_failed_exception.h"
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <memory>
 #include <string>
+
+namespace document { class DocumentTypeRepo; }
 
 namespace document::select {
 

@@ -4,13 +4,14 @@
 
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/datatype/datatype.h>
-#include <vespa/document/repo/documenttyperepo.h>
 
 namespace document {
 
+class DocumentTypeRepo;
+
 class TestDocRepo {
     DocumenttypesConfig _cfg;
-    DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const DocumentTypeRepo> _repo;
 
 public:
     TestDocRepo();
@@ -19,7 +20,7 @@ public:
     static DocumenttypesConfig getDefaultConfig();
 
     const DocumentTypeRepo& getTypeRepo() const { return *_repo; }
-    const DocumentTypeRepo::SP getTypeRepoSp() const { return _repo; }
+    std::shared_ptr<const DocumentTypeRepo> getTypeRepoSp() const { return _repo; }
     const DocumenttypesConfig& getTypeConfig() const { return _cfg; }
     const DataType* getDocumentType(const vespalib::string &name) const;
 };

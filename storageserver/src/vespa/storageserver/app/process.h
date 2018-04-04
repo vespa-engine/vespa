@@ -28,7 +28,7 @@ class StorageNodeContext;
 
 class Process : public ApplicationGenerationFetcher {
 protected:
-    using DocumentTypeRepoSP = std::shared_ptr<document::DocumentTypeRepo>;
+    using DocumentTypeRepoSP = std::shared_ptr<const document::DocumentTypeRepo>;
     config::ConfigUri _configUri;
     DocumentTypeRepoSP getTypeRepo() { return _repos.back(); }
     config::ConfigSubscriber _configSubscriber;

@@ -32,7 +32,7 @@ public:
 
 private:
     DocumenttypesConfigSP          _documenttypes;
-    document::DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const document::DocumentTypeRepo> _repo;
     ProtonConfigSP                 _proton;
     FiledistributorrpcConfigSP     _fileDistributorRpc;
     BucketspacesConfigSP           _bucketspaces;
@@ -43,7 +43,7 @@ private:
 public:
     BootstrapConfig(int64_t generation,
                     const DocumenttypesConfigSP & documenttypes,
-                    const document::DocumentTypeRepo::SP &repo,
+                    const std::shared_ptr<const document::DocumentTypeRepo> &repo,
                     const ProtonConfigSP &protonConfig,
                     const FiledistributorrpcConfigSP &filedistRpcConfSP,
                     const BucketspacesConfigSP &bucketspaces,
@@ -55,7 +55,7 @@ public:
     const FiledistributorrpcConfig &getFiledistributorrpcConfig() const { return *_fileDistributorRpc; }
     const FiledistributorrpcConfigSP &getFiledistributorrpcConfigSP() const { return _fileDistributorRpc; }
     const DocumenttypesConfigSP &getDocumenttypesConfigSP() const { return _documenttypes; }
-    const document::DocumentTypeRepo::SP &getDocumentTypeRepoSP() const { return _repo; }
+    const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepoSP() const { return _repo; }
     const vespa::config::search::core::ProtonConfig &getProtonConfig() const { return *_proton; }
     const ProtonConfigSP &getProtonConfigSP() const { return _proton; }
     const BucketspacesConfigSP &getBucketspacesConfigSP() const { return _bucketspaces; }
