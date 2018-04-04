@@ -101,18 +101,42 @@ public class FileDirectory  {
     public FileReference addFile(File source) {
         try {
             Long hash = computeReference(source);
-            FileReference reference = new FileReference(Long.toHexString(hash));
-            return addFile(source, reference);
+            verifyExistingFile(hash);
+            FileReference fileReference = fileReferenceFromHash(hash);
+            return addFile(source, fileReference);
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    // If there is exists a directory for a file reference, but it does not have correct hash, we delete everything in it
+    private void verifyExistingFile(Long hashOfFileToBeAdded) throws IOException {
+        FileReference fileReference = fileReferenceFromHash(hashOfFileToBeAdded);
+        File destinationDir = destinationDir(fileReference);
+        if (!destinationDir.exists()) return;
+
+        Long hashOfExistingFileReference = computeReference(destinationDir);
+        if (hashOfExistingFileReference.longValue() != hashOfFileToBeAdded.longValue()) {
+            log.log(LogLevel.ERROR, "Directory for file reference ' " + fileReference.value() +
+                    "' has content that does not match its hash, deleting everything in " +
+                    destinationDir.getAbsolutePath());
+            IOUtils.recursiveDeleteDir(destinationDir);
+        }
+    }
+
+    private File destinationDir(FileReference fileReference) {
+        return new File(root, fileReference.value());
+    }
+
+    private FileReference fileReferenceFromHash(Long hash) {
+        return new FileReference(Long.toHexString(hash));
     }
 
     FileReference addFile(File source, FileReference reference) {
         ensureRootExist();
         try {
             logfileInfo(source);
-            File destinationDir = new File(root, reference.value());
+            File destinationDir = destinationDir(reference);
             Path tempDestinationDir = Files.createTempDirectory(root.toPath(), "writing");
             File destination = new File(tempDestinationDir.toFile(), source.getName());
             if (!destinationDir.exists()) {
@@ -121,8 +145,9 @@ public class FileDirectory  {
                 if (source.isDirectory()) {
                     log.log(LogLevel.DEBUG, "Copying source " + source.getAbsolutePath() + " to " + destination.getAbsolutePath());
                     IOUtils.copyDirectory(source, destination, -1);
-                } else
+                } else {
                     copyFile(source, destination);
+                }
                 if (!destinationDir.exists()) {
                     log.log(LogLevel.DEBUG, "Moving from " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
                     if ( ! tempDestinationDir.toFile().renameTo(destinationDir)) {

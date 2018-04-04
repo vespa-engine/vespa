@@ -11,6 +11,8 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -39,7 +41,6 @@ public class FileDirectoryTest {
         assertEquals("2b8e97f15c854e1d", bar.value());
     }
 
-
     @Test
     public void requireThatFileReferenceWithSubDirectoriesWorks() throws IOException {
         FileDirectory fileDirectory = new FileDirectory(temporaryFolder.getRoot());
@@ -62,6 +63,30 @@ public class FileDirectoryTest {
         assertTrue(new File(dir, "foo").exists());
         assertTrue(new File(dir, "bar").exists());
         assertEquals("9ca074b47a4b510c", fileReference.value());
+    }
+
+    @Test
+    public void requireThatExistingDirWithInvalidContentIsDeleted() throws IOException {
+        FileDirectory fileDirectory = new FileDirectory(temporaryFolder.getRoot());
+
+        String subdirName = "subdir";
+        File subDirectory = new File(temporaryFolder.getRoot(), subdirName);
+        createFileInSubDir(subDirectory, "foo");
+        FileReference fileReference = fileDirectory.addFile(subDirectory);
+        File dir = fileDirectory.getFile(fileReference);
+        assertTrue(dir.exists());
+        assertTrue(new File(dir, "foo").exists());
+        assertFalse(new File(dir, "doesnotexist").exists());
+        assertEquals("1315a322fc323608", fileReference.value());
+
+        // Remove a file, directory should be deleted before adding a new file
+        Files.delete(Paths.get(fileDirectory.getPath(fileReference)).resolve("subdir").resolve("foo"));
+        fileReference = fileDirectory.addFile(subDirectory);
+        dir = fileDirectory.getFile(fileReference);
+        assertTrue(dir.exists());
+        assertTrue(new File(dir, "foo").exists());
+        assertFalse(new File(dir, "doesnotexist").exists());
+        assertEquals("1315a322fc323608", fileReference.value());
     }
 
     // Content in created file is equal to the filename string
