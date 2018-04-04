@@ -39,6 +39,10 @@ class DocumentTypeRepoFactory {
 
     static void deleteRepo(DocumentTypeRepo *repoRawPtr) noexcept;
 public:
+    /*
+     * Since same instance is returned for equal config, we return a shared
+     * pointer to a const repo.  The repo should be considered immutable.
+     */
     static std::shared_ptr<const DocumentTypeRepo> make(const DocumenttypesConfig &config);
 };
 
