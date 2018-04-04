@@ -2,6 +2,7 @@
 
 #include "memfiletestutils.h"
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/persistence/spi/test.h>
 
 using document::DocumentType;

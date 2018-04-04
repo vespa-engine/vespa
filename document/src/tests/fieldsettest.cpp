@@ -7,6 +7,7 @@
 
 #include <vespa/document/datatype/annotationreferencedatatype.h>
 #include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <algorithm>
 

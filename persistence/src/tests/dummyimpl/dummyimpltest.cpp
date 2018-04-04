@@ -3,6 +3,7 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
+#include <vespa/document/repo/documenttyperepo.h>
 
 namespace storage {
 namespace spi {

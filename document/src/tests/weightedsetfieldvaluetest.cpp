@@ -6,6 +6,7 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/document/repo/documenttyperepo.h>
 
 using vespalib::nbostream;
 

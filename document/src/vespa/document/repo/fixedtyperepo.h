@@ -2,10 +2,12 @@
 
 #pragma once
 
-#include "documenttyperepo.h"
 #include <vespa/document/datatype/datatype.h>
 
 namespace document {
+
+class DocumentTypeRepo;
+class AnnotationType;
 
 // Combines a DocumentTypeRepo and a DocumentType to allow easy access
 // to the types contained in the DocumentType's namespace.
@@ -14,18 +16,14 @@ class FixedTypeRepo {
     const DocumentType *_doc_type;
 
 public:
-    explicit FixedTypeRepo(const DocumentTypeRepo &repo)
-        : _repo(&repo), _doc_type(repo.getDocumentType(DataType::T_DOCUMENT)) { }
+    explicit FixedTypeRepo(const DocumentTypeRepo &repo);
     FixedTypeRepo(const DocumentTypeRepo &repo, const DocumentType &doc_type)
         : _repo(&repo), _doc_type(&doc_type) {}
     FixedTypeRepo(const DocumentTypeRepo &repo, const vespalib::string &type);
 
-    const DataType *getDataType(int32_t id) const
-    { return _repo->getDataType(*_doc_type, id); }
-    const DataType *getDataType(const vespalib::string &name) const
-    { return _repo->getDataType(*_doc_type, name); }
-    const AnnotationType *getAnnotationType(int32_t id) const
-    { return _repo->getAnnotationType(*_doc_type, id); }
+    const DataType *getDataType(int32_t id) const;
+    const DataType *getDataType(const vespalib::string &name) const;
+    const AnnotationType *getAnnotationType(int32_t id) const;
 
     const DocumentTypeRepo &getDocumentTypeRepo() const { return *_repo; }
     const DocumentType &getDocumentType() const { return *_doc_type; }

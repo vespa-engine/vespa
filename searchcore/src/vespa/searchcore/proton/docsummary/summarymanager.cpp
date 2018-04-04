@@ -5,6 +5,7 @@
 #include "summaryflushtarget.h"
 #include "summarymanager.h"
 #include <vespa/config/print/ostreamconfigwriter.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/juniper/rpinterface.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>

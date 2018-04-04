@@ -9,6 +9,7 @@
 #include <vespa/document/update/removevalueupdate.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 

@@ -2,6 +2,7 @@
 
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fastos/file.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>

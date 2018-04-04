@@ -3,7 +3,6 @@
 
 #include <vespa/documentapi/messagebus/messages/documentmessage.h>
 #include <vespa/documentapi/messagebus/messages/documentreply.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <mutex>
 
 namespace config { class ConfigUri; }

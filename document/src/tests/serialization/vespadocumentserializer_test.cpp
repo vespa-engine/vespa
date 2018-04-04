@@ -31,6 +31,7 @@
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/util.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>

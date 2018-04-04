@@ -21,6 +21,7 @@
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/updates.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/vespalib/data/slime/binary_format.h>

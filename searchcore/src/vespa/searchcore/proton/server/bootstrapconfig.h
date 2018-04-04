@@ -6,7 +6,6 @@
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/config/config-proton.h>
 #include <vespa/document/config/config-documenttypes.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/config/retriever/configsnapshot.h>
 #include <vespa/fileacquirer/config-filedistributorrpc.h>

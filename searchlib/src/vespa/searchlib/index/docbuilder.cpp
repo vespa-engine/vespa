@@ -2,6 +2,7 @@
 
 #include "docbuilder.h"
 #include <vespa/document/datatype/urldatatype.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/text/utf8.h>

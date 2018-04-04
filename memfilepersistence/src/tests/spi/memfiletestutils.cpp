@@ -6,6 +6,7 @@
 #include <tests/spi/simulatedfailurefile.h>
 #include <vespa/memfilepersistence/memfile/memfilecache.h>
 #include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/vespalib/objects/nbostream.h>

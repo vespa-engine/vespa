@@ -8,7 +8,6 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/config-bucketspaces.h>
