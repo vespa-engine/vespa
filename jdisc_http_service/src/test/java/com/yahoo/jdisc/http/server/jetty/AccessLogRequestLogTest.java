@@ -90,4 +90,17 @@ public class AccessLogRequestLogTest {
         assertThat(actualRawQuery.get(), is(rawQuery));
     }
 
+    @Test
+    public void verify_x_forwarded_for_precedence () {
+        HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
+        when(httpServletRequest.getRequestURI()).thenReturn("//search/");
+        when(httpServletRequest.getQueryString()).thenReturn("q=%%2");
+        when(httpServletRequest.getHeader("x-forwarded-for")).thenReturn("1.2.3.4");
+        when(httpServletRequest.getHeader("y-ra")).thenReturn("2.3.4.5");
+
+        AccessLogEntry accessLogEntry = new AccessLogEntry();
+        AccessLogRequestLog.populateAccessLogEntryFromHttpServletRequest(httpServletRequest, accessLogEntry);
+        assertThat(accessLogEntry.getRemoteAddress(), is("1.2.3.4"));
+    }
+
 }

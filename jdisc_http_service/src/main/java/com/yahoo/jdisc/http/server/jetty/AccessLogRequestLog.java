@@ -35,10 +35,10 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
 
     private static final Logger logger = Logger.getLogger(AccessLogRequestLog.class.getName());
 
+    private static final String HEADER_NAME_X_FORWARDED_FOR = "x-forwarded-for";
     private static final String HEADER_NAME_Y_RA = "y-ra";
     private static final String HEADER_NAME_Y_RP = "y-rp";
     private static final String HEADER_NAME_YAHOOREMOTEIP = "yahooremoteip";
-    private static final String HEADER_NAME_X_FORWARDED_FOR = "x-forwarded-for";
     private static final String HEADER_NAME_CLIENT_IP = "client-ip";
 
     private final AccessLog accessLog;
@@ -123,9 +123,9 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
     }
 
     private static String getRemoteAddress(final HttpServletRequest request) {
-        return Alternative.preferred(request.getHeader(HEADER_NAME_Y_RA))
+        return Alternative.preferred(request.getHeader(HEADER_NAME_X_FORWARDED_FOR))
+                .alternatively(() -> request.getHeader(HEADER_NAME_Y_RA))
                 .alternatively(() -> request.getHeader(HEADER_NAME_YAHOOREMOTEIP))
-                .alternatively(() -> request.getHeader(HEADER_NAME_X_FORWARDED_FOR))
                 .alternatively(() -> request.getHeader(HEADER_NAME_CLIENT_IP))
                 .orElseGet(request::getRemoteAddr);
     }
