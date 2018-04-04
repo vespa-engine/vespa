@@ -71,6 +71,7 @@ DocumentTypeRepoFactory::make(const DocumenttypesConfig &config)
 bool
 DocumentTypeRepoFactory::empty()
 {
+    std::lock_guard guard(_mutex);
     return _repos.empty();
 }
 
