@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Clock;
@@ -28,14 +27,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.joining;
@@ -96,34 +91,25 @@ public class DeploymentTrigger {
     //--- Start of methods which triggers deployment jobs -------------------------
 
     /**
-     * Called each time a job completes (successfully or not) to cause triggering of one or more follow-up jobs
-     * (which may possibly the same job once over).
+     * Called each time a job completes (successfully or not) to record information used when deciding what to trigger.
      *
      * @param report information about the job that just completed
      */
     public void triggerFromCompletion(JobReport report) {
         applications().lockOrThrow(report.applicationId(), application -> {
-            ApplicationVersion applicationVersion = applicationVersionFrom(report);
+            ApplicationVersion applicationVersion = report.sourceRevision().map(sr -> ApplicationVersion.from(sr, report.buildNumber()))
+                                                          .orElse(ApplicationVersion.unknown);
             application = application.withJobCompletion(report, applicationVersion, clock.instant(), controller);
             application = application.withProjectId(report.projectId());
 
-            // Handle successful starting and ending
-            if (report.jobType() == JobType.component) {
-                if (report.success()) {
-                    if (!acceptNewApplicationVersionNow(application))
-                        application = application.withOutstandingChange(Change.of(applicationVersion));
-                    else
-                        // Note that in case of an ongoing upgrade this may result in both the upgrade and application
-                        // change being deployed together
-                        application = application.withChange(application.change().with(applicationVersion));
-                }
+            if (report.jobType() == JobType.component && report.success()) {
+                if ( ! acceptNewApplicationVersionNow(application))
+                    application = application.withOutstandingChange(Change.of(applicationVersion));
+                else
+                    // Note that in case of an ongoing upgrade this may result in both the upgrade and application
+                    // change being deployed together
+                    application = application.withChange(application.change().with(applicationVersion));
             }
-            else if (report.jobType().isProduction() && deploymentComplete(application)) {
-                // change completed
-                // TODO jvenstad: Check for and remove individual parts of Change.
-                application = application.withChange(Change.empty());
-            }
-
             applications().store(application);
         });
     }
@@ -162,7 +148,7 @@ public class DeploymentTrigger {
                                                         clock.instant(),
                                                         application.deployVersionFor(triggering.jobType, controller),
                                                         application.deployApplicationVersionFor(triggering.jobType, controller, false)
-                                                                              .orElse(ApplicationVersion.unknown),
+                                                                   .orElse(ApplicationVersion.unknown),
                                                         triggering.reason);
     }
 
@@ -196,7 +182,7 @@ public class DeploymentTrigger {
                                                                    .map(Change::of)
                                                                    .filter(change -> keepApplicationChange)
                                                                    .orElse(Change.empty())));
-            if (!applications().require(applicationId).change().isPresent())
+            if ( ! applications().require(applicationId).change().isPresent())
                 deploymentQueue.removeJobs(application.id());
         });
     }
@@ -238,6 +224,8 @@ public class DeploymentTrigger {
                 completedAt = Optional.empty();
             }
         }
+        if (completedAt.isPresent())
+            application = application.withChange(Change.empty());
 
         for (Triggering triggering : triggerings)
             if (application.deploymentJobs().isDeployableTo(triggering.jobType.environment(), change) && allowedToTriggerNow(triggering, application))
@@ -277,24 +265,6 @@ public class DeploymentTrigger {
         return controller.applications();
     }
 
-    /**
-     * Create application version from job report
-     */
-    private ApplicationVersion applicationVersionFrom(JobReport report) {
-        return report.sourceRevision().map(sr -> ApplicationVersion.from(sr, report.buildNumber()))
-                     .orElse(ApplicationVersion.unknown);
-    }
-
-    /**
-     * Returns whether all production zones listed in deployment spec has this change (or a newer version, if upgrade)
-     */
-    private boolean deploymentComplete(LockedApplication application) {
-        return order.jobsFrom(application.deploymentSpec()).stream()
-                    .filter(JobType::isProduction)
-                    .filter(job -> job.zone(controller.system()).isPresent())
-                    .allMatch(job -> changeCompletedAt(application, job).isPresent());
-    }
-
     /** Returns the instant when the given application's current change was completed for the given job. */
     private Optional<Instant> changeCompletedAt(Application application, JobType job) {
         if ( ! job.isProduction())
@@ -313,6 +283,7 @@ public class DeploymentTrigger {
                                             .orElse(0);
 
         // TODO jvenstad: Allow downgrades when considering whether to trigger -- stop them at choice of deployment version.
+        // TODO jvenstad: This allows tests to be re-run, for instance, while keeping the deployment itself a no-op.
         if (applicationComparison == -1 || platformComparison == -1)
             return Optional.of(deployment.at());
 
@@ -322,15 +293,15 @@ public class DeploymentTrigger {
     private boolean acceptNewApplicationVersionNow(LockedApplication application) {
         if ( ! application.change().isPresent()) return true;
 
-        if (application.change().application().isPresent()) return true; // more application changes are ok
+        if (application.change().application().isPresent()) return true; // More application changes are ok.
 
-        if (application.deploymentJobs().hasFailures()) return true; // allow changes to fix upgrade problems
+        if (application.deploymentJobs().hasFailures()) return true; // Allow changes to fix upgrade problems.
 
-        if (application.isBlocked(clock.instant()))
-            return true; // allow testing changes while upgrade blocked (debatable)
+        if (   ! application.deploymentSpec().canUpgradeAt(clock.instant())
+            || ! application.deploymentSpec().canChangeRevisionAt(clock.instant()))
+            return true; // Allow testing changes while upgrade blocked (debatable).
 
-        // Otherwise, the application is currently upgrading, without failures, and we should wait with the new
-        // application version.
+        // Otherwise, the application is currently upgrading, without failures, and we should wait with the new application version.
         return false;
     }
 
@@ -363,169 +334,4 @@ public class DeploymentTrigger {
     }
 
 }
-//
-//    /**
-//     * Loop through the steps of the deployment spec for the given application and propagate state changes as prescribed.
-//     *
-//     * The intial state is determined by whether there are revision or version changes to roll out.
-//     * For each following step, as given by the deployment spec, check whether the previous state is valid,
-//     * different from the state of the jobs in the step and with differences that are currently permitted;
-//     * if this is all true, determine the reason for triggering the current job, if any. If there is a reason
-//     * to trigger, and if it is allowed to trigger that job right now, then do so.
-//     * Finally, if the last step succeeded with a valid state, mark the changes of this state as complete.
-//     */
-//    // This method should be called both by the upgrade maintainer, and on job completion.
-//    private void triggerJobsFor(LockedApplication application) {
-//        State state = State.inital(application);
-//        for (DeploymentSpec.Step step : application.deploymentSpec().steps()) {
-//            // For the jobs of this step, trigger what should be triggered based on the state of the previous step:
-//            List<JobType> stepJobs = step.zones().stream().map(this::jobFor).collect(Collectors.toList());
-//            application.deploymentJobs().jobStatus();
-//            for (JobType jobType : stepJobs) {
-//                JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
-//                if (state.isSimilarTo(State.of(jobStatus))) continue; // If the two states are the same, do nothing.
-//
-//                State target = state;
-//                if ( ! application.deploymentSpec().canChangeRevisionAt(clock.instant())) target = target.withoutApplication();
-//                if ( ! application.deploymentSpec().canUpgradeAt(clock.instant())) target = target.withoutPlatform();
-//                // Also peel away versions that are no longer desired: no longer the deploying(), or, perhaps, no longer have high enough confidence?
-//                if (target.isInvalid()) continue; // If all possible changes were prohibited, do nothing.
-//
-//                Optional<String> reason = reasonForTriggering(jobStatus);
-//                if ( ! reason.isPresent()) continue; // If we had no reason to trigger this job now: don't!
-//
-//                if ( ! canTriggerNow(jobType, target, application, stepJobs)) continue; // Go somewhere else to force.
-//
-//                buildSystem.addJob(application.id(), jobType, reason.get().equals("Retrying immediately, as the job failed on capacity constraints."));
-//                application = application.withJobTriggering(jobType, application.deploying(), reason.get(), clock.instant(), controller);
-//
-//            }
-//            // Finally, find the exit state of this step, to propagate further:
-//            state = JobList.from(application).types(stepJobs).commonState()
-//                           // A bit convoluted, perhaps; if empty stepJobs, this is a Delay, and we just delay the input state.
-//                           .orElse(state.delay(((DeploymentSpec.Delay) step).duration(), clock.instant()));
-//        }
-//        if (state.platform().isPresent()) application = application.withDeploying(Optional.empty()); // TODO: Change this, obviously.
-//        controller.applications().store(application);
-//    }
-//
-//    private JobType jobFor(DeploymentSpec.DeclaredZone zone) {
-//        return JobType.from(controller.system(), zone.environment(), zone.region().orElse(null))
-//                      .orElseThrow(() -> new IllegalArgumentException("Invalid zone " + zone));
-//    }
-//
-//    private Optional<String> reasonForTriggering(JobStatus jobStatus) {
-//        if (jobStatus == null) return Optional.of("Job became available for triggering for the first time.");
-//        if (jobStatus.isRunning(jobTimeoutLimit())) return Optional.empty();
-//        if (jobStatus.isSuccess()) return Optional.of("A new change passed successfully through the upstream step.");
-//        if (jobStatus.jobError().filter(JobError.outOfCapacity::equals).isPresent()) return Optional.of("Retrying immediately, as the job failed on capacity constraints.");
-//        if (jobStatus.firstFailing().get().at().isAfter(clock.instant().minus(Duration.ofSeconds(10)))) return Optional.of("Immediate retry, as " + jobStatus.type() + " just started failing.");
-//        if (   jobStatus.lastCompleted().get().at().isBefore(clock.instant().minus(Duration.between(jobStatus.firstFailing().get().at(), clock.instant()).dividedBy(10)))
-//               || jobStatus.lastCompleted().get().at().isBefore(clock.instant().minus(Duration.ofHours(4)))) return Optional.of("Delayed retry, as " + jobStatus.type() + " hasn't been retried for a while.");
-//        return Optional.empty();
-//    }
-//
-//    private boolean canTriggerNow(JobType jobType, State target, Application application, List<JobType> concurrentJobs) {
-//        if ( ! application.deploymentJobs().projectId().isPresent()) return false;
-//        if (target.platform().isPresent() && jobType.isProduction() && isOnNewerVersionThan(target.platform().get(), jobType, application)) return false;
-//        if ( ! concurrentJobs.containsAll(JobList.from(application).running(jobTimeoutLimit()).production().asList())) return false;
-//        return true;
-//    }
-//
-//    private boolean isOnNewerVersionThan(Version version, JobType jobType, Application application) {
-//        return jobType.zone(controller.system())
-//                      .map(zone -> application.deployments().get(zone))
-//                      .filter(deployment -> deployment.version().isAfter(version))
-//                      .isPresent();
-//    }
-//
-//    /**
-//     * Contains information about the last successful state of a Step.
-//     *
-//     * Two states can be merged by similarity, and delayed by a given delay. If the resulting state
-//     * is invalid, it means some next step does not (yet) have a new state to upgrade to;
-//     * otherwise, the resulting state provides target version and revision for some next step.
-//     */
-//    public static class State {
-//
-//        public static final State invalid = new State(null, null, null);
-//
-//        private final Version platform;
-//        private final ApplicationVersion application;
-//        private final Instant completion;
-//
-//        private State(Version platform, ApplicationVersion application, Instant completion) {
-//            this.platform = platform;
-//            this.application = application;
-//            this.completion = completion;
-//        }
-//
-//        public static State of(JobStatus jobStatus) {
-//            if (jobStatus == null || ! jobStatus.lastSuccess().isPresent()) return State.invalid;
-//            return new State(jobStatus.lastSuccess().get().version(),
-//                             jobStatus.lastSuccess().get().applicationVersion(),
-//                             jobStatus.lastSuccess().get().at());
-//        }
-//
-//        public static State inital(Application application) {
-//            return new State(application.change().platform().orElse(null),
-//                             application.change().application().orElse(null),
-//                             Instant.MIN);
-//        }
-//
-//        /** Returns the state with the later completion if they are similar, and invalid otherwise. */
-//        public State merge(State other) {
-//            return ! isInvalid() && isSimilarTo(other)
-//                    ? completion.isAfter(other.completion) ? this : other
-//                    : invalid;
-//        }
-//
-//        /** Returns a state with completion delayed by the given delay, or invalid if this is before the given now. */
-//        public State delay(Duration delay, Instant now) {
-//            return (isInvalid() || completion.plus(delay).isAfter(now))
-//                    ? invalid
-//                    : new State(platform, application, completion.plus(delay));
-//        }
-//
-//        /** Returns whether the two states agree on version and revision. */
-//        public boolean isSimilarTo(State other) {
-//            return platform().equals(other.platform()) && application().equals(other.application());
-//        }
-//
-//        /** Returns whether this state provides a valid upgrade target. */
-//        public boolean isInvalid() {
-//            return completion == null || (platform == null && application == null);
-//        }
-//
-//        public State deployableTo(Version platform) {
-//            return this.platform != null && this.platform.compareTo(platform) < 0
-//                    ? this
-//                    : withoutPlatform();
-//        }
-//        // TODO jvenstad: Inline these two?
-//        public State deployableTo(ApplicationVersion application) {
-//            return this.application != null && this.application.compareTo(application) < 0
-//                    ? this
-//                    : withoutApplication();
-//        }
-//
-//        public Optional<Version> platform() {
-//            return Optional.ofNullable(platform);
-//        }
-//
-//        public Optional<ApplicationVersion> application() {
-//            return Optional.ofNullable(application);
-//        }
-//
-//        public State withoutPlatform() {
-//            return new State(null, application, completion);
-//        }
-//
-//        public State withoutApplication() {
-//            return new State(platform, null, completion);
-//        }
-//
-//    }
-//
-//
-//}
+

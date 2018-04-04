@@ -218,9 +218,4 @@ public class Application {
         return "application '" + id + "'";
     }
 
-    /** Returns whether changes to this are blocked in the given instant */
-    public boolean isBlocked(Instant instant) {
-         return ! deploymentSpec().canUpgradeAt(instant) || ! deploymentSpec().canChangeRevisionAt(instant);
-    }
-
 }
