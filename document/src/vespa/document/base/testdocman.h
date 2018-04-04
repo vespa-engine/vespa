@@ -21,7 +21,6 @@
 #include "testdocrepo.h"
 #include <vespa/document/datatype/datatypes.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <memory>
 #include <vector>
 
@@ -29,17 +28,17 @@ namespace document {
     class TestDocMan {
         static std::vector<char> _buffer;
         TestDocRepo _test_repo;
-        DocumentTypeRepo::SP _repo;
+        std::shared_ptr<const DocumentTypeRepo> _repo;
         const DocumenttypesConfig *_typeCfg;
 
     public:
         TestDocMan();
         ~TestDocMan();
 
-        void setTypeRepo(const DocumentTypeRepo::SP &repo);
+        void setTypeRepo(const std::shared_ptr<const DocumentTypeRepo> &repo);
 
         const DocumentTypeRepo& getTypeRepo() const { return *_repo; }
-        const DocumentTypeRepo::SP getTypeRepoSP() const { return _repo; }
+        std::shared_ptr<const DocumentTypeRepo> getTypeRepoSP() const { return _repo; }
         const DocumenttypesConfig *getTypeConfig() const { return _typeCfg; }
 
         /** Create test document. */

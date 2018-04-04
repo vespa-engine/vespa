@@ -2,6 +2,7 @@
 
 #include "testdocrepo.h"
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/config/print/fileconfigreader.h>
 

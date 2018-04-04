@@ -21,7 +21,7 @@ namespace
 
 DDBCSP
 getConfig(int64_t generation, const Schema::SP &schema,
-          shared_ptr<DocumentTypeRepo> repo,
+          shared_ptr<const DocumentTypeRepo> repo,
           const AttributesConfig &attributes)
 {
     return test::DocumentDBConfigBuilder(generation, schema, "client", "test").
@@ -232,7 +232,7 @@ TEST("Test that DocumentDBConfigScout::scout looks ahead")
     AttributesConfigBuilder liveAttributes;
     setupLiveAttributes(liveAttributes.attribute);
 
-    shared_ptr<DocumentTypeRepo> repo(make_shared<DocumentTypeRepo>());
+    shared_ptr<const DocumentTypeRepo> repo(make_shared<DocumentTypeRepo>());
     Schema::SP schema(make_shared<Schema>());
     DDBCSP cfg = getConfig(4, schema, repo, attributes);
     DDBCSP liveCfg = getConfig(4, schema, repo, liveAttributes);

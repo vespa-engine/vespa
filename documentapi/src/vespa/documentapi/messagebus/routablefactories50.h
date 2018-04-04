@@ -6,9 +6,6 @@
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/updatedocumentmessage.h>
-#include <vespa/document/repo/documenttyperepo.h>
-
-
 
 namespace document { class DocumentTypeRepo; }
 

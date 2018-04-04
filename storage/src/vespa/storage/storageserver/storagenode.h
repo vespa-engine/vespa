@@ -82,7 +82,7 @@ public:
     void updateMetrics(const MetricLockGuard & guard) override;
 
     /** Updates the document type repo. */
-    void setNewDocumentRepo(const std::shared_ptr<document::DocumentTypeRepo>& repo);
+    void setNewDocumentRepo(const std::shared_ptr<const document::DocumentTypeRepo>& repo);
 
     /**
      * Pauses the persistence processing. While the returned ResumeGuard

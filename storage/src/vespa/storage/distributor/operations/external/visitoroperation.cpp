@@ -660,7 +660,7 @@ void
 VisitorOperation::attemptToParseOrderingSelector()
 {
     std::unique_ptr<document::select::Node> docSelection;
-    std::shared_ptr<document::DocumentTypeRepo> repo(_owner.getTypeRepo());
+    std::shared_ptr<const document::DocumentTypeRepo> repo(_owner.getTypeRepo());
     document::select::Parser parser(
             *repo, _owner.getBucketIdFactory());
     docSelection = parser.parse(_msg->getDocumentSelection());

@@ -118,7 +118,7 @@ public:
 CPPUNIT_TEST_SUITE_REGISTRATION(DocumentSelectParserTest);
 
 namespace {
-    DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const DocumentTypeRepo> _repo;
 }
 
 void DocumentSelectParserTest::setUp()

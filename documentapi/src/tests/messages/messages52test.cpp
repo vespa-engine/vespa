@@ -4,6 +4,7 @@
 
 #include "messages52test.h"
 #include <vespa/documentapi/documentapi.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/document/datatype/documenttype.h>
 

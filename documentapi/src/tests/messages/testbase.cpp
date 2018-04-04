@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "testbase.h"
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/vespalib/util/exception.h>
 #include <fcntl.h>

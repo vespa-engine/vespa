@@ -68,7 +68,7 @@ struct PersistenceUtil {
     uint16_t _nodeIndex;
     FileStorThreadMetrics& _metrics;
     const document::BucketIdFactory& _bucketFactory;
-    const std::shared_ptr<document::DocumentTypeRepo> _repo;
+    const std::shared_ptr<const document::DocumentTypeRepo> _repo;
     spi::PersistenceProvider& _spi;
 
     PersistenceUtil(

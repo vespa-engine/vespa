@@ -3,6 +3,7 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/vdslib/state/clusterstate.h>
@@ -16,7 +17,7 @@ using mbus::Routable;
 using mbus::IRoutingPolicy;
 
 class Test : public vespalib::TestApp {
-    DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const DocumentTypeRepo> _repo;
 
 public:
     Test();

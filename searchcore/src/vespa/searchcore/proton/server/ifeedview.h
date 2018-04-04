@@ -34,7 +34,7 @@ public:
     IFeedView & operator = (const IFeedView &) = delete;
     virtual ~IFeedView() { }
 
-    virtual const std::shared_ptr<document::DocumentTypeRepo> &getDocumentTypeRepo() const = 0;
+    virtual const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepo() const = 0;
 
     /**
      * Access to const version of document meta store.

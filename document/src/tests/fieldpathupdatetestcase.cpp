@@ -23,7 +23,7 @@ namespace document {
 using namespace fieldvalue;
 
 struct FieldPathUpdateTestCase : public CppUnit::TestFixture {
-    DocumentTypeRepo::SP _repo;
+    std::shared_ptr<const DocumentTypeRepo> _repo;
     DocumentType _foobar_type;
 
     void setUp() override;

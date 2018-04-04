@@ -3,7 +3,8 @@
 
 #include "iroutingpolicyfactory.h"
 #include <vespa/documentapi/messagebus/systemstate/systemstate.h>
-#include <vespa/document/repo/documenttyperepo.h>
+
+namespace document { class DocumentTypeRepo; }
 
 namespace documentapi {
 

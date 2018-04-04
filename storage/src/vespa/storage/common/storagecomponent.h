@@ -60,7 +60,7 @@ class StorageComponent : public framework::Component {
 public:
     using UP = std::unique_ptr<StorageComponent>;
     using PriorityConfig = vespa::config::content::core::internal::InternalStorPrioritymappingType;
-    using DocumentTypeRepoSP = std::shared_ptr<document::DocumentTypeRepo>;
+    using DocumentTypeRepoSP = std::shared_ptr<const document::DocumentTypeRepo>;
     using LoadTypeSetSP = std::shared_ptr<documentapi::LoadTypeSet>;
     using DistributionSP = std::shared_ptr<lib::Distribution>;
 
