@@ -2,6 +2,7 @@
 
 #include "bootstrapconfigmanager.h"
 #include "bootstrapconfig.h"
+#include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/searchlib/common/tunefileinfo.hpp>
@@ -19,6 +20,7 @@ using vespa::config::search::core::ProtonConfig;
 using cloud::config::filedistribution::FiledistributorrpcConfig;
 using vespa::config::content::core::BucketspacesConfig;
 using document::DocumenttypesConfig;
+using document::DocumentTypeRepoFactory;
 using BucketspacesConfigSP = std::shared_ptr<BucketspacesConfig>;
 
 namespace proton {
@@ -99,7 +101,7 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
     if (snapshot.isChanged<DocumenttypesConfig>(_configId, currentGen)) {
         LOG(spam, "Documenttypes config is changed");
         newDocumenttypesConfig = snapshot.getConfig<DocumenttypesConfig>(_configId);
-        newRepo = std::make_shared<DocumentTypeRepo>(*newDocumenttypesConfig);
+        newRepo = DocumentTypeRepoFactory::make(*newDocumenttypesConfig);
     }
     if (snapshot.isChanged<BucketspacesConfig>(_configId, currentGen)) {
         LOG(spam, "Bucketspaces config is changed");

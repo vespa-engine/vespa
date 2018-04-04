@@ -7,6 +7,7 @@
 #include <vespa/config/print/fileconfigsnapshotreader.h>
 #include <vespa/config/print/fileconfigsnapshotwriter.h>
 #include <vespa/config-bucketspaces.h>
+#include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config-summarymap.h>
@@ -20,6 +21,7 @@
 LOG_SETUP(".proton.server.fileconfigmanager");
 
 using document::DocumentTypeRepo;
+using document::DocumentTypeRepoFactory;
 using document::DocumenttypesConfig;
 using search::IndexMetaInfo;
 using search::SerialNum;
@@ -347,7 +349,7 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
         docTypesCfg = currentSnapshot.getDocumenttypesConfigSP();
         repo = currentSnapshot.getDocumentTypeRepoSP();
     } else {
-        repo.reset(new DocumentTypeRepo(*docTypesCfg));
+        repo = DocumentTypeRepoFactory::make(*docTypesCfg);
     }
 
     auto filedistRpcConf = std::make_shared<FiledistributorrpcConfig>();
