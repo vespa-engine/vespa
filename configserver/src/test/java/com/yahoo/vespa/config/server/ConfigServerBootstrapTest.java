@@ -34,8 +34,6 @@ public class ConfigServerBootstrapTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
-    @Ignore // TODO: An issue with how MockCurator.MockLock is implemented make this not work (it will hang
-            // not being able to acquire activate lock in ConfigServerBootstrap
     public void testBootStrap() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig();
         DeployTester tester = new DeployTester("src/test/apps/hosted/", configserverConfig);
