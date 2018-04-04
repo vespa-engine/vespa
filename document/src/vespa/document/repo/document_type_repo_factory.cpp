@@ -42,9 +42,8 @@ DocumentTypeRepoFactory::make(const DocumenttypesConfig &config)
         }
     }
     auto repoConfig = std::make_unique<const DocumenttypesConfig>(config);
-    auto repoup1 = std::make_unique<DocumentTypeRepo>(*repoConfig);
-    auto repoup2 = std::unique_ptr<DocumentTypeRepo, Deleter>(repoup1.release(), Deleter());
-    auto repo = std::shared_ptr<const DocumentTypeRepo>(std::move(repoup2));
+    auto repoup = std::make_unique<DocumentTypeRepo>(*repoConfig);
+    auto repo = std::shared_ptr<const DocumentTypeRepo>(repoup.release(), Deleter());
     _repos.emplace(repo.get(), DocumentTypeRepoEntry(repo, std::move(repoConfig)));
     return repo;
 }
