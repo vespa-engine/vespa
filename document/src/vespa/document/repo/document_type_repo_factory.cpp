@@ -4,8 +4,6 @@
 #include "documenttyperepo.h"
 #include <vespa/document/config/config-documenttypes.h>
 #include <iostream>
-#include <stdexcept>
-
 
 namespace document {
 
