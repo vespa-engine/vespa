@@ -11,6 +11,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInterruptedException;
 import com.yahoo.container.Container;
 import com.yahoo.container.QrConfig;
+import com.yahoo.container.Server;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.config.HandlersConfigurerDi;
 import com.yahoo.container.di.config.Subscriber;
@@ -121,7 +122,7 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void start() {
         qrConfig = getConfig(QrConfig.class);
-        ContainerDiscApplication.hackToInitializeServer(qrConfig);
+        hackToInitializeServer(qrConfig);
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
         configureComponents(builder.guiceModules().activate());
@@ -131,6 +132,16 @@ public final class ConfiguredApplication implements Application {
         portWatcher = new Thread(this::watchPortChange);
         portWatcher.setDaemon(true);
         portWatcher.start();
+    }
+
+
+    private static void hackToInitializeServer(QrConfig config) {
+        try {
+            Server.get().initialize(config);
+        } catch (Exception e) {
+            log.log(LogLevel.ERROR, "Caught exception when initializing server. Exiting.", e);
+            Runtime.getRuntime().halt(1);
+        }
     }
 
     private <T extends ConfigInstance> T getConfig(Class<T> configClass) {
