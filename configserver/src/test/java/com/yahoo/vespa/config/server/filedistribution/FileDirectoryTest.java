@@ -13,6 +13,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -75,16 +77,23 @@ public class FileDirectoryTest {
         FileReference fileReference = fileDirectory.addFile(subDirectory);
         File dir = fileDirectory.getFile(fileReference);
         assertTrue(dir.exists());
-        assertTrue(new File(dir, "foo").exists());
+        File foo = new File(dir, "foo");
+        assertTrue(foo.exists());
+        FileTime fooCreatedTimestamp = Files.readAttributes(foo.toPath(), BasicFileAttributes.class).creationTime();
         assertFalse(new File(dir, "doesnotexist").exists());
         assertEquals("1315a322fc323608", fileReference.value());
 
         // Remove a file, directory should be deleted before adding a new file
+        try { Thread.sleep(1000);} catch (InterruptedException e) {/*ignore */} // Needed since we have timestamp resolution of 1 second
         Files.delete(Paths.get(fileDirectory.getPath(fileReference)).resolve("subdir").resolve("foo"));
         fileReference = fileDirectory.addFile(subDirectory);
         dir = fileDirectory.getFile(fileReference);
+        File foo2 = new File(dir, "foo");
         assertTrue(dir.exists());
-        assertTrue(new File(dir, "foo").exists());
+        assertTrue(foo2.exists());
+        FileTime foo2CreatedTimestamp = Files.readAttributes(foo2.toPath(), BasicFileAttributes.class).creationTime();
+        // Check that creation timestamp is newer than the old one to be sure that a new file was written
+        assertTrue(foo2CreatedTimestamp.compareTo(fooCreatedTimestamp) > 0);
         assertFalse(new File(dir, "doesnotexist").exists());
         assertEquals("1315a322fc323608", fileReference.value());
     }
