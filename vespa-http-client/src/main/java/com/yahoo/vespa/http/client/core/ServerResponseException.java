@@ -27,6 +27,14 @@ public class ServerResponseException extends Exception {
         this.responseString = responseString;
     }
 
+    public int getResponseCode() {
+        return responseCode;
+    }
+
+    public String getResponseString() {
+        return responseString;
+    }
+
     @Override
     public String toString() {
         if (responseCode > 0) {

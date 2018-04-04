@@ -1,27 +1,41 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
+import com.yahoo.vespa.http.client.FeedConnectException;
+import com.yahoo.vespa.http.client.FeedEndpointException;
+import com.yahoo.vespa.http.client.FeedProtocolException;
 import com.yahoo.vespa.http.client.Result;
 import com.yahoo.vespa.http.client.V3HttpAPITest;
+import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.core.Document;
 import com.yahoo.vespa.http.client.core.EndpointResult;
 
+import com.yahoo.vespa.http.client.core.ServerResponseException;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 public class IOThreadTest {
+
+    private static final Endpoint ENDPOINT = Endpoint.create("myhost");
+
     final EndpointResultQueue endpointResultQueue = mock(EndpointResultQueue.class);
     final ApacheGatewayConnection apacheGatewayConnection = mock(ApacheGatewayConnection.class);
     final String exceptionMessage = "SOME EXCEPTION FOO";
@@ -33,6 +47,10 @@ public class IOThreadTest {
     Document doc2 = new Document(V3HttpAPITest.documents.get(1).getDocumentId(),
             V3HttpAPITest.documents.get(1).getContents(), null /* context */);
     DocumentQueue documentQueue = new DocumentQueue(4);
+
+    public IOThreadTest() {
+        when(apacheGatewayConnection.getEndpoint()).thenReturn(ENDPOINT);
+    }
 
     /**
      * Set up mock so that it can handle both failDocument() and resultReceived().
@@ -124,4 +142,59 @@ public class IOThreadTest {
             assert (latch.await(120, TimeUnit.SECONDS));
         }
     }
+
+    @Test
+    public void requireThatEndpointProtocolExceptionsArePropagated()
+            throws IOException, ServerResponseException, InterruptedException, TimeoutException, ExecutionException {
+        when(apacheGatewayConnection.connect()).thenReturn(true);
+        int errorCode = 403;
+        String errorMessage = "Not authorized";
+        doThrow(new ServerResponseException(errorCode, errorMessage)).when(apacheGatewayConnection).handshake();
+        Future<FeedEndpointException> futureException = endpointErrorCapturer(endpointResultQueue);
+
+        try (IOThread ioThread = new IOThread(
+                endpointResultQueue, apacheGatewayConnection, 0, 0, 10, 10L, documentQueue, 0)) {
+            ioThread.post(doc1);
+            FeedEndpointException reportedException = futureException.get(120, TimeUnit.SECONDS);
+            assertThat(reportedException, instanceOf(FeedProtocolException.class));
+            FeedProtocolException actualException = (FeedProtocolException) reportedException;
+            assertThat(actualException.getHttpStatusCode(), equalTo(errorCode));
+            assertThat(actualException.getHttpResponseMessage(), equalTo(errorMessage));
+            assertThat(actualException.getEndpoint(), equalTo(ENDPOINT));
+            assertThat(actualException.getMessage(), equalTo("Endpoint 'myhost:4080' returned an error on handshake: 403 - Not authorized"));
+        }
+    }
+
+    @Test
+    public void requireThatEndpointConnectExceptionsArePropagated()
+        throws IOException, ServerResponseException, InterruptedException, TimeoutException, ExecutionException {
+        when(apacheGatewayConnection.connect()).thenReturn(true);
+        String errorMessage = "generic error message";
+        IOException cause = new IOException(errorMessage);
+        doThrow(cause).when(apacheGatewayConnection).handshake();
+        Future<FeedEndpointException> futureException = endpointErrorCapturer(endpointResultQueue);
+
+        try (IOThread ioThread = new IOThread(
+                endpointResultQueue, apacheGatewayConnection, 0, 0, 10, 10L, documentQueue, 0)) {
+            ioThread.post(doc1);
+            FeedEndpointException reportedException = futureException.get(120, TimeUnit.SECONDS);
+            assertThat(reportedException, instanceOf(FeedConnectException.class));
+            FeedConnectException actualException = (FeedConnectException) reportedException;
+            assertThat(actualException.getCause(), equalTo(cause));
+            assertThat(actualException.getEndpoint(), equalTo(ENDPOINT));
+            assertThat(actualException.getMessage(), equalTo("Handshake to endpoint 'myhost:4080' failed: generic error message"));
+        }
+    }
+
+    private static Future<FeedEndpointException> endpointErrorCapturer(EndpointResultQueue endpointResultQueue) {
+        CompletableFuture<FeedEndpointException> futureResult = new CompletableFuture<>();
+        doAnswer(invocation -> {
+            if (futureResult.isDone()) return null;
+            FeedEndpointException reportedException = (FeedEndpointException) invocation.getArguments()[0];
+            futureResult.complete(reportedException);
+            return null;
+        }).when(endpointResultQueue).onEndpointError(any());
+        return futureResult;
+    }
+
 }
