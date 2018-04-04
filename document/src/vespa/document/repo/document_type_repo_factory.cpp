@@ -3,12 +3,32 @@
 #include "document_type_repo_factory.h"
 #include "documenttyperepo.h"
 #include <vespa/document/config/config-documenttypes.h>
-#include <functional>
+#include <iostream>
 
 namespace document {
 
 std::mutex DocumentTypeRepoFactory::_mutex;
 DocumentTypeRepoFactory::DocumentTypeRepoMap DocumentTypeRepoFactory::_repos;
+
+namespace {
+
+class EmptyFactoryCheck
+{
+public:
+    ~EmptyFactoryCheck();
+};
+
+EmptyFactoryCheck::~EmptyFactoryCheck()
+{
+    if (!DocumentTypeRepoFactory::empty()) {
+        std::cerr << "DocumentTypeRepoFactory not empty at shutdown" << std::endl;
+        abort();
+    }
+}
+
+EmptyFactoryCheck emptyFactoryCheck;
+
+}
 
 /*
  * Class handling deletion of document type repo after last reference is gone.
@@ -46,6 +66,13 @@ DocumentTypeRepoFactory::make(const DocumenttypesConfig &config)
     auto repo = std::shared_ptr<const DocumentTypeRepo>(repoup.release(), Deleter());
     _repos.emplace(repo.get(), DocumentTypeRepoEntry(repo, std::move(repoConfig)));
     return repo;
+}
+
+bool
+DocumentTypeRepoFactory::empty()
+{
+    std::lock_guard guard(_mutex);
+    return _repos.empty();
 }
 
 }
