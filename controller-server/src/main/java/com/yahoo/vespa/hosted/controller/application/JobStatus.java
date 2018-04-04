@@ -186,7 +186,6 @@ public class JobStatus {
             this.at = at;
         }
 
-        // TODO: Replace with proper ID, and make the build number part optional, or something -- it's not there for lastTriggered!
         /** Returns the id of this run of this job, or -1 if not known */
         public long id() { return id; }
 
@@ -202,7 +201,6 @@ public class JobStatus {
         /** Returns the time if this triggering or completion */
         public Instant at() { return at; }
 
-        // TODO: Consider a version and application version for each JobStatus, to compare against a Target (instead of Change, which is, really, a Target).
         /** Returns whether the job last completed for the given change */
         public boolean lastCompletedWas(Change change) {
             if (change.platform().isPresent() && ! change.platform().get().equals(version())) return false;
