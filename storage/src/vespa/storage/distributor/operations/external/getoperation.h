@@ -23,10 +23,8 @@ class DistributorBucketSpace;
 class GetOperation  : public Operation
 {
 public:
-    GetOperation(DistributorComponent& manager,
-                 DistributorBucketSpace &bucketSpace,
-                 const std::shared_ptr<api::GetCommand> & msg,
-                 PersistenceOperationMetricSet& metric);
+    GetOperation(DistributorComponent& manager, DistributorBucketSpace &bucketSpace,
+                 std::shared_ptr<api::GetCommand> msg, PersistenceOperationMetricSet& metric);
 
     void onClose(DistributorMessageSender& sender) override;
     void onStart(DistributorMessageSender& sender) override;

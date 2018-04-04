@@ -10,8 +10,7 @@ LOG_SETUP(".pendingmessages");
 namespace storage::distributor {
 
 PendingMessageTracker::PendingMessageTracker(framework::ComponentRegister& cr)
-    : framework::HtmlStatusReporter("pendingmessages",
-                                    "Pending messages to storage nodes"),
+    : framework::HtmlStatusReporter("pendingmessages", "Pending messages to storage nodes"),
       _component(cr, "pendingmessagetracker"),
       _nodeInfo(_component.getClock()),
       _nodeBusyDuration(60),
@@ -20,26 +19,25 @@ PendingMessageTracker::PendingMessageTracker(framework::ComponentRegister& cr)
     _component.registerStatusPage(*this);
 }
 
-PendingMessageTracker::~PendingMessageTracker()
-{
-}
+PendingMessageTracker::~PendingMessageTracker() = default;
 
-PendingMessageTracker::MessageEntry::MessageEntry(
-        TimePoint timeStamp_,
-        uint32_t msgType_,
-        uint32_t priority_,
-        uint64_t msgId_,
-        document::Bucket bucket_,
-        uint16_t nodeIdx_,
-        const vespalib::string & msgText_)
+PendingMessageTracker::MessageEntry::MessageEntry(TimePoint timeStamp_, uint32_t msgType_, uint32_t priority_,
+                                                  uint64_t msgId_, document::Bucket bucket_, uint16_t nodeIdx_)
     : timeStamp(timeStamp_),
       msgType(msgType_),
       priority(priority_),
       msgId(msgId_),
       bucket(bucket_),
-      nodeIdx(nodeIdx_),
-      msgText(msgText_)
-{
+      nodeIdx(nodeIdx_)
+{ }
+
+vespalib::string
+PendingMessageTracker::MessageEntry::toHtml() const {
+    vespalib::asciistream ss;
+    ss << "<li><i>Node " << nodeIdx << "</i>: "
+       << "<b>" << framework::MilliSecTime(timeStamp.count()).toString() << "</b> "
+       << api::MessageType::get(api::MessageType::Id(msgType)).getName() << "(" <<  bucket.getBucketId() <<  ", priority=" << priority << ")</li>\n";
+    return ss.str();
 }
 
 PendingMessageTracker::TimePoint
@@ -88,26 +86,17 @@ PendingMessageTracker::clearMessagesForNode(uint16_t node)
 }
 
 void
-PendingMessageTracker::insert(
-        const std::shared_ptr<api::StorageMessage>& msg)
+PendingMessageTracker::insert(const std::shared_ptr<api::StorageMessage>& msg)
 {
     std::lock_guard<std::mutex> guard(_lock);
     if (msg->getAddress()) {
-        _messages.insert(
-                MessageEntry(currentTime(),
-                             msg->getType().getId(),
-                             msg->getPriority(),
-                             msg->getMsgId(),
-                             msg->getBucket(),
-                             msg->getAddress()->getIndex(),
-                             msg->getSummary()));
+        _messages.emplace(currentTime(), msg->getType().getId(), msg->getPriority(), msg->getMsgId(),
+                          msg->getBucket(), msg->getAddress()->getIndex());
 
         _nodeInfo.incPending(msg->getAddress()->getIndex());
 
         LOG(debug, "Sending message %s with id %zu to %s",
-            msg->toString().c_str(),
-            msg->getMsgId(),
-            msg->getAddress()->toString().c_str());
+            msg->toString().c_str(), msg->getMsgId(), msg->getAddress()->toString().c_str());
     }
 }
 
@@ -153,9 +142,7 @@ runCheckerOnRange(PendingMessageTracker::Checker& checker, const Range& range)
 }
 
 void
-PendingMessageTracker::checkPendingMessages(uint16_t node,
-                                            const document::Bucket &bucket,
-                                            Checker& checker) const
+PendingMessageTracker::checkPendingMessages(uint16_t node, const document::Bucket &bucket, Checker& checker) const
 {
     std::lock_guard<std::mutex> guard(_lock);
     const MessagesByNodeAndBucket& msgs(boost::multi_index::get<1>(_messages));
@@ -165,8 +152,7 @@ PendingMessageTracker::checkPendingMessages(uint16_t node,
 }
 
 void
-PendingMessageTracker::checkPendingMessages(const document::Bucket &bucket,
-                                            Checker& checker) const
+PendingMessageTracker::checkPendingMessages(const document::Bucket &bucket, Checker& checker) const
 {
     std::lock_guard<std::mutex> guard(_lock);
     const MessagesByBucketAndType& msgs(boost::multi_index::get<2>(_messages));
@@ -176,9 +162,7 @@ PendingMessageTracker::checkPendingMessages(const document::Bucket &bucket,
 }
 
 bool
-PendingMessageTracker::hasPendingMessage(uint16_t node,
-                                         const document::Bucket &bucket,
-                                         uint32_t messageType) const
+PendingMessageTracker::hasPendingMessage(uint16_t node, const document::Bucket &bucket, uint32_t messageType) const
 {
     std::lock_guard<std::mutex> guard(_lock);
     const MessagesByNodeAndBucket& msgs(boost::multi_index::get<1>(_messages));
@@ -190,9 +174,7 @@ PendingMessageTracker::hasPendingMessage(uint16_t node,
 void
 PendingMessageTracker::getStatusStartPage(std::ostream& out) const
 {
-    out << "View:\n"
-           "<ul>\n"
-           "<li><a href=\"?order=bucket\">Group by bucket</a></li>"
+    out << "View:\n<ul>\n<li><a href=\"?order=bucket\">Group by bucket</a></li>"
            "<li><a href=\"?order=node\">Group by node</a></li>\n";
 }
 
@@ -201,19 +183,10 @@ PendingMessageTracker::getStatusPerBucket(std::ostream& out) const
 {
     std::lock_guard<std::mutex> guard(_lock);
     const MessagesByNodeAndBucket& msgs = boost::multi_index::get<1>(_messages);
-    using BucketMap = std::map<document::Bucket,
-                               std::vector<vespalib::string>>;
+    using BucketMap = std::map<document::Bucket, std::vector<vespalib::string>>;
     BucketMap perBucketMsgs;
-    for (auto& msg : msgs) {
-        vespalib::asciistream ss;
-        ss << "<li><i>Node "
-           << msg.nodeIdx << "</i>: "
-           << "<b>"
-           << framework::MilliSecTime(msg.timeStamp.count()).toString()
-           << "</b> "
-           << msg.msgText << "</li>\n";
-
-        perBucketMsgs[msg.bucket].emplace_back(ss.str());
+    for (const auto& msg : msgs) {
+        perBucketMsgs[msg.bucket].emplace_back(msg.toHtml());
     }
 
     bool first = true;
@@ -240,24 +213,18 @@ PendingMessageTracker::getStatusPerNode(std::ostream& out) const
     std::lock_guard<std::mutex> guard(_lock);
     const MessagesByNodeAndBucket& msgs = boost::multi_index::get<1>(_messages);
     int lastNode = -1;
-    for (MessagesByNodeAndBucket::const_iterator iter =
-             msgs.begin(); iter != msgs.end(); iter++) {
-        if (iter->nodeIdx != lastNode) {
+    for (const auto & node : msgs) {
+        if (node.nodeIdx != lastNode) {
             if (lastNode != -1) {
                 out << "</ul>\n";
             }
 
-            out << "<b>Node " << iter->nodeIdx
-                << " (pending count: "
-                << _nodeInfo.getPendingCount(iter->nodeIdx)
-                << ")</b>\n<ul>\n";
-            lastNode = iter->nodeIdx;
+            out << "<b>Node " << node.nodeIdx << " (pending count: "
+                << _nodeInfo.getPendingCount(node.nodeIdx) << ")</b>\n<ul>\n";
+            lastNode = node.nodeIdx;
         }
 
-        out << "<li><b>"
-            << framework::MilliSecTime(iter->timeStamp.count()).toString()
-            << "</b> "
-            << iter->msgText << "</li>\n";
+        out << node.toHtml();
     }
 
     if (lastNode != -1) {
@@ -266,8 +233,7 @@ PendingMessageTracker::getStatusPerNode(std::ostream& out) const
 }
 
 void
-PendingMessageTracker::reportHtmlStatus(
-        std::ostream& out, const framework::HttpUrlPath& path) const
+PendingMessageTracker::reportHtmlStatus(std::ostream& out, const framework::HttpUrlPath& path) const
 {
     if (!path.hasAttribute("order")) {
         getStatusStartPage(out);
@@ -279,11 +245,6 @@ PendingMessageTracker::reportHtmlStatus(
 }
 
 void
-PendingMessageTracker::print(std::ostream& /*out*/,
-                             bool /*verbose*/,
-                             const std::string& /*indent*/) const
-{
-
-}
+PendingMessageTracker::print(std::ostream&, bool, const std::string&) const { }
 
 }

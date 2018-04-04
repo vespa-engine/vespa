@@ -49,8 +49,8 @@ public:
     explicit TraceNode(int64_t timestamp);
 
     TraceNode & operator =(const TraceNode &);
-    TraceNode(TraceNode &&) = default;
-    TraceNode & operator =(TraceNode &&) = default;
+    TraceNode(TraceNode &&) noexcept;
+    TraceNode & operator =(TraceNode &&) noexcept = default;
     ~TraceNode();
 
     /**
@@ -197,7 +197,7 @@ public:
      * @param child The child to add.
      * @return This, to allow chaining.
      */
-    TraceNode &addChild(const TraceNode &child);
+    TraceNode &addChild(TraceNode child);
 
     /**
      * Adds a list of child nodes to this.
@@ -205,7 +205,7 @@ public:
      * @param children The children to add.
      * @return This, to allow chaining.
      */
-    TraceNode &addChildren(const std::vector<TraceNode> &children);
+    TraceNode &addChildren(std::vector<TraceNode> children);
 
     /**
      * Generate a non-parseable, human-readable string representation of

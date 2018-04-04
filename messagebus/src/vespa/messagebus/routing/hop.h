@@ -40,12 +40,12 @@ public:
      * @param selector     The selector to copy.
      * @param ignoreResult Whether or not to ignore the result of this hop.
      */
-    Hop(const std::vector<IHopDirective::SP> &selector, bool ignoreResult);
+    Hop(std::vector<IHopDirective::SP> selector, bool ignoreResult);
 
     Hop(const Hop &);
     Hop & operator = (const Hop &);
-    Hop(Hop &&) = default;
-    Hop & operator = (Hop &&) = default;
+    Hop(Hop &&) noexcept = default;
+    Hop & operator = (Hop &&) noexcept = default;
 
     ~Hop();
 

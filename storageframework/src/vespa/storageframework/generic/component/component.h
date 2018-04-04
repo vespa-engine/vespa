@@ -94,7 +94,6 @@ class Component : private ManagedComponent
     ThreadPool* _threadPool;
     MetricRegistrator* _metricReg;
     std::pair<MetricUpdateHook*, SecondTime> _metricUpdateHook;
-    MemoryManagerInterface* _memoryManager;
     Clock* _clock;
     ComponentStateListener* _listener;
     std::atomic<UpgradeFlags> _upgradeFlag;
@@ -108,7 +107,6 @@ class Component : private ManagedComponent
     std::pair<MetricUpdateHook*, SecondTime> getMetricUpdateHook() override { return _metricUpdateHook; }
     const StatusReporter* getStatusReporter() override { return _status; }
     void setMetricRegistrator(MetricRegistrator& mr) override;
-    void setMemoryManager(MemoryManagerInterface& mm) override { _memoryManager = &mm; }
     void setClock(Clock& c) override { _clock = &c; }
     void setThreadPool(ThreadPool& tp) override { _threadPool = &tp; }
     void setUpgradeFlag(UpgradeFlags flag) override {
@@ -174,21 +172,12 @@ public:
     ThreadPool& getThreadPool() const;
 
     /**
-     * Get the memory manager used in this application if any. This function
-     * will fail before the application has registered a memory manager
-     * implementation. Applications using memory management are encouraged to
-     * register a memory manager before creating components to avoid needing
-     * components to delay using it.
-     */
-    MemoryManagerInterface& getMemoryManager() const;
-
-    /**
      * Get the clock used in this application. This function will fail before
      * the application has registered a clock implementation. Applications are
      * encourated to register a clock implementation before adding components to
      * avoid needing components to delay using it.
      */
-    Clock& getClock() const;
+    Clock& getClock() const { return *_clock; }
 
     /**
      * Helper functions for components wanting to start a single thread.

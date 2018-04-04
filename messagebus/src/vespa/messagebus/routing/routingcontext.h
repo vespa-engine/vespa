@@ -248,7 +248,7 @@ public:
      *
      * @param route The route to contain in the child context.
      */
-    void addChild(const Route &route);
+    void addChild(Route route);
 
     /**
      * This is a convenience method to more easily add a list of children to this. It will simply call the {@link
@@ -256,7 +256,7 @@ public:
      *
      * @param routes A list of routes to add as children.
      */
-    void addChildren(const std::vector<Route> &routes);
+    void addChildren(std::vector<Route> routes);
 
     /**
      * Returns the local mirror of the system's name server.

@@ -41,7 +41,7 @@ SourceSession::send(Message::UP msg, const string &routeName, bool parseIfNotFou
 {
     bool found = false;
     RoutingTable::SP rt = _mbus.getRoutingTable(msg->getProtocol());
-    if (rt.get() != nullptr) {
+    if (rt) {
         const Route *route = rt->getRoute(routeName);
         if (route != nullptr) {
             msg->setRoute(*route);

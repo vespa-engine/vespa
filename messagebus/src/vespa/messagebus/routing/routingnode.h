@@ -56,7 +56,7 @@ private:
      * @param parent The parent routing node.
      * @param route  The route to assign to this.
      */
-    RoutingNode(RoutingNode &parent, const Route &route);
+    RoutingNode(RoutingNode &parent, Route route);
 
     /**
      * Clears the list of child routing node objects, and frees the memory used
@@ -133,7 +133,7 @@ private:
      *
      * @param ins The route to insert.
      */
-    void insertRoute(const Route &ins);
+    void insertRoute(Route ins);
 
     /**
      * This method traverses the current hop looking for an isntance of {@link
@@ -288,7 +288,7 @@ public:
      *
      * @param route The route to store in the child node.
      */
-    void addChild(const Route &route);
+    void addChild(Route route);
 
     /**
      * This is a convenience method to call {@link #setError(Error)}.

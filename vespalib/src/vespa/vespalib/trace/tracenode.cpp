@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/trace/tracenode.h>
-#include <vespa/vespalib/trace/tracevisitor.h>
+#include "tracenode.h"
+#include "tracevisitor.h"
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -41,7 +41,7 @@ struct Cmp {
 
 
 TraceNode::TraceNode() :
-    _parent(NULL),
+    _parent(nullptr),
     _strict(true),
     _hasNote(false),
     _note(""),
@@ -50,7 +50,7 @@ TraceNode::TraceNode() :
 { }
 
 TraceNode::TraceNode(const TraceNode &rhs) :
-    _parent(NULL),
+    _parent(nullptr),
     _strict(rhs._strict),
     _hasNote(rhs._hasNote),
     _note(rhs._note),
@@ -60,12 +60,13 @@ TraceNode::TraceNode(const TraceNode &rhs) :
     addChildren(rhs._children);
 }
 
+TraceNode::TraceNode(TraceNode &&) noexcept = default;
 TraceNode & TraceNode::operator =(const TraceNode &) = default;
 
-TraceNode::~TraceNode() { }
+TraceNode::~TraceNode() = default;
 
 TraceNode::TraceNode(const string &note, int64_t timestamp) :
-    _parent(NULL),
+    _parent(nullptr),
     _strict(true),
     _hasNote(true),
     _note(note),
@@ -74,7 +75,7 @@ TraceNode::TraceNode(const string &note, int64_t timestamp) :
 { }
 
 TraceNode::TraceNode(int64_t timestamp) :
-    _parent(NULL),
+    _parent(nullptr),
     _strict(true),
     _hasNote(false),
     _note(""),
@@ -90,15 +91,11 @@ TraceNode::swap(TraceNode &other)
     std::swap(_hasNote, other._hasNote);
     _note.swap(other._note);
     _children.swap(other._children);
-    for (std::vector<TraceNode>::iterator it = _children.begin();
-         it != _children.end(); ++it)
-    {
-        it->_parent = this;
+    for (auto & child : _children) {
+        child._parent = this;
     }
-    for (std::vector<TraceNode>::iterator it = other._children.begin();
-         it != other._children.end(); ++it)
-    {
-        it->_parent = &other;
+    for (auto & child : other._children) {
+        child._parent = &other;
     }
     std::swap(_timestamp, other._timestamp);
     return *this;
@@ -107,7 +104,7 @@ TraceNode::swap(TraceNode &other)
 TraceNode &
 TraceNode::clear()
 {
-    _parent = NULL;
+    _parent = nullptr;
     _strict = true;
     _hasNote = false;
     _note.clear();
@@ -120,10 +117,8 @@ TraceNode &
 TraceNode::sort()
 {
     if (!isLeaf()) {
-        for (std::vector<TraceNode>::iterator it = _children.begin();
-             it != _children.end(); ++it)
-        {
-            it->sort();
+        for (auto & child : _children) {
+            child.sort();
         }
         if (!isStrict()) {
             std::sort(_children.begin(), _children.end(), Cmp());
@@ -140,15 +135,13 @@ TraceNode::compact()
     }
     std::vector<TraceNode> tmp;
     tmp.swap(_children);
-    for (std::vector<TraceNode>::iterator it = tmp.begin();
-         it != tmp.end(); ++it)
+    for (auto & child : tmp)
     {
-        TraceNode &child = *it;
         child.compact();
         if (child.isEmpty()) {
             // ignore
         } else if (child.isLeaf()) {
-            addChild(*it);
+            addChild(child);
         } else if (_strict == child._strict) {
             addChildren(child._children);
         } else if (child.getNumChildren() == 1) {
@@ -161,7 +154,7 @@ TraceNode::compact()
                 addChildren(grandChild._children);
             }
         } else {
-            addChild(*it);
+            addChild(child);
         }
     }
     return *this;
@@ -194,21 +187,19 @@ TraceNode::addChild(const string &note, int64_t timestamp)
 }
 
 TraceNode &
-TraceNode::addChild(const TraceNode &child)
+TraceNode::addChild(TraceNode child)
 {
     LOG_ASSERT(!_hasNote);
-    _children.push_back(child);
+    _children.emplace_back(std::move(child));
     _children.back()._parent = this;
     return *this;
 }
 
 TraceNode &
-TraceNode::addChildren(const std::vector<TraceNode> &children)
+TraceNode::addChildren(std::vector<TraceNode> children)
 {
-    for (std::vector<TraceNode>::const_iterator it = children.begin();
-         it != children.end(); ++it)
-    {
-        addChild(*it);
+    for (auto & child : children) {
+        addChild(std::move(child));
     }
     return *this;
 }
@@ -236,10 +227,8 @@ TraceNode::writeString(string &dst, size_t indent, size_t limit) const
     }
     string name = isStrict() ? "trace" : "fork";
     dst.append(pre).append("<").append(name).append(">\n");
-    for (std::vector<TraceNode>::const_iterator it = _children.begin();
-         it != _children.end(); ++it)
-    {
-        if (!it->writeString(dst, indent + 4, limit)) {
+    for (const auto & child : _children) {
+        if (!child.writeString(dst, indent + 4, limit)) {
             return false;
         }
     }
@@ -266,10 +255,8 @@ TraceNode::encode() const
         ret.append("]");
     } else {
         ret.append(_strict ? "(" : "{");
-        for (std::vector<TraceNode>::const_iterator it = _children.begin();
-             it != _children.end(); ++it)
-        {
-            ret.append(it->encode());
+        for (const auto & child : _children) {
+            ret.append(child.encode());
         }
         ret.append(_strict ? ")" : "}");
     }
@@ -349,8 +336,8 @@ TraceNode::accept(TraceVisitor & visitor) const
         return visitor;
     }
     visitor.entering(*this);
-    for (auto it(_children.begin()), mt(_children.end()); it != mt; it++) {
-        it->accept(visitor);
+    for (auto & child : _children) {
+        child.accept(visitor);
     }
     visitor.leaving(*this);
     return visitor;

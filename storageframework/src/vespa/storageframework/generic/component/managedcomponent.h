@@ -22,7 +22,6 @@ namespace metrics {
 namespace storage::framework {
 
 class StatusReporter;
-class MemoryManagerInterface;
 class MetricRegistrator;
 class MetricUpdateHook;
 class ThreadPool;
@@ -65,7 +64,6 @@ struct ManagedComponent {
     virtual const StatusReporter* getStatusReporter() = 0;
 
     virtual void setMetricRegistrator(MetricRegistrator&) = 0;
-    virtual void setMemoryManager(MemoryManagerInterface&) = 0;
     virtual void setClock(Clock&) = 0;
     virtual void setThreadPool(ThreadPool&) = 0;
     virtual void setUpgradeFlag(UpgradeFlags flag) = 0;

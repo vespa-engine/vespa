@@ -8,7 +8,6 @@
 #include <vespa/storage/distributor/operations/idealstate/setbucketstateoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
-#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
@@ -17,8 +16,7 @@ LOG_SETUP(".distributor.operation.checkers");
 
 using document::BucketSpace;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 bool
 SplitBucketStateChecker::validForSplit(StateChecker::Context& c)
@@ -1005,7 +1003,7 @@ BucketStateStateChecker::shouldSkipActivationDueToMaintenance(
         const StateChecker::Context& c) const
 {
     for (uint32_t i = 0; i < activeNodes.size(); ++i) {
-        const BucketCopy* cp(c.entry->getNode(activeNodes[i].nodeIndex));
+        const BucketCopy* cp(c.entry->getNode(activeNodes[i]._nodeIndex));
         if (!cp || cp->active()) {
             continue;
         }
@@ -1052,13 +1050,13 @@ BucketStateStateChecker::check(StateChecker::Context& c)
     vespalib::asciistream reason;
     std::vector<uint16_t> operationNodes;
     for (uint32_t i=0; i<activeNodes.size(); ++i) {
-        const BucketCopy* cp = c.entry->getNode(activeNodes[i].nodeIndex);
+        const BucketCopy* cp = c.entry->getNode(activeNodes[i]._nodeIndex);
         if (cp == 0 || cp->active()) {
             continue;
         }
-        operationNodes.push_back(activeNodes[i].nodeIndex);
-        reason << "[Setting node " << activeNodes[i].nodeIndex << " as active: "
-               << activeNodes[i].reason << "]";
+        operationNodes.push_back(activeNodes[i]._nodeIndex);
+        reason << "[Setting node " << activeNodes[i]._nodeIndex << " as active: "
+               << activeNodes[i].getReason() << "]";
     }
 
     // Deactivate all copies that are currently marked as active.
@@ -1069,7 +1067,7 @@ BucketStateStateChecker::check(StateChecker::Context& c)
         }
         bool shouldBeActive = false;
         for (uint32_t j=0; j<activeNodes.size(); ++j) {
-            if (activeNodes[j].nodeIndex == cp.getNode()) {
+            if (activeNodes[j]._nodeIndex == cp.getNode()) {
                 shouldBeActive = true;
             }
         }
@@ -1085,7 +1083,7 @@ BucketStateStateChecker::check(StateChecker::Context& c)
 
     std::vector<uint16_t> activeNodeIndexes;
     for (uint32_t i=0; i<activeNodes.size(); ++i) {
-        activeNodeIndexes.push_back(activeNodes[i].nodeIndex);
+        activeNodeIndexes.push_back(activeNodes[i]._nodeIndex);
     }
     auto op = std::make_unique<SetBucketStateOperation>(
             c.component.getClusterName(),
@@ -1096,11 +1094,9 @@ BucketStateStateChecker::check(StateChecker::Context& c)
     // we currently always send high pri activations.
     // Otherwise, only > 1 operationNodes if we have copies to deactivate.
     if (activeNodes.size() > 1 || operationNodes.size() == 1) {
-        op->setPriority(c.distributorConfig.getMaintenancePriorities()
-                        .activateNoExistingActive);
+        op->setPriority(c.distributorConfig.getMaintenancePriorities().activateNoExistingActive);
     } else {
-        op->setPriority(c.distributorConfig.getMaintenancePriorities()
-                        .activateWithExistingActive);
+        op->setPriority(c.distributorConfig.getMaintenancePriorities().activateWithExistingActive);
     }
     op->setDetailedReason(reason.str());
     return Result::createStoredResult(std::move(op), MaintenancePriority::VERY_HIGH);
@@ -1139,8 +1135,7 @@ GarbageCollectionStateChecker::check(Context& c)
                << ", configured interval "
                << c.distributorConfig.getGarbageCollectionInterval() << "]";
 
-        op->setPriority(c.distributorConfig.getMaintenancePriorities()
-                        .garbageCollection);
+        op->setPriority(c.distributorConfig.getMaintenancePriorities().garbageCollection);
         op->setDetailedReason(reason.c_str());
         return Result::createStoredResult(std::move(op), MaintenancePriority::VERY_LOW);
     } else {
@@ -1148,5 +1143,4 @@ GarbageCollectionStateChecker::check(Context& c)
     }
 }
 
-} // distributor
-} // storage
+}

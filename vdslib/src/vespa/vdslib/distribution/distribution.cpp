@@ -549,8 +549,7 @@ Distribution::getIdealNodes(const NodeType& nodeType,
     uint32_t seed;
     if (nodeType == NodeType::STORAGE) {
         seed = getStorageSeed(bucket, clusterState);
-        getIdealGroups(bucket, clusterState, *_nodeGraph, redundancy,
-                       _groupDistribution);
+        getIdealGroups(bucket, clusterState, *_nodeGraph, redundancy, _groupDistribution);
     } else {
         seed = getDistributorSeed(bucket, clusterState);
         const Group* group(getIdealDistributorGroup(bucket, clusterState, *_nodeGraph));
@@ -566,8 +565,7 @@ Distribution::getIdealNodes(const NodeType& nodeType,
     uint32_t randomIndex = 0;
     for (uint32_t i=0, n=_groupDistribution.size(); i<n; ++i) {
         uint16_t groupRedundancy(_groupDistribution[i]._redundancy);
-        const std::vector<uint16_t>& nodes(
-                _groupDistribution[i]._group->getNodes());
+        const std::vector<uint16_t>& nodes(_groupDistribution[i]._group->getNodes());
         // Create temporary place to hold results. Use double linked list
         // for cheap access to back(). Stuff in redundancy fake entries to
         // avoid needing to check size during iteration.
@@ -576,15 +574,11 @@ Distribution::getIdealNodes(const NodeType& nodeType,
             // Verify that the node is legal target before starting to grab
             // random number. Helps worst case of having to start new random
             // seed if the node that is out of order is illegal anyways.
-            const NodeState& nodeState(
-                    clusterState.getNodeState(Node(nodeType, nodes[j])));
+            const NodeState& nodeState(clusterState.getNodeState(Node(nodeType, nodes[j])));
             if (!nodeState.getState().oneOf(upStates)) continue;
             if (nodeState.isAnyDiskDown()) {
-                uint16_t idealDiskIndex(getIdealDisk(
-                        nodeState, nodes[j], bucket, IDEAL_DISK_EVEN_IF_DOWN));
-                if (nodeState.getDiskState(idealDiskIndex).getState()
-                        != State::UP)
-                {
+                uint16_t idealDiskIndex(getIdealDisk(nodeState, nodes[j], bucket, IDEAL_DISK_EVEN_IF_DOWN));
+                if (nodeState.getDiskState(idealDiskIndex).getState() != State::UP) {
                     continue;
                 }
             }
@@ -611,8 +605,7 @@ Distribution::getIdealNodes(const NodeType& nodeType,
                      it != tmpResults.end(); ++it)
                 {
                     if (score > it->_score) {
-                        tmpResults.insert(it, ScoredNode(
-                                nodes[j], nodeState.getReliability(), score));
+                        tmpResults.insert(it, ScoredNode(nodes[j], nodeState.getReliability(), score));
                         break;
                     }
                 }
@@ -620,10 +613,9 @@ Distribution::getIdealNodes(const NodeType& nodeType,
             }
         }
         trimResult(tmpResults, groupRedundancy);
-        for (std::list<ScoredNode>::iterator it = tmpResults.begin();
-                it != tmpResults.end(); ++it)
-        {
-            resultNodes.push_back(it->_index);
+        resultNodes.reserve(resultNodes.size() + tmpResults.size());
+        for (const auto & scored : tmpResults) {
+            resultNodes.push_back(scored._index);
         }
     }
 }

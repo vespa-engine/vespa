@@ -13,7 +13,6 @@ ComponentRegisterImpl::ComponentRegisterImpl()
       _topMetricSet("vds", "", ""),
       _hooks(),
       _metricManager(nullptr),
-      _memoryManager(nullptr),
       _clock(nullptr),
       _threadPool(nullptr),
       _upgradeFlag(NO_UPGRADE_SPECIAL_HANDLING_ACTIVE),
@@ -27,7 +26,6 @@ ComponentRegisterImpl::registerComponent(ManagedComponent& mc)
 {
     vespalib::LockGuard lock(_componentLock);
     _components.push_back(&mc);
-    if (_memoryManager != 0) mc.setMemoryManager(*_memoryManager);
     if (_clock != 0) mc.setClock(*_clock);
     if (_threadPool != 0) mc.setThreadPool(*_threadPool);
     if (_metricManager != 0) mc.setMetricRegistrator(*this);

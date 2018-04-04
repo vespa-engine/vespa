@@ -13,8 +13,7 @@
 
 using document::test::makeDocumentBucket;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 using namespace std::chrono_literals;
 
@@ -199,12 +198,10 @@ PendingMessageTrackerTest::testSimple()
     clock.setAbsoluteTimeInSeconds(1);
     PendingMessageTracker tracker(compReg);
 
-    std::shared_ptr<api::RemoveCommand> remove(
-            new api::RemoveCommand(
+    auto remove = std::make_shared<api::RemoveCommand>(
                     makeDocumentBucket(document::BucketId(16, 1234)),
-                    document::DocumentId("userdoc:footype:1234:foo"), 1001));
-    remove->setAddress(
-            api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0));
+                    document::DocumentId("userdoc:footype:1234:foo"), 1001);
+    remove->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0));
     tracker.insert(remove);
 
     {
@@ -216,8 +213,7 @@ PendingMessageTrackerTest::testSimple()
                         "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000004d2))</b>\n"
                         "<ul>\n"
                         "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> "
-                        "Remove(BucketId(0x40000000000004d2), "
-                        "userdoc:footype:1234:foo, timestamp 1001)</li>\n"
+                        "Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
                         "</ul>\n"),
                 ost.str());
     }
@@ -229,8 +225,7 @@ PendingMessageTrackerTest::testSimple()
         std::ostringstream ost;
         tracker.reportStatus(ost, framework::HttpUrlPath("/pendingmessages?order=bucket"));
 
-        CPPUNIT_ASSERT_MSG(ost.str(),
-                           ost.str().find("doc:") == std::string::npos);
+        CPPUNIT_ASSERT_MSG(ost.str(), ost.str().find("doc:") == std::string::npos);
     }
 }
 
@@ -240,20 +235,17 @@ PendingMessageTrackerTest::insertMessages(PendingMessageTracker& tracker)
     for (uint32_t i = 0; i < 4; i++) {
         std::ostringstream ost;
         ost << "userdoc:footype:1234:" << i;
-        std::shared_ptr<api::RemoveCommand> remove(
-                new api::RemoveCommand(
+        auto remove = std::make_shared<api::RemoveCommand>(
                         makeDocumentBucket(document::BucketId(16, 1234)),
-                        document::DocumentId(ost.str()), 1000 + i));
-        remove->setAddress(
-                api::StorageMessageAddress("storage",
-                                           lib::NodeType::STORAGE, i % 2));
+                        document::DocumentId(ost.str()), 1000 + i);
+        remove->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, i % 2));
         tracker.insert(remove);
     }
 
     for (uint32_t i = 0; i < 4; i++) {
         std::ostringstream ost;
         ost << "userdoc:footype:4567:" << i;
-        std::shared_ptr<api::RemoveCommand> remove(new api::RemoveCommand(makeDocumentBucket(document::BucketId(16, 4567)), document::DocumentId(ost.str()), 2000 + i));
+        auto remove = std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(16, 4567)), document::DocumentId(ost.str()), 2000 + i);
         remove->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, i % 2));
         tracker.insert(remove);
     }
@@ -302,21 +294,21 @@ PendingMessageTrackerTest::testMultipleMessages()
                 std::string(
                         "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000004d2))</b>\n"
                         "<ul>\n"
-                        "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), userdoc:footype:1234:0, timestamp 1000)</li>\n"
-                        "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), userdoc:footype:1234:2, timestamp 1002)</li>\n"
-                        "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), userdoc:footype:1234:1, timestamp 1001)</li>\n"
-                        "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), userdoc:footype:1234:3, timestamp 1003)</li>\n"
+                        "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                        "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                        "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                        "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
                         "</ul>\n"
                         "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000011d7))</b>\n"
                         "<ul>\n"
-                        "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), userdoc:footype:4567:0, timestamp 2000)</li>\n"
-                        "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), userdoc:footype:4567:2, timestamp 2002)</li>\n"
-                        "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), userdoc:footype:4567:1, timestamp 2001)</li>\n"
-                        "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), userdoc:footype:4567:3, timestamp 2003)</li>\n"
-                        "</ul>\n"),
+                        "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                        "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                        "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                        "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                        "</ul>\n"
+                        ),
                 ost.str());
     }
-
     {
         std::ostringstream ost;
         tracker.reportStatus(ost, framework::HttpUrlPath("/pendingmessages?order=node"));
@@ -324,17 +316,17 @@ PendingMessageTrackerTest::testMultipleMessages()
         CPPUNIT_ASSERT_CONTAIN(std::string(
                                      "<b>Node 0 (pending count: 4)</b>\n"
                                      "<ul>\n"
-                                     "<li><b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), userdoc:footype:1234:0, timestamp 1000)</li>\n"
-                                     "<li><b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), userdoc:footype:1234:2, timestamp 1002)</li>\n"
-                                     "<li><b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), userdoc:footype:4567:0, timestamp 2000)</li>\n"
-                                     "<li><b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), userdoc:footype:4567:2, timestamp 2002)</li>\n"
+                                     "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                                     "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                                     "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                                     "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
                                      "</ul>\n"
                                      "<b>Node 1 (pending count: 4)</b>\n"
                                      "<ul>\n"
-                                     "<li><b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), userdoc:footype:1234:1, timestamp 1001)</li>\n"
-                                     "<li><b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), userdoc:footype:1234:3, timestamp 1003)</li>\n"
-                                     "<li><b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), userdoc:footype:4567:1, timestamp 2001)</li>\n"
-                                     "<li><b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), userdoc:footype:4567:3, timestamp 2003)</li>\n"
+                                     "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                                     "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                                     "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                                     "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
                                      "</ul>\n"
             ), ost.str());
     }
@@ -394,12 +386,9 @@ PendingMessageTrackerTest::testGetPendingMessageTypes()
     PendingMessageTracker tracker(compReg);
     document::BucketId bid(16, 1234);
 
-    std::shared_ptr<api::RemoveCommand> remove(
-            new api::RemoveCommand(
-                    makeDocumentBucket(bid),
-                    document::DocumentId("userdoc:footype:1234:foo"), 1001));
-    remove->setAddress(
-            api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0));
+    auto remove = std::make_shared<api::RemoveCommand>(makeDocumentBucket(bid),
+                                                       document::DocumentId("userdoc:footype:1234:foo"), 1001);
+    remove->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0));
     tracker.insert(remove);
 
     {
@@ -434,21 +423,16 @@ PendingMessageTrackerTest::testHasPendingMessage()
     CPPUNIT_ASSERT(!tracker.hasPendingMessage(1, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
 
     {
-        std::shared_ptr<api::RemoveCommand> remove(
-                new api::RemoveCommand(
-                        makeDocumentBucket(bid),
-                        document::DocumentId("userdoc:footype:1234:foo"), 1001));
-        remove->setAddress(
-                api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
+        auto remove = std::make_shared<api::RemoveCommand>(makeDocumentBucket(bid),
+                                                           document::DocumentId("userdoc:footype:1234:foo"), 1001);
+        remove->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
         tracker.insert(remove);
     }
 
     CPPUNIT_ASSERT(tracker.hasPendingMessage(1, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
     CPPUNIT_ASSERT(!tracker.hasPendingMessage(0, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
     CPPUNIT_ASSERT(!tracker.hasPendingMessage(2, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
-    CPPUNIT_ASSERT(!tracker.hasPendingMessage(1,
-                                              makeDocumentBucket(document::BucketId(16, 1233)),
-                                              api::MessageType::REMOVE_ID));
+    CPPUNIT_ASSERT(!tracker.hasPendingMessage(1, makeDocumentBucket(document::BucketId(16, 1233)), api::MessageType::REMOVE_ID));
     CPPUNIT_ASSERT(!tracker.hasPendingMessage(1, makeDocumentBucket(bid), api::MessageType::DELETEBUCKET_ID));
 }
 
@@ -460,10 +444,8 @@ class OperationEnumerator : public PendingMessageTracker::Checker
 public:
     bool check(uint32_t msgType, uint16_t node, uint8_t p) override {
         (void) p;
-        ss << api::MessageType::get(static_cast<api::MessageType::Id>(msgType))
-                .getName()
-           << " -> " << node
-           << "\n";
+        ss << api::MessageType::get(static_cast<api::MessageType::Id>(msgType)).getName()
+           << " -> " << node << "\n";
 
         return true;
     }
@@ -523,5 +505,4 @@ void PendingMessageTrackerTest::busy_node_duration_can_be_adjusted() {
     CPPUNIT_ASSERT(!f.tracker().getNodeInfo().isBusy(0));
 }
 
-} // distributor
-} // storage
+}

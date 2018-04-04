@@ -1,20 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/dummystoragelink.h>
-#include <tests/distributor/distributortestutil.h>
+#include "distributortestutil.h"
 #include <vespa/config-stor-distribution.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
-#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
-#include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/distributor/statecheckers.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/stat.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 
 using namespace std::literals::string_literals;
 using document::test::makeBucketSpace;
