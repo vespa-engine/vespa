@@ -192,8 +192,8 @@ public class FileDownloaderTest {
         FileDownloader fileDownloader = new FileDownloader(connectionPool, downloadDir, tempDir, timeout, sleepBetweenRetries);
         FileReference foo = new FileReference("foo");
         FileReference bar = new FileReference("bar");
-        fileDownloader.queueForAsyncDownload(new FileReferenceDownload(foo));
-        fileDownloader.queueForAsyncDownload(new FileReferenceDownload(bar));
+        fileDownloader.download(new FileReferenceDownload(foo));
+        fileDownloader.download(new FileReferenceDownload(bar));
 
         // Verify download status
         assertDownloadStatus(fileDownloader, foo, 0.0);
