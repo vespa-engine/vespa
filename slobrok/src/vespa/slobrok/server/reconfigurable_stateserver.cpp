@@ -28,13 +28,11 @@ ReconfigurableStateServer::ReconfigurableStateServer(const config::ConfigUri & c
     _configFetcher->start();
 }
 
-ReconfigurableStateServer::~ReconfigurableStateServer() = default;
-
-bool
-ReconfigurableStateServer::isServerUp() const
+ReconfigurableStateServer::~ReconfigurableStateServer()
 {
-    return static_cast<bool>(_server);
+    _configFetcher->close();
 }
+
 void
 ReconfigurableStateServer::configure(std::unique_ptr<vespa::config::StateserverConfig> config)
 {
@@ -48,6 +46,16 @@ ReconfigurableStateServer::configure(std::unique_ptr<vespa::config::StateserverC
             std::this_thread::sleep_for(retryTime * 1s);
         }
     }
+    if (!_server) {
+        try {
+            _server = std::make_unique<vespalib::StateServer>(config->httpport, _health, _metrics, _components);
+        } catch (vespalib::PortListenException & e) {
+            LOG(error, "Failed listening to network port(%d) with protocol(%s): '%s', giving up and restarting.",
+                e.get_port(), e.get_protocol().c_str(), e.what());
+            std::quick_exit(17);
+        }
+    }
+
 }
 
 }

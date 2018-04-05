@@ -19,7 +19,6 @@ public:
                               vespalib::MetricsProducer & metrics,
                               vespalib::ComponentConfigProducer & component);
     ~ReconfigurableStateServer();
-    bool isServerUp() const;
 private:
     void configure(std::unique_ptr<vespa::config::StateserverConfig> config) override;
     vespalib::HealthProducer               & _health;
