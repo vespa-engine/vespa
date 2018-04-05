@@ -17,7 +17,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.StatisticsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.config.StateserverConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
@@ -83,13 +82,6 @@ public class AdminTestCase {
             if (s.connectionspec().matches(".*" + localhost + ".*")) localHostOK = true;
         }
         assertTrue(localHostOK);
-
-        StateserverConfig.Builder ssb = new StateserverConfig.Builder();
-        vespaModel.getConfig(ssb, "admin/slobrok.0");
-        assertEquals(19100, new StateserverConfig(ssb).httpport());
-
-        vespaModel.getConfig(ssb, "admin/slobrok.1");
-        assertEquals(19102, new StateserverConfig(ssb).httpport());
 
         LogdConfig.Builder lb = new LogdConfig.Builder();
         vespaModel.getConfig(lb, "admin/slobrok.0");

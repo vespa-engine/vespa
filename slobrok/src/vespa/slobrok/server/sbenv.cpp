@@ -1,25 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "reconfigurable_stateserver.h"
 #include "sbenv.h"
 #include "selfcheck.h"
 #include "remote_check.h"
+#include <sstream>
+#include <vespa/vespalib/net/state_server.h>
 #include <vespa/vespalib/util/host_name.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/config/helper/configfetcher.h>
-#include <thread>
-#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".sbenv");
 
-using namespace std::chrono_literals;
-
 namespace slobrok {
-
 namespace {
 
 void
@@ -85,16 +80,17 @@ ConfigTask::PerformTask()
 } // namespace slobrok::<unnamed>
 
 SBEnv::SBEnv(const ConfigShim &shim)
-    : _transport(std::make_unique<FNET_Transport>()),
-      _supervisor(std::make_unique<FRT_Supervisor>(_transport.get(), nullptr)),
-      _configShim(shim),
+    : _transport(new FNET_Transport()),
+      _supervisor(new FRT_Supervisor(_transport.get(), NULL)),
+      _sbPort(shim.portNumber()),
+      _statePort(shim.statePort()),
       _configurator(shim.factory().create(*this)),
       _shuttingDown(false),
       _partnerList(),
       _me(),
       _rpcHooks(*this, _rpcsrvmap, _rpcsrvmanager),
-      _selfchecktask(std::make_unique<SelfCheck>(getSupervisor()->GetScheduler(), _rpcsrvmap, _rpcsrvmanager)),
-      _remotechecktask(std::make_unique<RemoteCheck>(getSupervisor()->GetScheduler(), _rpcsrvmap, _rpcsrvmanager, _exchanger)),
+      _selfchecktask(new SelfCheck(getSupervisor()->GetScheduler(), _rpcsrvmap, _rpcsrvmanager)),
+      _remotechecktask(new RemoteCheck(getSupervisor()->GetScheduler(), _rpcsrvmap, _rpcsrvmanager, _exchanger)),
       _health(),
       _metrics(_rpcHooks, *_transport),
       _components(),
@@ -102,7 +98,7 @@ SBEnv::SBEnv(const ConfigShim &shim)
       _exchanger(*this, _rpcsrvmap),
       _rpcsrvmap()
 {
-    srandom(time(nullptr) ^ getpid());
+    srandom(time(NULL) ^ getpid());
     _rpcHooks.initRPC(getSupervisor());
 }
 
@@ -162,22 +158,20 @@ toString(const std::vector<std::string> & v) {
 int
 SBEnv::MainLoop()
 {
-    if (! getSupervisor()->Listen(_configShim.portNumber())) {
-        LOG(error, "unable to listen to port %d", _configShim.portNumber());
+    vespalib::StateServer stateServer(_statePort, _health, _metrics, _components);
+
+    if (! getSupervisor()->Listen(_sbPort)) {
+        LOG(error, "unable to listen to port %d", _sbPort);
         EV_STOPPING("slobrok", "could not listen");
         return 1;
     } else {
-        LOG(config, "listening on port %d", _configShim.portNumber());
+        LOG(config, "listening on port %d", _sbPort);
     }
 
-    std::string myspec = createSpec(_configShim.portNumber());
+    std::string myspec = createSpec(_sbPort);
 
-    _me = std::make_unique<ManagedRpcServer>(myspec.c_str(), myspec.c_str(), _rpcsrvmanager);
-
-    std::unique_ptr<ReconfigurableStateServer> stateServer;
-    if (_configShim.enableStateServer()) {
-        stateServer = std::make_unique<ReconfigurableStateServer>(_configShim.configId(), _health, _metrics, _components);
-    }
+    _me.reset(new ManagedRpcServer(myspec.c_str(), myspec.c_str(),
+                                   _rpcsrvmanager));
 
     try {
         _configurator->poll();

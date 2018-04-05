@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.admin;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.vespa.config.StateserverConfig;
 import com.yahoo.vespa.model.AbstractService;
 
 /**
@@ -10,13 +9,8 @@ import com.yahoo.vespa.model.AbstractService;
  *
  * @author  gjoranv
  */
-public class Slobrok extends AbstractService implements StateserverConfig.Producer {
+public class Slobrok extends AbstractService {
     private static final long serialVersionUID = 1L;
-
-    @Override
-    public void getConfig(StateserverConfig.Builder builder) {
-        builder.httpport(getStatePort());
-    }
 
     /**
      * @param parent The parent ConfigProducer.
@@ -46,7 +40,9 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
     }
 
     public String getStartupCommand() {
-        return "exec $ROOT/sbin/vespa-slobrok -p " + getPort() + " -c " + getConfigId();
+        return "exec $ROOT/sbin/vespa-slobrok -p " + getPort() +
+                " -s " + getStatePort() +
+                " -c " + getConfigId();
     }
 
     /**
@@ -59,15 +55,15 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
     /**
      * @return The port on which this slobrok should respond, as a String.
      */
-    private String getPort() {
+    public String getPort() {
         return String.valueOf(getRelativePort(0));
     }
 
     /**
      * @return The port on which the state server should respond
      */
-    public int getStatePort() {
-        return getRelativePort(1);
+    public String getStatePort() {
+        return String.valueOf(getRelativePort(1));
     }
 
     /**

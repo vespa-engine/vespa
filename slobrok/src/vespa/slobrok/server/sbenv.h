@@ -8,10 +8,10 @@
 #include "exchange_manager.h"
 #include "configshim.h"
 #include "ok_state.h"
-#include "metrics_producer.h"
 #include <vespa/config-slobroks.h>
 #include <vespa/slobrok/cfg.h>
 #include <vespa/vespalib/net/simple_health_producer.h>
+#include "metrics_producer.h"
 #include <vespa/vespalib/net/simple_component_config_producer.h>
 
 class FastOS_ThreadPool;
@@ -23,6 +23,7 @@ namespace slobrok {
 
 class NamedService;
 class ManagedRpcServer;
+class RemoteRpcServer;
 class RPCHooks;
 class SelfCheck;
 class RemoteCheck;
@@ -39,7 +40,8 @@ private:
     std::unique_ptr<FNET_Transport>    _transport;
     std::unique_ptr<FRT_Supervisor>    _supervisor;
 
-    ConfigShim         _configShim;
+    uint32_t           _sbPort;
+    uint32_t           _statePort;
     Configurator::UP   _configurator;
     bool               _shuttingDown;
 

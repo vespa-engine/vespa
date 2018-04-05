@@ -16,7 +16,7 @@ ConfigFetcher::ConfigFetcher(const IConfigContext::SP & context)
 }
 
 ConfigFetcher::ConfigFetcher(const SourceSpec & spec)
-    : _poller(std::make_shared<ConfigContext>(spec)),
+    : _poller(IConfigContext::SP(new ConfigContext(spec))),
       _thread(std::make_unique<vespalib::Thread>(_poller)),
       _closed(false),
       _started(false)
