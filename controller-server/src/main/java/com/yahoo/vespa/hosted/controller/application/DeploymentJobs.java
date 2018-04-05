@@ -122,9 +122,9 @@ public class DeploymentJobs {
             return true;
         }
         if (environment == Environment.staging) {
-            return isSuccessful(change, JobType.systemTest);
+            return successAt(change, JobType.systemTest).isPresent();
         } else if (environment == Environment.prod) {
-            return isSuccessful(change, JobType.stagingTest);
+            return successAt(change, JobType.stagingTest).isPresent();
         }
         return true; // other environments do not have any preconditions
     }
@@ -145,12 +145,12 @@ public class DeploymentJobs {
 
     public Optional<IssueId> issueId() { return issueId; }
 
-    /** Returns whether the job of the given type has completed successfully for the given change */
-    private boolean isSuccessful(Change change, JobType jobType) {
+    /** Returns the time of success for the given change for the given job type, or empty if unsuccessful. */
+    public Optional<Instant> successAt(Change change, JobType jobType) {
         return Optional.ofNullable(jobStatus().get(jobType))
                        .flatMap(JobStatus::lastSuccess)
                        .filter(status -> status.lastCompletedWas(change))
-                       .isPresent();
+                       .map(JobStatus.JobRun::at);
     }
 
     private static Optional<Long> requireId(Optional<Long> id, String message) {

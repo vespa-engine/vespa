@@ -173,10 +173,10 @@ public class ControllerTest {
                 .environment(Environment.prod)
                 .region("us-east-3")
                 .build();
-        tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(component).application(app1).nextBuildNumber().nextBuildNumber().uploadArtifact(applicationPackage).submit();
         try {
             tester.deploy(systemTest, app1, applicationPackage);
-            fail("Expected exception due to unallowed production deployment removal");
+            fail("Expected exception due to illegal production deployment removal");
         }
         catch (IllegalArgumentException e) {
             assertEquals("deployment-removal: application 'tenant1.app1' is deployed in corp-us-east-1, but does not include this zone in deployment.xml", e.getMessage());

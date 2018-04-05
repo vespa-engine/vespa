@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -151,6 +150,7 @@ public class Application {
 
     /** Returns the version a new deployment to this zone should use for this application */
     public Version deployVersionIn(ZoneId zone, Controller controller) {
+        // TODO jvenstad: Return max of current and change.
         return change.platform().orElse(versionIn(zone, controller));
     }
 
@@ -176,6 +176,7 @@ public class Application {
     public Optional<ApplicationVersion> deployApplicationVersionFor(DeploymentJobs.JobType jobType,
                                                                     Controller controller,
                                                                     boolean currentVersion) {
+        // TODO jvenstad: Return max of current and change's.
         if (jobType == DeploymentJobs.JobType.component)
             return Optional.empty();
 
@@ -214,11 +215,6 @@ public class Application {
     @Override
     public String toString() {
         return "application '" + id + "'";
-    }
-
-    /** Returns whether changes to this are blocked in the given instant */
-    public boolean isBlocked(Instant instant) {
-         return ! deploymentSpec().canUpgradeAt(instant) || ! deploymentSpec().canChangeRevisionAt(instant);
     }
 
 }

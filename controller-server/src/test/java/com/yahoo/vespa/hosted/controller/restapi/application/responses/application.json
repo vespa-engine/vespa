@@ -58,7 +58,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Available change in component",
+        "reason": "Deploying application change to 1.0.42-commit1",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -72,7 +72,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Available change in component",
+        "reason": "Deploying application change to 1.0.42-commit1",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -86,7 +86,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Available change in component",
+        "reason": "Deploying application change to 1.0.42-commit1",
         "at": "(ignore)"
       }
     },
