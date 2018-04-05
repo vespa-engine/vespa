@@ -38,7 +38,6 @@ import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.content.*;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
-import com.yahoo.vespa.model.content.engines.VDSEngine;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.MultilevelDispatchValidator;
@@ -132,10 +131,6 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
             if (c.search.hasIndexedCluster() && !(c.persistenceFactory instanceof ProtonEngine.Factory) ) {
                 throw new RuntimeException("If you have indexed search you need to have proton as engine");
-            }
-
-            if (c.isMemfilePersistence()) {
-                admin.deployLogger().log(Level.WARNING, "'vds' engine is deprecated and will soon be removed. 'proton' is only recommended engine.");
             }
 
             if (documentsElement != null) {
@@ -513,10 +508,6 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
     public DistributionMode getDistributionMode() {
         if (distributionMode != null) return distributionMode;
         return getPersistence().getDefaultDistributionMode();
-    }
-
-    public boolean isMemfilePersistence() {
-        return persistenceFactory instanceof VDSEngine.Factory;
     }
 
     public static String getClusterName(ModelElement clusterElem) {

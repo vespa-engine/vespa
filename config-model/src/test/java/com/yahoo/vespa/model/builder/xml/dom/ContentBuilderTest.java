@@ -20,7 +20,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
-import com.yahoo.vespa.model.content.engines.VDSEngine;
 import com.yahoo.vespa.model.search.*;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 
@@ -194,9 +193,6 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "    <documents>" +
                 "       <document type=\"music\" mode=\"store-only\"/>" +
                 "    </documents>" +
-                "    <engine>"+
-                "      <vds/>"+
-                "    </engine>"+
                 "    <group>"+
                 "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>"+
                 "    </group>"+
@@ -206,7 +202,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(s.hasIndexedCluster());
         assertTrue(s.getClusters().isEmpty());
 
-        assertTrue(a.getPersistence() instanceof VDSEngine.Factory);
+        assertTrue(a.getPersistence() instanceof ProtonEngine.Factory);
 
         assertEquals(1, a.getStorageNodes().getChildren().size());
     }
@@ -244,9 +240,6 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "    <documents>" +
                 "       <document type=\"music\" mode=\"store-only\"/>" +
                 "    </documents>" +
-                "    <engine>"+
-                "      <vds/>"+
-                "    </engine>"+
                 "    <group>"+
                 "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>"+
                 "    </group>"+
@@ -263,7 +256,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(1, a.getRootGroup().getNodes().size());
         assertEquals("node0", a.getRootGroup().getNodes().get(0).getHostName());
 
-        assertTrue(a.getPersistence() instanceof  VDSEngine.Factory);
+        assertTrue(a.getPersistence() instanceof  ProtonEngine.Factory);
         assertEquals(1, a.getStorageNodes().getChildren().size());
         assertEquals("a", a.getConfigId());
     }
@@ -331,9 +324,6 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "    <documents>"+
                 "       <document type='music' mode='streaming'/>"+
                 "    </documents>"+
-                "    <engine>"+
-                "      <vds/>"+
-                "    </engine>"+
                 "    <group>"+
                 "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>"+
                 "    </group>"+
@@ -348,7 +338,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(musicClusterId + ".music", sc.getClusterName());
         assertEquals(musicClusterId, ((StreamingSearchCluster)sc).getStorageRouteSpec());
 
-        assertTrue(cluster.getPersistence() instanceof VDSEngine.Factory);
+        assertTrue(cluster.getPersistence() instanceof ProtonEngine.Factory);
         assertEquals(1, cluster.getStorageNodes().getChildren().size());
 
         assertEquals(musicClusterId, cluster.getConfigId());
@@ -360,7 +350,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "logd", "configproxy",
                 "config-sentinel", "configserver", "logserver",
                 "slobrok", "container-clustercontroller",
-                "storagenode", "distributor"
+                "storagenode", "distributor","searchnode","transactionlogserver"
         };
         assertServices(h, expectedServices);
 
@@ -386,9 +376,6 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "       <document type='music' mode='streaming'/>"+
                 "       <document type='book' mode='streaming'/>"+
                 "    </documents>"+
-                "    <engine>"+
-                "      <vds/>"+
-                "    </engine>"+
                 "    <group>"+
                 "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>"+
                 "    </group>"+
@@ -412,7 +399,7 @@ public class ContentBuilderTest extends DomBuilderTest {
             assertEquals(musicClusterId, ((StreamingSearchCluster) sc).getStorageRouteSpec());
         }
 
-        assertTrue(cluster.getPersistence() instanceof VDSEngine.Factory);
+        assertTrue(cluster.getPersistence() instanceof ProtonEngine.Factory);
         assertEquals(1, cluster.getStorageNodes().getChildren().size());
 
         assertEquals(musicClusterId, cluster.getConfigId());

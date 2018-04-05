@@ -16,9 +16,7 @@ public class EngineFactoryBuilder {
             }
 
             ModelElement e;
-            if ((e = persistence.getChild("vds")) != null) {
-                return new VDSEngine.Factory(e);
-            } else if (persistence.getChild("proton") != null) {
+            if (persistence.getChild("proton") != null) {
                 return new ProtonEngine.Factory(c.getSearch());
             } else if (persistence.getChild("dummy") != null) {
                 return new com.yahoo.vespa.model.content.engines.DummyPersistence.Factory();

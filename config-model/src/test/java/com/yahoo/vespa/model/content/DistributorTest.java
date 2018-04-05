@@ -54,31 +54,15 @@ public class DistributorTest {
 
     @Test
     public void testRevertDefaultOffForSearch() {
-        {
-            StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
-            parse("<cluster id=\"storage\">\n" +
-                    "  <documents/>" +
-                    "    <engine>" +
-                    "       <vds/>" +
-                    "    </engine>" +
-                    "  <group>" +
-                    "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                    "  </group>" +
-                    "</cluster>").getConfig(builder);
-            StorDistributormanagerConfig conf = new StorDistributormanagerConfig(builder);
-            assertEquals(true, conf.enable_revert());
-        }
-        {
-            StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
-            parse("<cluster id=\"storage\">\n" +
-                    "  <documents/>" +
-                    "  <group>" +
-                    "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                    "  </group>" +
-                    "</cluster>").getConfig(builder);
-            StorDistributormanagerConfig conf = new StorDistributormanagerConfig(builder);
-            assertEquals(false, conf.enable_revert());
-        }
+        StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
+        parse("<cluster id=\"storage\">\n" +
+                "  <documents/>" +
+                "  <group>" +
+                "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+                "  </group>" +
+                "</cluster>").getConfig(builder);
+        StorDistributormanagerConfig conf = new StorDistributormanagerConfig(builder);
+        assertEquals(false, conf.enable_revert());
     }
 
     @Test
@@ -104,7 +88,7 @@ public class DistributorTest {
         assertEquals(26214400, conf.splitsize());
         assertEquals(13107200, conf.joinsize());
         assertEquals(8, conf.minsplitcount());
-        assertEquals(true, conf.inlinebucketsplitting());
+        assertEquals(false, conf.inlinebucketsplitting());
     }
 
     @Test

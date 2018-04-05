@@ -102,9 +102,6 @@ public class StorageClusterTest {
         parse(
                 "<cluster id=\"bees\">\n" +
                 "    <documents/>" +
-                "    <engine>" +
-                 "     <vds/>" +
-                "    </engine>" +
                 "    <tuning>\n" +
                 "        <persistence-threads>\n" +
                 "            <thread lowest-priority=\"VERY_LOW\" count=\"2\"/>\n" +
@@ -121,7 +118,7 @@ public class StorageClusterTest {
         StorFilestorConfig config = new StorFilestorConfig(builder);
 
         assertEquals(4, config.num_threads());
-        assertEquals(true, config.enable_multibit_split_optimalization());
+        assertEquals(false, config.enable_multibit_split_optimalization());
     }
 
     @Test
@@ -144,30 +141,6 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void maintenance_tuning_is_honored_for_vds_provider() throws Exception {
-        StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
-        parse(
-                "<cluster id=\"bees\">\n" +
-                "  <documents/>" +
-                "  <engine>\n" +
-                "    <vds/>\n" +
-                "  </engine>\n" +
-                "  <tuning>" +
-                "    <maintenance start=\"01:00\" stop=\"02:00\" high=\"tuesday\"/>\n" +
-                "  </tuning>" +
-                "  <group>" +
-                "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                "  </group>" +
-                "</cluster>"
-             ).getConfig(builder);
-        StorIntegritycheckerConfig config = new StorIntegritycheckerConfig(builder);
-
-        assertEquals(60, config.dailycyclestart());
-        assertEquals(120, config.dailycyclestop());
-        assertEquals("rrRrrrr", config.weeklycycle());
-    }
-
-    @Test
     public void integrity_checker_explicitly_disabled_when_not_running_with_vds_provider() throws Exception {
         StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
         parse(
@@ -181,26 +154,6 @@ public class StorageClusterTest {
         StorIntegritycheckerConfig config = new StorIntegritycheckerConfig(builder);
         // '-' --> don't run on the given week day
         assertEquals("-------", config.weeklycycle());
-    }
-
-    @Test
-    public void integrity_checker_not_explicitly_disabled_when_running_with_vds_provider() throws Exception {
-        StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
-        parse(
-                "<cluster id=\"bees\">\n" +
-                "  <documents/>" +
-                "  <engine>\n" +
-                "    <vds/>\n" +
-                "  </engine>\n" +
-                "  <group>" +
-                "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                "  </group>" +
-                "</cluster>"
-        ).getConfig(builder);
-        StorIntegritycheckerConfig config = new StorIntegritycheckerConfig(builder);
-        // No tuning element has been provided, but we should still get a default weeklycycle
-        // config generated since we're on VDS.
-        assertEquals("Rrrrrrr", config.weeklycycle());
     }
 
     @Test

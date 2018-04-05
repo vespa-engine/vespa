@@ -157,11 +157,7 @@ DocumentProcessing = element document-processing {
 
 ## Config for the persistence providers.
 Engine = element engine {
-   (Vds | Proton | Dummy)
-}
-
-Vds = element vds {
-    text
+   (Proton | Dummy)
 }
 
 Proton = element proton {
@@ -374,4 +370,11 @@ TuningCompression = element compression {
 
 Experimental = element experimental {
     element enable-multiple-bucket-spaces { xsd:boolean }?
+}
+
+Thread = element thread {
+  ## The lowest priority this thread should handle.
+  attribute lowest-priority { xsd:string}? &
+  ## The number of threads of this type to create
+  attribute count { xsd:integer }?
 }

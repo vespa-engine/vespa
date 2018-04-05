@@ -603,7 +603,6 @@ public class ClusterTest extends ContentBaseTest {
     @Test
     public void testProviders() {
         testProvider("proton", StorServerConfig.Persistence_provider.Type.RPC);
-        testProvider("vds", StorServerConfig.Persistence_provider.Type.STORAGE);
         testProvider("dummy", StorServerConfig.Persistence_provider.Type.DUMMY);
     }
 

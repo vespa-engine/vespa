@@ -48,9 +48,6 @@ public class GenericConfigTest {
                 "      <group>" +
                 "        <node distribution-key='0' hostalias='node0'/>" +
                 "      </group>" +
-                "      <engine>" +
-                "        <vds/>" +
-                "      </engine>" +
                 "  </content>" +
                 "</services>";
     }
