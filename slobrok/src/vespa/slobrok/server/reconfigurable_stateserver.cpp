@@ -24,7 +24,7 @@ ReconfigurableStateServer::ReconfigurableStateServer(const config::ConfigUri & c
       _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _server()
 {
-    _configFetcher->subscribe<vespa::config::StateserverConfig>(configUri.getConfigId(), this, 0);
+    _configFetcher->subscribe<vespa::config::StateserverConfig>(configUri.getConfigId(), this);
     _configFetcher->start();
 }
 
