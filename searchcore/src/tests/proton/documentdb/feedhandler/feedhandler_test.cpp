@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/persistence/spi/result.h>
+#include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
@@ -26,6 +27,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/io/fileutil.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("feedhandler_test");
@@ -250,19 +252,31 @@ MyFeedView::~MyFeedView() {}
 struct SchemaContext {
     Schema::SP                schema;
     std::unique_ptr<DocBuilder> builder;
-    SchemaContext() :
-        schema(new Schema()),
-        builder()
-    {
-        schema->addIndexField(Schema::IndexField("i1", DataType::STRING, CollectionType::SINGLE));
-        builder.reset(new DocBuilder(*schema));
-    }
+    SchemaContext();
+    ~SchemaContext();
     DocTypeName getDocType() const {
         return DocTypeName(builder->getDocumentType().getName());
     }
     const std::shared_ptr<const document::DocumentTypeRepo> &getRepo() const { return builder->getDocumentTypeRepo(); }
+    void addField(vespalib::stringref fieldName);
 };
 
+SchemaContext::SchemaContext()
+    : schema(new Schema()),
+      builder()
+{
+    addField("i1");
+}
+
+
+SchemaContext::~SchemaContext() = default;
+
+void
+SchemaContext::addField(vespalib::stringref fieldName)
+{
+    schema->addIndexField(Schema::IndexField(fieldName, DataType::STRING, CollectionType::SINGLE));
+    builder = std::make_unique<DocBuilder>(*schema);
+}
 
 struct DocumentContext {
     Document::SP  doc;
@@ -282,6 +296,16 @@ struct UpdateContext {
         update(new DocumentUpdate(builder.getDocumentType(), DocumentId(docId))),
         bucketId(BucketFactory::getBucketId(update->getId()))
     {
+    }
+    void addFieldUpdate(const vespalib::string &fieldName) {
+        const auto &docType = update->getType();
+        const auto &field = docType.getField(fieldName);
+        auto fieldValue = field.createValue();
+        fieldValue->assign(document::StringFieldValue("new value"));
+        document::AssignValueUpdate assignValueUpdate(*fieldValue);
+        document::FieldUpdate fieldUpdate(field);
+        fieldUpdate.addUpdate(assignValueUpdate);
+        update->addUpdate(fieldUpdate);
     }
 };
 
@@ -644,10 +668,57 @@ TEST_F("require that remove is NOT rejected if resource limit is reached", FeedH
     EXPECT_EQUAL("", token.getResult()->getErrorMessage());
 }
 
+void
+checkUpdate(FeedHandlerFixture &f, SchemaContext &schemaContext,
+            const vespalib::string &fieldName, bool expectReject)
+{
+    f.handler.setSerialNum(15);
+    UpdateContext updCtx("id:test:searchdocument::foo", *schemaContext.builder);
+    updCtx.addFieldUpdate(fieldName);
+    f.feedView.metaStore.insert(updCtx.update->getId().getGlobalId(), MyDocumentMetaStore::Entry(5, 5, Timestamp(9)));
+    f.feedView.metaStore.allocate(updCtx.update->getId().getGlobalId());
+    FeedOperation::UP op = std::make_unique<UpdateOperation>(updCtx.bucketId, Timestamp(10), updCtx.update);
+    FeedTokenContext token;
+    f.handler.performOperation(std::move(token.token), std::move(op));
+    EXPECT_TRUE(dynamic_cast<const UpdateResult *>(token.getResult()));
+    if (expectReject) {
+        EXPECT_EQUAL(0, f.feedView.update_count);
+        EXPECT_EQUAL(0u, f.feedView.update_serial);
+        EXPECT_EQUAL(Result::TRANSIENT_ERROR, token.getResult()->getErrorCode());
+        EXPECT_EQUAL("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Field not found'",
+                     token.getResult()->getErrorMessage());
+    } else {
+        EXPECT_EQUAL(1, f.feedView.update_count);
+        EXPECT_EQUAL(16u, f.feedView.update_serial);
+        EXPECT_EQUAL(Result::NONE, token.getResult()->getErrorCode());
+        EXPECT_EQUAL("", token.getResult()->getErrorMessage());
+    }
+}
+
+TEST_F("require that update with same document type repo is ok", FeedHandlerFixture)
+{
+    checkUpdate(f, f.schema, "i1", false);
+}
+
+TEST_F("require that update with different document type repo can succed", FeedHandlerFixture)
+{
+    SchemaContext schema;
+    schema.addField("i2");
+    checkUpdate(f, schema, "i1", false);
+}
+
+TEST_F("require that update with different document type repo can be rejected", FeedHandlerFixture)
+{
+    SchemaContext schema;
+    schema.addField("i2");
+    checkUpdate(f, schema, "i2", true);
+}
+
 }  // namespace
 
 TEST_MAIN()
 {
     DummyFileHeaderContext::setCreator("feedhandler_test");
     TEST_RUN_ALL();
+    vespalib::rmdir("mytlsdir", true);
 }
