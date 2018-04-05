@@ -74,7 +74,7 @@ public class FileDownloader {
         } else {
             log.log(LogLevel.DEBUG, () -> "File reference '" + fileReference.value() + "' not found in " +
                     directory.getAbsolutePath() + ", starting download");
-            return queueForAsyncDownload(fileReferenceDownload, timeout);
+            return download(fileReferenceDownload);
         }
     }
 
@@ -106,7 +106,7 @@ public class FileDownloader {
         return Optional.empty();
     }
 
-    public synchronized Future<Optional<File>> queueForAsyncDownload(FileReferenceDownload fileReferenceDownload, Duration timeout) {
+    public synchronized Future<Optional<File>> download(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
         Future<Optional<File>> inProgress = fileReferenceDownloader.addDownloadListener(fileReference, () -> getFile(fileReferenceDownload));
         if (inProgress != null) {
@@ -114,12 +114,12 @@ public class FileDownloader {
             return inProgress;
         }
 
-        Future<Optional<File>> future = queueForAsyncDownload(fileReferenceDownload);
+        Future<Optional<File>> future = queueForDownload(fileReferenceDownload);
         log.log(LogLevel.DEBUG, () -> "Queued '" + fileReference.value() + "' for download with timeout " + timeout);
         return future;
     }
 
-    public Future<Optional<File>> queueForAsyncDownload(FileReferenceDownload fileReferenceDownload) {
+    private Future<Optional<File>> queueForDownload(FileReferenceDownload fileReferenceDownload) {
         fileReferenceDownloader.addToDownloadQueue(fileReferenceDownload);
         return fileReferenceDownload.future();
     }
