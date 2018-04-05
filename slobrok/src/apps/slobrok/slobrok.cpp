@@ -50,7 +50,6 @@ int
 App::Main()
 {
     uint32_t portnum = 2773;
-    uint32_t statePort = 0;
     vespalib::string cfgId;
 
     int argi = 1;
@@ -60,9 +59,6 @@ App::Main()
         switch (c) {
         case 'c':
             cfgId = std::string(optArg);
-            break;
-        case 's':
-            statePort = atoi(optArg);
             break;
         case 'p':
             portnum = atoi(optArg);
@@ -77,10 +73,11 @@ App::Main()
         if (cfgId.empty()) {
             LOG(debug, "no config id specified");
             ConfigShim shim(portnum);
-            mainobj.reset(new SBEnv(shim));
+            mainobj = std::make_unique<SBEnv>(shim);
         } else {
-            ConfigShim shim(portnum, statePort, cfgId);
-            mainobj.reset(new SBEnv(shim));
+            ConfigShim shim(portnum, cfgId);
+            shim.enableStateServer(true);
+            mainobj = std::make_unique<SBEnv>(shim);
         }
         hook_sigterm();
         res = mainobj->MainLoop();
