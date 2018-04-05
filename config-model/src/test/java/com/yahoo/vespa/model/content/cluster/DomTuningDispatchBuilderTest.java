@@ -45,7 +45,7 @@ public class DomTuningDispatchBuilderTest {
         assertNull(dispatch.getMaxHitsPerPartition());
         assertNull(dispatch.getMinGroupCoverage());
         assertNull(dispatch.getMinActiveDocsCoverage());
-        assertTrue(TuningDispatch.DispatchPolicy.ROUNDROBIN == dispatch.getDispatchPolicy());
+        assertTrue(TuningDispatch.DispatchPolicy.WEIGHTED == dispatch.getDispatchPolicy());
     }
 
     @Test
@@ -86,7 +86,7 @@ public class DomTuningDispatchBuilderTest {
                         "    </dispatch>" +
                         "  </tuning>" +
                         "</content>");
-        assertTrue(TuningDispatch.DispatchPolicy.RANDOM == dispatch.getDispatchPolicy());
+        assertTrue(TuningDispatch.DispatchPolicy.WEIGHTED == dispatch.getDispatchPolicy());
     }
 
     private static TuningDispatch newTuningDispatch(String xml) throws Exception {

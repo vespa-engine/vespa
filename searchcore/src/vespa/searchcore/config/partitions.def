@@ -50,7 +50,7 @@ dataset[].mpp			int default=1
 dataset[].maxnodesdownperfixedrow int default=0
 
 ## Use simple roundrobin or random.
-dataset[].useroundrobinforfixedrow bool default=true
+dataset[].useroundrobinforfixedrow bool default=false
 
 ## specifies where a fdispatch or fsearch process can be contacted.
 ## must be in the format hostname:port/id where /id is optional.

@@ -183,7 +183,15 @@ public class IndexedHierarchicDistributionTest {
                 "  </group>", "");
     }
     private ContentCluster getIllegalGroupsCluster() throws Exception {
-        return createCluster(createClusterXml(getOddGroupsClusterXml(), 4, 4));
+        return createCluster(createClusterXml(getOddGroupsClusterXml(), Optional.of(getRoundRobinDispatchXml()), 4, 4));
+    }
+
+    private String getRoundRobinDispatchXml() {
+        return joinLines("<tuning>",
+                "  <dispatch>",
+                "    <dispatch-policy>round-robin</dispatch-policy>",
+                "  </dispatch>",
+                "</tuning>");
     }
 
     private String getRandomDispatchXml() {
