@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.admin;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.vespa.config.StateserverConfig;
+import com.yahoo.vespa.config.core.StateserverConfig;
 import com.yahoo.vespa.model.AbstractService;
 
 /**

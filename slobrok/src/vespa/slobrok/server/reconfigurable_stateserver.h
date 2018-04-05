@@ -12,7 +12,7 @@ namespace vespalib {
 }
 namespace slobrok {
 
-class ReconfigurableStateServer : private config::IFetcherCallback<vespa::config::StateserverConfig> {
+class ReconfigurableStateServer : private config::IFetcherCallback<vespa::config::core::StateserverConfig> {
 public:
     ReconfigurableStateServer(const config::ConfigUri & configUri,
                               vespalib::HealthProducer & healt,
@@ -20,7 +20,7 @@ public:
                               vespalib::ComponentConfigProducer & component);
     ~ReconfigurableStateServer();
 private:
-    void configure(std::unique_ptr<vespa::config::StateserverConfig> config) override;
+    void configure(std::unique_ptr<vespa::config::core::StateserverConfig> config) override;
     vespalib::HealthProducer               & _health;
     vespalib::MetricsProducer              & _metrics;
     vespalib::ComponentConfigProducer      & _components;
