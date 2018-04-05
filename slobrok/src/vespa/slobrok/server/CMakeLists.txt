@@ -22,6 +22,7 @@ vespa_add_library(slobrok_slobrokserver
     slobrokserver.cpp
     visible_map.cpp
     metrics_producer.cpp
+    reconfigurable_stateserver.cpp
     INSTALL lib64
     DEPENDS
     slobrok
