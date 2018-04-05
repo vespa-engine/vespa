@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -55,11 +56,13 @@ public class FileReferenceDownloader {
         FileReference fileReference = fileReferenceDownload.fileReference();
         long end = System.currentTimeMillis() + timeout.toMillis();
         boolean downloadStarted = false;
+        int retryCount = 0;
         while ((System.currentTimeMillis() < end) && !downloadStarted) {
             try {
-                if (startDownloadRpc(fileReferenceDownload)) {
+                if (startDownloadRpc(fileReferenceDownload, retryCount)) {
                     downloadStarted = true;
                 } else {
+                    retryCount++;
                     Thread.sleep(sleepBetweenRetries.toMillis());
                 }
             }
@@ -104,7 +107,7 @@ public class FileReferenceDownloader {
         }
     }
 
-    private boolean startDownloadRpc(FileReferenceDownload fileReferenceDownload) {
+    private boolean startDownloadRpc(FileReferenceDownload fileReferenceDownload, int retryCount) {
         Connection connection = connectionPool.getCurrent();
         Request request = new Request("filedistribution.serveFile");
         String fileReference = fileReferenceDownload.fileReference().value();
@@ -112,18 +115,19 @@ public class FileReferenceDownloader {
         request.parameters().add(new Int32Value(fileReferenceDownload.downloadFromOtherSourceIfNotFound() ? 0 : 1));
 
         execute(request, connection);
+        Level logLevel = (retryCount > 0 ? LogLevel.INFO : LogLevel.DEBUG);
         if (validateResponse(request)) {
-            log.log(LogLevel.DEBUG, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection);
+            log.log(logLevel, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection);
             if (request.returnValues().get(0).asInt32() == 0) {
-                log.log(LogLevel.DEBUG, () -> "Found file reference '" + fileReference + "' available at " + connection.getAddress());
+                log.log(logLevel, () -> "Found file reference '" + fileReference + "' available at " + connection.getAddress());
                 return true;
             } else {
-                log.log(LogLevel.DEBUG, "File reference '" + fileReference + "' not found for " + connection.getAddress());
+                log.log(logLevel, "File reference '" + fileReference + "' not found for " + connection.getAddress());
                 connectionPool.setNewCurrentConnection();
                 return false;
             }
         } else {
-            log.log(LogLevel.DEBUG, "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
+            log.log(logLevel, "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
                     ", error code: " + request.errorCode() + ", set error for connection and use another for next request");
             connectionPool.setError(connection, request.errorCode());
             return false;
