@@ -87,12 +87,10 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
                 .orElse(JobType.component);
 
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
-        controller.applications().lockOrThrow(applicationId, application -> {
-            // Since this is a manual operation we likely want it to trigger as soon as possible so we add it at to the
-            // front of the queue
-            application = controller.applications().deploymentTrigger().trigger(new DeploymentTrigger.Triggering(application, jobType, "Triggered from screwdriver/v1"), application);
-            controller.applications().store(application);
-        });
+        // Since this is a manual operation we likely want it to trigger as soon as possible so we add it at to the
+        // front of the queue
+        controller.applications().deploymentTrigger().trigger(new DeploymentTrigger.Triggering(
+                controller.applications().require(applicationId), jobType, "Triggered from screwdriver/v1"));
 
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
