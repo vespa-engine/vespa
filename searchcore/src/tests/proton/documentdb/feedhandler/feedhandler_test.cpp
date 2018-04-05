@@ -229,6 +229,12 @@ struct MyFeedView : public test::DummyFeedView {
     const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override {
         return NULL;
     }
+    void checkCounts(int exp_update_count, SerialNum exp_update_serial, int exp_put_count, SerialNum exp_put_serial) {
+        EXPECT_EQUAL(exp_update_count, update_count);
+        EXPECT_EQUAL(exp_update_serial, update_serial);
+        EXPECT_EQUAL(exp_put_count, put_count);
+        EXPECT_EQUAL(exp_put_serial, put_serial);
+    }
 };
 
 MyFeedView::MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &dtr)
@@ -670,26 +676,32 @@ TEST_F("require that remove is NOT rejected if resource limit is reached", FeedH
 
 void
 checkUpdate(FeedHandlerFixture &f, SchemaContext &schemaContext,
-            const vespalib::string &fieldName, bool expectReject)
+            const vespalib::string &fieldName, bool expectReject, bool existing)
 {
     f.handler.setSerialNum(15);
     UpdateContext updCtx("id:test:searchdocument::foo", *schemaContext.builder);
     updCtx.addFieldUpdate(fieldName);
-    f.feedView.metaStore.insert(updCtx.update->getId().getGlobalId(), MyDocumentMetaStore::Entry(5, 5, Timestamp(9)));
-    f.feedView.metaStore.allocate(updCtx.update->getId().getGlobalId());
+    if (existing) {
+        f.feedView.metaStore.insert(updCtx.update->getId().getGlobalId(), MyDocumentMetaStore::Entry(5, 5, Timestamp(9)));
+        f.feedView.metaStore.allocate(updCtx.update->getId().getGlobalId());
+    } else {
+        updCtx.update->setCreateIfNonExistent(true);
+    }
     FeedOperation::UP op = std::make_unique<UpdateOperation>(updCtx.bucketId, Timestamp(10), updCtx.update);
     FeedTokenContext token;
     f.handler.performOperation(std::move(token.token), std::move(op));
     EXPECT_TRUE(dynamic_cast<const UpdateResult *>(token.getResult()));
     if (expectReject) {
-        EXPECT_EQUAL(0, f.feedView.update_count);
-        EXPECT_EQUAL(0u, f.feedView.update_serial);
+        TEST_DO(f.feedView.checkCounts(0, 0u, 0, 0u));
         EXPECT_EQUAL(Result::TRANSIENT_ERROR, token.getResult()->getErrorCode());
         EXPECT_EQUAL("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Field not found'",
                      token.getResult()->getErrorMessage());
     } else {
-        EXPECT_EQUAL(1, f.feedView.update_count);
-        EXPECT_EQUAL(16u, f.feedView.update_serial);
+        if (existing) {
+            TEST_DO(f.feedView.checkCounts(1, 16u, 0, 0u));
+        } else {
+            TEST_DO(f.feedView.checkCounts(0, 0u, 1, 16u));
+        }
         EXPECT_EQUAL(Result::NONE, token.getResult()->getErrorCode());
         EXPECT_EQUAL("", token.getResult()->getErrorMessage());
     }
@@ -697,21 +709,40 @@ checkUpdate(FeedHandlerFixture &f, SchemaContext &schemaContext,
 
 TEST_F("require that update with same document type repo is ok", FeedHandlerFixture)
 {
-    checkUpdate(f, f.schema, "i1", false);
+    checkUpdate(f, f.schema, "i1", false, true);
 }
 
-TEST_F("require that update with different document type repo can succed", FeedHandlerFixture)
+TEST_F("require that update with different document type repo can be ok", FeedHandlerFixture)
 {
     SchemaContext schema;
     schema.addField("i2");
-    checkUpdate(f, schema, "i1", false);
+    checkUpdate(f, schema, "i1", false, true);
 }
 
 TEST_F("require that update with different document type repo can be rejected", FeedHandlerFixture)
 {
     SchemaContext schema;
     schema.addField("i2");
-    checkUpdate(f, schema, "i2", true);
+    checkUpdate(f, schema, "i2", true, true);
+}
+
+TEST_F("require that update with same document type repo is ok, fallback to create document", FeedHandlerFixture)
+{
+    checkUpdate(f, f.schema, "i1", false, false);
+}
+
+TEST_F("require that update with different document type repo can be ok, fallback to create document", FeedHandlerFixture)
+{
+    SchemaContext schema;
+    schema.addField("i2");
+    checkUpdate(f, schema, "i1", false, false);
+}
+
+TEST_F("require that update with different document type repo can be rejected, preventing fallback to create document", FeedHandlerFixture)
+{
+    SchemaContext schema;
+    schema.addField("i2");
+    checkUpdate(f, schema, "i2", true, false);
 }
 
 }  // namespace
