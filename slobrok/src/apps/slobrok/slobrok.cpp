@@ -50,7 +50,6 @@ int
 App::Main()
 {
     uint32_t portnum = 2773;
-    uint32_t statePort = 0;
     vespalib::string cfgId;
 
     int argi = 1;
@@ -60,9 +59,6 @@ App::Main()
         switch (c) {
         case 'c':
             cfgId = std::string(optArg);
-            break;
-        case 's':
-            statePort = atoi(optArg);
             break;
         case 'p':
             portnum = atoi(optArg);
@@ -79,7 +75,7 @@ App::Main()
             ConfigShim shim(portnum);
             mainobj.reset(new SBEnv(shim));
         } else {
-            ConfigShim shim(portnum, statePort, cfgId);
+            ConfigShim shim(portnum, cfgId);
             mainobj.reset(new SBEnv(shim));
         }
         hook_sigterm();
