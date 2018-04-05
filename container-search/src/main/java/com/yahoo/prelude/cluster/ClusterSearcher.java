@@ -152,18 +152,20 @@ public class ClusterSearcher extends Searcher {
             gotExpectedBackend = true;
         } else {
             for (int dispatcherIndex = 0; dispatcherIndex < searchClusterConfig.dispatcher().size(); dispatcherIndex++) {
-                Backend b = createBackend(searchClusterConfig.dispatcher(dispatcherIndex));
-                FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool, 
-                                                       searchClusterConfig, cacheParams, emulationConfig, docSumParams,
-                                                       documentDbConfig, b, dispatcher, dispatcherIndex);
                 try {
-                    searcher.setLocalDispatching( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host()));
+                    if (! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host())) {
+                        Backend b = createBackend(searchClusterConfig.dispatcher(dispatcherIndex));
+                        FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool,
+                                searchClusterConfig, cacheParams, emulationConfig, docSumParams,
+                                documentDbConfig, b, dispatcher, dispatcherIndex);
+                        searcher.setLocalDispatching(true);
+                        backends.add(b);
+                        addBackendSearcher(searcher);
+                        gotExpectedBackend |= searcher.isLocalDispatching();
+                    }
                 } catch (UnknownHostException e) {
                     throw new RuntimeException(e);
                 }
-                backends.add(b);
-                addBackendSearcher(searcher);
-                gotExpectedBackend |= searcher.isLocalDispatching();
             }
         }
         if ( ! gotExpectedBackend) {
