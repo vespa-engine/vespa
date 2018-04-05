@@ -1,0 +1,57 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# A basic search definition - called music, should be saved to music.sd
+search music {
+
+  # It contains one document type only - called music as well
+  document music {
+
+    field title type string {
+      indexing: summary | index   # How this field should be indexed
+      # index-to: title, default    # Create two indexes
+      weight: 75 # Ranking importancy of this field, used by the built in nativeRank feature
+      header
+    }
+
+    field artist type string {
+      indexing: summary | attribute | index
+      # index-to: artist, default
+
+      weight: 25
+      header
+    }
+
+    field year type int {
+      indexing: summary | attribute
+      header
+    }
+
+    # Increase query
+    field popularity type int {
+      indexing: summary | attribute
+      body
+    }
+
+    field url type uri {
+      indexing: summary | index
+      header
+    }
+
+  }
+
+  rank-profile default inherits default {
+    first-phase {
+      expression: nativeRank(title,artist) + attribute(popularity)
+    }
+
+  }
+
+  rank-profile textmatch inherits default {
+    first-phase {
+      expression: nativeRank(title,artist)
+    }
+
+  }
+
+
+
+}
