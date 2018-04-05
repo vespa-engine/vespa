@@ -3,9 +3,10 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 
+/**
+ * @author baldersheim
+ */
 public interface AddFileInterface {
     FileReference addUri(String uri, String relativePath);
-    FileReference addUri(String uri, String relativePath, FileReference reference);
     FileReference addFile(String relativePath);
-    FileReference addFile(String relativePath, FileReference reference);
 }

@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class FileDBRegistry implements FileRegistry {
 
@@ -25,27 +25,6 @@ public class FileDBRegistry implements FileRegistry {
 
     public FileDBRegistry(AddFileInterface manager) {
         this.manager = manager;
-    }
-
-    public synchronized FileReference addFile(String relativePath, FileReference reference) {
-        Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(relativePath));
-        return cachedReference.orElseGet(() -> {
-            FileReference newRef = manager.addFile(relativePath, reference);
-            entries.add(new Entry(relativePath, newRef));
-            fileReferenceCache.put(relativePath, newRef);
-            return newRef;
-        });
-    }
-
-    public synchronized FileReference addUri(String uri, FileReference reference) {
-        String relativePath = uriToRelativeFile(uri);
-        Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(uri));
-        return cachedReference.orElseGet(() -> {
-            FileReference newRef = manager.addUri(uri, relativePath, reference);
-            entries.add(new Entry(uri, newRef));
-            fileReferenceCache.put(uri, newRef);
-            return newRef;
-        });
     }
 
     @Override
