@@ -107,11 +107,6 @@ public class IdentifierTest {
     }
 
     @Test
-    public void rotation_id_may_contain_dot() {
-        new RotationId("rotation.id.with.dot");
-    }
-
-    @Test
     public void user_tenant_id_does_not_contain_underscore() {
         assertEquals("by-under-score-user", new UserId("under_score_user").toTenantId().id());
     }
