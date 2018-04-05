@@ -133,8 +133,8 @@ indexing.tasklimit int default=1000 restart
 ## for each of the internal indexing threads when visibility delay is
 ## nonzero. The number is divided by the number of indexing threads,
 ## i.e.  when indexing.threads is 4 and indexing.semiunboundtasklimit
-## is 1000000 then effective task limit is 250000.
-indexing.semiunboundtasklimit int default = 1000000 restart
+## is 40000 then effective task limit is 10000.
+indexing.semiunboundtasklimit int default = 40000 restart
 
 ## How long a freshly loaded index shall be warmed up
 ## before being used for serving
