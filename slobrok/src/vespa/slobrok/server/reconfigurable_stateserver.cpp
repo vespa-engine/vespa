@@ -6,6 +6,8 @@
 #include <thread>
 
 #include <vespa/log/log.h>
+#include <vespa/config/common/exceptions.h>
+
 LOG_SETUP(".reconfigurable_stateserver");
 
 using namespace std::chrono_literals;
@@ -22,12 +24,17 @@ ReconfigurableStateServer::ReconfigurableStateServer(const config::ConfigUri & c
       _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _server()
 {
-    _configFetcher->subscribe<vespa::config::StateserverConfig>(configUri.getConfigId(), this);
+    _configFetcher->subscribe<vespa::config::StateserverConfig>(configUri.getConfigId(), this, 0);
     _configFetcher->start();
 }
 
 ReconfigurableStateServer::~ReconfigurableStateServer() = default;
 
+bool
+ReconfigurableStateServer::isServerUp() const
+{
+    return static_cast<bool>(_server);
+}
 void
 ReconfigurableStateServer::configure(std::unique_ptr<vespa::config::StateserverConfig> config)
 {

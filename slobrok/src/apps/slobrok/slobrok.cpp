@@ -73,10 +73,11 @@ App::Main()
         if (cfgId.empty()) {
             LOG(debug, "no config id specified");
             ConfigShim shim(portnum);
-            mainobj.reset(new SBEnv(shim));
+            mainobj = std::make_unique<SBEnv>(shim);
         } else {
             ConfigShim shim(portnum, cfgId);
-            mainobj.reset(new SBEnv(shim));
+            shim.enableStateServer(true);
+            mainobj = std::make_unique<SBEnv>(shim);
         }
         hook_sigterm();
         res = mainobj->MainLoop();

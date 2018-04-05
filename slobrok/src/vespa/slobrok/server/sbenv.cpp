@@ -162,8 +162,6 @@ toString(const std::vector<std::string> & v) {
 int
 SBEnv::MainLoop()
 {
-    ReconfigurableStateServer stateServer(_configShim.configId(), _health, _metrics, _components);
-
     if (! getSupervisor()->Listen(_configShim.portNumber())) {
         LOG(error, "unable to listen to port %d", _configShim.portNumber());
         EV_STOPPING("slobrok", "could not listen");
@@ -175,6 +173,11 @@ SBEnv::MainLoop()
     std::string myspec = createSpec(_configShim.portNumber());
 
     _me = std::make_unique<ManagedRpcServer>(myspec.c_str(), myspec.c_str(), _rpcsrvmanager);
+
+    std::unique_ptr<ReconfigurableStateServer> stateServer;
+    if (_configShim.enableStateServer()) {
+        stateServer = std::make_unique<ReconfigurableStateServer>(_configShim.configId(), _health, _metrics, _components);
+    }
 
     try {
         _configurator->poll();
