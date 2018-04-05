@@ -1,4 +1,0 @@
-This module contains Storage's persistence SPI implementation.
-
-It uses memory representation of files, which currently are persisted in
-slotfiles on disk.

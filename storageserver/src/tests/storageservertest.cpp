@@ -8,7 +8,6 @@
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
-#include <vespa/memfilepersistence/spi/memfilepersistenceprovider.h>
 #include <vespa/messagebus/staticthrottlepolicy.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/storageapi/mbusprot/storagecommand.h>
@@ -20,12 +19,13 @@
 #include <tests/dummystoragelink.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/storageserver/app/distributorprocess.h>
-#include <vespa/storageserver/app/memfileservicelayerprocess.h>
+#include <vespa/storageserver/app/dummyservicelayerprocess.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <sys/time.h>
 
 #include <vespa/log/log.h>
+
 LOG_SETUP(".storageservertest");
 
 using document::test::makeDocumentBucket;
@@ -175,7 +175,7 @@ namespace {
     };
 
     struct Storage : public Node {
-        MemFileServiceLayerProcess _process;
+        DummyServiceLayerProcess _process;
         StorageComponent::UP _component;
 
         Storage(vdstestlib::DirConfig& config);
