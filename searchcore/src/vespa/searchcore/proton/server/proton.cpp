@@ -21,6 +21,7 @@
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/host_name.h>

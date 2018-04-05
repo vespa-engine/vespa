@@ -7,6 +7,7 @@
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/bootstrapconfigmanager.h>

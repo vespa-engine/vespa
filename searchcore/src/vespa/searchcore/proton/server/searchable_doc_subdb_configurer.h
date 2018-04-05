@@ -13,7 +13,6 @@
 #include <vespa/searchcore/proton/index/i_index_writer.h>
 #include <vespa/searchcore/proton/matching/constant_value_repo.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_initializer.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/config-attributes.h>

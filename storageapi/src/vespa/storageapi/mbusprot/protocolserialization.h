@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/document/bucket/bucket.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/messagebus/routable.h>
 #include <vespa/storageapi/mbusprot/storagemessage.h>
 #include <vespa/storageapi/message/bucket.h>

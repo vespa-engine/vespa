@@ -5,6 +5,7 @@ vespa_add_library(searchcore_test STATIC
     buckethandler.cpp
     clusterstatehandler.cpp
     documentdb_config_builder.cpp
+    dummy_feed_view.cpp
     userdocumentsbuilder.cpp
     DEPENDS
     searchcore_fconfig

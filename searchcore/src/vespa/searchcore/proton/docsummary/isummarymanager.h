@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/docstore/idocumentstore.h>
@@ -11,6 +10,8 @@
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
+
+namespace document { class DocumentTypeRepo; }
 
 namespace proton {
 

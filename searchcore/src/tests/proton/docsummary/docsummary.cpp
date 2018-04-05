@@ -5,6 +5,7 @@
 #include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/eval/tensor/tensor_factory.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>

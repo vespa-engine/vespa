@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/server/documentdbconfig.h>
 #include <vespa/searchcore/proton/server/documentdbconfigscout.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>

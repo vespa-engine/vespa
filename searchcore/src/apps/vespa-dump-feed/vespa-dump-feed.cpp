@@ -4,6 +4,7 @@
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/document.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/messagebus/destinationsession.h>

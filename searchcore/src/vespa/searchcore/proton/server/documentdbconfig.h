@@ -3,7 +3,6 @@
 #pragma once
 
 #include "document_db_maintenance_config.h"
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/matching/ranking_constants.h>
@@ -21,7 +20,8 @@ namespace vespa::config::search::internal {
 }
 namespace vespa::config::search::summary { namespace internal { class InternalJuniperrcType; } }
 
-namespace document { namespace internal { class InternalDocumenttypesType; } }
+namespace document { class DocumentTypeRepo; }
+namespace document::internal { class InternalDocumenttypesType; }
 
 namespace proton {
 
@@ -184,7 +184,7 @@ public:
     const JuniperrcConfigSP &getJuniperrcConfigSP() const { return _juniperrc; }
     const DocumenttypesConfigSP &getDocumenttypesConfigSP() const { return _documenttypes; }
     const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepoSP() const { return _repo; }
-    const document::DocumentType *getDocumentType() const { return _repo->getDocumentType(getDocTypeName()); }
+    const document::DocumentType *getDocumentType() const;
     const ImportedFieldsConfig &getImportedFieldsConfig() const { return *_importedFields; }
     const ImportedFieldsConfigSP &getImportedFieldsConfigSP() const { return _importedFields; }
     const search::index::Schema::SP &getSchemaSP() const { return _schema; }

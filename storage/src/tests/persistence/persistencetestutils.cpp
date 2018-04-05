@@ -3,6 +3,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <tests/persistence/persistencetestutils.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>

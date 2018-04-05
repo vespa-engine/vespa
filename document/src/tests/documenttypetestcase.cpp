@@ -3,6 +3,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/exceptions.h>

@@ -4,6 +4,7 @@
 #include <tests/common/storagelinktest.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/storageserver/statemanager.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>

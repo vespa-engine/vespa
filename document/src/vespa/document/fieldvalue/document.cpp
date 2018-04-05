@@ -4,6 +4,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/document/repo/fixedtyperepo.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>

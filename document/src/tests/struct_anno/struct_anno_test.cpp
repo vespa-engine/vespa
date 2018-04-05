@@ -9,6 +9,7 @@
 #include <vespa/document/serialization/annotationserializer.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/fastos/file.h>

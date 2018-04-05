@@ -8,7 +8,6 @@
  */
 #pragma once
 
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 
@@ -64,9 +63,12 @@
 namespace document
 {
 
+class DocumentTypeRepo;
 class TestDocMan;
 
 }
+
+namespace document::internal { class InternalDocumenttypesType; }
 
 namespace storage {
 namespace spi {
@@ -74,11 +76,12 @@ namespace spi {
 struct ConformanceTest : public CppUnit::TestFixture {
     struct PersistenceFactory {
         typedef std::unique_ptr<PersistenceFactory> UP;
+        using DocumenttypesConfig = const document::internal::InternalDocumenttypesType;
 
         virtual ~PersistenceFactory() {}
         virtual PersistenceProvider::UP getPersistenceImplementation(
                 const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                const document::DocumentTypeRepo::DocumenttypesConfig &typesCfg) = 0;
+                const DocumenttypesConfig &typesCfg) = 0;
 
         virtual void
         clear(void)

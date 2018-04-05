@@ -3,6 +3,7 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/objects/nbostream.h>

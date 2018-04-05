@@ -3,7 +3,6 @@
 #pragma once
 
 #include "protocolserialization5_2.h"
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 namespace storage {

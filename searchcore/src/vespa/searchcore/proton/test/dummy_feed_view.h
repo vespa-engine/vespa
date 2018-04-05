@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/searchcore/proton/server/ifeedview.h>
-#include <vespa/document/repo/documenttyperepo.h>
 
 namespace proton::test {
 
@@ -10,12 +9,9 @@ struct DummyFeedView : public IFeedView
 {
     std::shared_ptr<const document::DocumentTypeRepo> _docTypeRepo;
 
-    DummyFeedView()
-        : _docTypeRepo()
-    {}
-    DummyFeedView(const std::shared_ptr<const document::DocumentTypeRepo> &docTypeRepo)
-        : _docTypeRepo(docTypeRepo)
-    {}
+    DummyFeedView();
+    DummyFeedView(const std::shared_ptr<const document::DocumentTypeRepo> &docTypeRepo);
+    virtual ~DummyFeedView() override;
     const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepo() const override {
         return _docTypeRepo;
     }

@@ -7,6 +7,7 @@
 #include <vespa/document/datatype/annotationreferencedatatype.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>

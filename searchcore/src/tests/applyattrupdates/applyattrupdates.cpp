@@ -7,6 +7,7 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/clearvalueupdate.h>

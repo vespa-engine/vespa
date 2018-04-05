@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/memfilepersistence/mapper/simplememfileiobuffer.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <tests/spi/memfiletestutils.h>
 #include <tests/spi/options_builder.h>
 

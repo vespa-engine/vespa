@@ -4,5 +4,6 @@ vespa_add_executable(searchcore_visibility_handler_test_app TEST
     visibility_handler_test.cpp
     DEPENDS
     searchcore_server
+    searchcore_test
 )
 vespa_add_test(NAME searchcore_visibility_handler_test_app COMMAND searchcore_visibility_handler_test_app)

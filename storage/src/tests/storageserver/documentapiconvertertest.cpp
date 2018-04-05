@@ -5,6 +5,7 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/documentapi/documentapi.h>

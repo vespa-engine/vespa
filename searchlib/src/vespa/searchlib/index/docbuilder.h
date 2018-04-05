@@ -9,7 +9,6 @@
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/stringfmt.h>
 

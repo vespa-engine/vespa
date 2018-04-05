@@ -9,7 +9,6 @@
 #pragma once
 
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/util/sync.h>
@@ -18,6 +17,7 @@
 #include <map>
 
 namespace document {
+class DocumentTypeRepo;
     class FieldSet;
     namespace select { class Node; }
 }

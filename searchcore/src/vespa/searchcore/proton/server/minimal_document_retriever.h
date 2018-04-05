@@ -3,7 +3,6 @@
 #pragma once
 
 #include "documentretrieverbase.h"
-#include <vespa/document/repo/documenttyperepo.h>
 
 namespace search { class IDocumentStore; }
 

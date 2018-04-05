@@ -3,6 +3,7 @@
 #include "testdocman.h"
 #include "exceptions.h"
 #include <vespa/document/datatype/datatypes.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <boost/random.hpp>
 #include <sstream>
 
