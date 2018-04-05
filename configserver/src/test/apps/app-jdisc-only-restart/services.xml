@@ -2,6 +2,13 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services version="1.0">
 
+    <admin version="2.0">
+        <adminserver hostalias="node1"/>
+        <slobroks>
+            <slobrok hostalias="node1" baseport="12345"/>
+        </slobroks>
+    </admin>
+
     <jdisc version="1.0">
         <document-processing compressdocuments="true">
             <chain id="ContainerWrapperTest">
