@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.tls.AthenzSslContextBuilder;
+import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.certificate.ConfigServerKeyStoreRefresher;
 import com.yahoo.vespa.hosted.node.admin.util.KeyStoreOptions;
@@ -22,27 +23,27 @@ import java.util.Optional;
 public class SslConfigServerApiImpl implements ConfigServerApi {
 
     private final ConfigServerApiImpl configServerApi;
-    private final Environment environment;
     private final Optional<ConfigServerKeyStoreRefresher> keyStoreRefresher;
+    private final ConfigServerInfo configServerInfo;
 
-    public SslConfigServerApiImpl(Environment environment) {
-        this.environment = environment;
+    public SslConfigServerApiImpl(ConfigServerInfo configServerInfo, String hostname) {
+        this.configServerInfo = configServerInfo;
 
         // At this point we don't know the state of the keystore, it may not exist at all, or the keystore
         // maybe exists, but the certificate in it is expired. Create the ConfigServerApi without a keystore
         // (but with truststore and hostname verifier).
         this.configServerApi = new ConfigServerApiImpl(
-                environment.getConfigServerUris(), makeSslConnectionSocketFactory(Optional.empty()));
+                configServerInfo.getConfigServerUris(), makeSslConnectionSocketFactory(Optional.empty()));
 
         // If we have keystore options, we should make sure we use the keystore with the latest certificate,
         // start the keystore refresher.
-        this.keyStoreRefresher = environment.getKeyStoreOptions().map(keyStoreOptions -> {
+        this.keyStoreRefresher = configServerInfo.getKeyStoreOptions().map(keyStoreOptions -> {
             // Any callback from KeyStoreRefresher should result in using the latest keystore on disk
             Runnable connectionFactoryRefresher = () -> configServerApi.setSSLConnectionSocketFactory(
                     makeSslConnectionSocketFactory(Optional.of(keyStoreOptions)));
 
             ConfigServerKeyStoreRefresher keyStoreRefresher = new ConfigServerKeyStoreRefresher(
-                    keyStoreOptions, connectionFactoryRefresher, configServerApi, environment.getParentHostHostname());
+                    keyStoreOptions, connectionFactoryRefresher, configServerApi, hostname);
 
             // Run the refresh once manually to make sure that we have a valid certificate, otherwise fail.
             try {
@@ -55,6 +56,11 @@ public class SslConfigServerApiImpl implements ConfigServerApi {
             keyStoreRefresher.start();
             return keyStoreRefresher;
         });
+    }
+
+    public SslConfigServerApiImpl(Environment environment) {
+        this(environment.getConfigServerInfo(), environment.getParentHostHostname());
+
     }
 
     @Override
@@ -94,14 +100,14 @@ public class SslConfigServerApiImpl implements ConfigServerApi {
 
     private SSLContext makeSslContext(Optional<KeyStoreOptions> keyStoreOptions) {
         AthenzSslContextBuilder sslContextBuilder = new AthenzSslContextBuilder();
-        environment.getTrustStoreOptions().map(KeyStoreOptions::loadKeyStore).ifPresent(sslContextBuilder::withTrustStore);
+        configServerInfo.getTrustStoreOptions().map(KeyStoreOptions::loadKeyStore).ifPresent(sslContextBuilder::withTrustStore);
         keyStoreOptions.ifPresent(options -> sslContextBuilder.withKeyStore(options.loadKeyStore(), options.password));
 
         return sslContextBuilder.build();
     }
 
     private HostnameVerifier makeHostnameVerifier() {
-        return environment.getAthenzIdentity()
+        return configServerInfo.getAthenzIdentity()
                 .map(identity -> (HostnameVerifier) new AthenzIdentityVerifier(Collections.singleton(identity)))
                 .orElseGet(SSLConnectionSocketFactory::getDefaultHostnameVerifier);
     }
