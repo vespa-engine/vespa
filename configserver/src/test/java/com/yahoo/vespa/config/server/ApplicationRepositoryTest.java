@@ -33,8 +33,6 @@ public class ApplicationRepositoryTest {
 
     private final static File testApp = new File("src/test/apps/app");
     private final static File testAppJdiscOnly = new File("src/test/apps/app-jdisc-only");
-    private final static File testAppJdiscOnlyRestart = new File("src/test/apps/app-jdisc-only-restart");
-
     private final static TenantName tenantName = TenantName.from("test");
     private final static Clock clock = Clock.systemUTC();
 
@@ -65,7 +63,7 @@ public class ApplicationRepositoryTest {
     @Test
     public void prepareAndActivateWithRestart() throws IOException {
         prepareAndActivateApp(testAppJdiscOnly);
-        PrepareResult result = prepareAndActivateApp(testAppJdiscOnlyRestart);
+        PrepareResult result = prepareAndActivateApp(testApp);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertFalse(result.configChangeActions().getRestartActions().isEmpty());
     }
