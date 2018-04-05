@@ -10,7 +10,6 @@ import com.yahoo.component.chain.ChainsConfigurer;
 import com.yahoo.component.chain.model.ChainsModel;
 import com.yahoo.component.chain.model.ChainsModelBuilder;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.container.Container;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
@@ -38,7 +37,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.search.debug.DebugRpcAdaptor;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
@@ -57,7 +55,6 @@ import com.yahoo.statistics.Value;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -97,13 +94,6 @@ public class SearchHandler extends LoggingRequestHandler {
     public static final String defaultSearchChainName = "default";
     private static final String fallbackSearchChain = "vespa";
     private static final CompoundName FORCE_TIMESTAMPS = new CompoundName("trace.timestamps");;
-
-    // This is a hack to add the RPC adaptors for search only once
-    // TODO: Figure out the correct life cycle and init of RPC adaptors
-    static {
-        Container c = Container.get();
-        c.addOptionalRpcAdaptor(new DebugRpcAdaptor());
-    }
 
     private final Linguistics linguistics;
 

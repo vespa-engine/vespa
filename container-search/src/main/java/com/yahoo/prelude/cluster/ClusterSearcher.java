@@ -10,8 +10,6 @@ import com.yahoo.concurrent.Receiver;
 import com.yahoo.concurrent.Receiver.MessageState;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
-import com.yahoo.container.protect.Error;
-import com.yahoo.fs4.PacketDumper;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.net.HostName;
@@ -39,10 +37,18 @@ import com.yahoo.statistics.Value;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
@@ -69,8 +75,6 @@ public class ClusterSearcher extends Searcher {
     private final Value cacheHitRatio;
 
     private final String clusterModelName;
-
-    private final List<Backend> backends = new ArrayList<>();
 
     // The set of document types contained in this search cluster
     private final Set<String> documentTypes;
@@ -155,7 +159,6 @@ public class ClusterSearcher extends Searcher {
                         FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool,
                                 searchClusterConfig, cacheParams, emulationConfig, docSumParams,
                                 documentDbConfig, b, dispatcher, dispatcherIndex);
-                        backends.add(b);
                         addBackendSearcher(searcher);
                     }
                 } catch (UnknownHostException e) {
@@ -163,10 +166,8 @@ public class ClusterSearcher extends Searcher {
                 }
             }
         }
-        if ( backends.size() != 1 ) {
-            log.log(Level.SEVERE, "ClusterSearcher should have a local top level dispatch."
-                                  + " The possibility to configure dispatchers explicitly will be removed"
-                                  + " in a future release.");
+        if ( server == null ) {
+            log.log(Level.SEVERE, "ClusterSearcher should have a top level dispatch.");
         }
         monitor.freeze();
         monitor.startPingThread();
@@ -185,10 +186,9 @@ public class ClusterSearcher extends Searcher {
      * Returns false if this host is local.
      */
     boolean isRemote(String host) throws UnknownHostException {
-        if (InetAddress.getByName(host).isLoopbackAddress())
-            return false;
-        else
-            return !host.equals(HostName.getLocalhost());
+        return (InetAddress.getByName(host).isLoopbackAddress())
+                ? false
+                : !host.equals(HostName.getLocalhost());
     }
 
     private static ClusterParams makeClusterParams(int searchclusterIndex,
@@ -211,10 +211,8 @@ public class ClusterSearcher extends Searcher {
                                                Backend backend,
                                                Dispatcher dispatcher,
                                                int dispatcherIndex) {
-        ClusterParams clusterParams = makeClusterParams(searchclusterIndex,
-                                                        searchClusterConfig,
-                                                        emulConfig, 
-                                                        dispatcherIndex);
+        ClusterParams clusterParams = makeClusterParams(searchclusterIndex, searchClusterConfig,
+                                                        emulConfig, dispatcherIndex);
         return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, cacheParams, 
                                 documentdbInfoConfig);
     }
@@ -225,9 +223,7 @@ public class ClusterSearcher extends Searcher {
                                                    LegacyEmulationConfig emulConfig,
                                                    SummaryParameters docSumParams,
                                                    DocumentdbInfoConfig documentdbInfoConfig) {
-        ClusterParams clusterParams = makeClusterParams(searchclusterIndex,
-                                                        searchClusterConfig,
-                                                        emulConfig, 0);
+        ClusterParams clusterParams = makeClusterParams(searchclusterIndex, searchClusterConfig, emulConfig, 0);
         VdsStreamingSearcher searcher = (VdsStreamingSearcher) VespaBackEndSearcher
                 .getSearcher("com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher");
         searcher.setSearchClusterConfigId(searchClusterConfig.rankprofiles().configid());
@@ -247,14 +243,6 @@ public class ClusterSearcher extends Searcher {
         fs4ResourcePool = null;
         maxQueryTimeout = DEFAULT_MAX_QUERY_TIMEOUT;
         maxQueryCacheTimeout = DEFAULT_MAX_QUERY_CACHE_TIMEOUT;
-    }
-
-    public Map<String, Backend.BackendStatistics> getBackendStatistics() {
-        Map<String, Backend.BackendStatistics> backendStatistics = new TreeMap<>();
-        for (Backend backend : backends) {
-            backendStatistics.put(backend.toString(), backend.getStatistics());
-        }
-        return backendStatistics;
     }
 
     private Backend createBackend(QrSearchersConfig.Searchcluster.Dispatcher disp) {
@@ -472,11 +460,9 @@ public class ClusterSearcher extends Searcher {
         Set<String> restrict = query.getModel().getRestrict();
         if (restrict == null || restrict.isEmpty()) {
             Set<String> sources = query.getModel().getSources();
-            if (sources == null || sources.isEmpty()) {
-                return documentTypes;
-            } else {
-                return new HashSet<>(indexFacts.newSession(sources, Collections.emptyList(), documentTypes).documentTypes());
-            }
+            return (sources == null || sources.isEmpty())
+                    ? documentTypes
+                    : new HashSet<>(indexFacts.newSession(sources, Collections.emptyList(), documentTypes).documentTypes());
         } else {
             return filterValidDocumentTypes(restrict);
         }
@@ -550,12 +536,6 @@ public class ClusterSearcher extends Searcher {
         return pong.activeNodes().get() > 0;
     }
 
-    public void dumpPackets(PacketDumper.PacketType packetType, boolean on) throws IOException {
-        for (Backend b : backends) {
-            b.dumpPackets(packetType, on);
-        }
-    }
-
     @Override
     public void deconstruct() {
         monitor.shutdown();
@@ -591,11 +571,7 @@ public class ClusterSearcher extends Searcher {
 
         public Pong getPong() throws InterruptedException {
             Tuple2<MessageState, Pong> reply = pong.get(pingChallenge.getTimeout() + 150);
-            if (reply.first != MessageState.VALID) {
-                return null;
-            } else {
-                return reply.second;
-            }
+            return (reply.first != MessageState.VALID) ? null : reply.second;
         }
 
     }
