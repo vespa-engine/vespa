@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
+import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
@@ -47,6 +48,8 @@ public class CuratorDb {
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
     private final JobQueueSerializer jobQueueSerializer = new JobQueueSerializer();
+    private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer();
+    private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
 
     private final Curator curator;
 
@@ -111,11 +114,13 @@ public class CuratorDb {
 
     // -------------- Read and write --------------------------------------------------
 
+    private Optional<Slime> readSlime(Path path) {
+        return curator.getData(path).filter(data -> data.length > 0).map(SlimeUtils::jsonToSlime);
+    }
+
     public Set<String> readInactiveJobs() {
         try {
-            Optional<byte[]> data = curator.getData(inactiveJobsPath());
-            if (! data.isPresent() || data.get().length == 0) return new HashSet<>(); // inactive jobs has never been written
-            return stringSetSerializer.fromJson(data.get());
+            return readSlime(inactiveJobsPath()).map(stringSetSerializer::fromSlime).orElseGet(HashSet::new);
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Error reading inactive jobs, deleting inactive state");
@@ -130,9 +135,7 @@ public class CuratorDb {
 
     public Deque<ApplicationId> readJobQueue(DeploymentJobs.JobType jobType) {
         try {
-            Optional<byte[]> data = curator.getData(jobQueuePath(jobType));
-            if ( ! data.isPresent() || data.get().length == 0) return new ArrayDeque<>(); // job queue has never been written
-            return jobQueueSerializer.fromJson(data.get());
+            return readSlime(jobQueuePath(jobType)).map(jobQueueSerializer::fromSlime).orElseGet(ArrayDeque::new);
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Error reading job queue of type '" + jobType.jobName() + "'; deleting it.");
@@ -161,39 +164,28 @@ public class CuratorDb {
     }
   
     public void writeVersionStatus(VersionStatus status) {
-        VersionStatusSerializer serializer = new VersionStatusSerializer();
         try {
-            curator.set(versionStatusPath(), SlimeUtils.toJsonBytes(serializer.toSlime(status)));
+            curator.set(versionStatusPath(), SlimeUtils.toJsonBytes(versionStatusSerializer.toSlime(status)));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to serialize version status", e);
         }
     }
 
     public VersionStatus readVersionStatus() {
-        Optional<byte[]> data = curator.getData(versionStatusPath());
-        if ( ! data.isPresent() || data.get().length == 0) {
-            return VersionStatus.empty(); // Default if status has never been written
-        }
-        VersionStatusSerializer serializer = new VersionStatusSerializer();
-        return serializer.fromSlime(SlimeUtils.jsonToSlime(data.get()));
+        return readSlime(versionStatusPath()).map(versionStatusSerializer::fromSlime).orElseGet(VersionStatus::empty);
     }
 
     public void writeConfidenceOverrides(Map<Version, VespaVersion.Confidence> overrides) {
-        ConfidenceOverrideSerializer serializer = new ConfidenceOverrideSerializer();
         try {
-            curator.set(confidenceOverridesPath(), SlimeUtils.toJsonBytes(serializer.toSlime(overrides)));
+            curator.set(confidenceOverridesPath(), SlimeUtils.toJsonBytes(confidenceOverrideSerializer.toSlime(overrides)));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to serialize confidence overrides", e);
         }
     }
 
     public Map<Version, VespaVersion.Confidence> readConfidenceOverrides() {
-        ConfidenceOverrideSerializer serializer = new ConfidenceOverrideSerializer();
-        Optional<byte[]> data = curator.getData(confidenceOverridesPath());
-        if (!data.isPresent() || data.get().length == 0) {
-            return Collections.emptyMap();
-        }
-        return serializer.fromSlime(SlimeUtils.jsonToSlime(data.get()));
+        return readSlime(confidenceOverridesPath()).map(confidenceOverrideSerializer::fromSlime)
+                                                   .orElseGet(Collections::emptyMap);
     }
 
     // The following methods are called by internal code

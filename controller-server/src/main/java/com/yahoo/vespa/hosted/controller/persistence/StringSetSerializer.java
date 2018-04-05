@@ -34,8 +34,8 @@ public class StringSetSerializer {
 
     }
 
-    public Set<String> fromJson(byte[] data) {
-        Inspector inspector = SlimeUtils.jsonToSlime(data).get();
+    public Set<String> fromSlime(Slime slime) {
+        Inspector inspector = slime.get();
         Set<String> stringSet = new HashSet<>();
         inspector.traverse((ArrayTraverser) (index, name) -> stringSet.add(name.asString()));
         return stringSet;
