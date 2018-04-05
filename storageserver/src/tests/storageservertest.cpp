@@ -72,8 +72,8 @@ namespace {
         }
 
         ~SlobrokMirror() {
-            if (mirror.get() != 0) {
-                mirror.reset(0);
+            if (mirror) {
+                mirror.reset();
                 visor.ShutDown(true);
             }
         }
@@ -96,9 +96,6 @@ struct StorageServerTest : public CppUnit::TestFixture {
 
     void testNormalUsage();
     void testPortOverlap_Stress();
-    void testFailOnNoDisks();
-    void testFailOnWrongAmountOfDisks();
-    void testOneDiskUnusable();
     void testShutdownDuringDiskLoad(bool storagenode);
     void testShutdownStorageDuringDiskLoad();
     void testShutdownDistributorDuringDiskLoad();
@@ -110,9 +107,6 @@ struct StorageServerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(StorageServerTest);
     CPPUNIT_TEST(testNormalUsage);
     CPPUNIT_TEST_IGNORED(testPortOverlap_Stress);
-    CPPUNIT_TEST(testFailOnNoDisks);
-    CPPUNIT_TEST(testFailOnWrongAmountOfDisks);
-    CPPUNIT_TEST(testOneDiskUnusable);
     CPPUNIT_TEST_IGNORED(testShutdownStorageDuringDiskLoad);
     CPPUNIT_TEST_IGNORED(testShutdownDistributorDuringDiskLoad);
     CPPUNIT_TEST_IGNORED(testShutdownAfterDiskFailure_Stress);
@@ -246,51 +240,6 @@ StorageServerTest::testNormalUsage()
         Distributor distServer(*distConfig);
         Storage storServer(*storConfig);
     }
-}
-
-void
-StorageServerTest::testFailOnNoDisks()
-{
-    system("rmdir vdsroot/disks/d0");
-    try{
-        Storage server(*storConfig);
-        CPPUNIT_FAIL("Expected exception about no available disks.");
-    } catch (vespalib::Exception& e) {
-        CPPUNIT_ASSERT_CONTAIN_MESSAGE(e.what(),
-                "No disks configured",
-                e.getMessage());
-    }
-}
-
-void
-StorageServerTest::testFailOnWrongAmountOfDisks()
-{
-/* TODO: Can't be in stor-server config anymore.
-    storConfig->getConfig("stor-server").set("disk_count", "2");
-    try{
-        StorageServer server(storConfig->getConfigId());
-        CPPUNIT_FAIL("Expected exception about wrong amount of disks.");
-    } catch (vespalib::Exception& e) {
-        CPPUNIT_ASSERT_CONTAIN_MESSAGE(e.what(),
-                "Found 1 disks and config says we're supposed to have 2",
-                e.getMessage());
-    }
-*/
-}
-
-void
-StorageServerTest::testOneDiskUnusable()
-{
-    CPPUNIT_ASSERT(system("rm -rf vdsroot/disks/d0") == 0);
-    CPPUNIT_ASSERT(system("mkdir -p vdsroot/disks/d1") == 0);
-    //CPPUNIT_ASSERT(system("ln -s /thisdoesnotexist vdsroot/disks/d0") == 0);
-    Storage server(*storConfig);
-    CPPUNIT_ASSERT_EQUAL(2, (int)server.getDiskCount());
-    CPPUNIT_ASSERT(!server.getPartitions()[0].isUp());
-    CPPUNIT_ASSERT_CONTAIN(
-            std::string("Disk not found during scanning"),
-            server.getPartitions()[0].getReason());
-    CPPUNIT_ASSERT(server.getPartitions()[1].isUp());
 }
 
 namespace {
