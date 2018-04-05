@@ -201,6 +201,7 @@ public final class ConfiguredApplication implements Application {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
                     configurer.runOnceAndEnsureRegistryHackRun(builder.guiceModules().activate());
                     intitializeAndActivateContainer(builder);
+                    if (qrConfig.restartOnDeploy()) break;
                 } catch (ConfigInterruptedException | InterruptedException e) {
                     break;
                 } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
