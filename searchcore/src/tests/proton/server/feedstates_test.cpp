@@ -7,7 +7,6 @@ LOG_SETUP("feedstates_test");
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/server/feedstates.h>
 #include <vespa/searchcore/proton/server/ireplayconfig.h>

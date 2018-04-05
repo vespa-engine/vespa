@@ -5,7 +5,6 @@
 #include "ifeedview.h"
 #include "ireplayconfig.h"
 #include "replaypacketdispatcher.h"
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchlib/common/idestructorcallback.h>

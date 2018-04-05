@@ -94,7 +94,7 @@ void assertDocumentOperation(DocumentOperation &op, BucketId expBucket, uint32_t
     EXPECT_EQUAL(4u, op.getPrevLid());
 }
 
-DocumentTypeRepo::UP
+std::unique_ptr<const DocumentTypeRepo>
 makeDocTypeRepo()
 {
     DocumenttypesConfigBuilderHelper builder;
@@ -106,7 +106,7 @@ makeDocTypeRepo()
                               addField("y", DataType::T_STRING)).
                      addField("map", Map(DataType::T_STRING,
                                          DataType::T_STRING)));
-    return DocumentTypeRepo::UP(new DocumentTypeRepo(builder.config()));
+    return std::unique_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(builder.config()));
 }
 
 

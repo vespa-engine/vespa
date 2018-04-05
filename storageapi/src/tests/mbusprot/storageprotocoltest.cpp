@@ -12,7 +12,6 @@
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/document.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>

@@ -60,7 +60,7 @@ const string empty("");
 const document::DocumentId docId("doc:test:1");
 
 
-DocumentTypeRepo::UP
+std::unique_ptr<const DocumentTypeRepo>
 makeDocTypeRepo()
 {
     DocumenttypesConfigBuilderHelper builder;
@@ -85,7 +85,7 @@ makeDocTypeRepo()
                      addField("id", DataType::T_STRING).
                      addField("ac", DataType::T_INT).
                      addField("ad", DataType::T_INT));
-    return DocumentTypeRepo::UP(new DocumentTypeRepo(builder.config()));
+    return std::unique_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(builder.config()));
 }
 
 
@@ -129,7 +129,7 @@ class TestFixture
 {
 public:
     MockAttributeManager _amgr;
-    DocumentTypeRepo::UP _repoUP;
+    std::unique_ptr<const DocumentTypeRepo> _repoUP;
     bool _hasFields;
 
     TestFixture();
@@ -292,7 +292,7 @@ TestFixture::testPrune(const string &selection,
 
 TEST_F("Test that test setup is OK", TestFixture)
 {
-    DocumentTypeRepo &repo = *f._repoUP;
+    const DocumentTypeRepo &repo = *f._repoUP;
     const DocumentType *docType = repo.getDocumentType("test");
     ASSERT_TRUE(docType);
     EXPECT_EQUAL(10u, docType->getFieldCount());

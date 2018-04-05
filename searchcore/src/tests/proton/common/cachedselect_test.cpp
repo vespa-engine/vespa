@@ -88,7 +88,7 @@ const string body_name_2 = type_name_2 + ".body";
 const int32_t noIntVal = std::numeric_limits<int32_t>::min();
 
 
-DocumentTypeRepo::UP
+std::unique_ptr<const DocumentTypeRepo>
 makeDocTypeRepo()
 {
     DocumenttypesConfigBuilderHelper builder;
@@ -113,7 +113,7 @@ makeDocTypeRepo()
                      addField("id", DataType::T_STRING).
                      addField("ac", DataType::T_INT).
                      addField("ad", DataType::T_INT));
-    return DocumentTypeRepo::UP(new DocumentTypeRepo(builder.config()));
+    return std::unique_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(builder.config()));
 }
 
 
@@ -289,7 +289,7 @@ MyDB::getDoc(uint32_t lid) const
 class TestFixture
 {
 public:
-    DocumentTypeRepo::UP _repoUP;
+    std::unique_ptr<const DocumentTypeRepo> _repoUP;
     bool _hasFields;
     MyAttributeManager _amgr;
     MyDB::UP _db;
@@ -352,7 +352,7 @@ TestFixture::testParse(const string &selection,
 
 TEST_F("Test that test setup is OK", TestFixture)
 {
-    DocumentTypeRepo &repo = *f._repoUP;
+    const DocumentTypeRepo &repo = *f._repoUP;
     const DocumentType *docType = repo.getDocumentType("test");
     ASSERT_TRUE(docType);
     EXPECT_EQUAL(10u, docType->getFieldCount());

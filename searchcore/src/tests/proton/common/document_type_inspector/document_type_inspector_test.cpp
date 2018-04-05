@@ -14,7 +14,7 @@ const vespalib::string type_name = "test";
 const vespalib::string header_name = type_name + ".header";
 const vespalib::string body_name = type_name + ".body";
 
-DocumentTypeRepo::UP
+std::unique_ptr<const DocumentTypeRepo>
 makeOldDocTypeRepo()
 {
     DocumenttypesConfigBuilderHelper builder;
@@ -24,10 +24,10 @@ makeOldDocTypeRepo()
                      addField("f2", DataType::T_STRING).
                      addField("f3", DataType::T_STRING).
                      addField("f4", DataType::T_STRING));
-    return DocumentTypeRepo::UP(new DocumentTypeRepo(builder.config()));
+    return std::unique_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(builder.config()));
 }
 
-DocumentTypeRepo::UP
+std::unique_ptr<const DocumentTypeRepo>
 makeNewDocTypeRepo()
 {
     DocumenttypesConfigBuilderHelper builder;
@@ -37,13 +37,13 @@ makeNewDocTypeRepo()
                      addField("f2", DataType::T_STRING).
                      addField("f3", DataType::T_INT).
                      addField("f5", DataType::T_STRING));
-    return DocumentTypeRepo::UP(new DocumentTypeRepo(builder.config()));
+    return std::unique_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(builder.config()));
 }
 
 struct Fixture
 {
-    DocumentTypeRepo::UP _oldRepo;
-    DocumentTypeRepo::UP _newRepo;
+    std::unique_ptr<const DocumentTypeRepo> _oldRepo;
+    std::unique_ptr<const DocumentTypeRepo> _newRepo;
     DocumentTypeInspector _inspector;
     Fixture()
         : _oldRepo(makeOldDocTypeRepo()),
