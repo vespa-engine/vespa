@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import static java.util.Comparator.naturalOrder;
@@ -68,7 +69,7 @@ public class DeploymentTrigger {
         this.controller = controller;
         this.clock = clock;
         this.deploymentQueue = new DeploymentQueue(controller, curator);
-        this.order = new DeploymentOrder(controller);
+        this.order = new DeploymentOrder(controller::system);
         this.jobTimeout = controller.system().equals(SystemName.main) ? Duration.ofHours(12) : Duration.ofHours(1);
     }
 
@@ -204,8 +205,8 @@ public class DeploymentTrigger {
 
         for (DeploymentSpec.Step step : steps) {
             LockedApplication app = application;
-            Collection<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
-            Collection<JobType> remainingJobs = stepJobs.stream().filter(job -> ! completedAt(app, job).isPresent()).collect(toList());
+            Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
+            Set<JobType> remainingJobs = stepJobs.stream().filter(job -> ! completedAt(app, job).isPresent()).collect(toSet());
             if (remainingJobs.isEmpty()) { // All jobs are complete -- find the time of completion for this step.
                 if (stepJobs.isEmpty()) { // No jobs means this is delay step.
                     Duration delay = ((DeploymentSpec.Delay) step).duration();
@@ -283,10 +284,9 @@ public class DeploymentTrigger {
 
         // TODO jvenstad: Allow downgrades when considering whether to trigger -- stop them at choice of deployment version.
         // TODO jvenstad: This allows tests to be re-run, for instance, while keeping the deployment itself a no-op.
-        if (applicationComparison == -1 || platformComparison == -1)
-            return Optional.of(deployment.at());
-
-        return applicationComparison == 0 && platformComparison == 0 ? Optional.of(deployment.at()) : Optional.empty();
+        return Optional.of(deployment.at())
+                .filter(ignored ->     applicationComparison == -1 || platformComparison == -1
+                                   || (applicationComparison ==  0 && platformComparison ==  0));
     }
 
     private boolean acceptNewApplicationVersionNow(LockedApplication application) {

@@ -29,9 +29,9 @@ public class DeploymentOrder {
 
     private final Supplier<SystemName> system;
 
-    public DeploymentOrder(Controller controller) {
-        Objects.requireNonNull(controller, "Controller may not be null");
-        this.system = controller::system;
+    public DeploymentOrder(Supplier<SystemName> system) {
+        Objects.requireNonNull(system, "system may not be null");
+        this.system = system;
     }
 
     /** Returns jobs for given deployment spec, in the order they are declared */
