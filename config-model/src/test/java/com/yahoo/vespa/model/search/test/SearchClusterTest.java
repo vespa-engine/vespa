@@ -134,14 +134,23 @@ public class SearchClusterTest {
         assertFalse(cluster2.getSearch().getChains().localProviders().isEmpty());
 
         QrSearchersConfig.Builder builder = new QrSearchersConfig.Builder();
-        cluster1.getConfig(builder);
+        cluster1.getContainers().get(0).getConfig(builder);
         QrSearchersConfig config = new QrSearchersConfig(builder);
 
+        String hostName = cluster1.getContainers().get(0).getHostName();
         assertThat(config.searchcluster().size(), is(2));
         int normalId = 0;
         int bulkId = 1;
         assertThat(config.searchcluster().get(normalId).name(), is("normal"));
         assertThat(config.searchcluster().get(bulkId).name(), is("xbulk"));
+        assertEquals(1, config.searchcluster(0).dispatcher().size());
+        assertEquals(hostName, config.searchcluster(0).dispatcher(0).host());
+        assertEquals(19129, config.searchcluster(0).dispatcher(0).port());
+
+        assertEquals(1, config.searchcluster(1).dispatcher().size());
+        assertEquals(hostName, config.searchcluster(1).dispatcher(0).host());
+        assertEquals(19132, config.searchcluster(1).dispatcher(0).port());
+
 
         ClusterConfig.Builder clusterConfigBuilder = new ClusterConfig.Builder();
         model.getConfig(clusterConfigBuilder, "j1/searchchains/chain/normal/component/com.yahoo.prelude.cluster.ClusterSearcher");

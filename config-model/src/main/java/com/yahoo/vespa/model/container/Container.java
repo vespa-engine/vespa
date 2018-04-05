@@ -7,6 +7,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
+import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
@@ -24,6 +25,7 @@ import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
+
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +48,7 @@ import static com.yahoo.container.QrConfig.Rpc;
 @RestartConfigs({QrStartConfig.class, QrConfig.class})
 public class Container extends AbstractService implements
         QrConfig.Producer,
+        QrSearchersConfig.Producer,
         ComponentsConfig.Producer,
         JdiscBindingsConfig.Producer,
         ContainerHttpConfig.Producer,
@@ -399,6 +402,16 @@ public class Container extends AbstractService implements
 
     public void setHttpServerEnabled(boolean httpServerEnabled) {
         this.httpServerEnabled = httpServerEnabled;
+    }
+
+    @Override
+    public void getConfig(QrSearchersConfig.Builder builder) {
+        if (parent instanceof ContainerCluster) {
+            ContainerCluster cluster = (ContainerCluster) parent;
+            if (cluster.getSearch() != null) {
+                cluster.getSearch().getConfig(builder, getHostName());
+            }
+        }
     }
 
 
