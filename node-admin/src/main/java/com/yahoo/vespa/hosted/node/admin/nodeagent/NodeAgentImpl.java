@@ -246,7 +246,7 @@ public class NodeAgentImpl implements NodeAgent {
     private void updateNodeRepoWithCurrentAttributes(final NodeRepositoryNode node) {
         final NodeAttributes currentNodeAttributes = new NodeAttributes()
                 .withRestartGeneration(node.currentRestartGeneration.orElse(null))
-                .withRebootGeneration(node.currentRebootGeneration.orElse(0L))
+                .withRebootGeneration(node.currentRebootGeneration)
                 .withDockerImage(node.currentDockerImage.orElse(new DockerImage("")))
                 .withVespaVersion(node.vespaVersion.orElse(""));
 
@@ -254,7 +254,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .withRestartGeneration(node.wantedRestartGeneration.orElse(null))
                 // update reboot gen with wanted gen if set, we ignore reboot for Docker nodes but
                 // want the two to be equal in node repo
-                .withRebootGeneration(node.wantedRebootGeneration.orElse(0L))
+                .withRebootGeneration(node.wantedRebootGeneration)
                 .withDockerImage(node.wantedDockerImage.filter(n -> containerState == UNKNOWN).orElse(new DockerImage("")))
                 .withVespaVersion(node.wantedVespaVersion.filter(n -> containerState == UNKNOWN).orElse(""));
 

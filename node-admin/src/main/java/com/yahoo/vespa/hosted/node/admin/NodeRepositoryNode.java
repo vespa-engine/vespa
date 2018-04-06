@@ -29,18 +29,18 @@ public class NodeRepositoryNode {
     public final Optional<Long> wantedRestartGeneration;
     public final Optional<Long> currentRestartGeneration;
 
-    public final Optional<Long> wantedRebootGeneration;
-    public final Optional<Long> currentRebootGeneration;
+    public final long wantedRebootGeneration;
+    public final long currentRebootGeneration;
 
     public final Optional<Boolean> allowedToBeDown;
     public final Optional<Owner> owner;
     public final Optional<Membership> membership;
 
-    public final Double minCpuCores;
-    public final Double minMainMemoryAvailableGb;
-    public final Double minDiskAvailableGb;
+    public final double minCpuCores;
+    public final double minMainMemoryAvailableGb;
+    public final double minDiskAvailableGb;
 
-    public final Boolean fastDisk;
+    public final boolean fastDisk;
     public final Set<String> ipAddresses;
 
     public final Optional<String> hardwareDivergence;
@@ -61,12 +61,12 @@ public class NodeRepositoryNode {
             final Optional<Membership> membership,
             final Optional<Long> wantedRestartGeneration,
             final Optional<Long> currentRestartGeneration,
-            final Optional<Long> wantedRebootGeneration,
-            final Optional<Long> currentRebootGeneration,
-            final Double minCpuCores,
-            final Double minMainMemoryAvailableGb,
-            final Double minDiskAvailableGb,
-            final Boolean fastDisk,
+            final long wantedRebootGeneration,
+            final long currentRebootGeneration,
+            final double minCpuCores,
+            final double minMainMemoryAvailableGb,
+            final double minDiskAvailableGb,
+            final boolean fastDisk,
             final Set<String> ipAddresses,
             final Optional<String> hardwareDivergence,
             final Optional<String> parentHostname) {
@@ -77,10 +77,6 @@ public class NodeRepositoryNode {
         Objects.requireNonNull(allowedToBeDown);
         Objects.requireNonNull(owner);
         Objects.requireNonNull(membership);
-        Objects.requireNonNull(minCpuCores);
-        Objects.requireNonNull(minMainMemoryAvailableGb);
-        Objects.requireNonNull(minDiskAvailableGb);
-        Objects.requireNonNull(fastDisk);
         Objects.requireNonNull(ipAddresses);
 
         this.hostname = hostname;
@@ -306,12 +302,12 @@ public class NodeRepositoryNode {
         private Optional<Membership> membership = Optional.empty();
         private Optional<Long> wantedRestartGeneration = Optional.empty();
         private Optional<Long> currentRestartGeneration = Optional.empty();
-        private Optional<Long> wantedRebootGeneration = Optional.empty();
-        private Optional<Long> currentRebootGeneration = Optional.empty();
-        private Double minCpuCores;
-        private Double minMainMemoryAvailableGb;
-        private Double minDiskAvailableGb;
-        private Boolean fastDisk = false;
+        private long wantedRebootGeneration;
+        private long currentRebootGeneration;
+        private double minCpuCores;
+        private double minMainMemoryAvailableGb;
+        private double minDiskAvailableGb;
+        private boolean fastDisk = false;
         private Set<String> ipAddresses = Collections.emptySet();
         private Optional<String> hardwareDivergence = Optional.empty();
         private Optional<String> parentHostname = Optional.empty();
@@ -329,6 +325,8 @@ public class NodeRepositoryNode {
             minDiskAvailableGb(node.minDiskAvailableGb);
             fastDisk(node.fastDisk);
             ipAddresses(node.ipAddresses);
+            wantedRebootGeneration(node.wantedRebootGeneration);
+            currentRebootGeneration(node.currentRebootGeneration);
 
             node.wantedDockerImage.ifPresent(this::wantedDockerImage);
             node.currentDockerImage.ifPresent(this::currentDockerImage);
@@ -338,8 +336,6 @@ public class NodeRepositoryNode {
             node.membership.ifPresent(this::membership);
             node.wantedRestartGeneration.ifPresent(this::wantedRestartGeneration);
             node.currentRestartGeneration.ifPresent(this::currentRestartGeneration);
-            node.wantedRebootGeneration.ifPresent(this::wantedRebootGeneration);
-            node.currentRebootGeneration.ifPresent(this::currentRebootGeneration);
             node.hardwareDivergence.ifPresent(this::hardwareDivergence);
             node.parentHostname.ifPresent(this::parentHostname);
         }
@@ -414,12 +410,12 @@ public class NodeRepositoryNode {
         }
 
         public Builder wantedRebootGeneration(long wantedRebootGeneration) {
-            this.wantedRebootGeneration = Optional.of(wantedRebootGeneration);
+            this.wantedRebootGeneration = wantedRebootGeneration;
             return this;
         }
 
         public Builder currentRebootGeneration(long currentRebootGeneration) {
-            this.currentRebootGeneration = Optional.of(currentRebootGeneration);
+            this.currentRebootGeneration = currentRebootGeneration;
             return this;
         }
 
