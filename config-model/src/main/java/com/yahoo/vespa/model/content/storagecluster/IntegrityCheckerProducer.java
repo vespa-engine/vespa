@@ -13,45 +13,7 @@ public class IntegrityCheckerProducer implements StorIntegritycheckerConfig.Prod
 
     public static class Builder {
         protected IntegrityCheckerProducer build(ContentCluster cluster, ModelElement clusterElem) {
-            if (!cluster.isMemfilePersistence()) {
                 return integrityCheckerDisabled();
-            }
-
-            ModelElement tuning = clusterElem.getChild("tuning");
-
-            if (tuning == null) {
-                return new IntegrityCheckerProducer();
-            }
-
-            ModelElement maintenance = tuning.getChild("maintenance");
-            if (maintenance == null) {
-                return new IntegrityCheckerProducer();
-            }
-
-            Integer startTime = null;
-            Integer stopTime = null;
-            String weeklyCycle = null;
-
-            String start = maintenance.getStringAttribute("start");
-            if (start != null) {
-                startTime = ConfigModelUtils.getTimeOfDay(start);
-            }
-
-            String stop = maintenance.getStringAttribute("stop");
-            if (stop != null) {
-                stopTime = ConfigModelUtils.getTimeOfDay(stop);
-            }
-
-            String high = maintenance.getStringAttribute("high");
-
-            if (high != null) {
-                int weekday = ConfigModelUtils.getDayOfWeek(high);
-                char[] weeklycycle = "rrrrrrr".toCharArray();
-                weeklycycle[weekday] = 'R';
-                weeklyCycle = String.valueOf(weeklycycle);
-            }
-
-            return new IntegrityCheckerProducer(startTime, stopTime, weeklyCycle);
         }
     }
 

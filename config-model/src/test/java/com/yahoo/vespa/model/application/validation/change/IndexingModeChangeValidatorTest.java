@@ -50,9 +50,6 @@ public class IndexingModeChangeValidatorTest {
         return "<services version='1.0'>" +
                "  <content id='default' version='1.0'>" +
                "    <redundancy>1</redundancy>" +
-               "    <engine>" +
-               (indexingMode.equals(AbstractSearchCluster.IndexingMode.REALTIME) ? "    <proton/>" : "     <vds/>") +
-               "    </engine>" +
                "    <documents>" +
                "      <document type='music' mode='" +
                (indexingMode.equals(AbstractSearchCluster.IndexingMode.REALTIME) ? "index" : "streaming") + "'/>" +

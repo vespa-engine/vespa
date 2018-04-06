@@ -100,8 +100,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
             final boolean hasIndexedDocumentType = clusterContainsIndexedDocumentType(documentsNode);
 
             return new DistributorCluster(parent,
-                    new BucketSplitting.Builder().build(
-                            parent, new ModelElement(producerSpec)), gc, hasIndexedDocumentType);
+                    new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc, hasIndexedDocumentType);
         }
     }
 

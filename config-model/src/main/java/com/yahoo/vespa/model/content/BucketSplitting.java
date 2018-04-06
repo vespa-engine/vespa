@@ -12,13 +12,12 @@ public class BucketSplitting implements StorDistributormanagerConfig.Producer {
     Integer maxDocuments;
     Integer splitSize;
     Integer minSplitCount;
-    boolean useInlineBucketSplitting;
 
     public static class Builder {
-        public BucketSplitting build(ContentCluster cluster, ModelElement clusterElem) {
+        public BucketSplitting build(ModelElement clusterElem) {
             ModelElement tuning = clusterElem.getChild("tuning");
             if (tuning == null) {
-                return new BucketSplitting(cluster.isMemfilePersistence(), null, null, null);
+                return new BucketSplitting(null, null, null);
             }
 
             ModelElement bucketSplitting = tuning.getChild("bucket-splitting");
@@ -27,18 +26,17 @@ public class BucketSplitting implements StorDistributormanagerConfig.Producer {
                 Integer splitSize = bucketSplitting.getIntegerAttribute("max-size");
                 Integer minSplitCount = bucketSplitting.getIntegerAttribute("minimum-bits");
 
-                return new BucketSplitting(cluster.isMemfilePersistence(), maxDocuments, splitSize, minSplitCount);
+                return new BucketSplitting(maxDocuments, splitSize, minSplitCount);
             }
 
-            return new BucketSplitting(cluster.isMemfilePersistence(), null, null, null);
+            return new BucketSplitting(null, null, null);
         }
     }
 
-    public BucketSplitting(boolean useInlineBucketSplitting, Integer maxDocuments, Integer splitSize, Integer minSplitCount) {
+    public BucketSplitting(Integer maxDocuments, Integer splitSize, Integer minSplitCount) {
         this.maxDocuments = maxDocuments;
         this.splitSize = splitSize;
         this.minSplitCount = minSplitCount;
-        this.useInlineBucketSplitting = useInlineBucketSplitting;
     }
 
     @Override
@@ -55,6 +53,6 @@ public class BucketSplitting implements StorDistributormanagerConfig.Producer {
             builder.minsplitcount(minSplitCount);
         }
 
-        builder.inlinebucketsplitting(useInlineBucketSplitting);
+        builder.inlinebucketsplitting(false);
     }
 }
