@@ -440,7 +440,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     // Public for testing
     void converge() {
-        final Optional<NodeRepositoryNode> optionalNode = nodeRepository.getContainerNodeSpec(hostname);
+        final Optional<NodeRepositoryNode> optionalNode = nodeRepository.getNode(hostname);
 
         // We just removed the node from node repo, so this is expected until NodeAdmin stop this NodeAgent
         if (!optionalNode.isPresent() && expectNodeNotInNodeRepo) return;

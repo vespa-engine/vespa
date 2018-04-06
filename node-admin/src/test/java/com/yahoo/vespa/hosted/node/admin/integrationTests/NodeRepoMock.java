@@ -32,14 +32,19 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public List<NodeRepositoryNode> getContainersToRun(String dockerHostHostname) {
+    public List<NodeRepositoryNode> getNodes(String baseHostName) {
         synchronized (monitor) {
             return new ArrayList<>(nodeRepositoryNodesByHostname.values());
         }
     }
 
     @Override
-    public Optional<NodeRepositoryNode> getContainerNodeSpec(String hostName) {
+    public List<NodeRepositoryNode> getNodes(NodeType... nodeTypes) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Optional<NodeRepositoryNode> getNode(String hostName) {
         synchronized (monitor) {
             return Optional.ofNullable(nodeRepositoryNodesByHostname.get(hostName));
         }
@@ -61,36 +66,18 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public void markAsDirty(String hostName) {
-        Optional<NodeRepositoryNode> cns = getContainerNodeSpec(hostName);
+    public void setNodeState(String hostName, Node.State nodeState) {
+        Optional<NodeRepositoryNode> node = getNode(hostName);
 
         synchronized (monitor) {
-            cns.ifPresent(containerNodeSpec -> updateContainerNodeSpec(new NodeRepositoryNode.Builder(containerNodeSpec)
-                    .nodeState(Node.State.dirty)
-                    .nodeType(NodeType.tenant)
-                    .nodeFlavor("docker")
+            node.ifPresent(nrn -> updateNodeRepositoryNode(new NodeRepositoryNode.Builder(nrn)
+                    .nodeState(nodeState)
                     .build()));
-            callOrderVerifier.add("markAsDirty with HostName: " + hostName);
+            callOrderVerifier.add("setNodeState " + hostName + " to " + nodeState);
         }
     }
 
-    @Override
-    public void markNodeAvailableForNewAllocation(String hostName) {
-        Optional<NodeRepositoryNode> cns = getContainerNodeSpec(hostName);
-
-        synchronized (monitor) {
-            if (cns.isPresent()) {
-                updateContainerNodeSpec(new NodeRepositoryNode.Builder(cns.get())
-                        .nodeState(Node.State.ready)
-                        .nodeType(NodeType.tenant)
-                        .nodeFlavor("docker")
-                        .build());
-            }
-            callOrderVerifier.add("markNodeAvailableForNewAllocation with HostName: " + hostName);
-        }
-    }
-
-    public void updateContainerNodeSpec(NodeRepositoryNode nodeRepositoryNode) {
+    public void updateNodeRepositoryNode(NodeRepositoryNode nodeRepositoryNode) {
         nodeRepositoryNodesByHostname.put(nodeRepositoryNode.hostname, nodeRepositoryNode);
     }
 

@@ -120,7 +120,7 @@ public class NodeAgentImplTest {
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
-        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(hostName)).thenReturn(Optional.of(node));
         when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(187500000000L));
 
         nodeAgent.converge();
@@ -152,7 +152,7 @@ public class NodeAgentImplTest {
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
-        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(hostName)).thenReturn(Optional.of(node));
         when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(217432719360L));
 
         nodeAgent.converge();
@@ -176,7 +176,7 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
 
-        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(hostName)).thenReturn(Optional.of(node));
         when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
         when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
         when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
@@ -219,7 +219,7 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
-        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(hostName)).thenReturn(Optional.of(node));
         when(dockerOperations.pullImageAsyncIfNeeded(any())).thenReturn(true);
         when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(201326592000L));
 
@@ -251,7 +251,7 @@ public class NodeAgentImplTest {
         NodeRepositoryNode secondSpec = specBuilder.minDiskAvailableGb(200).build();
         NodeRepositoryNode thirdSpec = specBuilder.minCpuCores(4).build();
 
-        when(nodeRepository.getContainerNodeSpec(hostName))
+        when(nodeRepository.getNode(hostName))
                 .thenReturn(Optional.of(firstSpec))
                 .thenReturn(Optional.of(secondSpec))
                 .thenReturn(Optional.of(thirdSpec));
@@ -315,7 +315,7 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
-        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(hostName)).thenReturn(Optional.of(node));
 
         nodeAgent.converge();
 
@@ -337,7 +337,7 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(null,false);
 
-        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(hostName)).thenReturn(Optional.of(node));
 
         nodeAgent.converge();
         nodeAgent.converge();
@@ -370,7 +370,7 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
-        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(hostName)).thenReturn(Optional.of(node));
 
         nodeAgent.converge();
 
@@ -397,7 +397,7 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
 
-        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(hostName)).thenReturn(Optional.of(node));
 
         nodeAgent.converge();
 
@@ -417,14 +417,14 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
-        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(hostName)).thenReturn(Optional.of(node));
 
         nodeAgent.converge();
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations, nodeRepository);
         inOrder.verify(dockerOperations, times(1)).removeContainer(any(), any());
         inOrder.verify(storageMaintainer, times(1)).cleanupNodeStorage(eq(containerName), eq(node));
-        inOrder.verify(nodeRepository, times(1)).markNodeAvailableForNewAllocation(eq(hostName));
+        inOrder.verify(nodeRepository, times(1)).setNodeState(eq(hostName), eq(Node.State.ready));
 
         verify(dockerOperations, never()).createContainer(eq(containerName), any());
         verify(dockerOperations, never()).startContainer(eq(containerName), any());
@@ -457,10 +457,10 @@ public class NodeAgentImplTest {
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
-        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(hostName)).thenReturn(Optional.of(node));
 
         nodeAgent.converge();
-        verify(nodeRepository, times(1)).markAsDirty(eq(hostName));
+        verify(nodeRepository, times(1)).setNodeState(eq(hostName), eq(Node.State.dirty));
     }
 
     @Test
@@ -474,7 +474,7 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, false);
 
-        when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(eq(hostName))).thenReturn(Optional.of(node));
         when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
         when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
         when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(201326592000L));
@@ -500,7 +500,7 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
-        when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(eq(hostName))).thenReturn(Optional.of(node));
         when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(201326592000L));
 
         final InOrder inOrder = inOrder(orchestrator, dockerOperations, nodeRepository);
@@ -567,7 +567,7 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = spy(makeNodeAgent(null, false));
 
-        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(hostName)).thenReturn(Optional.of(node));
         when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
         when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
         when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
@@ -626,7 +626,7 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
-        when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(eq(hostName))).thenReturn(Optional.of(node));
         when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(39625000000L));
         when(dockerOperations.getContainerStats(eq(containerName)))
                 .thenReturn(Optional.of(stats1))
@@ -668,7 +668,7 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
 
-        when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(eq(hostName))).thenReturn(Optional.of(node));
         when(dockerOperations.getContainerStats(eq(containerName))).thenReturn(Optional.empty());
 
         nodeAgent.converge(); // Run the converge loop once to initialize lastNode
@@ -691,7 +691,7 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
 
-        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(node));
+        when(nodeRepository.getNode(hostName)).thenReturn(Optional.of(node));
         Path tempDirectory = Files.createTempDirectory("foo");
         when(pathResolver.getApplicationStoragePathForHost()).thenReturn(tempDirectory);
         when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);

@@ -129,7 +129,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
         if (currentState != RESUMED) return;
 
         try {
-            NodeRepositoryNode node = nodeRepository.getContainerNodeSpec(dockerHostHostName)
+            NodeRepositoryNode node = nodeRepository.getNode(dockerHostHostName)
                     .orElseThrow(() -> new RuntimeException("Failed to get host's node spec from node-repo"));
             String hardwareDivergence = maintainer.getHardwareDivergence(node);
 
@@ -270,7 +270,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             }
 
             try {
-                final List<NodeRepositoryNode> containersToRun = nodeRepository.getContainersToRun(dockerHostHostName);
+                final List<NodeRepositoryNode> containersToRun = nodeRepository.getNodes(dockerHostHostName);
                 nodeAdmin.refreshContainersToRun(containersToRun);
             } catch (Exception e) {
                 log.log(LogLevel.WARNING, "Failed to update which containers should be running", e);
@@ -279,7 +279,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     }
 
     private List<String> getNodesInActiveState() {
-        return nodeRepository.getContainersToRun(dockerHostHostName)
+        return nodeRepository.getNodes(dockerHostHostName)
                              .stream()
                              .filter(node -> node.nodeState == Node.State.active)
                              .map(node -> node.hostname)

@@ -55,7 +55,7 @@ public class NodeAdminStateUpdaterImplTest {
     @Test
     public void testStateConvergence() {
         mockNodeRepo(4);
-        List<String> activeHostnames = nodeRepository.getContainersToRun(parentHostname).stream()
+        List<String> activeHostnames = nodeRepository.getNodes(parentHostname).stream()
                 .map(node -> node.hostname)
                 .collect(Collectors.toList());
         List<String> suspendHostnames = new ArrayList<>(activeHostnames);
@@ -195,7 +195,7 @@ public class NodeAdminStateUpdaterImplTest {
                         .build())
                 .collect(Collectors.toList());
 
-        when(nodeRepository.getContainersToRun(eq(parentHostname))).thenReturn(containersToRun);
+        when(nodeRepository.getNodes(eq(parentHostname))).thenReturn(containersToRun);
     }
 
     private void tickAfter(int seconds) {

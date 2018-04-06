@@ -22,7 +22,7 @@ public class RestartTest {
 
             long wantedRestartGeneration = 1;
             long currentRestartGeneration = wantedRestartGeneration;
-            dockerTester.addContainerNodeSpec(createNodeRepositoryNode(wantedRestartGeneration, currentRestartGeneration));
+            dockerTester.addNodeRepositoryNode(createNodeRepositoryNode(wantedRestartGeneration, currentRestartGeneration));
 
             // Wait for node admin to be notified with node repo state and the docker container has been started
             while (dockerTester.nodeAdmin.getListOfHosts().size() == 0) {
@@ -36,7 +36,7 @@ public class RestartTest {
 
             wantedRestartGeneration = 2;
             currentRestartGeneration = 1;
-            dockerTester.addContainerNodeSpec(createNodeRepositoryNode(wantedRestartGeneration, currentRestartGeneration));
+            dockerTester.addNodeRepositoryNode(createNodeRepositoryNode(wantedRestartGeneration, currentRestartGeneration));
 
             dockerTester.callOrderVerifier.assertInOrder(
                     "Suspend for host1.test.yahoo.com",

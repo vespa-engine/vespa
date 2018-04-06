@@ -30,7 +30,7 @@ public class RebootTest {
     public void test() throws InterruptedException, UnknownHostException {
         try (DockerTester dockerTester = new DockerTester()) {
 
-            dockerTester.addContainerNodeSpec(createContainerNodeSpec());
+            dockerTester.addNodeRepositoryNode(createNodeRepositoryNode());
 
             // Wait for node admin to be notified with node repo state and the docker container has been started
             while (dockerTester.nodeAdmin.getListOfHosts().size() == 0) {
@@ -62,7 +62,7 @@ public class RebootTest {
         }
     }
 
-    private NodeRepositoryNode createContainerNodeSpec() {
+    private NodeRepositoryNode createNodeRepositoryNode() {
         return new NodeRepositoryNode.Builder()
                 .hostname("host1.test.yahoo.com")
                 .wantedDockerImage(new DockerImage("dockerImage"))

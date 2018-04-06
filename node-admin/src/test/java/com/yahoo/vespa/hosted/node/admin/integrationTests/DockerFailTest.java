@@ -28,7 +28,7 @@ public class DockerFailTest {
                     .minMainMemoryAvailableGb(1)
                     .minDiskAvailableGb(1)
                     .build();
-            dockerTester.addContainerNodeSpec(nodeRepositoryNode);
+            dockerTester.addNodeRepositoryNode(nodeRepositoryNode);
 
             // Wait for node admin to be notified with node repo state and the docker container has been started
             while (dockerTester.nodeAdmin.getListOfHosts().size() == 0) {

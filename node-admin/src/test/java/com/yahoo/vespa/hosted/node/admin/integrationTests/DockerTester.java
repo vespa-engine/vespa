@@ -85,8 +85,8 @@ public class DockerTester implements AutoCloseable {
         nodeAdminStateUpdater.start();
     }
 
-    void addContainerNodeSpec(NodeRepositoryNode nodeRepositoryNode) {
-        nodeRepositoryMock.updateContainerNodeSpec(nodeRepositoryNode);
+    void addNodeRepositoryNode(NodeRepositoryNode nodeRepositoryNode) {
+        nodeRepositoryMock.updateNodeRepositoryNode(nodeRepositoryNode);
     }
 
     @Override

@@ -15,11 +15,11 @@ import java.util.Optional;
  */
 public interface NodeRepository {
 
-    List<NodeRepositoryNode> getContainerNodeSpecs(String baseHostName);
+    List<NodeRepositoryNode> getNodes(String baseHostName);
 
-    List<ContainerNodeSpec> getContainerNodeSpecs(NodeType... nodeTypes);
+    List<NodeRepositoryNode> getNodes(NodeType... nodeTypes);
 
-    Optional<NodeRepositoryNode> getContainerNodeSpec(String hostName);
+    Optional<NodeRepositoryNode> getNode(String hostName);
 
     List<ContainerAclSpec> getContainerAclSpecs(String hostName);
 

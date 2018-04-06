@@ -39,19 +39,19 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public List<NodeRepositoryNode> getContainerNodeSpecs(String baseHostName) {
-        return getContainerNodeSpecs(Optional.of(baseHostName), Collections.emptyList());
+    public List<NodeRepositoryNode> getNodes(String baseHostName) {
+        return getNodes(Optional.of(baseHostName), Collections.emptyList());
     }
 
     @Override
-    public List<ContainerNodeSpec> getContainerNodeSpecs(NodeType... nodeTypes) {
+    public List<NodeRepositoryNode> getNodes(NodeType... nodeTypes) {
         if (nodeTypes.length == 0)
             throw new IllegalArgumentException("Must specify at least 1 node type");
 
-        return getContainerNodeSpecs(Optional.empty(), Arrays.asList(nodeTypes));
+        return getNodes(Optional.empty(), Arrays.asList(nodeTypes));
     }
 
-    private List<ContainerNodeSpec> getContainerNodeSpecs(Optional<String> baseHostName, List<NodeType> nodeTypeList) {
+    private List<NodeRepositoryNode> getNodes(Optional<String> baseHostName, List<NodeType> nodeTypeList) {
         Optional<String> nodeTypes = Optional
                 .of(nodeTypeList.stream().map(NodeType::name).collect(Collectors.joining(",")))
                 .filter(StringUtils::isNotEmpty);
@@ -65,7 +65,7 @@ public class RealNodeRepository implements NodeRepository {
         for (GetNodesResponse.Node node : nodesForHost.nodes) {
             NodeRepositoryNode nodeSpec;
             try {
-                nodeSpec = createContainerNodeSpec(node);
+                nodeSpec = createNodeRepositoryNode(node);
             } catch (IllegalArgumentException | NullPointerException e) {
                 NODE_ADMIN_LOGGER.warning("Bad node received from node repo when requesting children of the "
                         + baseHostName + " host: " + node, e);
@@ -77,14 +77,14 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public Optional<NodeRepositoryNode> getContainerNodeSpec(String hostName) {
+    public Optional<NodeRepositoryNode> getNode(String hostName) {
         try {
             GetNodesResponse.Node nodeResponse = configServerApi.get("/nodes/v2/node/" + hostName,
                                                                      GetNodesResponse.Node.class);
             if (nodeResponse == null) {
                 return Optional.empty();
             }
-            return Optional.of(createContainerNodeSpec(nodeResponse));
+            return Optional.of(createNodeRepositoryNode(nodeResponse));
         } catch (HttpException.NotFoundException|HttpException.ForbiddenException e) {
             // Return empty on 403 in addition to 404 as it likely means we're trying to access a node that
             // has been deleted. When a node is deleted, the parent-child relationship no longer exists and
@@ -107,7 +107,7 @@ public class RealNodeRepository implements NodeRepository {
         }
     }
 
-    private static NodeRepositoryNode createContainerNodeSpec(GetNodesResponse.Node node)
+    private static NodeRepositoryNode createNodeRepositoryNode(GetNodesResponse.Node node)
             throws IllegalArgumentException, NullPointerException {
         Objects.requireNonNull(node.nodeType, "Unknown node type");
         NodeType nodeType = NodeType.valueOf(node.nodeType);

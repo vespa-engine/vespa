@@ -34,7 +34,7 @@ public class FilebeatConfigProviderTest {
     public void it_replaces_all_fields_correctly() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
 
-        Optional<String> config = filebeatConfigProvider.getConfig(getNodeSpec(tenant, application, instance));
+        Optional<String> config = filebeatConfigProvider.getConfig(createNodeRepositoryNode(tenant, application, instance));
 
         assertTrue(config.isPresent());
         String configString = config.get();
@@ -46,7 +46,7 @@ public class FilebeatConfigProviderTest {
         Environment env = getEnvironment(Collections.emptyList());
 
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(env);
-        Optional<String> config = filebeatConfigProvider.getConfig(getNodeSpec(tenant, application, instance));
+        Optional<String> config = filebeatConfigProvider.getConfig(createNodeRepositoryNode(tenant, application, instance));
         assertFalse(config.isPresent());
     }
 
@@ -80,7 +80,7 @@ public class FilebeatConfigProviderTest {
     public void it_does_not_add_double_quotes() {
         Environment environment = getEnvironment(ImmutableList.of("unquoted", "\"quoted\""));
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
-        Optional<String> config = filebeatConfigProvider.getConfig(getNodeSpec(tenant, application, instance));
+        Optional<String> config = filebeatConfigProvider.getConfig(createNodeRepositoryNode(tenant, application, instance));
         assertThat(config.get(), containsString("hosts: [\"unquoted\",\"quoted\"]"));
     }
 
@@ -92,7 +92,7 @@ public class FilebeatConfigProviderTest {
 
     private String getConfigString() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
-        NodeRepositoryNode node = getNodeSpec(tenant, application, instance);
+        NodeRepositoryNode node = createNodeRepositoryNode(tenant, application, instance);
         return filebeatConfigProvider.getConfig(node).orElseThrow(() -> new RuntimeException("Failed to get filebeat config"));
     }
 
@@ -108,7 +108,7 @@ public class FilebeatConfigProviderTest {
                 .build();
     }
 
-    private NodeRepositoryNode getNodeSpec(String tenant, String application, String instance) {
+    private NodeRepositoryNode createNodeRepositoryNode(String tenant, String application, String instance) {
         NodeRepositoryNode.Owner owner = new NodeRepositoryNode.Owner(tenant, application, instance);
         return new NodeRepositoryNode.Builder()
                 .owner(owner)

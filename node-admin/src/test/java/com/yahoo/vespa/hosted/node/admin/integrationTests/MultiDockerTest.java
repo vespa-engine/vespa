@@ -20,7 +20,7 @@ public class MultiDockerTest {
             NodeRepositoryNode nodeRepositoryNode2 = addAndWaitForNode(
                     dockerTester, "host2.test.yahoo.com", new DockerImage("image2"));
 
-            dockerTester.addContainerNodeSpec(
+            dockerTester.addNodeRepositoryNode(
                     new NodeRepositoryNode.Builder(nodeRepositoryNode2)
                             .nodeState(Node.State.dirty)
                             .minCpuCores(1)
@@ -29,7 +29,7 @@ public class MultiDockerTest {
                             .build());
 
             // Wait until it is marked ready
-            while (dockerTester.nodeRepositoryMock.getContainerNodeSpec(nodeRepositoryNode2.hostname)
+            while (dockerTester.nodeRepositoryMock.getNode(nodeRepositoryNode2.hostname)
                     .filter(node -> node.nodeState != Node.State.ready).isPresent()) {
                 Thread.sleep(10);
             }
@@ -52,12 +52,12 @@ public class MultiDockerTest {
             dockerTester.callOrderVerifier.assertInOrderWithAssertMessage(
                     "Maintainer did not receive call to delete application storage",
                     "deleteContainer with ContainerName { name=host2 }",
-                     "DeleteContainerStorage with ContainerName { name=host2 }");
+                    "DeleteContainerStorage with ContainerName { name=host2 }");
 
             dockerTester.callOrderVerifier.assertInOrder(
                     "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion='1.2.3', hardwareDivergence='null'}",
                     "updateNodeAttributes with HostName: host2.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image2, vespaVersion='1.2.3', hardwareDivergence='null'}",
-                    "markNodeAvailableForNewAllocation with HostName: host2.test.yahoo.com",
+                    "setNodeState host2.test.yahoo.com to ready",
                     "updateNodeAttributes with HostName: host3.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion='1.2.3', hardwareDivergence='null'}");
         }
     }
@@ -77,7 +77,7 @@ public class MultiDockerTest {
                 .minDiskAvailableGb(1)
                 .build();
 
-        tester.addContainerNodeSpec(nodeRepositoryNode);
+        tester.addNodeRepositoryNode(nodeRepositoryNode);
 
         // Wait for node admin to be notified with node repo state and the docker container has been started
         while (tester.nodeAdmin.getListOfHosts().size() != tester.nodeRepositoryMock.getNumberOfContainerSpecs()) {

@@ -87,7 +87,7 @@ public class NodeAdminImpl implements NodeAdmin {
                 .collect(Collectors.toList());
 
         storageMaintainer.cleanNodeAdmin();
-        synchronizeNodeSpecsToNodeAgents(containersToRunHostnames, existingContainerNames);
+        synchronizeNodesToNodeAgents(containersToRunHostnames, existingContainerNames);
         dockerOperations.deleteUnusedDockerImages();
 
         updateNodeAgentMetrics();
@@ -224,7 +224,7 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     // The method streams the list of containers twice.
-    void synchronizeNodeSpecsToNodeAgents(
+    void synchronizeNodesToNodeAgents(
             final List<String> hostnamesToRun,
             final List<ContainerName> existingContainers) {
         final Map<ContainerName, String> hostnameByContainerName = hostnamesToRun.stream()

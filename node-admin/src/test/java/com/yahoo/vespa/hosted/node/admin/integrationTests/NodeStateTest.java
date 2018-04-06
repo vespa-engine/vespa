@@ -29,7 +29,7 @@ public class NodeStateTest {
             .build();
 
     private void setup(DockerTester tester) throws InterruptedException {
-        tester.addContainerNodeSpec(initialNodeRepositoryNode);
+        tester.addNodeRepositoryNode(initialNodeRepositoryNode);
 
         // Wait for node admin to be notified with node repo state and the docker container has been started
         while (tester.nodeAdmin.getListOfHosts().size() == 0) {
@@ -47,7 +47,7 @@ public class NodeStateTest {
         try (DockerTester dockerTester = new DockerTester()) {
             setup(dockerTester);
             // Change node state to dirty
-            dockerTester.addContainerNodeSpec(new NodeRepositoryNode.Builder(initialNodeRepositoryNode)
+            dockerTester.addNodeRepositoryNode(new NodeRepositoryNode.Builder(initialNodeRepositoryNode)
                     .nodeState(Node.State.dirty)
                     .minCpuCores(1)
                     .minMainMemoryAvailableGb(1)
@@ -55,7 +55,7 @@ public class NodeStateTest {
                     .build());
 
             // Wait until it is marked ready
-            while (dockerTester.nodeRepositoryMock.getContainerNodeSpec(initialNodeRepositoryNode.hostname)
+            while (dockerTester.nodeRepositoryMock.getNode(initialNodeRepositoryNode.hostname)
                     .filter(node -> node.nodeState != Node.State.ready).isPresent()) {
                 Thread.sleep(10);
             }
@@ -76,7 +76,7 @@ public class NodeStateTest {
             DockerImage newDockerImage = new DockerImage("newDockerImage");
 
             // Change node state to inactive and change the wanted docker image
-            dockerTester.addContainerNodeSpec(new NodeRepositoryNode.Builder(initialNodeRepositoryNode)
+            dockerTester.addNodeRepositoryNode(new NodeRepositoryNode.Builder(initialNodeRepositoryNode)
                     .wantedDockerImage(newDockerImage)
                     .nodeState(Node.State.inactive)
                     .minCpuCores(1)
@@ -91,7 +91,7 @@ public class NodeStateTest {
 
 
             // Change node state to active
-            dockerTester.addContainerNodeSpec(new NodeRepositoryNode.Builder(initialNodeRepositoryNode)
+            dockerTester.addNodeRepositoryNode(new NodeRepositoryNode.Builder(initialNodeRepositoryNode)
                     .wantedDockerImage(newDockerImage)
                     .nodeState(Node.State.active)
                     .minCpuCores(1)

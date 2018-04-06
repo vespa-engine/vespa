@@ -77,7 +77,7 @@ public class RealNodeRepositoryTest {
         NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         while (Instant.now().minusSeconds(120).isBefore(start)) {
             try {
-                nodeRepositoryApi.getContainersToRun("foobar");
+                nodeRepositoryApi.getNodes("foobar");
                 return;
             } catch (Exception e) {
                 Thread.sleep(100);
@@ -99,7 +99,7 @@ public class RealNodeRepositoryTest {
         NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String dockerHostHostname = "dockerhost1.yahoo.com";
 
-        final List<NodeRepositoryNode> containersToRun = nodeRepositoryApi.getContainersToRun(dockerHostHostname);
+        final List<NodeRepositoryNode> containersToRun = nodeRepositoryApi.getNodes(dockerHostHostname);
         assertThat(containersToRun.size(), is(1));
         final NodeRepositoryNode node = containersToRun.get(0);
         assertThat(node.hostname, is("host4.yahoo.com"));
@@ -117,7 +117,7 @@ public class RealNodeRepositoryTest {
         waitForJdiscContainerToServe();
         NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String hostname = "host4.yahoo.com";
-        Optional<NodeRepositoryNode> node = nodeRepositoryApi.getContainerNodeSpec(hostname);
+        Optional<NodeRepositoryNode> node = nodeRepositoryApi.getNode(hostname);
         assertThat(node.isPresent(), is(true));
         assertThat(node.get().hostname, is(hostname));
     }
@@ -127,7 +127,7 @@ public class RealNodeRepositoryTest {
         waitForJdiscContainerToServe();
         NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String hostname = "host-that-does-not-exist";
-        Optional<NodeRepositoryNode> node = nodeRepositoryApi.getContainerNodeSpec(hostname);
+        Optional<NodeRepositoryNode> node = nodeRepositoryApi.getNode(hostname);
         assertFalse(node.isPresent());
     }
 
@@ -162,18 +162,18 @@ public class RealNodeRepositoryTest {
         NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         waitForJdiscContainerToServe();
 
-        nodeRepositoryApi.markAsDirty("host5.yahoo.com");
-        nodeRepositoryApi.markNodeAvailableForNewAllocation("host5.yahoo.com");
+        nodeRepositoryApi.setNodeState("host5.yahoo.com", Node.State.dirty);
+        nodeRepositoryApi.setNodeState("host5.yahoo.com", Node.State.ready);
 
         try {
-            nodeRepositoryApi.markNodeAvailableForNewAllocation("host4.yahoo.com");
+            nodeRepositoryApi.setNodeState("host4.yahoo.com", Node.State.ready);
             fail("Should not be allowed to be marked ready as it is not registered as provisioned, dirty, failed or parked");
         } catch (RuntimeException ignored) {
             // expected
         }
 
         try {
-            nodeRepositoryApi.markNodeAvailableForNewAllocation("host101.yahoo.com");
+            nodeRepositoryApi.setNodeState("host101.yahoo.com", Node.State.ready);
             fail("Expected failure because host101 does not exist");
         } catch (RuntimeException ignored) {
             // expected
