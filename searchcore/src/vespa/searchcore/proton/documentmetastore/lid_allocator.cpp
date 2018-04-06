@@ -220,7 +220,7 @@ public:
           _activeLids(activeLids),
           _matchDataVector()
     {
-        setEstimate(HitEstimate(0, false));
+        setEstimate(HitEstimate(_activeLids.size(), false));
     }
 
     ~WhiteListBlueprint() {
