@@ -7,7 +7,9 @@
 #include "ifeedview.h"
 #include "tlcproxy.h"
 #include "configstore.h"
+#include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/transport_latch.h>
@@ -107,8 +109,14 @@ FeedHandler::performUpdate(FeedToken token, UpdateOperation &op)
 {
     _activeFeedView->prepareUpdate(op);
     if (op.getPrevDbDocumentId().valid() && !op.getPrevMarkedAsRemoved()) {
+        if (considerUpdateOperationForRejection(token, op)) {
+            return;
+        }
         performInternalUpdate(std::move(token), op);
     } else if (op.getUpdate()->getCreateIfNonExistent()) {
+        if (considerUpdateOperationForRejection(token, op)) {
+            return;
+        }
         createNonExistingDocument(std::move(token), op);
     } else {
         if (token) {
@@ -482,6 +490,37 @@ FeedHandler::considerWriteOperationForRejection(FeedToken & token, const FeedOpe
     }
     return false;
 }
+
+bool
+FeedHandler::considerUpdateOperationForRejection(FeedToken &token, const UpdateOperation &op)
+{
+    const auto *repo = _activeFeedView->getDocumentTypeRepo().get();
+    const auto &update = *op.getUpdate();
+    /*
+     * Check if document types are equal. DocumentTypeRepoFactory::make returns
+     * the same document type repo if document type configs are equal, thus we
+     * can just perform a cheaper identity check here.
+     */
+    if (repo->getDocumentType(_docTypeName.getName()) != &update.getType()) {
+        try {
+            vespalib::nbostream stream;
+            op.serialize(stream);
+            UpdateOperation checkOp(op.getType());
+            vespalib::nbostream checkStream(stream.peek(), stream.size());
+            checkOp.deserialize(stream, *repo);
+        } catch (document::FieldNotFoundException &e) {
+            if (token) {
+                auto message = make_string("Update operation rejected for document '%s' of type '%s': 'Field not found'",
+                                           update.getId().toString().c_str(), _docTypeName.toString().c_str());
+                token->setResult(make_unique<UpdateResult>(Result::TRANSIENT_ERROR, message), false);
+                token->fail();
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
 
 void
 FeedHandler::performOperation(FeedToken token, FeedOperation::UP op)

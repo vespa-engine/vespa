@@ -102,6 +102,7 @@ private:
     void doHandleOperation(FeedToken token, FeedOperationUP op);
 
     bool considerWriteOperationForRejection(FeedToken & token, const FeedOperation &op);
+    bool considerUpdateOperationForRejection(FeedToken &token, const UpdateOperation &op);
 
     /**
      * Delayed execution of feed operations against feed view, in

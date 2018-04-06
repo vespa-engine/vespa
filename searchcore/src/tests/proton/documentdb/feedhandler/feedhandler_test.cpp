@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/persistence/spi/result.h>
+#include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
@@ -26,6 +27,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/io/fileutil.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("feedhandler_test");
@@ -227,6 +229,12 @@ struct MyFeedView : public test::DummyFeedView {
     const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override {
         return NULL;
     }
+    void checkCounts(int exp_update_count, SerialNum exp_update_serial, int exp_put_count, SerialNum exp_put_serial) {
+        EXPECT_EQUAL(exp_update_count, update_count);
+        EXPECT_EQUAL(exp_update_serial, update_serial);
+        EXPECT_EQUAL(exp_put_count, put_count);
+        EXPECT_EQUAL(exp_put_serial, put_serial);
+    }
 };
 
 MyFeedView::MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &dtr)
@@ -250,19 +258,31 @@ MyFeedView::~MyFeedView() {}
 struct SchemaContext {
     Schema::SP                schema;
     std::unique_ptr<DocBuilder> builder;
-    SchemaContext() :
-        schema(new Schema()),
-        builder()
-    {
-        schema->addIndexField(Schema::IndexField("i1", DataType::STRING, CollectionType::SINGLE));
-        builder.reset(new DocBuilder(*schema));
-    }
+    SchemaContext();
+    ~SchemaContext();
     DocTypeName getDocType() const {
         return DocTypeName(builder->getDocumentType().getName());
     }
     const std::shared_ptr<const document::DocumentTypeRepo> &getRepo() const { return builder->getDocumentTypeRepo(); }
+    void addField(vespalib::stringref fieldName);
 };
 
+SchemaContext::SchemaContext()
+    : schema(new Schema()),
+      builder()
+{
+    addField("i1");
+}
+
+
+SchemaContext::~SchemaContext() = default;
+
+void
+SchemaContext::addField(vespalib::stringref fieldName)
+{
+    schema->addIndexField(Schema::IndexField(fieldName, DataType::STRING, CollectionType::SINGLE));
+    builder = std::make_unique<DocBuilder>(*schema);
+}
 
 struct DocumentContext {
     Document::SP  doc;
@@ -282,6 +302,16 @@ struct UpdateContext {
         update(new DocumentUpdate(builder.getDocumentType(), DocumentId(docId))),
         bucketId(BucketFactory::getBucketId(update->getId()))
     {
+    }
+    void addFieldUpdate(const vespalib::string &fieldName) {
+        const auto &docType = update->getType();
+        const auto &field = docType.getField(fieldName);
+        auto fieldValue = field.createValue();
+        fieldValue->assign(document::StringFieldValue("new value"));
+        document::AssignValueUpdate assignValueUpdate(*fieldValue);
+        document::FieldUpdate fieldUpdate(field);
+        fieldUpdate.addUpdate(assignValueUpdate);
+        update->addUpdate(fieldUpdate);
     }
 };
 
@@ -644,10 +674,82 @@ TEST_F("require that remove is NOT rejected if resource limit is reached", FeedH
     EXPECT_EQUAL("", token.getResult()->getErrorMessage());
 }
 
+void
+checkUpdate(FeedHandlerFixture &f, SchemaContext &schemaContext,
+            const vespalib::string &fieldName, bool expectReject, bool existing)
+{
+    f.handler.setSerialNum(15);
+    UpdateContext updCtx("id:test:searchdocument::foo", *schemaContext.builder);
+    updCtx.addFieldUpdate(fieldName);
+    if (existing) {
+        f.feedView.metaStore.insert(updCtx.update->getId().getGlobalId(), MyDocumentMetaStore::Entry(5, 5, Timestamp(9)));
+        f.feedView.metaStore.allocate(updCtx.update->getId().getGlobalId());
+    } else {
+        updCtx.update->setCreateIfNonExistent(true);
+    }
+    FeedOperation::UP op = std::make_unique<UpdateOperation>(updCtx.bucketId, Timestamp(10), updCtx.update);
+    FeedTokenContext token;
+    f.handler.performOperation(std::move(token.token), std::move(op));
+    EXPECT_TRUE(dynamic_cast<const UpdateResult *>(token.getResult()));
+    if (expectReject) {
+        TEST_DO(f.feedView.checkCounts(0, 0u, 0, 0u));
+        EXPECT_EQUAL(Result::TRANSIENT_ERROR, token.getResult()->getErrorCode());
+        EXPECT_EQUAL("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Field not found'",
+                     token.getResult()->getErrorMessage());
+    } else {
+        if (existing) {
+            TEST_DO(f.feedView.checkCounts(1, 16u, 0, 0u));
+        } else {
+            TEST_DO(f.feedView.checkCounts(0, 0u, 1, 16u));
+        }
+        EXPECT_EQUAL(Result::NONE, token.getResult()->getErrorCode());
+        EXPECT_EQUAL("", token.getResult()->getErrorMessage());
+    }
+}
+
+TEST_F("require that update with same document type repo is ok", FeedHandlerFixture)
+{
+    checkUpdate(f, f.schema, "i1", false, true);
+}
+
+TEST_F("require that update with different document type repo can be ok", FeedHandlerFixture)
+{
+    SchemaContext schema;
+    schema.addField("i2");
+    checkUpdate(f, schema, "i1", false, true);
+}
+
+TEST_F("require that update with different document type repo can be rejected", FeedHandlerFixture)
+{
+    SchemaContext schema;
+    schema.addField("i2");
+    checkUpdate(f, schema, "i2", true, true);
+}
+
+TEST_F("require that update with same document type repo is ok, fallback to create document", FeedHandlerFixture)
+{
+    checkUpdate(f, f.schema, "i1", false, false);
+}
+
+TEST_F("require that update with different document type repo can be ok, fallback to create document", FeedHandlerFixture)
+{
+    SchemaContext schema;
+    schema.addField("i2");
+    checkUpdate(f, schema, "i1", false, false);
+}
+
+TEST_F("require that update with different document type repo can be rejected, preventing fallback to create document", FeedHandlerFixture)
+{
+    SchemaContext schema;
+    schema.addField("i2");
+    checkUpdate(f, schema, "i2", true, false);
+}
+
 }  // namespace
 
 TEST_MAIN()
 {
     DummyFileHeaderContext::setCreator("feedhandler_test");
     TEST_RUN_ALL();
+    vespalib::rmdir("mytlsdir", true);
 }
