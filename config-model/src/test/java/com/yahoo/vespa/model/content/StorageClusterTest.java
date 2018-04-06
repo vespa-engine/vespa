@@ -196,7 +196,7 @@ public class StorageClusterTest {
             cluster.getStorageNodes().getConfig(builder);
             node.getConfig(builder);
             StorServerConfig config = new StorServerConfig(builder);
-            assertEquals(getDefaults().underVespaHome("var/db/vespa/vds/storage/storage/0"), config.root_folder());
+            assertEquals(getDefaults().underVespaHome("var/db/vespa/search/storage/storage/0"), config.root_folder());
         }
 
         {
@@ -204,7 +204,7 @@ public class StorageClusterTest {
             cluster.getDistributorNodes().getConfig(builder);
             cluster.getDistributorNodes().getChildren().get("0").getConfig(builder);
             StorServerConfig config = new StorServerConfig(builder);
-            assertEquals(getDefaults().underVespaHome("var/db/vespa/vds/storage/distributor/0"), config.root_folder());
+            assertEquals(getDefaults().underVespaHome("var/db/vespa/search/storage/distributor/0"), config.root_folder());
         }
     }
 
