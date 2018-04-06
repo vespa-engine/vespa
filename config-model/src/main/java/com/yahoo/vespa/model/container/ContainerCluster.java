@@ -135,7 +135,7 @@ public final class ContainerCluster
 
     /**
      * URI prefix used for internal, usually programmatic, APIs. URIs using this
-Qr     * prefix should never considered available for direct use by customers, and
+     * prefix should never considered available for direct use by customers, and
      * normal compatibility concerns only applies to libraries using the URIs in
      * question, not contents served from the URIs themselves.
      */
