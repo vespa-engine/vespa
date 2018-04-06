@@ -66,15 +66,16 @@ public class NodeMonitor {
     public void failed(ErrorMessage error) {
         long respondedAt = System.currentTimeMillis();
 
-        if (error.getCode() == BACKEND_COMMUNICATION_ERROR.code 
-            || error.getCode() == NO_ANSWER_WHEN_PINGING_NODE.code)
-        {
+        if (error.getCode() == NO_ANSWER_WHEN_PINGING_NODE.code) {
             // Only count not being able to talk to backend at all
             // as errors we care about
             if ((respondedAt - succeededAt) > 10000) {
                 this.searchNodesOnline = false;
                 setWorking(false, "Not working for 10 s: " + error.toString());
             }
+        } else if (error.getCode() == BACKEND_COMMUNICATION_ERROR.code) {
+            this.searchNodesOnline = false;
+            setWorking(false, "Backend communication error: " + error.toString());
         } else {
             succeededAt = respondedAt;
         }

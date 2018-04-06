@@ -82,8 +82,6 @@ public class ClusterSearcher extends Searcher {
     // Mapping from rank profile names to document types containing them
     private final Map<String, Set<String>> rankProfiles = new HashMap<>();
 
-    private final boolean failoverToRemote;
-
     private final FS4ResourcePool fs4ResourcePool;
 
     private final long maxQueryTimeout; // in milliseconds
@@ -122,7 +120,6 @@ public class ClusterSearcher extends Searcher {
         clusterModelName = clusterConfig.clusterName();
         QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, clusterModelName);
         documentTypes = new LinkedHashSet<>();
-        failoverToRemote = clusterConfig.failoverToRemote();
 
         String eventName = clusterModelName + ".cache_hit_ratio";
         cacheHitRatio = new Value(eventName, manager, new Value.Parameters().setNameExtension(false)
@@ -234,7 +231,6 @@ public class ClusterSearcher extends Searcher {
 
     /** Do not use, for internal testing purposes only. **/
     ClusterSearcher(Set<String> documentTypes) {
-        this.failoverToRemote = false;
         this.documentTypes = documentTypes;
         monitor = new ClusterMonitor(this, new QrMonitorConfig(new QrMonitorConfig.Builder()), Optional.of(new VipStatus()));
         cacheHitRatio = new Value("com.yahoo.prelude.cluster.ClusterSearcher.ClusterSearcher().dummy",
@@ -255,10 +251,6 @@ public class ClusterSearcher extends Searcher {
                             + ", timeout=" + config.cacheTimeout() + ")");
 
         return new CacheControl(config.cacheSize(), config.cacheTimeout());
-    }
-
-    public String getClusterModelName() {
-        return clusterModelName;
     }
 
     ClusterMonitor getMonitor() {
