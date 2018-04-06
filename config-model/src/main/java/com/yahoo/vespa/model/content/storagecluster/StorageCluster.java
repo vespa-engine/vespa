@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.content.storagecluster;
 
 import com.yahoo.vespa.config.content.core.StorIntegritycheckerConfig;
-import com.yahoo.vespa.config.storage.StorMemfilepersistenceConfig;
 import com.yahoo.vespa.config.content.core.StorBucketmoverConfig;
 import com.yahoo.vespa.config.content.core.StorVisitorConfig;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
@@ -22,7 +21,6 @@ import org.w3c.dom.Element;
 public class StorageCluster extends AbstractConfigProducer<StorageNode>
     implements StorServerConfig.Producer,
         StorBucketmoverConfig.Producer,
-        StorMemfilepersistenceConfig.Producer,
         StorIntegritycheckerConfig.Producer,
         StorFilestorConfig.Producer,
         StorVisitorConfig.Producer,
@@ -46,9 +44,6 @@ public class StorageCluster extends AbstractConfigProducer<StorageNode>
     }
 
     private Integer bucketMoverMaxFillAboveAverage = null;
-    private Long cacheSize = null;
-    private Double diskFullPercentage = null;
-
     private String clusterName;
     private FileStorProducer fileStorProducer;
     private IntegrityCheckerProducer integrityCheckerProducer;
@@ -76,18 +71,6 @@ public class StorageCluster extends AbstractConfigProducer<StorageNode>
     public void getConfig(StorBucketmoverConfig.Builder builder) {
         if (bucketMoverMaxFillAboveAverage != null) {
             builder.max_target_fill_rate_above_average(bucketMoverMaxFillAboveAverage);
-        }
-    }
-
-    @Override
-    public void getConfig(StorMemfilepersistenceConfig.Builder builder) {
-        if (cacheSize != null) {
-            builder.cache_size(cacheSize);
-        }
-
-        if (diskFullPercentage != null) {
-            builder.disk_full_factor(diskFullPercentage / 100.0);
-            builder.disk_full_factor_move(diskFullPercentage / 100.0 * 0.9);
         }
     }
 

@@ -70,9 +70,6 @@ public class DistributorTest {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
                 "  <documents/>" +
-                "    <engine>" +
-                "       <vds/>" +
-                "    </engine>" +
                 "    <tuning>\n" +
                 "      <bucket-splitting max-documents=\"2K\" max-size=\"25M\" minimum-bits=\"8\" />\n" +
                 "    </tuning>\n" +
@@ -96,9 +93,6 @@ public class DistributorTest {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         ContentCluster cluster = parseCluster("<cluster id=\"storage\">\n" +
                 "  <documents/>" +
-                "    <engine>" +
-                "       <vds/>" +
-                "    </engine>" +
                 "    <tuning>" +
                 "      <distribution type=\"legacy\"/>" +
                 "    </tuning>\n" +
@@ -120,9 +114,6 @@ public class DistributorTest {
 
         cluster = parseCluster("<cluster id=\"storage\">\n" +
                 "  <documents/>" +
-                "    <engine>" +
-                "       <vds/>" +
-                "    </engine>" +
                 "    <tuning>" +
                 "      <distribution type=\"legacy\"/>" +
                 "    </tuning>\n" +

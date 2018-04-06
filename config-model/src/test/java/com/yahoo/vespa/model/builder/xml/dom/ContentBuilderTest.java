@@ -747,7 +747,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "        <node hostalias='mockhost' distribution-key='0' />\n" +
                 "      </group>\n" +
                 "      <engine>\n" +
-                "       <vds/>\n" +
+                "       <dummy/>\n" +
                 "      </engine>\n" +
                 "  </content>\n");
 

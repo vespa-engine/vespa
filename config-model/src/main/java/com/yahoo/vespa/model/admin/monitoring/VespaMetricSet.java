@@ -309,10 +309,6 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.queuesize.average","diskqueuesize"));
         metrics.add(new Metric("vds.filestor.alldisks.averagequeuewait.sum.average","diskqueuewait"));
 
-        metrics.add(new Metric("vds.memfilepersistence.cache.files.average"));
-        metrics.add(new Metric("vds.memfilepersistence.cache.body.average"));
-        metrics.add(new Metric("vds.memfilepersistence.cache.header.average"));
-        metrics.add(new Metric("vds.memfilepersistence.cache.meta.average"));
         metrics.add(new Metric("vds.visitor.allthreads.queuesize.count.average"));
         metrics.add(new Metric("vds.visitor.allthreads.completed.sum.average"));
         metrics.add(new Metric("vds.visitor.allthreads.created.sum.rate","visit"));

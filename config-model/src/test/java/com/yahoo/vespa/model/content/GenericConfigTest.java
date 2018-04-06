@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import com.yahoo.vespa.config.storage.StorMemfilepersistenceConfig;
+import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -28,8 +28,8 @@ public class GenericConfigTest {
     private String servicesXml() {
         return "" +
                 "<services version='1.0'>" +
-                "  <config name='vespa.config.storage.stor-memfilepersistence'>" +
-                "    <disk_full_factor>0.001</disk_full_factor> " +
+                "  <config name='vespa.config.content.stor-filestor'>" +
+                "    <num_threads>7</num_threads> " +
                 "  </config>" +
                 "  <admin  version=\"2.0\">" +
                 "    <adminserver hostalias=\"node0\" />" +
@@ -61,16 +61,16 @@ public class GenericConfigTest {
     public void config_override_on_root_is_visible_on_storage_cluster() throws Exception {
         StorageCluster cluster = model.getContentClusters().get("storage").getStorageNodes();
 
-        StorMemfilepersistenceConfig config = model.getConfig(StorMemfilepersistenceConfig.class, cluster.getConfigId());
-        assertThat(config.disk_full_factor(), is(0.001));
+        StorFilestorConfig config = model.getConfig(StorFilestorConfig.class, cluster.getConfigId());
+        assertThat(config.num_threads(), is(7));
     }
 
     @Test
     public void config_override_on_root_is_visible_on_content_cluster() throws Exception {
         ContentCluster cluster = model.getContentClusters().get("storage");
 
-        StorMemfilepersistenceConfig config = model.getConfig(StorMemfilepersistenceConfig.class, cluster.getConfigId());
-        assertThat(config.disk_full_factor(), is(0.001));
+        StorFilestorConfig config = model.getConfig(StorFilestorConfig.class, cluster.getConfigId());
+        assertThat(config.num_threads(), is(7));
     }
 
 }
