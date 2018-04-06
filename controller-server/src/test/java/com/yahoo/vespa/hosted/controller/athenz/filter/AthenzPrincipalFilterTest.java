@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.filter;
 
 import com.yahoo.jdisc.Response;
@@ -10,36 +10,27 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
+import com.yahoo.vespa.athenz.tls.KeyUtils;
+import com.yahoo.vespa.athenz.tls.X509CertificateBuilder;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.InvalidTokenException;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.cert.X509v3CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
-import java.math.BigInteger;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.Date;
 import java.util.Objects;
 import java.util.Set;
 
 import static com.yahoo.jdisc.Response.Status.UNAUTHORIZED;
+import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
@@ -197,24 +188,13 @@ public class AthenzPrincipalFilterTest {
 
     }
 
-    // TODO Move this to separate athenz module/bundle
     private static X509Certificate createSelfSignedCertificate(AthenzIdentity identity) {
-        try {
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-            keyGen.initialize(512);
-            KeyPair keyPair = keyGen.genKeyPair();
-            ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSA").build(keyPair.getPrivate());
-            X500Name x500Name = new X500Name("CN="+ identity.getFullName());
-            X509v3CertificateBuilder certificateBuilder =
-                    new JcaX509v3CertificateBuilder(
-                            x500Name, BigInteger.ONE, new Date(), Date.from(Instant.now().plus(Duration.ofDays(30))),
-                            x500Name, keyPair.getPublic());
-            return new JcaX509CertificateConverter()
-                    .setProvider(new BouncyCastleProvider())
-                    .getCertificate(certificateBuilder.build(contentSigner));
-        } catch (CertificateException | NoSuchAlgorithmException | OperatorCreationException e) {
-            throw new RuntimeException(e);
-        }
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 512);
+        X500Principal x500Name = new X500Principal("CN="+ identity.getFullName());
+        Instant now = Instant.now();
+        return X509CertificateBuilder
+                .fromKeypair(keyPair, x500Name, now, now.plus(Duration.ofDays(30)), SHA256_WITH_RSA, 1)
+                .build();
     }
 
 }
