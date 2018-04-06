@@ -179,6 +179,7 @@
                 container-jersey2-jar-with-dependencies.jar,
                 container-search-and-docproc-jar-with-dependencies.jar,
                 docprocs-jar-with-dependencies.jar,
+                jdisc-security-filters-jar-with-dependencies.jar,
                 jdisc_http_service-jar-with-dependencies.jar,
                 vespaclient-container-plugin-jar-with-dependencies.jar,
                 vespa-athenz-jar-with-dependencies.jar,
