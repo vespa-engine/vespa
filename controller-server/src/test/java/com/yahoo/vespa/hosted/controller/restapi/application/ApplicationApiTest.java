@@ -10,6 +10,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -885,11 +886,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         Response response;
 
-        // TODO jvenstad: Reintroduce this if on-demand queue is returned -- remove otherwise.
-        //response = container.handleRequest(request("/screwdriver/v1/jobsToRun", GET).get());
-        //assertTrue("Response contains system-test", response.getBodyAsString().contains(DeploymentJobs.JobType.systemTest.jobName()));
-        //assertTrue("Response contains staging-test", response.getBodyAsString().contains(DeploymentJobs.JobType.stagingTest.jobName()));
-        //assertEquals("Response contains only two items", 2, SlimeUtils.jsonToSlime(response.getBody()).get().entries());
+        response = container.handleRequest(request("/screwdriver/v1/jobsToRun", GET).get());
+        Inspector jobs = SlimeUtils.jsonToSlime(response.getBody()).get();
+        assertTrue("Response contains staging-test", jobs.field("staging-test").valid());
+        assertEquals("Response contains only this item", 1, jobs.children());
 
     }
 

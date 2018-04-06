@@ -260,7 +260,6 @@ public class DeploymentTester {
     private void notifyJobCompletion(DeploymentJobs.JobReport report) {
         if (report.jobType() != JobType.component && ! buildService().removeJob(report.projectId(), report.jobType()))
             throw new IllegalArgumentException(report.jobType() + " is not running for " + report.applicationId());
-        // TODO jvenstad: Replace this with something more approriate?
         assertFalse("Unexpected entry '" + report.jobType() + "@" + report.projectId() + " in: " + buildService().jobs(),
                     buildService().removeJob(report.projectId(), report.jobType()));
 

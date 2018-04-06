@@ -233,7 +233,7 @@ public class DeploymentTrigger {
         return triggerings;
     }
 
-    private Map<JobType, List<Triggering>> computeReadyJobs() {
+    public Map<JobType, List<Triggering>> computeReadyJobs() {
         return ApplicationList.from(applications().asList())
                               .notPullRequest()
                               .withProjectId()
@@ -241,15 +241,15 @@ public class DeploymentTrigger {
                               .idList().stream()
                               .map(this::computeReadyJobs)
                               .flatMap(List::stream)
+                              .sorted(comparing(Triggering::isRetry)
+                                              .thenComparing(Triggering::applicationUpgrade)
+                                              .reversed()
+                                              .thenComparing(Triggering::availableSince))
                               .collect(groupingBy(Triggering::jobType));
     }
 
     private void triggerJobs(JobType jobType, List<Triggering> triggerings) {
         triggerings.stream()
-                   .sorted(comparing(Triggering::isRetry)
-                                   .thenComparing(Triggering::applicationUpgrade)
-                                   .reversed()
-                                   .thenComparing(Triggering::availableSince))
                    .filter(this::allowedToTriggerNow)
                    .limit(EnumSet.of(systemTest, stagingTest).contains(jobType) ? 1 : Integer.MAX_VALUE)
                    .forEach(this::trigger);
@@ -343,17 +343,19 @@ public class DeploymentTrigger {
     public static class Triggering {
 
         private final ApplicationId id;
-        private final Change change;
         private final JobType jobType;
-        private final boolean retry;
+        private final long projectId;
+        private final Change change;
         private final String reason;
         private final Instant availableSince;
+        private final boolean retry;
         private final Collection<JobType> concurrentlyWith;
 
         public Triggering(Application application, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith) {
             this.id = application.id();
-            this.change = application.change();
             this.jobType = jobType;
+            this.projectId = application.deploymentJobs().projectId().get();
+            this.change = application.change();
             this.availableSince = availableSince;
             this.concurrentlyWith = concurrentlyWith;
 
@@ -362,14 +364,14 @@ public class DeploymentTrigger {
             this.reason = retry ? "Retrying on out of capacity" : reason;
         }
 
-        public Triggering(Application id, JobType jobType, String reason, Instant availableSince) {
-            this(id, jobType, reason, availableSince, Collections.emptySet());
-        }
-
+        public ApplicationId id() { return id; }
         public JobType jobType() { return jobType; }
+        public long projectId() { return projectId; }
+        public Change change() { return change; }
+        public String reason() { return reason; }
+        public Instant availableSince() { return availableSince; }
         public boolean isRetry() { return retry; }
         public boolean applicationUpgrade() { return change.application().isPresent(); }
-        public Instant availableSince() { return availableSince; }
 
     }
 

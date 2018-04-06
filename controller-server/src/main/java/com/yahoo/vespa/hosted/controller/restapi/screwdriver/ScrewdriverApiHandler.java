@@ -11,6 +11,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Path;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
@@ -19,6 +20,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -64,10 +66,8 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
         if (path.matches("/screwdriver/v1/release/vespa")) {
             return vespaVersion();
         }
-        // TODO jvenstad: Update doc to indicate this is no longer true, or do an on-demand computation here.
-        //if (path.matches("/screwdriver/v1/jobsToRun")) {
-            //return buildJobs(controller.applications().deploymentTrigger().deploymentQueue().jobs());
-        //}
+        if (path.matches("/screwdriver/v1/jobsToRun"))
+            return buildJobs(controller.applications().deploymentTrigger().computeReadyJobs());
         return notFound(request);
     }
 
@@ -110,14 +110,21 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
         
     }
 
-    private HttpResponse buildJobs(List<BuildJob> buildJobs) {
+    private HttpResponse buildJobs(Map<JobType, List<DeploymentTrigger.Triggering>> jobs) {
         Slime slime = new Slime();
-        Cursor buildJobArray = slime.setArray();
-        for (BuildJob buildJob : buildJobs) {
-            Cursor buildJobObject = buildJobArray.addObject();
-            buildJobObject.setLong("projectId", buildJob.projectId());
-            buildJobObject.setString("jobName", buildJob.jobName());
-        }
+        Cursor jobTypesObject = slime.setObject();
+        jobs.forEach((jobType, triggerings) -> {
+            Cursor jobArray = jobTypesObject.setArray(jobType.jobName());
+            triggerings.forEach(triggering -> {
+                Cursor buildJobObject = jobArray.addObject();
+                buildJobObject.setString("applicationId", triggering.id().toString());
+                buildJobObject.setString("jobName", triggering.jobType().jobName());
+                buildJobObject.setLong("projectId", triggering.projectId());
+                buildJobObject.setString("change", triggering.change().toString());
+                buildJobObject.setString("reason", triggering.reason());
+                buildJobObject.setLong("availableSince", triggering.availableSince().toEpochMilli());
+            });
+        });
         return new SlimeJsonResponse(slime);
     }
 
