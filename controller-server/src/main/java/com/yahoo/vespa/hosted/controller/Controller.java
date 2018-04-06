@@ -40,8 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -95,7 +93,7 @@ public class Controller extends AbstractComponent {
         this(db, curator, rotationsConfig,
              gitHub, entityService, organization, globalRoutingService, zoneRegistry,
              configServerClient, nodeRepositoryClient, metricsService, nameService, routingGenerator, chefClient,
-             Clock.systemUTC(), athenzClientFactory, artifactRepository, buildService, Executors.newFixedThreadPool(20));
+             Clock.systemUTC(), athenzClientFactory, artifactRepository, buildService);
     }
 
     public Controller(ControllerDb db, CuratorDb curator, RotationsConfig rotationsConfig,
@@ -105,7 +103,7 @@ public class Controller extends AbstractComponent {
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chefClient, Clock clock,
                       AthenzClientFactory athenzClientFactory, ArtifactRepository artifactRepository,
-                      BuildService buildService, Executor deploymentTriggerExecutor) {
+                      BuildService buildService) {
         Objects.requireNonNull(db, "Controller db cannot be null");
         Objects.requireNonNull(curator, "Curator cannot be null");
         Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null");
@@ -123,8 +121,7 @@ public class Controller extends AbstractComponent {
         Objects.requireNonNull(clock, "Clock cannot be null");
         Objects.requireNonNull(athenzClientFactory, "Athens cannot be null");
         Objects.requireNonNull(artifactRepository, "ArtifactRepository cannot be null");
-        Objects.requireNonNull(artifactRepository, "BuildSystem cannot be null");
-        Objects.requireNonNull(artifactRepository, "Executor cannot be null");
+        Objects.requireNonNull(buildService, "BuildService cannot be null");
 
         this.curator = curator;
         this.gitHub = gitHub;
@@ -143,7 +140,7 @@ public class Controller extends AbstractComponent {
         applicationController = new ApplicationController(this, dbProxy, curator, athenzClientFactory,
                                                           rotationsConfig,
                                                           nameService, configServerClient, artifactRepository,
-                                                          routingGenerator, buildService, deploymentTriggerExecutor, clock);
+                                                          routingGenerator, buildService, clock);
         tenantController = new TenantController(this, dbProxy, curator, athenzClientFactory);
     }
     

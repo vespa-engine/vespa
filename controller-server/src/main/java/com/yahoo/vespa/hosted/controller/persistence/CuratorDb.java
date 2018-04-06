@@ -54,7 +54,6 @@ public class CuratorDb {
     private static final Path applicationRoot = root.append("applications");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
-    private final JobQueueSerializer jobQueueSerializer = new JobQueueSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
@@ -145,21 +144,6 @@ public class CuratorDb {
 
     public void writeInactiveJobs(Set<String> inactiveJobs) {
         curator.set(inactiveJobsPath(), stringSetSerializer.toJson(inactiveJobs));
-    }
-
-    public Deque<ApplicationId> readJobQueue(DeploymentJobs.JobType jobType) {
-        try {
-            return readSlime(jobQueuePath(jobType)).map(jobQueueSerializer::fromSlime).orElseGet(ArrayDeque::new);
-        }
-        catch (RuntimeException e) {
-            log.log(Level.WARNING, "Error reading job queue of type '" + jobType.jobName() + "'; deleting it.");
-            writeJobQueue(jobType, Collections::emptyIterator);
-            return new ArrayDeque<>();
-        }
-    }
-
-    public void writeJobQueue(DeploymentJobs.JobType jobType, Iterable<ApplicationId> queue) {
-        curator.set(jobQueuePath(jobType), jobQueueSerializer.toJson(queue));
     }
 
     public double readUpgradesPerMinute() {
@@ -392,4 +376,5 @@ public class CuratorDb {
     private static Path applicationPath(ApplicationId application) {
         return applicationRoot.append(application.serializedForm());
     }
+    
 }

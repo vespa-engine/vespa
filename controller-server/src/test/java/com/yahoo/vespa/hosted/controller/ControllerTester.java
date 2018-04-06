@@ -266,8 +266,7 @@ public final class ControllerTester {
                                                clock,
                                                new AthenzClientFactoryMock(athensDb),
                                                artifactRepository,
-                                               buildService,
-                                               Runnable::run);
+                                               buildService);
         controller.updateVersionStatus(VersionStatus.compute(controller));
         return controller;
     }
