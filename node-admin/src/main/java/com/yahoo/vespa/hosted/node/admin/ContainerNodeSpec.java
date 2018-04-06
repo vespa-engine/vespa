@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -16,7 +17,7 @@ import java.util.Set;
 public class ContainerNodeSpec {
     public final String hostname;
     public final Node.State nodeState;
-    public final String nodeType;
+    public final NodeType nodeType;
     public final String nodeFlavor;
     public final String nodeCanonicalFlavor;
 
@@ -51,7 +52,7 @@ public class ContainerNodeSpec {
             final Optional<DockerImage> wantedDockerImage,
             final Optional<DockerImage> currentDockerImage,
             final Node.State nodeState,
-            final String nodeType,
+            final NodeType nodeType,
             final String nodeFlavor,
             final String nodeCanonicalFlavor,
             final Optional<String> wantedVespaVersion,
@@ -296,7 +297,7 @@ public class ContainerNodeSpec {
         private Optional<DockerImage> wantedDockerImage = Optional.empty();
         private Optional<DockerImage> currentDockerImage = Optional.empty();
         private Node.State nodeState;
-        private String nodeType;
+        private NodeType nodeType;
         private String nodeFlavor;
         private String nodeCanonicalFlavor;
         private Optional<String> wantedVespaVersion = Optional.empty();
@@ -363,7 +364,7 @@ public class ContainerNodeSpec {
             this.nodeState = nodeState;
             return this;
         }
-        public Builder nodeType(String nodeType) {
+        public Builder nodeType(NodeType nodeType) {
             this.nodeType = nodeType;
             return this;
         }

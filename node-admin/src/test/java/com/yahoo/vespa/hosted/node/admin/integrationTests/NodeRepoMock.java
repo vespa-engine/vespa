@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
@@ -66,7 +67,7 @@ public class NodeRepoMock implements NodeRepository {
         synchronized (monitor) {
             cns.ifPresent(containerNodeSpec -> updateContainerNodeSpec(new ContainerNodeSpec.Builder(containerNodeSpec)
                     .nodeState(Node.State.dirty)
-                    .nodeType("tenant")
+                    .nodeType(NodeType.tenant)
                     .nodeFlavor("docker")
                     .build()));
             callOrderVerifier.add("markAsDirty with HostName: " + hostName);
@@ -81,7 +82,7 @@ public class NodeRepoMock implements NodeRepository {
             if (cns.isPresent()) {
                 updateContainerNodeSpec(new ContainerNodeSpec.Builder(cns.get())
                         .nodeState(Node.State.ready)
-                        .nodeType("tenant")
+                        .nodeType(NodeType.tenant)
                         .nodeFlavor("docker")
                         .build());
             }

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
@@ -89,6 +90,9 @@ public class RealNodeRepository implements NodeRepository {
 
     private static ContainerNodeSpec createContainerNodeSpec(GetNodesResponse.Node node)
             throws IllegalArgumentException, NullPointerException {
+        Objects.requireNonNull(node.nodeType, "Unknown node type");
+        NodeType nodeType = NodeType.valueOf(node.nodeType);
+
         Objects.requireNonNull(node.nodeState, "Unknown node state");
         Node.State nodeState = Node.State.valueOf(node.nodeState);
         if (nodeState == Node.State.active) {
@@ -116,7 +120,7 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.wantedDockerImage).map(DockerImage::new),
                 Optional.ofNullable(node.currentDockerImage).map(DockerImage::new),
                 nodeState,
-                node.nodeType,
+                nodeType,
                 node.nodeFlavor,
                 node.nodeCanonicalFlavor,
                 Optional.ofNullable(node.wantedVespaVersion),

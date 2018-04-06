@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.Container;
@@ -96,7 +97,7 @@ public class NodeAgentImplTest {
 
     private final ContainerNodeSpec.Builder nodeSpecBuilder = new ContainerNodeSpec.Builder()
             .hostname(hostName)
-            .nodeType("tenant")
+            .nodeType(NodeType.tenant)
             .nodeFlavor("docker")
             .minCpuCores(MIN_CPU_CORES)
             .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
@@ -682,7 +683,7 @@ public class NodeAgentImplTest {
     public void testRunningConfigServer() throws IOException {
         final long rebootGeneration = 0;
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
-                .nodeType("config")
+                .nodeType(NodeType.config)
                 .wantedDockerImage(dockerImage)
                 .nodeState(Node.State.active)
                 .wantedVespaVersion(vespaVersion)

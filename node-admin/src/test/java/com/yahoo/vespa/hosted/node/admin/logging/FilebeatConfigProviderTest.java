@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.logging;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
@@ -55,7 +56,7 @@ public class FilebeatConfigProviderTest {
         ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .nodeFlavor("flavor")
                 .nodeState(Node.State.active)
-                .nodeType("type")
+                .nodeType(NodeType.tenant)
                 .hostname("hostname")
                 .minCpuCores(1)
                 .minMainMemoryAvailableGb(1)
@@ -113,7 +114,7 @@ public class FilebeatConfigProviderTest {
                 .owner(owner)
                 .nodeFlavor("flavor")
                 .nodeState(Node.State.active)
-                .nodeType("type")
+                .nodeType(NodeType.tenant)
                 .hostname("hostname")
                 .minCpuCores(1)
                 .minMainMemoryAvailableGb(1)

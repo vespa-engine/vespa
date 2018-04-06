@@ -699,7 +699,7 @@ public class NodeAgentImpl implements NodeAgent {
 
         // ContainerData only works when root, which is the case only for HostAdmin so far -- config nodes are only used under HostAdmin.
         // If this fails, however, we should fail the start-up, as the config server won't work without it. Thus, no catch here.
-        if (nodeSpec.nodeType.equals(NodeType.config.name())) {
+        if (nodeSpec.nodeType == NodeType.config) {
             logger.info("Creating files needed by config server");
             new ConfigServerContainerData(environment, nodeSpec.hostname).writeTo(containerData);
         }

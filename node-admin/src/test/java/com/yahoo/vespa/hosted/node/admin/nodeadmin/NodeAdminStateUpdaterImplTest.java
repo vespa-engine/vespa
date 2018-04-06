@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
@@ -186,7 +187,7 @@ public class NodeAdminStateUpdaterImplTest {
                 .mapToObj(i -> new ContainerNodeSpec.Builder()
                         .hostname("host" + i + ".test.yahoo.com")
                         .nodeState(Node.State.active)
-                        .nodeType("tenant")
+                        .nodeType(NodeType.tenant)
                         .nodeFlavor("docker")
                         .minCpuCores(1)
                         .minMainMemoryAvailableGb(1)

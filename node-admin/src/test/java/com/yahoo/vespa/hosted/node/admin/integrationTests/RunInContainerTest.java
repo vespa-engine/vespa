@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.concurrent.classlock.ClassLocking;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -173,7 +174,7 @@ public class RunInContainerTest {
                         .hostname("host1.test.yahoo.com")
                         .wantedDockerImage(new DockerImage("dockerImage"))
                         .nodeState(Node.State.active)
-                        .nodeType("tenant")
+                        .nodeType(NodeType.tenant)
                         .nodeFlavor("docker")
                         .build()));
         doThrow(new OrchestratorException("Cannot suspend because...")).when(orchestratorMock)

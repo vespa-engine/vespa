@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.test.ManualClock;
@@ -75,7 +76,7 @@ public class StorageMaintainerTest {
         ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .hostname(hostname)
                 .nodeState(Node.State.ready)
-                .nodeType("tenants")
+                .nodeType(NodeType.tenant)
                 .nodeFlavor("docker")
                 .minCpuCores(1)
                 .minMainMemoryAvailableGb(1)
