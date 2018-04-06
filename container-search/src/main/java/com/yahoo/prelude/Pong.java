@@ -9,6 +9,7 @@ import java.util.Optional;
 import com.yahoo.fs4.PongPacket;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.statistics.ElapsedTime;
+import com.yahoo.container.protect.Error;
 
 /**
  * An answer from Ping.

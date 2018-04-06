@@ -12,7 +12,7 @@ public class MonitorConfiguration {
     /**
      * The interval in ms between consecutive checks of the monitored nodes
      */
-    private final long checkInterval = 1000;
+    private final long checkInterval = 100;
 
     /**
      * The number of milliseconds to attempt to complete a request before giving

@@ -3,11 +3,9 @@ package com.yahoo.search.cluster;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.protect.Error;
-import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.log.LogLevel;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
-import com.yahoo.prelude.fastsearch.FastSearcher;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -16,7 +14,12 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Implements clustering (failover and load balancing) over a set of client
