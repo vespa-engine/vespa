@@ -496,6 +496,11 @@ FeedHandler::considerUpdateOperationForRejection(FeedToken &token, const UpdateO
 {
     const auto *repo = _activeFeedView->getDocumentTypeRepo().get();
     const auto &update = *op.getUpdate();
+    /*
+     * Check if document types are equal. DocumentTypeRepoFactory::make returns
+     * the same document type repo if document type configs are equal, thus we
+     * can just perform a cheaper identity check here.
+     */
     if (repo->getDocumentType(_docTypeName.getName()) != &update.getType()) {
         try {
             vespalib::nbostream stream;
