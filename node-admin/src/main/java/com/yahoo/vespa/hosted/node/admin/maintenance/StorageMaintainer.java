@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.logging.FilebeatConfigProvider;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
@@ -65,7 +65,7 @@ public class StorageMaintainer {
         numberOfNodeAdminMaintenanceFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.maintenance.fails");
     }
 
-    public void writeMetricsConfig(ContainerName containerName, ContainerNodeSpec nodeSpec) {
+    public void writeMetricsConfig(ContainerName containerName, NodeRepositoryNode node) {
         final Path yamasAgentFolder = environment.pathInNodeAdminFromPathInNode(
                 containerName, Paths.get("/etc/yamas-agent/"));
 
@@ -77,21 +77,21 @@ public class StorageMaintainer {
         SecretAgentScheduleMaker hostLifeSchedule = new SecretAgentScheduleMaker("host-life", 60, hostLifeCheckPath)
                 .withTag("namespace", "Vespa")
                 .withTag("role", "tenants")
-                .withTag("flavor", nodeSpec.nodeFlavor)
-                .withTag("canonicalFlavor", nodeSpec.nodeCanonicalFlavor)
-                .withTag("state", nodeSpec.nodeState.toString())
+                .withTag("flavor", node.nodeFlavor)
+                .withTag("canonicalFlavor", node.nodeCanonicalFlavor)
+                .withTag("state", node.nodeState.toString())
                 .withTag("zone", environment.getZone())
                 .withTag("parentHostname", environment.getParentHostHostname());
-        nodeSpec.owner.ifPresent(owner -> hostLifeSchedule
+        node.owner.ifPresent(owner -> hostLifeSchedule
                 .withTag("tenantName", owner.tenant)
                 .withTag("app", owner.application + "." + owner.instance)
                 .withTag("applicationName", owner.application)
                 .withTag("instanceName", owner.instance)
                 .withTag("applicationId", owner.tenant + "." + owner.application + "." + owner.instance));
-        nodeSpec.membership.ifPresent(membership -> hostLifeSchedule
+        node.membership.ifPresent(membership -> hostLifeSchedule
                 .withTag("clustertype", membership.clusterType)
                 .withTag("clusterid", membership.clusterId));
-        nodeSpec.vespaVersion.ifPresent(version -> hostLifeSchedule.withTag("vespaVersion", version));
+        node.vespaVersion.ifPresent(version -> hostLifeSchedule.withTag("vespaVersion", version));
 
         try {
             vespaSchedule.writeTo(yamasAgentFolder);
@@ -104,13 +104,13 @@ public class StorageMaintainer {
         }
     }
 
-    public void writeFilebeatConfig(ContainerName containerName, ContainerNodeSpec nodeSpec) {
+    public void writeFilebeatConfig(ContainerName containerName, NodeRepositoryNode node) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
         try {
             FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
-            Optional<String> config = filebeatConfigProvider.getConfig(nodeSpec);
+            Optional<String> config = filebeatConfigProvider.getConfig(node);
             if (!config.isPresent()) {
-                logger.error("Was not able to generate a config for filebeat, ignoring filebeat file creation." + nodeSpec.toString());
+                logger.error("Was not able to generate a config for filebeat, ignoring filebeat file creation." + node.toString());
                 return;
             }
             Path filebeatPath = environment.pathInNodeAdminFromPathInNode(
@@ -118,7 +118,7 @@ public class StorageMaintainer {
             Files.write(filebeatPath, config.get().getBytes());
             logger.info("Wrote filebeat config.");
         } catch (Throwable t) {
-            logger.error("Failed writing filebeat config; " + nodeSpec, t);
+            logger.error("Failed writing filebeat config; " + node, t);
         }
     }
 
@@ -218,33 +218,33 @@ public class StorageMaintainer {
      *
      * @param force Set to true to bypass throttling
      */
-    public void handleCoreDumpsForContainer(ContainerName containerName, ContainerNodeSpec nodeSpec, boolean force) {
+    public void handleCoreDumpsForContainer(ContainerName containerName, NodeRepositoryNode node, boolean force) {
         if (! getMaintenanceThrottlerFor(containerName).shouldHandleCoredumpsNow() && !force) return;
 
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
-        addHandleCoredumpsCommand(maintainerExecutor, containerName, nodeSpec);
+        addHandleCoredumpsCommand(maintainerExecutor, containerName, node);
 
         maintainerExecutor.execute();
         getMaintenanceThrottlerFor(containerName).updateNextHandleCoredumpsTime();
     }
 
-    private void addHandleCoredumpsCommand(MaintainerExecutor maintainerExecutor, ContainerName containerName, ContainerNodeSpec nodeSpec) {
+    private void addHandleCoredumpsCommand(MaintainerExecutor maintainerExecutor, ContainerName containerName, NodeRepositoryNode node) {
         if (!environment.getCoredumpFeedEndpoint().isPresent()) {
             // Core dump handling is disabled.
             return;
         }
 
         Map<String, Object> attributes = new HashMap<>();
-        attributes.put("hostname", nodeSpec.hostname);
+        attributes.put("hostname", node.hostname);
         attributes.put("parent_hostname", environment.getParentHostHostname());
         attributes.put("region", environment.getRegion());
         attributes.put("environment", environment.getEnvironment());
-        attributes.put("flavor", nodeSpec.nodeFlavor);
+        attributes.put("flavor", node.nodeFlavor);
         attributes.put("kernel_version", System.getProperty("os.version"));
 
-        nodeSpec.currentDockerImage.ifPresent(image -> attributes.put("docker_image", image.asString()));
-        nodeSpec.vespaVersion.ifPresent(version -> attributes.put("vespa_version", version));
-        nodeSpec.owner.ifPresent(owner -> {
+        node.currentDockerImage.ifPresent(image -> attributes.put("docker_image", image.asString()));
+        node.vespaVersion.ifPresent(version -> attributes.put("vespa_version", version));
+        node.owner.ifPresent(owner -> {
             attributes.put("tenant", owner.tenant);
             attributes.put("application", owner.application);
             attributes.put("instance", owner.instance);
@@ -295,10 +295,10 @@ public class StorageMaintainer {
      * Prepares the container-storage for the next container by deleting/archiving all the data of the current container.
      * Removes old files, reports coredumps and archives container data, runs when container enters state "dirty"
      */
-    public void cleanupNodeStorage(ContainerName containerName, ContainerNodeSpec nodeSpec) {
+    public void cleanupNodeStorage(ContainerName containerName, NodeRepositoryNode node) {
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         addRemoveOldFilesCommand(maintainerExecutor, containerName);
-        addHandleCoredumpsCommand(maintainerExecutor, containerName, nodeSpec);
+        addHandleCoredumpsCommand(maintainerExecutor, containerName, node);
         addArchiveNodeData(maintainerExecutor, containerName);
 
         maintainerExecutor.execute();
@@ -317,21 +317,21 @@ public class StorageMaintainer {
 
     /**
      * Runs node-maintainer's SpecVerifier and returns its output
-     * @param nodeSpec Node specification containing the excepted values we want to verify against
+     * @param node Node specification containing the excepted values we want to verify against
      * @return new combined hardware divergence
      * @throws RuntimeException if exit code != 0
      */
-    public String getHardwareDivergence(ContainerNodeSpec nodeSpec) {
+    public String getHardwareDivergence(NodeRepositoryNode node) {
         List<String> arguments = new ArrayList<>(Arrays.asList("specification",
-                "--disk", Double.toString(nodeSpec.minDiskAvailableGb),
-                "--memory", Double.toString(nodeSpec.minMainMemoryAvailableGb),
-                "--cpu_cores", Double.toString(nodeSpec.minCpuCores),
-                "--is_ssd", Boolean.toString(nodeSpec.fastDisk),
-                "--ips", String.join(",", nodeSpec.ipAddresses)));
+                "--disk", Double.toString(node.minDiskAvailableGb),
+                "--memory", Double.toString(node.minMainMemoryAvailableGb),
+                "--cpu_cores", Double.toString(node.minCpuCores),
+                "--is_ssd", Boolean.toString(node.fastDisk),
+                "--ips", String.join(",", node.ipAddresses)));
 
-        if (nodeSpec.hardwareDivergence.isPresent()) {
+        if (node.hardwareDivergence.isPresent()) {
             arguments.add("--divergence");
-            arguments.add(nodeSpec.hardwareDivergence.get());
+            arguments.add(node.hardwareDivergence.get());
         }
 
         return executeMaintainer("com.yahoo.vespa.hosted.node.verification.Main", arguments.toArray(new String[0]));

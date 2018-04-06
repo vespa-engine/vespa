@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -16,7 +16,7 @@ public class DockerFailTest {
     @Test
     public void dockerFailTest() throws Exception {
         try (DockerTester dockerTester = new DockerTester()) {
-            ContainerNodeSpec containerNodeSpec = new ContainerNodeSpec.Builder()
+            NodeRepositoryNode nodeRepositoryNode = new NodeRepositoryNode.Builder()
                     .hostname("host1.test.yahoo.com")
                     .wantedDockerImage(new DockerImage("dockerImage"))
                     .nodeState(Node.State.active)
@@ -28,7 +28,7 @@ public class DockerFailTest {
                     .minMainMemoryAvailableGb(1)
                     .minDiskAvailableGb(1)
                     .build();
-            dockerTester.addContainerNodeSpec(containerNodeSpec);
+            dockerTester.addContainerNodeSpec(nodeRepositoryNode);
 
             // Wait for node admin to be notified with node repo state and the docker container has been started
             while (dockerTester.nodeAdmin.getListOfHosts().size() == 0) {

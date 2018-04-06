@@ -8,7 +8,7 @@ import com.yahoo.system.ProcessExecuter;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
@@ -73,7 +73,7 @@ public class StorageMaintainerTest {
     public void testMaintenanceThrottlingAfterSuccessfulMaintenance() {
         String hostname = "node-123.us-north-3.test.yahoo.com";
         ContainerName containerName = ContainerName.fromHostname(hostname);
-        ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
+        NodeRepositoryNode node = new NodeRepositoryNode.Builder()
                 .hostname(hostname)
                 .nodeState(Node.State.ready)
                 .nodeType(NodeType.tenant)
@@ -93,7 +93,7 @@ public class StorageMaintainerTest {
         verifyProcessExecuterCalled(1);
 
         // Coredump handler has its own throttler
-        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
+        storageMaintainer.handleCoreDumpsForContainer(containerName, node, false);
         verifyProcessExecuterCalled(2);
 
 
@@ -101,29 +101,29 @@ public class StorageMaintainerTest {
         storageMaintainer.removeOldFilesFromNode(containerName);
         verifyProcessExecuterCalled(3);
 
-        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
+        storageMaintainer.handleCoreDumpsForContainer(containerName, node, false);
         verifyProcessExecuterCalled(4);
 
-        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
+        storageMaintainer.handleCoreDumpsForContainer(containerName, node, false);
         verifyProcessExecuterCalled(4);
 
-        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, true);
+        storageMaintainer.handleCoreDumpsForContainer(containerName, node, true);
         verifyProcessExecuterCalled(5);
 
-        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, true);
+        storageMaintainer.handleCoreDumpsForContainer(containerName, node, true);
         verifyProcessExecuterCalled(6);
 
-        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
+        storageMaintainer.handleCoreDumpsForContainer(containerName, node, false);
         verifyProcessExecuterCalled(6);
 
 
         // cleanupNodeStorage is unthrottled and it should reset previous times
-        storageMaintainer.cleanupNodeStorage(containerName, nodeSpec);
+        storageMaintainer.cleanupNodeStorage(containerName, node);
         verifyProcessExecuterCalled(7);
-        storageMaintainer.cleanupNodeStorage(containerName, nodeSpec);
+        storageMaintainer.cleanupNodeStorage(containerName, node);
         verifyProcessExecuterCalled(8);
 
-        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
+        storageMaintainer.handleCoreDumpsForContainer(containerName, node, false);
         verifyProcessExecuterCalled(9);
     }
 

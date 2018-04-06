@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
 
 import java.time.Duration;
 import java.util.List;
@@ -19,7 +19,7 @@ public interface NodeAdmin {
      * Calling this will cause NodeAdmin to move to the state containersToRun by adding or removing nodes.
      * @param containersToRun this is the wanted state.
      */
-    void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun);
+    void refreshContainersToRun(final List<NodeRepositoryNode> containersToRun);
 
     /**
      * Attempts to freeze/unfreeze all NodeAgents and itself. To freeze a NodeAgent means that

@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
@@ -62,23 +62,23 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void createContainer(ContainerName containerName, final ContainerNodeSpec nodeSpec) {
+    public void createContainer(ContainerName containerName, final NodeRepositoryNode node) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         logger.info("Creating container " + containerName);
         try {
-            InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname);
+            InetAddress nodeInetAddress = environment.getInetAddressForHost(node.hostname);
 
             String configServers = String.join(",", environment.getConfigServerHostNames());
 
             Docker.CreateContainerCommand command = docker.createContainerCommand(
-                    nodeSpec.wantedDockerImage.get(),
-                    ContainerResources.from(nodeSpec.minCpuCores, nodeSpec.minMainMemoryAvailableGb),
+                    node.wantedDockerImage.get(),
+                    ContainerResources.from(node.minCpuCores, node.minMainMemoryAvailableGb),
                     containerName,
-                    nodeSpec.hostname)
+                    node.hostname)
                     .withManagedBy(MANAGER_NAME)
                     .withEnvironment("CONFIG_SERVER_ADDRESS", configServers) // TODO: Remove when all images support CONTAINER_ENVIRONMENT_SETTINGS
                     .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS",
-                                     environment.getContainerEnvironmentResolver().createSettings(environment, nodeSpec))
+                                     environment.getContainerEnvironmentResolver().createSettings(environment, node))
                     .withUlimit("nofile", 262_144, 262_144)
                     .withUlimit("nproc", 32_768, 409_600)
                     .withUlimit("core", -1, -1)
@@ -100,14 +100,14 @@ public class DockerOperationsImpl implements DockerOperations {
                 command.withVolume("/etc/hosts", "/etc/hosts"); // TODO This is probably not necessary - review later
             } else {
                 // IPv6 - Assume always valid
-                Inet6Address ipV6Address = this.retriever.getIPv6Address(nodeSpec.hostname).orElseThrow(
+                Inet6Address ipV6Address = this.retriever.getIPv6Address(node.hostname).orElseThrow(
                         () -> new RuntimeException("Unable to find a valid IPv6 address. Missing an AAAA DNS entry?"));
                 InetAddress ipV6Prefix = InetAddress.getByName(IPV6_NPT_PREFIX);
                 InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 8);
                 command.withIpAddress(ipV6Local);
 
                 // IPv4 - Only present for some containers
-                Optional<Inet4Address> ipV4Address = this.retriever.getIPv4Address(nodeSpec.hostname);
+                Optional<Inet4Address> ipV4Address = this.retriever.getIPv4Address(node.hostname);
                 if (ipV4Address.isPresent()) {
                     InetAddress ipV4Prefix = InetAddress.getByName(IPV4_NPT_PREFIX);
                     InetAddress ipV4Local = IPAddresses.prefixTranslate(ipV4Address.get(), ipV4Prefix, 2);
@@ -123,7 +123,7 @@ public class DockerOperationsImpl implements DockerOperations {
             }
 
             // TODO: Enforce disk constraints
-            long minMainMemoryAvailableMb = (long) (nodeSpec.minMainMemoryAvailableGb * 1024);
+            long minMainMemoryAvailableMb = (long) (node.minMainMemoryAvailableGb * 1024);
             if (minMainMemoryAvailableMb > 0) {
                 // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
                 // only has this much physical memory (overrides total memory reported by `free -m`).
@@ -140,11 +140,11 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void startContainer(ContainerName containerName, final ContainerNodeSpec nodeSpec) {
+    public void startContainer(ContainerName containerName, final NodeRepositoryNode node) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         logger.info("Starting container " + containerName);
         try {
-            InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname);
+            InetAddress nodeInetAddress = environment.getInetAddressForHost(node.hostname);
             boolean isIPv6 = nodeInetAddress instanceof Inet6Address;
 
             if (isIPv6) {
@@ -169,7 +169,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void removeContainer(final Container existingContainer, ContainerNodeSpec nodeSpec) {
+    public void removeContainer(final Container existingContainer, NodeRepositoryNode node) {
         final ContainerName containerName = existingContainer.name;
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         if (existingContainer.state.isRunning()) {

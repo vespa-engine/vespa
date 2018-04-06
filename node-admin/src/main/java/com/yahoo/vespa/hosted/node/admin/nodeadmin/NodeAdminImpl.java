@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
@@ -80,7 +80,7 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     @Override
-    public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
+    public void refreshContainersToRun(final List<NodeRepositoryNode> containersToRun) {
         final List<ContainerName> existingContainerNames = dockerOperations.listAllManagedContainers();
         final List<String> containersToRunHostnames = containersToRun.stream()
                 .map(container -> container.hostname)

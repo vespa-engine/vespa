@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.component;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public interface ContainerEnvironmentResolver {
 
-    String createSettings(Environment environment, ContainerNodeSpec nodeSpec);
+    String createSettings(Environment environment, NodeRepositoryNode node);
 
     class ContainerEnvironmentSettings {
 

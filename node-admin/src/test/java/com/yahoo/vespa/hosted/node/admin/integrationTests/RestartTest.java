@@ -3,8 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
+import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -23,7 +22,7 @@ public class RestartTest {
 
             long wantedRestartGeneration = 1;
             long currentRestartGeneration = wantedRestartGeneration;
-            dockerTester.addContainerNodeSpec(createContainerNodeSpec(wantedRestartGeneration, currentRestartGeneration));
+            dockerTester.addContainerNodeSpec(createNodeRepositoryNode(wantedRestartGeneration, currentRestartGeneration));
 
             // Wait for node admin to be notified with node repo state and the docker container has been started
             while (dockerTester.nodeAdmin.getListOfHosts().size() == 0) {
@@ -37,7 +36,7 @@ public class RestartTest {
 
             wantedRestartGeneration = 2;
             currentRestartGeneration = 1;
-            dockerTester.addContainerNodeSpec(createContainerNodeSpec(wantedRestartGeneration, currentRestartGeneration));
+            dockerTester.addContainerNodeSpec(createNodeRepositoryNode(wantedRestartGeneration, currentRestartGeneration));
 
             dockerTester.callOrderVerifier.assertInOrder(
                     "Suspend for host1.test.yahoo.com",
@@ -45,8 +44,8 @@ public class RestartTest {
         }
     }
 
-    private ContainerNodeSpec createContainerNodeSpec(long wantedRestartGeneration, long currentRestartGeneration) {
-        return new ContainerNodeSpec.Builder()
+    private NodeRepositoryNode createNodeRepositoryNode(long wantedRestartGeneration, long currentRestartGeneration) {
+        return new NodeRepositoryNode.Builder()
                 .hostname("host1.test.yahoo.com")
                 .nodeState(Node.State.active)
                 .wantedDockerImage(new DockerImage("image:1.2.3"))

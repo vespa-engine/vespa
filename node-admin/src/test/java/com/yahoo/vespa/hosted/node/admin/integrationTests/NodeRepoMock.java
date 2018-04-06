@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -23,7 +23,7 @@ import java.util.Optional;
 public class NodeRepoMock implements NodeRepository {
     private static final Object monitor = new Object();
 
-    private final Map<String, ContainerNodeSpec> containerNodeSpecsByHostname = new HashMap<>();
+    private final Map<String, NodeRepositoryNode> nodeRepositoryNodesByHostname = new HashMap<>();
     private final Map<String, List<ContainerAclSpec>> acls = new HashMap<>();
     private final CallOrderVerifier callOrderVerifier;
 
@@ -32,16 +32,16 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public List<ContainerNodeSpec> getContainersToRun(String dockerHostHostname) {
+    public List<NodeRepositoryNode> getContainersToRun(String dockerHostHostname) {
         synchronized (monitor) {
-            return new ArrayList<>(containerNodeSpecsByHostname.values());
+            return new ArrayList<>(nodeRepositoryNodesByHostname.values());
         }
     }
 
     @Override
-    public Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName) {
+    public Optional<NodeRepositoryNode> getContainerNodeSpec(String hostName) {
         synchronized (monitor) {
-            return Optional.ofNullable(containerNodeSpecsByHostname.get(hostName));
+            return Optional.ofNullable(nodeRepositoryNodesByHostname.get(hostName));
         }
     }
 
@@ -62,10 +62,10 @@ public class NodeRepoMock implements NodeRepository {
 
     @Override
     public void markAsDirty(String hostName) {
-        Optional<ContainerNodeSpec> cns = getContainerNodeSpec(hostName);
+        Optional<NodeRepositoryNode> cns = getContainerNodeSpec(hostName);
 
         synchronized (monitor) {
-            cns.ifPresent(containerNodeSpec -> updateContainerNodeSpec(new ContainerNodeSpec.Builder(containerNodeSpec)
+            cns.ifPresent(containerNodeSpec -> updateContainerNodeSpec(new NodeRepositoryNode.Builder(containerNodeSpec)
                     .nodeState(Node.State.dirty)
                     .nodeType(NodeType.tenant)
                     .nodeFlavor("docker")
@@ -76,11 +76,11 @@ public class NodeRepoMock implements NodeRepository {
 
     @Override
     public void markNodeAvailableForNewAllocation(String hostName) {
-        Optional<ContainerNodeSpec> cns = getContainerNodeSpec(hostName);
+        Optional<NodeRepositoryNode> cns = getContainerNodeSpec(hostName);
 
         synchronized (monitor) {
             if (cns.isPresent()) {
-                updateContainerNodeSpec(new ContainerNodeSpec.Builder(cns.get())
+                updateContainerNodeSpec(new NodeRepositoryNode.Builder(cns.get())
                         .nodeState(Node.State.ready)
                         .nodeType(NodeType.tenant)
                         .nodeFlavor("docker")
@@ -90,13 +90,13 @@ public class NodeRepoMock implements NodeRepository {
         }
     }
 
-    public void updateContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
-        containerNodeSpecsByHostname.put(containerNodeSpec.hostname, containerNodeSpec);
+    public void updateContainerNodeSpec(NodeRepositoryNode nodeRepositoryNode) {
+        nodeRepositoryNodesByHostname.put(nodeRepositoryNode.hostname, nodeRepositoryNode);
     }
 
     public int getNumberOfContainerSpecs() {
         synchronized (monitor) {
-            return containerNodeSpecsByHostname.size();
+            return nodeRepositoryNodesByHostname.size();
         }
     }
 }

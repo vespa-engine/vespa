@@ -4,12 +4,9 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
+import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
-
-import java.io.IOException;
 
 /**
  * @author freva
@@ -20,11 +17,11 @@ public class MultiDockerTest {
     public void test() throws InterruptedException {
         try (DockerTester dockerTester = new DockerTester()) {
             addAndWaitForNode(dockerTester, "host1.test.yahoo.com", new DockerImage("image1"));
-            ContainerNodeSpec containerNodeSpec2 = addAndWaitForNode(
+            NodeRepositoryNode nodeRepositoryNode2 = addAndWaitForNode(
                     dockerTester, "host2.test.yahoo.com", new DockerImage("image2"));
 
             dockerTester.addContainerNodeSpec(
-                    new ContainerNodeSpec.Builder(containerNodeSpec2)
+                    new NodeRepositoryNode.Builder(nodeRepositoryNode2)
                             .nodeState(Node.State.dirty)
                             .minCpuCores(1)
                             .minMainMemoryAvailableGb(1)
@@ -32,8 +29,8 @@ public class MultiDockerTest {
                             .build());
 
             // Wait until it is marked ready
-            while (dockerTester.nodeRepositoryMock.getContainerNodeSpec(containerNodeSpec2.hostname)
-                    .filter(nodeSpec -> nodeSpec.nodeState != Node.State.ready).isPresent()) {
+            while (dockerTester.nodeRepositoryMock.getContainerNodeSpec(nodeRepositoryNode2.hostname)
+                    .filter(node -> node.nodeState != Node.State.ready).isPresent()) {
                 Thread.sleep(10);
             }
 
@@ -65,8 +62,8 @@ public class MultiDockerTest {
         }
     }
 
-    private ContainerNodeSpec addAndWaitForNode(DockerTester tester, String hostName, DockerImage dockerImage) throws InterruptedException {
-        ContainerNodeSpec containerNodeSpec = new ContainerNodeSpec.Builder()
+    private NodeRepositoryNode addAndWaitForNode(DockerTester tester, String hostName, DockerImage dockerImage) throws InterruptedException {
+        NodeRepositoryNode nodeRepositoryNode = new NodeRepositoryNode.Builder()
                 .hostname(hostName)
                 .wantedDockerImage(dockerImage)
                 .wantedVespaVersion("1.2.3")
@@ -80,7 +77,7 @@ public class MultiDockerTest {
                 .minDiskAvailableGb(1)
                 .build();
 
-        tester.addContainerNodeSpec(containerNodeSpec);
+        tester.addContainerNodeSpec(nodeRepositoryNode);
 
         // Wait for node admin to be notified with node repo state and the docker container has been started
         while (tester.nodeAdmin.getListOfHosts().size() != tester.nodeRepositoryMock.getNumberOfContainerSpecs()) {
@@ -92,6 +89,6 @@ public class MultiDockerTest {
                 "createContainerCommand with " + dockerImage + ", HostName: " + hostName + ", " + containerName,
                 "executeInContainerAsRoot with " + containerName + ", args: [" + DockerTester.NODE_PROGRAM + ", resume]");
 
-        return containerNodeSpec;
+        return nodeRepositoryNode;
     }
 }

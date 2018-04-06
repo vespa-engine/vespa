@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.logging;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -53,7 +53,7 @@ public class FilebeatConfigProviderTest {
     @Test
     public void it_does_not_generate_config_for_nodes_wihout_owner() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
-        ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
+        NodeRepositoryNode node = new NodeRepositoryNode.Builder()
                 .nodeFlavor("flavor")
                 .nodeState(Node.State.active)
                 .nodeType(NodeType.tenant)
@@ -62,7 +62,7 @@ public class FilebeatConfigProviderTest {
                 .minMainMemoryAvailableGb(1)
                 .minDiskAvailableGb(1)
                 .build();
-        Optional<String> config = filebeatConfigProvider.getConfig(nodeSpec);
+        Optional<String> config = filebeatConfigProvider.getConfig(node);
         assertFalse(config.isPresent());
     }
 
@@ -92,8 +92,8 @@ public class FilebeatConfigProviderTest {
 
     private String getConfigString() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
-        ContainerNodeSpec nodeSpec = getNodeSpec(tenant, application, instance);
-        return filebeatConfigProvider.getConfig(nodeSpec).orElseThrow(() -> new RuntimeException("Failed to get filebeat config"));
+        NodeRepositoryNode node = getNodeSpec(tenant, application, instance);
+        return filebeatConfigProvider.getConfig(node).orElseThrow(() -> new RuntimeException("Failed to get filebeat config"));
     }
 
     private Environment getEnvironment(List<String> logstashNodes) {
@@ -108,9 +108,9 @@ public class FilebeatConfigProviderTest {
                 .build();
     }
 
-    private ContainerNodeSpec getNodeSpec(String tenant, String application, String instance) {
-        ContainerNodeSpec.Owner owner = new ContainerNodeSpec.Owner(tenant, application, instance);
-        return new ContainerNodeSpec.Builder()
+    private NodeRepositoryNode getNodeSpec(String tenant, String application, String instance) {
+        NodeRepositoryNode.Owner owner = new NodeRepositoryNode.Owner(tenant, application, instance);
+        return new NodeRepositoryNode.Builder()
                 .owner(owner)
                 .nodeFlavor("flavor")
                 .nodeState(Node.State.active)

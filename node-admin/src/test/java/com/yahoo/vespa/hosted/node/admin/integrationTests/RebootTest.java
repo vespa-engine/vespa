@@ -3,8 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
+import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
@@ -63,8 +62,8 @@ public class RebootTest {
         }
     }
 
-    private ContainerNodeSpec createContainerNodeSpec() {
-        return new ContainerNodeSpec.Builder()
+    private NodeRepositoryNode createContainerNodeSpec() {
+        return new NodeRepositoryNode.Builder()
                 .hostname("host1.test.yahoo.com")
                 .wantedDockerImage(new DockerImage("dockerImage"))
                 .nodeState(Node.State.active)
