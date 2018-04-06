@@ -63,12 +63,8 @@ public class Server {
         instance = new Server();
     }
 
-    // TODO: Don't throw exception
     // TODO: Make independent of config
-    public void initialize(QrConfig config) throws Exception {
-        //TODO: Reenable
-        //mBeanServer = new MBeanServer(configId);
-
+    public void initialize(QrConfig config) {
         localServerDiscriminator = config.discriminator();
         container.setupFileAcquirer(config.filedistributor());
         initRpcServer(config.rpc());
