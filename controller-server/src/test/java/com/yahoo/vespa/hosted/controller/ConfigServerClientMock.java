@@ -121,7 +121,52 @@ public class ConfigServerClientMock extends AbstractComponent implements ConfigS
             }
         };
     }
-    
+
+    @Override
+    public PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames,
+                                       Set<String> rotationNames, byte[] content) {
+        lastPrepareVersion = deployOptions.vespaVersion.map(Version::new).orElse(null);
+        if (prepareException != null) {
+            RuntimeException prepareException = this.prepareException;
+            this.prepareException = null;
+            throw prepareException;
+        }
+        applicationActivated.put(deployment.applicationId(), false);
+        applicationInstances.put(deployment.applicationId(), UUID.randomUUID() + ":4080");
+
+        return new PreparedApplication() {
+            @Override
+            public void activate() { /* Nothing to do, done in  */}
+
+            @Override
+            public List<Log> messages() {
+                Log warning = new Log();
+                warning.level = "WARNING";
+                warning.time  = 1;
+                warning.message = "The warning";
+
+                Log info = new Log();
+                info.level = "INFO";
+                info.time  = 2;
+                info.message = "The info";
+
+                return Arrays.asList(warning, info);
+            }
+
+            @Override
+            public PrepareResponse prepareResponse() {
+                applicationActivated.put(deployment.applicationId(), true);
+
+                PrepareResponse prepareResponse = new PrepareResponse();
+                prepareResponse.message = "foo";
+                prepareResponse.configChangeActions = new ConfigChangeActions(Collections.emptyList(),
+                                                                              Collections.emptyList());
+                prepareResponse.tenant = new TenantId("tenant");
+                return prepareResponse;
+            }
+        };
+    }
+
     @Override
     public List<String> getNodeQueryHost(DeploymentId deployment, String type) {
         if (applicationInstances.containsKey(deployment.applicationId())) {

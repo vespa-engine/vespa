@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.curator.Lock;
@@ -330,10 +331,17 @@ public class ApplicationController {
 
             // Carry out deployment
             options = withVersion(version, options);
-            ConfigServerClient.PreparedApplication preparedApplication =
-                    configServer.prepare(new DeploymentId(applicationId, zone), options, cnames, rotationNames,
-                                         applicationPackage.zippedContent());
-            preparedApplication.activate();
+
+
+            ConfigServerClient.PreparedApplication preparedApplication;
+            DeploymentId deploymentId = new DeploymentId(applicationId, zone);
+            // TODO: Using deploy() only for user tenants in CD for now
+            if (controller.system().equals(SystemName.cd) && deploymentId.applicationId().tenant().value().startsWith(Tenant.userPrefix)) {
+                preparedApplication = configServer.deploy(deploymentId, options, cnames, rotationNames, applicationPackage.zippedContent());
+            } else {
+                preparedApplication = configServer.prepare(deploymentId, options, cnames, rotationNames, applicationPackage.zippedContent());
+                preparedApplication.activate();
+            }
             application = application.withNewDeployment(zone, applicationVersion, version, clock.instant());
 
             store(application);
