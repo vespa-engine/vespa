@@ -7,7 +7,15 @@ import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.application.validation.change.*;
+import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
+import com.yahoo.vespa.model.application.validation.change.ClusterSizeReductionValidator;
+import com.yahoo.vespa.model.application.validation.change.ConfigValueChangeValidator;
+import com.yahoo.vespa.model.application.validation.change.ContainerRestartValidator;
+import com.yahoo.vespa.model.application.validation.change.ContentClusterRemovalValidator;
+import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
+import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
+import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
+import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.first.AccessControlValidator;
 
 import java.time.Instant;
