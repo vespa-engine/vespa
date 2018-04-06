@@ -91,10 +91,8 @@ ServiceLayerNode::subscribeToConfigs()
 {
     StorageNode::subscribeToConfigs();
     _configFetcher.reset(new config::ConfigFetcher(_configUri.getContext()));
-    _configFetcher->subscribe<StorDevicesConfig>(_configUri.getConfigId(), this);
 
     vespalib::LockGuard configLockGuard(_configLock);
-    _deviceConfig = std::move(_newDevicesConfig);
         // Verify and set disk count
     if (_serverConfig->diskCount != 0
         && _serverConfig->diskCount != _partitions.size())
@@ -205,23 +203,6 @@ ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         }
     }
     StorageNode::handleLiveConfigUpdate(initGuard);
-}
-
-void
-ServiceLayerNode::configure(std::unique_ptr<StorDevicesConfig> config)
-{
-        // When we get config, we try to grab the config lock to ensure noone
-        // else is doing configuration work, and then we write the new config
-        // to a variable where we can find it later when processing config
-        // updates
-    {
-        vespalib::LockGuard configLockGuard(_configLock);
-        _newDevicesConfig = std::move(config);
-    }
-    if (_distributionConfig) {
-        InitialGuard concurrent_config_guard(_initial_config_mutex);
-        handleLiveConfigUpdate(concurrent_config_guard);
-    }
 }
 
 VisitorMessageSession::UP

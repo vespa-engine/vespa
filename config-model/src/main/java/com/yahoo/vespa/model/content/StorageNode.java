@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorBucketmoverConfig;
-import com.yahoo.vespa.config.storage.StorDevicesConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.config.storage.StorMemfilepersistenceConfig;
@@ -21,16 +20,13 @@ import java.util.Arrays;
 /**
  * Class to provide config related to a specific storage node.
  */
-@RestartConfigs({StorDevicesConfig.class, StorFilestorConfig.class,
-                 StorMemfilepersistenceConfig.class, StorBucketmoverConfig.class})
-public class StorageNode extends ContentNode implements StorServerConfig.Producer, StorDevicesConfig.Producer {
+@RestartConfigs({StorFilestorConfig.class, StorMemfilepersistenceConfig.class, StorBucketmoverConfig.class})
+public class StorageNode extends ContentNode implements StorServerConfig.Producer {
 
-    static final String rootFolder = Defaults.getDefaults().underVespaHome("var/db/vespa/vds/");
+    static final String rootFolder = Defaults.getDefaults().underVespaHome("var/db/vespa/search/");
 
     private final Double capacity;
     private final boolean retired;
-    private final boolean isHostedVespa;
-    private boolean usesVdsEngine = false;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<StorageNode> {
         @Override
@@ -47,7 +43,6 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
               distributionKey);
         this.retired = retired;
         this.capacity = capacity;
-        this.isHostedVespa = cluster.getRoot().getDeployState().getProperties().hostedVespa();
     }
 
     @Override
@@ -56,31 +51,6 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
                 ? null
                 : "exec sbin/vespa-storaged -c $VESPA_CONFIG_ID";
     }
-
-    @Override
-    public void getConfig(StorDevicesConfig.Builder builder) {
-        String root_folder = getRootDirectory();
-        builder.root_folder(root_folder);
-
-        // For VDS in hosted Vespa, we default to using the root_folder as the disk to store the data in.
-        // Setting disk_path will then
-        if (isHostedVespa && usesVdsEngine) {
-            // VDS looks up the first disk at the directory path root_folder/disks/d0.
-            builder.disk_path(Arrays.asList(root_folder + "/disks/d0"));
-        }
-    }
-
-    // 2015-08-11: Needed because of the following circular dependency:
-    // 1. StorageNode is created.
-    // 2. A particular persistence engine is picked depending on things (like the presence of engine/proton element)
-    //    that are hidden from the code creating the StorageNode in (1).
-    // 3. The persistence engine depends on the StorageNode, e.g. it's a parent node.
-    //
-    // If the VDSEngine is picked in (2), we would like to know this in StorageNode::getConfig(). Hence this setter.
-    public void useVdsEngine() {
-        usesVdsEngine = true;
-    }
-
 
     public double getCapacity() {
         if (capacity != null) {

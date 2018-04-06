@@ -13,7 +13,6 @@ import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.content.core.StorStatusConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.config.storage.StorDevicesConfig;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
@@ -39,7 +38,7 @@ import java.util.Optional;
  * @author hmusum
  */
 @RestartConfigs({ProtonConfig.class, MetricsmanagerConfig.class, TranslogserverConfig.class,
-                 StorDevicesConfig.class, StorFilestorConfig.class, StorBucketmoverConfig.class,
+                 StorFilestorConfig.class, StorBucketmoverConfig.class,
                  StorCommunicationmanagerConfig.class, StorStatusConfig.class,
                  StorServerConfig.class, LoadTypeConfig.class})
 public class SearchNode extends AbstractService implements

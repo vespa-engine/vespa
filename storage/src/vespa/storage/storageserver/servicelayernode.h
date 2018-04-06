@@ -15,7 +15,6 @@
 #include <vespa/storage/common/visitorfactory.h>
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/config-stor-devices.h>
 #include <vespa/config/config.h>
 
 namespace storage {
@@ -24,11 +23,9 @@ class FileStorManager;
 
 class ServiceLayerNode
         : public StorageNode,
-          private VisitorMessageSessionFactory,
-          private config::IFetcherCallback<vespa::config::storage::StorDevicesConfig>
+          private VisitorMessageSessionFactory
 
 {
-    using StorDevicesConfig = vespa::config::storage::StorDevicesConfig;
     ServiceLayerNodeContext& _context;
     spi::PersistenceProvider& _persistenceProvider;
     spi::PartitionStateList _partitions;
@@ -37,8 +34,6 @@ class ServiceLayerNode
 
     // FIXME: Should probably use the fetcher in StorageNode
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
-    std::unique_ptr<StorDevicesConfig> _deviceConfig;
-    std::unique_ptr<StorDevicesConfig> _newDevicesConfig;
     FileStorManager* _fileStorManager;
     bool _init_has_been_called;
     bool _noUsablePartitionMode;
@@ -65,7 +60,6 @@ private:
     void subscribeToConfigs() override;
     void initializeNodeSpecific() override;
     void handleLiveConfigUpdate(const InitialGuard & initGuard) override;
-    void configure(std::unique_ptr<StorDevicesConfig> config) override;
     VisitorMessageSession::UP createSession(Visitor&, VisitorThread&) override;
     documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const override;
     std::unique_ptr<StorageLink> createChain() override;
