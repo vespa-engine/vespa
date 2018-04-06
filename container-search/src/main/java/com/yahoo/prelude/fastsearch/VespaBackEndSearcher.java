@@ -74,8 +74,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         return result.hits().unorderedDeepIterator();
     }
 
-    private boolean localDispatching = true;
-
     /** The name of this source */
     private String name;
 
@@ -707,12 +705,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     protected boolean isLoggingFine() {
         return getLogger().isLoggable(Level.FINE);
-    }
-
-    public boolean isLocalDispatching() { return localDispatching; }
-
-    public void setLocalDispatching(boolean localDispatching) {
-        this.localDispatching = localDispatching;
     }
 
 }
