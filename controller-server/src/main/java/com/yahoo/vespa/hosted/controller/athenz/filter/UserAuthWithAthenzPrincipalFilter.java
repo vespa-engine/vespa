@@ -3,8 +3,8 @@ package com.yahoo.vespa.hosted.controller.athenz.filter;
 
 import com.google.inject.Inject;
 import com.yahoo.jdisc.Response;
-import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
+import com.yahoo.jdisc.http.filters.cors.CorsSecurityFilterConfig;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -20,7 +20,6 @@ import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.controller.restapi.filter.SecurityFilterUtils.sendErrorResponse;
 
 /**
  * A variant of the {@link AthenzPrincipalFilter} to be used in combination with a cookie-based
@@ -30,7 +29,7 @@ import static com.yahoo.vespa.hosted.controller.restapi.filter.SecurityFilterUti
  * @author bjorncs
  */
 // TODO Remove this filter once migrated to Okta
-@After({"AccessControlRequestFilter", "BouncerFilter"})
+@After({"CorsPreflightSecurityRequestFilter", "BouncerFilter"})
 public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
 
     private static final Logger log = Logger.getLogger(UserAuthWithAthenzPrincipalFilter.class.getName());
@@ -39,34 +38,35 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
     private final String principalHeaderName;
 
     @Inject
-    public UserAuthWithAthenzPrincipalFilter(ZmsKeystore zmsKeystore, Executor executor, AthenzConfig config) {
-        super(zmsKeystore, executor, config);
-        this.userAuthenticationPassThruAttribute = config.userAuthenticationPassThruAttribute();
-        this.principalHeaderName = config.principalHeaderName();
+    public UserAuthWithAthenzPrincipalFilter(ZmsKeystore zmsKeystore,
+                                             Executor executor,
+                                             AthenzConfig athenzConfig,
+                                             CorsSecurityFilterConfig corsConfig) {
+        super(zmsKeystore, executor, athenzConfig, corsConfig);
+        this.userAuthenticationPassThruAttribute = athenzConfig.userAuthenticationPassThruAttribute();
+        this.principalHeaderName = athenzConfig.principalHeaderName();
     }
 
     @Override
-    public void filter(DiscFilterRequest request, ResponseHandler responseHandler) {
-        if (request.getMethod().equals("OPTIONS")) return; // Skip authentication on OPTIONS - required for Javascript CORS
+    public Optional<ErrorResponse> filter(DiscFilterRequest request) {
+        if (request.getMethod().equals("OPTIONS")) return Optional.empty(); // Skip authentication on OPTIONS - required for Javascript CORS
 
         try {
             switch (getUserAuthenticationResult(request)) {
                 case USER_COOKIE_MISSING:
                 case USER_COOKIE_ALTERNATIVE_MISSING:
-                    super.filter(request, responseHandler); // Cookie-based authentication failed, delegate to Athenz
-                    break;
+                    return super.filter(request); // Cookie-based authentication failed, delegate to Athenz
                 case USER_COOKIE_OK:
                     rewriteUserPrincipalToAthenz(request);
-                    return; // Authenticated using user cookie
+                    return Optional.empty(); // Authenticated using user cookie
                 case USER_COOKIE_INVALID:
-                    sendErrorResponse(responseHandler,
-                                      Response.Status.UNAUTHORIZED,
-                                      "Your user cookie is invalid (either expired, tampered or invalid ip)");
-                    break;
+                    return Optional.of(new ErrorResponse(Response.Status.UNAUTHORIZED, "Your user cookie is invalid (either expired, tampered or invalid ip)"));
+                default:
+                    return Optional.empty();
             }
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Authentication failed: " + e.getMessage(), e);
-            sendErrorResponse(responseHandler, Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
+            return Optional.of(new ErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage()));
         }
     }
 

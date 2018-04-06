@@ -3,9 +3,9 @@ package com.yahoo.vespa.hosted.controller.athenz.filter;
 
 import com.google.inject.Inject;
 import com.yahoo.jdisc.Response;
-import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
-import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
+import com.yahoo.jdisc.http.filters.cors.CorsSecurityFilterConfig;
+import com.yahoo.jdisc.http.filters.cors.CorsSecurityRequestFilterBase;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
@@ -13,11 +13,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsKeystore;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
 import java.security.cert.X509Certificate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
-import static com.yahoo.vespa.hosted.controller.restapi.filter.SecurityFilterUtils.sendErrorResponse;
 
 /**
  * Authenticates Athenz principal, either through:
@@ -30,7 +31,7 @@ import static com.yahoo.vespa.hosted.controller.restapi.filter.SecurityFilterUti
  * @author bjorncs
  */
 // TODO bjorncs: Move this class to vespa-athenz bundle
-public class AthenzPrincipalFilter implements SecurityRequestFilter {
+public class AthenzPrincipalFilter extends CorsSecurityRequestFilterBase {
 
     private final NTokenValidator validator;
     private final String principalTokenHeader;
@@ -39,18 +40,25 @@ public class AthenzPrincipalFilter implements SecurityRequestFilter {
      * @param executor to preload the ZMS public keys with
      */
     @Inject
-    public AthenzPrincipalFilter(ZmsKeystore zmsKeystore, Executor executor, AthenzConfig config) {
-        this(new NTokenValidator(zmsKeystore), executor, config.principalHeaderName());
+    public AthenzPrincipalFilter(ZmsKeystore zmsKeystore,
+                                 Executor executor,
+                                 AthenzConfig athenzConfig,
+                                 CorsSecurityFilterConfig corsConfig) {
+        this(new NTokenValidator(zmsKeystore), executor, athenzConfig.principalHeaderName(), new HashSet<>(corsConfig.allowedUrls()));
     }
 
-    AthenzPrincipalFilter(NTokenValidator validator, Executor executor, String principalTokenHeader) {
+    AthenzPrincipalFilter(NTokenValidator validator,
+                          Executor executor,
+                          String principalTokenHeader,
+                          Set<String> corsAllowedUrls) {
+        super(corsAllowedUrls);
         this.validator = validator;
         this.principalTokenHeader = principalTokenHeader;
         executor.execute(validator::preloadPublicKeys);
     }
 
     @Override
-    public void filter(DiscFilterRequest request, ResponseHandler responseHandler) {
+    public Optional<ErrorResponse> filter(DiscFilterRequest request) {
         try {
             Optional<AthenzPrincipal> certificatePrincipal = getClientCertificate(request)
                     .map(AthenzIdentities::from)
@@ -61,8 +69,7 @@ public class AthenzPrincipalFilter implements SecurityRequestFilter {
             if (!certificatePrincipal.isPresent() && !nTokenPrincipal.isPresent()) {
                 String errorMessage = "Unable to authenticate Athenz identity. " +
                         "Either client certificate or principal token is required.";
-                sendErrorResponse(responseHandler, Response.Status.UNAUTHORIZED, errorMessage);
-                return;
+                return Optional.of(new ErrorResponse(Response.Status.UNAUTHORIZED, errorMessage));
             }
             if (certificatePrincipal.isPresent() && nTokenPrincipal.isPresent()
                     && !certificatePrincipal.get().getIdentity().equals(nTokenPrincipal.get().getIdentity())) {
@@ -70,14 +77,14 @@ public class AthenzPrincipalFilter implements SecurityRequestFilter {
                         "Identity in principal token does not match x509 CN: token-identity=%s, cert-identity=%s",
                         nTokenPrincipal.get().getIdentity().getFullName(),
                         certificatePrincipal.get().getIdentity().getFullName());
-                sendErrorResponse(responseHandler, Response.Status.UNAUTHORIZED, errorMessage);
-                return;
+                return Optional.of(new ErrorResponse(Response.Status.UNAUTHORIZED, errorMessage));
             }
             AthenzPrincipal principal = nTokenPrincipal.orElseGet(certificatePrincipal::get);
             request.setUserPrincipal(principal);
             request.setRemoteUser(principal.getName());
+            return Optional.empty();
         } catch (Exception e) {
-            sendErrorResponse(responseHandler,Response.Status.UNAUTHORIZED, e.getMessage());
+            return Optional.of(new ErrorResponse(Response.Status.UNAUTHORIZED, e.getMessage()));
         }
     }
 

@@ -4,11 +4,10 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.jdisc.Response;
-import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
-import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
+import com.yahoo.jdisc.http.filters.cors.CorsSecurityFilterConfig;
+import com.yahoo.jdisc.http.filters.cors.CorsSecurityRequestFilterBase;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -33,6 +32,7 @@ import javax.ws.rs.WebApplicationException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
@@ -41,7 +41,6 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAthenzIdentities.SCREWDRIVER_DOMAIN;
-import static com.yahoo.vespa.hosted.controller.restapi.filter.SecurityFilterUtils.sendErrorResponse;
 
 /**
  * A security filter protects all controller apis.
@@ -50,7 +49,7 @@ import static com.yahoo.vespa.hosted.controller.restapi.filter.SecurityFilterUti
  */
 @After("com.yahoo.vespa.hosted.controller.athenz.filter.UserAuthWithAthenzPrincipalFilter")
 @Provides("ControllerAuthorizationFilter")
-public class ControllerAuthorizationFilter implements SecurityRequestFilter {
+public class ControllerAuthorizationFilter extends CorsSecurityRequestFilterBase {
 
     private static final List<Method> WHITELISTED_METHODS = Arrays.asList(GET, OPTIONS, HEAD);
 
@@ -58,31 +57,30 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
 
     private final AthenzClientFactory clientFactory;
     private final TenantController tenantController;
-    private final AuthorizationResponseHandler authorizationResponseHandler;
-
-    public interface AuthorizationResponseHandler {
-        void handle(ResponseHandler responseHandler, DiscFilterRequest request, WebApplicationException verificationException);
-    }
 
     @Inject
-    public ControllerAuthorizationFilter(AthenzClientFactory clientFactory, Controller controller) {
-        this(clientFactory, controller.tenants(), new DefaultAuthorizationResponseHandler());
+    public ControllerAuthorizationFilter(AthenzClientFactory clientFactory,
+                                         Controller controller,
+                                         CorsSecurityFilterConfig corsConfig) {
+        super(corsConfig);
+        this.clientFactory = clientFactory;
+        this.tenantController = controller.tenants();
     }
 
     ControllerAuthorizationFilter(AthenzClientFactory clientFactory,
                                   TenantController tenantController,
-                                  AuthorizationResponseHandler authorizationResponseHandler) {
+                                  Set<String> allowedUrls) {
+        super(allowedUrls);
         this.clientFactory = clientFactory;
         this.tenantController = tenantController;
-        this.authorizationResponseHandler = authorizationResponseHandler;
     }
 
     // NOTE: Be aware of the ordering of the path pattern matching. Semantics may change if the patterns are evaluated
     //       in different order.
     @Override
-    public void filter(DiscFilterRequest request, ResponseHandler handler) {
+    public Optional<ErrorResponse> filter(DiscFilterRequest request) {
         Method method = getMethod(request);
-        if (isWhiteListedMethod(method)) return;
+        if (isWhiteListedMethod(method)) return Optional.empty();
 
         try {
             Path path = new Path(request.getRequestURI());
@@ -98,8 +96,12 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
             } else {
                 throw new ForbiddenException("No access control is explicitly declared for this api.");
             }
+            return Optional.empty();
         } catch (WebApplicationException e) {
-            authorizationResponseHandler.handle(handler, request, e);
+            int statusCode = e.getResponse().getStatus();
+            String errorMessage = e.getMessage();
+            log.log(LogLevel.WARNING, String.format("Access denied(%d): %s", statusCode, errorMessage), e);
+            return Optional.of(new ErrorResponse(statusCode, errorMessage));
         }
     }
 
@@ -241,21 +243,5 @@ public class ControllerAuthorizationFilter implements SecurityRequestFilter {
         return Optional.ofNullable(request.getUserPrincipal())
                 .map(AthenzPrincipal.class::cast);
     }
-
-    /**
-     * Maps {@link WebApplicationException} to http response ({@link Response}.
-     */
-    private static class DefaultAuthorizationResponseHandler implements AuthorizationResponseHandler {
-        @Override
-        public void handle(ResponseHandler responseHandler,
-                           DiscFilterRequest request,
-                           WebApplicationException exception) {
-            int statusCode = exception.getResponse().getStatus();
-            String errorMessage = exception.getMessage();
-            log.log(LogLevel.WARNING, String.format("Access denied(%d): %s", statusCode, errorMessage), exception);
-            sendErrorResponse(responseHandler, statusCode, errorMessage);
-        }
-    }
-
 
 }

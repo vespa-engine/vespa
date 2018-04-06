@@ -34,11 +34,14 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.yahoo.jdisc.Response.Status.UNAUTHORIZED;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static org.hamcrest.Matchers.containsString;
@@ -58,6 +61,8 @@ public class AthenzPrincipalFilterTest {
     private static final String ATHENZ_PRINCIPAL_HEADER = "Athenz-Principal-Auth";
     private static final AthenzIdentity IDENTITY = AthenzUser.fromUserId("bob");
     private static final X509Certificate CERTIFICATE = createSelfSignedCertificate(IDENTITY);
+    private static final String ORIGIN = "http://localhost";
+    private static final Set<String> CORS_ALLOWED_URLS = singleton(ORIGIN);
 
     private NTokenValidator validator;
 
@@ -68,27 +73,33 @@ public class AthenzPrincipalFilterTest {
 
     @Test
     public void valid_ntoken_is_accepted() {
-        DiscFilterRequest request = mock(DiscFilterRequest.class);
+        DiscFilterRequest request = createRequestMock();
         AthenzPrincipal principal = new AthenzPrincipal(IDENTITY, NTOKEN);
         when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(NTOKEN.getRawToken());
         when(request.getClientCertificateChain()).thenReturn(emptyList());
         when(validator.validate(NTOKEN)).thenReturn(principal);
 
-        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER);
+        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
         filter.filter(request, new ResponseHandlerMock());
 
         verify(request).setUserPrincipal(principal);
     }
 
+    private DiscFilterRequest createRequestMock() {
+        DiscFilterRequest request = mock(DiscFilterRequest.class);
+        when(request.getHeader("Origin")).thenReturn(ORIGIN);
+        return request;
+    }
+
     @Test
     public void missing_token_and_certificate_is_unauthorized() {
-        DiscFilterRequest request = mock(DiscFilterRequest.class);
+        DiscFilterRequest request = createRequestMock();
         when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(null);
         when(request.getClientCertificateChain()).thenReturn(emptyList());
 
         ResponseHandlerMock responseHandler = new ResponseHandlerMock();
 
-        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER);
+        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
         filter.filter(request, responseHandler);
 
         assertUnauthorized(responseHandler, "Unable to authenticate Athenz identity");
@@ -96,7 +107,7 @@ public class AthenzPrincipalFilterTest {
 
     @Test
     public void invalid_token_is_unauthorized() {
-        DiscFilterRequest request = mock(DiscFilterRequest.class);
+        DiscFilterRequest request = createRequestMock();
         String errorMessage = "Invalid token";
         when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(NTOKEN.getRawToken());
         when(request.getClientCertificateChain()).thenReturn(emptyList());
@@ -104,7 +115,7 @@ public class AthenzPrincipalFilterTest {
 
         ResponseHandlerMock responseHandler = new ResponseHandlerMock();
 
-        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER);
+        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
         filter.filter(request, responseHandler);
 
         assertUnauthorized(responseHandler, errorMessage);
@@ -112,13 +123,13 @@ public class AthenzPrincipalFilterTest {
 
     @Test
     public void certificate_is_accepted() {
-        DiscFilterRequest request = mock(DiscFilterRequest.class);
+        DiscFilterRequest request = createRequestMock();
         when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(null);
         when(request.getClientCertificateChain()).thenReturn(singletonList(CERTIFICATE));
 
         ResponseHandlerMock responseHandler = new ResponseHandlerMock();
 
-        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER);
+        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
         filter.filter(request, responseHandler);
 
         AthenzPrincipal expectedPrincipal = new AthenzPrincipal(IDENTITY);
@@ -127,7 +138,7 @@ public class AthenzPrincipalFilterTest {
 
     @Test
     public void both_ntoken_and_certificate_is_accepted() {
-        DiscFilterRequest request = mock(DiscFilterRequest.class);
+        DiscFilterRequest request = createRequestMock();
         AthenzPrincipal principalWithToken = new AthenzPrincipal(IDENTITY, NTOKEN);
         when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(NTOKEN.getRawToken());
         when(request.getClientCertificateChain()).thenReturn(singletonList(CERTIFICATE));
@@ -135,7 +146,7 @@ public class AthenzPrincipalFilterTest {
 
         ResponseHandlerMock responseHandler = new ResponseHandlerMock();
 
-        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER);
+        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
         filter.filter(request, responseHandler);
 
         verify(request).setUserPrincipal(principalWithToken);
@@ -143,7 +154,7 @@ public class AthenzPrincipalFilterTest {
 
     @Test
     public void conflicting_ntoken_and_certificate_is_unauthorized() {
-        DiscFilterRequest request = mock(DiscFilterRequest.class);
+        DiscFilterRequest request = createRequestMock();
         AthenzUser conflictingIdentity = AthenzUser.fromUserId("mallory");
         when(request.getHeader(ATHENZ_PRINCIPAL_HEADER)).thenReturn(NTOKEN.getRawToken());
         when(request.getClientCertificateChain())
@@ -152,7 +163,7 @@ public class AthenzPrincipalFilterTest {
 
         ResponseHandlerMock responseHandler = new ResponseHandlerMock();
 
-        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER);
+        AthenzPrincipalFilter filter = new AthenzPrincipalFilter(validator, Runnable::run, ATHENZ_PRINCIPAL_HEADER, CORS_ALLOWED_URLS);
         filter.filter(request, responseHandler);
 
         assertUnauthorized(responseHandler, "Identity in principal token does not match x509 CN");
