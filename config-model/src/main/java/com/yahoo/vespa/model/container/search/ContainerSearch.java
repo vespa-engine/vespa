@@ -13,15 +13,22 @@ import com.yahoo.vespa.model.container.component.ContainerSubsystem;
 import com.yahoo.vespa.model.container.search.searchchain.HttpProvider;
 import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
-import com.yahoo.vespa.model.search.*;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
+import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.Dispatch;
+import com.yahoo.vespa.model.search.IndexedSearchCluster;
+import com.yahoo.vespa.model.search.StreamingSearchCluster;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author gjoranv
@@ -31,7 +38,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     implements
     	IndexInfoConfig.Producer,
     	IlscriptsConfig.Producer,
-    	QrSearchersConfig.Producer,
     	QrStartConfig.Producer,
     	QueryProfilesConfig.Producer,
         SemanticRulesConfig.Producer,
@@ -164,12 +170,10 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         }
     }
 
-    @Override
-    public void getConfig(QrSearchersConfig.Builder builder) {
+    public void getConfig(QrSearchersConfig.Builder builder, String hostName) {
         for (int i = 0; i < systems.size(); i++) {
     	    AbstractSearchCluster sys = findClusterWithId(systems, i);
-    		QrSearchersConfig.Searchcluster.Builder scB = new QrSearchersConfig.Searchcluster.Builder().
-    				name(sys.getClusterName());
+    		QrSearchersConfig.Searchcluster.Builder scB = new QrSearchersConfig.Searchcluster.Builder().name(sys.getClusterName());
     		for (AbstractSearchCluster.SearchDefinitionSpec spec : sys.getLocalSDS()) {
     			scB.searchdef(spec.getSearchDefinition().getName());
     		}
@@ -178,9 +182,11 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     		if (sys instanceof IndexedSearchCluster) {
     			scB.rowbits(sys.getRowBits());
                 for (Dispatch tld: ((IndexedSearchCluster)sys).getTLDs()) {
-                	scB.dispatcher(new QrSearchersConfig.Searchcluster.Dispatcher.Builder().
-                			host(tld.getHostname()).
-                			port(tld.getDispatchPort()));
+                    if (hostName.equals(tld.getHostname())) {
+                        scB.dispatcher(new QrSearchersConfig.Searchcluster.Dispatcher.Builder().
+                                host(tld.getHostname()).
+                                port(tld.getDispatchPort()));
+                    }
                 }
             } else {
             	scB.storagecluster(new QrSearchersConfig.Searchcluster.Storagecluster.Builder().

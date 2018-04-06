@@ -14,11 +14,9 @@ import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.ComponentsConfig;
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
@@ -122,7 +120,6 @@ public final class ContainerCluster
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer,
         SchemamappingConfig.Producer,
-        QrSearchersConfig.Producer,
         QrStartConfig.Producer,
         QueryProfilesConfig.Producer,
         PageTemplatesConfig.Producer,
@@ -628,11 +625,6 @@ public final class ContainerCluster
 
     private static String toFileReferenceString(Path path) {
         return DISK_BUNDLE_PREFIX + path.toString();
-    }
-
-    @Override
-    public void getConfig(QrSearchersConfig.Builder builder) {
-    	if (containerSearch!=null) containerSearch.getConfig(builder);
     }
 
     @Override
