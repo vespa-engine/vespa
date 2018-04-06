@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -30,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -70,9 +68,7 @@ public class DockerOperationsImpl implements DockerOperations {
         try {
             InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname);
 
-            String configServers = environment.getConfigServerUris().stream()
-                    .map(URI::getHost)
-                    .collect(Collectors.joining(","));
+            String configServers = String.join(",", environment.getConfigServerHostNames());
 
             Docker.CreateContainerCommand command = docker.createContainerCommand(
                     nodeSpec.wantedDockerImage.get(),

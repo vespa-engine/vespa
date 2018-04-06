@@ -3,15 +3,12 @@ package com.yahoo.vespa.hosted.node.admin.component;
 
 import com.google.common.base.Strings;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
-import com.yahoo.vespa.hosted.node.admin.util.KeyStoreOptions;
 
 import java.net.InetAddress;
-import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.text.DateFormat;
@@ -112,8 +109,6 @@ public class Environment {
     }
 
     public List<String> getConfigServerHostNames() { return configServerInfo.getConfigServerHostNames(); }
-
-    public List<URI> getConfigServerUris() { return configServerInfo.getConfigServerUris(); }
 
     public String getEnvironment() { return environment; }
 
@@ -216,18 +211,6 @@ public class Environment {
 
     public List<String> getLogstashNodes() {
         return logstashNodes;
-    }
-
-    public Optional<KeyStoreOptions> getKeyStoreOptions() {
-        return configServerInfo.getKeyStoreOptions();
-    }
-
-    public Optional<KeyStoreOptions> getTrustStoreOptions() {
-        return configServerInfo.getTrustStoreOptions();
-    }
-
-    public Optional<AthenzIdentity> getAthenzIdentity() {
-        return configServerInfo.getAthenzIdentity();
     }
 
     public NodeType getNodeType() { return nodeType; }
