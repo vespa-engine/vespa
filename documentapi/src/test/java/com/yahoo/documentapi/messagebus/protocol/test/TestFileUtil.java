@@ -4,26 +4,16 @@ package com.yahoo.documentapi.messagebus.protocol.test;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
 public class TestFileUtil {
     protected static final String DATA_PATH = "./test/crosslanguagefiles";
 
     public static void writeToFile(String path, byte[] data) throws IOException {
-        // Write to a temporary file to avoid racing with cross-language tests reading the
-        // exact same file we're trying to write.
-        String tmpPath = path + ".tmp";
-        try (FileOutputStream stream = new FileOutputStream(tmpPath)) {
+        try (FileOutputStream stream = new FileOutputStream(path)) {
             stream.write(data);
         }
-        // We make the assumption that all file systems we run these tests on support some form
-        // of atomic moving rather than "move by content copy".
-        Files.move(FileSystems.getDefault().getPath(tmpPath), FileSystems.getDefault().getPath(path), ATOMIC_MOVE);
     }
 
     /**

@@ -175,18 +175,14 @@ TestBase::dump(const mbus::Blob& blob) const
 bool
 TestBase::writeFile(const string &filename, const mbus::Blob& blob) const
 {
-    std::string tmp_filename = filename + ".tmp";
-    int file = open(tmp_filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    int file = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (file == -1) {
         return false;
     }
-    if (write(file, blob.data(), blob.size()) != static_cast<ssize_t>(blob.size())) {
-        throw vespalib::Exception("write failed");
+    if (write(file, blob.data(), blob.size()) != (ssize_t)blob.size()) {
+	throw vespalib::Exception("write failed");
     }
     close(file);
-    if (rename(tmp_filename.c_str(), filename.c_str()) != 0) {
-        throw vespalib::Exception("rename failed");
-    }
     return true;
 }
 
@@ -199,8 +195,8 @@ TestBase::readFile(const string &filename) const
     if (file != -1) {
         lseek(file, 0, SEEK_SET);
         if (read(file, blob.data(), len) != len) {
-            throw vespalib::Exception("read failed");
-        }
+	    throw vespalib::Exception("read failed");
+	}
         close(file);
     }
 
