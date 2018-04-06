@@ -93,9 +93,14 @@ public class DeploymentTrigger {
     /**
      * Called each time a job completes (successfully or not) to record information used when deciding what to trigger.
      */
-    public void triggerFromCompletion(JobReport report) {
+    public void notifyOfCompletion(JobReport report) {
+        if ( ! applications().get(report.applicationId()).isPresent()) {
+            log.log(LogLevel.WARNING, "Ignoring completion of job of project '" + report.projectId() +
+                                      "': Unknown application '" + report.applicationId() + "'");
+            return;
+        }
+
         applications().lockOrThrow(report.applicationId(), application -> {
-            log.log(LogLevel.INFO, String.format("%s %d completed for %s with %s.", report.jobType(), report.buildNumber(), report.applicationId(), report.jobError().map(JobError::toString).orElse("success")));
             ApplicationVersion applicationVersion = report.sourceRevision().map(sr -> ApplicationVersion.from(sr, report.buildNumber()))
                                                           .orElse(ApplicationVersion.unknown);
             application = application.withJobCompletion(report, applicationVersion, clock.instant(), controller);
@@ -115,6 +120,8 @@ public class DeploymentTrigger {
 
     /**
      * Finds and triggers jobs that can and should run but are currently not.
+     *
+     * Only one job is triggered each run for test jobs, since those environments have limited capacity.
      */
     public void triggerReadyJobs() {
         computeReadyJobs().forEach((jobType, jobs) -> {
@@ -140,9 +147,9 @@ public class DeploymentTrigger {
                                                                        job.reason)));
             return true;
         }
-        // TODO jvenstad: On 404, set empty projectId (and send ticket?)
-        // TODO jvensatd: On 401, 403 with crumb issues, refresh auth.
-        // TODO jvenstad: On 403 with missing collaborator status send deployment issue ticket?
+        // TODO jvenstad: On 404: set empty projectId (and send ticket?). Throw and catch NoSuchElementException.
+        // TODO jvensatd: On 401, 403 with crumb issues: refresh auth. Handle in client.
+        // TODO jvenstad: On 403 with missing collaborator status: send deployment issue ticket? Throw and catch IllegalArumentException.
         log.log(LogLevel.WARNING, "Failed to trigger " + buildJob + " for " + job.id);
         return false;
     }
@@ -155,7 +162,7 @@ public class DeploymentTrigger {
      */
     public void triggerChange(ApplicationId applicationId, Change change) {
         applications().lockOrThrow(applicationId, application -> {
-            if (application.change().isPresent() && !application.deploymentJobs().hasFailures())
+            if (application.change().isPresent() && ! application.deploymentJobs().hasFailures())
                 throw new IllegalArgumentException("Could not start " + change + " on " + application + ": " +
                                                    application.change() + " is already in progress");
             application = application.withChange(change);
@@ -180,51 +187,48 @@ public class DeploymentTrigger {
         });
     }
 
-    //--- End of methods which triggers deployment jobs ----------------------------
-
     /**
      * Finds the next step to trigger for the given application, if any, and triggers it
      */
     public List<Job> computeReadyJobs(ApplicationId id) {
         List<Job> jobs = new ArrayList<>();
         applications().lockIfPresent(id, application -> {
-            Change change = application.change();
-
-            // Urgh. Empty spec means unknown spec. Should we write it at component completion?
-            List<DeploymentSpec.Step> steps = application.deploymentSpec().steps();
-            if (steps.isEmpty()) steps = Collections.singletonList(new DeploymentSpec.DeclaredZone(Environment.test));
+            List<DeploymentSpec.Step> steps = application.deploymentSpec().equals(DeploymentSpec.empty)
+                    ? Collections.singletonList(new DeploymentSpec.DeclaredZone(Environment.test))
+                    : application.deploymentSpec().steps();
 
             Optional<Instant> completedAt = Optional.of(clock.instant());
-            String reason = "Deploying " + change.toString();
+            String reason = "Deploying " + application.change();
 
             for (DeploymentSpec.Step step : steps) {
-                LockedApplication app = application;
                 Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
-                Set<JobType> remainingJobs = stepJobs.stream().filter(job -> !completedAt(app, job).isPresent()).collect(toSet());
-                if (remainingJobs.isEmpty()) { // All jobs are complete -- find the time of completion for this step.
+                Set<JobType> remainingJobs = stepJobs.stream().filter(job -> ! completedAt(application, job).isPresent()).collect(toSet());
+                if (remainingJobs.isEmpty()) { // All jobs are complete -- find the time of completion of this step.
                     if (stepJobs.isEmpty()) { // No jobs means this is delay step.
                         Duration delay = ((DeploymentSpec.Delay) step).duration();
-                        completedAt = completedAt.map(at -> at.plus(delay)).filter(at -> !at.isAfter(clock.instant()));
+                        completedAt = completedAt.map(at -> at.plus(delay)).filter(at -> ! at.isAfter(clock.instant()));
                         reason += " after a delay of " + delay;
                     }
                     else {
-                        completedAt = stepJobs.stream().map(job -> completedAt(app, job).get()).max(naturalOrder());
+                        completedAt = stepJobs.stream().map(job -> completedAt(application, job).get()).max(naturalOrder());
                         reason = "Available change in " + stepJobs.stream().map(JobType::jobName).collect(joining(", "));
                     }
                 }
-                else if (completedAt.isPresent()) { // Some jobs remain, and this step is not complete -- trigger those jobs if the previous step was done.
+                else if (completedAt.isPresent()) { // Step not complete, because some jobs remain -- trigger these if the previous step was done.
                     for (JobType job : remainingJobs)
-                        jobs.add(new Job(app, job, reason, completedAt.get(), stepJobs));
+                        jobs.add(new Job(application, job, reason, completedAt.get(), stepJobs));
                     completedAt = Optional.empty();
                 }
             }
             if (completedAt.isPresent())
-                application = application.withChange(Change.empty());
-            applications().store(application);
+                applications().store(application.withChange(Change.empty()));
         });
         return jobs;
     }
 
+    /**
+     * Returns the set of all jobs which have changes to propagate from the upstream steps, sorted by job.
+     */
     public Map<JobType, List<Job>> computeReadyJobs() {
         return ApplicationList.from(applications().asList())
                               .notPullRequest()
@@ -325,6 +329,8 @@ public class DeploymentTrigger {
         private final Instant availableSince;
         private final boolean retry;
         private final Collection<JobType> concurrentlyWith;
+        // TODO jvenstad: Store target versions here, and set in withJobTriggering(Job job, Instant at).
+        // TODO jvenstad: Use trigger-versions during deployment!
 
         public Job(Application application, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith) {
             this.id = application.id();

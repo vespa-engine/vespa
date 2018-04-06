@@ -864,7 +864,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse notifyJobCompletion(String tenant, String applicationName, HttpRequest request) {
         try {
-            controller.applications().notifyJobCompletion(toJobReport(tenant, applicationName, toSlime(request.getData()).get()));
+            controller.applications().deploymentTrigger().notifyOfCompletion(toJobReport(tenant, applicationName, toSlime(request.getData()).get()));
             return new MessageResponse("ok");
         } catch (IllegalStateException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));

@@ -16,6 +16,7 @@ public interface BuildService {
     boolean trigger(BuildJob buildJob);
 
 
+    // TODO jvenstad: Replace with DeploymentTrigger.Job
     class BuildJob {
 
         private final long projectId;

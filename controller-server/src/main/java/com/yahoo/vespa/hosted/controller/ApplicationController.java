@@ -559,15 +559,6 @@ public class ApplicationController {
         }
     }
 
-    public void notifyJobCompletion(JobReport report) {
-        if ( ! get(report.applicationId()).isPresent()) {
-            log.log(Level.WARNING, "Ignoring completion of job of project '" + report.projectId() +
-                                   "': Unknown application '" + report.applicationId() + "'");
-            return;
-        }
-        deploymentTrigger.triggerFromCompletion(report);
-    }
-
     /**
      * Tells config server to schedule a restart of all nodes in this deployment
      *

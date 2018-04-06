@@ -264,7 +264,7 @@ public class DeploymentTester {
                     buildService().removeJob(report.projectId(), report.jobType()));
 
         clock().advance(Duration.ofMillis(1));
-        applications().notifyJobCompletion(report);
+        applications().deploymentTrigger().notifyOfCompletion(report);
         applications().deploymentTrigger().triggerReadyJobs();
     }
 

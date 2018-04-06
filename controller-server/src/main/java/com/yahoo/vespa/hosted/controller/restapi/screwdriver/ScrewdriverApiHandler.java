@@ -82,12 +82,16 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
 
     private HttpResponse trigger(HttpRequest request, String tenantName, String applicationName) {
         JobType jobType = Optional.of(asString(request.getData()))
-                .filter(s -> !s.isEmpty())
-                .map(JobType::fromJobName)
-                .orElse(JobType.component);
+                                  .filter(s -> ! s.isEmpty())
+                                  .map(JobType::fromJobName)
+                                  .orElse(JobType.component);
 
         Application application = controller.applications().require(ApplicationId.from(tenantName, applicationName, "default"));
-        controller.applications().deploymentTrigger().trigger(new DeploymentTrigger.Job(application, jobType, "Triggered from screwdriver/v1", controller.clock().instant(), Collections.emptySet()));
+        controller.applications().deploymentTrigger().trigger(new DeploymentTrigger.Job(application,
+                                                                                        jobType,
+                                                                                        "Triggered from screwdriver/v1",
+                                                                                        controller.clock().instant(),
+                                                                                        Collections.emptySet()));
 
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
@@ -106,15 +110,14 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
         cursor.setString("sha", version.releaseCommit());
         cursor.setLong("date", version.committedAt().toEpochMilli());
         return new SlimeJsonResponse(slime);
-        
     }
 
-    private HttpResponse buildJobs(Map<JobType, List<DeploymentTrigger.Job>> jobs) {
+    private HttpResponse buildJobs(Map<JobType, List<DeploymentTrigger.Job>> jobLists) {
         Slime slime = new Slime();
         Cursor jobTypesObject = slime.setObject();
-        jobs.forEach((jobType, triggerings) -> {
+        jobLists.forEach((jobType, jobs) -> {
             Cursor jobArray = jobTypesObject.setArray(jobType.jobName());
-            triggerings.forEach(job -> {
+            jobs.forEach(job -> {
                 Cursor buildJobObject = jobArray.addObject();
                 buildJobObject.setString("applicationId", job.id().toString());
                 buildJobObject.setString("jobName", job.jobType().jobName());
