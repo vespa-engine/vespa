@@ -10,8 +10,10 @@ import java.util.Map;
 
 import static com.yahoo.vespa.clustercontroller.core.matchers.HasMetricContext.hasMetricContext;
 import static com.yahoo.vespa.clustercontroller.core.matchers.HasMetricContext.withDimension;
+import static org.hamcrest.Matchers.closeTo;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.doubleThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -22,11 +24,18 @@ public class MetricReporterTest {
     private static class Fixture {
         final MetricReporter mockReporter = mock(MetricReporter.class);
         final MetricUpdater metricUpdater = new MetricUpdater(mockReporter, 0);
-        final ClusterFixture clusterFixture = ClusterFixture.forFlatCluster(10);
+        final ClusterFixture clusterFixture;
 
         Fixture() {
-            when(mockReporter.createContext(any())).then(invocation ->
-                    new HasMetricContext.MockContext((Map<String, ?>)invocation.getArguments()[0]));
+            this(10);
+        }
+
+        Fixture(int nodes) {
+            clusterFixture = ClusterFixture.forFlatCluster(nodes);
+            when(mockReporter.createContext(any())).then(invocation -> {
+                @SuppressWarnings("unchecked") Map<String, ?> arg = (Map<String, ?>)invocation.getArguments()[0];
+                return new HasMetricContext.MockContext(arg);
+            });
         }
     }
 
@@ -55,6 +64,40 @@ public class MetricReporterTest {
                 argThat(hasMetricContext(withNodeTypeDimension("storage"))));
         verify(f.mockReporter).set(eq("cluster-controller.maintenance.count"), eq(1),
                 argThat(hasMetricContext(withNodeTypeDimension("storage"))));
+    }
+
+    private void doTestRatiosInState(String clusterState, double distributorRatio, double storageRatio) {
+        Fixture f = new Fixture();
+        f.metricUpdater.updateClusterStateMetrics(f.clusterFixture.cluster(), ClusterState.stateFromString(clusterState));
+
+        verify(f.mockReporter).set(eq("cluster-controller.available-nodes.ratio"),
+                doubleThat(closeTo(distributorRatio, 0.0001)),
+                argThat(hasMetricContext(withNodeTypeDimension("distributor"))));
+
+        verify(f.mockReporter).set(eq("cluster-controller.available-nodes.ratio"),
+                doubleThat(closeTo(storageRatio, 0.0001)),
+                argThat(hasMetricContext(withNodeTypeDimension("storage"))));
+    }
+
+    @Test
+    public void metrics_are_emitted_for_partial_node_availability_ratio() {
+        // Only Up, Init, Retired and Maintenance are counted as available states
+        doTestRatiosInState("distributor:10 .1.s:d storage:9 .1.s:d .2.s:m .4.s:r .5.s:i .6.s:s", 0.9, 0.7);
+    }
+
+    @Test
+    public void metrics_are_emitted_for_full_node_availability_ratio() {
+        doTestRatiosInState("distributor:10 storage:10", 1.0, 1.0);
+    }
+
+    @Test
+    public void metrics_are_emitted_for_zero_node_availability_ratio() {
+        doTestRatiosInState("cluster:d", 0.0, 0.0);
+    }
+
+    @Test
+    public void maintenance_mode_is_counted_as_available() {
+        doTestRatiosInState("distributor:10 storage:10 .0.s:m", 1.0, 1.0);
     }
 
 }

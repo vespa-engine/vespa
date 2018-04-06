@@ -13,9 +13,9 @@ import java.util.stream.Stream;
 
 public class HasMetricContext extends ArgumentMatcher<MetricReporter.Context> {
 
-    private final Map<String, String> dimensions;
+    private final Map<String, ?> dimensions;
 
-    public HasMetricContext(Map<String, String> dimensions) {
+    private HasMetricContext(Map<String, String> dimensions) {
         this.dimensions = new TreeMap<>(dimensions);
     }
 
@@ -41,7 +41,7 @@ public class HasMetricContext extends ArgumentMatcher<MetricReporter.Context> {
         final String name;
         final String value;
 
-        public Dimension(String name, String value) {
+        private Dimension(String name, String value) {
             this.name = name;
             this.value = value;
         }
