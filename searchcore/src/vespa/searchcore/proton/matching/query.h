@@ -56,7 +56,7 @@ public:
     /**
      * Use the given blueprint as white list node in the blueprint tree.
      * The search iterator created by this blueprint should return all
-     * invisible / inactive documents as hits. These hits will then not be
+     * visible / active documents as hits. These hits will then be
      * part of the result set for the query executed.
      *
      * @param whiteListBlueprint the blueprint used for white listing.
