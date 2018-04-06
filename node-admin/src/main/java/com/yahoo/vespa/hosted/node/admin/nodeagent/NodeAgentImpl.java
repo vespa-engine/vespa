@@ -511,14 +511,14 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
             case provisioned:
-                nodeRepository.markAsDirty(hostname);
+                nodeRepository.setNodeState(hostname, Node.State.dirty);
                 break;
             case dirty:
                 removeContainerIfNeededUpdateContainerState(nodeSpec, container);
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
                 storageMaintainer.cleanupNodeStorage(containerName, nodeSpec);
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
-                nodeRepository.markNodeAvailableForNewAllocation(hostname);
+                nodeRepository.setNodeState(hostname, Node.State.ready);
                 expectNodeNotInNodeRepo = true;
                 break;
             default:

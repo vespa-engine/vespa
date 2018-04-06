@@ -16,8 +16,10 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.Up
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -37,10 +39,27 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public List<ContainerNodeSpec> getContainersToRun(String baseHostName) {
-        final GetNodesResponse nodesForHost = configServerApi.get(
-                "/nodes/v2/node/?parentHost=" + baseHostName + "&recursive=true",
-                GetNodesResponse.class);
+    public List<ContainerNodeSpec> getContainerNodeSpecs(String baseHostName) {
+        return getContainerNodeSpecs(Optional.of(baseHostName), Collections.emptyList());
+    }
+
+    @Override
+    public List<ContainerNodeSpec> getContainerNodeSpecs(NodeType... nodeTypes) {
+        if (nodeTypes.length == 0)
+            throw new IllegalArgumentException("Must specify at least 1 node type");
+
+        return getContainerNodeSpecs(Optional.empty(), Arrays.asList(nodeTypes));
+    }
+
+    private List<ContainerNodeSpec> getContainerNodeSpecs(Optional<String> baseHostName, List<NodeType> nodeTypeList) {
+        Optional<String> nodeTypes = Optional
+                .of(nodeTypeList.stream().map(NodeType::name).collect(Collectors.joining(",")))
+                .filter(StringUtils::isNotEmpty);
+
+        String path = "/nodes/v2/node/?recursive=true" +
+                baseHostName.map(base -> "&parentHost=" + base).orElse("") +
+                nodeTypes.map(types -> "&type=" + types).orElse("");
+        final GetNodesResponse nodesForHost = configServerApi.get(path, GetNodesResponse.class);
 
         List<ContainerNodeSpec> nodes = new ArrayList<>(nodesForHost.nodes.size());
         for (GetNodesResponse.Node node : nodesForHost.nodes) {
@@ -155,18 +174,8 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public void markAsDirty(String hostName) {
-        // This will never happen once the new allocation scheme is rolled out.
-        markNodeToState(hostName, Node.State.dirty.name());
-    }
-
-    @Override
-    public void markNodeAvailableForNewAllocation(final String hostName) {
-        // TODO replace with call to delete node when everything has been migrated to dynamic docker allocation
-        markNodeToState(hostName, "availablefornewallocations");
-    }
-
-    private void markNodeToState(String hostName, String state) {
+    public void setNodeState(String hostName, Node.State nodeState) {
+        String state = nodeState == Node.State.ready ? "availablefornewallocations" : nodeState.name();
         NodeMessageResponse response = configServerApi.put(
                 "/nodes/v2/state/" + state + "/" + hostName,
                 Optional.empty(), /* body */
