@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -61,19 +60,9 @@ public class RealNodeRepository implements NodeRepository {
                 nodeTypes.map(types -> "&type=" + types).orElse("");
         final GetNodesResponse nodesForHost = configServerApi.get(path, GetNodesResponse.class);
 
-        List<NodeRepositoryNode> nodes = new ArrayList<>(nodesForHost.nodes.size());
-        for (GetNodesResponse.Node node : nodesForHost.nodes) {
-            NodeRepositoryNode nodeSpec;
-            try {
-                nodeSpec = createNodeRepositoryNode(node);
-            } catch (IllegalArgumentException | NullPointerException e) {
-                NODE_ADMIN_LOGGER.warning("Bad node received from node repo when requesting children of the "
-                        + baseHostName + " host: " + node, e);
-                continue;
-            }
-            nodes.add(nodeSpec);
-        }
-        return nodes;
+        return nodesForHost.nodes.stream()
+                .map(RealNodeRepository::createNodeRepositoryNode)
+                .collect(Collectors.toList());
     }
 
     @Override
