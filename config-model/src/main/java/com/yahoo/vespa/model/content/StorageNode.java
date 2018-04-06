@@ -5,7 +5,6 @@ import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorBucketmoverConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.vespa.config.storage.StorMemfilepersistenceConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -15,12 +14,10 @@ import com.yahoo.vespa.model.content.engines.ProtonProvider;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import org.w3c.dom.Element;
 
-import java.util.Arrays;
-
 /**
  * Class to provide config related to a specific storage node.
  */
-@RestartConfigs({StorFilestorConfig.class, StorMemfilepersistenceConfig.class, StorBucketmoverConfig.class})
+@RestartConfigs({StorFilestorConfig.class, StorBucketmoverConfig.class})
 public class StorageNode extends ContentNode implements StorServerConfig.Producer {
 
     static final String rootFolder = Defaults.getDefaults().underVespaHome("var/db/vespa/search/");
