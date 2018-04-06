@@ -11,6 +11,9 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
@@ -29,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Curator backed database for storing working state shared between controller servers.
@@ -44,12 +48,15 @@ public class CuratorDb {
 
     private static final Path lockRoot = root.append("locks");
 
+    private static final Path tenantRoot = root.append("tenants");
+
     private static final Duration defaultLockTimeout = Duration.ofMinutes(5);
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
     private final JobQueueSerializer jobQueueSerializer = new JobQueueSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
+    private final TenantSerializer tenantSerializer = new TenantSerializer();
 
     private final Curator curator;
 
@@ -188,6 +195,50 @@ public class CuratorDb {
                                                    .orElseGet(Collections::emptyMap);
     }
 
+    public void writeTenant(UserTenant tenant) {
+        try {
+            curator.set(tenantPath(tenant.name()), SlimeUtils.toJsonBytes(tenantSerializer.toSlime(tenant)));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write " + tenant.toString(), e);
+        }
+    }
+
+    public Optional<UserTenant> readUserTenant(TenantName name) {
+        return readSlime(tenantPath(name)).map(tenantSerializer::userTenantFrom);
+    }
+
+    public void writeTenant(AthenzTenant tenant) {
+        try {
+            curator.set(tenantPath(tenant.name()), SlimeUtils.toJsonBytes(tenantSerializer.toSlime(tenant)));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write " + tenant.toString(), e);
+        }
+    }
+
+    public Optional<AthenzTenant> readAthenzTenant(TenantName name) {
+        return readSlime(tenantPath(name)).map(tenantSerializer::athenzTenantFrom);
+    }
+
+    public Optional<Tenant> readTenant(TenantName name) {
+        if (name.value().startsWith(Tenant.userPrefix)) {
+            return readUserTenant(name).map(Tenant.class::cast);
+        }
+        return readAthenzTenant(name).map(Tenant.class::cast);
+    }
+
+    public List<Tenant> readTenants() {
+        return curator.getChildren(tenantRoot).stream()
+                      .map(TenantName::from)
+                      .map(this::readTenant)
+                      .filter(Optional::isPresent)
+                      .map(Optional::get)
+                      .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+    }
+
+    public void removeTenant(TenantName name) {
+        curator.delete(tenantPath(name));
+    }
+
     // The following methods are called by internal code
 
     @SuppressWarnings("unused")
@@ -285,5 +336,9 @@ public class CuratorDb {
 
     private static Path openStackServerPoolPath() {
         return root.append("openStackServerPool");
+    }
+
+    private static Path tenantPath(TenantName name) {
+        return tenantRoot.append(name.value());
     }
 }
