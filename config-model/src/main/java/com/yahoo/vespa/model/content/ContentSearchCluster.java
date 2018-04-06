@@ -17,6 +17,7 @@ import org.w3c.dom.Element;
 
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Encapsulates the various options for search in a content model.
@@ -270,6 +271,13 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
                 .map(StreamingSearchCluster.class::cast)
                 .filter(ssc -> ssc.getSdConfig().getSearch().getName().equals(docType))
                 .findFirst();
+    }
+
+    public List<StreamingSearchCluster> getStreamingClusters() {
+        return getClusters().values().stream()
+                .filter(StreamingSearchCluster.class::isInstance)
+                .map(StreamingSearchCluster.class::cast)
+                .collect(Collectors.toList());
     }
 
     @Override

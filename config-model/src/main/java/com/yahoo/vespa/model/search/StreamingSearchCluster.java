@@ -45,11 +45,13 @@ public class StreamingSearchCluster extends SearchCluster implements
 
     private final String storageRouteSpec;
     private final AttributesProducer attributesConfig;
+    private final String docTypeName;
     private DerivedConfiguration sdConfig = null;
 
     public StreamingSearchCluster(AbstractConfigProducer parent, String clusterName, int index, String docTypeName, String storageRouteSpec) {
         super(parent, clusterName, index);
         attributesConfig = new AttributesProducer(parent, docTypeName);
+        this.docTypeName = docTypeName;
         this.storageRouteSpec = storageRouteSpec;
     }
 
@@ -59,6 +61,11 @@ public class StreamingSearchCluster extends SearchCluster implements
     @Override
     protected IndexingMode getIndexingMode() { return IndexingMode.STREAMING; }
     public final String getStorageRouteSpec()       { return storageRouteSpec; }
+
+    public String getDocTypeName() {
+        return docTypeName;
+    }
+
     @Override
     public int getRowBits() { return 0; }
 
@@ -92,6 +99,9 @@ public class StreamingSearchCluster extends SearchCluster implements
     }
     private void deriveSingleSearchDefinition(com.yahoo.searchdefinition.Search localSearch,
                                               List<com.yahoo.searchdefinition.Search> globalSearches) {
+        if (!localSearch.getName().equals(docTypeName)) {
+            throw new IllegalStateException("Mismatch between document type name (" + docTypeName + ") and name of search definition (" + localSearch.getName() + ")");
+        }
         this.sdConfig = new DerivedConfiguration(localSearch, globalSearches, deployLogger(),
                                                  getRoot().getDeployState().rankProfileRegistry(),
                                                  getRoot().getDeployState().getQueryProfiles().getRegistry());

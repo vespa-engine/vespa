@@ -15,6 +15,7 @@ import com.yahoo.vespa.model.application.validation.change.ContentClusterRemoval
 import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
+import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.first.AccessControlValidator;
 
 import java.time.Instant;
@@ -70,6 +71,7 @@ public class Validation {
         ChangeValidator[] validators = new ChangeValidator[] {
                 new IndexingModeChangeValidator(),
                 new IndexedSearchClusterChangeValidator(),
+                new StreamingSearchClusterChangeValidator(),
                 new ConfigValueChangeValidator(logger),
                 new StartupCommandChangeValidator(),
                 new ContentClusterRemovalValidator(),

@@ -13,13 +13,13 @@ import org.junit.Test;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.equalTo;
+import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.assertEqualActions;
+import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRefeedAction;
+import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRestartAction;
+import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.normalizeServicesInActions;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRestartAction;
-import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRefeedAction;
 
 public class IndexedSearchClusterChangeValidatorTest {
 
@@ -74,27 +74,13 @@ public class IndexedSearchClusterChangeValidatorTest {
                     buildCreator().create();
         }
 
+        private List<ConfigChangeAction> validate() {
+            return normalizeServicesInActions(validator.validate(currentModel, nextModel,
+                    ValidationOverrides.empty, Instant.now()));
+        }
+
         public void assertValidation() {
-            List<ConfigChangeAction> act = normalizeServicesInActions(validator.validate(currentModel, nextModel,
-                                                                                         ValidationOverrides.empty, Instant.now()));
-            assertThat(act.size(), is(0));
-        }
-
-        private static List<ConfigChangeAction> normalizeServicesInActions(List<ConfigChangeAction> result) {
-            return result.stream().
-                    map(action -> ((VespaConfigChangeAction) action).modifyAction(
-                            action.getMessage(),
-                            normalizeServices(action.getServices()),
-                            action.getType().equals(ConfigChangeAction.Type.REFEED) ?
-                            ((VespaRefeedAction)action).getDocumentType() : "")).
-                    collect(Collectors.toList());
-        }
-
-        private static List<ServiceInfo> normalizeServices(List<ServiceInfo> services) {
-            return services.stream().
-                    map(service -> new ServiceInfo(service.getServiceName(), "null", null, null,
-                            service.getConfigId(), "null")).
-                    collect(Collectors.toList());
+            assertThat(validate().size(), is(0));
         }
 
         public void assertValidation(ConfigChangeAction exp) {
@@ -102,11 +88,7 @@ public class IndexedSearchClusterChangeValidatorTest {
         }
 
         public void assertValidation(List<ConfigChangeAction> exp) {
-            List<ConfigChangeAction> act = normalizeServicesInActions(validator.validate(currentModel, nextModel,
-                                                                                         ValidationOverrides.empty, Instant.now()));
-            exp.sort((lhs, rhs) -> lhs.getMessage().compareTo(rhs.getMessage()));
-            act.sort((lhs, rhs) -> lhs.getMessage().compareTo(rhs.getMessage()));
-            assertThat(act, equalTo(exp));
+            assertEqualActions(exp, validate());
         }
     }
 
