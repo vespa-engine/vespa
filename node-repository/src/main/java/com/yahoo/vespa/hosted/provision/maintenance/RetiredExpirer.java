@@ -87,7 +87,7 @@ public class RetiredExpirer extends Maintainer {
     /**
      * Checks if the node can be removed:
      * if the node is a docker host, it will only be removed if it has no children,
-     * or all its children are parked or failed
+     * or all its children are parked or failed.
      * Otherwise, a removal is allowed if either of these are true:
      * - The node has been in state {@link History.Event.Type#retired} for longer than {@link #retiredExpiry}
      * - Orchestrator allows it
@@ -101,8 +101,8 @@ public class RetiredExpirer extends Maintainer {
 
         Optional<Instant> timeOfRetiredEvent = node.history().event(History.Event.Type.retired).map(History.Event::at);
         Optional<Instant> retireAfter = timeOfRetiredEvent.map(retiredEvent -> retiredEvent.plus(retiredExpiry));
-        boolean shouldRetireNowBecauseExpried = retireAfter.map(time -> time.isBefore(clock.instant())).orElse(false);
-        if (shouldRetireNowBecauseExpried) {
+        boolean shouldRetireNowBecauseExpired = retireAfter.map(time -> time.isBefore(clock.instant())).orElse(false);
+        if (shouldRetireNowBecauseExpired) {
             return true;
         }
 

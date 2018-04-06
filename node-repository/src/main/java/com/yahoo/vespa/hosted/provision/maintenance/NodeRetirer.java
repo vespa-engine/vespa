@@ -34,6 +34,7 @@ import java.util.stream.Stream;
  * @author freva
  */
 public class NodeRetirer extends Maintainer {
+
     public static final FlavorSpareChecker.SpareNodesPolicy SPARE_NODES_POLICY = flavorSpareCount ->
             flavorSpareCount.getNumReadyAmongReplacees() > 2;
 
@@ -226,4 +227,5 @@ public class NodeRetirer extends Maintainer {
                         Node::flavor,
                         Collectors.groupingBy(Node::state, Collectors.counting())));
     }
+
 }

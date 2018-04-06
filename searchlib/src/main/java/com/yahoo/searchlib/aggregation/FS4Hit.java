@@ -9,7 +9,7 @@ import com.yahoo.vespa.objects.Serializer;
 /**
  * This class represents a single hit from the fastserver4 backend
  *
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author havardpe
  */
 public class FS4Hit extends Hit {
 

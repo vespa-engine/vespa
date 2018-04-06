@@ -8,5 +8,7 @@ package com.yahoo.searchlib.aggregation.hll;
  * @author bjorncs
  */
 public interface UniqueCountEstimator<T> {
+
     long estimateCount(T sketch);
+
 }

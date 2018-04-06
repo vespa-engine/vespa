@@ -22,8 +22,7 @@ import java.util.Optional;
 /**
  * Represents a config server cluster.
  *
- * @author lulf
- * @since 5.15
+ * @author Ulf Lilleengen
  */
 public class ConfigserverCluster extends AbstractConfigProducer
         implements
