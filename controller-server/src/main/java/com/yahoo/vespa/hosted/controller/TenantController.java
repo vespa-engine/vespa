@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.PersistenceException;
 
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -53,9 +54,11 @@ public class TenantController {
         this.athenzClientFactory = athenzClientFactory;
     }
 
-    /** Returns a list of all known tenants */
+    /** Returns a list of all known tenants sorted by name */
     public List<Tenant> asList() {
-        return db.listTenants();
+        return db.listTenants().stream()
+                 .sorted(Comparator.comparing(Tenant::name))
+                 .collect(Collectors.toList());
     }
 
     /** Returns a list of all tenants accessible by the given user */
