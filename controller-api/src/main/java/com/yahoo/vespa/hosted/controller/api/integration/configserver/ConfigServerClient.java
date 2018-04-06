@@ -31,7 +31,7 @@ public interface ConfigServerClient {
 
     // TODO: Remove default implementation
     default PreparedApplication deploy(DeploymentId applicationInstance, DeployOptions deployOptions, Set<String> rotationCnames, Set<String> rotationNames, byte[] content) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return prepare(applicationInstance, deployOptions, rotationCnames, rotationNames, content);
     }
 
     List<String> getNodeQueryHost(DeploymentId applicationInstance, String type) throws NoInstanceException;
