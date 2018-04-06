@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
+import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.RealNodeRepository;
@@ -20,6 +21,10 @@ public class RealConfigServerClients implements ConfigServerClients {
 
     public RealConfigServerClients(Environment environment) {
         this(new SslConfigServerApiImpl(environment));
+    }
+
+    public RealConfigServerClients(ConfigServerInfo info, String hostname) {
+        this(new SslConfigServerApiImpl(info, hostname));
     }
 
     public RealConfigServerClients(NodeRepository nodeRepository, Orchestrator orchestrator) {

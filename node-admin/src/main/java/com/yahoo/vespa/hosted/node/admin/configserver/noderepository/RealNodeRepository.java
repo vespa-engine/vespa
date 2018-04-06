@@ -5,10 +5,8 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
-import com.yahoo.vespa.hosted.node.admin.configserver.SslConfigServerApiImpl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetAclResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetNodesResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeMessageResponse;
@@ -35,10 +33,6 @@ public class RealNodeRepository implements NodeRepository {
 
     public RealNodeRepository(ConfigServerApi configServerApi) {
         this.configServerApi = configServerApi;
-    }
-
-    public RealNodeRepository(Environment environment) {
-        this(new SslConfigServerApiImpl(environment));
     }
 
     @Override

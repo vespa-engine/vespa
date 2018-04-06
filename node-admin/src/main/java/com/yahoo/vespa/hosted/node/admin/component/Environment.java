@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.component;
 import com.google.common.base.Strings;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
@@ -15,7 +14,6 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -26,7 +24,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 
 /**
  * Various utilities for getting values from node-admin's environment. Immutable.
@@ -45,8 +42,7 @@ public class Environment {
     private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
     private static final String COREDUMP_FEED_ENDPOINT = "COREDUMP_FEED_ENDPOINT";
 
-    private final List<String> configServerHostNames;
-    private final List<URI> configServerURIs;
+    private final ConfigServerInfo configServerInfo;
     private final String environment;
     private final String region;
     private final String system;
@@ -55,9 +51,6 @@ public class Environment {
     private final PathResolver pathResolver;
     private final List<String> logstashNodes;
     private final Optional<String> coredumpFeedEndpoint;
-    private final Optional<KeyStoreOptions> keyStoreOptions;
-    private final Optional<KeyStoreOptions> trustStoreOptions;
-    private final Optional<AthenzIdentity> athenzIdentity;
     private final NodeType nodeType;
     private final String defaultFlavor;
     private final String cloud;
@@ -103,23 +96,7 @@ public class Environment {
         Objects.requireNonNull(defaultFlavor, "default flavor cannot be null");
         Objects.requireNonNull(cloud, "cloud cannot be null");
 
-        this.configServerHostNames = configServerConfig.hosts();
-        this.configServerURIs = createConfigServerUris(
-                configServerConfig.scheme(),
-                configServerConfig.hosts(),
-                configServerConfig.port());
-        this.keyStoreOptions = createKeyStoreOptions(
-                configServerConfig.keyStoreConfig().path(),
-                configServerConfig.keyStoreConfig().password().toCharArray(),
-                configServerConfig.keyStoreConfig().type().name());
-        this.trustStoreOptions = createKeyStoreOptions(
-                configServerConfig.trustStoreConfig().path(),
-                configServerConfig.trustStoreConfig().password().toCharArray(),
-                configServerConfig.trustStoreConfig().type().name());
-        this.athenzIdentity = createAthenzIdentity(
-                configServerConfig.athenzDomain(),
-                configServerConfig.serviceName());
-
+        this.configServerInfo = new ConfigServerInfo(configServerConfig);
         this.environment = environment;
         this.region = region;
         this.system = system;
@@ -134,9 +111,9 @@ public class Environment {
         this.containerEnvironmentResolver = containerEnvironmentResolver;
     }
 
-    public List<String> getConfigServerHostNames() { return configServerHostNames; }
+    public List<String> getConfigServerHostNames() { return configServerInfo.getConfigServerHostNames(); }
 
-    public List<URI> getConfigServerUris() { return configServerURIs; }
+    public List<URI> getConfigServerUris() { return configServerInfo.getConfigServerUris(); }
 
     public String getEnvironment() { return environment; }
 
@@ -164,29 +141,12 @@ public class Environment {
         return getEnvironment() + "." + getRegion();
     }
 
-    private static List<URI> createConfigServerUris(String scheme, List<String> configServerHosts, int port) {
-        return configServerHosts.stream()
-                .map(hostname -> URI.create(scheme + "://" + hostname + ":" + port))
-                .collect(Collectors.toList());
-    }
-
     private static List<String> getLogstashNodesFromEnvironment() {
         String logstashNodes = System.getenv(LOGSTASH_NODES);
         if (Strings.isNullOrEmpty(logstashNodes)) {
             return Collections.emptyList();
         }
         return Arrays.asList(logstashNodes.split("[,\\s]+"));
-    }
-
-    private static Optional<KeyStoreOptions> createKeyStoreOptions(String pathToKeyStore, char[] password, String type) {
-        return Optional.ofNullable(pathToKeyStore)
-                .filter(path -> !Strings.isNullOrEmpty(path))
-                .map(path -> new KeyStoreOptions(Paths.get(path), password, type));
-    }
-
-    private static Optional<AthenzIdentity> createAthenzIdentity(String athenzDomain, String serviceName) {
-        if (Strings.isNullOrEmpty(athenzDomain) || Strings.isNullOrEmpty(serviceName)) return Optional.empty();
-        return Optional.of(new AthenzService(athenzDomain, serviceName));
     }
 
     public InetAddress getInetAddressForHost(String hostname) throws UnknownHostException {
@@ -259,15 +219,15 @@ public class Environment {
     }
 
     public Optional<KeyStoreOptions> getKeyStoreOptions() {
-        return keyStoreOptions;
+        return configServerInfo.getKeyStoreOptions();
     }
 
     public Optional<KeyStoreOptions> getTrustStoreOptions() {
-        return trustStoreOptions;
+        return configServerInfo.getTrustStoreOptions();
     }
 
     public Optional<AthenzIdentity> getAthenzIdentity() {
-        return athenzIdentity;
+        return configServerInfo.getAthenzIdentity();
     }
 
     public NodeType getNodeType() { return nodeType; }
@@ -278,6 +238,10 @@ public class Environment {
 
     public ContainerEnvironmentResolver getContainerEnvironmentResolver() {
         return containerEnvironmentResolver;
+    }
+
+    public ConfigServerInfo getConfigServerInfo() {
+        return configServerInfo;
     }
 
     public static class Builder {
