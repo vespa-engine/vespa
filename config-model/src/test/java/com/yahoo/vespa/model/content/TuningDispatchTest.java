@@ -30,7 +30,7 @@ public class TuningDispatchTest {
         TuningDispatch dispatch = new TuningDispatch.Builder()
                 .setDispatchPolicy("random")
                 .build();
-        assertTrue(TuningDispatch.DispatchPolicy.WEIGHTED == dispatch.getDispatchPolicy());
+        assertTrue(TuningDispatch.DispatchPolicy.ADAPTIVE == dispatch.getDispatchPolicy());
         assertNull(dispatch.getMinGroupCoverage());
         assertNull(dispatch.getMinActiveDocsCoverage());
     }
@@ -38,9 +38,9 @@ public class TuningDispatchTest {
     @Test
     public void requireThatWeightedDispatchWork() {
         TuningDispatch dispatch = new TuningDispatch.Builder()
-                .setDispatchPolicy("weighted")
+                .setDispatchPolicy("adaptive")
                 .build();
-        assertTrue(TuningDispatch.DispatchPolicy.WEIGHTED == dispatch.getDispatchPolicy());
+        assertTrue(TuningDispatch.DispatchPolicy.ADAPTIVE == dispatch.getDispatchPolicy());
         assertNull(dispatch.getMinGroupCoverage());
         assertNull(dispatch.getMinActiveDocsCoverage());
     }
@@ -49,6 +49,6 @@ public class TuningDispatchTest {
     public void requireThatDefaultsAreNull() {
         TuningDispatch dispatch = new TuningDispatch.Builder().build();
         assertNull(dispatch.getMaxHitsPerPartition());
-        assertTrue(TuningDispatch.DispatchPolicy.WEIGHTED == dispatch.getDispatchPolicy());
+        assertTrue(TuningDispatch.DispatchPolicy.ADAPTIVE == dispatch.getDispatchPolicy());
     }
 }
