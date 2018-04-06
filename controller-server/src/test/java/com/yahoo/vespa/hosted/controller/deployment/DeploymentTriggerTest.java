@@ -28,6 +28,8 @@ import java.util.function.Supplier;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionEuWest1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsCentral1;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsEast3;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
@@ -69,22 +71,22 @@ public class DeploymentTriggerTest {
 
         // system-test fails and is retried
         tester.deployAndNotify(app, applicationPackage, false, JobType.systemTest);
-        assertEquals("Job is retried on failure", 1, tester.deploymentQueue().jobs().size());
+        assertEquals("Job is retried on failure", 1, tester.buildService().jobs().size());
         tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
 
         // staging-test times out and is retried
-        tester.deploymentQueue().takeJobsToRun();
+        tester.buildService().takeJobsToRun();
         tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
         tester.readyJobTrigger().maintain();
-        assertEquals("Retried dead job", 1, tester.deploymentQueue().jobs().size());
-        assertEquals(JobType.stagingTest.jobName(), tester.deploymentQueue().jobs().get(0).jobName());
+        assertEquals("Retried dead job", 1, tester.buildService().jobs().size());
+        assertEquals(JobType.stagingTest.jobName(), tester.buildService().jobs().get(0).jobName());
     }
 
     @Test
     public void deploymentSpecDecidesTriggerOrder() {
         DeploymentTester tester = new DeploymentTester();
-        DeploymentQueue deploymentQueue = tester.deploymentQueue();
         TenantName tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
+        MockBuildService mockBuildService = tester.buildService();
         Application application = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -102,13 +104,13 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionCorpUsEast1);
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsWest1);
-        assertTrue("All jobs consumed", deploymentQueue.jobs().isEmpty());
+        assertTrue("All jobs consumed", mockBuildService.jobs().isEmpty());
     }
 
     @Test
     public void deploymentsSpecWithDelays() {
         DeploymentTester tester = new DeploymentTester();
-        DeploymentQueue deploymentQueue = tester.deploymentQueue();
+        MockBuildService mockBuildService = tester.buildService();
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -128,45 +130,43 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
         tester.clock().advance(Duration.ofSeconds(1)); // Make staging test sort as the last successful job
         tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
-        assertTrue("No more jobs triggered at this time", deploymentQueue.jobs().isEmpty());
+        assertTrue("No more jobs triggered at this time", mockBuildService.jobs().isEmpty());
 
         // 30 seconds pass, us-west-1 is triggered
         tester.clock().advance(Duration.ofSeconds(30));
         tester.deploymentTrigger().triggerReadyJobs();
 
-        // Consume us-west-1 job without reporting completion
-        assertEquals(1, deploymentQueue.jobs().size());
-        assertEquals(JobType.productionUsWest1.jobName(), deploymentQueue.jobs().get(0).jobName());
-        deploymentQueue.takeJobsToRun();
+        assertEquals(1, mockBuildService.jobs().size());
+        tester.assertRunning(application.id(), productionUsWest1);
 
         // 3 minutes pass, delayed trigger does nothing as us-west-1 is still in progress
         tester.clock().advance(Duration.ofMinutes(3));
         tester.deploymentTrigger().triggerReadyJobs();
-        assertTrue("No more jobs triggered at this time", deploymentQueue.jobs().isEmpty());
+        assertEquals(1, mockBuildService.jobs().size());
+        tester.assertRunning(application.id(), productionUsWest1);
 
         // us-west-1 completes
-        tester.deploy(JobType.productionUsWest1, application, applicationPackage);
-        tester.jobCompletion(JobType.productionUsWest1).application(application).submit();
+        tester.deployAndNotify(application, applicationPackage, true, productionUsWest1);
 
         // Delayed trigger does nothing as not enough time has passed after us-west-1 completion
         tester.deploymentTrigger().triggerReadyJobs();
-        assertTrue("No more jobs triggered at this time", deploymentQueue.jobs().isEmpty());
+        assertTrue("No more jobs triggered at this time", mockBuildService.jobs().isEmpty());
 
         // 3 minutes pass, us-central-1 is still not triggered
         tester.clock().advance(Duration.ofMinutes(3));
         tester.deploymentTrigger().triggerReadyJobs();
-        assertTrue("No more jobs triggered at this time", deploymentQueue.jobs().isEmpty());
+        assertTrue("No more jobs triggered at this time", mockBuildService.jobs().isEmpty());
 
         // 4 minutes pass, us-central-1 is triggered
         tester.clock().advance(Duration.ofMinutes(1));
         tester.deploymentTrigger().triggerReadyJobs();
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
-        assertTrue("All jobs consumed", deploymentQueue.jobs().isEmpty());
+        assertTrue("All jobs consumed", mockBuildService.jobs().isEmpty());
 
         // Delayed trigger job runs again, with nothing to trigger
         tester.clock().advance(Duration.ofMinutes(10));
         tester.deploymentTrigger().triggerReadyJobs();
-        assertTrue("All jobs consumed", deploymentQueue.jobs().isEmpty());
+        assertTrue("All jobs consumed", mockBuildService.jobs().isEmpty());
     }
 
     @Test
@@ -189,26 +189,25 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
 
         // Deploys in first region
-        assertEquals(1, tester.deploymentQueue().jobs().size());
+        assertEquals(1, tester.buildService().jobs().size());
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
 
         // Deploys in two regions in parallel
-        assertEquals(2, tester.deploymentQueue().jobs().size());
-        assertEquals(JobType.productionUsEast3.jobName(), tester.deploymentQueue().jobs().get(0).jobName());
-        assertEquals(JobType.productionUsWest1.jobName(), tester.deploymentQueue().jobs().get(1).jobName());
-        tester.deploymentQueue().takeJobsToRun();
+        assertEquals(2, tester.buildService().jobs().size());
+        tester.assertRunning(application.id(), productionUsEast3);
+        tester.assertRunning(application.id(), productionUsWest1);
 
         tester.deploy(JobType.productionUsWest1, application, applicationPackage, false);
         tester.jobCompletion(JobType.productionUsWest1).application(application).submit();
-        assertTrue("No more jobs triggered at this time", tester.deploymentQueue().jobs().isEmpty());
+        assertEquals("One job still running.", JobType.productionUsEast3.jobName(), tester.buildService().jobs().get(0).jobName());
 
         tester.deploy(JobType.productionUsEast3, application, applicationPackage, false);
         tester.jobCompletion(JobType.productionUsEast3).application(application).submit();
 
         // Last region completes
-        assertEquals(1, tester.deploymentQueue().jobs().size());
+        assertEquals(1, tester.buildService().jobs().size());
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionEuWest1);
-        assertTrue("All jobs consumed", tester.deploymentQueue().jobs().isEmpty());
+        assertTrue("All jobs consumed", tester.buildService().jobs().isEmpty());
     }
 
     @Test
@@ -242,8 +241,8 @@ public class DeploymentTriggerTest {
     @Test
     public void testSuccessfulDeploymentApplicationPackageChanged() {
         DeploymentTester tester = new DeploymentTester();
-        DeploymentQueue deploymentQueue = tester.deploymentQueue();
         TenantName tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
+        MockBuildService mockBuildService = tester.buildService();
         Application application = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
         ApplicationPackage previousApplicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -270,7 +269,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionUsCentral1);
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionUsWest1);
         tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionEuWest1);
-        assertTrue("All jobs consumed", deploymentQueue.jobs().isEmpty());
+        assertTrue("All jobs consumed", mockBuildService.jobs().isEmpty());
     }
 
     @Test
@@ -299,7 +298,7 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofHours(1)); // --------------- Enter block window: 18:30
 
         readyJobsTrigger.run();
-        assertEquals(0, tester.deploymentQueue().jobs().size());
+        assertEquals(0, tester.buildService().jobs().size());
         
         String searchDefinition =
                 "search test {\n" +
@@ -320,12 +319,12 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(app, changedApplication, true, stagingTest);
 
         readyJobsTrigger.run();
-        assertEquals(0, tester.deploymentQueue().jobs().size());
+        assertEquals(0, tester.buildService().jobs().size());
 
         tester.clock().advance(Duration.ofHours(2)); // ---------------- Exit block window: 20:30
         tester.deploymentTrigger().triggerReadyJobs(); // Schedules the blocked production job(s)
-        assertEquals(1, tester.deploymentQueue().jobs().size());
-        BuildService.BuildJob productionJob = tester.deploymentQueue().takeJobsToRun().get(0);
+        assertEquals(1, tester.buildService().jobs().size());
+        BuildService.BuildJob productionJob = tester.buildService().takeJobsToRun().get(0);
         assertEquals("production-us-west-1", productionJob.jobName());
     }
 
@@ -340,36 +339,10 @@ public class DeploymentTriggerTest {
         tester.controller().applications().lockOrThrow(app.id(), locked -> {
             tester.controller().applications().store(locked.withChange(Change.of(Version.fromString("6.2"))));
         });
-        assertEquals(0, tester.deploymentQueue().jobs().size());
+        assertEquals(0, tester.buildService().jobs().size());
         readyJobsTrigger.run();
-        assertEquals(1, tester.deploymentQueue().jobs().size());
-        assertEquals("system-test", tester.deploymentQueue().jobs().get(0).jobName());
-    }
-
-    @Test
-    public void testHandleMultipleNotificationsFromLastJob() {
-        DeploymentTester tester = new DeploymentTester();
-        DeploymentQueue deploymentQueue = tester.deploymentQueue();
-        TenantName tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
-        Application application = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
-                .region("corp-us-east-1")
-                .build();
-
-        // Component job finishes
-        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
-
-        // Application is deployed to all test environments and declared zones
-        tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionCorpUsEast1);
-
-        // Extra notification for last job
-        tester.jobCompletion(JobType.productionCorpUsEast1).application(application).submit();
-        assertFalse("Change has been deployed",
-                    tester.applications().require(application.id()).change().isPresent());
-        assertTrue("All jobs consumed", deploymentQueue.jobs().isEmpty());
+        assertEquals(1, tester.buildService().jobs().size());
+        assertEquals("system-test", tester.buildService().jobs().get(0).jobName());
     }
 
     @Test
@@ -393,8 +366,8 @@ public class DeploymentTriggerTest {
         // Deploy the new application version, even though the platform version is already deployed in us-central-1.
         // Let it fail in us-central-1 after deployment, so we can test this zone is later skipped.
         tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(application, applicationPackage, true, false, systemTest);
-        tester.deployAndNotify(application, applicationPackage, true, false, stagingTest);
+        tester.deployAndNotify(application, applicationPackage, true, systemTest);
+        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
         tester.jobCompletion(productionEuWest1).application(application).unsuccessful().submit();
         tester.deploy(productionUsCentral1, application, Optional.empty(), false);
         // Deploying before notifying here makes the job not re-trigger, but instead triggers the next job (because of triggerReadyJobs() in notification.)
@@ -404,12 +377,12 @@ public class DeploymentTriggerTest {
                      app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
 
         assertEquals(Collections.singletonList(new BuildService.BuildJob(1, productionEuWest1.jobName())),
-                     tester.deploymentQueue().jobs());
+                     tester.buildService().jobs());
 
         tester.deploy(productionEuWest1, application, Optional.empty(), false);
-        tester.deployAndNotify(application, Optional.empty(), false, true, productionEuWest1);
+        tester.deployAndNotify(application, Optional.empty(), false, productionEuWest1);
         assertFalse(app.get().change().isPresent());
-        assertTrue(tester.deploymentQueue().jobs().isEmpty());
+        assertTrue(tester.buildService().jobs().isEmpty());
     }
 
     @Test
@@ -429,7 +402,7 @@ public class DeploymentTriggerTest {
         tester.completeDeploymentWithError(application, applicationPackage, BuildJob.defaultBuildNumber + 1, productionUsCentral1);
 
         // deployAndNotify doesn't actually deploy if the job fails, so we need to do that manually.
-        tester.deployAndNotify(application, Optional.empty(), false, true, productionUsCentral1);
+        tester.deployAndNotify(application, Optional.empty(), false, productionUsCentral1);
         tester.deploy(productionUsCentral1, application, Optional.empty(), false);
 
         ApplicationVersion appVersion1 = ApplicationVersion.from(BuildJob.defaultSourceRevision, BuildJob.defaultBuildNumber + 1);

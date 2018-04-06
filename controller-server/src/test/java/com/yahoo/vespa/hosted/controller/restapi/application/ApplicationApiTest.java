@@ -885,16 +885,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         Response response;
 
-        response = container.handleRequest(request("/screwdriver/v1/jobsToRun", GET).get());
-        assertTrue("Response contains system-test", response.getBodyAsString().contains(DeploymentJobs.JobType.systemTest.jobName()));
-        assertTrue("Response contains staging-test", response.getBodyAsString().contains(DeploymentJobs.JobType.stagingTest.jobName()));
-        assertEquals("Response contains only two items", 2, SlimeUtils.jsonToSlime(response.getBody()).get().entries());
-
-        // Check that GET didn't affect the enqueued jobs.
-        response = container.handleRequest(request("/screwdriver/v1/jobsToRun", GET).get());
-        assertTrue("Response contains system-test", response.getBodyAsString().contains(DeploymentJobs.JobType.systemTest.jobName()));
-        assertTrue("Response contains staging-test", response.getBodyAsString().contains(DeploymentJobs.JobType.stagingTest.jobName()));
-        assertEquals("Response contains only two items", 2, SlimeUtils.jsonToSlime(response.getBody()).get().entries());
+        // TODO jvenstad: Reintroduce this if on-demand queue is returned -- remove otherwise.
+        //response = container.handleRequest(request("/screwdriver/v1/jobsToRun", GET).get());
+        //assertTrue("Response contains system-test", response.getBodyAsString().contains(DeploymentJobs.JobType.systemTest.jobName()));
+        //assertTrue("Response contains staging-test", response.getBodyAsString().contains(DeploymentJobs.JobType.stagingTest.jobName()));
+        //assertEquals("Response contains only two items", 2, SlimeUtils.jsonToSlime(response.getBody()).get().entries());
 
     }
 

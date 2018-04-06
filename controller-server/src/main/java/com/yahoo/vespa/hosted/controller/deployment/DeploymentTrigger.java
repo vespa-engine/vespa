@@ -6,10 +6,12 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
+import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -27,13 +29,20 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
+import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
+import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 
@@ -55,20 +64,23 @@ public class DeploymentTrigger {
     private final Duration jobTimeout;
 
     private final static Logger log = Logger.getLogger(DeploymentTrigger.class.getName());
+    private static final int triggeringRetries = 5;
 
     private final Controller controller;
     private final Clock clock;
-    private final DeploymentQueue deploymentQueue;
     private final DeploymentOrder order;
+    private final BuildService buildService;
+    private final Executor executor;
 
-    public DeploymentTrigger(Controller controller, CuratorDb curator, Clock clock) {
+    public DeploymentTrigger(Controller controller, CuratorDb curator, BuildService buildService, Executor executor, Clock clock) {
         Objects.requireNonNull(controller, "controller cannot be null");
         Objects.requireNonNull(curator, "curator cannot be null");
         Objects.requireNonNull(clock, "clock cannot be null");
         this.controller = controller;
         this.clock = clock;
-        this.deploymentQueue = new DeploymentQueue(controller, curator);
         this.order = new DeploymentOrder(controller::system);
+        this.buildService = buildService;
+        this.executor = executor;
         this.jobTimeout = controller.system().equals(SystemName.main) ? Duration.ofHours(12) : Duration.ofHours(1);
     }
 
@@ -77,10 +89,6 @@ public class DeploymentTrigger {
      */
     public Instant jobTimeoutLimit() {
         return clock.instant().minus(jobTimeout);
-    }
-
-    public DeploymentQueue deploymentQueue() {
-        return deploymentQueue;
     }
 
     public DeploymentOrder deploymentOrder() {
@@ -96,6 +104,7 @@ public class DeploymentTrigger {
      */
     public void triggerFromCompletion(JobReport report) {
         applications().lockOrThrow(report.applicationId(), application -> {
+            log.log(LogLevel.INFO, String.format("%s %d completed for %s with %s.", report.jobType(), report.buildNumber(), report.applicationId(), report.jobError().map(JobError::toString).orElse("success")));
             ApplicationVersion applicationVersion = report.sourceRevision().map(sr -> ApplicationVersion.from(sr, report.buildNumber()))
                                                           .orElse(ApplicationVersion.unknown);
             application = application.withJobCompletion(report, applicationVersion, clock.instant(), controller);
@@ -114,37 +123,36 @@ public class DeploymentTrigger {
     }
 
     /**
-     * Find jobs that can and should run but are currently not.
+     * Finds and triggers jobs that can and should run but are currently not.
      */
     public void triggerReadyJobs() {
-        ApplicationList.from(applications().asList())
-                       .notPullRequest()
-                       .withProjectId()
-                       .deploying()
-                       .idList().stream()
-                       .map(this::triggerReadyJobs)
-                       .flatMap(List::stream)
-                       .filter(this::allowedToTriggerNow)
-                       .forEach(this::trigger);
+        computeReadyJobs().forEach(this::triggerJobs);
     }
 
-    /**
-     * Trigger a job for an application, if allowed
-     *
-     * @param triggering the triggering to execute, i.e., application, job type and reason
-     */
-    public void trigger(Triggering triggering) {
-        applications().lockOrThrow(triggering.id, application -> {
-            log.info(String.format("Triggering %s for %s, deploying %s: %s", triggering.jobType, application.id(), application.change(), triggering.reason));
-            deploymentQueue.addJob(application.id(), triggering.jobType, triggering.retry);
-            // TODO jvenstad: Set this when triggering succeeds.
-            applications().store(application.withJobTriggering(triggering.jobType,
+    public void trigger(ApplicationId id, JobType jobType, String reason, boolean retry) {
+        applications().lockOrThrow(id, application -> {
+            log.info(String.format("Attempting to trigger %s for %s, deploying %s: %s", jobType, application.id(), application.change(), reason));
+
+            BuildService.BuildJob buildJob = new BuildService.BuildJob(application.deploymentJobs().projectId().get(), jobType.jobName());
+            int attempts = triggeringRetries;
+            while (attempts-- >= 0)
+                if (buildService.trigger(buildJob))
+                    break;
+
+            if (attempts < 0) {
+                log.log(LogLevel.WARNING, "Exhausted all " + triggeringRetries + " retries for " + buildJob + " without success.");
+                return;
+            }
+
+            // TODO jvenstad: Put Triggerings in the MockBuildService, for better debugging.
+            applications().store(application.withJobTriggering(jobType,
                                                                clock.instant(),
-                                                               application.deployVersionFor(triggering.jobType, controller),
-                                                               application.deployApplicationVersionFor(triggering.jobType, controller, false)
+                                                               application.deployVersionFor(jobType, controller),
+                                                               application.deployApplicationVersionFor(jobType, controller, false)
                                                                           .orElse(ApplicationVersion.unknown),
-                                                               triggering.reason));
+                                                               reason));
         });
+
     }
 
     /**
@@ -177,8 +185,6 @@ public class DeploymentTrigger {
                                                                    .map(Change::of)
                                                                    .filter(change -> keepApplicationChange)
                                                                    .orElse(Change.empty())));
-            if ( ! applications().require(applicationId).change().isPresent())
-                deploymentQueue.removeJobs(application.id());
         });
     }
 
@@ -187,7 +193,7 @@ public class DeploymentTrigger {
     /**
      * Finds the next step to trigger for the given application, if any, and triggers it
      */
-    private List<Triggering> triggerReadyJobs(ApplicationId id) {
+    private List<Triggering> computeReadyJobs(ApplicationId id) {
         List<Triggering> triggerings = new ArrayList<>();
         applications().lockIfPresent(id, application -> {
             Change change = application.change();
@@ -216,7 +222,7 @@ public class DeploymentTrigger {
                 }
                 else if (completedAt.isPresent()) { // Some jobs remain, and this step is not complete -- trigger those jobs if the previous step was done.
                     for (JobType job : remainingJobs)
-                        triggerings.add(new Triggering(app, job, reason, stepJobs));
+                        triggerings.add(new Triggering(app, job, reason, completedAt.get(), stepJobs));
                     completedAt = Optional.empty();
                 }
             }
@@ -225,6 +231,32 @@ public class DeploymentTrigger {
             applications().store(application);
         });
         return triggerings;
+    }
+
+    private Map<JobType, List<Triggering>> computeReadyJobs() {
+        return ApplicationList.from(applications().asList())
+                              .notPullRequest()
+                              .withProjectId()
+                              .deploying()
+                              .idList().stream()
+                              .map(this::computeReadyJobs)
+                              .flatMap(List::stream)
+                              .collect(groupingBy(Triggering::jobType));
+    }
+
+    private void triggerJobs(JobType jobType, List<Triggering> triggerings) {
+        triggerings.stream()
+                   .sorted(comparing(Triggering::isRetry)
+                                   .thenComparing(Triggering::applicationUpgrade)
+                                   .reversed()
+                                   .thenComparing(Triggering::availableSince))
+                   .filter(this::allowedToTriggerNow)
+                   .limit(EnumSet.of(systemTest, stagingTest).contains(jobType) ? 1 : Integer.MAX_VALUE)
+                   .forEach(this::trigger);
+    }
+
+    private void trigger(Triggering triggering) {
+        trigger(triggering.id, triggering.jobType, triggering.reason, triggering.retry);
     }
 
     private Optional<Instant> completedAt(Application application, JobType jobType) {
@@ -301,17 +333,28 @@ public class DeploymentTrigger {
         return false;
     }
 
+    private Optional<BuildService.BuildJob> toBuildJob(ApplicationId applicationId, JobType jobType) {
+        return applications().get(applicationId)
+                             .flatMap(application -> application.deploymentJobs().projectId())
+                             .map(projectId -> new BuildService.BuildJob(projectId, jobType.jobName()));
+    }
+
+
     public static class Triggering {
 
         private final ApplicationId id;
+        private final Change change;
         private final JobType jobType;
         private final boolean retry;
         private final String reason;
+        private final Instant availableSince;
         private final Collection<JobType> concurrentlyWith;
 
-        public Triggering(Application application, JobType jobType, String reason, Collection<JobType> concurrentlyWith) {
+        public Triggering(Application application, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith) {
             this.id = application.id();
+            this.change = application.change();
             this.jobType = jobType;
+            this.availableSince = availableSince;
             this.concurrentlyWith = concurrentlyWith;
 
             JobStatus status = application.deploymentJobs().jobStatus().get(jobType);
@@ -319,9 +362,14 @@ public class DeploymentTrigger {
             this.reason = retry ? "Retrying on out of capacity" : reason;
         }
 
-        public Triggering(Application id, JobType jobType, String reason) {
-            this(id, jobType, reason, Collections.emptySet());
+        public Triggering(Application id, JobType jobType, String reason, Instant availableSince) {
+            this(id, jobType, reason, availableSince, Collections.emptySet());
         }
+
+        public JobType jobType() { return jobType; }
+        public boolean isRetry() { return retry; }
+        public boolean applicationUpgrade() { return change.application().isPresent(); }
+        public Instant availableSince() { return availableSince; }
 
     }
 

@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
+import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
@@ -65,6 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -102,7 +104,8 @@ public class ApplicationController {
                           AthenzClientFactory zmsClientFactory, RotationsConfig rotationsConfig,
                           NameService nameService, ConfigServerClient configServer,
                           ArtifactRepository artifactRepository,
-                          RoutingGenerator routingGenerator, Clock clock) {
+                          RoutingGenerator routingGenerator, BuildService buildService,
+                          Executor deploymentTriggerExecutor, Clock clock) {
         this.controller = controller;
         this.db = db;
         this.curator = curator;
@@ -114,7 +117,7 @@ public class ApplicationController {
 
         this.artifactRepository = artifactRepository;
         this.rotationRepository = new RotationRepository(rotationsConfig, this, curator);
-        this.deploymentTrigger = new DeploymentTrigger(controller, curator, clock);
+        this.deploymentTrigger = new DeploymentTrigger(controller, curator, buildService, deploymentTriggerExecutor, clock);
 
         for (Application application : db.listApplications()) {
             lockIfPresent(application.id(), this::store);
