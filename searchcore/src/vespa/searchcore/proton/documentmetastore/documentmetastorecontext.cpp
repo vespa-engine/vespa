@@ -6,8 +6,7 @@ namespace proton {
 
 DocumentMetaStoreContext::ReadGuard::ReadGuard(const search::AttributeVector::SP &metaStoreAttr) :
     _guard(metaStoreAttr),
-    _store(static_cast<const DocumentMetaStore &>(*_guard)),
-    _activeLidsGuard(_store.getActiveLidsGuard())
+    _store(static_cast<const DocumentMetaStore &>(*_guard))
 {
 }
 

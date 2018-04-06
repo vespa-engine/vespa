@@ -100,6 +100,8 @@ public:
     {
         return _bv.getNextTrueBit(idx);
     }
+
+    const search::GrowableBitVector &getBitVector() const { return _bv; }
 }; 
 
 }

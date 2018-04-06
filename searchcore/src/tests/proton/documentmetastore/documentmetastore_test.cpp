@@ -187,25 +187,25 @@ assertMetaData(const DocumentMetaData &exp, const DocumentMetaData &act)
 }
 
 bool
-assertActiveLids(const BoolVector &exp, const SingleValueBitNumericAttribute &act)
+assertActiveLids(const BoolVector &exp, const search::BitVector &act)
 {
     // lid 0 is reserved
-    if (!EXPECT_EQUAL(exp.size() + 1, act.getNumDocs())) return false;
+    if (!EXPECT_EQUAL(exp.size() + 1, act.size())) return false;
     for (size_t i = 0; i < exp.size(); ++i) {
-        if (!EXPECT_EQUAL((exp[i] ? 1 : 0), act.getInt(i + 1))) return false;
+        if (!EXPECT_EQUAL(exp[i], act.testBit(i + 1))) return false;
     }
     return true;
 }
 
 bool
-assertBlackList(const SimpleResult &exp, Blueprint::UP blackListBlueprint, bool strict, uint32_t docIdLimit)
+assertWhiteList(const SimpleResult &exp, Blueprint::UP whiteListBlueprint, bool strict, uint32_t docIdLimit)
 {
     MatchDataLayout mdl;
     MatchData::UP md = mdl.createMatchData();
-    blackListBlueprint->fetchPostings(strict);
-    blackListBlueprint->setDocIdLimit(docIdLimit);
+    whiteListBlueprint->fetchPostings(strict);
+    whiteListBlueprint->setDocIdLimit(docIdLimit);
 
-    SearchIterator::UP sb = blackListBlueprint->createSearch(*md, strict);
+    SearchIterator::UP sb = whiteListBlueprint->createSearch(*md, strict);
     SimpleResult act;
     act.searchStrict(*sb, docIdLimit);
     return EXPECT_EQUAL(exp, act);
@@ -986,7 +986,7 @@ TEST("requireThatBucketStateCanBeUpdated")
 {
     UserDocFixture f;
     f.dms.constructFreeList();
-    EXPECT_EQUAL(1u, f.dms.getActiveLids().getNumDocs()); // lid 0 is reserved
+    EXPECT_EQUAL(1u, f.dms.getActiveLids().size()); // lid 0 is reserved
 
     f.addGlobalIds();
     EXPECT_TRUE(assertActiveLids(BoolVector().F().F().F().F().F().F().F(), f.dms.getActiveLids()));
@@ -1052,18 +1052,18 @@ TEST("requireThatRemovedLidsAreClearedAsActive")
     EXPECT_EQUAL(2u, f.dms.getNumActiveLids());
 }
 
-TEST("requireThatBlackListBlueprintIsCreated")
+TEST("require that whitelist blueprint is created")
 {
     UserDocFixture f;
     f.dms.constructFreeList();
     f.addGlobalIds();
 
     f.dms.setBucketState(f.bid1, true);
-    EXPECT_TRUE(assertBlackList(SimpleResult().addHit(3).addHit(6).addHit(7), f.dms.createBlackListBlueprint(),
+    EXPECT_TRUE(assertWhiteList(SimpleResult().addHit(1).addHit(2).addHit(4).addHit(5), f.dms.createWhiteListBlueprint(),
                                 true, f.dms.getCommittedDocIdLimit()));
 
     f.dms.setBucketState(f.bid2, true);
-    EXPECT_TRUE(assertBlackList(SimpleResult(), f.dms.createBlackListBlueprint(),
+    EXPECT_TRUE(assertWhiteList(SimpleResult().addHit(1).addHit(2).addHit(3).addHit(4).addHit(5).addHit(6).addHit(7), f.dms.createWhiteListBlueprint(),
                                 true,  f.dms.getCommittedDocIdLimit()));
 }
 

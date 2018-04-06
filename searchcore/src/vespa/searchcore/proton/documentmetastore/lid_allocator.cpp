@@ -2,17 +2,12 @@
 
 #include "lid_allocator.h"
 #include <vespa/searchlib/query/queryterm.h>
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
+#include <vespa/searchlib/common/bitvectoriterator.h>
 #include <mutex>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.documentmetastore.lid_allocator");
 
-using search::AttributeVector;
-using search::GrowStrategy;
-using search::QueryTermSimple;
-using search::attribute::SearchContextParams;
 using search::fef::TermFieldMatchDataArray;
 using search::queryeval::Blueprint;
 using search::queryeval::FieldSpecBaseList;
@@ -24,27 +19,13 @@ namespace proton::documentmetastore {
 
 LidAllocator::LidAllocator(uint32_t size,
                            uint32_t capacity,
-                           GenerationHolder &genHolder,
-                           const GrowStrategy & grow)
+                           GenerationHolder &genHolder)
     : _holdLids(),
-      _freeLids(size,
-                capacity,
-                genHolder,
-                true,
-                false),
-      _usedLids(size,
-                capacity,
-                genHolder,
-                false,
-                true),
-      _pendingHoldLids(size,
-                       capacity,
-                       genHolder,
-                       false,
-                       false),
+      _freeLids(size, capacity, genHolder, true, false),
+      _usedLids(size, capacity, genHolder, false, true),
+      _pendingHoldLids(size, capacity, genHolder, false, false),
       _lidFreeListConstructed(false),
-      _activeLidsAttr(new BitAttribute("[activelids]", grow)),
-      _activeLids(static_cast<BitAttribute &>(*_activeLidsAttr)),
+      _activeLids(size, capacity, genHolder, false, false),
       _numActiveLids(0u)
 {
 
@@ -81,18 +62,7 @@ LidAllocator::ensureSpace(uint32_t newSize,
     _freeLids.resizeVector(newSize, newCapacity);
     _usedLids.resizeVector(newSize, newCapacity);
     _pendingHoldLids.resizeVector(newSize, newCapacity);
-}
-
-void
-LidAllocator::ensureSpace(DocId lid,
-                          uint32_t newSize,
-                          uint32_t newCapacity)
-{
-    ensureSpace(newSize, newCapacity);
-    if (lid >= _activeLids.getNumDocs()) {
-        _activeLids.addDocs((lid - _activeLids.getNumDocs()) + 1);
-    }
-    _activeLids.commit();
+    _activeLids.resizeVector(newSize, newCapacity);
 }
 
 void
@@ -103,11 +73,10 @@ LidAllocator::unregisterLid(DocId lid)
         _pendingHoldLids.setBit(lid);
     }
     _usedLids.clearBit(lid);
-    if (_activeLids.get(lid) != 0) {
-        --_numActiveLids;
+    if (_activeLids.testBit(lid)) {
+        _activeLids.clearBit(lid);
+        _numActiveLids = _activeLids.count();
     }
-    _activeLids.update(lid, 0);
-    _activeLids.commit();
 }
 
 size_t
@@ -144,9 +113,10 @@ LidAllocator::moveLidEnd(DocId fromLid, DocId toLid)
     }
     _usedLids.setBit(toLid);
     _usedLids.clearBit(fromLid);
-    _activeLids.update(toLid, _activeLids.get(fromLid));
-    _activeLids.update(fromLid, 0);
-    _activeLids.commit();
+    if (_activeLids.testBit(fromLid)) {
+        _activeLids.setBit(toLid);
+        _activeLids.clearBit(fromLid);
+    }
 }
 
 void
@@ -221,10 +191,10 @@ LidAllocator::constructFreeList(DocId lidLimit)
 
 namespace {
 
-class BlackListBlueprint : public SimpleLeafBlueprint
+class WhiteListBlueprint : public SimpleLeafBlueprint
 {
 private:
-    AttributeVector::SearchContext::UP _searchCtx;
+    const search::GrowableBitVector &_activeLids;
     mutable std::mutex _lock;
     mutable std::vector<search::fef::TermFieldMatchData *> _matchDataVector;
 
@@ -240,25 +210,20 @@ private:
             std::lock_guard<std::mutex> lock(_lock);
             _matchDataVector.push_back(tfmd);
         }
-        return _searchCtx->createIterator(tfmd, strict);
-    }
-
-    virtual void
-    fetchPostings(bool strict) override
-    {
-        _searchCtx->fetchPostings(strict);
+        uint32_t docIdLimit = _activeLids.size();
+        return search::BitVectorIterator::create(&_activeLids, docIdLimit, *tfmd, strict);
     }
 
 public:
-    BlackListBlueprint(AttributeVector::SearchContext::UP searchCtx)
+    WhiteListBlueprint(const search::GrowableBitVector &activeLids)
         : SimpleLeafBlueprint(FieldSpecBaseList()),
-          _searchCtx(std::move(searchCtx)),
+          _activeLids(activeLids),
           _matchDataVector()
     {
         setEstimate(HitEstimate(0, false));
     }
 
-    ~BlackListBlueprint() {
+    ~WhiteListBlueprint() {
         for (auto matchData : _matchDataVector) {
             delete matchData;
         }
@@ -268,34 +233,23 @@ public:
 }
 
 Blueprint::UP
-LidAllocator::createBlackListBlueprint() const
+LidAllocator::createWhiteListBlueprint() const
 {
-    QueryTermSimple::UP term(new QueryTermSimple("0", QueryTermSimple::WORD));
-    return Blueprint::UP(
-            new BlackListBlueprint(_activeLids.getSearch(std::move(term), SearchContextParams())));
+    return std::make_unique<WhiteListBlueprint>(_activeLids.getBitVector());
 }
 
 void
 LidAllocator::updateActiveLids(DocId lid, bool active)
 {
-    int8_t oldActiveFlag = _activeLids.get(lid);
-    int8_t newActiveFlag = (active ? 1 : 0);
-    if (oldActiveFlag != newActiveFlag) {
-        if (oldActiveFlag != 0) {
-            if (newActiveFlag == 0) {
-                --_numActiveLids;
-            }
+    bool oldActive = _activeLids.testBit(lid);
+    if (oldActive != active) {
+        if (active) {
+            _activeLids.setBit(lid);
         } else {
-            ++_numActiveLids;
+            _activeLids.clearBit(lid);
         }
+        _numActiveLids = _activeLids.count();
     }
-    _activeLids.update(lid, newActiveFlag);
-}
-
-void
-LidAllocator::commitActiveLids()
-{
-    _activeLids.commit();
 }
 
 void
@@ -307,15 +261,8 @@ LidAllocator::clearDocs(DocId lidLow, DocId lidLimit)
 }
 
 void
-LidAllocator::compactLidSpace(uint32_t wantedLidLimit)
-{
-    _activeLids.compactLidSpace(wantedLidLimit);
-}
-
-void
 LidAllocator::shrinkLidSpace(DocId committedDocIdLimit)
 {
-    _activeLids.shrinkLidSpace();
     ensureSpace(committedDocIdLimit, committedDocIdLimit);
 }
 

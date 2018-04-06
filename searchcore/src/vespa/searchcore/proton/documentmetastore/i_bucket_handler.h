@@ -51,7 +51,7 @@ struct IBucketHandler
 
     /**
      * Sets the bucket state to active / inactive.
-     * Documents that are inactive will be black-listed during search.
+     * Documents that are inactive will not be white-listed during search.
      **/
     virtual void setBucketState(const BucketId &bucketId, bool active) = 0;
 

@@ -165,7 +165,7 @@ DocumentMetaStore::ensureSpace(DocId lid)
     setNumDocs(_metaDataStore.size());
     unsigned int newSize = _metaDataStore.size();
     unsigned int newCapacity = _metaDataStore.capacity();
-    _lidAlloc.ensureSpace(lid, newSize, newCapacity);
+    _lidAlloc.ensureSpace(newSize, newCapacity);
 }
 
 bool
@@ -190,7 +190,6 @@ DocumentMetaStore::insert(DocId lid, const RawDocumentMetaData &metaData)
                       metaData.getDocSize(),
                       _subDbType);
     _lidAlloc.updateActiveLids(lid, state.isActive());
-    _lidAlloc.commitActiveLids();
     updateCommittedDocIdLimit();
     return true;
 }
@@ -446,8 +445,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwner::SP bucketDB,
       _gidToLidMap(),
       _lidAlloc(_metaDataStore.size(),
                 _metaDataStore.capacity(),
-                getGenerationHolder(),
-                grow),
+                getGenerationHolder()),
       _gidCompare(gidCompare),
       _bucketDB(bucketDB),
       _shrinkLidSpaceBlockers(0),
@@ -778,9 +776,9 @@ DocumentMetaStore::getLidUsageStats() const
 }
 
 Blueprint::UP
-DocumentMetaStore::createBlackListBlueprint() const
+DocumentMetaStore::createWhiteListBlueprint() const
 {
-    return _lidAlloc.createBlackListBlueprint();
+    return _lidAlloc.createWhiteListBlueprint();
 }
 
 AttributeVector::SearchContext::UP
@@ -964,7 +962,6 @@ DocumentMetaStore::updateActiveLids(const BucketId &bucketId, bool active)
         }
         _lidAlloc.updateActiveLids(lid, active);
     }
-    _lidAlloc.commitActiveLids();
 }
 
 void
@@ -978,7 +975,6 @@ DocumentMetaStore::populateActiveBuckets(const BucketId::List &buckets)
     for (const auto &bucketId : fixupBuckets) {
         updateActiveLids(bucketId, true);
     }
-    _lidAlloc.commitActiveLids();
 }
 
 void
@@ -993,7 +989,6 @@ void
 DocumentMetaStore::compactLidSpace(uint32_t wantedLidLimit)
 {
     AttributeVector::compactLidSpace(wantedLidLimit);
-    _lidAlloc.compactLidSpace(wantedLidLimit);
     ++_shrinkLidSpaceBlockers;
 }
 
