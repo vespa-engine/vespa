@@ -58,8 +58,8 @@ public class Runner {
     }
 
 
-    public static void main(String[] args) throws IOException, InterruptedException {
-        final CommandLineArguments commandLineArgs = CommandLineArguments.build(args);
+    public static void main(String[] args) throws IOException {
+        CommandLineArguments commandLineArgs = CommandLineArguments.build(args);
         if (commandLineArgs == null) {
             return;
         }
@@ -73,10 +73,10 @@ public class Runner {
         int intervalOfLogging = commandLineArgs.getVerbose()
                 ? commandLineArgs.getWhenVerboseEnabledPrintMessageForEveryXDocuments()
                 : Integer.MAX_VALUE;
-        final AtomicInteger numSent = new AtomicInteger(0);
-        final SimpleLoggerResultCallback callback = new SimpleLoggerResultCallback(numSent, intervalOfLogging);
+        AtomicInteger numSent = new AtomicInteger(0);
+        SimpleLoggerResultCallback callback = new SimpleLoggerResultCallback(numSent, intervalOfLogging);
 
-        final FeedClient feedClient = FeedClientFactory.create(
+        FeedClient feedClient = FeedClientFactory.create(
                 commandLineArgs.createSessionParams(formatInputStream.getFormat()== FormatInputStream.Format.JSON), callback);
 
         long sendTotalTimeMs = send(
@@ -89,11 +89,12 @@ public class Runner {
             double transferTimeSec = ((double) sendTotalTimeMs) / 1000.0;
             System.err.println("Sent " + fileSizeMb + " MB in " + transferTimeSec + " seconds.");
             System.err.println("Speed: " + ((fileSizeMb / transferTimeSec) * 8.0) + " Mbits/sec, + HTTP overhead " +
-                    "(not taking compression into account)");
+                               "(not taking compression into account)");
             if (transferTimeSec > 0) {
                 System.err.printf("Docs/sec %.3f%n\n", numSent.get() / transferTimeSec);
             }
         }
         callback.printProgress();
     }
+
 }

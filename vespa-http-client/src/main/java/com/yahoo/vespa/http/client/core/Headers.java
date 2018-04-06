@@ -1,15 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core;
 
-import com.google.common.annotations.Beta;
-
 /**
  * Wrapper for shared constants used by both client and server.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-@Beta
 public final class Headers {
+
     private Headers() {
     }
 

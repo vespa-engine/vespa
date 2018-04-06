@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.operationProcessor;
 
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,7 +9,6 @@ import com.yahoo.vespa.http.client.core.communication.ClusterConnection;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.util.List;
 
 public class OperationStats {
@@ -30,8 +28,8 @@ public class OperationStats {
     }
 
     private String generateSessionParamsAsXmlString(final SessionParams sessionParams) {
-        final ObjectMapper objectMapper = new ObjectMapper();
-        final StringWriter stringWriter = new StringWriter();
+        ObjectMapper objectMapper = new ObjectMapper();
+        StringWriter stringWriter = new StringWriter();
         try {
             JsonGenerator jsonGenerator = jsonFactory.createGenerator(stringWriter);
             objectMapper.writeValue(jsonGenerator, sessionParams);
@@ -43,7 +41,7 @@ public class OperationStats {
 
     public String getStatsAsJson() {
         try {
-            final StringWriter stringWriter = new StringWriter();
+            StringWriter stringWriter = new StringWriter();
             JsonGenerator jsonGenerator = jsonFactory.createGenerator(stringWriter);
             jsonGenerator.writeStartObject();
             jsonGenerator.writeArrayFieldStart("clusters");

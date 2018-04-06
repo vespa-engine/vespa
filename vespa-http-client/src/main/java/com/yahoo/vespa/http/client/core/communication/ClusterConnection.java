@@ -4,7 +4,6 @@ package com.yahoo.vespa.http.client.core.communication;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.annotations.Beta;
 import com.yahoo.vespa.http.client.config.Cluster;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
@@ -24,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Einar M R Rosenvinge
  */
-@Beta
 public class ClusterConnection implements AutoCloseable {
 
     private final OperationProcessor operationProcessor;

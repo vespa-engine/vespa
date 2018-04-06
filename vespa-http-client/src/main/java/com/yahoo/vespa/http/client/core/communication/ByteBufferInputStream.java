@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
-import com.google.common.annotations.Beta;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -11,10 +9,7 @@ import java.util.Deque;
 
 /**
  * @author Einar M R Rosenvinge
- *
- * @since 5.1.20
  */
-@Beta
 class ByteBufferInputStream extends InputStream {
     private final Deque<ByteBuffer> currentBuffers = new ArrayDeque<>();
 

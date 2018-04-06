@@ -32,6 +32,7 @@ public class SimpleLoggerResultCallback implements FeedClient.ResultCallback {
 
     /**
      * Constructor
+     *
      * @param sentDocumentCounter a counter that is increased outside this class, but can be nice to print here.
      * @param printStatsForEveryXDocument how often to print stats.
      */
