@@ -72,7 +72,7 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
 
     // 2015-08-11: Needed because of the following circular dependency:
     // 1. StorageNode is created.
-    // 2. A particular persistence engine is picked depending on things (like the presence of engine/vds element)
+    // 2. A particular persistence engine is picked depending on things (like the presence of engine/proton element)
     //    that are hidden from the code creating the StorageNode in (1).
     // 3. The persistence engine depends on the StorageNode, e.g. it's a parent node.
     //

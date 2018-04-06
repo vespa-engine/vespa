@@ -431,9 +431,6 @@ public class ClusterTest extends ContentBaseTest {
         cluster = parse(
             "<content version=\"1.0\" id=\"storage\">\n" +
             "  <documents/>" +
-            "  <engine>" +
-            "    <vds/>" +
-            "  </engine>" +
             "  <group>\n" +
             "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
             "  </group>\n" +
@@ -463,9 +460,6 @@ public class ClusterTest extends ContentBaseTest {
         cluster = parse(
             "<content version=\"1.0\" id=\"storage\">\n" +
             "  <documents/>" +
-            "  <engine>" +
-            "    <vds/>" +
-            "  </engine>" +
             "  <group>\n" +
             "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
             "  </group>\n" +
