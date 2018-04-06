@@ -4,12 +4,12 @@ package com.yahoo.vespa.hosted.controller;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.Slime;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.GitRevision;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBuildJob;
@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.GitRepository;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
@@ -30,6 +29,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrgani
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.integration.MockMetricsService;
@@ -140,7 +141,7 @@ public final class ControllerTester {
     /** Creates the given tenant and application and deploys it */
     public Application createAndDeploy(String tenantName, String domainName, String applicationName,
                                        String instanceName, ZoneId zone, long projectId, Long propertyId) {
-        TenantId tenant = createTenant(tenantName, domainName, propertyId);
+        TenantName tenant = createTenant(tenantName, domainName, propertyId);
         Application application = createApplication(tenant, applicationName, instanceName, projectId);
         deploy(application, zone);
         return application;
@@ -189,20 +190,21 @@ public final class ControllerTester {
         return domain;
     }
 
-    public TenantId createTenant(String tenantName, String domainName, Long propertyId) {
-        TenantId id = new TenantId(tenantName);
-        Optional<Tenant> existing = controller().tenants().tenant(id);
-        if (existing.isPresent()) return id;
-
-        Tenant tenant = Tenant.createAthensTenant(id, createDomain(domainName), new Property("app1Property"),
-                propertyId == null ? Optional.empty() : Optional.of(new PropertyId(propertyId.toString())));
-        controller().tenants().createAthenzTenant(tenant, TestIdentities.userNToken);
-        assertNotNull(controller().tenants().tenant(id));
-        return id;
+    public TenantName createTenant(String tenantName, String domainName, Long propertyId) {
+        TenantName name = TenantName.from(tenantName);
+        Optional<Tenant> existing = controller().tenants().tenant(name);
+        if (existing.isPresent()) return name;
+        AthenzTenant tenant = AthenzTenant.create(name, createDomain(domainName), new Property("app1Property"),
+                                                  Optional.ofNullable(propertyId)
+                                                          .map(Object::toString)
+                                                          .map(PropertyId::new));
+        controller().tenants().create(tenant, TestIdentities.userNToken);
+        assertNotNull(controller().tenants().tenant(name));
+        return name;
     }
 
-    public Application createApplication(TenantId tenant, String applicationName, String instanceName, long projectId) {
-        ApplicationId applicationId = ApplicationId.from(tenant.id(), applicationName, instanceName);
+    public Application createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {
+        ApplicationId applicationId = ApplicationId.from(tenant.value(), applicationName, instanceName);
         controller().applications().createApplication(applicationId, Optional.of(TestIdentities.userNToken));
         controller().applications().lockOrThrow(applicationId, lockedApplication ->
                 controller().applications().store(lockedApplication.withProjectId(projectId)));

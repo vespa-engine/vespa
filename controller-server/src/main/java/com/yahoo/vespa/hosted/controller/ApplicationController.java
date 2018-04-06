@@ -12,14 +12,12 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
-import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
@@ -37,9 +35,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerato
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.DeploymentExpirer;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
@@ -140,7 +140,7 @@ public class ApplicationController {
 
     /** Returns all applications of a tenant */
     public List<Application> asList(TenantName tenant) {
-        return db.listApplications(new TenantId(tenant.value()));
+        return db.listApplications(tenant);
     }
 
     /**
@@ -239,19 +239,19 @@ public class ApplicationController {
             if (asList(id.tenant()).stream().noneMatch(application -> application.id().application().equals(id.application())))
                 com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
 
-            Optional<Tenant> tenant = controller.tenants().tenant(new TenantId(id.tenant().value()));
+            Optional<Tenant> tenant = controller.tenants().tenant(id.tenant());
             if ( ! tenant.isPresent())
                 throw new IllegalArgumentException("Could not create '" + id + "': This tenant does not exist");
             if (get(id).isPresent())
                 throw new IllegalArgumentException("Could not create '" + id + "': Application already exists");
             if (get(dashToUnderscore(id)).isPresent()) // VESPA-1945
                 throw new IllegalArgumentException("Could not create '" + id + "': Application " + dashToUnderscore(id) + " already exists");
-            if (id.instance().isDefault() && tenant.get().isAthensTenant()) { // Only create the athens application for "default" instances.
+            if (id.instance().isDefault() && tenant.get() instanceof AthenzTenant) { // Only create the athenz application for "default" instances.
                 if ( ! token.isPresent())
                     throw new IllegalArgumentException("Could not create '" + id + "': No NToken provided");
 
                 ZmsClient zmsClient = zmsClientFactory.createZmsClientWithAuthorizedServiceToken(token.get());
-                zmsClient.addApplication(tenant.get().getAthensDomain().get(),
+                zmsClient.addApplication(((AthenzTenant) tenant.get()).domain(),
                                          new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
             }
             LockedApplication application = new LockedApplication(new Application(id), lock);
@@ -501,14 +501,14 @@ public class ApplicationController {
             if ( ! application.deployments().isEmpty())
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments");
 
-            Tenant tenant = controller.tenants().tenant(new TenantId(id.tenant().value())).get();
-            if (tenant.isAthensTenant() && ! token.isPresent())
+            Tenant tenant = controller.tenants().tenant(id.tenant()).get();
+            if (tenant instanceof AthenzTenant && ! token.isPresent())
                 throw new IllegalArgumentException("Could not delete '" + application + "': No NToken provided");
 
             // Only delete in Athenz once
-            if (id.instance().isDefault() && tenant.isAthensTenant()) {
+            if (id.instance().isDefault() && tenant instanceof AthenzTenant) {
                 zmsClientFactory.createZmsClientWithAuthorizedServiceToken(token.get())
-                                .deleteApplication(tenant.getAthensDomain().get(),
+                                .deleteApplication(((AthenzTenant) tenant).domain(),
                                                    new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
             }
             db.deleteApplication(id);

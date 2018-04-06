@@ -27,8 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This implements a callback API from Screwdriver which lets deployment jobs notify the controller
- * on completion.
+ * This API lists deployment jobs that are queued for execution on Screwdriver.
  * 
  * @author bratseth
  * @author mpolden

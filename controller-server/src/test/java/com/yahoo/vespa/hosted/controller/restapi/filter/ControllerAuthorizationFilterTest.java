@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
@@ -12,7 +13,6 @@ import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
@@ -48,7 +48,7 @@ public class ControllerAuthorizationFilterTest {
     private static final AthenzDomain TENANT_DOMAIN = new AthenzDomain("tenantdomain");
     private static final AthenzService TENANT_ADMIN = new AthenzService(TENANT_DOMAIN, "adminservice");
     private static final AthenzService TENANT_PIPELINE = HostedAthenzIdentities.from(new ScrewdriverId("12345"));
-    private static final TenantId TENANT = new TenantId("mytenant");
+    private static final TenantName TENANT = TenantName.from("mytenant");
     private static final ApplicationId APPLICATION = new ApplicationId("myapp");
 
     @Test
@@ -80,7 +80,7 @@ public class ControllerAuthorizationFilterTest {
     public void only_hosted_operator_or_tenant_admin_can_access_tenant_admin_apis() {
         ControllerTester controllerTester = new ControllerTester();
         controllerTester.athenzDb().hostedOperators.add(HOSTED_OPERATOR);
-        controllerTester.createTenant(TENANT.id(), TENANT_DOMAIN.getName(), null);
+        controllerTester.createTenant(TENANT.value(), TENANT_DOMAIN.getName(), null);
         controllerTester.athenzDb().domains.get(TENANT_DOMAIN).admins.add(TENANT_ADMIN);
 
         ControllerAuthorizationFilter filter = createFilter(controllerTester);
@@ -100,7 +100,7 @@ public class ControllerAuthorizationFilterTest {
     public void only_hosted_operator_and_screwdriver_project_with_deploy_role_can_access_tenant_pipeline_apis() {
         ControllerTester controllerTester = new ControllerTester();
         controllerTester.athenzDb().hostedOperators.add(HOSTED_OPERATOR);
-        controllerTester.createTenant(TENANT.id(), TENANT_DOMAIN.getName(), null);
+        controllerTester.createTenant(TENANT.value(), TENANT_DOMAIN.getName(), null);
         controllerTester.createApplication(TENANT, APPLICATION.id(), "default", 12345);
         AthenzDbMock.Domain domainMock = controllerTester.athenzDb().domains.get(TENANT_DOMAIN);
         domainMock.admins.add(TENANT_ADMIN);

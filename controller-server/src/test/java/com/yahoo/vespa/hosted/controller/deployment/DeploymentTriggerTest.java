@@ -3,12 +3,11 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -86,7 +85,7 @@ public class DeploymentTriggerTest {
     public void deploymentSpecDecidesTriggerOrder() {
         DeploymentTester tester = new DeploymentTester();
         DeploymentQueue deploymentQueue = tester.deploymentQueue();
-        TenantId tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
+        TenantName tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
         Application application = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -245,7 +244,7 @@ public class DeploymentTriggerTest {
     public void testSuccessfulDeploymentApplicationPackageChanged() {
         DeploymentTester tester = new DeploymentTester();
         DeploymentQueue deploymentQueue = tester.deploymentQueue();
-        TenantId tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
+        TenantName tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
         Application application = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
         ApplicationPackage previousApplicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -350,7 +349,7 @@ public class DeploymentTriggerTest {
     public void testHandleMultipleNotificationsFromLastJob() {
         DeploymentTester tester = new DeploymentTester();
         DeploymentQueue deploymentQueue = tester.deploymentQueue();
-        TenantId tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
+        TenantName tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
         Application application = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)

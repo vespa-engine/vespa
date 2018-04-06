@@ -3,10 +3,11 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.base.Joiner;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.Tenant;
-import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,14 +22,18 @@ public interface ControllerDb {
 
     // --------- Tenants
 
-    void createTenant(Tenant tenant);
+    void createTenant(UserTenant tenant);
+
+    void createTenant(AthenzTenant tenant);
 
     // TODO: Remove exception from all signatures
-    void updateTenant(Tenant tenant) throws PersistenceException;
+    void updateTenant(AthenzTenant tenant) throws PersistenceException;
 
-    void deleteTenant(TenantId tenantId) throws PersistenceException;
+    void deleteTenant(TenantName name) throws PersistenceException;
 
-    Optional<Tenant> getTenant(TenantId tenantId) throws PersistenceException;
+    Optional<Tenant> getTenant(TenantName name) throws PersistenceException;
+
+    Optional<AthenzTenant> getAthenzTenant(TenantName name) throws PersistenceException;
 
     List<Tenant> listTenants();
 
@@ -45,10 +50,10 @@ public interface ControllerDb {
     List<Application> listApplications();
 
     /** Returns all applications of a tenant */
-    List<Application> listApplications(TenantId tenantId);
+    List<Application> listApplications(TenantName name);
 
     /** Returns the given elements joined by dot "." */
-    default String path(Identifier... elements) {
+    default String path(TenantName... elements) {
         return Joiner.on(".").join(elements);
     }
 

@@ -26,9 +26,4 @@ public class TenantId extends NonDefaultIdentifier {
         }
     }
 
-    /** Return true if this is the user tenant of the given user */
-    public boolean isTenantFor(UserId userId) {
-        return id().equals("by-" + userId.id().replace('_', '-'));
-    }
-
 }
