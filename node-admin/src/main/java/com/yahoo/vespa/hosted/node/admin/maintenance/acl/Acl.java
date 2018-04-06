@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InetAddresses;
-import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeAcl;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Action;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Chain;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Command;
@@ -22,11 +22,11 @@ import java.util.Objects;
 public class Acl {
 
     private final int containerPid;
-    private final List<ContainerAclSpec> containerAclSpecs;
+    private final List<NodeAcl> nodeAcls;
 
-    public Acl(int containerPid, List<ContainerAclSpec> containerAclSpecs) {
+    public Acl(int containerPid, List<NodeAcl> nodeAcls) {
         this.containerPid = containerPid;
-        this.containerAclSpecs = ImmutableList.copyOf(containerAclSpecs);
+        this.nodeAcls = ImmutableList.copyOf(nodeAcls);
     }
 
     public List<Command> toCommands() {
@@ -51,8 +51,8 @@ public class Acl {
                         .withOption("-p", "ipv6-icmp"));
 
         // Allow traffic from trusted containers
-        containerAclSpecs.stream()
-                .map(ContainerAclSpec::ipAddress)
+        nodeAcls.stream()
+                .map(NodeAcl::ipAddress)
                 .filter(Acl::isIpv6)
                 .map(ipAddress -> new FilterCommand(Chain.INPUT, Action.ACCEPT)
                         .withOption("-s", String.format("%s/128", ipAddress)))
@@ -74,12 +74,12 @@ public class Acl {
         if (o == null || getClass() != o.getClass()) return false;
         Acl that = (Acl) o;
         return containerPid == that.containerPid &&
-                Objects.equals(containerAclSpecs, that.containerAclSpecs);
+                Objects.equals(nodeAcls, that.nodeAcls);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(containerPid, containerAclSpecs);
+        return Objects.hash(containerPid, nodeAcls);
     }
 
     private static boolean isIpv6(String ipAddress) {

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeAcl;
 import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
@@ -24,7 +24,7 @@ public class NodeRepoMock implements NodeRepository {
     private static final Object monitor = new Object();
 
     private final Map<String, NodeRepositoryNode> nodeRepositoryNodesByHostname = new HashMap<>();
-    private final Map<String, List<ContainerAclSpec>> acls = new HashMap<>();
+    private final Map<String, List<NodeAcl>> acls = new HashMap<>();
     private final CallOrderVerifier callOrderVerifier;
 
     public NodeRepoMock(CallOrderVerifier callOrderVerifier) {
@@ -51,7 +51,7 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public List<ContainerAclSpec> getContainerAclSpecs(String hostName) {
+    public List<NodeAcl> getNodeAcl(String hostName) {
         synchronized (monitor) {
             return Optional.ofNullable(acls.get(hostName))
                     .orElseGet(Collections::emptyList);

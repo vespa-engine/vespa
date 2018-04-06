@@ -10,13 +10,13 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class ContainerAclSpec {
+public class NodeAcl {
 
     private final String hostname;
     private final String ipAddress;
     private final ContainerName trustedBy;
 
-    public ContainerAclSpec(String hostname, String ipAddress, ContainerName trustedBy) {
+    public NodeAcl(String hostname, String ipAddress, ContainerName trustedBy) {
         this.hostname = hostname;
         this.ipAddress = ipAddress;
         this.trustedBy = trustedBy;
@@ -38,7 +38,7 @@ public class ContainerAclSpec {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ContainerAclSpec that = (ContainerAclSpec) o;
+        NodeAcl that = (NodeAcl) o;
         return Objects.equals(hostname, that.hostname) &&
                 Objects.equals(ipAddress, that.ipAddress) &&
                 Objects.equals(trustedBy, that.trustedBy);
