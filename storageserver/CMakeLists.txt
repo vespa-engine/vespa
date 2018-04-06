@@ -4,7 +4,6 @@ vespa_define_module(
     fastos
     storage
     streamingvisitors_searchvisitor
-    memfilepersistence
 
     APPS
     src/apps/storaged

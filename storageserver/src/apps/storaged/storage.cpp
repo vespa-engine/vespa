@@ -16,7 +16,6 @@
 #include <vespa/storage/storageutil/utils.h>
 #include <vespa/storageserver/app/distributorprocess.h>
 #include "forcelink.h"
-#include <vespa/storageserver/app/memfileservicelayerprocess.h>
 #include <vespa/storageserver/app/dummyservicelayerprocess.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/shutdownguard.h>
@@ -39,12 +38,10 @@ Process::UP createProcess(vespalib::stringref configId) {
         return Process::UP(new DistributorProcess(configId));
     } else switch (serverConfig->persistenceProvider.type) {
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::STORAGE:
-            return Process::UP(new MemFileServiceLayerProcess(configId));
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::DUMMY:
             return Process::UP(new DummyServiceLayerProcess(configId));
         default:
-            throw vespalib::IllegalStateException(
-                    "Unknown persistence provider.", VESPA_STRLOC);
+            throw vespalib::IllegalStateException("Unknown persistence provider.", VESPA_STRLOC);
     }
 }
 
