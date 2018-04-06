@@ -4,7 +4,6 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/document/bucket/bucketselector.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 

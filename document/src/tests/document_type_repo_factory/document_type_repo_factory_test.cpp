@@ -2,7 +2,6 @@
 
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/testapp.h>

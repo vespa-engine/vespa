@@ -23,7 +23,6 @@ class DocumentTypeRepo {
 
 public:
     using DocumenttypesConfig = const internal::InternalDocumenttypesType;
-    typedef std::unique_ptr<DocumentTypeRepo> UP;
 
     // This one should only be used for testing. If you do not have any config.
     explicit DocumentTypeRepo(const DocumentType & docType);

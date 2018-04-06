@@ -14,7 +14,6 @@
 #include <vespa/config-imported-fields.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/referencedatatype.h>
-#include <vespa/document/repo/documenttyperepo.h>
 
 using document::DataType;
 using document::DocumentType;
