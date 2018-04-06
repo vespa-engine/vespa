@@ -90,19 +90,38 @@ public final class Text {
      * Validates that the given string value only contains text characters and
      * returns the first illegal code point if one is found.
      */
-    public static OptionalInt validateTextString(String value) {
-        for (int i = 0; i < value.length(); i++) {
-            char theChar = value.charAt(i);
-            int codePoint = value.codePointAt(i);
-            if (Character.isHighSurrogate(theChar)) {
-                // Skip one char ahead, since codePointAt() consumes one more char in this case
-                ++i;
-            }
-            if (!Text.isTextCharacter(codePoint)) {
+    public static OptionalInt validateTextString(String string) {
+        for (int i = 0; i < string.length(); i++) {
+            int codePoint = string.codePointAt(i);
+            if ( ! Text.isTextCharacter(codePoint))
                 return OptionalInt.of(codePoint);
-            }
+
+            if (Character.isHighSurrogate(string.charAt(i)))
+                ++i; // // codePointAt() consumes one more char in this case
         }
         return OptionalInt.empty();
+    }
+
+    /**
+     * Returns a string where any invalid characters in the input string is replaced by spaces
+     */
+    public static String stripInvalidCharacters(String string) {
+        StringBuilder stripped = null; // lazy, as most string will not need stripping
+        for (int i = 0; i < string.length(); i++) {
+            int codePoint = string.codePointAt(i);
+            if ( ! Text.isTextCharacter(codePoint) || codePoint == 'X' || codePoint == 'Y') {
+                if (stripped == null)
+                    stripped = new StringBuilder(string.substring(0, i));
+                stripped.append(' ');
+            }
+            else if (stripped != null) {
+                stripped.appendCodePoint(codePoint);
+            }
+
+            if (Character.isHighSurrogate(string.charAt(i)))
+                ++i; // // codePointAt() consumes one more char in this case
+        }
+        return stripped != null ? stripped.toString() : string;
     }
 
 }
