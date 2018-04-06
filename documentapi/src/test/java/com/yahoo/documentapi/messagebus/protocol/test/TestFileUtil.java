@@ -20,7 +20,6 @@ public class TestFileUtil {
         String tmpPath = path + ".tmp";
         try (FileOutputStream stream = new FileOutputStream(tmpPath)) {
             stream.write(data);
-            stream.flush();
         }
         // We make the assumption that all file systems we run these tests on support some form
         // of atomic moving rather than "move by content copy".
