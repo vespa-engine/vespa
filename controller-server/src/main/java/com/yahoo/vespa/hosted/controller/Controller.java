@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
+import com.yahoo.vespa.hosted.controller.persistence.ControllerDbProxy;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -132,11 +133,12 @@ public class Controller extends AbstractComponent {
         this.clock = clock;
         this.athenzClientFactory = athenzClientFactory;
 
-        applicationController = new ApplicationController(this, db, curator, athenzClientFactory,
+        ControllerDbProxy dbProxy = new ControllerDbProxy(db, curator);
+        applicationController = new ApplicationController(this, dbProxy, curator, athenzClientFactory,
                                                           rotationsConfig,
                                                           nameService, configServerClient, artifactRepository,
                                                           routingGenerator, clock);
-        tenantController = new TenantController(this, db, curator, athenzClientFactory);
+        tenantController = new TenantController(this, dbProxy, curator, athenzClientFactory);
     }
     
     /** Returns the instance controlling tenants */

@@ -1,4 +1,4 @@
 [
-  @include(tenant2.json),
-  @include(tenant1-recursive.json)
+  @include(tenant1-recursive.json),
+  @include(tenant2.json)
 ]

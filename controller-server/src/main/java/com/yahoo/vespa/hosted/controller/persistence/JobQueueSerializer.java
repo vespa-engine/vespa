@@ -11,9 +11,6 @@ import com.yahoo.vespa.config.SlimeUtils;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Serialization of a queue of ApplicationIds to/from Json bytes using Slime.
@@ -36,8 +33,8 @@ public class JobQueueSerializer {
         }
     }
 
-    public Deque<ApplicationId> fromJson(byte[] data) {
-        Inspector inspector = SlimeUtils.jsonToSlime(data).get();
+    public Deque<ApplicationId> fromSlime(Slime slime) {
+        Inspector inspector = slime.get();
         Deque<ApplicationId> queue = new ArrayDeque<>();
         inspector.traverse((ArrayTraverser) (index, value) -> queue.addLast(ApplicationId.fromSerializedForm(value.asString())));
         return queue;
