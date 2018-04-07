@@ -48,7 +48,7 @@ public:
                   generation_t currentGeneration);
     bool holdLidOK(DocId lid, DocId lidLimit) const;
     void constructFreeList(DocId lidLimit);
-    search::queryeval::Blueprint::UP createWhiteListBlueprint() const;
+    search::queryeval::Blueprint::UP createWhiteListBlueprint(uint32_t docIdLimit) const;
     void updateActiveLids(DocId lid, bool active);
     void clearDocs(DocId lidLow, DocId lidLimit);
     void shrinkLidSpace(DocId committedDocIdLimit);
