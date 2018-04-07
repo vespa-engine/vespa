@@ -48,14 +48,13 @@ import java.util.stream.Collectors;
 public class FailedExpirer extends Maintainer {
 
     private static final Logger log = Logger.getLogger(NodeRetirer.class.getName());
-
-    private static final Duration defaultExpiry = Duration.ofDays(4); // Grace period to allow recovery of data
-    private static final Duration containerExpiry = Duration.ofHours(1); // Stateless nodes, no data to recover
     private static final int maxAllowedFailures = 5; // Stop recycling nodes after this number of failures
 
     private final NodeRepository nodeRepository;
     private final Zone zone;
     private final Clock clock;
+    private final Duration defaultExpiry; // Grace period to allow recovery of data
+    private final Duration containerExpiry; // Stateless nodes, no data to recover
 
     public FailedExpirer(NodeRepository nodeRepository, Zone zone, Clock clock, Duration interval,
                          JobControl jobControl) {
@@ -63,6 +62,12 @@ public class FailedExpirer extends Maintainer {
         this.nodeRepository = nodeRepository;
         this.zone = zone;
         this.clock = clock;
+        if (zone.system() == SystemName.main) {
+            defaultExpiry = Duration.ofDays(4);
+            containerExpiry = Duration.ofHours(1);
+        } else {
+            defaultExpiry = containerExpiry = Duration.ofMinutes(30);
+        }
     }
 
     @Override
@@ -72,7 +77,7 @@ public class FailedExpirer extends Maintainer {
                 .filter(node -> node.allocation().isPresent() &&
                                 node.allocation().get().membership().cluster().type() == ClusterSpec.Type.container)
                 .collect(Collectors.toList());
-        List<Node> remainingNodes = getExpiredNodes(zone.system() == SystemName.cd ? containerExpiry : defaultExpiry);
+        List<Node> remainingNodes = getExpiredNodes(defaultExpiry);
         remainingNodes.removeAll(containerNodes);
         recycle(containerNodes);
         recycle(remainingNodes);
