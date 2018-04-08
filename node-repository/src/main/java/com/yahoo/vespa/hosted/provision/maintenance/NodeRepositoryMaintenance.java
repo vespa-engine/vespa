@@ -9,7 +9,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetireIPv4OnlyNodes;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
@@ -51,15 +50,15 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final JobControl jobControl;
 
     @Inject
-    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Curator curator,
+    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor, 
                                      Zone zone, Orchestrator orchestrator, Metric metric,
                                      ConfigserverConfig configserverConfig) {
-        this(nodeRepository, deployer, curator, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
+        this(nodeRepository, deployer, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
                 orchestrator, metric, configserverConfig);
     }
 
-    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Curator curator,
+    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
                                      ConfigserverConfig configserverConfig) {
@@ -127,8 +126,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         /** The time a node must be continuously nonresponsive before it is failed */
         private final Duration failGrace;
         
-        private final Duration zooKeeperAccessMaintenanceInterval;
-
         private final Duration reservationExpiry;
         private final Duration inactiveExpiry;
         private final Duration retiredExpiry;
@@ -160,13 +157,11 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
 
             if (environment.equals(Environment.prod)) {
-                zooKeeperAccessMaintenanceInterval = Duration.ofMinutes(1);
                 reservationExpiry = Duration.ofMinutes(20); // same as deployment timeout
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(29);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
             } else {
-                zooKeeperAccessMaintenanceInterval = Duration.ofSeconds(10);
                 reservationExpiry = Duration.ofMinutes(10); // Need to be long enough for deployment to be finished for all config model versions
                 inactiveExpiry = Duration.ofSeconds(2); // support interactive wipe start over
                 retiredInterval = Duration.ofMinutes(5);
