@@ -46,8 +46,8 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     virtual search::LidUsageStats getLidUsageStats() const override {
         return _store.getLidUsageStats();
     }
-    virtual search::queryeval::Blueprint::UP createBlackListBlueprint() const override {
-        return _store.createBlackListBlueprint();
+    virtual search::queryeval::Blueprint::UP createWhiteListBlueprint() const override {
+        return _store.createWhiteListBlueprint();
     }
     uint64_t getCurrentGeneration() const override {
         return _store.getCurrentGeneration();
@@ -154,9 +154,6 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     }
     virtual DocId getNumActiveLids() const override {
         return _store.getNumActiveLids();
-    }
-    virtual search::AttributeGuard getActiveLidsGuard() const override {
-        return _store.getActiveLidsGuard();
     }
     virtual bool getFreeListActive() const override {
         return _store.getFreeListActive();

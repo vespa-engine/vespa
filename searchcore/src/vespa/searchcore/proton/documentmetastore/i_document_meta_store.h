@@ -59,8 +59,6 @@ struct IDocumentMetaStore : public search::IDocumentMetaStore,
 
     virtual void getLids(const BucketId &bucketId, std::vector<DocId> &lids) = 0;
 
-    virtual search::AttributeGuard getActiveLidsGuard() const = 0;
-
     /*
      * Called by document db executor to hold unblocking of shrinking of lid
      * space after all outstanding holdLid() operations at the time of

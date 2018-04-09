@@ -100,7 +100,7 @@ class Test : public vespalib::TestApp {
     void requireThatNoDocsGiveZeroDocFrequency();
     void requireThatWeakAndBlueprintsAreCreatedCorrectly();
     void requireThatParallelWandBlueprintsAreCreatedCorrectly();
-    void requireThatBlackListBlueprintCanBeUsed();
+    void requireThatWhiteListBlueprintCanBeUsed();
 
 public:
     ~Test();
@@ -825,7 +825,7 @@ void Test::requireThatParallelWandBlueprintsAreCreatedCorrectly() {
 }
 
 void
-Test::requireThatBlackListBlueprintCanBeUsed()
+Test::requireThatWhiteListBlueprintCanBeUsed()
 {
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addStringTerm("foo", field, field_id, string_weight);
@@ -839,7 +839,7 @@ Test::requireThatBlackListBlueprintCanBeUsed()
         .addResult(field, "foo", FakeResult().doc(1).doc(3).doc(5).doc(7).doc(9).doc(11));
     context.setLimit(42);
 
-    query.setBlackListBlueprint(SimpleBlueprint::UP(new SimpleBlueprint(SimpleResult().addHit(3).addHit(9))));
+    query.setWhiteListBlueprint(SimpleBlueprint::UP(new SimpleBlueprint(SimpleResult().addHit(1).addHit(2).addHit(4).addHit(5).addHit(6).addHit(7).addHit(8).addHit(10).addHit(11).addHit(12))));
 
     FakeRequestContext requestContext;
     MatchDataLayout mdl;
@@ -886,7 +886,7 @@ Test::Main()
     TEST_CALL(requireThatNoDocsGiveZeroDocFrequency);
     TEST_CALL(requireThatWeakAndBlueprintsAreCreatedCorrectly);
     TEST_CALL(requireThatParallelWandBlueprintsAreCreatedCorrectly);
-    TEST_CALL(requireThatBlackListBlueprintCanBeUsed);
+    TEST_CALL(requireThatWhiteListBlueprintCanBeUsed);
 
     TEST_DONE();
 }

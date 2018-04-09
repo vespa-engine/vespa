@@ -19,7 +19,6 @@ public:
     private:
         search::AttributeGuard   _guard;
         const DocumentMetaStore &_store;
-        search::AttributeGuard   _activeLidsGuard;
     public:
         ReadGuard(const search::AttributeVector::SP &metaStoreAttr);
         const search::IDocumentMetaStore &get() const override { return _store; }

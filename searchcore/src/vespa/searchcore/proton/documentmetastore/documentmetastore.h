@@ -67,9 +67,6 @@ private:
                                  search::btree::BTreeNoLeafData,
                                  search::btree::NoAggregated,
                                  const KeyComp &> TreeType;
-    // Bit attribute vector used to keep track of active & inactive documents.
-    // Inactive documents will be black-listed during search.
-    typedef search::SingleValueBitNumericAttribute BitAttribute;
 
     MetaDataStore       _metaDataStore;
     TreeType            _gidToLidMap;
@@ -209,7 +206,7 @@ public:
     DocId   getNumUsedLids() const override { return _lidAlloc.getNumUsedLids(); }
     DocId getNumActiveLids() const override { return _lidAlloc.getNumActiveLids(); }
     search::LidUsageStats getLidUsageStats() const override;
-    search::queryeval::Blueprint::UP createBlackListBlueprint() const override;
+    search::queryeval::Blueprint::UP createWhiteListBlueprint() const override;
 
     /**
      * Implements search::AttributeVector
@@ -230,10 +227,6 @@ public:
     Iterator upperBound(const GlobalId &gid) const override;
 
     void getLids(const BucketId &bucketId, std::vector<DocId> &lids) override;
-
-    search::AttributeGuard getActiveLidsGuard() const override {
-        return _lidAlloc.getActiveLidsGuard();
-    }
 
     bool getFreeListActive() const override {
         return _lidAlloc.isFreeListConstructed();
@@ -266,7 +259,8 @@ public:
         return AttributeVector::getGenerationHandler();
     }
 
-    const BitAttribute &getActiveLids() const { return _lidAlloc.getActiveLids(); }
+    const search::GrowableBitVector &getActiveLids() const { return _lidAlloc.getActiveLids(); }
+
     void clearDocs(DocId lidLow, DocId lidLimit) override;
 
     /*

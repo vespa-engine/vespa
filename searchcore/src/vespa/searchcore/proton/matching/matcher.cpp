@@ -36,7 +36,7 @@ namespace proton::matching {
 
 namespace {
 
-// used to give out empty blacklist blueprints
+// used to give out empty whitelist blueprints
 struct StupidMetaStore : search::IDocumentMetaStore {
     bool getGid(DocId, GlobalId &) const override { return false; }
     bool getGidEvenIfMoved(DocId, GlobalId &) const override { return false; }
@@ -48,7 +48,7 @@ struct StupidMetaStore : search::IDocumentMetaStore {
     DocId getNumActiveLids() const override { return 0; }
     uint64_t getCurrentGeneration() const override { return 0; }
     LidUsageStats getLidUsageStats() const override { return LidUsageStats(); }
-    Blueprint::UP createBlackListBlueprint() const override { return Blueprint::UP(); }
+    Blueprint::UP createWhiteListBlueprint() const override { return Blueprint::UP(); }
 };
 
 FeatureSet::SP findFeatureSet(const DocsumRequest &req,

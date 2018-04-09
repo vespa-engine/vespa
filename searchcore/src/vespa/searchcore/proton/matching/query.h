@@ -22,7 +22,7 @@ private:
     search::query::Node::UP _query_tree;
     Blueprint::UP           _blueprint;
     search::fef::Location   _location;
-    Blueprint::UP           _blackListBlueprint;
+    Blueprint::UP           _whiteListBlueprint;
 
 public:
     Query();
@@ -54,14 +54,14 @@ public:
     void extractLocations(std::vector<const search::fef::Location *> &locs);
 
     /**
-     * Use the given blueprint as black list node in the blueprint tree.
+     * Use the given blueprint as white list node in the blueprint tree.
      * The search iterator created by this blueprint should return all
-     * invisible / inactive documents as hits. These hits will then not be
+     * visible / active documents as hits. These hits will then be
      * part of the result set for the query executed.
      *
-     * @param blackListBlueprint the blueprint used for black listing.
+     * @param whiteListBlueprint the blueprint used for white listing.
      **/
-    void setBlackListBlueprint(Blueprint::UP blackListBlueprint);
+    void setWhiteListBlueprint(Blueprint::UP whiteListBlueprint);
 
     /**
      * Reserve room for terms in the query in the given match data

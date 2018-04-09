@@ -143,10 +143,10 @@ struct IDocumentMetaStore {
     virtual LidUsageStats getLidUsageStats() const = 0;
 
     /**
-     * Creates a black list blueprint that returns a search iterator
-     * that gives hits for all documents that should not be visible.
+     * Creates a white list blueprint that returns a search iterator
+     * that gives hits for all documents that should be visible.
      **/
-    virtual std::unique_ptr<queryeval::Blueprint> createBlackListBlueprint() const = 0;
+    virtual std::unique_ptr<queryeval::Blueprint> createWhiteListBlueprint() const = 0;
 
     /**
      * Give read access to the current generation of the metastore.

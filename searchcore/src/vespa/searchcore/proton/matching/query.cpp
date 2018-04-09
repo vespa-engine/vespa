@@ -26,7 +26,7 @@ using search::fef::Location;
 using search::query::Node;
 using search::query::QueryTreeCreator;
 using search::query::Weight;
-using search::queryeval::AndNotBlueprint;
+using search::queryeval::AndBlueprint;
 using search::queryeval::Blueprint;
 using search::queryeval::IRequestContext;
 using search::queryeval::SearchIterator;
@@ -112,9 +112,9 @@ Query::extractLocations(vector<const Location *> &locations)
 }
 
 void
-Query::setBlackListBlueprint(Blueprint::UP blackListBlueprint)
+Query::setWhiteListBlueprint(Blueprint::UP whiteListBlueprint)
 {
-    _blackListBlueprint = std::move(blackListBlueprint);
+    _whiteListBlueprint = std::move(whiteListBlueprint);
 }
 
 void
@@ -125,14 +125,14 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
 
     _blueprint = BlueprintBuilder::build(requestContext, *_query_tree, context);
     LOG(debug, "original blueprint:\n%s\n", _blueprint->asString().c_str());
-    if (_blackListBlueprint.get() != NULL) {
-        std::unique_ptr<AndNotBlueprint> andNotBlueprint(new AndNotBlueprint());
-        (*andNotBlueprint)
+    if (_whiteListBlueprint) {
+        std::unique_ptr<AndBlueprint> andBlueprint(new AndBlueprint());
+        (*andBlueprint)
             .addChild(std::move(_blueprint))
-            .addChild(std::move(_blackListBlueprint));
-        _blueprint = std::move(andNotBlueprint);
+            .addChild(std::move(_whiteListBlueprint));
+        _blueprint = std::move(andBlueprint);
         _blueprint->setDocIdLimit(context.getDocIdLimit());
-        LOG(debug, "blueprint after black listing:\n%s\n", _blueprint->asString().c_str());
+        LOG(debug, "blueprint after white listing:\n%s\n", _blueprint->asString().c_str());
     }
 }
 

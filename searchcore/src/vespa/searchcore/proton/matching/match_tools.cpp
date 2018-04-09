@@ -148,7 +148,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
     if (_valid) {
         _query.extractTerms(_queryEnv.terms());
         _query.extractLocations(_queryEnv.locations());
-        _query.setBlackListBlueprint(metaStore.createBlackListBlueprint());
+        _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
         _query.reserveHandles(_requestContext, searchContext, _mdl);
         _query.optimize();
         _query.fetchPostings();

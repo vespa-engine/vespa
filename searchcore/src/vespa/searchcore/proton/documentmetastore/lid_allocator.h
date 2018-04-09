@@ -7,12 +7,6 @@
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 
-namespace search {
-class AttributeVector;
-class SingleValueBitNumericAttribute;
-class GrowStrategy;
-}
-
 namespace proton::documentmetastore {
 
 /**
@@ -22,33 +16,26 @@ namespace proton::documentmetastore {
 class LidAllocator
 {
 private:
-    typedef search::SingleValueBitNumericAttribute BitAttribute;
     typedef uint32_t DocId;
     typedef vespalib::GenerationHandler::generation_t generation_t;
-    using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
 
     LidHoldList                 _holdLids;
     LidStateVector              _freeLids;
     LidStateVector              _usedLids;
     LidStateVector              _pendingHoldLids;
     bool                        _lidFreeListConstructed;
-    AttributeVectorSP           _activeLidsAttr;
-    BitAttribute               &_activeLids;
+    LidStateVector              _activeLids;
     uint32_t                    _numActiveLids;
 
 public:
     LidAllocator(uint32_t size,
                  uint32_t capacity,
-                 vespalib::GenerationHolder &genHolder,
-                 const search::GrowStrategy & grow);
+                 vespalib::GenerationHolder &genHolder);
     ~LidAllocator();
 
     DocId getFreeLid(DocId lidLimit);
     DocId peekFreeLid(DocId lidLimit);
     void ensureSpace(uint32_t newSize,
-                     uint32_t newCapacity);
-    void ensureSpace(DocId lid,
-                     uint32_t newSize,
                      uint32_t newCapacity);
     void registerLid(DocId lid) { _usedLids.setBit(lid); }
     void unregisterLid(DocId lid);
@@ -61,11 +48,9 @@ public:
                   generation_t currentGeneration);
     bool holdLidOK(DocId lid, DocId lidLimit) const;
     void constructFreeList(DocId lidLimit);
-    search::queryeval::Blueprint::UP createBlackListBlueprint() const;
+    search::queryeval::Blueprint::UP createWhiteListBlueprint(uint32_t docIdLimit) const;
     void updateActiveLids(DocId lid, bool active);
-    void commitActiveLids();
     void clearDocs(DocId lidLow, DocId lidLimit);
-    void compactLidSpace(DocId wantedLidLimit);
     void shrinkLidSpace(DocId committedDocIdLimit);
     uint32_t getNumUsedLids() const;
     uint32_t getNumActiveLids() const {
@@ -89,13 +74,8 @@ public:
     DocId getHighestUsedLid() const {
         return _usedLids.getHighest();
     }
-    search::AttributeGuard getActiveLidsGuard() const {
-        return search::AttributeGuard(_activeLidsAttr);
-    }
-    const BitAttribute &getActiveLids() const {
-        return _activeLids;
-    }
 
+    const search::GrowableBitVector &getActiveLids() const { return _activeLids.getBitVector(); }
 };
 
 }
