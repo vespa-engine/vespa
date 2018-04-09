@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.runner;
 
-import com.google.common.annotations.Beta;
-
 import com.google.common.base.Splitter;
 import com.yahoo.vespa.http.client.config.Cluster;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
@@ -22,7 +20,6 @@ import java.util.concurrent.TimeUnit;
  *
  * @author dybis
  */
-@Beta
 @Command(name = "vespa-http-client",
         description = "This is a tool for feeding xml or json data to a Vespa application.")
 public class CommandLineArguments {

@@ -1,18 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core;
 
-import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
-
 import java.util.Iterator;
-
 
 /**
  * Serialization/deserialization class for the result of a single document operation against Vespa.
  *
  * @author Steinar Knutsen
  */
-@Beta
 public final class OperationStatus {
 
     public static final String IS_CONDITION_NOT_MET = "IS-CONDITION-NOT-MET";

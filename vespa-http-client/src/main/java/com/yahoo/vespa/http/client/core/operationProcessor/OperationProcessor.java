@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.operationProcessor;
 
-import com.google.common.annotations.Beta;
 import com.google.common.collect.ArrayListMultimap;
 import com.yahoo.vespa.http.client.FeedClient;
 import com.yahoo.vespa.http.client.FeedEndpointException;
@@ -33,7 +32,6 @@ import java.util.logging.Logger;
  *
  * @author dybis
  */
-@Beta
 public class OperationProcessor {
 
     private static final Logger log = Logger.getLogger(OperationProcessor.class.getName());

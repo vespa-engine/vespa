@@ -53,7 +53,7 @@ public class FeedClientImpl implements FeedClient {
         charsetEncoder.onMalformedInput(CodingErrorAction.REPORT);
         charsetEncoder.onUnmappableCharacter(CodingErrorAction.REPORT);
 
-        final Document document = new Document(documentId, documentData, context);
+        Document document = new Document(documentId, documentData, context);
         operationProcessor.sendDocument(document);
     }
 

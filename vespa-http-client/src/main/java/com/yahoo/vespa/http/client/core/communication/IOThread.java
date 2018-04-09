@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.vespa.http.client.FeedConnectException;
 import com.yahoo.vespa.http.client.FeedProtocolException;
 import com.yahoo.vespa.http.client.Result;
@@ -29,7 +28,6 @@ import java.util.logging.Logger;
  * 
  * @author Einar M R Rosenvinge
  */
-@Beta
 class IOThread implements Runnable, AutoCloseable {
 
     private static Logger log = Logger.getLogger(IOThread.class.getName());

@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core;
 
-import com.google.common.annotations.Beta;
-
 /**
  * Simple encoding scheme to remove space, linefeed, control characters and
  * anything outside ISO 646.irv:1991 from strings. The scheme is supposed to be
@@ -10,10 +8,10 @@ import com.google.common.annotations.Beta;
  * used as quoting characters, the output is by definition US-ASCII only
  * characters.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-@Beta
 public final class Encoder {
+
     /**
      * ISO 646.irv:1991 safe quoting into a StringBuilder instance.
      *
@@ -23,10 +21,9 @@ public final class Encoder {
      *            the destination buffer
      * @return the destination buffer given as input
      */
-    public static StringBuilder encode(final String input,
-            final StringBuilder output) {
+    public static StringBuilder encode(String input, StringBuilder output) {
         for (int i = 0; i < input.length(); i = input.offsetByCodePoints(i, 1)) {
-            final int c = input.codePointAt(i);
+            int c = input.codePointAt(i);
             if (c <= '~') {
                 if (c <= ' ') {
                     encode(c, output);
@@ -58,52 +55,46 @@ public final class Encoder {
      * @throws IllegalArgumentException
      *             if the input string contains unexpected or invalid data
      */
-    public static StringBuilder decode(final String input,
-            final StringBuilder output) {
+    public static StringBuilder decode(String input, StringBuilder output) {
         for (int i = 0; i < input.length(); i = input.offsetByCodePoints(i, 1)) {
-            final int c = input.codePointAt(i);
+            int c = input.codePointAt(i);
             if (c > '~') {
-                throw new IllegalArgumentException(
-                        "Input contained character above printable ASCII.");
+                throw new IllegalArgumentException("Input contained character above printable ASCII.");
             }
             switch (c) {
-            case '{':
-                i = decode(input, i, output);
-                break;
-            default:
-                output.append((char) c);
-                break;
+                case '{':
+                    i = decode(input, i, output);
+                    break;
+                default:
+                    output.append((char) c);
+                    break;
             }
         }
         return output;
     }
 
-    private static int decode(final String input, final int offset,
-            final StringBuilder output) {
+    private static int decode(String input, int offset, StringBuilder output) {
         char c = 0;
         int end = offset;
-        final int start = offset + 1;
+        int start = offset + 1;
         int codePoint;
 
         while ('}' != c) {
             if (++end >= input.length()) {
-                throw new IllegalArgumentException(
-                        "Unterminated quoted character or empty quoting.");
+                throw new IllegalArgumentException("Unterminated quoted character or empty quoting.");
             }
             c = input.charAt(end);
         }
         try {
             codePoint = Integer.parseInt(input.substring(start, end), 16);
-        } catch (final NumberFormatException e) {
-            throw new IllegalArgumentException("Unexpected quoted data: ["
-                    + input.substring(start, end) + "]", e);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Unexpected quoted data: [" + input.substring(start, end) + "]", e);
         }
         if (Character.charCount(codePoint) > 1) {
             try {
                 output.append(Character.toChars(codePoint));
-            } catch (final IllegalArgumentException e) {
-                throw new IllegalArgumentException("Unexpected quoted data: ["
-                        + input.substring(start, end) + "]", e);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Unexpected quoted data: [" + input.substring(start, end) + "]", e);
             }
         } else {
             output.append((char) codePoint);
@@ -112,7 +103,7 @@ public final class Encoder {
 
     }
 
-    private static void encode(final int c, final StringBuilder output) {
+    private static void encode(int c, StringBuilder output) {
         output.append("{").append(Integer.toHexString(c)).append("}");
     }
 

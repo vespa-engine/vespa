@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
-import com.google.common.annotations.Beta;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ListMultimap;
 import com.yahoo.vespa.http.client.FeedEndpointException;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.core.operationProcessor.EndPointResultFactory;
@@ -11,7 +8,6 @@ import com.yahoo.vespa.http.client.core.EndpointResult;
 import com.yahoo.vespa.http.client.core.operationProcessor.OperationProcessor;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -21,7 +17,6 @@ import java.util.logging.Logger;
 /**
  * @author Einar M R Rosenvinge
  */
-@Beta
 class EndpointResultQueue {
 
     private static Logger log = Logger.getLogger(EndpointResultQueue.class.getName());
@@ -112,7 +107,6 @@ class EndpointResultQueue {
         operationProcessor.resultReceived(endpointResult, clusterId);
     }
 
-    @Beta
     private class DocumentTimerTask implements Runnable {
         private final String operationId;
 
@@ -126,7 +120,6 @@ class EndpointResultQueue {
         }
     }
 
-    @Beta
     private class TimerFuture {
         private final ScheduledFuture<?> future;
 

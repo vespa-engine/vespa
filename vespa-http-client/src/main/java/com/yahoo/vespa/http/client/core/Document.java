@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core;
 
-import com.google.common.annotations.Beta;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -11,13 +9,11 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
 
-
 /**
-* @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
-* @since 5.1.20
-*/
-@Beta
+ * @author Einar M R Rosenvinge
+ */
 final public class Document {
+
     private final String documentId;
     private final ByteBuffer data;
     private final long createTimeMillis = System.currentTimeMillis();
@@ -88,4 +84,5 @@ final public class Document {
         }
         return operationId;
     }
+
 }

@@ -24,13 +24,8 @@ public class ThrottlePolicy {
      * @param messagesQueued if any messages where queued.
      * @return The new value to be used for max-in-flight (should be cropped externally to fit max/min values).
      */
-    public int calcNewMaxInFlight(
-            final double maxPerformanceChange,
-            final int numOk,
-            final int previousNumOk,
-            final int previousMaxInFlight,
-            final int maxInFlightNow,
-            final boolean messagesQueued) {
+    public int calcNewMaxInFlight(double maxPerformanceChange, int numOk, int previousNumOk, int previousMaxInFlight,
+                                  int maxInFlightNow, boolean messagesQueued) {
 
         double difference = calculateRuleBasedDifference(
                 maxPerformanceChange, numOk, previousNumOk, previousMaxInFlight, maxInFlightNow);
@@ -56,12 +51,8 @@ public class ThrottlePolicy {
         return maxInFlightNow + delta;
     }
 
-    private static double calculateRuleBasedDifference(
-            final double maxPerformanceChange,
-            final double numOk,
-            final double previousNumOk,
-            final double previousMaxInFlight,
-            final double maxInFlightNow) {
+    private static double calculateRuleBasedDifference(double maxPerformanceChange, double numOk, double previousNumOk,
+                                                       double previousMaxInFlight, double maxInFlightNow) {
         double difference = min(
                 maxPerformanceChange,
                 abs((numOk - previousNumOk) / safeDenominator(previousNumOk)));
@@ -78,4 +69,5 @@ public class ThrottlePolicy {
     private static double safeDenominator(double x) {
         return x == 0.0 ? 1.0 : x;
     }
+
 }

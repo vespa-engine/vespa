@@ -4,7 +4,6 @@ package com.yahoo.vespa.http.client.core;
 import com.yahoo.vespa.http.client.FeedClient;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 import org.xml.sax.ext.DefaultHandler2;
 
 import javax.xml.parsers.SAXParser;
@@ -22,7 +21,7 @@ public class XmlFeedReader {
     // Static class.
     private XmlFeedReader() {}
 
-    public static void read(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) throws Exception{
+    public static void read(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) throws Exception {
 
         SAXParserFactory parserFactor = SAXParserFactory.newInstance();
         parserFactor.setValidating(false);
@@ -46,6 +45,7 @@ public class XmlFeedReader {
  * Streams XML and sends each document operation to feeder.
  */
 class SAXClientFeeder extends DefaultHandler2 {
+
     public static final String CDATA_START = "<![CDATA[";
     public static final String CDATA_STOP = "]]>";
     private final FeedClient feedClient;
@@ -62,25 +62,23 @@ class SAXClientFeeder extends DefaultHandler2 {
     }
 
     @Override
-    public void startCDATA () throws SAXException {
+    public void startCDATA() {
         content.append(CDATA_START);
         isCData = true;
     }
 
     @Override
-    public void endCDATA () throws SAXException {
+    public void endCDATA() {
         content.append(CDATA_STOP);
         isCData = false;
     }
 
     @Override
-    public void comment(char[] ch, int start, int length) throws SAXException {
-
-    }
+    public void comment(char[] ch, int start, int length) { }
 
     @SuppressWarnings("fallthrough")
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes) {
         switch(qName){
             case "vespafeed":
                 vespaIndent++;
@@ -110,7 +108,7 @@ class SAXClientFeeder extends DefaultHandler2 {
     }
 
     @Override
-    public void endElement(String uri, String localName, String qName) throws SAXException {
+    public void endElement(String uri, String localName, String qName) {
         content.append("</")
                 .append(qName)
                 .append(">");
@@ -133,8 +131,7 @@ class SAXClientFeeder extends DefaultHandler2 {
     }
 
     @Override
-    public void characters (char buf [], int offset, int len)
-            throws SAXException {
+    public void characters (char buf [], int offset, int len) {
         if (isCData) {
             content.append(buf, offset, len);
             return;
@@ -153,4 +150,5 @@ class SAXClientFeeder extends DefaultHandler2 {
             }
         }
     }
+
 }

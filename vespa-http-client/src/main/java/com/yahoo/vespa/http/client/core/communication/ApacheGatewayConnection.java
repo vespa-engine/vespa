@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
@@ -46,7 +45,6 @@ import java.util.zip.GZIPOutputStream;
 /**
  * @author Einar M R Rosenvinge
  */
-@Beta
 class ApacheGatewayConnection implements GatewayConnection {
 
     private static Logger log = Logger.getLogger(ApacheGatewayConnection.class.getName());
@@ -83,7 +81,7 @@ class ApacheGatewayConnection implements GatewayConnection {
         this.httpClientFactory = httpClientFactory;
         this.connectionParams = connectionParams;
         this.httpClient = null;
-        final boolean isJson = feedParams.getDataFormat() == FeedParams.DataFormat.JSON_UTF8;
+        boolean isJson = feedParams.getDataFormat() == FeedParams.DataFormat.JSON_UTF8;
         if (isJson) {
             startOfFeed = START_OF_FEED_JSON;
             endOfFeed = END_OF_FEED_JSON;
@@ -379,6 +377,7 @@ class ApacheGatewayConnection implements GatewayConnection {
      * On re-connect we want to recreate the connection, hence we need a factory.
      */
     public static class HttpClientFactory {
+
         final ConnectionParams connectionParams;
         final boolean useSsl;
 
