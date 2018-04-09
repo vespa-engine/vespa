@@ -73,8 +73,7 @@ PersistenceQueueTest::testFetchNextUnlockedMessageIfBucketLocked()
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(_node->getPartitions().size(),
-                            loadTypes.getMetricLoadTypes(), 1);
+    metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
 
     FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
     uint32_t stripeId = filestorHandler.getNextStripeId(0);

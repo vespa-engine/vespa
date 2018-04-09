@@ -103,10 +103,8 @@ void StateReporterTest::setUp() {
     uint16_t diskCount = _node->getPartitions().size();
     documentapi::LoadTypeSet::SP loadTypes(_node->getLoadTypes());
 
-    _filestorMetrics.reset(new FileStorMetrics(
-            _node->getLoadTypes()->getMetricLoadTypes()));
-    _filestorMetrics->initDiskMetrics(
-            diskCount, loadTypes->getMetricLoadTypes(), 1);
+    _filestorMetrics.reset(new FileStorMetrics(_node->getLoadTypes()->getMetricLoadTypes()));
+    _filestorMetrics->initDiskMetrics(diskCount, loadTypes->getMetricLoadTypes(), 1, 1);
     _topSet->registerMetric(*_filestorMetrics);
 
     _metricManager->init(_config->getConfigId(), _node->getThreadPool());

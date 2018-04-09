@@ -41,6 +41,10 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numStripes, MessageSender& sen
     for (uint32_t i=0; i<_diskInfo.size(); ++i) {
         _diskInfo[i].metrics = metrics.disks[i].get();
         assert(_diskInfo[i].metrics != 0);
+        uint32_t j(0);
+        for (Stripe & stripe : _diskInfo[i].getStripes()) {
+            stripe.setMetrics(metrics.disks[i]->stripes[j++].get());
+        }
     }
 
     if (_diskInfo.size() == 0) {
@@ -924,7 +928,7 @@ FileStorHandlerImpl::Stripe::getNextMessage(uint32_t timeout, Disk & disk)
             iter++;
         }
         if (iter != end) {
-            return getMessage(guard, disk, idx, iter);
+            return getMessage(guard, idx, iter);
         }
         if (attempt == 0) {
             guard.wait(timeout);
@@ -934,7 +938,7 @@ FileStorHandlerImpl::Stripe::getNextMessage(uint32_t timeout, Disk & disk)
 }
 
 FileStorHandler::LockedMessage &
-FileStorHandlerImpl::Stripe::getNextMessage(Disk & disk, FileStorHandler::LockedMessage& lck)
+FileStorHandlerImpl::Stripe::getNextMessage(FileStorHandler::LockedMessage& lck)
 {
     const document::Bucket & bucket = lck.second->getBucket();
     vespalib::MonitorGuard guard(_lock);
@@ -949,7 +953,7 @@ FileStorHandlerImpl::Stripe::getNextMessage(Disk & disk, FileStorHandler::Locked
 
     api::StorageMessage & m(*range.first->_command);
 
-    uint64_t waitTime(range.first->_timer.stop(disk.metrics->averageQueueWaitingTime[m.getLoadType()]));
+    uint64_t waitTime(range.first->_timer.stop(_metrics->averageQueueWaitingTime[m.getLoadType()]));
 
     if (!messageTimedOutInQueue(m, waitTime)) {
         std::shared_ptr<api::StorageMessage> msg = std::move(range.first->_command);
@@ -970,10 +974,10 @@ FileStorHandlerImpl::Stripe::getNextMessage(Disk & disk, FileStorHandler::Locked
 }
 
 FileStorHandler::LockedMessage
-FileStorHandlerImpl::Stripe::getMessage(vespalib::MonitorGuard & guard, Disk & disk, PriorityIdx & idx, PriorityIdx::iterator iter) {
+FileStorHandlerImpl::Stripe::getMessage(vespalib::MonitorGuard & guard, PriorityIdx & idx, PriorityIdx::iterator iter) {
 
     api::StorageMessage & m(*iter->_command);
-    uint64_t waitTime(iter->_timer.stop(disk.metrics->averageQueueWaitingTime[m.getLoadType()]));
+    uint64_t waitTime(iter->_timer.stop(_metrics->averageQueueWaitingTime[m.getLoadType()]));
 
     std::shared_ptr<api::StorageMessage> msg = std::move(iter->_command);
     document::Bucket bucket(iter->_bucket);

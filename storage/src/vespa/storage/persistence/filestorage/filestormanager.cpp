@@ -112,9 +112,10 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         _disks.resize(_component.getDiskCount());
 
         size_t numThreads = _config->numThreads;
-        _metrics->initDiskMetrics(_disks.size(), _component.getLoadTypes()->getMetricLoadTypes(), numThreads);
+        size_t numStripes = std::min(numThreads, numThreads);
+        _metrics->initDiskMetrics(_disks.size(), _component.getLoadTypes()->getMetricLoadTypes(), numStripes, numThreads);
 
-        _filestorHandler.reset(new FileStorHandler(std::min(numThreads, numThreads), *this, *_metrics, _partitions, _compReg));
+        _filestorHandler.reset(new FileStorHandler(numStripes, *this, *_metrics, _partitions, _compReg));
         for (uint32_t i=0; i<_component.getDiskCount(); ++i) {
             if (_partitions[i].isUp()) {
                 LOG(spam, "Setting up disk %u", i);

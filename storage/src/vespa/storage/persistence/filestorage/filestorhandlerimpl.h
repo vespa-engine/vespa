@@ -34,6 +34,7 @@
 namespace storage {
 
 class FileStorDiskMetrics;
+class FileStorStripeMetrics;
 class StorBucketDatabase;
 class AbortBucketOperationsCommand;
 
@@ -118,20 +119,22 @@ public:
         void failOperations(const document::Bucket & bucket, const api::ReturnCode & code);
 
         FileStorHandler::LockedMessage getNextMessage(uint32_t timeout, Disk & disk);
-        FileStorHandler::LockedMessage & getNextMessage(Disk & disk, FileStorHandler::LockedMessage& lock);
+        FileStorHandler::LockedMessage & getNextMessage(FileStorHandler::LockedMessage& lock);
         void dumpQueue(std::ostream & os) const;
         void dumpActiveHtml(std::ostream & os) const;
         void dumpQueueHtml(std::ostream & os) const;
         vespalib::Monitor & exposeLock() { return _lock; }
         PriorityQueue & exposeQueue() { return _queue; }
         BucketIdx & exposeBucketIdx() { return bmi::get<2>(_queue); }
+        void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
     private:
         bool hasActive(vespalib::MonitorGuard & monitor, const AbortBucketOperationsCommand& cmd) const;
-        FileStorHandler::LockedMessage getMessage(vespalib::MonitorGuard & guard, Disk & t,
-                                                  PriorityIdx & idx, PriorityIdx::iterator iter);
+        FileStorHandler::LockedMessage getMessage(vespalib::MonitorGuard & guard, PriorityIdx & idx,
+                                                  PriorityIdx::iterator iter);
         typedef vespalib::hash_map<document::Bucket, LockEntry, document::Bucket::hash> LockedBuckets;
         const FileStorHandlerImpl  &_owner;
         MessageSender              &_messageSender;
+        FileStorStripeMetrics      *_metrics;
         vespalib::Monitor           _lock;
         PriorityQueue               _queue;
         LockedBuckets               _lockedBuckets;
@@ -170,7 +173,7 @@ public:
             return _stripes[stripeId].getNextMessage(timeout, *this);
         }
         FileStorHandler::LockedMessage & getNextMessage(uint32_t stripeId, FileStorHandler::LockedMessage & lck) {
-            return _stripes[stripeId].getNextMessage(*this, lck);
+            return _stripes[stripeId].getNextMessage(lck);
         }
         std::shared_ptr<FileStorHandler::BucketLockInterface>
         lock(const document::Bucket & bucket) {
@@ -188,6 +191,7 @@ public:
         Stripe & stripe(const document::Bucket & bucket) {
             return _stripes[bucket.getBucketId().getRawId()%_stripes.size()];
         }
+        std::vector<Stripe> & getStripes() { return _stripes; }
     private:
         uint32_t              _nextStripeId;
         std::vector<Stripe>   _stripes;
