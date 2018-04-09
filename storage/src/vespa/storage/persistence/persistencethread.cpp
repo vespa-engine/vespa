@@ -21,7 +21,7 @@ PersistenceThread::PersistenceThread(ServiceLayerComponentRegister& compReg,
                                      FileStorHandler& filestorHandler,
                                      FileStorThreadMetrics& metrics,
                                      uint16_t deviceIndex)
-    : _threadId(filestorHandler.getNextStripeId(deviceIndex)),
+    : _stripeId(filestorHandler.getNextStripeId(deviceIndex)),
       _env(configUri, compReg, filestorHandler, metrics, deviceIndex, provider),
       _warnOnSlowOperations(5000),
       _spi(provider),
@@ -34,7 +34,7 @@ PersistenceThread::PersistenceThread(ServiceLayerComponentRegister& compReg,
       _closed(false)
 {
     std::ostringstream threadName;
-    threadName << "Disk " << _env._partition << " thread " << _threadId;
+    threadName << "Disk " << _env._partition << " thread " << _stripeId;
     _component.reset(new ServiceLayerComponent(compReg, threadName.str()));
     _bucketOwnershipNotifier.reset(new BucketOwnershipNotifier(*_component, filestorHandler));
     framework::MilliSecTime maxProcessingTime(60 * 1000);
@@ -1062,7 +1062,7 @@ void PersistenceThread::processMessages(FileStorHandler::LockedMessage & lock)
             trackers.push_back(std::move(tracker));
 
             if (trackers.back()->getReply()->getResult().success()) {
-                _env._fileStorHandler.getNextMessage(_env._partition, _threadId, lock);
+                _env._fileStorHandler.getNextMessage(_env._partition, _stripeId, lock);
             } else {
                 break;
             }
@@ -1086,7 +1086,7 @@ PersistenceThread::run(framework::ThreadHandle& thread)
     while (!thread.interrupted() && !_env._fileStorHandler.closed(_env._partition)) {
         thread.registerTick();
 
-        FileStorHandler::LockedMessage lock(_env._fileStorHandler.getNextMessage(_env._partition, _threadId));
+        FileStorHandler::LockedMessage lock(_env._fileStorHandler.getNextMessage(_env._partition, _stripeId));
 
         if (lock.first) {
             processMessages(lock);
