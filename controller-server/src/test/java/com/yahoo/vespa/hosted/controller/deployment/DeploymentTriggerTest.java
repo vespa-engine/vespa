@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -25,6 +26,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionEuWest1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsCentral1;
@@ -34,6 +36,7 @@ import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobTy
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -359,7 +362,7 @@ public class DeploymentTriggerTest {
         tester.deployCompletely(application, applicationPackage);
 
         // Platform upgrade which doesn't succeed, allowing a dual change.
-        Version version1 = new Version("7.1");
+        Version version1 = new Version("7.2");
         tester.upgradeSystem(version1);
         tester.completeUpgradeWithError(application, version1, applicationPackage, productionEuWest1);
 
@@ -422,6 +425,66 @@ public class DeploymentTriggerTest {
         tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
         tester.completeUpgrade(application, version1, applicationPackage);
         assertEquals(appVersion1, app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
+    }
+
+    @Test
+    public void stepIsCompletePreciselyWhenItShouldBe() {
+        DeploymentTester tester = new DeploymentTester();
+        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Supplier<Application> app = () -> tester.application(application.id());
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-central-1")
+                .region("eu-west-1")
+                .upgradePolicy("canary")
+                .build();
+        tester.deployCompletely(application, applicationPackage);
+
+        Version v2 = new Version("7.2");
+        tester.upgradeSystem(v2);
+        tester.completeUpgradeWithError(application, v2, applicationPackage, productionUsCentral1);
+        tester.deploy(productionUsCentral1, application, applicationPackage);
+        tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
+        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
+        tester.deploymentTrigger().cancelChange(application.id(), false);
+         // TODO jvenstad: Fails below, because step is considered complete, and thus isn't re-triggered.
+        tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
+        Instant triggered = app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at();
+
+        tester.clock().advance(Duration.ofHours(1));
+
+        Version v1 = new Version("7.1");
+        tester.upgradeSystem(v1); // Downgrade, but it works, since the app is a canary.
+        assertEquals(Change.of(v1), app.get().change());
+
+        // 7.1 completes normally, and us-central-1 is skipped, as current change is strictly dominated by what's deployed there.
+        tester.jobCompletion(systemTest).application(application).submit();
+        tester.jobCompletion(stagingTest).application(application).submit();
+        tester.jobCompletion(productionEuWest1).application(application).submit();
+        assertEquals(triggered, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
+        assertFalse(app.get().change().isPresent());
+        assertTrue(tester.buildService().jobs().isEmpty());
+
+        // Roll out a new application version -- this should trigger us-central-1, but only as long as it hasn't yet deployed there.
+        tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(systemTest).application(application).submit();
+        tester.jobCompletion(stagingTest).application(application).submit();
+
+        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
+        assertEquals((Long) 42L, app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
+        assertNotEquals(triggered, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
+
+        // Change has a higher application version than what is deployed -- deployment should trigger.
+        tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
+        tester.deploy(productionUsCentral1, application, applicationPackage);
+        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
+        assertEquals((Long) 43L, app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
+
+        // Change is again strictly dominated, and us-central-1 should be skipped, even though it is still a failure.
+        tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
+        tester.jobCompletion(productionEuWest1).application(application).submit();
+        assertFalse(app.get().change().isPresent());
+        assertFalse(app.get().deploymentJobs().jobStatus().get(productionUsCentral1).isSuccess());
     }
 
 }
