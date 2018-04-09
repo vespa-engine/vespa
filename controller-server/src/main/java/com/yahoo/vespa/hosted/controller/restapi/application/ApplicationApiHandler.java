@@ -795,8 +795,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         } else if (tenant.get() instanceof UserTenant) {
             controller.tenants().deleteTenant((UserTenant) tenant.get());
         } else {
-            throw new IllegalArgumentException("Don't know how to delete " + tenant.get() + " of type " +
-                                               tenant.get().getClass().getSimpleName());
+            throw new IllegalArgumentException("Unknown tenant type:" + tenant.get().getClass().getSimpleName() +
+                                               ", for " + tenant.get());
         }
 
         // TODO: Change to a message response saying the tenant was deleted
@@ -1222,7 +1222,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         } else if (tenant instanceof UserTenant) {
             return "USER";
         }
-        throw new IllegalArgumentException("Unrecognized tenant type: " + tenant.getClass().getSimpleName());
+        throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());
     }
 
     private static NToken requireNToken(HttpRequest request, String message) {
