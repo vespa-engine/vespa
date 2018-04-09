@@ -58,4 +58,4 @@ findroot
 
 # END environment bootstrap section
 
-(echo "$@" | $VESPA_HOME/bin/zkcli) 2>&1
+echo "$@" | $VESPA_HOME/bin/zkcli
