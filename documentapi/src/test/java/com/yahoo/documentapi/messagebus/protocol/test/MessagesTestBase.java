@@ -10,6 +10,8 @@ import com.yahoo.messagebus.Routable;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -87,6 +89,14 @@ public abstract class MessagesTestBase {
         return TestFileUtil.getPath(filename);
     }
 
+    private boolean fileContentIsUnchanged(String path, byte[] dataToWrite) throws IOException {
+        if (!Files.exists(Paths.get(path))) {
+            return false;
+        }
+        byte[] existingData = TestFileUtil.readFile(path);
+        return Arrays.equals(existingData, dataToWrite);
+    }
+
     /**
      * Writes the content of the given routable to the given file.
      *
@@ -97,12 +107,18 @@ public abstract class MessagesTestBase {
     public int serialize(String filename, Routable routable) {
         Version version = version();
         String path = getPath(version + "-java-" + filename + ".dat");
-        System.out.println("Serializing to '" + path + "'..");
         byte[] data = protocol.encode(version, routable);
         assertNotNull(data);
         assertTrue(data.length > 0);
         try {
-            TestFileUtil.writeToFile(path, data);
+            if (fileContentIsUnchanged(path, data)) {
+                System.out.println(String.format("Serialization for '%s' is unchanged; not overwriting it", path));
+            } else {
+                System.out.println(String.format("Serializing to '%s'..", path));
+                // This only happens when protocol encoding has changed and takes place
+                // during local development, not regular test runs.
+                TestFileUtil.writeToFile(path, data);
+            }
         } catch (IOException e) {
             throw new AssertionError(e);
         }
