@@ -31,14 +31,10 @@ public interface IPAddresses {
 
     InetAddress[] getAddresses(String hostname);
 
-    /**
-     * Returns a list of string representation of the IP addresses (RFC 5952 compact format)
-     */
-    default List<String> getAddresses(String hostname, IPVersion ipVersion) {
-        return Stream.of(getAddresses(hostname))
-                .filter(inetAddress -> isOfType(inetAddress, ipVersion))
-                .map(InetAddresses::toAddrString)
-                .collect(Collectors.toList());
+    default Optional<InetAddress> getAddress(String hostname, IPVersion ipVersion) {
+        return ipVersion == IPVersion.IPv6
+                ? getIPv6Address(hostname).map(InetAddress.class::cast)
+                : getIPv4Address(hostname).map(InetAddress.class::cast);
     }
 
     /**
