@@ -231,11 +231,7 @@ public:
      */
     uint32_t getNumActiveMerges() const;
 
-    /**
-     * Provides the next stripe id for a certain disk.
-     * @param disk
-     * @return
-     */
+    /// Provides the next stripe id for a certain disk.
     uint32_t getNextStripeId(uint32_t disk);
 
     /** Removes the merge status for the given bucket. */
