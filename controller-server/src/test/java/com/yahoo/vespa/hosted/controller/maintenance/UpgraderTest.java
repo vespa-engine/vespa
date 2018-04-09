@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
@@ -21,7 +20,6 @@ import java.time.Duration;
 import java.time.Instant;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionEuWest1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
@@ -869,13 +867,13 @@ public class UpgraderTest {
         tester.readyJobTrigger().maintain();
         assertEquals(2, tester.deploymentQueue().jobs().size());
         tester.completeUpgrade(default0, version, "default");
-        tester.completeUpgrade(default2, version, "default");
+        tester.completeUpgrade(default1, version, "default");
 
         // Remaining applications upgraded
         upgrader.maintain();
         tester.readyJobTrigger().maintain();
         assertEquals(2, tester.deploymentQueue().jobs().size());
-        tester.completeUpgrade(default1, version, "default");
+        tester.completeUpgrade(default2, version, "default");
         tester.completeUpgrade(default3, version, "default");
         upgrader.maintain();
         tester.readyJobTrigger().maintain();
