@@ -1,5 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.restapi.filter;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.jdisc.http.filter.security.cors;
 
 import com.google.inject.Inject;
 import com.yahoo.jdisc.Response;
@@ -8,18 +8,12 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.vespa.hosted.controller.restapi.filter.config.HttpAccessControlConfig;
-import com.yahoo.yolean.chain.After;
-import com.yahoo.yolean.chain.Before;
 import com.yahoo.yolean.chain.Provides;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
-import static com.yahoo.vespa.hosted.controller.restapi.filter.AccessControlHeaders.ACCESS_CONTROL_HEADERS;
-import static com.yahoo.vespa.hosted.controller.restapi.filter.AccessControlHeaders.ALLOW_ORIGIN_HEADER;
 
 /**
  * <p>
@@ -37,16 +31,15 @@ import static com.yahoo.vespa.hosted.controller.restapi.filter.AccessControlHead
  *
  * @author andreer
  * @author gv
+ * @author bjorncs
  */
-@After({"InputValidationFilter","RemoteIPFilter", "DoNotTrackRequestFilter", "CookieDataRequestFilter"})
-@Before({"BouncerFilter", "ControllerAuthorizationFilter"})
-@Provides("AccessControlRequestFilter")
-public class AccessControlRequestFilter implements SecurityRequestFilter {
+@Provides("CorsPreflightRequestFilter")
+public class CorsPreflightRequestFilter implements SecurityRequestFilter {
     private final Set<String> allowedUrls;
 
     @Inject
-    public AccessControlRequestFilter(HttpAccessControlConfig config) {
-        allowedUrls = Collections.unmodifiableSet(config.allowedUrls().stream().collect(Collectors.toSet()));
+    public CorsPreflightRequestFilter(CorsFilterConfig config) {
+        this.allowedUrls = new HashSet<>(config.allowedUrls());
     }
 
     @Override
@@ -58,11 +51,8 @@ public class AccessControlRequestFilter implements SecurityRequestFilter {
 
         HttpResponse response = HttpResponse.newInstance(Response.Status.OK);
 
-        if (allowedUrls.contains(origin))
-            response.headers().add(ALLOW_ORIGIN_HEADER, origin);
-
-        ACCESS_CONTROL_HEADERS.forEach(
-                (name, value) -> response.headers().add(name, value));
+        CorsLogic.createCorsPreflightResponseHeaders(origin, allowedUrls)
+                .forEach(response.headers()::put);
 
         ContentChannel cc = responseHandler.handleResponse(response);
         cc.close(null);

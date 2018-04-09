@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<!-- Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+   http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>jdisc-security-filters</artifactId>
+    <packaging>container-plugin</packaging>
+    <version>6-SNAPSHOT</version>
+
+    <parent>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>parent</artifactId>
+        <version>6-SNAPSHOT</version>
+        <relativePath>../parent/pom.xml</relativePath>
+    </parent>
+    <dependencies>
+        <!-- provided -->
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-dev</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- test -->
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-test</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>bundle-plugin</artifactId>
+                <extensions>true</extensions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

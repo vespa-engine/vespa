@@ -54,6 +54,11 @@ public class ControllerContainerTest {
             "      <item key=\"rotation-id-5\">rotation-fqdn-5</item>\n" +
             "    </rotations>\n" +
             "  </config>\n" +
+            "  <config name=\"jdisc.http.filter.security.cors.cors-filter\">\n" +
+            "    <allowedUrls>\n" +
+            "      <item>http://localhost</item>\n" +
+            "    </allowedUrls>\n" +
+            "  </config>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock'/>\n" +

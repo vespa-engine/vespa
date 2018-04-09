@@ -1,13 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.restapi.filter;
+package com.yahoo.jdisc.http.filter.security.cors;
 
 import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.filter.DiscFilterResponse;
 import com.yahoo.jdisc.http.filter.RequestView;
 import com.yahoo.jdisc.http.filter.SecurityResponseFilter;
+import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig.Builder;
 import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpResponse;
-import com.yahoo.vespa.hosted.controller.restapi.filter.config.HttpAccessControlConfig;
-import com.yahoo.vespa.hosted.controller.restapi.filter.config.HttpAccessControlConfig.Builder;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -17,8 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.yahoo.vespa.hosted.controller.restapi.filter.AccessControlHeaders.ACCESS_CONTROL_HEADERS;
-import static com.yahoo.vespa.hosted.controller.restapi.filter.AccessControlHeaders.ALLOW_ORIGIN_HEADER;
+import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ACCESS_CONTROL_HEADERS;
+import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ALLOW_ORIGIN_HEADER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -27,8 +26,9 @@ import static org.mockito.Mockito.when;
 
 /**
  * @author gjoranv
+ * @author bjorncs
  */
-public class AccessControlResponseFilterTest {
+public class CorsResponseFilterTest {
 
     @Test
     public void any_request_yields_access_control_headers_in_response() {
@@ -62,10 +62,10 @@ public class AccessControlResponseFilterTest {
         return Collections.unmodifiableMap(response.headers);
     }
 
-    private static AccessControlResponseFilter newResponseFilter(String... allowedOriginUrls) {
+    private static CorsResponseFilter newResponseFilter(String... allowedOriginUrls) {
         Builder builder = new Builder();
         Arrays.asList(allowedOriginUrls).forEach(builder::allowedUrls);
-        return new AccessControlResponseFilter(new HttpAccessControlConfig(builder));
+        return new CorsResponseFilter(new CorsFilterConfig(builder));
     }
 
     private static RequestView newRequestView(String originUrl) {

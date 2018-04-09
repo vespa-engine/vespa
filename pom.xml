@@ -78,6 +78,7 @@
         <module>indexinglanguage</module>
         <module>jaxrs_client_utils</module>
         <module>jaxrs_utils</module>
+        <module>jdisc-security-filters</module>
         <module>jdisc_core</module>
         <module>jdisc_core_test</module>
         <module>jdisc_http_service</module>

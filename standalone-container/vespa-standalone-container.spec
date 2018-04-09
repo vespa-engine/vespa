@@ -50,6 +50,7 @@ declare -a modules=(
   container-search-and-docproc
   defaults
   docprocs
+  jdisc-security-filters
   jdisc_core
   jdisc_http_service
   simplemetrics

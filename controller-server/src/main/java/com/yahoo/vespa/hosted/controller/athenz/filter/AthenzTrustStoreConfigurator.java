@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.controller.athenz.filter;
 import com.google.inject.Inject;
 import com.yahoo.jdisc.http.ssl.SslTrustStoreConfigurator;
 import com.yahoo.jdisc.http.ssl.SslTrustStoreContext;
+import com.yahoo.vespa.athenz.tls.KeyStoreBuilder;
+import com.yahoo.vespa.athenz.tls.KeyStoreType;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
 import java.io.File;
@@ -29,13 +31,9 @@ public class AthenzTrustStoreConfigurator implements SslTrustStoreConfigurator {
     }
 
     private static KeyStore createTrustStore(File trustStoreFile) {
-        try (FileInputStream in = new FileInputStream(trustStoreFile)) {
-            KeyStore trustStore = KeyStore.getInstance("JKS");
-            trustStore.load(in, "changeit".toCharArray());
-            return trustStore;
-        } catch (IOException | CertificateException | NoSuchAlgorithmException | KeyStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return KeyStoreBuilder.withType(KeyStoreType.JKS)
+                .fromFile(trustStoreFile, "changeit".toCharArray())
+                .build();
     }
 
     @Override

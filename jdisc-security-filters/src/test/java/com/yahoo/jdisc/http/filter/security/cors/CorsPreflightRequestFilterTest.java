@@ -1,5 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.restapi.filter;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.jdisc.http.filter.security.cors;
 
 import com.yahoo.jdisc.HeaderFields;
 import com.yahoo.jdisc.Response;
@@ -7,25 +7,24 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.vespa.hosted.controller.restapi.filter.config.HttpAccessControlConfig;
-import com.yahoo.vespa.hosted.controller.restapi.filter.config.HttpAccessControlConfig.Builder;
+import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig.Builder;
 import org.junit.Test;
 
 import java.util.Arrays;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
-import static com.yahoo.vespa.hosted.controller.restapi.filter.AccessControlHeaders.ACCESS_CONTROL_HEADERS;
-import static com.yahoo.vespa.hosted.controller.restapi.filter.AccessControlHeaders.ALLOW_ORIGIN_HEADER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ACCESS_CONTROL_HEADERS;
+import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ALLOW_ORIGIN_HEADER;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+
 /**
  * @author gjoranv
+ * @author bjorncs
  */
-public class AccessControlRequestFilterTest {
+public class CorsPreflightRequestFilterTest {
 
     @Test
     public void any_options_request_yields_access_control_headers_in_response() {
@@ -60,10 +59,10 @@ public class AccessControlRequestFilterTest {
         return request;
     }
 
-    private static AccessControlRequestFilter newRequestFilter(String... allowedOriginUrls) {
+    private static CorsPreflightRequestFilter newRequestFilter(String... allowedOriginUrls) {
         Builder builder = new Builder();
         Arrays.asList(allowedOriginUrls).forEach(builder::allowedUrls);
-        return new AccessControlRequestFilter(new HttpAccessControlConfig(builder));
+        return new CorsPreflightRequestFilter(new CorsFilterConfig(builder));
     }
 
     private static class AccessControlResponseHandler implements ResponseHandler {
