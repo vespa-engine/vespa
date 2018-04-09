@@ -2,16 +2,16 @@
 
 #pragma once
 
-#include "health_adapter.h"
-#include "idocumentdbowner.h"
+#include "bootstrapconfig.h"
 #include "bootstrapconfigmanager.h"
 #include "documentdb.h"
+#include "health_adapter.h"
+#include "i_proton_configurer_owner.h"
+#include "idocumentdbowner.h"
 #include "memory_flush_config_updater.h"
 #include "proton_config_fetcher.h"
-#include "i_proton_configurer_owner.h"
 #include "proton_configurer.h"
 #include "rpc_hooks.h"
-#include "bootstrapconfig.h"
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
@@ -19,8 +19,8 @@
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
-#include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
+#include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/engine/monitorapi.h>
 #include <vespa/searchlib/engine/transportserver.h>
@@ -38,6 +38,7 @@ namespace proton {
 
 class DiskMemUsageSampler;
 class IDocumentDBReferenceRegistry;
+class PrepareRestartHandler;
 
 class Proton : public IProtonConfigurerOwner,
                public search::engine::MonitorServer,
@@ -98,6 +99,7 @@ private:
     DocsumBySlime::UP               _docsumBySlime;
     MemoryFlushConfigUpdater::UP    _memoryFlushConfigUpdater;
     FlushEngine::UP                 _flushEngine;
+    std::unique_ptr<PrepareRestartHandler> _prepareRestartHandler;
     RPCHooks::UP                    _rpcHooks;
     HealthAdapter                   _healthAdapter;
     vespalib::GenericStateHandler   _genericStateHandler;
