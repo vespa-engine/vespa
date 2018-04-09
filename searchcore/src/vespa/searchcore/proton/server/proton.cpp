@@ -2,26 +2,27 @@
 
 #include "disk_mem_usage_sampler.h"
 #include "document_db_explorer.h"
+#include "fileconfigmanager.h"
 #include "flushhandlerproxy.h"
 #include "memoryflush.h"
 #include "persistencehandlerproxy.h"
+#include "prepare_restart_handler.h"
 #include "proton.h"
+#include "proton_config_snapshot.h"
 #include "resource_usage_explorer.h"
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
-#include "proton_config_snapshot.h"
-#include "fileconfigmanager.h"
 
-#include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
-#include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
-#include <vespa/searchcore/proton/flushengine/prepare_restart_flush_strategy.h>
-#include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
-#include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
-#include <vespa/searchlib/util/fileheadertk.h>
-#include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
+#include <vespa/searchcore/proton/flushengine/prepare_restart_flush_strategy.h>
+#include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
+#include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
+#include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
+#include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/host_name.h>
@@ -177,6 +178,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       _docsumBySlime(),
       _memoryFlushConfigUpdater(),
       _flushEngine(),
+      _prepareRestartHandler(),
       _rpcHooks(),
       _healthAdapter(*this),
       _genericStateHandler(CUSTOM_COMPONENT_API_PATH, *this),
@@ -295,6 +297,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _protonConfigurer.applyInitialConfig(initializeThreads);
     initializeThreads.reset();
 
+    _prepareRestartHandler = std::make_unique<PrepareRestartHandler>(*_flushEngine);
     RPCHooks::Params rpcParams(*this, protonConfig.rpcport, _configUri.getConfigId());
     rpcParams.slobrok_config = _configUri.createWithNewId(protonConfig.slobrokconfigid);
     _rpcHooks.reset(new RPCHooks(rpcParams));
@@ -634,29 +637,11 @@ Proton::triggerFlush()
     return true;
 }
 
-namespace {
-
-PrepareRestartFlushStrategy::Config
-createPrepareRestartConfig(const ProtonConfig &protonConfig)
-{
-    return PrepareRestartFlushStrategy::Config(protonConfig.flush.preparerestart.replaycost,
-                                               protonConfig.flush.preparerestart.replayoperationcost,
-                                               protonConfig.flush.preparerestart.writecost);
-}
-
-}
-
 bool
 Proton::prepareRestart()
 {
-    if (!_flushEngine || ! _flushEngine->HasThread()) {
-        return false;
-    }
     BootstrapConfig::SP configSnapshot = getActiveConfigSnapshot();
-    auto strategy = std::make_shared<PrepareRestartFlushStrategy>(
-            createPrepareRestartConfig(configSnapshot->getProtonConfig()));
-    _flushEngine->setStrategy(strategy);
-    return true;
+    return _prepareRestartHandler->prepareRestart(configSnapshot->getProtonConfig());
 }
 
 namespace {

@@ -68,6 +68,7 @@ vespa_add_library(searchcore_server STATIC
     operationdonecontext.cpp
     pendinglidtracker.cpp
     persistencehandlerproxy.cpp
+    prepare_restart_handler.cpp
     proton.cpp
     proton_config_fetcher.cpp
     proton_config_snapshot.cpp
