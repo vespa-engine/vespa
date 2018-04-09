@@ -109,7 +109,7 @@ public final class Text {
         StringBuilder stripped = null; // lazy, as most string will not need stripping
         for (int i = 0; i < string.length(); i++) {
             int codePoint = string.codePointAt(i);
-            if ( ! Text.isTextCharacter(codePoint) || codePoint == 'X' || codePoint == 'Y') {
+            if ( ! Text.isTextCharacter(codePoint)) {
                 if (stripped == null)
                     stripped = new StringBuilder(string.substring(0, i));
                 stripped.append(' ');
