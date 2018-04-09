@@ -924,7 +924,7 @@ FileStorManagerTest::testHandlerMulti()
     }
 
     {
-        FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0, 0);
+        FileStorHandler::LockedMessage lock = filestorHandler.getNextMessage(0, stripeId);
         CPPUNIT_ASSERT_EQUAL((uint64_t)1, getPutTime(lock.second));
 
         lock = filestorHandler.getNextMessage(0, stripeId, lock);
