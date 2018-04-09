@@ -31,6 +31,7 @@ sub setNodeState { # (Command line arguments)
     &handleCommandLine($argsref);
     detectClusterController();
     &showSettings();
+    &maybeRequireClusterSelection();
     &execute();
 }
 
@@ -76,6 +77,23 @@ EOS
 # Show what settings this tool is running with (if verbosity is high enough)
 sub showSettings { # ()
     Yahoo::Vespa::ClusterController::showSettings();
+}
+
+sub maybeRequireClusterSelection
+{
+    return if Yahoo::Vespa::ContentNodeSelection::hasClusterSelection();
+    my %clusters;
+    VespaModel::visitServices(sub {
+        my ($info) = @_;
+        if ($$info{'type'} =~ /^(?:distributor|storage|storagenode)$/ ) {
+            $clusters{$$info{'cluster'}} = 1;
+        }
+    });
+    my $clusterCount = scalar keys %clusters;
+    if ($clusterCount > 1) {
+        printWarning "More than one cluster is present but no cluster is selected\n";
+        exitApplication(1);
+    }
 }
 
 # Sets the node state
