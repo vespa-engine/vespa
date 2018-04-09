@@ -246,8 +246,8 @@ public class StatisticsSearcher extends Searcher {
                 Metric.Context degradedContext = getDegradedMetricContext(execution.chain().getId().stringValue(), queryCoverage);
                 metric.add(DEGRADED_METRIC, 1, degradedContext);
             }
-            metric.set(DOCS_COVERED_METRIC, queryCoverage.getDocs(), metricContext);
-            metric.set(DOCS_TOTAL_METRIC, queryCoverage.getActive(), metricContext);
+            metric.add(DOCS_COVERED_METRIC, queryCoverage.getDocs(), metricContext);
+            metric.add(DOCS_TOTAL_METRIC, queryCoverage.getActive(), metricContext);
         }
         int hitCount = result.getConcreteHitCount();
         hitsPerQuery.put((double) hitCount);
