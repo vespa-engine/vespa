@@ -9,12 +9,10 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
-import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
-import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.persistence.PersistenceException;
 
 import java.time.Duration;
 import java.util.Comparator;
@@ -38,22 +36,17 @@ public class TenantController {
     /** The controller owning this */    
     private final Controller controller;
 
-    /** For permanent storage */
-    private final ControllerDb db;
-
-    /** For working memory storage and sharing between controllers */
+    /** For persistence */
     private final CuratorDb curator;
 
     private final AthenzClientFactory athenzClientFactory;
 
-    public TenantController(Controller controller, ControllerDb db, CuratorDb curator,
-                            AthenzClientFactory athenzClientFactory) {
+    public TenantController(Controller controller, CuratorDb curator, AthenzClientFactory athenzClientFactory) {
         this.controller = controller;
-        this.db = db;
         this.curator = curator;
         this.athenzClientFactory = athenzClientFactory;
         // Write all tenants to ensure persisted data uses latest serialization format
-        for (Tenant tenant : db.listTenants()) {
+        for (Tenant tenant : curator.readTenants()) {
             try (Lock lock = lock(tenant.name())) {
                 if (tenant instanceof AthenzTenant) {
                     curator.writeTenant((AthenzTenant) tenant);
@@ -68,9 +61,9 @@ public class TenantController {
 
     /** Returns a list of all known tenants sorted by name */
     public List<Tenant> asList() {
-        return db.listTenants().stream()
-                 .sorted(Comparator.comparing(Tenant::name))
-                 .collect(Collectors.toList());
+        return curator.readTenants().stream()
+                      .sorted(Comparator.comparing(Tenant::name))
+                      .collect(Collectors.toList());
     }
 
     /** Returns a list of all tenants accessible by the given user */
@@ -88,7 +81,7 @@ public class TenantController {
     public void create(UserTenant tenant) {
         try (Lock lock = lock(tenant.name())) {
             requireNonExistent(tenant.name());
-            db.createTenant(tenant);
+            curator.writeTenant(tenant);
             log.info("Created " + tenant);
         }
     }
@@ -107,7 +100,7 @@ public class TenantController {
                                                    "'");
             }
             athenzClientFactory.createZmsClientWithAuthorizedServiceToken(token).createTenant(domain);
-            db.createTenant(tenant);
+            curator.writeTenant(tenant);
             log.info("Created " + tenant);
         }
     }
@@ -121,11 +114,7 @@ public class TenantController {
 
     /** Find tenant by name */
     public Optional<Tenant> tenant(TenantName name) {
-        try {
-            return db.getTenant(name);
-        } catch (PersistenceException e) {
-            throw new RuntimeException(e);
-        }
+        return curator.readTenant(name);
     }
 
     /** Find tenant by name */
@@ -135,11 +124,7 @@ public class TenantController {
 
     /** Find Athenz tenant by name */
     public Optional<AthenzTenant> athenzTenant(TenantName name) {
-        try {
-            return db.getAthenzTenant(name);
-        } catch (PersistenceException e) {
-            throw new RuntimeException(e);
-        }
+        return curator.readAthenzTenant(name);
     }
 
     /** Update Athenz tenant */
@@ -147,10 +132,8 @@ public class TenantController {
         try (Lock lock = lock(updatedTenant.name())) {
             requireExists(updatedTenant.name());
             updateAthenzDomain(updatedTenant, token);
-            db.updateTenant(updatedTenant);
+            curator.writeTenant(updatedTenant);
             log.info("Updated " + updatedTenant);
-        } catch (PersistenceException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -170,16 +153,12 @@ public class TenantController {
     }
 
     private void deleteTenant(TenantName name) {
-        try {
-            if ( ! controller.applications().asList(name).isEmpty()) {
-                throw new IllegalArgumentException("Could not delete tenant '" + name.value()
-                                                   + "': This tenant has active applications");
-            }
-            db.deleteTenant(name);
-            log.info("Deleted " + name);
-        } catch (PersistenceException e) {
-            throw new RuntimeException(e);
+        if (!controller.applications().asList(name).isEmpty()) {
+            throw new IllegalArgumentException("Could not delete tenant '" + name.value()
+                                               + "': This tenant has active applications");
         }
+        curator.removeTenant(name);
+        log.info("Deleted " + name);
     }
 
     private void updateAthenzDomain(AthenzTenant updatedTenant, NToken token) {

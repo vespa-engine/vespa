@@ -35,8 +35,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Curator backed database for storing working state shared between controller servers.
- * This maps controller specific operations to general curator operations.
+ * Curator backed database for storing the persistence state of controllers. This maps controller specific operations
+ * to general curator operations.
  *
  * @author bratseth
  * @author mpolden

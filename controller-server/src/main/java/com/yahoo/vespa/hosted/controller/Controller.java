@@ -26,8 +26,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingSe
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
-import com.yahoo.vespa.hosted.controller.persistence.ControllerDbProxy;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -44,15 +42,12 @@ import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 /**
- * API to the controller. This contains (currently: should contain) the object model of everything the 
- * controller cares about, mainly tenants and applications.
- * 
- * As the controller runtime and Controller object are singletons, this instance can read from the object model
- * in memory. However, all changes to the object model must be persisted in the controller db.
+ * API to the controller. This contains the object model of everything the controller cares about, mainly tenants and
+ * applications. The object model is persisted to curator.
  * 
  * All the individual model objects reachable from the Controller are immutable.
  * 
- * Access to the controller is multithread safe, provided the locking methods are
+ * Access to the controller is multi-thread safe, provided the locking methods are
  * used when accessing, modifying and storing objects provided by the controller.
  * 
  * @author bratseth
@@ -79,24 +74,23 @@ public class Controller extends AbstractComponent {
     /**
      * Creates a controller 
      * 
-     * @param db the db storing persistent state
-     * @param curator the curator instance storing working state shared between controller instances
+     * @param curator the curator instance storing the persistent state of the controller.
      */
     @Inject
-    public Controller(ControllerDb db, CuratorDb curator, RotationsConfig rotationsConfig,
+    public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, ConfigServerClient configServer, NodeRepositoryClientInterface nodeRepository,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, AthenzClientFactory athenzClientFactory,
                       ArtifactRepository artifactRepository, BuildService buildService) {
-        this(db, curator, rotationsConfig,
+        this(curator, rotationsConfig,
              gitHub, entityService, organization, globalRoutingService, zoneRegistry,
              configServer, nodeRepository, metricsService, nameService, routingGenerator, chef,
              Clock.systemUTC(), athenzClientFactory, artifactRepository, buildService);
     }
 
-    public Controller(ControllerDb db, CuratorDb curator, RotationsConfig rotationsConfig,
+    public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, ConfigServerClient configServer, NodeRepositoryClientInterface nodeRepository,
@@ -118,9 +112,7 @@ public class Controller extends AbstractComponent {
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
         this.athenzClientFactory = Objects.requireNonNull(athenzClientFactory, "AthenzClientFactory cannot be null");
 
-        ControllerDbProxy dbProxy = new ControllerDbProxy(Objects.requireNonNull(db, "Controller db cannot be null"),
-                                                          curator);
-        applicationController = new ApplicationController(this, dbProxy, curator, athenzClientFactory,
+        applicationController = new ApplicationController(this, curator, athenzClientFactory,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
                                                           Objects.requireNonNull(nameService, "NameService cannot be null"),
                                                           configServer,
@@ -128,7 +120,7 @@ public class Controller extends AbstractComponent {
                                                           Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock);
-        tenantController = new TenantController(this, dbProxy, curator, athenzClientFactory);
+        tenantController = new TenantController(this, curator, athenzClientFactory);
     }
     
     /** Returns the instance controlling tenants */

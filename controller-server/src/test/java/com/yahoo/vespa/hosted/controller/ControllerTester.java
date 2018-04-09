@@ -30,18 +30,16 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrgani
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
-import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.MockBuildService;
 import com.yahoo.vespa.hosted.controller.integration.MockMetricsService;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
-import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.persistence.MemoryControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.routing.MockRoutingGenerator;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
@@ -57,7 +55,6 @@ import static org.junit.Assert.assertNotNull;
  */
 public final class ControllerTester {
 
-    private final ControllerDb db;
     private final AthenzDbMock athenzDb;
     private final ManualClock clock; // TODO jvenstad: Let this clock determine log time stamps.
     private final ConfigServerClientMock configServer;
@@ -73,29 +70,28 @@ public final class ControllerTester {
     private Controller controller;
 
     public ControllerTester() {
-        this(new MemoryControllerDb(), new AthenzDbMock(), new ManualClock(), new ConfigServerClientMock(),
+        this(new AthenzDbMock(), new ManualClock(), new ConfigServerClientMock(),
              new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), defaultRotationsConfig(),
              new MemoryNameService(), new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
     }
 
     public ControllerTester(ManualClock clock) {
-        this(new MemoryControllerDb(), new AthenzDbMock(), clock, new ConfigServerClientMock(),
+        this(new AthenzDbMock(), clock, new ConfigServerClientMock(),
              new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), defaultRotationsConfig(),
              new MemoryNameService(), new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
     }
 
     public ControllerTester(RotationsConfig rotationsConfig) {
-        this(new MemoryControllerDb(), new AthenzDbMock(), new ManualClock(), new ConfigServerClientMock(),
+        this(new AthenzDbMock(), new ManualClock(), new ConfigServerClientMock(),
              new ZoneRegistryMock(), new GitHubMock(), new MockCuratorDb(), rotationsConfig, new MemoryNameService(),
              new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService());
     }
 
-    private ControllerTester(ControllerDb db, AthenzDbMock athenzDb, ManualClock clock,
+    private ControllerTester(AthenzDbMock athenzDb, ManualClock clock,
                              ConfigServerClientMock configServer, ZoneRegistryMock zoneRegistry,
                              GitHubMock gitHub, CuratorDb curator, RotationsConfig rotationsConfig,
                              MemoryNameService nameService, ArtifactRepositoryMock artifactRepository,
                              EntityService entityService, MockBuildService buildService) {
-        this.db = db;
         this.athenzDb = athenzDb;
         this.clock = clock;
         this.configServer = configServer;
@@ -107,7 +103,7 @@ public final class ControllerTester {
         this.artifactRepository = artifactRepository;
         this.entityService = entityService;
         this.buildService = buildService;
-        this.controller = createController(db, curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
+        this.controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
                                            athenzDb, nameService, artifactRepository, entityService, buildService);
     }
 
@@ -135,7 +131,7 @@ public final class ControllerTester {
 
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
     public final void createNewController() {
-        controller = createController(db, curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry, athenzDb,
+        controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry, athenzDb,
                                       nameService, artifactRepository, entityService, buildService);
     }
 
@@ -243,14 +239,13 @@ public final class ControllerTester {
         return new LockedApplication(application, new Lock("/test", new MockCurator()));
     }
 
-    private static Controller createController(ControllerDb db, CuratorDb curator, RotationsConfig rotationsConfig,
+    private static Controller createController(CuratorDb curator, RotationsConfig rotationsConfig,
                                                ConfigServerClientMock configServerClientMock, ManualClock clock,
                                                GitHubMock gitHubClientMock, ZoneRegistryMock zoneRegistryMock,
                                                AthenzDbMock athensDb, MemoryNameService nameService,
                                                ArtifactRepository artifactRepository, EntityService entityService,
                                                BuildService buildService) {
-        Controller controller = new Controller(db,
-                                               curator,
+        Controller controller = new Controller(curator,
                                                rotationsConfig,
                                                gitHubClientMock,
                                                entityService,
