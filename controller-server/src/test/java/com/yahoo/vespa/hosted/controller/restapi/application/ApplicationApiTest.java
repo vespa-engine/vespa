@@ -337,6 +337,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(data)
                                       .userIdentity(new UserId("new_user")), // Normalized to by-new-user by API
                               new File("create-user-response.json"));
+
+        // GET user lists only tenants for the authenticated user
+        tester.assertResponse(request("/application/v4/user", GET)
+                                      .userIdentity(new UserId("other_user")),
+                              "{\"user\":\"other_user\",\"tenants\":[],\"tenantExists\":false}");
+
         // OPTIONS return 200 OK
         tester.assertResponse(request("/application/v4/", Request.Method.OPTIONS),
                               "");

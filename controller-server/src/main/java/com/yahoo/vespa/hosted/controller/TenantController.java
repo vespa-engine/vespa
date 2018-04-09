@@ -79,7 +79,7 @@ public class TenantController {
         Set<AthenzDomain> userDomains = new HashSet<>(athenzClientFactory.createZtsClientWithServicePrincipal()
                                                                          .getTenantDomainsForUser(athenzUser));
         return asList().stream()
-                       .filter(tenant -> tenant instanceof UserTenant||
+                       .filter(tenant -> isUser(tenant, user) ||
                                          userDomains.stream().anyMatch(domain -> inDomain(tenant, domain)))
                        .collect(Collectors.toList());
     }
@@ -229,6 +229,10 @@ public class TenantController {
 
     private static boolean inDomain(Tenant tenant, AthenzDomain domain) {
         return tenant instanceof AthenzTenant && ((AthenzTenant) tenant).in(domain);
+    }
+
+    private static boolean isUser(Tenant tenant, UserId userId) {
+        return tenant instanceof UserTenant && ((UserTenant) tenant).is(userId.id());
     }
 
     private static String dashToUnderscore(String s) {
