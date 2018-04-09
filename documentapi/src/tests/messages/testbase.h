@@ -57,5 +57,7 @@ public:
     string getPath(const string &filename) const { return _dataPath + "/" + filename; }
     mbus::Blob encode(const mbus::Routable &obj) const { return _protocol.encode(getVersion(), obj); }
     mbus::Routable::UP decode(mbus::BlobRef data) const { return _protocol.decode(getVersion(), data); }
+private:
+    bool file_content_is_unchanged(const string& filename, const mbus::Blob& data_to_write) const;
 };
 
