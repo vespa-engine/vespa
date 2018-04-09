@@ -513,6 +513,20 @@ public class HttpRequestFactoryTest {
         }
     }
 
+    @Test
+    public final void illegal_unicode_in_query_throws_requestexception() {
+        try {
+            HttpRequestFactory.newJDiscRequest(
+                    new MockContainer(),
+                    new MockRequest("http://example.com/search?query=%c0%ae"));
+            fail("Above statement should throw");
+        } catch (RequestException e) {
+            assertThat(e.getResponseStatus(), is(Response.Status.BAD_REQUEST));
+            assertThat(e.getMessage(), equalTo("Query violates RFC 2396: Not valid UTF8! byte C0 in state 0"));
+        }
+    }
+
+
     private static final class MockContainer implements CurrentContainer {
 
         @Override
