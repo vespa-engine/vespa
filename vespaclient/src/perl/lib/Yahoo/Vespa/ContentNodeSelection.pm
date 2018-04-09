@@ -127,6 +127,10 @@ sub validateCommandLineArguments { # (WantedState)
     return 1;
 }
 
+sub hasClusterSelection {
+    return defined $CLUSTER;
+}
+
 ############## Utility functions - Not intended for external use #############
 
 sub validType { # (ServiceType) -> Bool
