@@ -26,12 +26,14 @@ import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
+import com.yahoo.vdslib.VisitorStatistics;
 
 /**
  * The searcher which forwards queries to storage nodes using visiting.
@@ -151,7 +153,9 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
                 ", returned hit count = ", hits.size(), ", summary count = ",
                 summaryMap.size());
 
+        VisitorStatistics visitStats = visitor.getStatistics();
         result.setTotalHitCount(visitor.getTotalHitCount());
+        result.setCoverage(new Coverage(visitStats.getDocumentsVisited(), visitStats.getDocumentsVisited()));
         query.trace(visitor.getStatistics().toString(), false, 2);
         query.getContext(true).setProperty(STREAMING_STATISTICS, visitor.getStatistics());
 
