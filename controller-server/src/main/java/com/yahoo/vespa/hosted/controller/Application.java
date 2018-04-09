@@ -150,8 +150,8 @@ public class Application {
 
     /** Returns the version a new deployment to this zone should use for this application */
     public Version deployVersionIn(ZoneId zone, Controller controller) {
-        // TODO jvenstad: Return max of current and change.
-        return change.platform().orElse(versionIn(zone, controller));
+        Version current = versionIn(zone, controller);
+        return change.platform().filter(version -> ! current.isAfter(version)).orElse(current);
     }
 
     /** Returns the current version this application has, or if none; should use, in the given zone */
@@ -175,21 +175,19 @@ public class Application {
      */
     public Optional<ApplicationVersion> deployApplicationVersionFor(DeploymentJobs.JobType jobType,
                                                                     Controller controller,
-                                                                    boolean currentVersion) {
-        // TODO jvenstad: Return max of current and change's.
+                                                                    boolean useCurrentVersion) {
         if (jobType == DeploymentJobs.JobType.component)
             return Optional.empty();
 
-        if (currentVersion || ! change().application().isPresent()) {
-            Deployment deployment = deployments().get(jobType.zone(controller.system()).get());
-            if (deployment != null)
-                return Optional.of(deployment.applicationVersion());
+        Optional<ApplicationVersion> current = Optional.ofNullable(deployments.get(jobType.zone(controller.system()).get()))
+                .map(Deployment::applicationVersion);
 
-            if (deploymentJobs().lastSuccessfulApplicationVersionFor(jobType).isPresent())
-                return deploymentJobs().lastSuccessfulApplicationVersionFor(jobType);
-        }
-
-        return change().application();
+        return Optional.ofNullable(change.application()
+                                         .filter(version -> ! (useCurrentVersion || current.filter(cv -> cv.compareTo(version) > 0).isPresent()))
+                                         .orElse(current
+                                                         .orElse(deploymentJobs().lastSuccessfulApplicationVersionFor(jobType)
+                                                                                 .orElse(change.application()
+                                                                                               .orElse(null)))));
     }
 
     /** Returns the global rotation of this, if present */
