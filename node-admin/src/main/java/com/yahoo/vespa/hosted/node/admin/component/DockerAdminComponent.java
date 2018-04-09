@@ -106,7 +106,8 @@ public class DockerAdminComponent implements AdminComponent {
         AclMaintainer aclMaintainer = new AclMaintainer(
                 dockerOperations,
                 configServerClients.nodeRepository(),
-                dockerHostHostName);
+                dockerHostHostName,
+                new IPAddressesImpl());
 
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(
                 hostName,

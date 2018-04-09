@@ -1,20 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
+import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.AclSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.verification.VerificationMode;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.Map;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyVararg;
@@ -30,69 +30,61 @@ public class AclMaintainerTest {
 
     private static final String NODE_ADMIN_HOSTNAME = "node-admin.region-1.yahoo.com";
 
-    private AclMaintainer aclMaintainer;
-    private DockerOperations dockerOperations;
-    private NodeRepository nodeRepository;
-    private List<Container> containers;
+    private final IPAddressesMock ipAddresses = new IPAddressesMock();
+    private final DockerOperations dockerOperations  = mock(DockerOperations.class);
+    private final NodeRepository nodeRepository = mock(NodeRepository.class);
+    private final List<Container> containers = new ArrayList<>();
+    private final AclMaintainer aclMaintainer =
+            new AclMaintainer(dockerOperations, nodeRepository, NODE_ADMIN_HOSTNAME, ipAddresses);
 
     @Before
     public void before() {
-        this.dockerOperations = mock(DockerOperations.class);
-        this.nodeRepository = mock(NodeRepository.class);
-        this.aclMaintainer = new AclMaintainer(dockerOperations, nodeRepository, NODE_ADMIN_HOSTNAME);
-        this.containers = new ArrayList<>();
         when(dockerOperations.getAllManagedContainers()).thenReturn(containers);
     }
 
     @Test
     public void configures_container_acl() {
-        Container container = makeContainer("container-1");
-        List<AclSpec> aclSpec = makeNodeAcls(3, container.name);
-        when(nodeRepository.getNodesAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpec);
+        List<Container> containers = null;
+        Map<Container, Acl> acls = null;
+
+        when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers)).thenReturn(acls);
+
         aclMaintainer.run();
-        assertAclsApplied(container.name, aclSpec);
+
+        assertAclsApplied(acls);
     }
 
     @Test
     public void does_not_configure_acl_if_unchanged() {
-        Container container = makeContainer("container-1");
-        List<AclSpec> aclSpecs = makeNodeAcls(3, container.name);
-        when(nodeRepository.getNodesAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
-        // Run twice
-        aclMaintainer.run();
-        aclMaintainer.run();
-        assertAclsApplied(container.name, aclSpecs, times(1));
-    }
+        List<Container> containers = null;
+        Map<Container, Acl> acls = null;
 
-    @Test
-    public void reconfigures_acl_when_container_pid_changes() {
-        Container container = makeContainer("container-1");
-        List<AclSpec> aclSpecs = makeNodeAcls(3, container.name);
-        when(nodeRepository.getNodesAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
+        when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers)).thenReturn(acls);
 
         aclMaintainer.run();
-        assertAclsApplied(container.name, aclSpecs);
-
-        // Container is restarted and PID changes
-        makeContainer(container.name.asString(), Container.State.RUNNING, 43);
+        aclMaintainer.run();
         aclMaintainer.run();
 
-        assertAclsApplied(container.name, aclSpecs, times(2));
+        assertAclsApplied(acls, times(1));
     }
 
     @Test
     public void does_not_configure_acl_for_stopped_container() {
-        Container stoppedContainer = makeContainer("container-1", Container.State.EXITED, 0);
-        List<AclSpec> aclSpecs = makeNodeAcls(1, stoppedContainer.name);
-        when(nodeRepository.getNodesAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
+        List<Container> containers = null;
+        Map<Container, Acl> acls = null;
+
+        when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers)).thenReturn(acls);
+
+
         aclMaintainer.run();
-        assertAclsApplied(stoppedContainer.name, aclSpecs, never());
+
+        assertAclsApplied(acls, never());
     }
 
     @Test
     public void rollback_is_attempted_when_applying_acl_fail() {
-        Container container = makeContainer("container-1");
-        when(nodeRepository.getNodesAcl(NODE_ADMIN_HOSTNAME)).thenReturn(makeNodeAcls(1, container.name));
+        List<Container> containers = null;
+        Map<Container, Acl> acls = null;
 
         doThrow(new RuntimeException("iptables command failed"))
                 .doNothing()
@@ -102,7 +94,7 @@ public class AclMaintainerTest {
         aclMaintainer.run();
 
         verify(dockerOperations).executeCommandInNetworkNamespace(
-                eq(container.name),
+                eq(ContainerName.fromHostname("dsd.dsds.ds")),
                 eq("ip6tables"),
                 eq("-P"),
                 eq("INPUT"),
@@ -110,33 +102,35 @@ public class AclMaintainerTest {
         );
     }
 
-    private void assertAclsApplied(ContainerName containerName, List<AclSpec> aclSpecs) {
-        assertAclsApplied(containerName, aclSpecs, times(1));
+
+    private void assertAclsApplied(Map<Container, Acl> acls) {
+        assertAclsApplied(acls, times(1));
     }
 
-    private void assertAclsApplied(ContainerName containerName, List<AclSpec> aclSpecs,
-                                   VerificationMode verificationMode) {
-        StringBuilder expectedCommand = new StringBuilder()
-                .append("ip6tables -F INPUT; ")
-                .append("ip6tables -P INPUT DROP; ")
-                .append("ip6tables -P FORWARD DROP; ")
-                .append("ip6tables -P OUTPUT ACCEPT; ")
-                .append("ip6tables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT; ")
-                .append("ip6tables -A INPUT -i lo -j ACCEPT; ")
-                .append("ip6tables -A INPUT -p ipv6-icmp -j ACCEPT; ");
+    private void assertAclsApplied(Map<Container, Acl> acls, VerificationMode verificationMode) {
 
-        aclSpecs.forEach(nodeAcl ->
-                expectedCommand.append("ip6tables -A INPUT -s " + nodeAcl.ipAddress() + "/128 -j ACCEPT; "));
+        acls.forEach((container, acl) -> {
+            String iptables = "Somehing";
+            StringBuilder expectedCommand = new StringBuilder()
+                    .append(iptables + " -F INPUT; ")
+                    .append(iptables + " -P INPUT DROP; ")
+                    .append(iptables + " -P FORWARD DROP; ")
+                    .append(iptables + " -P OUTPUT ACCEPT; ")
+                    .append(iptables + " -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT; ")
+                    .append(iptables + " -A INPUT -i lo -j ACCEPT; ")
+                    .append(iptables + " -A INPUT -p ipv6-icmp -j ACCEPT; ");
 
-        expectedCommand.append("ip6tables -A INPUT -j REJECT");
+            acl.trustedNodes().forEach(node ->
+                    expectedCommand.append(iptables + " -A INPUT -s " +
+                            InetAddresses.toAddrString(node) +
+                            "TOD" + " -j ACCEPT; "));
 
+            acl.trustedPorts().forEach(node ->
+                    expectedCommand.append(iptables + " -A INPUT -p tcp --dport " + node + " -j ACCEPT; "));
 
-        verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
-                eq(containerName), eq("/bin/sh"), eq("-c"), eq(expectedCommand.toString()));
-    }
-
-    private Container makeContainer(String hostname) {
-        return makeContainer(hostname, Container.State.RUNNING, 42);
+            verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
+                    eq(container.name), eq("/bin/sh"), eq("-c"), eq(expectedCommand.toString()));
+        });
     }
 
     private Container makeContainer(String hostname, Container.State state, int pid) {
@@ -146,11 +140,4 @@ public class AclMaintainerTest {
         containers.add(container);
         return container;
     }
-
-    private static List<AclSpec> makeNodeAcls(int count, ContainerName containerName) {
-        return IntStream.rangeClosed(1, count)
-                .mapToObj(i -> new AclSpec("node-" + i, "::" + i, containerName))
-                .collect(Collectors.toList());
-    }
-
 }
