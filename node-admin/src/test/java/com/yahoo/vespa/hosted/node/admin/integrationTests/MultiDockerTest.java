@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -17,11 +17,11 @@ public class MultiDockerTest {
     public void test() throws InterruptedException {
         try (DockerTester dockerTester = new DockerTester()) {
             addAndWaitForNode(dockerTester, "host1.test.yahoo.com", new DockerImage("image1"));
-            NodeRepositoryNode nodeRepositoryNode2 = addAndWaitForNode(
+            NodeSpec nodeSpec2 = addAndWaitForNode(
                     dockerTester, "host2.test.yahoo.com", new DockerImage("image2"));
 
             dockerTester.addNodeRepositoryNode(
-                    new NodeRepositoryNode.Builder(nodeRepositoryNode2)
+                    new NodeSpec.Builder(nodeSpec2)
                             .nodeState(Node.State.dirty)
                             .minCpuCores(1)
                             .minMainMemoryAvailableGb(1)
@@ -29,7 +29,7 @@ public class MultiDockerTest {
                             .build());
 
             // Wait until it is marked ready
-            while (dockerTester.nodeRepositoryMock.getNode(nodeRepositoryNode2.hostname)
+            while (dockerTester.nodeRepositoryMock.getNode(nodeSpec2.hostname)
                     .filter(node -> node.nodeState != Node.State.ready).isPresent()) {
                 Thread.sleep(10);
             }
@@ -62,8 +62,8 @@ public class MultiDockerTest {
         }
     }
 
-    private NodeRepositoryNode addAndWaitForNode(DockerTester tester, String hostName, DockerImage dockerImage) throws InterruptedException {
-        NodeRepositoryNode nodeRepositoryNode = new NodeRepositoryNode.Builder()
+    private NodeSpec addAndWaitForNode(DockerTester tester, String hostName, DockerImage dockerImage) throws InterruptedException {
+        NodeSpec nodeSpec = new NodeSpec.Builder()
                 .hostname(hostName)
                 .wantedDockerImage(dockerImage)
                 .wantedVespaVersion("1.2.3")
@@ -77,7 +77,7 @@ public class MultiDockerTest {
                 .minDiskAvailableGb(1)
                 .build();
 
-        tester.addNodeRepositoryNode(nodeRepositoryNode);
+        tester.addNodeRepositoryNode(nodeSpec);
 
         // Wait for node admin to be notified with node repo state and the docker container has been started
         while (tester.nodeAdmin.getListOfHosts().size() != tester.nodeRepositoryMock.getNumberOfContainerSpecs()) {
@@ -89,6 +89,6 @@ public class MultiDockerTest {
                 "createContainerCommand with " + dockerImage + ", HostName: " + hostName + ", " + containerName,
                 "executeInContainerAsRoot with " + containerName + ", args: [" + DockerTester.NODE_PROGRAM + ", resume]");
 
-        return nodeRepositoryNode;
+        return nodeSpec;
     }
 }

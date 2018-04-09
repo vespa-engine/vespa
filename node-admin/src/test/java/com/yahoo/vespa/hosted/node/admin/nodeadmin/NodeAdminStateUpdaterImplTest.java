@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
@@ -183,8 +183,8 @@ public class NodeAdminStateUpdaterImplTest {
     }
 
     private void mockNodeRepo(int numberOfNodes) {
-        List<NodeRepositoryNode> containersToRun = IntStream.range(0, numberOfNodes)
-                .mapToObj(i -> new NodeRepositoryNode.Builder()
+        List<NodeSpec> containersToRun = IntStream.range(0, numberOfNodes)
+                .mapToObj(i -> new NodeSpec.Builder()
                         .hostname("host" + i + ".test.yahoo.com")
                         .nodeState(Node.State.active)
                         .nodeType(NodeType.tenant)

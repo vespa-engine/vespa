@@ -15,7 +15,7 @@ import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.containerdata.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.containerdata.MotdContainerData;
 import com.yahoo.vespa.hosted.node.admin.containerdata.PromptContainerData;
@@ -114,7 +114,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private ContainerState containerState = UNKNOWN;
 
-    private NodeRepositoryNode lastNode = null;
+    private NodeSpec lastNode = null;
     private CpuUsageReporter lastCpuMetric = new CpuUsageReporter();
 
     public NodeAgentImpl(
@@ -228,7 +228,7 @@ public class NodeAgentImpl implements NodeAgent {
         logger.info("Stopped");
     }
 
-    void runLocalResumeScriptIfNeeded(NodeRepositoryNode node) {
+    void runLocalResumeScriptIfNeeded(NodeSpec node) {
         if (! resumeScriptRun) {
             storageMaintainer.writeMetricsConfig(containerName, node);
             storageMaintainer.writeFilebeatConfig(containerName, node);
@@ -243,7 +243,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void updateNodeRepoWithCurrentAttributes(final NodeRepositoryNode node) {
+    private void updateNodeRepoWithCurrentAttributes(final NodeSpec node) {
         final NodeAttributes currentNodeAttributes = new NodeAttributes()
                 .withRestartGeneration(node.currentRestartGeneration.orElse(null))
                 .withRebootGeneration(node.currentRebootGeneration)
@@ -271,7 +271,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void startContainer(NodeRepositoryNode node) {
+    private void startContainer(NodeSpec node) {
         createContainerData(node);
         dockerOperations.createContainer(containerName, node);
         dockerOperations.startContainer(containerName, node);
@@ -281,7 +281,7 @@ public class NodeAgentImpl implements NodeAgent {
         logger.info("Container successfully started, new containerState is " + containerState);
     }
 
-    private Optional<Container> removeContainerIfNeededUpdateContainerState(NodeRepositoryNode node, Optional<Container> existingContainer) {
+    private Optional<Container> removeContainerIfNeededUpdateContainerState(NodeSpec node, Optional<Container> existingContainer) {
         return existingContainer
                 .flatMap(container -> removeContainerIfNeeded(node, container))
                 .map(container -> {
@@ -293,7 +293,7 @@ public class NodeAgentImpl implements NodeAgent {
                 });
     }
 
-    private Optional<String> shouldRestartServices(NodeRepositoryNode node) {
+    private Optional<String> shouldRestartServices(NodeSpec node) {
         if (!node.wantedRestartGeneration.isPresent()) return Optional.empty();
 
         if (!node.currentRestartGeneration.isPresent() ||
@@ -304,7 +304,7 @@ public class NodeAgentImpl implements NodeAgent {
         return Optional.empty();
     }
 
-    private void restartServices(NodeRepositoryNode node, Container existingContainer) {
+    private void restartServices(NodeSpec node, Container existingContainer) {
         if (existingContainer.state.isRunning() && node.nodeState == Node.State.active) {
             ContainerName containerName = existingContainer.name;
             logger.info("Restarting services for " + containerName);
@@ -321,7 +321,7 @@ public class NodeAgentImpl implements NodeAgent {
         dockerOperations.stopServicesOnNode(containerName);
     }
 
-    private Optional<String> shouldRemoveContainer(NodeRepositoryNode node, Container existingContainer) {
+    private Optional<String> shouldRemoveContainer(NodeSpec node, Container existingContainer) {
         final Node.State nodeState = node.nodeState;
         if (nodeState == Node.State.dirty || nodeState == Node.State.provisioned) {
             return Optional.of("Node in state " + nodeState + ", container should no longer be running");
@@ -345,7 +345,7 @@ public class NodeAgentImpl implements NodeAgent {
         return Optional.empty();
     }
 
-    private Optional<Container> removeContainerIfNeeded(NodeRepositoryNode node, Container existingContainer) {
+    private Optional<Container> removeContainerIfNeeded(NodeSpec node, Container existingContainer) {
         Optional<String> removeReason = shouldRemoveContainer(node, existingContainer);
         if (removeReason.isPresent()) {
             logger.info("Will remove container " + existingContainer + ": " + removeReason.get());
@@ -371,7 +371,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
 
-    private void scheduleDownLoadIfNeeded(NodeRepositoryNode node) {
+    private void scheduleDownLoadIfNeeded(NodeSpec node) {
         if (node.currentDockerImage.equals(node.wantedDockerImage)) return;
 
         if (dockerOperations.pullImageAsyncIfNeeded(node.wantedDockerImage.get())) {
@@ -440,12 +440,12 @@ public class NodeAgentImpl implements NodeAgent {
 
     // Public for testing
     void converge() {
-        final Optional<NodeRepositoryNode> optionalNode = nodeRepository.getNode(hostname);
+        final Optional<NodeSpec> optionalNode = nodeRepository.getNode(hostname);
 
         // We just removed the node from node repo, so this is expected until NodeAdmin stop this NodeAgent
         if (!optionalNode.isPresent() && expectNodeNotInNodeRepo) return;
 
-        final NodeRepositoryNode node = optionalNode.orElseThrow(() ->
+        final NodeSpec node = optionalNode.orElseThrow(() ->
                 new IllegalStateException(String.format("Node '%s' missing from node repository.", hostname)));
         expectNodeNotInNodeRepo = false;
 
@@ -535,7 +535,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     @SuppressWarnings("unchecked")
     public void updateContainerNodeMetrics() {
-        final NodeRepositoryNode node = lastNode;
+        final NodeSpec node = lastNode;
         if (node == null || containerState != UNKNOWN) return;
 
         Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
@@ -693,7 +693,7 @@ public class NodeAgentImpl implements NodeAgent {
         orchestrator.suspend(hostname);
     }
 
-    private void createContainerData(NodeRepositoryNode node) {
+    private void createContainerData(NodeSpec node) {
         ContainerData containerData = ContainerData.createClean(environment, ContainerName.fromHostname(node.hostname));
 
         // ContainerData only works when root, which is the case only for HostAdmin so far -- config nodes are only used under HostAdmin.

@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
@@ -99,9 +99,9 @@ public class RealNodeRepositoryTest {
         NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String dockerHostHostname = "dockerhost1.yahoo.com";
 
-        final List<NodeRepositoryNode> containersToRun = nodeRepositoryApi.getNodes(dockerHostHostname);
+        final List<NodeSpec> containersToRun = nodeRepositoryApi.getNodes(dockerHostHostname);
         assertThat(containersToRun.size(), is(1));
-        final NodeRepositoryNode node = containersToRun.get(0);
+        final NodeSpec node = containersToRun.get(0);
         assertThat(node.hostname, is("host4.yahoo.com"));
         assertThat(node.wantedDockerImage.get(), is(new DockerImage("docker-registry.domain.tld:8080/dist/vespa:6.42.0")));
         assertThat(node.nodeState, is(Node.State.active));
@@ -117,7 +117,7 @@ public class RealNodeRepositoryTest {
         waitForJdiscContainerToServe();
         NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String hostname = "host4.yahoo.com";
-        Optional<NodeRepositoryNode> node = nodeRepositoryApi.getNode(hostname);
+        Optional<NodeSpec> node = nodeRepositoryApi.getNode(hostname);
         assertThat(node.isPresent(), is(true));
         assertThat(node.get().hostname, is(hostname));
     }
@@ -127,7 +127,7 @@ public class RealNodeRepositoryTest {
         waitForJdiscContainerToServe();
         NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String hostname = "host-that-does-not-exist";
-        Optional<NodeRepositoryNode> node = nodeRepositoryApi.getNode(hostname);
+        Optional<NodeSpec> node = nodeRepositoryApi.getNode(hostname);
         assertFalse(node.isPresent());
     }
 

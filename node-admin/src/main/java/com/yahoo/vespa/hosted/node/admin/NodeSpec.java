@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * @author stiankri
  */
-public class NodeRepositoryNode {
+public class NodeSpec {
     public final String hostname;
     public final Node.State nodeState;
     public final NodeType nodeType;
@@ -46,7 +46,7 @@ public class NodeRepositoryNode {
     public final Optional<String> hardwareDivergence;
     public final Optional<String> parentHostname;
 
-    public NodeRepositoryNode(
+    public NodeSpec(
             final String hostname,
             final Optional<DockerImage> wantedDockerImage,
             final Optional<DockerImage> currentDockerImage,
@@ -107,9 +107,9 @@ public class NodeRepositoryNode {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof NodeRepositoryNode)) return false;
+        if (!(o instanceof NodeSpec)) return false;
 
-        NodeRepositoryNode that = (NodeRepositoryNode) o;
+        NodeSpec that = (NodeSpec) o;
 
         return Objects.equals(hostname, that.hostname) &&
                 Objects.equals(wantedDockerImage, that.wantedDockerImage) &&
@@ -314,7 +314,7 @@ public class NodeRepositoryNode {
 
         public Builder() {}
 
-        public Builder(NodeRepositoryNode node) {
+        public Builder(NodeSpec node) {
             hostname(node.hostname);
             nodeState(node.nodeState);
             nodeType(node.nodeType);
@@ -454,8 +454,8 @@ public class NodeRepositoryNode {
             return this;
         }
 
-        public NodeRepositoryNode build() {
-            return new NodeRepositoryNode(hostname, wantedDockerImage, currentDockerImage, nodeState, nodeType,
+        public NodeSpec build() {
+            return new NodeSpec(hostname, wantedDockerImage, currentDockerImage, nodeState, nodeType,
                                          nodeFlavor, nodeCanonicalFlavor,
                                          wantedVespaVersion, vespaVersion, allowedToBeDown, owner, membership,
                                          wantedRestartGeneration, currentRestartGeneration,

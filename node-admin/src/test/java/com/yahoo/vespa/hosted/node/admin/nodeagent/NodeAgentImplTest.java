@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.containerdata.ConfigServerContainerData;
 import com.yahoo.vespa.hosted.node.admin.containerdata.ContainerData;
@@ -95,7 +95,7 @@ public class NodeAgentImplTest {
             .cloud("mycloud")
             .build();
 
-    private final NodeRepositoryNode.Builder nodeBuilder = new NodeRepositoryNode.Builder()
+    private final NodeSpec.Builder nodeBuilder = new NodeSpec.Builder()
             .hostname(hostName)
             .nodeType(NodeType.tenant)
             .nodeFlavor("docker")
@@ -108,7 +108,7 @@ public class NodeAgentImplTest {
     public void upToDateContainerIsUntouched() {
         final long restartGeneration = 1;
         final long rebootGeneration = 0;
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .nodeState(Node.State.active)
@@ -140,7 +140,7 @@ public class NodeAgentImplTest {
     public void verifyRemoveOldFilesIfDiskFull() {
         final long restartGeneration = 1;
         final long rebootGeneration = 0;
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .nodeState(Node.State.active)
@@ -165,7 +165,7 @@ public class NodeAgentImplTest {
     public void absentContainerCausesStart() throws Exception {
         final long restartGeneration = 1;
         final long rebootGeneration = 0;
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .nodeState(Node.State.active)
                 .wantedVespaVersion(vespaVersion)
@@ -207,7 +207,7 @@ public class NodeAgentImplTest {
         final DockerImage newDockerImage = new DockerImage("new-image");
         final long wantedRestartGeneration = 2;
         final long currentRestartGeneration = 1;
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .wantedDockerImage(newDockerImage)
                 .currentDockerImage(dockerImage)
                 .nodeState(Node.State.active)
@@ -237,7 +237,7 @@ public class NodeAgentImplTest {
     public void containerIsRestartedIfFlavorChanged() throws IOException {
         final long wantedRestartGeneration = 1;
         final long currentRestartGeneration = 1;
-        NodeRepositoryNode.Builder specBuilder = nodeBuilder
+        NodeSpec.Builder specBuilder = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .nodeState(Node.State.active)
@@ -247,9 +247,9 @@ public class NodeAgentImplTest {
                 .currentRestartGeneration(currentRestartGeneration);
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
-        NodeRepositoryNode firstSpec = specBuilder.build();
-        NodeRepositoryNode secondSpec = specBuilder.minDiskAvailableGb(200).build();
-        NodeRepositoryNode thirdSpec = specBuilder.minCpuCores(4).build();
+        NodeSpec firstSpec = specBuilder.build();
+        NodeSpec secondSpec = specBuilder.minDiskAvailableGb(200).build();
+        NodeSpec thirdSpec = specBuilder.minCpuCores(4).build();
 
         when(nodeRepository.getNode(hostName))
                 .thenReturn(Optional.of(firstSpec))
@@ -277,7 +277,7 @@ public class NodeAgentImplTest {
     public void noRestartIfOrchestratorSuspendFails() {
         final long wantedRestartGeneration = 2;
         final long currentRestartGeneration = 1;
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .nodeState(Node.State.active)
@@ -303,7 +303,7 @@ public class NodeAgentImplTest {
     @Test
     public void failedNodeRunningContainerShouldStillBeRunning() {
         final long restartGeneration = 1;
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .nodeState(Node.State.failed)
@@ -328,7 +328,7 @@ public class NodeAgentImplTest {
     public void readyNodeLeadsToNoAction() {
         final long restartGeneration = 1;
         final long rebootGeneration = 0;
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .nodeState(Node.State.ready)
                 .wantedRestartGeneration(restartGeneration)
                 .currentRestartGeneration(restartGeneration)
@@ -357,7 +357,7 @@ public class NodeAgentImplTest {
         final long restartGeneration = 1;
         final long rebootGeneration = 0;
 
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .nodeState(Node.State.inactive)
@@ -386,7 +386,7 @@ public class NodeAgentImplTest {
         final long restartGeneration = 1;
         final long rebootGeneration = 0;
 
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .nodeState(Node.State.reserved)
                 .wantedVespaVersion(vespaVersion)
@@ -409,7 +409,7 @@ public class NodeAgentImplTest {
                 .wantedRestartGeneration(restartGeneration)
                 .currentRestartGeneration(restartGeneration));
 
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .nodeState(nodeState)
@@ -451,7 +451,7 @@ public class NodeAgentImplTest {
 
     @Test
     public void provisionedNodeIsMarkedAsDirty() {
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .nodeState(Node.State.provisioned)
                 .build();
@@ -465,7 +465,7 @@ public class NodeAgentImplTest {
 
     @Test
     public void testRestartDeadContainerAfterNodeAdminRestart() throws IOException {
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .currentDockerImage(dockerImage)
                 .wantedDockerImage(dockerImage)
                 .nodeState(Node.State.active)
@@ -489,7 +489,7 @@ public class NodeAgentImplTest {
     @Test
     public void resumeProgramRunsUntilSuccess() {
         final long restartGeneration = 1;
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .nodeState(Node.State.active)
@@ -556,7 +556,7 @@ public class NodeAgentImplTest {
     public void start_container_subtask_failure_leads_to_container_restart() throws IOException {
         final long restartGeneration = 1;
         final long rebootGeneration = 0;
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .nodeState(Node.State.active)
                 .wantedVespaVersion(vespaVersion)
@@ -611,9 +611,9 @@ public class NodeAgentImplTest {
         Docker.ContainerStats stats1 = new ContainerStatsImpl(networks, precpu_stats, memory_stats, blkio_stats);
         Docker.ContainerStats stats2 = new ContainerStatsImpl(networks, cpu_stats, memory_stats, blkio_stats);
 
-        NodeRepositoryNode.Owner owner = new NodeRepositoryNode.Owner("tester", "testapp", "testinstance");
-        NodeRepositoryNode.Membership membership = new NodeRepositoryNode.Membership("clustType", "clustId", "grp", 3, false);
-        final NodeRepositoryNode node = nodeBuilder
+        NodeSpec.Owner owner = new NodeSpec.Owner("tester", "testapp", "testinstance");
+        NodeSpec.Membership membership = new NodeSpec.Membership("clustType", "clustId", "grp", 3, false);
+        final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .nodeState(Node.State.active)
@@ -662,7 +662,7 @@ public class NodeAgentImplTest {
 
     @Test
     public void testGetRelevantMetricsForReadyNode() {
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .nodeState(Node.State.ready)
                 .build();
 
@@ -682,7 +682,7 @@ public class NodeAgentImplTest {
     @Test
     public void testRunningConfigServer() throws IOException {
         final long rebootGeneration = 0;
-        final NodeRepositoryNode node = nodeBuilder
+        final NodeSpec node = nodeBuilder
                 .nodeType(NodeType.config)
                 .wantedDockerImage(dockerImage)
                 .nodeState(Node.State.active)

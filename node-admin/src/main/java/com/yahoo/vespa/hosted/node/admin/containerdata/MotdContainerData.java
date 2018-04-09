@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.node.admin.containerdata;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.Template;
 
@@ -46,7 +46,7 @@ public class MotdContainerData {
 
     private final String renderedString;
 
-    public MotdContainerData(NodeRepositoryNode node, Environment environment) {
+    public MotdContainerData(NodeSpec node, Environment environment) {
         renderedString = Template.of(templateString)
                 .set("zone", environment)
                 .set("type", node.nodeType)

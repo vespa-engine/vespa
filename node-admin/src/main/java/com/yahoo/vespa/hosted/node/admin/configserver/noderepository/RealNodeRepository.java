@@ -5,7 +5,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.NodeAcl;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetAclResponse;
@@ -38,19 +38,19 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public List<NodeRepositoryNode> getNodes(String baseHostName) {
+    public List<NodeSpec> getNodes(String baseHostName) {
         return getNodes(Optional.of(baseHostName), Collections.emptyList());
     }
 
     @Override
-    public List<NodeRepositoryNode> getNodes(NodeType... nodeTypes) {
+    public List<NodeSpec> getNodes(NodeType... nodeTypes) {
         if (nodeTypes.length == 0)
             throw new IllegalArgumentException("Must specify at least 1 node type");
 
         return getNodes(Optional.empty(), Arrays.asList(nodeTypes));
     }
 
-    private List<NodeRepositoryNode> getNodes(Optional<String> baseHostName, List<NodeType> nodeTypeList) {
+    private List<NodeSpec> getNodes(Optional<String> baseHostName, List<NodeType> nodeTypeList) {
         Optional<String> nodeTypes = Optional
                 .of(nodeTypeList.stream().map(NodeType::name).collect(Collectors.joining(",")))
                 .filter(StringUtils::isNotEmpty);
@@ -66,7 +66,7 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public Optional<NodeRepositoryNode> getNode(String hostName) {
+    public Optional<NodeSpec> getNode(String hostName) {
         try {
             GetNodesResponse.Node nodeResponse = configServerApi.get("/nodes/v2/node/" + hostName,
                                                                      GetNodesResponse.Node.class);
@@ -96,7 +96,7 @@ public class RealNodeRepository implements NodeRepository {
         }
     }
 
-    private static NodeRepositoryNode createNodeRepositoryNode(GetNodesResponse.Node node)
+    private static NodeSpec createNodeRepositoryNode(GetNodesResponse.Node node)
             throws IllegalArgumentException, NullPointerException {
         Objects.requireNonNull(node.nodeType, "Unknown node type");
         NodeType nodeType = NodeType.valueOf(node.nodeType);
@@ -112,18 +112,18 @@ public class RealNodeRepository implements NodeRepository {
 
         String hostName = Objects.requireNonNull(node.hostname, "hostname is null");
 
-        NodeRepositoryNode.Owner owner = null;
+        NodeSpec.Owner owner = null;
         if (node.owner != null) {
-            owner = new NodeRepositoryNode.Owner(node.owner.tenant, node.owner.application, node.owner.instance);
+            owner = new NodeSpec.Owner(node.owner.tenant, node.owner.application, node.owner.instance);
         }
 
-        NodeRepositoryNode.Membership membership = null;
+        NodeSpec.Membership membership = null;
         if (node.membership != null) {
-            membership = new NodeRepositoryNode.Membership(node.membership.clusterType, node.membership.clusterId,
+            membership = new NodeSpec.Membership(node.membership.clusterType, node.membership.clusterId,
                     node.membership.group, node.membership.index, node.membership.retired);
         }
 
-        return new NodeRepositoryNode(
+        return new NodeSpec(
                 hostName,
                 Optional.ofNullable(node.wantedDockerImage).map(DockerImage::new),
                 Optional.ofNullable(node.currentDockerImage).map(DockerImage::new),

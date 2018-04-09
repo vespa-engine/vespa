@@ -8,7 +8,7 @@ import com.yahoo.system.ProcessExecuter;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
@@ -73,7 +73,7 @@ public class StorageMaintainerTest {
     public void testMaintenanceThrottlingAfterSuccessfulMaintenance() {
         String hostname = "node-123.us-north-3.test.yahoo.com";
         ContainerName containerName = ContainerName.fromHostname(hostname);
-        NodeRepositoryNode node = new NodeRepositoryNode.Builder()
+        NodeSpec node = new NodeSpec.Builder()
                 .hostname(hostname)
                 .nodeState(Node.State.ready)
                 .nodeType(NodeType.tenant)

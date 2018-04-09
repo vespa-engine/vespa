@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
@@ -62,7 +62,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void createContainer(ContainerName containerName, final NodeRepositoryNode node) {
+    public void createContainer(ContainerName containerName, final NodeSpec node) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         logger.info("Creating container " + containerName);
         try {
@@ -140,7 +140,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void startContainer(ContainerName containerName, final NodeRepositoryNode node) {
+    public void startContainer(ContainerName containerName, final NodeSpec node) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         logger.info("Starting container " + containerName);
         try {
@@ -169,7 +169,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void removeContainer(final Container existingContainer, NodeRepositoryNode node) {
+    public void removeContainer(final Container existingContainer, NodeSpec node) {
         final ContainerName containerName = existingContainer.name;
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         if (existingContainer.state.isRunning()) {

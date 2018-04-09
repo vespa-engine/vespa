@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -44,8 +44,8 @@ public class RestartTest {
         }
     }
 
-    private NodeRepositoryNode createNodeRepositoryNode(long wantedRestartGeneration, long currentRestartGeneration) {
-        return new NodeRepositoryNode.Builder()
+    private NodeSpec createNodeRepositoryNode(long wantedRestartGeneration, long currentRestartGeneration) {
+        return new NodeSpec.Builder()
                 .hostname("host1.test.yahoo.com")
                 .nodeState(Node.State.active)
                 .wantedDockerImage(new DockerImage("image:1.2.3"))

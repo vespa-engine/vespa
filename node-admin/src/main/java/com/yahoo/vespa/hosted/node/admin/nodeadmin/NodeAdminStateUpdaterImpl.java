@@ -6,7 +6,7 @@ import com.yahoo.concurrent.classlock.ClassLock;
 import com.yahoo.concurrent.classlock.ClassLocking;
 import com.yahoo.concurrent.classlock.LockInterruptException;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
@@ -129,7 +129,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
         if (currentState != RESUMED) return;
 
         try {
-            NodeRepositoryNode node = nodeRepository.getNode(dockerHostHostName)
+            NodeSpec node = nodeRepository.getNode(dockerHostHostName)
                     .orElseThrow(() -> new RuntimeException("Failed to get host's node spec from node-repo"));
             String hardwareDivergence = maintainer.getHardwareDivergence(node);
 
@@ -270,7 +270,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             }
 
             try {
-                final List<NodeRepositoryNode> containersToRun = nodeRepository.getNodes(dockerHostHostName);
+                final List<NodeSpec> containersToRun = nodeRepository.getNodes(dockerHostHostName);
                 nodeAdmin.refreshContainersToRun(containersToRun);
             } catch (Exception e) {
                 log.log(LogLevel.WARNING, "Failed to update which containers should be running", e);

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.logging;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -53,7 +53,7 @@ public class FilebeatConfigProviderTest {
     @Test
     public void it_does_not_generate_config_for_nodes_wihout_owner() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
-        NodeRepositoryNode node = new NodeRepositoryNode.Builder()
+        NodeSpec node = new NodeSpec.Builder()
                 .nodeFlavor("flavor")
                 .nodeState(Node.State.active)
                 .nodeType(NodeType.tenant)
@@ -92,7 +92,7 @@ public class FilebeatConfigProviderTest {
 
     private String getConfigString() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
-        NodeRepositoryNode node = createNodeRepositoryNode(tenant, application, instance);
+        NodeSpec node = createNodeRepositoryNode(tenant, application, instance);
         return filebeatConfigProvider.getConfig(node).orElseThrow(() -> new RuntimeException("Failed to get filebeat config"));
     }
 
@@ -108,9 +108,9 @@ public class FilebeatConfigProviderTest {
                 .build();
     }
 
-    private NodeRepositoryNode createNodeRepositoryNode(String tenant, String application, String instance) {
-        NodeRepositoryNode.Owner owner = new NodeRepositoryNode.Owner(tenant, application, instance);
-        return new NodeRepositoryNode.Builder()
+    private NodeSpec createNodeRepositoryNode(String tenant, String application, String instance) {
+        NodeSpec.Owner owner = new NodeSpec.Owner(tenant, application, instance);
+        return new NodeSpec.Builder()
                 .owner(owner)
                 .nodeFlavor("flavor")
                 .nodeState(Node.State.active)

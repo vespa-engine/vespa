@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.logging.FilebeatConfigProvider;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
@@ -65,7 +65,7 @@ public class StorageMaintainer {
         numberOfNodeAdminMaintenanceFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.maintenance.fails");
     }
 
-    public void writeMetricsConfig(ContainerName containerName, NodeRepositoryNode node) {
+    public void writeMetricsConfig(ContainerName containerName, NodeSpec node) {
         final Path yamasAgentFolder = environment.pathInNodeAdminFromPathInNode(
                 containerName, Paths.get("/etc/yamas-agent/"));
 
@@ -104,7 +104,7 @@ public class StorageMaintainer {
         }
     }
 
-    public void writeFilebeatConfig(ContainerName containerName, NodeRepositoryNode node) {
+    public void writeFilebeatConfig(ContainerName containerName, NodeSpec node) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
         try {
             FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
@@ -218,7 +218,7 @@ public class StorageMaintainer {
      *
      * @param force Set to true to bypass throttling
      */
-    public void handleCoreDumpsForContainer(ContainerName containerName, NodeRepositoryNode node, boolean force) {
+    public void handleCoreDumpsForContainer(ContainerName containerName, NodeSpec node, boolean force) {
         if (! getMaintenanceThrottlerFor(containerName).shouldHandleCoredumpsNow() && !force) return;
 
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
@@ -228,7 +228,7 @@ public class StorageMaintainer {
         getMaintenanceThrottlerFor(containerName).updateNextHandleCoredumpsTime();
     }
 
-    private void addHandleCoredumpsCommand(MaintainerExecutor maintainerExecutor, ContainerName containerName, NodeRepositoryNode node) {
+    private void addHandleCoredumpsCommand(MaintainerExecutor maintainerExecutor, ContainerName containerName, NodeSpec node) {
         if (!environment.getCoredumpFeedEndpoint().isPresent()) {
             // Core dump handling is disabled.
             return;
@@ -295,7 +295,7 @@ public class StorageMaintainer {
      * Prepares the container-storage for the next container by deleting/archiving all the data of the current container.
      * Removes old files, reports coredumps and archives container data, runs when container enters state "dirty"
      */
-    public void cleanupNodeStorage(ContainerName containerName, NodeRepositoryNode node) {
+    public void cleanupNodeStorage(ContainerName containerName, NodeSpec node) {
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         addRemoveOldFilesCommand(maintainerExecutor, containerName);
         addHandleCoredumpsCommand(maintainerExecutor, containerName, node);
@@ -321,7 +321,7 @@ public class StorageMaintainer {
      * @return new combined hardware divergence
      * @throws RuntimeException if exit code != 0
      */
-    public String getHardwareDivergence(NodeRepositoryNode node) {
+    public String getHardwareDivergence(NodeSpec node) {
         List<String> arguments = new ArrayList<>(Arrays.asList("specification",
                 "--disk", Double.toString(node.minDiskAvailableGb),
                 "--memory", Double.toString(node.minMainMemoryAvailableGb),

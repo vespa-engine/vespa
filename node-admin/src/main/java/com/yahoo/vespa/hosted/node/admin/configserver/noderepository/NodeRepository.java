@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.node.admin.NodeAcl;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -15,11 +15,11 @@ import java.util.Optional;
  */
 public interface NodeRepository {
 
-    List<NodeRepositoryNode> getNodes(String baseHostName);
+    List<NodeSpec> getNodes(String baseHostName);
 
-    List<NodeRepositoryNode> getNodes(NodeType... nodeTypes);
+    List<NodeSpec> getNodes(NodeType... nodeTypes);
 
-    Optional<NodeRepositoryNode> getNode(String hostName);
+    Optional<NodeSpec> getNode(String hostName);
 
     List<NodeAcl> getNodeAcl(String hostName);
 

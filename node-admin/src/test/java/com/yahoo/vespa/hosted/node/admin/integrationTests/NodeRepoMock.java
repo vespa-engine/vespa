@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.node.admin.NodeAcl;
-import com.yahoo.vespa.hosted.node.admin.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -23,7 +23,7 @@ import java.util.Optional;
 public class NodeRepoMock implements NodeRepository {
     private static final Object monitor = new Object();
 
-    private final Map<String, NodeRepositoryNode> nodeRepositoryNodesByHostname = new HashMap<>();
+    private final Map<String, NodeSpec> nodeRepositoryNodesByHostname = new HashMap<>();
     private final Map<String, List<NodeAcl>> acls = new HashMap<>();
     private final CallOrderVerifier callOrderVerifier;
 
@@ -32,19 +32,19 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public List<NodeRepositoryNode> getNodes(String baseHostName) {
+    public List<NodeSpec> getNodes(String baseHostName) {
         synchronized (monitor) {
             return new ArrayList<>(nodeRepositoryNodesByHostname.values());
         }
     }
 
     @Override
-    public List<NodeRepositoryNode> getNodes(NodeType... nodeTypes) {
+    public List<NodeSpec> getNodes(NodeType... nodeTypes) {
         return Collections.emptyList();
     }
 
     @Override
-    public Optional<NodeRepositoryNode> getNode(String hostName) {
+    public Optional<NodeSpec> getNode(String hostName) {
         synchronized (monitor) {
             return Optional.ofNullable(nodeRepositoryNodesByHostname.get(hostName));
         }
@@ -67,18 +67,18 @@ public class NodeRepoMock implements NodeRepository {
 
     @Override
     public void setNodeState(String hostName, Node.State nodeState) {
-        Optional<NodeRepositoryNode> node = getNode(hostName);
+        Optional<NodeSpec> node = getNode(hostName);
 
         synchronized (monitor) {
-            node.ifPresent(nrn -> updateNodeRepositoryNode(new NodeRepositoryNode.Builder(nrn)
+            node.ifPresent(nrn -> updateNodeRepositoryNode(new NodeSpec.Builder(nrn)
                     .nodeState(nodeState)
                     .build()));
             callOrderVerifier.add("setNodeState " + hostName + " to " + nodeState);
         }
     }
 
-    public void updateNodeRepositoryNode(NodeRepositoryNode nodeRepositoryNode) {
-        nodeRepositoryNodesByHostname.put(nodeRepositoryNode.hostname, nodeRepositoryNode);
+    public void updateNodeRepositoryNode(NodeSpec nodeSpec) {
+        nodeRepositoryNodesByHostname.put(nodeSpec.hostname, nodeSpec);
     }
 
     public int getNumberOfContainerSpecs() {
