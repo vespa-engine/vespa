@@ -6,21 +6,21 @@ package com.yahoo.vespa.hosted.node.admin.task.util.process;
  * @author hakonhall
  */
 @SuppressWarnings("serial")
-public class UnexpectedOutputException2 extends ChildProcessException {
+public class UnexpectedOutputException extends ChildProcessException {
     /**
      * @param problem Problem description, e.g. "Output is not of the form ^NAME=VALUE$"
      */
-    public UnexpectedOutputException2(String problem, String commandLine, String possiblyHugeOutput) {
+    public UnexpectedOutputException(String problem, String commandLine, String possiblyHugeOutput) {
         super("output was not of the expected format: " + problem, commandLine, possiblyHugeOutput);
     }
 
     /**
      * @param problem Problem description, e.g. "Output is not of the form ^NAME=VALUE$"
      */
-    public UnexpectedOutputException2(RuntimeException cause,
-                                      String problem,
-                                      String commandLine,
-                                      String possiblyHugeOutput) {
+    public UnexpectedOutputException(RuntimeException cause,
+                                     String problem,
+                                     String commandLine,
+                                     String possiblyHugeOutput) {
         super(cause, "output was not of the expected format: " + problem, commandLine, possiblyHugeOutput);
     }
 }

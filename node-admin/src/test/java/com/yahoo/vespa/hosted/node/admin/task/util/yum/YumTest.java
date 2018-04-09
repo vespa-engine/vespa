@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -98,5 +99,28 @@ public class YumTest {
                 .enableRepo("repo-name")
                 .converge();
         fail();
+    }
+
+    @Test
+    public void testUnknownPackages() {
+        terminal.expectCommand(
+                "yum install --assumeyes package-1 package-2 package-3 2>&1",
+                0,
+                "Loaded plugins: fastestmirror, langpacks\n" +
+                        "Loading mirror speeds from cached hostfile\n" +
+                        "No package package-1 available.\n" +
+                        "No package package-2 available.\n" +
+                        "Nothing to do\n");
+
+        Yum yum = new Yum(taskContext, terminal);
+        Yum.GenericYumCommand install = yum.install("package-1", "package-2", "package-3");
+
+        try {
+            install.converge();
+            fail();
+        } catch (Exception e) {
+            assertTrue(e.getCause() != null);
+            assertEquals("Unknown package: package-1", e.getCause().getMessage());
+        }
     }
 }
