@@ -52,6 +52,18 @@ public class TenantController {
         this.db = db;
         this.curator = curator;
         this.athenzClientFactory = athenzClientFactory;
+        // Write all tenants to ensure persisted data uses latest serialization format
+        for (Tenant tenant : db.listTenants()) {
+            try (Lock lock = lock(tenant.name())) {
+                if (tenant instanceof AthenzTenant) {
+                    curator.writeTenant((AthenzTenant) tenant);
+                } else if (tenant instanceof UserTenant) {
+                    curator.writeTenant((UserTenant) tenant);
+                } else {
+                    throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());
+                }
+            }
+        }
     }
 
     /** Returns a list of all known tenants sorted by name */
