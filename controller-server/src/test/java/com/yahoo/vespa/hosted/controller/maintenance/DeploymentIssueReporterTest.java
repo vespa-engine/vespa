@@ -145,11 +145,10 @@ public class DeploymentIssueReporterTest {
 
         // Bump system version to 5.2 to upgrade canary app2.
         Version version = Version.fromString("5.2");
-        tester.updateVersionStatus(version);
+        tester.upgradeSystem(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
-        tester.upgrader().maintain();
-        tester.readyJobTrigger().maintain();
 
+        tester.readyJobTrigger().maintain();
         tester.completeUpgradeWithError(app2, version, canaryPackage, systemTest);
         tester.updateVersionStatus(version);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());

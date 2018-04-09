@@ -73,7 +73,7 @@ public class JobStatus {
         Version version;
         String reason;
         if (type == DeploymentJobs.JobType.component) { // not triggered by us
-            version = controller.systemVersion();
+            version = controller.systemVersion(); // TODO jvenstad: Get rid of this, and perhaps all of component info?
             reason = "Application commit";
         } else if (! lastTriggered.isPresent()) {
             throw new IllegalStateException("Got notified about completion of " + this +

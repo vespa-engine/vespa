@@ -16,9 +16,6 @@
       "name": "DeploymentIssueReporter"
     },
     {
-      "name": "DeploymentJobExecutor"
-    },
-    {
       "name": "DeploymentMetricsMaintainer"
     },
     {

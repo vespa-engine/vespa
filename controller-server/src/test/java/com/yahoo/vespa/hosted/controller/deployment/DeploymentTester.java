@@ -68,7 +68,7 @@ public class DeploymentTester {
 
     public ApplicationController applications() { return tester.controller().applications(); }
 
-    public DeploymentQueue deploymentQueue() { return tester.controller().applications().deploymentTrigger().deploymentQueue(); }
+    public MockBuildService buildService() { return tester.buildService(); }
 
     public DeploymentTrigger deploymentTrigger() { return tester.controller().applications().deploymentTrigger(); }
 
@@ -98,7 +98,6 @@ public class DeploymentTester {
     }
 
     public void upgradeSystem(Version version) {
-        configServer().setDefaultVersion(version);
         updateVersionStatus(version);
         upgrader().maintain();
         readyJobTrigger().maintain();
@@ -180,7 +179,7 @@ public class DeploymentTester {
             jobs = jobs.stream().filter(job -> ! job.isProduction()).collect(Collectors.toList());
         for (JobType job : jobs) {
             boolean failJob = failOnJob.map(j -> j.equals(job)).orElse(false);
-            deployAndNotify(application, applicationPackage, ! failJob, false, job);
+            deployAndNotify(application, applicationPackage, ! failJob, job);
             if (failJob) {
                 break;
             }
@@ -235,68 +234,37 @@ public class DeploymentTester {
                                                                         deployCurrentVersion));
     }
 
-    public void deployAndNotify(Application application, String upgradePolicy, boolean success, JobType... jobs) {
-        deployAndNotify(application, applicationPackage(upgradePolicy), success, true, jobs);
+    public void deployAndNotify(Application application, String upgradePolicy, boolean success, JobType job) {
+        deployAndNotify(application, applicationPackage(upgradePolicy), success, job);
     }
 
-    public void deployAndNotify(Application application, ApplicationPackage applicationPackage, boolean success,
-                                JobType... jobs) {
-        deployAndNotify(application, applicationPackage, success, true, jobs);
+    public void deployAndNotify(Application application, ApplicationPackage applicationPackage, boolean success, JobType job) {
+        deployAndNotify(application, Optional.of(applicationPackage), success, job);
     }
 
-    public void deployAndNotify(Application application, ApplicationPackage applicationPackage, boolean success,
-                                boolean expectOnlyTheseJobs, JobType... jobs) {
-        deployAndNotify(application, Optional.of(applicationPackage), success, expectOnlyTheseJobs, jobs);
-    }
-
-    public void deployAndNotify(Application application, Optional<ApplicationPackage> applicationPackage,
-                                boolean success, boolean expectOnlyTheseJobs, JobType... jobs) {
-        consumeJobs(application, expectOnlyTheseJobs, jobs);
-        for (JobType job : jobs) {
-            if (success) {
-                // Staging deploys twice, once with current version and once with new version
-                if (job == JobType.stagingTest) {
-                    deploy(job, application, applicationPackage, true);
-                }
-                deploy(job, application, applicationPackage, false);
+    public void deployAndNotify(Application application, Optional<ApplicationPackage> applicationPackage, boolean success, JobType job) {
+        if (success) {
+            // Staging deploys twice, once with current version and once with new version
+            if (job == JobType.stagingTest) {
+                deploy(job, application, applicationPackage, true);
             }
-            // Deactivate test deployments after deploy. This replicates the behaviour of the tenant pipeline
-            if (job.isTest()) {
-                controller().applications().deactivate(application, job.zone(controller().system()).get());
-            }
-            jobCompletion(job).application(application).success(success).submit();
+            deploy(job, application, applicationPackage, false);
         }
-    }
-
-    /** Assert that the sceduled jobs of this application are exactly those given, and take them */
-    private void consumeJobs(Application application, boolean expectOnlyTheseJobs, JobType... jobs) {
-        for (JobType job : jobs) {
-            BuildService.BuildJob buildJob = findJob(application, job);
-            assertEquals((long) application.deploymentJobs().projectId().get(), buildJob.projectId());
-            assertEquals(job.jobName(), buildJob.jobName());
+        // Deactivate test deployments after deploy. This replicates the behaviour of the tenant pipeline
+        if (job.isTest()) {
+            controller().applications().deactivate(application, job.zone(controller().system()).get());
         }
-        if (expectOnlyTheseJobs)
-            assertEquals("Unexpected job queue: " + jobsOf(application), jobs.length, jobsOf(application).size());
-        deploymentQueue().removeJobs(application.id());
-    }
-
-    private BuildService.BuildJob findJob(Application application, JobType jobType) {
-        for (BuildService.BuildJob job : deploymentQueue().jobs())
-            if (job.projectId() == application.deploymentJobs().projectId().get() && job.jobName().equals(jobType.jobName()))
-                return job;
-        throw new IllegalArgumentException(jobType + " is not scheduled for " + application);
-    }
-
-    private List<JobType> jobsOf(Application application) {
-        return  deploymentQueue().jobs().stream()
-                                 .filter(job -> job.projectId() == application.deploymentJobs().projectId().get())
-                                 .map(buildJob -> JobType.fromJobName(buildJob.jobName()))
-                                 .collect(Collectors.toList());
+        jobCompletion(job).application(application).success(success).submit();
     }
 
     private void notifyJobCompletion(DeploymentJobs.JobReport report) {
+        if (report.jobType() != JobType.component && ! buildService().removeJob(report.projectId(), report.jobType()))
+            throw new IllegalArgumentException(report.jobType() + " is not running for " + report.applicationId());
+        assertFalse("Unexpected entry '" + report.jobType() + "@" + report.projectId() + " in: " + buildService().jobs(),
+                    buildService().removeJob(report.projectId(), report.jobType()));
+
         clock().advance(Duration.ofMillis(1));
-        applications().notifyJobCompletion(report);
+        applications().deploymentTrigger().notifyOfCompletion(report);
         applications().deploymentTrigger().triggerReadyJobs();
     }
 
@@ -307,6 +275,14 @@ public class DeploymentTester {
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
+    }
+
+    public void assertRunning(ApplicationId id, JobType jobType) {
+        assertRunning(application(id).deploymentJobs().projectId().get(), jobType);
+    }
+
+    public void assertRunning(long projectId, JobType jobType) {
+        assertTrue(buildService().jobs().contains(new BuildService.BuildJob(projectId, jobType.jobName())));
     }
 
 }
