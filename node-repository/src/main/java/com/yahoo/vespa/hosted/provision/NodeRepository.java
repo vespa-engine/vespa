@@ -477,22 +477,21 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /*
-     * This method is used to enable a smooth rollout of dynamic docker flavor allocations. Once we have switch
-     * everything this can be simplified to only deleting the node.
-     *
-     * Should only be called by node-admin for docker containers
+     * This method is used by the REST API to handle readying nodes for new allocations. For docker containers this will
+     * remove the node from node repository, otherwise the node will be moved to state ready.
      */
-    public List<Node> markNodeAvailableForNewAllocation(String hostname) {
+    public Node markNodeAvailableForNewAllocation(String hostname, Agent agent, String reason) {
         Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
-        if (node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER) {
-            throw new IllegalArgumentException(
-                    "Cannot make " + hostname + " available for new allocation, must be a docker container node");
-        } else if (node.state() != Node.State.dirty) {
-            throw new IllegalArgumentException(
-                    "Cannot make " + hostname + " available for new allocation, must be in state dirty, but was in " + node.state());
+        if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) {
+            if (node.state() != Node.State.dirty) {
+                throw new IllegalArgumentException(
+                        "Cannot make " + hostname + " available for new allocation, must be in state dirty, but was in " + node.state());
+            }
+            return removeRecursively(node, true).get(0);
         }
 
-        return removeRecursively(node, true);
+        if (node.state() == Node.State.ready) return node;
+        return setReady(Collections.singletonList(node), agent, reason).get(0);
     }
 
     /**

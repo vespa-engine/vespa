@@ -6,7 +6,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
@@ -107,8 +106,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePUT(HttpRequest request) {
         String path = request.getUri().getPath();
         // Check paths to disallow illegal state changes
-        if (path.startsWith("/nodes/v2/state/ready/")) {
-            nodeRepository.setReady(lastElement(path), Agent.operator, "Readied through the nodes/v2 API");
+        if (path.startsWith("/nodes/v2/state/ready/") ||
+                path.startsWith("/nodes/v2/state/availablefornewallocations/")) {
+            nodeRepository.markNodeAvailableForNewAllocation(lastElement(path), Agent.operator, "Readied through the nodes/v2 API");
             return new MessageResponse("Moved " + lastElement(path) + " to ready");
         }
         else if (path.startsWith("/nodes/v2/state/failed/")) {
@@ -128,12 +128,6 @@ public class NodesApiHandler extends LoggingRequestHandler {
         else if (path.startsWith("/nodes/v2/state/active/")) {
             nodeRepository.reactivate(lastElement(path), Agent.operator, "Reactivated through nodes/v2 API");
             return new MessageResponse("Moved " + lastElement(path) + " to active");
-        }
-        else if (path.startsWith("/nodes/v2/state/availablefornewallocations/")) {
-            String hostname = lastElement(path);
-            List<Node> available = nodeRepository.markNodeAvailableForNewAllocation(hostname);
-            return new MessageResponse("Marked following nodes as available for new allocation: " +
-                    available.stream().map(Node::hostname).collect(Collectors.joining(", ")));
         }
 
         throw new NotFoundException("Cannot put to path '" + path + "'");

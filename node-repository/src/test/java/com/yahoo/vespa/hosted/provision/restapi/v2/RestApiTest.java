@@ -169,9 +169,12 @@ public class RestApiTest {
                        "{\"message\":\"Moved test-container-1 to dirty\"}");
 
         // ... and set it back to ready as if this was from the node-admin with the temporary state rest api
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/availablefornewallocations/test-container-1",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/test-container-1",
                         new byte[0], Request.Method.PUT),
-                "{\"message\":\"Marked following nodes as available for new allocation: test-container-1\"}");
+                "{\"message\":\"Moved test-container-1 to ready\"}");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-container-1",  new byte[0], Request.Method.GET),
+                404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'test-container-1'\"}");
 
         // Put a host in failed and make sure it's children are also failed
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/dockerhost1.yahoo.com", new byte[0], Request.Method.PUT),
