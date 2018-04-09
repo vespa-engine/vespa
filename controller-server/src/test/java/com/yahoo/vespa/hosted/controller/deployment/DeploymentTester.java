@@ -201,7 +201,7 @@ public class DeploymentTester {
     }
 
     public void completeUpgrade(Application application, Version version, ApplicationPackage applicationPackage) {
-        assertTrue(application + " has a deployment", applications().require(application.id()).change().isPresent());
+        assertTrue(application + " has a change", applications().require(application.id()).change().isPresent());
         assertEquals(Change.of(version), applications().require(application.id()).change());
         completeDeployment(application, applicationPackage, Optional.empty(), true);
     }

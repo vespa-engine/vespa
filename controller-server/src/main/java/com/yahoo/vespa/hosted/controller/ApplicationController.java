@@ -58,6 +58,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -136,12 +137,12 @@ public class ApplicationController {
 
     /** Returns a snapshot of all applications */
     public List<Application> asList() {
-        return db.listApplications();
+        return sort(db.listApplications());
     }
 
     /** Returns all applications of a tenant */
     public List<Application> asList(TenantName tenant) {
-        return db.listApplications(tenant);
+        return sort(db.listApplications(tenant));
     }
 
     /**
@@ -673,6 +674,11 @@ public class ApplicationController {
 
     public RotationRepository rotationRepository() {
         return rotationRepository;
+    }
+
+    /** Sort given list of applications by application ID */
+    private static List<Application> sort(List<Application> applications) {
+        return applications.stream().sorted(Comparator.comparing(Application::id)).collect(Collectors.toList());
     }
 
 }
