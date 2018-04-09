@@ -43,6 +43,7 @@ import java.util.stream.Collectors;
  * @author smorgrav
  */
 public class OrchestratorImpl implements Orchestrator {
+
     private static final Logger log = Logger.getLogger(OrchestratorImpl.class.getName());
 
     private final Policy policy;

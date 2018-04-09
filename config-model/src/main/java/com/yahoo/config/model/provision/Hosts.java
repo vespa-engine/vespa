@@ -77,7 +77,7 @@ public class Hosts {
             if ("localhost".equals(name)) {
                 name = HostName.getLocalhost();
             }
-            final List<String> hostAliases = VespaDomBuilder.getHostAliases(hostE.getChildNodes());
+            List<String> hostAliases = VespaDomBuilder.getHostAliases(hostE.getChildNodes());
             if (hostAliases.isEmpty()) {
                 throw new IllegalArgumentException("No host aliases defined for host '" + name + "'");
             }

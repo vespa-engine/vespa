@@ -23,6 +23,7 @@ import java.util.logging.Logger;
  */
 
 public class HostedVespaPolicy implements Policy {
+
     public static final String APPLICATION_SUSPENDED_CONSTRAINT = "application-suspended";
     public static final String ENOUGH_SERVICES_UP_CONSTRAINT = "enough-services-up";
     public static final String SET_NODE_STATE_CONSTRAINT = "controller-set-node-state";
@@ -125,4 +126,5 @@ public class HostedVespaPolicy implements Policy {
         ApplicationApi applicationApi = new ApplicationApiImpl(nodeGroup, hostStatusService, clusterControllerClientFactory);
         releaseSuspensionGrant(applicationApi);
     }
+
 }

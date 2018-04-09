@@ -105,7 +105,7 @@ public class HostResource implements Comparable<HostResource> {
         if (wantedPort > 0) {
             if (service.getPortCount() < 1) {
                 throw new RuntimeException(service + " wants baseport " + wantedPort +
-                        ", but it has not reserved any ports, so it cannot name a desired baseport.");
+                                           ", but it has not reserved any ports, so it cannot name a desired baseport.");
             }
             if (service.requiresWantedPort() || canUseWantedPort(service, wantedPort, serviceBasePort))
                 serviceBasePort = wantedPort;
