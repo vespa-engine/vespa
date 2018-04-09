@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.node.admin.NodeAcl;
+import com.yahoo.vespa.hosted.node.admin.AclSpec;
 import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -21,7 +21,7 @@ public interface NodeRepository {
 
     Optional<NodeSpec> getNode(String hostName);
 
-    List<NodeAcl> getNodeAcl(String hostName);
+    List<AclSpec> getNodeAcl(String hostName);
 
     void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes);
 

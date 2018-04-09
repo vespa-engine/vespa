@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.NodeAcl;
+import com.yahoo.vespa.hosted.node.admin.AclSpec;
 import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
@@ -83,12 +83,12 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public List<NodeAcl> getNodeAcl(String hostName) {
+    public List<AclSpec> getNodeAcl(String hostName) {
         try {
             final String path = String.format("/nodes/v2/acl/%s?children=true", hostName);
             final GetAclResponse response = configServerApi.get(path, GetAclResponse.class);
             return response.trustedNodes.stream()
-                    .map(node -> new NodeAcl(
+                    .map(node -> new AclSpec(
                             node.hostname, node.ipAddress, ContainerName.fromHostname(node.trustedBy)))
                     .collect(Collectors.toList());
         } catch (HttpException.NotFoundException e) {

@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.NodeAcl;
+import com.yahoo.vespa.hosted.node.admin.AclSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import org.junit.Before;
@@ -47,46 +47,46 @@ public class AclMaintainerTest {
     @Test
     public void configures_container_acl() {
         Container container = makeContainer("container-1");
-        List<NodeAcl> nodeAcl = makeNodeAcls(3, container.name);
-        when(nodeRepository.getNodeAcl(NODE_ADMIN_HOSTNAME)).thenReturn(nodeAcl);
+        List<AclSpec> aclSpec = makeNodeAcls(3, container.name);
+        when(nodeRepository.getNodeAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpec);
         aclMaintainer.run();
-        assertAclsApplied(container.name, nodeAcl);
+        assertAclsApplied(container.name, aclSpec);
     }
 
     @Test
     public void does_not_configure_acl_if_unchanged() {
         Container container = makeContainer("container-1");
-        List<NodeAcl> nodeAcls = makeNodeAcls(3, container.name);
-        when(nodeRepository.getNodeAcl(NODE_ADMIN_HOSTNAME)).thenReturn(nodeAcls);
+        List<AclSpec> aclSpecs = makeNodeAcls(3, container.name);
+        when(nodeRepository.getNodeAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
         // Run twice
         aclMaintainer.run();
         aclMaintainer.run();
-        assertAclsApplied(container.name, nodeAcls, times(1));
+        assertAclsApplied(container.name, aclSpecs, times(1));
     }
 
     @Test
     public void reconfigures_acl_when_container_pid_changes() {
         Container container = makeContainer("container-1");
-        List<NodeAcl> nodeAcls = makeNodeAcls(3, container.name);
-        when(nodeRepository.getNodeAcl(NODE_ADMIN_HOSTNAME)).thenReturn(nodeAcls);
+        List<AclSpec> aclSpecs = makeNodeAcls(3, container.name);
+        when(nodeRepository.getNodeAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
 
         aclMaintainer.run();
-        assertAclsApplied(container.name, nodeAcls);
+        assertAclsApplied(container.name, aclSpecs);
 
         // Container is restarted and PID changes
         makeContainer(container.name.asString(), Container.State.RUNNING, 43);
         aclMaintainer.run();
 
-        assertAclsApplied(container.name, nodeAcls, times(2));
+        assertAclsApplied(container.name, aclSpecs, times(2));
     }
 
     @Test
     public void does_not_configure_acl_for_stopped_container() {
         Container stoppedContainer = makeContainer("container-1", Container.State.EXITED, 0);
-        List<NodeAcl> nodeAcls = makeNodeAcls(1, stoppedContainer.name);
-        when(nodeRepository.getNodeAcl(NODE_ADMIN_HOSTNAME)).thenReturn(nodeAcls);
+        List<AclSpec> aclSpecs = makeNodeAcls(1, stoppedContainer.name);
+        when(nodeRepository.getNodeAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
         aclMaintainer.run();
-        assertAclsApplied(stoppedContainer.name, nodeAcls, never());
+        assertAclsApplied(stoppedContainer.name, aclSpecs, never());
     }
 
     @Test
@@ -110,11 +110,11 @@ public class AclMaintainerTest {
         );
     }
 
-    private void assertAclsApplied(ContainerName containerName, List<NodeAcl> nodeAcls) {
-        assertAclsApplied(containerName, nodeAcls, times(1));
+    private void assertAclsApplied(ContainerName containerName, List<AclSpec> aclSpecs) {
+        assertAclsApplied(containerName, aclSpecs, times(1));
     }
 
-    private void assertAclsApplied(ContainerName containerName, List<NodeAcl> nodeAcls,
+    private void assertAclsApplied(ContainerName containerName, List<AclSpec> aclSpecs,
                                    VerificationMode verificationMode) {
         StringBuilder expectedCommand = new StringBuilder()
                 .append("ip6tables -F INPUT; ")
@@ -125,7 +125,7 @@ public class AclMaintainerTest {
                 .append("ip6tables -A INPUT -i lo -j ACCEPT; ")
                 .append("ip6tables -A INPUT -p ipv6-icmp -j ACCEPT; ");
 
-        nodeAcls.forEach(nodeAcl ->
+        aclSpecs.forEach(nodeAcl ->
                 expectedCommand.append("ip6tables -A INPUT -s " + nodeAcl.ipAddress() + "/128 -j ACCEPT; "));
 
         expectedCommand.append("ip6tables -A INPUT -j REJECT");
@@ -147,9 +147,9 @@ public class AclMaintainerTest {
         return container;
     }
 
-    private static List<NodeAcl> makeNodeAcls(int count, ContainerName containerName) {
+    private static List<AclSpec> makeNodeAcls(int count, ContainerName containerName) {
         return IntStream.rangeClosed(1, count)
-                .mapToObj(i -> new NodeAcl("node-" + i, "::" + i, containerName))
+                .mapToObj(i -> new AclSpec("node-" + i, "::" + i, containerName))
                 .collect(Collectors.toList());
     }
 

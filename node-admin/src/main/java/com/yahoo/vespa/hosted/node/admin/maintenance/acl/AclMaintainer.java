@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.NodeAcl;
+import com.yahoo.vespa.hosted.node.admin.AclSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Action;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Chain;
@@ -83,9 +83,9 @@ public class AclMaintainer implements Runnable {
     }
 
     private synchronized void configureAcls() {
-        final Map<ContainerName, List<NodeAcl>> nodeAclGroupedByContainerName = nodeRepository
+        final Map<ContainerName, List<AclSpec>> nodeAclGroupedByContainerName = nodeRepository
                 .getNodeAcl(nodeAdminHostname).stream()
-                .collect(Collectors.groupingBy(NodeAcl::trustedBy));
+                .collect(Collectors.groupingBy(AclSpec::trustedBy));
 
         dockerOperations
                 .getAllManagedContainers().stream()
