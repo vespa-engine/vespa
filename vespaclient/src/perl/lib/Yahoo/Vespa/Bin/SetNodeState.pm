@@ -85,14 +85,14 @@ sub maybeRequireClusterSelection
     my %clusters;
     VespaModel::visitServices(sub {
         my ($info) = @_;
-	if ($$info{'type'} =~ /^(?:distributor|storage|storagenode)$/ ) {
-	    $clusters{$$info{'cluster'}} = 1;
-	}
+        if ($$info{'type'} =~ /^(?:distributor|storage|storagenode)$/ ) {
+            $clusters{$$info{'cluster'}} = 1;
+        }
     });
     my $clusterCount = scalar keys %clusters;
     if ($clusterCount > 1) {
         printWarning "More than one cluster is present but no cluster is selected\n";
-	exitApplication(1);
+        exitApplication(1);
     }
 }
 
