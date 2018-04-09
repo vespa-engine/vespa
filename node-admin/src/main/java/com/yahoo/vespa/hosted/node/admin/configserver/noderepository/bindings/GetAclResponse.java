@@ -22,11 +22,16 @@ public class GetAclResponse {
     @JsonProperty("trustedNetworks")
     public final List<Network> trustedNetworks;
 
+    @JsonProperty("trustedPorts")
+    public final List<Port> trustedPorts;
+
     @JsonCreator
     public GetAclResponse(@JsonProperty("trustedNodes") List<Node> trustedNodes,
-                          @JsonProperty("trustedNetworks") List<Network> trustedNetworks) {
+                          @JsonProperty("trustedNetworks") List<Network> trustedNetworks,
+                          @JsonProperty("trustedPorts") List<Port> trustedPorts) {
         this.trustedNodes = trustedNodes == null ? Collections.emptyList() : trustedNodes;
         this.trustedNetworks = trustedNetworks == null ? Collections.emptyList() : trustedNetworks;
+        this.trustedPorts = trustedPorts == null ? Collections.emptyList() : trustedPorts;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -48,6 +53,10 @@ public class GetAclResponse {
             this.ipAddress = ipAddress;
             this.trustedBy = trustedBy;
         }
+
+        public String getTrustedBy() {
+            return trustedBy;
+        }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -63,6 +72,30 @@ public class GetAclResponse {
         public Network(@JsonProperty("network") String network, @JsonProperty("trustedBy") String trustedBy) {
             this.network = network;
             this.trustedBy = trustedBy;
+        }
+
+        public String getTrustedBy() {
+            return trustedBy;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Port {
+
+        @JsonProperty("port")
+        public final Integer port;
+
+        @JsonProperty("trustedBy")
+        public final String trustedBy;
+
+        @JsonCreator
+        public Port(@JsonProperty("port") Integer port, @JsonProperty("trustedBy") String trustedBy) {
+            this.port = port;
+            this.trustedBy = trustedBy;
+        }
+
+        public String getTrustedBy() {
+            return trustedBy;
         }
     }
 }
