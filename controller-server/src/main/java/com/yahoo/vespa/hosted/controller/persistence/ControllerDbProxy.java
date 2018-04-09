@@ -69,11 +69,13 @@ public class ControllerDbProxy implements ControllerDb {
     @Override
     public void store(Application application) {
         db.store(application);
+        curator.writeApplication(application);
     }
 
     @Override
     public void deleteApplication(ApplicationId applicationId) {
         db.deleteApplication(applicationId);
+        curator.removeApplication(applicationId);
     }
 
     @Override

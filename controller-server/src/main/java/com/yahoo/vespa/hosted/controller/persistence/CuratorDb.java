@@ -10,6 +10,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -39,24 +41,24 @@ import java.util.stream.Collectors;
  * This maps controller specific operations to general curator operations.
  *
  * @author bratseth
+ * @author mpolden
  */
 public class CuratorDb {
 
     private static final Logger log = Logger.getLogger(CuratorDb.class.getName());
+    private static final Duration defaultLockTimeout = Duration.ofMinutes(5);
 
     private static final Path root = Path.fromString("/controller/v1");
-
     private static final Path lockRoot = root.append("locks");
-
     private static final Path tenantRoot = root.append("tenants");
-
-    private static final Duration defaultLockTimeout = Duration.ofMinutes(5);
+    private static final Path applicationRoot = root.append("applications");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
     private final JobQueueSerializer jobQueueSerializer = new JobQueueSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
+    private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
 
     private final Curator curator;
 
@@ -71,7 +73,7 @@ public class CuratorDb {
         this.curator = curator;
     }
 
-    // -------------- Locks --------------------------------------------------
+    // -------------- Locks ---------------------------------------------------
 
     public Lock lock(TenantName name, Duration timeout) {
         return lock(lockPath(name), timeout);
@@ -107,23 +109,28 @@ public class CuratorDb {
         return lock(lockRoot.append("maintenanceJobLocks").append(jobName), Duration.ofSeconds(1));
     }
 
+    @SuppressWarnings("unused") // Called by internal code
     public Lock lockProvisionState(String provisionStateId) {
         return lock(lockPath(provisionStateId), Duration.ofSeconds(1));
     }
 
+    @SuppressWarnings("unused") // Called by internal code
     public Lock lockVespaServerPool() {
         return lock(lockRoot.append("vespaServerPoolLock"), Duration.ofSeconds(1));
     }
 
+    @SuppressWarnings("unused") // Called by internal code
     public Lock lockOpenStackServerPool() {
         return lock(lockRoot.append("openStackServerPoolLock"), Duration.ofSeconds(1));
     }
 
-    // -------------- Read and write --------------------------------------------------
+    // -------------- Helpers ------------------------------------------
 
     private Optional<Slime> readSlime(Path path) {
         return curator.getData(path).filter(data -> data.length > 0).map(SlimeUtils::jsonToSlime);
     }
+
+    // -------------- Deployment orchestration --------------------------------
 
     public Set<String> readInactiveJobs() {
         try {
@@ -184,7 +191,8 @@ public class CuratorDb {
 
     public void writeConfidenceOverrides(Map<Version, VespaVersion.Confidence> overrides) {
         try {
-            curator.set(confidenceOverridesPath(), SlimeUtils.toJsonBytes(confidenceOverrideSerializer.toSlime(overrides)));
+            curator.set(confidenceOverridesPath(),
+                        SlimeUtils.toJsonBytes(confidenceOverrideSerializer.toSlime(overrides)));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to serialize confidence overrides", e);
         }
@@ -194,6 +202,8 @@ public class CuratorDb {
         return readSlime(confidenceOverridesPath()).map(confidenceOverrideSerializer::fromSlime)
                                                    .orElseGet(Collections::emptyMap);
     }
+
+    // -------------- Tenant --------------------------------------------------
 
     public void writeTenant(UserTenant tenant) {
         try {
@@ -239,7 +249,44 @@ public class CuratorDb {
         curator.delete(tenantPath(name));
     }
 
-    // The following methods are called by internal code
+    // -------------- Application ---------------------------------------------
+
+    public void writeApplication(Application application) {
+        try {
+            curator.set(applicationPath(application.id()),
+                        SlimeUtils.toJsonBytes(applicationSerializer.toSlime(application)));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write " + application.id().toString(), e);
+        }
+    }
+
+    public Optional<Application> readApplication(ApplicationId application) {
+        return readSlime(applicationPath(application)).map(applicationSerializer::fromSlime);
+    }
+
+    public List<Application> readApplications() {
+        return readApplications(ignored -> true);
+    }
+
+    public List<Application> readApplications(TenantName name) {
+        return readApplications(application -> application.tenant().equals(name));
+    }
+
+    private List<Application> readApplications(Predicate<ApplicationId> applicationFilter) {
+        return curator.getChildren(applicationRoot).stream()
+                      .map(ApplicationId::fromSerializedForm)
+                      .filter(applicationFilter)
+                      .map(this::readApplication)
+                      .filter(Optional::isPresent)
+                      .map(Optional::get)
+                      .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+    }
+
+    public void removeApplication(ApplicationId application) {
+        curator.delete(applicationPath(application));
+    }
+
+    // -------------- Provisioning (called by internal code) ------------------
 
     @SuppressWarnings("unused")
     public Optional<byte[]> readProvisionState(String provisionId) {
@@ -276,7 +323,7 @@ public class CuratorDb {
         curator.set(openStackServerPoolPath(), data);
     }
 
-    // -------------- Paths --------------------------------------------------
+    // -------------- Paths ---------------------------------------------------
 
     private Path lockPath(TenantName tenant) {
         Path lockPath = lockRoot
@@ -340,5 +387,9 @@ public class CuratorDb {
 
     private static Path tenantPath(TenantName name) {
         return tenantRoot.append(name.value());
+    }
+
+    private static Path applicationPath(ApplicationId application) {
+        return applicationRoot.append(application.serializedForm());
     }
 }

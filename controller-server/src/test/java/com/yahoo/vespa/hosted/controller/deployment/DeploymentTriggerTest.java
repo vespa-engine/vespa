@@ -7,7 +7,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -336,9 +335,11 @@ public class DeploymentTriggerTest {
         ReadyJobsTrigger readyJobsTrigger = new ReadyJobsTrigger(tester.controller(),
                                                                  Duration.ofHours(1),
                                                                  new JobControl(tester.controllerTester().curator()));
-        LockedApplication app = (LockedApplication)tester.createAndDeploy("default0", 3, "default");
+        Application app = tester.createAndDeploy("default0", 3, "default");
         // Store that we are upgrading but don't start the system-tests job
-        tester.controller().applications().store(app.withChange(Change.of(Version.fromString("6.2"))));
+        tester.controller().applications().lockOrThrow(app.id(), locked -> {
+            tester.controller().applications().store(locked.withChange(Change.of(Version.fromString("6.2"))));
+        });
         assertEquals(0, tester.deploymentQueue().jobs().size());
         readyJobsTrigger.run();
         assertEquals(1, tester.deploymentQueue().jobs().size());
