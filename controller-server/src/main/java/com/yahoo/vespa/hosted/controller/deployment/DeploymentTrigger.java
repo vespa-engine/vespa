@@ -23,25 +23,18 @@ import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
-import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -50,7 +43,6 @@ import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -76,7 +68,6 @@ public class DeploymentTrigger {
     private final Clock clock;
     private final DeploymentOrder order;
     private final BuildService buildService;
-    private final ExecutorService executor;
 
     public DeploymentTrigger(Controller controller, CuratorDb curator, BuildService buildService, Clock clock) {
         Objects.requireNonNull(controller, "controller cannot be null");
@@ -87,7 +78,6 @@ public class DeploymentTrigger {
         this.order = new DeploymentOrder(controller::system);
         this.buildService = buildService;
         this.jobTimeout = controller.system().equals(SystemName.main) ? Duration.ofHours(12) : Duration.ofHours(1);
-        this.executor = Executors.newFixedThreadPool(20);
     }
 
     /**
@@ -137,46 +127,24 @@ public class DeploymentTrigger {
      * Only one job is triggered each run for test jobs, since those environments have limited capacity.
      */
     public void triggerReadyJobs() {
-        List<Callable<Void>> tasks = new ArrayList<>();
-
         computeReadyJobs().collect(partitioningBy(job -> job.jobType().isTest()))
-                          .forEach((isConstrained, jobList) -> {
-                              if (isConstrained) {
-                                  jobList.stream()
+                          .entrySet().stream()
+                          .flatMap(entry -> (entry.getKey()
+                                  // True for capacity constrained zones -- sort by priority and make a task for each job type.
+                                  ? entry.getValue().stream()
                                          .sorted(comparing(Job::isRetry)
                                                          .thenComparing(Job::applicationUpgrade)
                                                          .reversed()
                                                          .thenComparing(Job::availableSince))
                                          .collect(groupingBy(Job::jobType))
-                                         .values().forEach(jobs -> tasks.add(
-                                          () -> {
-                                              for (Job job : jobs)
-                                                  if (canTrigger(job) && trigger(job))
-                                                      break;
-                                              return null;
-                                          }));
-                              }
-                              else {
-                                  jobList.stream()
-                                         .collect(groupingBy(Job::id))
-                                         .values().forEach(jobs -> tasks.add(
-                                          () -> {
-                                              for (Job job : jobs)
-                                                  applications().lockIfPresent(job.id, ignored -> {
-                                                      if (canTrigger(job))
-                                                          trigger(job);
-                                                  });
-                                              return null;
-                                          }));
-                              }
-                          });
-
-        try {
-            executor.invokeAll(tasks);
-        }
-        catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+                                  // False for production jobs -- keep step order and make a task for each application.
+                                  : entry.getValue().stream()
+                                         .collect(groupingBy(Job::id)))
+                                  .values().stream()
+                                  .map(jobs -> (Runnable) jobs.stream()
+                                                              .filter(job -> canTrigger(job) && trigger(job))
+                                                              .limit(entry.getKey() ? 1 : Long.MAX_VALUE)::count))
+                          .parallel().forEach(Runnable::run);
     }
 
     /**
