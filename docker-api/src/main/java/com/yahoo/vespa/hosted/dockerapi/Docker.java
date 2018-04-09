@@ -45,7 +45,7 @@ public interface Docker {
         Map<String, Object> getBlkioStats();
     }
 
-    default boolean networkNPTed() {
+    default boolean networkNATed() {
         return false;
     }
 
