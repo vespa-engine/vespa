@@ -149,7 +149,7 @@ public class EventDiffCalculator {
             } else if (isMayHaveMergesPendingUpEdge(prevReason, currReason)) {
                 events.add(createNodeEvent(info, "Node may have merges pending", params));
             } else if (isMayHaveMergesPendingDownEdge(prevReason, currReason)) {
-                events.add(createNodeEvent(info, "Node no longer have merges pending", params));
+                events.add(createNodeEvent(info, "Node no longer has merges pending", params));
             }
         }
     }

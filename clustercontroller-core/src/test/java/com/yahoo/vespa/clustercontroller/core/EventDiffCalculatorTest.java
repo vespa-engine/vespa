@@ -366,7 +366,7 @@ public class EventDiffCalculatorTest {
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(1)),
                 nodeEventForBucketSpace("default"),
-                nodeEventWithDescription("Node no longer have merges pending"))));
+                nodeEventWithDescription("Node no longer has merges pending"))));
     }
 
     @Test
