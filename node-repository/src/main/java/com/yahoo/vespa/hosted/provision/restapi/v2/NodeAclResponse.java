@@ -49,6 +49,11 @@ public class NodeAclResponse extends HttpResponse {
         nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toSlime(nodeAcl.trustedNetworks(),
                                                                                      nodeAcl.node(),
                                                                                      trustedNetworksArray));
+
+        Cursor trustedPortsArray = object.setArray("trustedPorts");
+        nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toSlime(nodeAcl.trustedPorts(),
+                nodeAcl,
+                trustedNetworksArray));
     }
 
     private void toSlime(NodeAcl nodeAcl, Cursor array) {
@@ -61,11 +66,19 @@ public class NodeAclResponse extends HttpResponse {
         }));
     }
 
-    private void toSlime(Set<String> trustedNetworks, Node trustedBy, Cursor array) {
+    private void toSlime(Set<String> trustedNetworks, Node trustedby, Cursor array) {
         trustedNetworks.forEach(network -> {
             Cursor object = array.addObject();
             object.setString("network", network);
-            object.setString("trustedBy", trustedBy.hostname());
+            object.setString("trustedBy", trustedby.hostname());
+        });
+    }
+
+    private void toSlime(Set<Integer> trustedPorts, NodeAcl trustedBy, Cursor array) {
+        trustedPorts.forEach(port -> {
+            Cursor object = array.addObject();
+            object.setLong("port", port);
+            object.setString("trustedBy", trustedBy.node().hostname());
         });
     }
 

@@ -17,11 +17,13 @@ public class NodeAcl {
     private final Node node;
     private final Set<Node> trustedNodes;
     private final Set<String> trustedNetworks;
+    private final Set<Integer> trustedPorts;
 
-    public NodeAcl(Node node, Set<Node> trustedNodes, Set<String> trustedNetworks) {
+    public NodeAcl(Node node, Set<Node> trustedNodes, Set<String> trustedNetworks, Set<Integer> trustedPorts) {
         this.node = node;
         this.trustedNodes = ImmutableSet.copyOf(trustedNodes);
         this.trustedNetworks = ImmutableSet.copyOf(trustedNetworks);
+        this.trustedPorts = ImmutableSet.copyOf(trustedPorts);
     }
 
     public Node node() {
@@ -34,5 +36,9 @@ public class NodeAcl {
 
     public Set<String> trustedNetworks() {
         return trustedNetworks;
+    }
+
+    public Set<Integer> trustedPorts() {
+        return trustedPorts;
     }
 }
