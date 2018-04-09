@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.jdisc.http.filters.cors;
+package com.yahoo.jdisc.http.filter.security.cors;
 
 import com.google.inject.Inject;
 import com.yahoo.jdisc.Response;
@@ -14,7 +14,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
-import static com.yahoo.jdisc.http.filters.cors.CorsLogic.createCorsPreflightResponseHeaders;
 
 /**
  * <p>
@@ -34,12 +33,12 @@ import static com.yahoo.jdisc.http.filters.cors.CorsLogic.createCorsPreflightRes
  * @author gv
  * @author bjorncs
  */
-@Provides("CorsPreflightSecurityRequestFilter")
-public class CorsPreflightSecurityRequestFilter implements SecurityRequestFilter {
+@Provides("CorsPreflightRequestFilter")
+public class CorsPreflightRequestFilter implements SecurityRequestFilter {
     private final Set<String> allowedUrls;
 
     @Inject
-    public CorsPreflightSecurityRequestFilter(CorsSecurityFilterConfig config) {
+    public CorsPreflightRequestFilter(CorsFilterConfig config) {
         this.allowedUrls = new HashSet<>(config.allowedUrls());
     }
 
@@ -52,7 +51,7 @@ public class CorsPreflightSecurityRequestFilter implements SecurityRequestFilter
 
         HttpResponse response = HttpResponse.newInstance(Response.Status.OK);
 
-        createCorsPreflightResponseHeaders(origin, allowedUrls)
+        CorsLogic.createCorsPreflightResponseHeaders(origin, allowedUrls)
                 .forEach(response.headers()::put);
 
         ContentChannel cc = responseHandler.handleResponse(response);

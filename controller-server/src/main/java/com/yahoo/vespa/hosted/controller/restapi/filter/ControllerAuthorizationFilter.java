@@ -6,8 +6,8 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
-import com.yahoo.jdisc.http.filters.cors.CorsSecurityFilterConfig;
-import com.yahoo.jdisc.http.filters.cors.CorsSecurityRequestFilterBase;
+import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
+import com.yahoo.jdisc.http.filter.security.cors.CorsRequestFilterBase;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -49,7 +49,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAth
  */
 @After("com.yahoo.vespa.hosted.controller.athenz.filter.UserAuthWithAthenzPrincipalFilter")
 @Provides("ControllerAuthorizationFilter")
-public class ControllerAuthorizationFilter extends CorsSecurityRequestFilterBase {
+public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
     private static final List<Method> WHITELISTED_METHODS = Arrays.asList(GET, OPTIONS, HEAD);
 
@@ -61,7 +61,7 @@ public class ControllerAuthorizationFilter extends CorsSecurityRequestFilterBase
     @Inject
     public ControllerAuthorizationFilter(AthenzClientFactory clientFactory,
                                          Controller controller,
-                                         CorsSecurityFilterConfig corsConfig) {
+                                         CorsFilterConfig corsConfig) {
         super(corsConfig);
         this.clientFactory = clientFactory;
         this.tenantController = controller.tenants();

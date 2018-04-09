@@ -2,4 +2,4 @@
 install_fat_java_artifact(jdisc-security-filters)
 install_java_artifact_dependencies(jdisc-security-filters)
 
-install_config_definition(src/main/resources/configdefinitions/cors-security-filter.def)
+install_config_definition(src/main/resources/configdefinitions/cors-filter.def)

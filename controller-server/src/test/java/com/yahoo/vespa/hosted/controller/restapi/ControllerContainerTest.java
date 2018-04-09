@@ -54,7 +54,7 @@ public class ControllerContainerTest {
             "      <item key=\"rotation-id-5\">rotation-fqdn-5</item>\n" +
             "    </rotations>\n" +
             "  </config>\n" +
-            "  <config name=\"jdisc.http.filters.cors.cors-security-filter\">\n" +
+            "  <config name=\"jdisc.http.filter.security.cors.cors-filter\">\n" +
             "    <allowedUrls>\n" +
             "      <item>http://localhost</item>\n" +
             "    </allowedUrls>\n" +

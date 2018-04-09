@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.jdisc.http.filters.cors;
+package com.yahoo.jdisc.http.filter.security.cors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,7 +15,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.yahoo.jdisc.http.filters.cors.CorsLogic.createCorsResponseHeaders;
+import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.createCorsResponseHeaders;
 
 /**
  * Security request filters should extend this base class to ensure that CORS header are included in the response of a rejected request.
@@ -23,17 +23,17 @@ import static com.yahoo.jdisc.http.filters.cors.CorsLogic.createCorsResponseHead
  *
  * @author bjorncs
  */
-public abstract class CorsSecurityRequestFilterBase implements SecurityRequestFilter {
+public abstract class CorsRequestFilterBase implements SecurityRequestFilter {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private final Set<String> allowedUrls;
 
-    protected CorsSecurityRequestFilterBase(CorsSecurityFilterConfig config) {
+    protected CorsRequestFilterBase(CorsFilterConfig config) {
         this(new HashSet<>(config.allowedUrls()));
     }
 
-    protected CorsSecurityRequestFilterBase(Set<String> allowedUrls) {
+    protected CorsRequestFilterBase(Set<String> allowedUrls) {
         this.allowedUrls = allowedUrls;
     }
 

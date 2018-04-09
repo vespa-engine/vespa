@@ -3,6 +3,6 @@
  * @author bjorncs
  */
 @ExportPackage
-package com.yahoo.jdisc.http.filters.cors;
+package com.yahoo.jdisc.http.filter.security.cors;
 
 import com.yahoo.osgi.annotation.ExportPackage;

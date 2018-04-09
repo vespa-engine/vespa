@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.jdisc.http.filters.cors;
+package com.yahoo.jdisc.http.filter.security.cors;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.jdisc.HeaderFields;

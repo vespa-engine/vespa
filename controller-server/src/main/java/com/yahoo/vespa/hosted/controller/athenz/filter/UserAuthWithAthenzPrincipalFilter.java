@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.athenz.filter;
 import com.google.inject.Inject;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
-import com.yahoo.jdisc.http.filters.cors.CorsSecurityFilterConfig;
+import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  * @author bjorncs
  */
 // TODO Remove this filter once migrated to Okta
-@After({"CorsPreflightSecurityRequestFilter", "BouncerFilter"})
+@After({"CorsPreflightRequestFilter", "BouncerFilter"})
 public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
 
     private static final Logger log = Logger.getLogger(UserAuthWithAthenzPrincipalFilter.class.getName());
@@ -41,7 +41,7 @@ public class UserAuthWithAthenzPrincipalFilter extends AthenzPrincipalFilter {
     public UserAuthWithAthenzPrincipalFilter(ZmsKeystore zmsKeystore,
                                              Executor executor,
                                              AthenzConfig athenzConfig,
-                                             CorsSecurityFilterConfig corsConfig) {
+                                             CorsFilterConfig corsConfig) {
         super(zmsKeystore, executor, athenzConfig, corsConfig);
         this.userAuthenticationPassThruAttribute = athenzConfig.userAuthenticationPassThruAttribute();
         this.principalHeaderName = athenzConfig.principalHeaderName();

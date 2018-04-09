@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.jdisc.http.filters.cors;
+package com.yahoo.jdisc.http.filter.security.cors;
 
 import com.yahoo.jdisc.HeaderFields;
 import com.yahoo.jdisc.Response;
@@ -7,14 +7,14 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.jdisc.http.filters.cors.CorsSecurityFilterConfig.Builder;
+import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig.Builder;
 import org.junit.Test;
 
 import java.util.Arrays;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
-import static com.yahoo.jdisc.http.filters.cors.CorsLogic.ACCESS_CONTROL_HEADERS;
-import static com.yahoo.jdisc.http.filters.cors.CorsLogic.ALLOW_ORIGIN_HEADER;
+import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ACCESS_CONTROL_HEADERS;
+import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ALLOW_ORIGIN_HEADER;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
  * @author gjoranv
  * @author bjorncs
  */
-public class CorsPreflightSecurityRequestFilterTest {
+public class CorsPreflightRequestFilterTest {
 
     @Test
     public void any_options_request_yields_access_control_headers_in_response() {
@@ -59,10 +59,10 @@ public class CorsPreflightSecurityRequestFilterTest {
         return request;
     }
 
-    private static CorsPreflightSecurityRequestFilter newRequestFilter(String... allowedOriginUrls) {
+    private static CorsPreflightRequestFilter newRequestFilter(String... allowedOriginUrls) {
         Builder builder = new Builder();
         Arrays.asList(allowedOriginUrls).forEach(builder::allowedUrls);
-        return new CorsPreflightSecurityRequestFilter(new CorsSecurityFilterConfig(builder));
+        return new CorsPreflightRequestFilter(new CorsFilterConfig(builder));
     }
 
     private static class AccessControlResponseHandler implements ResponseHandler {

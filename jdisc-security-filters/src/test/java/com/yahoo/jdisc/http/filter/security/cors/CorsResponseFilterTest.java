@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.jdisc.http.filters.cors;
+package com.yahoo.jdisc.http.filter.security.cors;
 
 import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.filter.DiscFilterResponse;
 import com.yahoo.jdisc.http.filter.RequestView;
 import com.yahoo.jdisc.http.filter.SecurityResponseFilter;
-import com.yahoo.jdisc.http.filters.cors.CorsSecurityFilterConfig.Builder;
+import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig.Builder;
 import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpResponse;
 import org.junit.Test;
 
@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.yahoo.jdisc.http.filters.cors.CorsLogic.ACCESS_CONTROL_HEADERS;
-import static com.yahoo.jdisc.http.filters.cors.CorsLogic.ALLOW_ORIGIN_HEADER;
+import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ACCESS_CONTROL_HEADERS;
+import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ALLOW_ORIGIN_HEADER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
  * @author gjoranv
  * @author bjorncs
  */
-public class CorsSecurityResponseFilterTest {
+public class CorsResponseFilterTest {
 
     @Test
     public void any_request_yields_access_control_headers_in_response() {
@@ -62,10 +62,10 @@ public class CorsSecurityResponseFilterTest {
         return Collections.unmodifiableMap(response.headers);
     }
 
-    private static CorsSecurityResponseFilter newResponseFilter(String... allowedOriginUrls) {
+    private static CorsResponseFilter newResponseFilter(String... allowedOriginUrls) {
         Builder builder = new Builder();
         Arrays.asList(allowedOriginUrls).forEach(builder::allowedUrls);
-        return new CorsSecurityResponseFilter(new CorsSecurityFilterConfig(builder));
+        return new CorsResponseFilter(new CorsFilterConfig(builder));
     }
 
     private static RequestView newRequestView(String originUrl) {

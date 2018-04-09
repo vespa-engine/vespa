@@ -4,8 +4,8 @@ package com.yahoo.vespa.hosted.controller.athenz.filter;
 import com.google.inject.Inject;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
-import com.yahoo.jdisc.http.filters.cors.CorsSecurityFilterConfig;
-import com.yahoo.jdisc.http.filters.cors.CorsSecurityRequestFilterBase;
+import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
+import com.yahoo.jdisc.http.filter.security.cors.CorsRequestFilterBase;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
@@ -31,7 +31,7 @@ import java.util.concurrent.Executor;
  * @author bjorncs
  */
 // TODO bjorncs: Move this class to vespa-athenz bundle
-public class AthenzPrincipalFilter extends CorsSecurityRequestFilterBase {
+public class AthenzPrincipalFilter extends CorsRequestFilterBase {
 
     private final NTokenValidator validator;
     private final String principalTokenHeader;
@@ -43,7 +43,7 @@ public class AthenzPrincipalFilter extends CorsSecurityRequestFilterBase {
     public AthenzPrincipalFilter(ZmsKeystore zmsKeystore,
                                  Executor executor,
                                  AthenzConfig athenzConfig,
-                                 CorsSecurityFilterConfig corsConfig) {
+                                 CorsFilterConfig corsConfig) {
         this(new NTokenValidator(zmsKeystore), executor, athenzConfig.principalHeaderName(), new HashSet<>(corsConfig.allowedUrls()));
     }
 
