@@ -11,7 +11,6 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
@@ -22,15 +21,14 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.ArrayDeque;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -97,10 +95,6 @@ public class CuratorDb {
         return lock(lockRoot.append("inactiveJobsLock"), defaultLockTimeout);
     }
 
-    public Lock lockJobQueues() {
-        return lock(lockRoot.append("jobQueuesLock"), defaultLockTimeout);
-    }
-
     public Lock lockMaintenanceJob(String jobName) {
         // Use a short timeout such that if maintenance jobs are started at about the same time on different nodes
         // and the maintenance job takes a long time to complete, only one of the nodes will run the job
@@ -125,8 +119,20 @@ public class CuratorDb {
 
     // -------------- Helpers ------------------------------------------
 
+    private <T> Optional<T> read(Path path, Function<byte[], T> mapper) {
+        return curator.getData(path).filter(data -> data.length > 0).map(mapper);
+    }
+
     private Optional<Slime> readSlime(Path path) {
-        return curator.getData(path).filter(data -> data.length > 0).map(SlimeUtils::jsonToSlime);
+        return read(path, SlimeUtils::jsonToSlime);
+    }
+
+    private static byte[] asJson(Slime slime) {
+        try {
+            return SlimeUtils.toJsonBytes(slime);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     // -------------- Deployment orchestration --------------------------------
@@ -147,11 +153,7 @@ public class CuratorDb {
     }
 
     public double readUpgradesPerMinute() {
-        Optional<byte[]> n = curator.getData(upgradesPerMinutePath());
-        if ( ! n.isPresent() || n.get().length == 0) {
-            return 0.5; // Default if value has never been written
-        }
-        return ByteBuffer.wrap(n.get()).getDouble();
+        return read(upgradesPerMinutePath(), ByteBuffer::wrap).map(ByteBuffer::getDouble).orElse(0.5);
     }
 
     public void writeUpgradesPerMinute(double n) {
@@ -162,11 +164,7 @@ public class CuratorDb {
     }
   
     public void writeVersionStatus(VersionStatus status) {
-        try {
-            curator.set(versionStatusPath(), SlimeUtils.toJsonBytes(versionStatusSerializer.toSlime(status)));
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to serialize version status", e);
-        }
+        curator.set(versionStatusPath(), asJson(versionStatusSerializer.toSlime(status)));
     }
 
     public VersionStatus readVersionStatus() {
@@ -174,12 +172,7 @@ public class CuratorDb {
     }
 
     public void writeConfidenceOverrides(Map<Version, VespaVersion.Confidence> overrides) {
-        try {
-            curator.set(confidenceOverridesPath(),
-                        SlimeUtils.toJsonBytes(confidenceOverrideSerializer.toSlime(overrides)));
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to serialize confidence overrides", e);
-        }
+        curator.set(confidenceOverridesPath(), asJson(confidenceOverrideSerializer.toSlime(overrides)));
     }
 
     public Map<Version, VespaVersion.Confidence> readConfidenceOverrides() {
@@ -190,11 +183,7 @@ public class CuratorDb {
     // -------------- Tenant --------------------------------------------------
 
     public void writeTenant(UserTenant tenant) {
-        try {
-            curator.set(tenantPath(tenant.name()), SlimeUtils.toJsonBytes(tenantSerializer.toSlime(tenant)));
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to write " + tenant.toString(), e);
-        }
+        curator.set(tenantPath(tenant.name()), asJson(tenantSerializer.toSlime(tenant)));
     }
 
     public Optional<UserTenant> readUserTenant(TenantName name) {
@@ -202,11 +191,7 @@ public class CuratorDb {
     }
 
     public void writeTenant(AthenzTenant tenant) {
-        try {
-            curator.set(tenantPath(tenant.name()), SlimeUtils.toJsonBytes(tenantSerializer.toSlime(tenant)));
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to write " + tenant.toString(), e);
-        }
+        curator.set(tenantPath(tenant.name()), asJson(tenantSerializer.toSlime(tenant)));
     }
 
     public Optional<AthenzTenant> readAthenzTenant(TenantName name) {
@@ -236,12 +221,7 @@ public class CuratorDb {
     // -------------- Application ---------------------------------------------
 
     public void writeApplication(Application application) {
-        try {
-            curator.set(applicationPath(application.id()),
-                        SlimeUtils.toJsonBytes(applicationSerializer.toSlime(application)));
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to write " + application.id().toString(), e);
-        }
+        curator.set(applicationPath(application.id()), asJson(applicationSerializer.toSlime(application)));
     }
 
     public Optional<Application> readApplication(ApplicationId application) {
@@ -335,10 +315,6 @@ public class CuratorDb {
 
     private static Path inactiveJobsPath() {
         return root.append("inactiveJobs");
-    }
-
-    private static Path jobQueuePath(DeploymentJobs.JobType jobType) {
-        return root.append("jobQueues").append(jobType.name());
     }
 
     private static Path upgradesPerMinutePath() {
