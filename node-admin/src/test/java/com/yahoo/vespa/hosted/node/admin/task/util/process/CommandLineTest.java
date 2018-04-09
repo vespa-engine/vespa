@@ -124,7 +124,7 @@ public class CommandLineTest {
         try {
             result.mapOutput(output -> { throw exception; });
             fail();
-        } catch (UnexpectedOutputException2 e) {
+        } catch (UnexpectedOutputException e) {
             assertEquals("Command 'program 2>&1' output was not of the expected format: " +
                     "Failed to map output: stdout/stderr: 'output'", e.getMessage());
             assertTrue(e.getCause() == exception);

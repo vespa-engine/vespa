@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -19,6 +19,9 @@ public class Yum {
     private static final Pattern INSTALL_NOOP_PATTERN = Pattern.compile("(?dm)^Nothing to do$");
     private static final Pattern UPGRADE_NOOP_PATTERN = Pattern.compile("(?dm)^No packages marked for update$");
     private static final Pattern REMOVE_NOOP_PATTERN = Pattern.compile("(?dm)^No Packages marked for removal$");
+
+    private static final Pattern UNKNOWN_PACKAGE_PATTERN = Pattern.compile(
+            "(?dm)^No package ([^ ]+) available\\.$");
 
     private final TaskContext taskContext;
     private final Terminal terminal;
@@ -55,8 +58,6 @@ public class Yum {
     }
 
     public static class GenericYumCommand {
-        private static Logger logger = Logger.getLogger(GenericYumCommand.class.getName());
-
         private final TaskContext taskContext;
         private final Terminal terminal;
         private final String yumCommand;
@@ -96,13 +97,22 @@ public class Yum {
             // Therefore, run the command and parse the output to decide.
             boolean modifiedSystem = commandLine
                     .executeSilently()
-                    .mapOutput(output -> !commandOutputNoopPattern.matcher(output).find());
+                    .mapOutput(this::mapOutput);
 
             if (modifiedSystem) {
                 commandLine.recordSilentExecutionAsSystemModification();
             }
 
             return modifiedSystem;
+        }
+
+        public boolean mapOutput(String output) {
+            Matcher unknownPackageMatcher = UNKNOWN_PACKAGE_PATTERN.matcher(output);
+            if (unknownPackageMatcher.find()) {
+                throw new IllegalArgumentException("Unknown package: " + unknownPackageMatcher.group(1));
+            }
+
+            return !commandOutputNoopPattern.matcher(output).find();
         }
     }
 }

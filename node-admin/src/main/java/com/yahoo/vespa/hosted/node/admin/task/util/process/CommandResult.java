@@ -55,7 +55,7 @@ public class CommandResult {
      * Map this CommandResult to an instance of type R.
      *
      * If a RuntimeException is thrown by the mapper, it is wrapped in an
-     * UnexpectedOutputException2 that includes a snippet of the output in the message.
+     * UnexpectedOutputException that includes a snippet of the output in the message.
      *
      * This method is intended to be used as part of the verification of the output.
      */
@@ -63,19 +63,19 @@ public class CommandResult {
         try {
             return mapper.apply(this);
         } catch (RuntimeException e) {
-            throw new UnexpectedOutputException2(e, "Failed to map output", commandLine.toString(), output);
+            throw new UnexpectedOutputException(e, "Failed to map output", commandLine.toString(), output);
         }
     }
 
     /**
      * Map the output to an instance of type R according to mapper, wrapping any
-     * RuntimeException in UnexpectedOutputException2 w/output snippet. See map() for details.
+     * RuntimeException in UnexpectedOutputException w/output snippet. See map() for details.
      */
     public <R> R mapOutput(Function<String, R> mapper) { return map(result -> mapper.apply(result.getOutput())); }
 
     /**
      * Map each output line to an instance of type R according to mapper, wrapping any
-     * RuntimeException in UnexpectedOutputException2 w/output snippet. See map() for details.
+     * RuntimeException in UnexpectedOutputException w/output snippet. See map() for details.
      */
     public <R> List<R> mapEachLine(Function<String, R> mapper) {
         return map(result -> result.getOutputLinesStream().map(mapper).collect(Collectors.toList()));
