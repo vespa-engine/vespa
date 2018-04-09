@@ -6,7 +6,7 @@ import com.yahoo.concurrent.classlock.ClassLock;
 import com.yahoo.concurrent.classlock.ClassLocking;
 import com.yahoo.concurrent.classlock.LockInterruptException;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
@@ -129,12 +129,12 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
         if (currentState != RESUMED) return;
 
         try {
-            ContainerNodeSpec nodeSpec = nodeRepository.getContainerNodeSpec(dockerHostHostName)
+            NodeSpec node = nodeRepository.getNode(dockerHostHostName)
                     .orElseThrow(() -> new RuntimeException("Failed to get host's node spec from node-repo"));
-            String hardwareDivergence = maintainer.getHardwareDivergence(nodeSpec);
+            String hardwareDivergence = maintainer.getHardwareDivergence(node);
 
             // Only update hardware divergence if there is a change.
-            if (!nodeSpec.hardwareDivergence.orElse("null").equals(hardwareDivergence)) {
+            if (!node.hardwareDivergence.orElse("null").equals(hardwareDivergence)) {
                 NodeAttributes nodeAttributes = new NodeAttributes().withHardwareDivergence(hardwareDivergence);
                 nodeRepository.updateNodeAttributes(dockerHostHostName, nodeAttributes);
             }
@@ -270,7 +270,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             }
 
             try {
-                final List<ContainerNodeSpec> containersToRun = nodeRepository.getContainersToRun(dockerHostHostName);
+                final List<NodeSpec> containersToRun = nodeRepository.getNodes(dockerHostHostName);
                 nodeAdmin.refreshContainersToRun(containersToRun);
             } catch (Exception e) {
                 log.log(LogLevel.WARNING, "Failed to update which containers should be running", e);
@@ -279,10 +279,10 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     }
 
     private List<String> getNodesInActiveState() {
-        return nodeRepository.getContainersToRun(dockerHostHostName)
+        return nodeRepository.getNodes(dockerHostHostName)
                              .stream()
-                             .filter(nodespec -> nodespec.nodeState == Node.State.active)
-                             .map(nodespec -> nodespec.hostname)
+                             .filter(node -> node.nodeState == Node.State.active)
+                             .map(node -> node.hostname)
                              .collect(Collectors.toList());
     }
 

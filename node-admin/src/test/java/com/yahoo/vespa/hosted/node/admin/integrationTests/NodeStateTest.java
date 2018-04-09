@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -15,11 +15,11 @@ import java.io.IOException;
  * @author freva
  */
 public class NodeStateTest {
-    private final ContainerNodeSpec initialContainerNodeSpec = new ContainerNodeSpec.Builder()
+    private final NodeSpec initialNodeSpec = new NodeSpec.Builder()
             .hostname("host1.test.yahoo.com")
             .wantedDockerImage(new DockerImage("dockerImage"))
             .nodeState(Node.State.active)
-            .nodeType("tenant")
+            .nodeType(NodeType.tenant)
             .nodeFlavor("docker")
             .wantedRestartGeneration(1L)
             .currentRestartGeneration(1L)
@@ -29,7 +29,7 @@ public class NodeStateTest {
             .build();
 
     private void setup(DockerTester tester) throws InterruptedException {
-        tester.addContainerNodeSpec(initialContainerNodeSpec);
+        tester.addNodeRepositoryNode(initialNodeSpec);
 
         // Wait for node admin to be notified with node repo state and the docker container has been started
         while (tester.nodeAdmin.getListOfHosts().size() == 0) {
@@ -47,7 +47,7 @@ public class NodeStateTest {
         try (DockerTester dockerTester = new DockerTester()) {
             setup(dockerTester);
             // Change node state to dirty
-            dockerTester.addContainerNodeSpec(new ContainerNodeSpec.Builder(initialContainerNodeSpec)
+            dockerTester.addNodeRepositoryNode(new NodeSpec.Builder(initialNodeSpec)
                     .nodeState(Node.State.dirty)
                     .minCpuCores(1)
                     .minMainMemoryAvailableGb(1)
@@ -55,8 +55,8 @@ public class NodeStateTest {
                     .build());
 
             // Wait until it is marked ready
-            while (dockerTester.nodeRepositoryMock.getContainerNodeSpec(initialContainerNodeSpec.hostname)
-                    .filter(nodeSpec -> nodeSpec.nodeState != Node.State.ready).isPresent()) {
+            while (dockerTester.nodeRepositoryMock.getNode(initialNodeSpec.hostname)
+                    .filter(node -> node.nodeState != Node.State.ready).isPresent()) {
                 Thread.sleep(10);
             }
 
@@ -76,7 +76,7 @@ public class NodeStateTest {
             DockerImage newDockerImage = new DockerImage("newDockerImage");
 
             // Change node state to inactive and change the wanted docker image
-            dockerTester.addContainerNodeSpec(new ContainerNodeSpec.Builder(initialContainerNodeSpec)
+            dockerTester.addNodeRepositoryNode(new NodeSpec.Builder(initialNodeSpec)
                     .wantedDockerImage(newDockerImage)
                     .nodeState(Node.State.inactive)
                     .minCpuCores(1)
@@ -91,7 +91,7 @@ public class NodeStateTest {
 
 
             // Change node state to active
-            dockerTester.addContainerNodeSpec(new ContainerNodeSpec.Builder(initialContainerNodeSpec)
+            dockerTester.addNodeRepositoryNode(new NodeSpec.Builder(initialNodeSpec)
                     .wantedDockerImage(newDockerImage)
                     .nodeState(Node.State.active)
                     .minCpuCores(1)

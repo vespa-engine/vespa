@@ -1,8 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
@@ -54,7 +55,7 @@ public class NodeAdminStateUpdaterImplTest {
     @Test
     public void testStateConvergence() {
         mockNodeRepo(4);
-        List<String> activeHostnames = nodeRepository.getContainersToRun(parentHostname).stream()
+        List<String> activeHostnames = nodeRepository.getNodes(parentHostname).stream()
                 .map(node -> node.hostname)
                 .collect(Collectors.toList());
         List<String> suspendHostnames = new ArrayList<>(activeHostnames);
@@ -182,11 +183,11 @@ public class NodeAdminStateUpdaterImplTest {
     }
 
     private void mockNodeRepo(int numberOfNodes) {
-        List<ContainerNodeSpec> containersToRun = IntStream.range(0, numberOfNodes)
-                .mapToObj(i -> new ContainerNodeSpec.Builder()
+        List<NodeSpec> containersToRun = IntStream.range(0, numberOfNodes)
+                .mapToObj(i -> new NodeSpec.Builder()
                         .hostname("host" + i + ".test.yahoo.com")
                         .nodeState(Node.State.active)
-                        .nodeType("tenant")
+                        .nodeType(NodeType.tenant)
                         .nodeFlavor("docker")
                         .minCpuCores(1)
                         .minMainMemoryAvailableGb(1)
@@ -194,7 +195,7 @@ public class NodeAdminStateUpdaterImplTest {
                         .build())
                 .collect(Collectors.toList());
 
-        when(nodeRepository.getContainersToRun(eq(parentHostname))).thenReturn(containersToRun);
+        when(nodeRepository.getNodes(eq(parentHostname))).thenReturn(containersToRun);
     }
 
     private void tickAfter(int seconds) {

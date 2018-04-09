@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -12,11 +13,10 @@ import java.util.Set;
 /**
  * @author stiankri
  */
-// TODO: Rename to Node or NodeRepositoryNode
-public class ContainerNodeSpec {
+public class NodeSpec {
     public final String hostname;
     public final Node.State nodeState;
-    public final String nodeType;
+    public final NodeType nodeType;
     public final String nodeFlavor;
     public final String nodeCanonicalFlavor;
 
@@ -29,29 +29,29 @@ public class ContainerNodeSpec {
     public final Optional<Long> wantedRestartGeneration;
     public final Optional<Long> currentRestartGeneration;
 
-    public final Optional<Long> wantedRebootGeneration;
-    public final Optional<Long> currentRebootGeneration;
+    public final long wantedRebootGeneration;
+    public final long currentRebootGeneration;
 
     public final Optional<Boolean> allowedToBeDown;
     public final Optional<Owner> owner;
     public final Optional<Membership> membership;
 
-    public final Double minCpuCores;
-    public final Double minMainMemoryAvailableGb;
-    public final Double minDiskAvailableGb;
+    public final double minCpuCores;
+    public final double minMainMemoryAvailableGb;
+    public final double minDiskAvailableGb;
 
-    public final Boolean fastDisk;
+    public final boolean fastDisk;
     public final Set<String> ipAddresses;
 
     public final Optional<String> hardwareDivergence;
     public final Optional<String> parentHostname;
 
-    public ContainerNodeSpec(
+    public NodeSpec(
             final String hostname,
             final Optional<DockerImage> wantedDockerImage,
             final Optional<DockerImage> currentDockerImage,
             final Node.State nodeState,
-            final String nodeType,
+            final NodeType nodeType,
             final String nodeFlavor,
             final String nodeCanonicalFlavor,
             final Optional<String> wantedVespaVersion,
@@ -61,12 +61,12 @@ public class ContainerNodeSpec {
             final Optional<Membership> membership,
             final Optional<Long> wantedRestartGeneration,
             final Optional<Long> currentRestartGeneration,
-            final Optional<Long> wantedRebootGeneration,
-            final Optional<Long> currentRebootGeneration,
-            final Double minCpuCores,
-            final Double minMainMemoryAvailableGb,
-            final Double minDiskAvailableGb,
-            final Boolean fastDisk,
+            final long wantedRebootGeneration,
+            final long currentRebootGeneration,
+            final double minCpuCores,
+            final double minMainMemoryAvailableGb,
+            final double minDiskAvailableGb,
+            final boolean fastDisk,
             final Set<String> ipAddresses,
             final Optional<String> hardwareDivergence,
             final Optional<String> parentHostname) {
@@ -77,10 +77,6 @@ public class ContainerNodeSpec {
         Objects.requireNonNull(allowedToBeDown);
         Objects.requireNonNull(owner);
         Objects.requireNonNull(membership);
-        Objects.requireNonNull(minCpuCores);
-        Objects.requireNonNull(minMainMemoryAvailableGb);
-        Objects.requireNonNull(minDiskAvailableGb);
-        Objects.requireNonNull(fastDisk);
         Objects.requireNonNull(ipAddresses);
 
         this.hostname = hostname;
@@ -111,9 +107,9 @@ public class ContainerNodeSpec {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ContainerNodeSpec)) return false;
+        if (!(o instanceof NodeSpec)) return false;
 
-        ContainerNodeSpec that = (ContainerNodeSpec) o;
+        NodeSpec that = (NodeSpec) o;
 
         return Objects.equals(hostname, that.hostname) &&
                 Objects.equals(wantedDockerImage, that.wantedDockerImage) &&
@@ -296,7 +292,7 @@ public class ContainerNodeSpec {
         private Optional<DockerImage> wantedDockerImage = Optional.empty();
         private Optional<DockerImage> currentDockerImage = Optional.empty();
         private Node.State nodeState;
-        private String nodeType;
+        private NodeType nodeType;
         private String nodeFlavor;
         private String nodeCanonicalFlavor;
         private Optional<String> wantedVespaVersion = Optional.empty();
@@ -306,42 +302,42 @@ public class ContainerNodeSpec {
         private Optional<Membership> membership = Optional.empty();
         private Optional<Long> wantedRestartGeneration = Optional.empty();
         private Optional<Long> currentRestartGeneration = Optional.empty();
-        private Optional<Long> wantedRebootGeneration = Optional.empty();
-        private Optional<Long> currentRebootGeneration = Optional.empty();
-        private Double minCpuCores;
-        private Double minMainMemoryAvailableGb;
-        private Double minDiskAvailableGb;
-        private Boolean fastDisk = false;
+        private long wantedRebootGeneration;
+        private long currentRebootGeneration;
+        private double minCpuCores;
+        private double minMainMemoryAvailableGb;
+        private double minDiskAvailableGb;
+        private boolean fastDisk = false;
         private Set<String> ipAddresses = Collections.emptySet();
         private Optional<String> hardwareDivergence = Optional.empty();
         private Optional<String> parentHostname = Optional.empty();
 
         public Builder() {}
 
-        public Builder(ContainerNodeSpec nodeSpec) {
-            hostname(nodeSpec.hostname);
-            nodeState(nodeSpec.nodeState);
-            nodeType(nodeSpec.nodeType);
-            nodeFlavor(nodeSpec.nodeFlavor);
-            nodeCanonicalFlavor(nodeSpec.nodeCanonicalFlavor);
-            minCpuCores(nodeSpec.minCpuCores);
-            minMainMemoryAvailableGb(nodeSpec.minMainMemoryAvailableGb);
-            minDiskAvailableGb(nodeSpec.minDiskAvailableGb);
-            fastDisk(nodeSpec.fastDisk);
-            ipAddresses(nodeSpec.ipAddresses);
+        public Builder(NodeSpec node) {
+            hostname(node.hostname);
+            nodeState(node.nodeState);
+            nodeType(node.nodeType);
+            nodeFlavor(node.nodeFlavor);
+            nodeCanonicalFlavor(node.nodeCanonicalFlavor);
+            minCpuCores(node.minCpuCores);
+            minMainMemoryAvailableGb(node.minMainMemoryAvailableGb);
+            minDiskAvailableGb(node.minDiskAvailableGb);
+            fastDisk(node.fastDisk);
+            ipAddresses(node.ipAddresses);
+            wantedRebootGeneration(node.wantedRebootGeneration);
+            currentRebootGeneration(node.currentRebootGeneration);
 
-            nodeSpec.wantedDockerImage.ifPresent(this::wantedDockerImage);
-            nodeSpec.currentDockerImage.ifPresent(this::currentDockerImage);
-            nodeSpec.wantedVespaVersion.ifPresent(this::wantedVespaVersion);
-            nodeSpec.vespaVersion.ifPresent(this::vespaVersion);
-            nodeSpec.owner.ifPresent(this::owner);
-            nodeSpec.membership.ifPresent(this::membership);
-            nodeSpec.wantedRestartGeneration.ifPresent(this::wantedRestartGeneration);
-            nodeSpec.currentRestartGeneration.ifPresent(this::currentRestartGeneration);
-            nodeSpec.wantedRebootGeneration.ifPresent(this::wantedRebootGeneration);
-            nodeSpec.currentRebootGeneration.ifPresent(this::currentRebootGeneration);
-            nodeSpec.hardwareDivergence.ifPresent(this::hardwareDivergence);
-            nodeSpec.parentHostname.ifPresent(this::parentHostname);
+            node.wantedDockerImage.ifPresent(this::wantedDockerImage);
+            node.currentDockerImage.ifPresent(this::currentDockerImage);
+            node.wantedVespaVersion.ifPresent(this::wantedVespaVersion);
+            node.vespaVersion.ifPresent(this::vespaVersion);
+            node.owner.ifPresent(this::owner);
+            node.membership.ifPresent(this::membership);
+            node.wantedRestartGeneration.ifPresent(this::wantedRestartGeneration);
+            node.currentRestartGeneration.ifPresent(this::currentRestartGeneration);
+            node.hardwareDivergence.ifPresent(this::hardwareDivergence);
+            node.parentHostname.ifPresent(this::parentHostname);
         }
 
         public Builder hostname(String hostname) {
@@ -363,7 +359,7 @@ public class ContainerNodeSpec {
             this.nodeState = nodeState;
             return this;
         }
-        public Builder nodeType(String nodeType) {
+        public Builder nodeType(NodeType nodeType) {
             this.nodeType = nodeType;
             return this;
         }
@@ -414,12 +410,12 @@ public class ContainerNodeSpec {
         }
 
         public Builder wantedRebootGeneration(long wantedRebootGeneration) {
-            this.wantedRebootGeneration = Optional.of(wantedRebootGeneration);
+            this.wantedRebootGeneration = wantedRebootGeneration;
             return this;
         }
 
         public Builder currentRebootGeneration(long currentRebootGeneration) {
-            this.currentRebootGeneration = Optional.of(currentRebootGeneration);
+            this.currentRebootGeneration = currentRebootGeneration;
             return this;
         }
 
@@ -458,8 +454,8 @@ public class ContainerNodeSpec {
             return this;
         }
 
-        public ContainerNodeSpec build() {
-            return new ContainerNodeSpec(hostname, wantedDockerImage, currentDockerImage, nodeState, nodeType,
+        public NodeSpec build() {
+            return new NodeSpec(hostname, wantedDockerImage, currentDockerImage, nodeState, nodeType,
                                          nodeFlavor, nodeCanonicalFlavor,
                                          wantedVespaVersion, vespaVersion, allowedToBeDown, owner, membership,
                                          wantedRestartGeneration, currentRestartGeneration,

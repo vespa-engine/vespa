@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
@@ -30,7 +30,7 @@ public class RebootTest {
     public void test() throws InterruptedException, UnknownHostException {
         try (DockerTester dockerTester = new DockerTester()) {
 
-            dockerTester.addContainerNodeSpec(createContainerNodeSpec());
+            dockerTester.addNodeRepositoryNode(createNodeRepositoryNode());
 
             // Wait for node admin to be notified with node repo state and the docker container has been started
             while (dockerTester.nodeAdmin.getListOfHosts().size() == 0) {
@@ -62,12 +62,12 @@ public class RebootTest {
         }
     }
 
-    private ContainerNodeSpec createContainerNodeSpec() {
-        return new ContainerNodeSpec.Builder()
+    private NodeSpec createNodeRepositoryNode() {
+        return new NodeSpec.Builder()
                 .hostname("host1.test.yahoo.com")
                 .wantedDockerImage(new DockerImage("dockerImage"))
                 .nodeState(Node.State.active)
-                .nodeType("tenant")
+                .nodeType(NodeType.tenant)
                 .nodeFlavor("docker")
                 .vespaVersion("6.50.0")
                 .wantedRestartGeneration(1L)

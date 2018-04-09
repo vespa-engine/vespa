@@ -2,7 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.logging;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -33,7 +34,7 @@ public class FilebeatConfigProviderTest {
     public void it_replaces_all_fields_correctly() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
 
-        Optional<String> config = filebeatConfigProvider.getConfig(getNodeSpec(tenant, application, instance));
+        Optional<String> config = filebeatConfigProvider.getConfig(createNodeRepositoryNode(tenant, application, instance));
 
         assertTrue(config.isPresent());
         String configString = config.get();
@@ -45,23 +46,23 @@ public class FilebeatConfigProviderTest {
         Environment env = getEnvironment(Collections.emptyList());
 
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(env);
-        Optional<String> config = filebeatConfigProvider.getConfig(getNodeSpec(tenant, application, instance));
+        Optional<String> config = filebeatConfigProvider.getConfig(createNodeRepositoryNode(tenant, application, instance));
         assertFalse(config.isPresent());
     }
 
     @Test
     public void it_does_not_generate_config_for_nodes_wihout_owner() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
-        ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
+        NodeSpec node = new NodeSpec.Builder()
                 .nodeFlavor("flavor")
                 .nodeState(Node.State.active)
-                .nodeType("type")
+                .nodeType(NodeType.tenant)
                 .hostname("hostname")
                 .minCpuCores(1)
                 .minMainMemoryAvailableGb(1)
                 .minDiskAvailableGb(1)
                 .build();
-        Optional<String> config = filebeatConfigProvider.getConfig(nodeSpec);
+        Optional<String> config = filebeatConfigProvider.getConfig(node);
         assertFalse(config.isPresent());
     }
 
@@ -79,7 +80,7 @@ public class FilebeatConfigProviderTest {
     public void it_does_not_add_double_quotes() {
         Environment environment = getEnvironment(ImmutableList.of("unquoted", "\"quoted\""));
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
-        Optional<String> config = filebeatConfigProvider.getConfig(getNodeSpec(tenant, application, instance));
+        Optional<String> config = filebeatConfigProvider.getConfig(createNodeRepositoryNode(tenant, application, instance));
         assertThat(config.get(), containsString("hosts: [\"unquoted\",\"quoted\"]"));
     }
 
@@ -91,8 +92,8 @@ public class FilebeatConfigProviderTest {
 
     private String getConfigString() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
-        ContainerNodeSpec nodeSpec = getNodeSpec(tenant, application, instance);
-        return filebeatConfigProvider.getConfig(nodeSpec).orElseThrow(() -> new RuntimeException("Failed to get filebeat config"));
+        NodeSpec node = createNodeRepositoryNode(tenant, application, instance);
+        return filebeatConfigProvider.getConfig(node).orElseThrow(() -> new RuntimeException("Failed to get filebeat config"));
     }
 
     private Environment getEnvironment(List<String> logstashNodes) {
@@ -107,13 +108,13 @@ public class FilebeatConfigProviderTest {
                 .build();
     }
 
-    private ContainerNodeSpec getNodeSpec(String tenant, String application, String instance) {
-        ContainerNodeSpec.Owner owner = new ContainerNodeSpec.Owner(tenant, application, instance);
-        return new ContainerNodeSpec.Builder()
+    private NodeSpec createNodeRepositoryNode(String tenant, String application, String instance) {
+        NodeSpec.Owner owner = new NodeSpec.Owner(tenant, application, instance);
+        return new NodeSpec.Builder()
                 .owner(owner)
                 .nodeFlavor("flavor")
                 .nodeState(Node.State.active)
-                .nodeType("type")
+                .nodeType(NodeType.tenant)
                 .hostname("hostname")
                 .minCpuCores(1)
                 .minMainMemoryAvailableGb(1)

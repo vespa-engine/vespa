@@ -6,18 +6,18 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface DockerOperations {
 
-    void createContainer(ContainerName containerName, ContainerNodeSpec nodeSpec);
+    void createContainer(ContainerName containerName, NodeSpec node);
 
-    void startContainer(ContainerName containerName, ContainerNodeSpec nodeSpec);
+    void startContainer(ContainerName containerName, NodeSpec node);
 
-    void removeContainer(Container existingContainer, ContainerNodeSpec nodeSpec);
+    void removeContainer(Container existingContainer, NodeSpec node);
 
     Optional<Container> getContainer(ContainerName containerName);
 

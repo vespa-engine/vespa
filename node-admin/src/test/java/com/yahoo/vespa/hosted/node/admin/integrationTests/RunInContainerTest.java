@@ -4,12 +4,13 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.concurrent.classlock.ClassLocking;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
@@ -142,7 +143,7 @@ public class RunInContainerTest {
     @Test
     public void testGetContainersToRunAPi() throws IOException, InterruptedException {
         doThrow(new OrchestratorException("Cannot suspend because...")).when(orchestratorMock).suspend(parentHostname);
-        when(nodeRepositoryMock.getContainersToRun(eq(parentHostname))).thenReturn(Collections.emptyList());
+        when(nodeRepositoryMock.getNodes(eq(parentHostname))).thenReturn(Collections.emptyList());
         waitForJdiscContainerToServe();
 
         assertTrue("The initial resume command should fail because it needs to converge first",
@@ -168,12 +169,12 @@ public class RunInContainerTest {
         assertTrue(verifyWithRetries("resume", true));
 
         // Lets try the same, but with an active container running on this host
-        when(nodeRepositoryMock.getContainersToRun(eq(parentHostname))).thenReturn(
-                Collections.singletonList(new ContainerNodeSpec.Builder()
+        when(nodeRepositoryMock.getNodes(eq(parentHostname))).thenReturn(
+                Collections.singletonList(new NodeSpec.Builder()
                         .hostname("host1.test.yahoo.com")
                         .wantedDockerImage(new DockerImage("dockerImage"))
                         .nodeState(Node.State.active)
-                        .nodeType("tenant")
+                        .nodeType(NodeType.tenant)
                         .nodeFlavor("docker")
                         .build()));
         doThrow(new OrchestratorException("Cannot suspend because...")).when(orchestratorMock)

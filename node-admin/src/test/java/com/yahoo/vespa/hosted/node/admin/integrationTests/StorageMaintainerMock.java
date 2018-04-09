@@ -5,7 +5,7 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
@@ -30,7 +30,7 @@ public class StorageMaintainerMock extends StorageMaintainer {
     }
 
     @Override
-    public void handleCoreDumpsForContainer(ContainerName containerName, ContainerNodeSpec nodeSpec, boolean force) {
+    public void handleCoreDumpsForContainer(ContainerName containerName, NodeSpec node, boolean force) {
     }
 
     @Override
@@ -42,7 +42,7 @@ public class StorageMaintainerMock extends StorageMaintainer {
     }
 
     @Override
-    public void cleanupNodeStorage(ContainerName containerName, ContainerNodeSpec nodeSpec) {
+    public void cleanupNodeStorage(ContainerName containerName, NodeSpec node) {
         callOrderVerifier.add("DeleteContainerStorage with " + containerName);
     }
 }

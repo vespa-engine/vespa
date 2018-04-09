@@ -1,8 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.node.admin.AclSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -22,8 +23,8 @@ import java.util.Optional;
 public class NodeRepoMock implements NodeRepository {
     private static final Object monitor = new Object();
 
-    private final Map<String, ContainerNodeSpec> containerNodeSpecsByHostname = new HashMap<>();
-    private final Map<String, List<ContainerAclSpec>> acls = new HashMap<>();
+    private final Map<String, NodeSpec> nodeRepositoryNodesByHostname = new HashMap<>();
+    private final Map<String, List<AclSpec>> acls = new HashMap<>();
     private final CallOrderVerifier callOrderVerifier;
 
     public NodeRepoMock(CallOrderVerifier callOrderVerifier) {
@@ -31,21 +32,26 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public List<ContainerNodeSpec> getContainersToRun(String dockerHostHostname) {
+    public List<NodeSpec> getNodes(String baseHostName) {
         synchronized (monitor) {
-            return new ArrayList<>(containerNodeSpecsByHostname.values());
+            return new ArrayList<>(nodeRepositoryNodesByHostname.values());
         }
     }
 
     @Override
-    public Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName) {
+    public List<NodeSpec> getNodes(NodeType... nodeTypes) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Optional<NodeSpec> getNode(String hostName) {
         synchronized (monitor) {
-            return Optional.ofNullable(containerNodeSpecsByHostname.get(hostName));
+            return Optional.ofNullable(nodeRepositoryNodesByHostname.get(hostName));
         }
     }
 
     @Override
-    public List<ContainerAclSpec> getContainerAclSpecs(String hostName) {
+    public List<AclSpec> getNodesAcl(String hostName) {
         synchronized (monitor) {
             return Optional.ofNullable(acls.get(hostName))
                     .orElseGet(Collections::emptyList);
@@ -60,42 +66,24 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public void markAsDirty(String hostName) {
-        Optional<ContainerNodeSpec> cns = getContainerNodeSpec(hostName);
+    public void setNodeState(String hostName, Node.State nodeState) {
+        Optional<NodeSpec> node = getNode(hostName);
 
         synchronized (monitor) {
-            cns.ifPresent(containerNodeSpec -> updateContainerNodeSpec(new ContainerNodeSpec.Builder(containerNodeSpec)
-                    .nodeState(Node.State.dirty)
-                    .nodeType("tenant")
-                    .nodeFlavor("docker")
+            node.ifPresent(nrn -> updateNodeRepositoryNode(new NodeSpec.Builder(nrn)
+                    .nodeState(nodeState)
                     .build()));
-            callOrderVerifier.add("markAsDirty with HostName: " + hostName);
+            callOrderVerifier.add("setNodeState " + hostName + " to " + nodeState);
         }
     }
 
-    @Override
-    public void markNodeAvailableForNewAllocation(String hostName) {
-        Optional<ContainerNodeSpec> cns = getContainerNodeSpec(hostName);
-
-        synchronized (monitor) {
-            if (cns.isPresent()) {
-                updateContainerNodeSpec(new ContainerNodeSpec.Builder(cns.get())
-                        .nodeState(Node.State.ready)
-                        .nodeType("tenant")
-                        .nodeFlavor("docker")
-                        .build());
-            }
-            callOrderVerifier.add("markNodeAvailableForNewAllocation with HostName: " + hostName);
-        }
-    }
-
-    public void updateContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
-        containerNodeSpecsByHostname.put(containerNodeSpec.hostname, containerNodeSpec);
+    public void updateNodeRepositoryNode(NodeSpec nodeSpec) {
+        nodeRepositoryNodesByHostname.put(nodeSpec.hostname, nodeSpec);
     }
 
     public int getNumberOfContainerSpecs() {
         synchronized (monitor) {
-            return containerNodeSpecsByHostname.size();
+            return nodeRepositoryNodesByHostname.size();
         }
     }
 }

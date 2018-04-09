@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.logging;
 
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 
 import java.util.Optional;
@@ -32,12 +32,12 @@ public class FilebeatConfigProvider {
         this.environment = environment;
     }
 
-    public Optional<String> getConfig(ContainerNodeSpec containerNodeSpec) {
+    public Optional<String> getConfig(NodeSpec node) {
 
-        if (environment.getLogstashNodes().size() == 0 || !containerNodeSpec.owner.isPresent()) {
+        if (environment.getLogstashNodes().size() == 0 || !node.owner.isPresent()) {
             return Optional.empty();
         }
-        ContainerNodeSpec.Owner owner = containerNodeSpec.owner.get();
+        NodeSpec.Owner owner = node.owner.get();
         int spoolSize = environment.getLogstashNodes().size() * logstashWorkers * logstashBulkMaxSize;
         String logstashNodeString = environment.getLogstashNodes().stream()
                 .map(this::addQuotes)

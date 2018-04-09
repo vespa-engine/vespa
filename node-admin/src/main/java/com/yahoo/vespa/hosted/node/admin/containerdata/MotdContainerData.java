@@ -1,14 +1,12 @@
 package com.yahoo.vespa.hosted.node.admin.containerdata;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.Template;
-import com.yahoo.vespa.hosted.provision.Node.State;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
 import java.util.function.BiConsumer;
 
 /**
@@ -48,15 +46,15 @@ public class MotdContainerData {
 
     private final String renderedString;
 
-    public MotdContainerData(ContainerNodeSpec nodeSpec, Environment environment) {
+    public MotdContainerData(NodeSpec node, Environment environment) {
         renderedString = Template.of(templateString)
                 .set("zone", environment)
-                .set("type", nodeSpec.nodeType)
-                .set("state", nodeSpec.nodeState)
-                .set("installed", nodeSpec.vespaVersion)
-                .set("wanted", nodeSpec.wantedVespaVersion)
-                .set("owner", nodeSpec.owner.map(id -> ApplicationId.from(id.tenant, id.application, id.instance)))
-                .set("flavor", nodeSpec.nodeFlavor)
+                .set("type", node.nodeType)
+                .set("state", node.nodeState)
+                .set("installed", node.vespaVersion)
+                .set("wanted", node.wantedVespaVersion)
+                .set("owner", node.owner.map(id -> ApplicationId.from(id.tenant, id.application, id.instance)))
+                .set("flavor", node.nodeFlavor)
                 .render();
     }
 

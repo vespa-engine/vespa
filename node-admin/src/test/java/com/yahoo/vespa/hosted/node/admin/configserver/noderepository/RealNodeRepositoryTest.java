@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
@@ -77,7 +77,7 @@ public class RealNodeRepositoryTest {
         NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         while (Instant.now().minusSeconds(120).isBefore(start)) {
             try {
-                nodeRepositoryApi.getContainersToRun("foobar");
+                nodeRepositoryApi.getNodes("foobar");
                 return;
             } catch (Exception e) {
                 Thread.sleep(100);
@@ -99,17 +99,17 @@ public class RealNodeRepositoryTest {
         NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String dockerHostHostname = "dockerhost1.yahoo.com";
 
-        final List<ContainerNodeSpec> containersToRun = nodeRepositoryApi.getContainersToRun(dockerHostHostname);
+        final List<NodeSpec> containersToRun = nodeRepositoryApi.getNodes(dockerHostHostname);
         assertThat(containersToRun.size(), is(1));
-        final ContainerNodeSpec nodeSpec = containersToRun.get(0);
-        assertThat(nodeSpec.hostname, is("host4.yahoo.com"));
-        assertThat(nodeSpec.wantedDockerImage.get(), is(new DockerImage("docker-registry.domain.tld:8080/dist/vespa:6.42.0")));
-        assertThat(nodeSpec.nodeState, is(Node.State.active));
-        assertThat(nodeSpec.wantedRestartGeneration.get(), is(0L));
-        assertThat(nodeSpec.currentRestartGeneration.get(), is(0L));
-        assertThat(nodeSpec.minCpuCores, is(0.2));
-        assertThat(nodeSpec.minMainMemoryAvailableGb, is(0.5));
-        assertThat(nodeSpec.minDiskAvailableGb, is(100.0));
+        final NodeSpec node = containersToRun.get(0);
+        assertThat(node.hostname, is("host4.yahoo.com"));
+        assertThat(node.wantedDockerImage.get(), is(new DockerImage("docker-registry.domain.tld:8080/dist/vespa:6.42.0")));
+        assertThat(node.nodeState, is(Node.State.active));
+        assertThat(node.wantedRestartGeneration.get(), is(0L));
+        assertThat(node.currentRestartGeneration.get(), is(0L));
+        assertThat(node.minCpuCores, is(0.2));
+        assertThat(node.minMainMemoryAvailableGb, is(0.5));
+        assertThat(node.minDiskAvailableGb, is(100.0));
     }
 
     @Test
@@ -117,9 +117,9 @@ public class RealNodeRepositoryTest {
         waitForJdiscContainerToServe();
         NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String hostname = "host4.yahoo.com";
-        Optional<ContainerNodeSpec> nodeSpec = nodeRepositoryApi.getContainerNodeSpec(hostname);
-        assertThat(nodeSpec.isPresent(), is(true));
-        assertThat(nodeSpec.get().hostname, is(hostname));
+        Optional<NodeSpec> node = nodeRepositoryApi.getNode(hostname);
+        assertThat(node.isPresent(), is(true));
+        assertThat(node.get().hostname, is(hostname));
     }
 
     @Test
@@ -127,8 +127,8 @@ public class RealNodeRepositoryTest {
         waitForJdiscContainerToServe();
         NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         String hostname = "host-that-does-not-exist";
-        Optional<ContainerNodeSpec> nodeSpec = nodeRepositoryApi.getContainerNodeSpec(hostname);
-        assertFalse(nodeSpec.isPresent());
+        Optional<NodeSpec> node = nodeRepositoryApi.getNode(hostname);
+        assertFalse(node.isPresent());
     }
 
     @Test
@@ -162,18 +162,18 @@ public class RealNodeRepositoryTest {
         NodeRepository nodeRepositoryApi = new RealNodeRepository(configServerApi);
         waitForJdiscContainerToServe();
 
-        nodeRepositoryApi.markAsDirty("host5.yahoo.com");
-        nodeRepositoryApi.markNodeAvailableForNewAllocation("host5.yahoo.com");
+        nodeRepositoryApi.setNodeState("host5.yahoo.com", Node.State.dirty);
+        nodeRepositoryApi.setNodeState("host5.yahoo.com", Node.State.ready);
 
         try {
-            nodeRepositoryApi.markNodeAvailableForNewAllocation("host4.yahoo.com");
+            nodeRepositoryApi.setNodeState("host4.yahoo.com", Node.State.ready);
             fail("Should not be allowed to be marked ready as it is not registered as provisioned, dirty, failed or parked");
         } catch (RuntimeException ignored) {
             // expected
         }
 
         try {
-            nodeRepositoryApi.markNodeAvailableForNewAllocation("host101.yahoo.com");
+            nodeRepositoryApi.setNodeState("host101.yahoo.com", Node.State.ready);
             fail("Expected failure because host101 does not exist");
         } catch (RuntimeException ignored) {
             // expected

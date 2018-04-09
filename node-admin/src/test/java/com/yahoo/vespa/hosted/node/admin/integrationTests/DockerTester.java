@@ -5,7 +5,7 @@ import com.yahoo.concurrent.classlock.ClassLocking;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
@@ -85,8 +85,8 @@ public class DockerTester implements AutoCloseable {
         nodeAdminStateUpdater.start();
     }
 
-    void addContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
-        nodeRepositoryMock.updateContainerNodeSpec(containerNodeSpec);
+    void addNodeRepositoryNode(NodeSpec nodeSpec) {
+        nodeRepositoryMock.updateNodeRepositoryNode(nodeSpec);
     }
 
     @Override

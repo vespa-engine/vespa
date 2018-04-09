@@ -65,30 +65,30 @@ public class NodeAdminImplTest {
 
 
         final InOrder inOrder = inOrder(nodeAgentFactory, nodeAgent1, nodeAgent2);
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.singletonList(containerName1));
+        nodeAdmin.synchronizeNodesToNodeAgents(Collections.emptyList(), Collections.singletonList(containerName1));
         verifyNoMoreInteractions(nodeAgentFactory);
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName1), Collections.singletonList(containerName1));
+        nodeAdmin.synchronizeNodesToNodeAgents(Collections.singletonList(hostName1), Collections.singletonList(containerName1));
         inOrder.verify(nodeAgentFactory).apply(hostName1);
         inOrder.verify(nodeAgent1).start();
         inOrder.verify(nodeAgent1, never()).stop();
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName1), Collections.singletonList(containerName1));
+        nodeAdmin.synchronizeNodesToNodeAgents(Collections.singletonList(hostName1), Collections.singletonList(containerName1));
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
         inOrder.verify(nodeAgent1, never()).start();
         inOrder.verify(nodeAgent1, never()).stop();
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.singletonList(containerName1));
+        nodeAdmin.synchronizeNodesToNodeAgents(Collections.emptyList(), Collections.singletonList(containerName1));
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
         verify(nodeAgent1).stop();
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName2), Collections.singletonList(containerName1));
+        nodeAdmin.synchronizeNodesToNodeAgents(Collections.singletonList(hostName2), Collections.singletonList(containerName1));
         inOrder.verify(nodeAgentFactory).apply(hostName2);
         inOrder.verify(nodeAgent2).start();
         inOrder.verify(nodeAgent2, never()).stop();
         verify(nodeAgent1).stop();
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.emptyList());
+        nodeAdmin.synchronizeNodesToNodeAgents(Collections.emptyList(), Collections.emptyList());
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
         inOrder.verify(nodeAgent2, never()).start();
         inOrder.verify(nodeAgent2).stop();
@@ -110,7 +110,7 @@ public class NodeAdminImplTest {
             existingContainerHostnames.add(hostName);
         }
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(existingContainerHostnames,
+        nodeAdmin.synchronizeNodesToNodeAgents(existingContainerHostnames,
                 existingContainerHostnames.stream().map(ContainerName::fromHostname).collect(Collectors.toList()));
 
         assertTrue(nodeAdmin.isFrozen()); // Initially everything is frozen to force convergence
