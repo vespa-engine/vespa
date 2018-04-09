@@ -51,7 +51,7 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public List<AclSpec> getNodeAcl(String hostName) {
+    public List<AclSpec> getNodesAcl(String hostName) {
         synchronized (monitor) {
             return Optional.ofNullable(acls.get(hostName))
                     .orElseGet(Collections::emptyList);

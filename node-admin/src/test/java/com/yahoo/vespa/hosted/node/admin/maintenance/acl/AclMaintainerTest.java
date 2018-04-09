@@ -48,7 +48,7 @@ public class AclMaintainerTest {
     public void configures_container_acl() {
         Container container = makeContainer("container-1");
         List<AclSpec> aclSpec = makeNodeAcls(3, container.name);
-        when(nodeRepository.getNodeAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpec);
+        when(nodeRepository.getNodesAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpec);
         aclMaintainer.run();
         assertAclsApplied(container.name, aclSpec);
     }
@@ -57,7 +57,7 @@ public class AclMaintainerTest {
     public void does_not_configure_acl_if_unchanged() {
         Container container = makeContainer("container-1");
         List<AclSpec> aclSpecs = makeNodeAcls(3, container.name);
-        when(nodeRepository.getNodeAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
+        when(nodeRepository.getNodesAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
         // Run twice
         aclMaintainer.run();
         aclMaintainer.run();
@@ -68,7 +68,7 @@ public class AclMaintainerTest {
     public void reconfigures_acl_when_container_pid_changes() {
         Container container = makeContainer("container-1");
         List<AclSpec> aclSpecs = makeNodeAcls(3, container.name);
-        when(nodeRepository.getNodeAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
+        when(nodeRepository.getNodesAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
 
         aclMaintainer.run();
         assertAclsApplied(container.name, aclSpecs);
@@ -84,7 +84,7 @@ public class AclMaintainerTest {
     public void does_not_configure_acl_for_stopped_container() {
         Container stoppedContainer = makeContainer("container-1", Container.State.EXITED, 0);
         List<AclSpec> aclSpecs = makeNodeAcls(1, stoppedContainer.name);
-        when(nodeRepository.getNodeAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
+        when(nodeRepository.getNodesAcl(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
         aclMaintainer.run();
         assertAclsApplied(stoppedContainer.name, aclSpecs, never());
     }
@@ -92,7 +92,7 @@ public class AclMaintainerTest {
     @Test
     public void rollback_is_attempted_when_applying_acl_fail() {
         Container container = makeContainer("container-1");
-        when(nodeRepository.getNodeAcl(NODE_ADMIN_HOSTNAME)).thenReturn(makeNodeAcls(1, container.name));
+        when(nodeRepository.getNodesAcl(NODE_ADMIN_HOSTNAME)).thenReturn(makeNodeAcls(1, container.name));
 
         doThrow(new RuntimeException("iptables command failed"))
                 .doNothing()

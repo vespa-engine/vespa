@@ -21,7 +21,7 @@ public interface NodeRepository {
 
     Optional<NodeSpec> getNode(String hostName);
 
-    List<AclSpec> getNodeAcl(String hostName);
+    List<AclSpec> getNodesAcl(String hostName);
 
     void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes);
 

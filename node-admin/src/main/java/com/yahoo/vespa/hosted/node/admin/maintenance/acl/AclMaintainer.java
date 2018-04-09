@@ -84,7 +84,7 @@ public class AclMaintainer implements Runnable {
 
     private synchronized void configureAcls() {
         final Map<ContainerName, List<AclSpec>> nodeAclGroupedByContainerName = nodeRepository
-                .getNodeAcl(nodeAdminHostname).stream()
+                .getNodesAcl(nodeAdminHostname).stream()
                 .collect(Collectors.groupingBy(AclSpec::trustedBy));
 
         dockerOperations
