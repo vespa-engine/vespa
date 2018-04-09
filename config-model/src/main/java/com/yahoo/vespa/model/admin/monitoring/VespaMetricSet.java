@@ -161,8 +161,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("failed_queries.rate", "failed_queries"));
         metrics.add(new Metric("degraded_queries.rate", "degraded_queries"));
         metrics.add(new Metric("hits_per_query.average", "hits_per_query"));
-        metrics.add(new Metric("coverage_per_query.average"));
-        metrics.add(new Metric("coverage_per_query.min"));
+        metrics.add(new Metric("documents_covered.count"));
+        metrics.add(new Metric("documents_total.count"));
 
         metrics.add(new Metric("totalhits_per_query.average", "totalhits_per_query"));
         metrics.add(new Metric("empty_results.rate", "empty_results"));
