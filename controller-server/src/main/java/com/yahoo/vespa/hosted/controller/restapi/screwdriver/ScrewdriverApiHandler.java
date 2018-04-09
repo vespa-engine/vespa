@@ -26,6 +26,9 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * This API lists deployment jobs that are queued for execution on Screwdriver.
@@ -68,7 +71,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
             return vespaVersion();
         }
         if (path.matches("/screwdriver/v1/jobsToRun"))
-            return buildJobs(controller.applications().deploymentTrigger().computeReadyJobs());
+            return buildJobs(controller.applications().deploymentTrigger().computeReadyJobs().collect(groupingBy(job -> job.jobType())));
         return notFound(request);
     }
 
