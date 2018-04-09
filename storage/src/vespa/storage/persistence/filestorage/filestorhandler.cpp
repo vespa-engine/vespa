@@ -53,21 +53,21 @@ FileStorHandler::pause()
 }
 
 bool
-FileStorHandler::schedule(const api::StorageMessage::SP& msg, uint16_t thread)
+FileStorHandler::schedule(const api::StorageMessage::SP& msg, uint16_t disk)
 {
-    return _impl->schedule(msg, thread);
+    return _impl->schedule(msg, disk);
 }
 
 FileStorHandler::LockedMessage
-FileStorHandler::getNextMessage(uint16_t thread, uint32_t stripeId)
+FileStorHandler::getNextMessage(uint16_t disk, uint32_t stripeId)
 {
-    return _impl->getNextMessage(thread, stripeId);
+    return _impl->getNextMessage(disk, stripeId);
 }
 
 FileStorHandler::LockedMessage &
-FileStorHandler::getNextMessage(uint16_t thread, uint32_t stripeId, LockedMessage& lck)
+FileStorHandler::getNextMessage(uint16_t disk, uint32_t stripeId, LockedMessage& lck)
 {
-    return _impl->getNextMessage(thread, stripeId, lck);
+    return _impl->getNextMessage(disk, stripeId, lck);
 }
 
 FileStorHandler::BucketLockInterface::SP
