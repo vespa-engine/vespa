@@ -77,14 +77,16 @@ public:
     class Stripe {
     public:
         struct LockEntry {
-            uint32_t         timestamp;
-            uint8_t          priority;
-            vespalib::string statusString;
+            uint32_t                timestamp;
+            uint8_t                 priority;
+            api::MessageType::Id    msgType;
+            api::StorageMessage::Id msgId;
 
-            LockEntry() : timestamp(0), priority(0), statusString() { }
 
-            LockEntry(uint8_t priority_, vespalib::stringref status)
-                : timestamp(time(nullptr)), priority(priority_), statusString(status)
+            LockEntry() : timestamp(0), priority(0), msgType(), msgId(0) { }
+
+            LockEntry(uint8_t priority_, api::MessageType::Id msgType_, api::StorageMessage::Id msgId_)
+                : timestamp(time(nullptr)), priority(priority_), msgType(msgType_), msgId(msgId_)
             { }
         };
         Stripe(const FileStorHandlerImpl & owner, MessageSender & messageSender);
@@ -201,7 +203,7 @@ public:
     class BucketLock : public FileStorHandler::BucketLockInterface {
     public:
         BucketLock(const vespalib::MonitorGuard & guard, Stripe& disk, const document::Bucket &bucket,
-                   uint8_t priority, const vespalib::stringref & statusString);
+                   uint8_t priority, api::MessageType::Id msgType, api::StorageMessage::Id);
         ~BucketLock();
 
         const document::Bucket &getBucket() const override { return _bucket; }

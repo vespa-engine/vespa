@@ -371,7 +371,7 @@ FileStorHandlerImpl::Stripe::lock(const document::Bucket &bucket)
         guard.wait(100);
     }
 
-    auto locker = std::make_shared<BucketLock>(guard, *this, bucket, 255, "External lock");
+    auto locker = std::make_shared<BucketLock>(guard, *this, bucket, 255, api::MessageType::INTERNAL_ID, 0);
 
     guard.broadcast();
     return locker;
@@ -984,7 +984,8 @@ FileStorHandlerImpl::Stripe::getMessage(vespalib::MonitorGuard & guard, Priority
     idx.erase(iter); // iter not used after this point.
 
     if (!messageTimedOutInQueue(*msg, waitTime)) {
-        auto locker = std::make_unique<BucketLock>(guard, *this, bucket, msg->getPriority(), msg->getSummary());;
+        auto locker = std::make_unique<BucketLock>(guard, *this, bucket, msg->getPriority(),
+                                                   msg->getType().getId(), msg->getMsgId());
         guard.unlock();
         return FileStorHandler::LockedMessage(std::move(locker), std::move(msg));
     } else {
@@ -1106,7 +1107,7 @@ FileStorHandlerImpl::getQueueSize(uint16_t disk) const
 
 FileStorHandlerImpl::BucketLock::BucketLock(const vespalib::MonitorGuard & guard, Stripe& stripe,
                                             const document::Bucket &bucket, uint8_t priority,
-                                            const vespalib::stringref & statusString)
+                                            api::MessageType::Id msgType, api::StorageMessage::Id msgId)
     : _stripe(stripe),
       _bucket(bucket)
 {
@@ -1114,7 +1115,7 @@ FileStorHandlerImpl::BucketLock::BucketLock(const vespalib::MonitorGuard & guard
     if (_bucket.getBucketId().getRawId() != 0) {
         // Lock the bucket and wait until it is not the current operation for
         // the disk itself.
-        _stripe.lock(guard, _bucket, Stripe::LockEntry(priority, statusString));
+        _stripe.lock(guard, _bucket, Stripe::LockEntry(priority, msgType, msgId));
         LOG(debug, "Locked bucket %s with priority %u",
             bucket.getBucketId().toString().c_str(), priority);
 
@@ -1179,9 +1180,9 @@ FileStorHandlerImpl::Stripe::dumpActiveHtml(std::ostream & os) const
 {
     uint32_t now = time(nullptr);
     vespalib::MonitorGuard guard(_lock);
-    for (const auto & entry : _lockedBuckets) {
-        os << entry.second.statusString << " (" << entry.first.getBucketId()
-           << ") Running for " << (now - entry.second.timestamp) << " secs<br/>\n";
+    for (const auto & e : _lockedBuckets) {
+        os << api::MessageType::get(e.second.msgType).getName() << ":" << e.second.msgId << " (" << e.first.getBucketId()
+           << ") Running for " << (now - e.second.timestamp) << " secs<br/>\n";
     }
 }
 
