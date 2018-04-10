@@ -29,9 +29,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.is;
+import static com.yahoo.test.PatternMatcher.matchesPattern;
 import static org.junit.Assert.*;
 
 public class ContentClusterTest extends ContentBaseTest {
@@ -737,37 +739,69 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    public void requireThatPreShutdownCommandIsSet() {
-        ContentCluster cluster = parse(
-            "<content version=\"1.0\" id=\"storage\">" +
-            "  <documents/>" +
-            "  <engine>" +
-            "    <proton>" +
-            "      <flush-on-shutdown>true</flush-on-shutdown>" +
-            "    </proton>" +
-            "  </engine>" +
-            "  <group>" +
-            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-            "  </group>" +
-            "</content>");
-        assertThat(cluster.getSearch().getSearchNodes().size(), is(1));
-        assertTrue(cluster.getSearch().getSearchNodes().get(0).getPreShutdownCommand().isPresent());
+    public void flush_on_shutdown_is_default_on_for_non_hosted() throws Exception {
+        assertPrepareRestartCommand(createOneNodeCluster(false));
+    }
 
-        cluster = parse(
-            "<content version=\"1.0\" id=\"storage\">" +
-            "  <documents/>" +
-            "  <engine>" +
-            "    <proton>" +
-            "      <flush-on-shutdown>  \n " +
-            "  true  </flush-on-shutdown>" +
-            "    </proton>" +
-            "  </engine>" +
-            "  <group>" +
-            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-            "  </group>" +
-            "</content>");
-        assertThat(cluster.getSearch().getSearchNodes().size(), is(1));
-        assertTrue(cluster.getSearch().getSearchNodes().get(0).getPreShutdownCommand().isPresent());
+    @Test
+    public void flush_on_shutdown_can_be_turned_off_for_non_hosted() throws Exception {
+        assertNoPreShutdownCommand(createClusterWithFlushOnShutdownOverride(false, false));
+    }
+
+    @Test
+    public void flush_on_shutdown_is_default_off_for_hosted() throws Exception {
+        assertNoPreShutdownCommand(createOneNodeCluster(true));
+    }
+
+    @Test
+    public void flush_on_shutdown_can_be_turned_on_for_hosted() throws Exception {
+        assertPrepareRestartCommand(createClusterWithFlushOnShutdownOverride(true, true));
+    }
+
+    private static ContentCluster createOneNodeCluster(boolean isHostedVespa) throws Exception {
+        return createOneNodeCluster("<content version=\"1.0\" id=\"mockcluster\">" +
+                "  <documents/>" +
+                "  <group>" +
+                "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+                "  </group>" +
+                "</content>", isHostedVespa);
+
+
+    }
+
+    private static ContentCluster createClusterWithFlushOnShutdownOverride(boolean flushOnShutdown, boolean isHostedVespa) throws Exception {
+        return createOneNodeCluster("<content version=\"1.0\" id=\"mockcluster\">" +
+                "  <documents/>" +
+                "  <engine>" +
+                "    <proton>" +
+                "      <flush-on-shutdown>" + Boolean.toString(flushOnShutdown) + "</flush-on-shutdown>" +
+                "    </proton>" +
+                "  </engine>" +
+                "  <group>" +
+                "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+                "  </group>" +
+                "</content>", isHostedVespa);
+    }
+
+    private static ContentCluster createOneNodeCluster(String clusterXml, boolean isHostedVespa) throws Exception {
+        DeployState.Builder deployStateBuilder = new DeployState.Builder()
+                .properties(new DeployProperties.Builder().hostedVespa(isHostedVespa).build());
+        MockRoot root = ContentClusterUtils.createMockRoot(Collections.emptyList(), deployStateBuilder);
+        ContentCluster cluster = ContentClusterUtils.createCluster(clusterXml, root);
+        root.freezeModelTopology();
+        cluster.validate();
+        return cluster;
+    }
+
+    private static void assertPrepareRestartCommand(ContentCluster cluster) {
+        Optional<String> command = cluster.getSearch().getSearchNodes().get(0).getPreShutdownCommand();
+        assertTrue(command.isPresent());
+        assertThat(command.get(), matchesPattern(".*vespa-proton-cmd [0-9]+ prepareRestart"));
+    }
+
+    private static void assertNoPreShutdownCommand(ContentCluster cluster) {
+        Optional<String> command = cluster.getSearch().getSearchNodes().get(0).getPreShutdownCommand();
+        assertFalse(command.isPresent());
     }
 
     @Test

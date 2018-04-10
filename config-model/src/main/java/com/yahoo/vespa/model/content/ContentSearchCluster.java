@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.documentmodel.DocumentTypeRepo;
@@ -68,10 +69,10 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         protected ContentSearchCluster doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
             ModelElement clusterElem = new ModelElement(producerSpec);
             String clusterName = ContentCluster.getClusterName(clusterElem);
-            Boolean flushOnShutdown = clusterElem.childAsBoolean("engine.proton.flush-on-shutdown");
+            Boolean flushOnShutdownElem = clusterElem.childAsBoolean("engine.proton.flush-on-shutdown");
 
             ContentSearchCluster search = new ContentSearchCluster(ancestor, clusterName, documentDefinitions, globallyDistributedDocuments,
-                    (flushOnShutdown != null ? flushOnShutdown : false));
+                    getFlushOnShutdown(flushOnShutdownElem, AbstractConfigProducer.deployStateFrom(ancestor)));
 
             ModelElement tuning = clusterElem.getChildByPath("engine.proton.tuning");
             if (tuning != null) {
@@ -85,6 +86,13 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             buildAllStreamingSearchClusters(clusterElem, clusterName, search);
             buildIndexedSearchCluster(clusterElem, clusterName, search);
             return search;
+        }
+
+        private boolean getFlushOnShutdown(Boolean flushOnShutdownElem, DeployState deployState) {
+            if (flushOnShutdownElem != null) {
+                return flushOnShutdownElem;
+            }
+            return (stateIsHosted(deployState) ? false : true);
         }
 
         private Double getQueryTimeout(ModelElement clusterElem) {
