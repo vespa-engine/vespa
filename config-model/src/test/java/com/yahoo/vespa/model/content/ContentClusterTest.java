@@ -34,8 +34,7 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
-// TODO Rename to ContentClusterTest
-public class ClusterTest extends ContentBaseTest {
+public class ContentClusterTest extends ContentBaseTest {
 
     private final static String HOSTS = "<admin version='2.0'><adminserver hostalias='mockhost' /></admin>";
 
