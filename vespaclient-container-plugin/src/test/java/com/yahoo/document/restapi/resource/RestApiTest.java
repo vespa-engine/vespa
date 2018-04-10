@@ -280,22 +280,8 @@ public class RestApiTest {
         assertThat(rest, containsString(visit_response_part3));
     }
 
-    // TODO why is this a limitation?
-    String visit_test_bad_uri = "/document/v1/namespace/document-type/group/abc?continuation=abc&selection=foo";
-    String visit_test_bad_response = "Visiting does not support setting value for group/value in combination with expression";
-
-
-    @Test
-    public void testBadVisit() throws Exception {
-        Request request = new Request("http://localhost:" + getFirstListenPort() + visit_test_bad_uri);
-        HttpGet get = new HttpGet(request.getUri());
-        String rest = doRest(get);
-        assertThat(rest, containsString(visit_test_bad_response));
-    }
-
     String visit_test_uri_selection_rewrite = "/document/v1/namespace/document-type/group/abc?continuation=abc";
     String visit_test_response_selection_rewrite = "doc selection: 'id.group=='abc''";
-
 
     @Test
     public void testUseExpressionOnVisit() throws Exception {
@@ -351,6 +337,28 @@ public class RestApiTest {
         assertNumericIdFailsParsing("a123");
         assertNumericIdFailsParsing("0x1234");
         assertNumericIdFailsParsing("\u0000");
+    }
+
+    @Test
+    public void can_specify_numeric_id_without_explicit_selection() {
+        assertResultingDocumentSelection("number/1234", "id.user==1234");
+    }
+
+    @Test
+    public void can_specify_group_id_without_explicit_selection() {
+        assertResultingDocumentSelection("group/foo", "id.group=='foo'");
+    }
+
+    @Test
+    public void can_specify_both_numeric_id_and_explicit_selection() {
+        assertResultingDocumentSelection(String.format("number/1234?selection=%s", encoded("1 != 2")),
+                "id.user==1234 and (1 != 2)");
+    }
+
+    @Test
+    public void can_specify_both_group_id_and_explicit_selection() {
+        assertResultingDocumentSelection(String.format("group/bar?selection=%s", encoded("3 != 4")),
+                "id.group=='bar' and (3 != 4)");
     }
 
     @Test

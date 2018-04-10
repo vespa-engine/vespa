@@ -308,22 +308,26 @@ public class RestApi extends LoggingRequestHandler {
         }
     }
 
+    private static String validateAndBuildLocationSubExpression(RestUri.Group group) {
+        if (group.name == 'n') {
+            return String.format("id.user==%d", parseAndValidateVisitNumericId(group.value));
+        } else {
+            // TODO first pass through Text.validateTextString? Cannot create doc IDs that don't match that anyway...
+            return String.format("id.group=='%s'", singleQuoteEscapedString(group.value));
+        }
+    }
+
     private static String documentSelectionFromRequest(RestUri restUri, HttpRequest request) throws BadRequestParameterException {
+        // TODO try to preemptively parse sub expression to ensure it is complete
         String documentSelection = Optional.ofNullable(request.getProperty(SELECTION)).orElse("");
         if (restUri.getGroup().isPresent() && ! restUri.getGroup().get().value.isEmpty()) {
-            if (! documentSelection.isEmpty()) {
-                // TODO why is this restriction in place? Document selection allows composition of location predicate and other expressions
-                throw new BadRequestParameterException(SELECTION, "Visiting does not support setting value for group/value in combination with expression, try using only expression parameter instead.");
-            }
-            RestUri.Group group = restUri.getGroup().get();
-            if (group.name == 'n') {
-                documentSelection = String.format("id.user==%d", parseAndValidateVisitNumericId(group.value));
+            String locationSubExpression = validateAndBuildLocationSubExpression(restUri.getGroup().get());
+            if (documentSelection.isEmpty()) {
+                documentSelection = locationSubExpression;
             } else {
-                // TODO first pass through Text.validateTextString? Cannot create doc IDs that don't match that anyway...
-                documentSelection = String.format("id.group=='%s'", singleQuoteEscapedString(group.value));
+                documentSelection = String.format("%s and (%s)", locationSubExpression, documentSelection);
             }
         }
-        // TODO try to preemptively parse sub expression to ensure it is complete
         return documentSelection;
     }
 
