@@ -7,7 +7,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class GroupingTransformTestCase {
 
