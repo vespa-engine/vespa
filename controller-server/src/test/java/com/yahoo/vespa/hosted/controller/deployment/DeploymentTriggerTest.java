@@ -349,46 +349,6 @@ public class DeploymentTriggerTest {
     }
 
     @Test
-    public void dualChangesAreNotSkippedWhenOnePartIsDeployedAlready() {
-        DeploymentTester tester = new DeploymentTester();
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
-        Supplier<Application> app = () -> tester.application(application.id());
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
-                .region("us-central-1")
-                .region("eu-west-1")
-                .build();
-
-        tester.deployCompletely(application, applicationPackage);
-
-        // Platform upgrade which doesn't succeed, allowing a dual change.
-        Version version1 = new Version("7.2");
-        tester.upgradeSystem(version1);
-        tester.completeUpgradeWithError(application, version1, applicationPackage, productionEuWest1);
-
-        // Deploy the new application version, even though the platform version is already deployed in us-central-1.
-        // Let it fail in us-central-1 after deployment, so we can test this zone is later skipped.
-        tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(application, applicationPackage, true, systemTest);
-        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
-        tester.jobCompletion(productionEuWest1).application(application).unsuccessful().submit();
-        tester.deploy(productionUsCentral1, application, Optional.empty(), false);
-        // Deploying before notifying here makes the job not re-trigger, but instead triggers the next job (because of triggerReadyJobs() in notification.)
-        tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
-
-        assertEquals(ApplicationVersion.from(BuildJob.defaultSourceRevision, BuildJob.defaultBuildNumber + 1),
-                     app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
-
-        assertEquals(Collections.singletonList(new BuildService.BuildJob(1, productionEuWest1.jobName())),
-                     tester.buildService().jobs());
-
-        tester.deploy(productionEuWest1, application, Optional.empty(), false);
-        tester.deployAndNotify(application, Optional.empty(), false, productionEuWest1);
-        assertFalse(app.get().change().isPresent());
-        assertTrue(tester.buildService().jobs().isEmpty());
-    }
-
-    @Test
     public void applicationVersionIsNotDowngraded() {
         DeploymentTester tester = new DeploymentTester();
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
@@ -444,11 +404,10 @@ public class DeploymentTriggerTest {
         tester.upgradeSystem(v2);
         tester.completeUpgradeWithError(application, v2, applicationPackage, productionUsCentral1);
         tester.deploy(productionUsCentral1, application, applicationPackage);
-        tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
+        tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
         assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
         tester.deploymentTrigger().cancelChange(application.id(), false);
-         // TODO jvenstad: Fails below, because step is considered complete, and thus isn't re-triggered.
-        tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
+        tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
         Instant triggered = app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at();
 
         tester.clock().advance(Duration.ofHours(1));
@@ -457,32 +416,31 @@ public class DeploymentTriggerTest {
         tester.upgradeSystem(v1); // Downgrade, but it works, since the app is a canary.
         assertEquals(Change.of(v1), app.get().change());
 
-        // 7.1 completes normally, and us-central-1 is skipped, as current change is strictly dominated by what's deployed there.
-        tester.jobCompletion(systemTest).application(application).submit();
-        tester.jobCompletion(stagingTest).application(application).submit();
-        tester.jobCompletion(productionEuWest1).application(application).submit();
+        // 7.1 proceeds 'til the last job, where it fails; us-central-1 is skipped, as current change is strictly dominated by what's deployed there.
+        tester.deployAndNotify(application, applicationPackage, true, systemTest);
+        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
         assertEquals(triggered, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
-        assertFalse(app.get().change().isPresent());
-        assertTrue(tester.buildService().jobs().isEmpty());
+        tester.deployAndNotify(application, applicationPackage, false, productionEuWest1);
 
-        // Roll out a new application version -- this should trigger us-central-1, but only as long as it hasn't yet deployed there.
+        // Roll out a new application version, which gives a dual change -- this should trigger us-central-1, but only as long as it hasn't yet deployed there.
         tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.jobCompletion(systemTest).application(application).submit();
-        tester.jobCompletion(stagingTest).application(application).submit();
+        tester.deployAndNotify(application, applicationPackage, false, productionEuWest1);
+        tester.deployAndNotify(application, applicationPackage, true, systemTest);
+        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
 
         assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
         assertEquals((Long) 42L, app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
         assertNotEquals(triggered, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
 
         // Change has a higher application version than what is deployed -- deployment should trigger.
-        tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
+        tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
         tester.deploy(productionUsCentral1, application, applicationPackage);
         assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
         assertEquals((Long) 43L, app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
 
         // Change is again strictly dominated, and us-central-1 should be skipped, even though it is still a failure.
-        tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
-        tester.jobCompletion(productionEuWest1).application(application).submit();
+        tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
+        tester.deployAndNotify(application, applicationPackage, true, productionEuWest1);
         assertFalse(app.get().change().isPresent());
         assertFalse(app.get().deploymentJobs().jobStatus().get(productionUsCentral1).isSuccess());
     }
