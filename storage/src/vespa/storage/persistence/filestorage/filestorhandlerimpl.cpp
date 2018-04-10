@@ -291,6 +291,14 @@ FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
         vespalib::MonitorGuard lockGuard(_mergeStatesLock);
         disk.metrics->pendingMerges.addValue(_mergeStates.size());
         disk.metrics->queueSize.addValue(disk.getQueueSize());
+
+        for (auto & entry : disk.metrics->averageQueueWaitingTime.getMetricMap()) {
+            metrics::LoadType loadType(entry.first, "ignored");
+            for (const auto & stripe : disk.metrics->stripes) {
+                const auto & m = stripe->averageQueueWaitingTime[loadType];
+                entry.second->addAvgValueWithCount(m.getAverage(), m.getCount());
+            }
+        }
     }
 }
 

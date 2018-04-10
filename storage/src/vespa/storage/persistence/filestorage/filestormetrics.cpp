@@ -160,12 +160,15 @@ FileStorStripeMetrics::FileStorStripeMetrics(const std::string& name, const std:
 
 FileStorStripeMetrics::~FileStorStripeMetrics() = default;
 
-FileStorDiskMetrics::FileStorDiskMetrics(const std::string& name,
-                                         const std::string& description,
-                                         MetricSet* owner)
+FileStorDiskMetrics::FileStorDiskMetrics(const std::string& name, const std::string& description,
+                                         const metrics::LoadTypeSet& loadTypes, MetricSet* owner)
     : MetricSet(name, "partofsum disk", description, owner, "disk"),
       sumThreads("allthreads", "sum", "", this),
       sumStripes("allstripes", "sum", "", this),
+      averageQueueWaitingTime(loadTypes,
+                              metrics::DoubleAverageMetric("averagequeuewait", "",
+                                                           "Average time an operation spends in input queue."),
+                              this),
       queueSize("queuesize", "", "Size of input message queue.", this),
       pendingMerges("pendingmerge", "", "Number of buckets currently being merged.", this),
       waitingForLockHitRate("waitingforlockrate", "",
@@ -230,7 +233,7 @@ void FileStorMetrics::initDiskMetrics(uint16_t numDisks, const LoadTypeSet& load
         std::ostringstream name;
         name << "disk_" << i;
         desc << "Disk " << i;
-        disks[i] = std::make_shared<FileStorDiskMetrics>( name.str(), desc.str(), this);
+        disks[i] = std::make_shared<FileStorDiskMetrics>( name.str(), desc.str(), loadTypes, this);
         sum.addMetricToSum(*disks[i]);
         disks[i]->initDiskMetrics(loadTypes, numStripes, threadsPerDisk);
     }
