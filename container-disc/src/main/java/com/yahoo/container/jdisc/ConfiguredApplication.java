@@ -122,6 +122,7 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void start() {
         qrConfig = getConfig(QrConfig.class);
+        log.info("QrConfig.restartOnDeploy: " + qrConfig.restartOnDeploy());
         hackToInitializeServer(qrConfig);
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
@@ -201,7 +202,10 @@ public final class ConfiguredApplication implements Application {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
                     configurer.runOnceAndEnsureRegistryHackRun(builder.guiceModules().activate());
                     intitializeAndActivateContainer(builder);
-                    if (qrConfig.restartOnDeploy()) break;
+                    if (qrConfig.restartOnDeploy()) {
+                        log.info("Stopping reconfigurer thread.");
+                        break;
+                    }
                 } catch (ConfigInterruptedException | InterruptedException e) {
                     break;
                 } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
@@ -213,7 +217,7 @@ public final class ConfiguredApplication implements Application {
                                                         "a bad state and will terminate", e);
                 }
             }
-            log.fine("Shutting down HandlersConfigurerDi");
+            log.info("Shutting down HandlersConfigurerDi");
         });
         reconfigurerThread.start();
     }
