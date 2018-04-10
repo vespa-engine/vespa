@@ -96,13 +96,13 @@ public class MockFSChannel extends FS4Channel {
                     && lastQueryPacket.getLastOffset() >= 1) {
                 result.addDocument(
                         new DocumentInfo(DocsumDefinitionTestCase.createGlobalId(123),
-                                         2003, 234, 0));
+                                         2003, 234, 1000));
             }
             if (lastQueryPacket.getOffset() <= 1
                     && lastQueryPacket.getLastOffset() >= 2) {
                 result.addDocument(
                         new DocumentInfo(DocsumDefinitionTestCase.createGlobalId(456),
-                                         1855, 234, 1));
+                                1855, 234, 1001));
             }
             packets.add(result);
         } 

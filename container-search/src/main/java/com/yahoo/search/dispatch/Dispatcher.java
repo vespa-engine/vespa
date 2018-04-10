@@ -38,11 +38,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A dispatcher communicates with search nodes to perform queries and fill hits.
- *
- * This is currently not functionally complete: Queries can only be dispatched to a single node,
- * and summaries can only be requested when they do not need the query.
- *
+ * A dispatcher communicates with search nodes to (in the future) perform queries and (now) fill hits.
  * This class is multithread safe.
  *
  * @author bratseth
