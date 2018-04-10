@@ -27,7 +27,7 @@ public interface DockerOperations {
 
     ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... command);
 
-    void executeCommandInNetworkNamespace(ContainerName containerName, String... command);
+    ProcessResult executeCommandInNetworkNamespace(ContainerName containerName, String... command);
 
     void resumeNode(ContainerName containerName);
 

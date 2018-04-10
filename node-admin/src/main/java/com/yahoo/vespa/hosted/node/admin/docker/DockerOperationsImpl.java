@@ -246,7 +246,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void executeCommandInNetworkNamespace(ContainerName containerName, String... command) {
+    public ProcessResult executeCommandInNetworkNamespace(ContainerName containerName, String... command) {
         final PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         final Integer containerPid = docker.getContainer(containerName)
                 .filter(container -> container.state.isRunning())
@@ -270,11 +270,13 @@ public class DockerOperationsImpl implements DockerOperations {
                 logger.error(msg);
                 throw new RuntimeException(msg);
             }
+            return new ProcessResult(0, result.getSecond(), "");
         } catch (IOException e) {
             logger.warning(String.format("IOException while executing %s in network namespace for %s (PID = %d)",
                     Arrays.toString(wrappedCommand), containerName.asString(), containerPid), e);
             throw new RuntimeException(e);
         }
+
     }
 
     @Override
