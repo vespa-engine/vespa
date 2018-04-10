@@ -376,5 +376,5 @@ public class CuratorDb {
     private static Path applicationPath(ApplicationId application) {
         return applicationRoot.append(application.serializedForm());
     }
-    
+
 }

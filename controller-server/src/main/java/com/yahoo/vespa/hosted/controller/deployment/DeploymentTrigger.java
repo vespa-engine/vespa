@@ -253,10 +253,25 @@ public class DeploymentTrigger {
                               .flatMap(List::stream);
     }
 
+    /**
+     * Returns the instant when the given application's current change was completed for the given job.
+     *
+     * Any job is complete if its current change was already successful on that job.
+     * A production job is also considered complete if its current change is strictly dominated by what
+     * is already deployed in its zone, i.e., no parts of the change are upgrades, and at least one
+     * part is a downgrade, regardless of the status of the job.
+     */
     private Optional<Instant> completedAt(Application application, JobType jobType) {
-        return jobType.isProduction()
-                ? changeCompletedAt(application, jobType)
-                : application.deploymentJobs().successAt(application.change(), jobType);
+        Optional<Instant> lastSuccess = application.deploymentJobs().successAt(application.change(), jobType);
+        if (lastSuccess.isPresent() || ! jobType.isProduction())
+            return lastSuccess;
+
+        Deployment deployment = application.deployments().get(jobType.zone(controller.system()).get());
+        return Optional.ofNullable(deployment).map(Deployment::at)
+                       .filter(ignored ->    ! (   application.change().upgrades(deployment.version())
+                                                || application.change().upgrades(deployment.applicationVersion()))
+                                          &&   (   application.change().downgrades(deployment.version())
+                                                || application.change().downgrades(deployment.applicationVersion())));
     }
 
     private boolean canTrigger(Job job) {
@@ -286,30 +301,6 @@ public class DeploymentTrigger {
 
     private ApplicationController applications() {
         return controller.applications();
-    }
-
-    /** Returns the instant when the given application's current change was completed for the given job. */
-    private Optional<Instant> changeCompletedAt(Application application, JobType job) {
-        if ( ! job.isProduction())
-            throw new IllegalArgumentException(job + " is not a production job!");
-
-        Deployment deployment = application.deployments().get(job.zone(controller.system()).get());
-        if (deployment == null)
-            return Optional.empty();
-
-        int applicationComparison = application.change().application()
-                                               .map(version -> version.compareTo(deployment.applicationVersion()))
-                                               .orElse(0);
-
-        int platformComparison = application.change().platform()
-                                            .map(version -> version.compareTo(deployment.version()))
-                                            .orElse(0);
-
-        // TODO jvenstad: Allow downgrades when considering whether to trigger -- stop them at choice of deployment version.
-        // TODO jvenstad: This allows tests to be re-run, for instance, while keeping the deployment itself a no-op.
-        return Optional.of(deployment.at())
-                .filter(ignored ->     applicationComparison == -1 || platformComparison == -1
-                                   || (applicationComparison ==  0 && platformComparison ==  0));
     }
 
     private boolean acceptNewApplicationVersion(LockedApplication application) {

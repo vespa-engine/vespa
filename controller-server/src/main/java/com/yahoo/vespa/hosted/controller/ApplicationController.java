@@ -637,7 +637,7 @@ public class ApplicationController {
         deploymentSpec.zones().stream()
                 .filter(zone -> zone.environment() == Environment.prod)
                 .forEach(zone -> {
-                    if (!controller.zoneRegistry().hasZone(ZoneId.from(zone.environment(),
+                    if ( ! controller.zoneRegistry().hasZone(ZoneId.from(zone.environment(),
                                                                        zone.region().orElse(null)))) {
                         throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in " +
                                                            "this system!");
@@ -647,8 +647,7 @@ public class ApplicationController {
 
     /** Verify that change is tested and that we aren't downgrading */
     private void validateChange(Application application, ZoneId zone, Version version) {
-        // TODO jvenstad: Hmmm ... Make it possible to deploy only the legal parts of the Change.
-        if (!application.deploymentJobs().isDeployableTo(zone.environment(), application.change())) {
+        if ( ! application.deploymentJobs().isDeployableTo(zone.environment(), application.change())) {
             throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
                                                " as " + application.change() + " is not tested");
         }
