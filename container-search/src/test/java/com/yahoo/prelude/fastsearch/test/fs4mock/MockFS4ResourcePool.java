@@ -26,6 +26,7 @@ public class MockFS4ResourcePool extends FS4ResourcePool {
 
     @Override
     public Backend getBackend(String hostname, int port) {
+        System.out.println("Got request to " + hostname + ":" + port);
         countRequest(hostname + ":" + port);
         if (nonRespondingBackends.contains(hostname))
             return new MockBackend(hostname, NonWorkingMockFSChannel::new);
