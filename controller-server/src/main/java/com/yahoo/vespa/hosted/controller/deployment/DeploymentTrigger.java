@@ -5,7 +5,6 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
-
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
@@ -33,8 +32,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -210,7 +207,7 @@ public class DeploymentTrigger {
     public List<Job> computeReadyJobs(ApplicationId id) {
         List<Job> jobs = new ArrayList<>();
         applications().lockIfPresent(id, application -> {
-            List<DeploymentSpec.Step> steps = application.deploymentSpec().equals(DeploymentSpec.empty)
+            List<DeploymentSpec.Step> steps = application.deploymentSpec().steps().isEmpty()
                     ? Collections.singletonList(new DeploymentSpec.DeclaredZone(Environment.test))
                     : application.deploymentSpec().steps();
 
