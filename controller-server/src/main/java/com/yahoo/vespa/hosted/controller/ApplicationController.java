@@ -334,8 +334,8 @@ public class ApplicationController {
 
             ConfigServerClient.PreparedApplication preparedApplication;
             DeploymentId deploymentId = new DeploymentId(applicationId, zone);
-            // TODO: Using deploy() only for user tenants in CD for now
-            if (controller.system().equals(SystemName.cd) && deploymentId.applicationId().tenant().value().startsWith(Tenant.userPrefix)) {
+            // TODO: Using deploy() only in CD and in AWS for now
+            if (controller.system().equals(SystemName.cd) || deploymentId.zoneId().region().value().equals("aws-us-east-1a")) {
                 preparedApplication = configServer.deploy(deploymentId, options, cnames, rotationNames, applicationPackage.zippedContent());
             } else {
                 preparedApplication = configServer.prepare(deploymentId, options, cnames, rotationNames, applicationPackage.zippedContent());
