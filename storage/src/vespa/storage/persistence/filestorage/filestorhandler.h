@@ -62,8 +62,7 @@ public:
         virtual ~BucketLockInterface() {};
     };
 
-    typedef std::pair<BucketLockInterface::SP,
-                      api::StorageMessage::SP> LockedMessage;
+    typedef std::pair<BucketLockInterface::SP, api::StorageMessage::SP> LockedMessage;
 
     enum DiskState {
         AVAILABLE,
@@ -71,7 +70,10 @@ public:
         CLOSED
     };
 
-    FileStorHandler(MessageSender&, FileStorMetrics&, const spi::PartitionStateList&, ServiceLayerComponentRegister&);
+    FileStorHandler(uint32_t numStripes, MessageSender&, FileStorMetrics&,
+                    const spi::PartitionStateList&, ServiceLayerComponentRegister&);
+    FileStorHandler(MessageSender&, FileStorMetrics&,
+                    const spi::PartitionStateList&, ServiceLayerComponentRegister&);
     ~FileStorHandler();
 
         // Commands used by file stor manager
@@ -116,12 +118,12 @@ public:
      *
      * @param disk The disk to get messages for
      */
-    LockedMessage getNextMessage(uint16_t disk);
+    LockedMessage getNextMessage(uint16_t disk, uint32_t stripeId);
 
     /**
      * Returns the next message for the same bucket.
      */
-    LockedMessage & getNextMessage(uint16_t disk, LockedMessage& lock);
+    LockedMessage & getNextMessage(uint16_t disk, uint32_t stripeId, LockedMessage& lock);
 
     /**
      * Lock a bucket. By default, each file stor thread has the locks of all
@@ -228,6 +230,13 @@ public:
      * @return Returns the number of active merges on the node.
      */
     uint32_t getNumActiveMerges() const;
+
+    /**
+     * Provides the next stripe id for a certain disk.
+     * @param disk
+     * @return
+     */
+    uint32_t getNextStripeId(uint32_t disk);
 
     /** Removes the merge status for the given bucket. */
     void clearMergeStatus(const document::Bucket&);
