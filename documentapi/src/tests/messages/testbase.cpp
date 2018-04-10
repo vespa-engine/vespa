@@ -4,6 +4,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/vespalib/util/exception.h>
+#include <vespa/vespalib/io/fileutil.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <algorithm>
@@ -109,6 +110,15 @@ TestBase::testCoverage(const std::vector<uint32_t> &expected, const std::vector<
     return ret;
 }
 
+bool TestBase::file_content_is_unchanged(const string& filename, const mbus::Blob& data_to_write) const {
+    if (!vespalib::fileExists(filename)) {
+        return false;
+    }
+    mbus::Blob existing = readFile(filename);
+    return ((existing.size() == data_to_write.size())
+            && (memcmp(existing.data(), data_to_write.data(), data_to_write.size()) == 0));
+}
+
 uint32_t
 TestBase::serialize(const string &filename, const mbus::Routable &routable)
 {
@@ -117,7 +127,9 @@ TestBase::serialize(const string &filename, const mbus::Routable &routable)
     LOG(info, "Serializing to '%s'..", path.c_str());
 
     mbus::Blob blob = _protocol.encode(version, routable);
-    if (!EXPECT_TRUE(writeFile(path, blob))) {
+    if (file_content_is_unchanged(path, blob)) {
+        LOG(info, "Serialization for '%s' is unchanged; not overwriting it", path.c_str());
+    } else if (!EXPECT_TRUE(writeFile(path, blob))) {
         LOG(error, "Could not open file '%s' for writing.", path.c_str());
         return 0;
     }
@@ -180,7 +192,7 @@ TestBase::writeFile(const string &filename, const mbus::Blob& blob) const
         return false;
     }
     if (write(file, blob.data(), blob.size()) != (ssize_t)blob.size()) {
-	throw vespalib::Exception("write failed");
+        throw vespalib::Exception("write failed");
     }
     close(file);
     return true;
@@ -195,8 +207,8 @@ TestBase::readFile(const string &filename) const
     if (file != -1) {
         lseek(file, 0, SEEK_SET);
         if (read(file, blob.data(), len) != len) {
-	    throw vespalib::Exception("read failed");
-	}
+            throw vespalib::Exception("read failed");
+        }
         close(file);
     }
 
