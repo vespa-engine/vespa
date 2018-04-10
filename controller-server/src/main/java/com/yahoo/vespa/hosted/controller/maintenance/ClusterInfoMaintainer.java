@@ -89,7 +89,7 @@ public class ClusterInfoMaintainer extends Maintainer {
             for (Deployment deployment : application.deployments().values()) {
                 DeploymentId deploymentId = new DeploymentId(application.id(), deployment.zone());
                 try {
-                    NodeList nodes = controller.nodeRepositoryClient()
+                    NodeList nodes = controller.nodeRepository()
                             .listNodes(deploymentId.zoneId(),
                                        deploymentId.applicationId().tenant().value(),
                                        deploymentId.applicationId().application().value(),

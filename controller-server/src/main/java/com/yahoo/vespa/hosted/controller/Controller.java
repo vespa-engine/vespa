@@ -60,7 +60,7 @@ import java.util.logging.Logger;
 public class Controller extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(Controller.class.getName());
-    
+
     private final CuratorDb curator;
     private final ApplicationController applicationController;
     private final TenantController tenantController;
@@ -69,10 +69,10 @@ public class Controller extends AbstractComponent {
     private final EntityService entityService;
     private final GlobalRoutingService globalRoutingService;
     private final ZoneRegistry zoneRegistry;
-    private final ConfigServerClient configServerClient;
-    private final NodeRepositoryClientInterface nodeRepositoryClient;
+    private final ConfigServerClient configServer;
+    private final NodeRepositoryClientInterface nodeRepository;
     private final MetricsService metricsService;
-    private final Chef chefClient;
+    private final Chef chef;
     private final Organization organization;
     private final AthenzClientFactory athenzClientFactory;
 
@@ -86,61 +86,48 @@ public class Controller extends AbstractComponent {
     public Controller(ControllerDb db, CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
-                      ZoneRegistry zoneRegistry, ConfigServerClient configServerClient, NodeRepositoryClientInterface nodeRepositoryClient,
+                      ZoneRegistry zoneRegistry, ConfigServerClient configServer, NodeRepositoryClientInterface nodeRepository,
                       MetricsService metricsService, NameService nameService,
-                      RoutingGenerator routingGenerator, Chef chefClient, AthenzClientFactory athenzClientFactory,
+                      RoutingGenerator routingGenerator, Chef chef, AthenzClientFactory athenzClientFactory,
                       ArtifactRepository artifactRepository, BuildService buildService) {
         this(db, curator, rotationsConfig,
              gitHub, entityService, organization, globalRoutingService, zoneRegistry,
-             configServerClient, nodeRepositoryClient, metricsService, nameService, routingGenerator, chefClient,
+             configServer, nodeRepository, metricsService, nameService, routingGenerator, chef,
              Clock.systemUTC(), athenzClientFactory, artifactRepository, buildService);
     }
 
     public Controller(ControllerDb db, CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService, Organization organization,
                       GlobalRoutingService globalRoutingService,
-                      ZoneRegistry zoneRegistry, ConfigServerClient configServerClient, NodeRepositoryClientInterface nodeRepositoryClient,
+                      ZoneRegistry zoneRegistry, ConfigServerClient configServer, NodeRepositoryClientInterface nodeRepository,
                       MetricsService metricsService, NameService nameService,
-                      RoutingGenerator routingGenerator, Chef chefClient, Clock clock,
+                      RoutingGenerator routingGenerator, Chef chef, Clock clock,
                       AthenzClientFactory athenzClientFactory, ArtifactRepository artifactRepository,
                       BuildService buildService) {
-        Objects.requireNonNull(db, "Controller db cannot be null");
-        Objects.requireNonNull(curator, "Curator cannot be null");
-        Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null");
-        Objects.requireNonNull(gitHub, "GitHubClient cannot be null");
-        Objects.requireNonNull(entityService, "EntityService cannot be null");
-        Objects.requireNonNull(organization, "Organization cannot be null");
-        Objects.requireNonNull(globalRoutingService, "GlobalRoutingService cannot be null");
-        Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
-        Objects.requireNonNull(configServerClient, "ConfigServerClient cannot be null");
-        Objects.requireNonNull(nodeRepositoryClient, "NodeRepositoryClientInterface cannot be null");
-        Objects.requireNonNull(metricsService, "MetricsService cannot be null");
-        Objects.requireNonNull(nameService, "NameService cannot be null");
-        Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null");
-        Objects.requireNonNull(chefClient, "ChefClient cannot be null");
-        Objects.requireNonNull(clock, "Clock cannot be null");
-        Objects.requireNonNull(athenzClientFactory, "Athens cannot be null");
-        Objects.requireNonNull(artifactRepository, "ArtifactRepository cannot be null");
-        Objects.requireNonNull(buildService, "BuildService cannot be null");
 
-        this.curator = curator;
-        this.gitHub = gitHub;
-        this.entityService = entityService;
-        this.organization = organization;
-        this.globalRoutingService = globalRoutingService;
-        this.zoneRegistry = zoneRegistry;
-        this.configServerClient = configServerClient;
-        this.nodeRepositoryClient = nodeRepositoryClient;
-        this.metricsService = metricsService;
-        this.chefClient = chefClient;
-        this.clock = clock;
-        this.athenzClientFactory = athenzClientFactory;
+        this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
+        this.gitHub = Objects.requireNonNull(gitHub, "GitHub cannot be null");
+        this.entityService = Objects.requireNonNull(entityService, "EntityService cannot be null");;
+        this.organization = Objects.requireNonNull(organization, "Organization cannot be null");
+        this.globalRoutingService = Objects.requireNonNull(globalRoutingService, "GlobalRoutingService cannot be null");
+        this.zoneRegistry = Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");;
+        this.configServer = Objects.requireNonNull(configServer, "ConfigServerClient cannot be null");;
+        this.nodeRepository = Objects.requireNonNull(nodeRepository, "NodeRepositoryClientInterface cannot be null");
+        this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
+        this.chef = Objects.requireNonNull(chef, "Chef cannot be null");
+        this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
+        this.athenzClientFactory = Objects.requireNonNull(athenzClientFactory, "AthenzClientFactory cannot be null");
 
-        ControllerDbProxy dbProxy = new ControllerDbProxy(db, curator);
+        ControllerDbProxy dbProxy = new ControllerDbProxy(Objects.requireNonNull(db, "Controller db cannot be null"),
+                                                          curator);
         applicationController = new ApplicationController(this, dbProxy, curator, athenzClientFactory,
-                                                          rotationsConfig,
-                                                          nameService, configServerClient, artifactRepository,
-                                                          routingGenerator, buildService, clock);
+                                                          Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
+                                                          Objects.requireNonNull(nameService, "NameService cannot be null"),
+                                                          configServer,
+                                                          Objects.requireNonNull(artifactRepository, "ArtifactRepository cannot be null"),
+                                                          Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
+                                                          Objects.requireNonNull(buildService, "BuildService cannot be null"),
+                                                          clock);
         tenantController = new TenantController(this, dbProxy, curator, athenzClientFactory);
     }
     
@@ -173,22 +160,25 @@ public class Controller extends AbstractComponent {
 
     // TODO: Model the response properly
     public JsonNode waitForConfigConvergence(DeploymentId deploymentId, long timeout) {
-        return configServerClient.waitForConfigConverge(deploymentId, timeout);
+        return configServer.waitForConfigConverge(deploymentId, timeout);
     }
 
-    public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName, String environment, String region) {
-        return configServerClient.getApplicationView(tenantName, applicationName, instanceName, environment, region);
+    public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
+                                              String environment, String region) {
+        return configServer.getApplicationView(tenantName, applicationName, instanceName, environment, region);
     }
 
     // TODO: Model the response properly
-    public Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath) {
-        return configServerClient.getServiceApiResponse(tenantName, applicationName, instanceName, environment, region, serviceName, restPath);
+    public Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName,
+                                          String environment, String region, String serviceName, String restPath) {
+        return configServer.getServiceApiResponse(tenantName, applicationName, instanceName, environment, region,
+                                                  serviceName, restPath);
     }
 
     // TODO: Model the response properly
     // TODO: What is this -- I believe it fetches, and purges, errors from some log server
     public JsonNode grabLog(DeploymentId deploymentId) {
-        return configServerClient.grabLog(deploymentId);
+        return configServer.grabLog(deploymentId);
     }
 
     public GitHub gitHub() {
@@ -236,7 +226,7 @@ public class Controller extends AbstractComponent {
     }
 
     public Chef chefClient() {
-        return chefClient;
+        return chef;
     }
 
     public Organization organization() {
@@ -247,8 +237,8 @@ public class Controller extends AbstractComponent {
         return curator;
     }
 
-    public NodeRepositoryClientInterface nodeRepositoryClient() {
-        return nodeRepositoryClient;
+    public NodeRepositoryClientInterface nodeRepository() {
+        return nodeRepository;
     }
 
     private static String printableVersion(Optional<VespaVersion> vespaVersion) {
