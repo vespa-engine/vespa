@@ -176,6 +176,7 @@ public:
     virtual vespalib::string getClassName() const;
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     virtual bool isEquiv() const { return false; }
+    virtual bool isWhiteList() const { return false; }
     virtual bool isIntermediate() const { return false; }
 };
 

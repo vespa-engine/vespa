@@ -224,6 +224,8 @@ public:
         setEstimate(HitEstimate(_activeLids.size(), false));
     }
 
+    bool isWhiteList() const override { return true; }
+
     ~WhiteListBlueprint() {
         for (auto matchData : _matchDataVector) {
             delete matchData;

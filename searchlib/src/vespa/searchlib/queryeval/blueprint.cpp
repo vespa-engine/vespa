@@ -417,9 +417,10 @@ areAnyParentsEquiv(const Blueprint * node)
 bool
 canBlueprintSkipUnpack(const Blueprint & bp, const fef::MatchData & md)
 {
-    return (bp.getState().numFields() != 0)
-           || (bp.isIntermediate()
-               && static_cast<const IntermediateBlueprint &>(bp).calculateUnpackInfo(md).empty());
+    return (bp.isWhiteList() ||
+            (bp.getState().numFields() != 0) ||
+            (bp.isIntermediate() &&
+             static_cast<const IntermediateBlueprint &>(bp).calculateUnpackInfo(md).empty()));
 }
 
 }
