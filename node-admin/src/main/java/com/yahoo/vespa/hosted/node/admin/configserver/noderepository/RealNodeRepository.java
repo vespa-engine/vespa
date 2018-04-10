@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
@@ -24,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -85,8 +85,8 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public Map<Container, Acl> getAcl(String hostName, List<Container> containers) {
-        Map<Container, Acl> acls = new HashMap<>();
+    public Map<String, Acl> getAcl(String hostName, Set<String> containerNames) {
+        Map<String, Acl> acls = new HashMap<>();
         try {
             final String path = String.format("/nodes/v2/acl/%s?children=true", hostName);
             final GetAclResponse response = configServerApi.get(path, GetAclResponse.class);
@@ -100,10 +100,10 @@ public class RealNodeRepository implements NodeRepository {
                     .collect(Collectors.groupingBy(GetAclResponse.Node::getTrustedBy));
 
             // For each container create an ACL - use empty lists if no trusted ports or nodes are found
-            containers.forEach(container -> acls.put(container,
-                    new Acl(trustedPorts.getOrDefault(container.hostname, new ArrayList<>())
+            containerNames.forEach(containerName -> acls.put(containerName,
+                    new Acl(trustedPorts.getOrDefault(containerName, new ArrayList<>())
                             .stream().map(port -> port.port)
-                            .collect(Collectors.toList()), trustedNodes.getOrDefault(container.hostname, new ArrayList<>())
+                            .collect(Collectors.toList()), trustedNodes.getOrDefault(containerName, new ArrayList<>())
                             .stream().map(node -> InetAddresses.forString(node.ipAddress))
                             .collect(Collectors.toList()))));
 

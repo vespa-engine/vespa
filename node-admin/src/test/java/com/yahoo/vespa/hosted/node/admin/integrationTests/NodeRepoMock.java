@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Mock with some simple logic
@@ -26,7 +27,7 @@ public class NodeRepoMock implements NodeRepository {
     private static final Object monitor = new Object();
 
     private final Map<String, NodeSpec> nodeRepositoryNodesByHostname = new HashMap<>();
-    private final Map<Container, Acl> acls = new HashMap<>();
+    private final Map<String, Acl> acls = new HashMap<>();
 
     private final CallOrderVerifier callOrderVerifier;
 
@@ -54,7 +55,7 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public Map<Container, Acl> getAcl(String hostname, List<Container> containers) {
+    public Map<String, Acl> getAcl(String hostname, Set<String> containers) {
         synchronized (monitor) {
             return acls;
         }

@@ -44,10 +44,10 @@ public class AclMaintainerTest {
 
     @Test
     public void configures_container_acl() {
-        List<Container> containers = null;
-        Map<Container, Acl> acls = null;
+        Map<String, Container> containers = null;
+        Map<String, Acl> acls = null;
 
-        when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers)).thenReturn(acls);
+        when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers.keySet())).thenReturn(acls);
 
         aclMaintainer.run();
 
@@ -56,10 +56,10 @@ public class AclMaintainerTest {
 
     @Test
     public void does_not_configure_acl_if_unchanged() {
-        List<Container> containers = null;
-        Map<Container, Acl> acls = null;
+        Map<String, Container> containers = null;
+        Map<String, Acl> acls = null;
 
-        when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers)).thenReturn(acls);
+        when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers.keySet())).thenReturn(acls);
 
         aclMaintainer.run();
         aclMaintainer.run();
@@ -70,10 +70,10 @@ public class AclMaintainerTest {
 
     @Test
     public void does_not_configure_acl_for_stopped_container() {
-        List<Container> containers = null;
-        Map<Container, Acl> acls = null;
+        Map<String, Container> containers = null;
+        Map<String, Acl> acls = null;
 
-        when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers)).thenReturn(acls);
+        when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers.keySet())).thenReturn(acls);
 
 
         aclMaintainer.run();
@@ -83,8 +83,8 @@ public class AclMaintainerTest {
 
     @Test
     public void rollback_is_attempted_when_applying_acl_fail() {
-        List<Container> containers = null;
-        Map<Container, Acl> acls = null;
+        Map<String, Container> containers = null;
+        Map<String, Acl> acls = null;
 
         doThrow(new RuntimeException("iptables command failed"))
                 .doNothing()
@@ -102,14 +102,13 @@ public class AclMaintainerTest {
         );
     }
 
-
-    private void assertAclsApplied(Map<Container, Acl> acls) {
+    private void assertAclsApplied(Map<String, Acl> acls) {
         assertAclsApplied(acls, times(1));
     }
 
-    private void assertAclsApplied(Map<Container, Acl> acls, VerificationMode verificationMode) {
+    private void assertAclsApplied(Map<String, Acl> acls, VerificationMode verificationMode) {
 
-        acls.forEach((container, acl) -> {
+        acls.forEach((containerName, acl) -> {
             String iptables = "Somehing";
             StringBuilder expectedCommand = new StringBuilder()
                     .append(iptables + " -F INPUT; ")
@@ -129,7 +128,7 @@ public class AclMaintainerTest {
                     expectedCommand.append(iptables + " -A INPUT -p tcp --dport " + node + " -j ACCEPT; "));
 
             verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
-                    eq(container.name), eq("/bin/sh"), eq("-c"), eq(expectedCommand.toString()));
+                    eq(ContainerName.fromHostname(containerName)), eq("/bin/sh"), eq("-c"), eq(expectedCommand.toString()));
         });
     }
 

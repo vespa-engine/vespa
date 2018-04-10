@@ -102,12 +102,13 @@ public class AclMaintainer implements Runnable {
     }
 
     private synchronized void configureAcls() {
-        List<Container> runningContainers = dockerOperations
+        Map<String, Container> runningContainers = dockerOperations
                 .getAllManagedContainers().stream()
                 .filter(container -> container.state.isRunning())
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(container -> container.name.asString(), container -> container));
 
-        nodeRepository.getAcl(nodeAdminHostname, runningContainers).forEach(this::apply);
+        nodeRepository.getAcl(nodeAdminHostname, runningContainers.keySet())
+                .forEach((containerName, acl) -> apply(runningContainers.get(containerName), acl));
     }
 
     @Override
