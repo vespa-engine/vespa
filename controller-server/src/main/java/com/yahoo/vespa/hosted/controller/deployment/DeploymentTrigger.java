@@ -269,9 +269,9 @@ public class DeploymentTrigger {
 
         Deployment deployment = application.deployments().get(jobType.zone(controller.system()).get());
         return Optional.ofNullable(deployment).map(Deployment::at)
-                       .filter(ignored ->      (   application.change().upgrades(deployment.version())
+                       .filter(ignored ->    ! (   application.change().upgrades(deployment.version())
                                                 || application.change().upgrades(deployment.applicationVersion()))
-                                          && ! (   application.change().downgrades(deployment.version())
+                                          &&   (   application.change().downgrades(deployment.version())
                                                 || application.change().downgrades(deployment.applicationVersion())));
     }
 
