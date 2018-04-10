@@ -76,7 +76,7 @@ public class FileDirectory  {
         return files[0];
     }
 
-    private Long computeReference(File file) throws IOException {
+    private Long computeHash(File file) throws IOException {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
         if (file.isDirectory()) {
             return Files.walk(file.toPath(), 100).map(path -> {
@@ -100,7 +100,7 @@ public class FileDirectory  {
 
     public FileReference addFile(File source) {
         try {
-            Long hash = computeReference(source);
+            Long hash = computeHash(source);
             verifyExistingFile(source, hash);
             FileReference fileReference = fileReferenceFromHash(hash);
             return addFile(source, fileReference);
@@ -109,14 +109,15 @@ public class FileDirectory  {
         }
     }
 
-    // If there exists a directory for a file reference, but it does not have correct hash, delete everything in it
+    // If there exists a directory for a file reference, but content does not have correct hash or the file we want to add
+    // does not exist in the directory, delete it
     private void verifyExistingFile(File source, Long hashOfFileToBeAdded) throws IOException {
         FileReference fileReference = fileReferenceFromHash(hashOfFileToBeAdded);
         File destinationDir = destinationDir(fileReference);
         if (!destinationDir.exists()) return;
 
-        Long hashOfExistingFileReference = computeReference(destinationDir.toPath().resolve(source.getName()).toFile());
-        if (! hashOfExistingFileReference.equals(hashOfFileToBeAdded)) {
+        File existingFile = destinationDir.toPath().resolve(source.getName()).toFile();
+        if ( ! existingFile.exists() || ! computeHash(existingFile).equals(hashOfFileToBeAdded)) {
             log.log(LogLevel.ERROR, "Directory for file reference '" + fileReference.value() +
                     "' has content that does not match its hash, deleting everything in " +
                     destinationDir.getAbsolutePath());
