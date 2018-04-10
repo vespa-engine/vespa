@@ -151,7 +151,7 @@ public class Application {
     /** Returns the version a new deployment to this zone should use for this application */
     public Version deployVersionIn(ZoneId zone, Controller controller) {
         Version current = versionIn(zone, controller);
-        return change.platform().filter(version -> ! current.isAfter(version)).orElse(current);
+        return change.platform().filter(ignored -> change.downgrades(current)).orElse(current);
     }
 
     /** Returns the current version this application has, or if none; should use, in the given zone */
@@ -162,6 +162,7 @@ public class Application {
 
     /** Returns the Vespa version to use for the given job */
     public Version deployVersionFor(DeploymentJobs.JobType jobType, Controller controller) {
+        // TODO jvenstad: Eliminate this and its sibling for component.
         return jobType == DeploymentJobs.JobType.component
                 ? controller.systemVersion()
                 : deployVersionIn(jobType.zone(controller.system()).get(), controller);
