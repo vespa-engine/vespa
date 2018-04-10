@@ -24,6 +24,9 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 
 import static org.hamcrest.core.Is.is;
@@ -291,7 +294,7 @@ public class RestApiTest {
     }
 
     String visit_test_uri_selection_rewrite = "/document/v1/namespace/document-type/group/abc?continuation=abc";
-    String visit_test_response_selection_rewrite = "doc selection: 'id.group='abc''";
+    String visit_test_response_selection_rewrite = "doc selection: 'id.group=='abc''";
 
 
     @Test
@@ -300,6 +303,54 @@ public class RestApiTest {
         HttpGet get = new HttpGet(request.getUri());
         String rest = doRest(get);
         assertThat(rest, containsString(visit_test_response_selection_rewrite));
+    }
+
+    private static String encoded(String original) {
+        try {
+            return URLEncoder.encode(original, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String performV1RestCall(String pathSuffix) {
+        try {
+            Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/%s",
+                    getFirstListenPort(), pathSuffix));
+            HttpGet get = new HttpGet(request.getUri());
+            return doRest(get);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void assertResultingDocumentSelection(String suffix, String expected) {
+        String output = performV1RestCall(suffix);
+        assertThat(output, containsString(String.format("doc selection: '%s'", expected)));
+    }
+
+    private void assertGroupDocumentSelection(String group, String expected) {
+        assertResultingDocumentSelection("group/" + encoded(group), expected);
+    }
+
+    @Test
+    public void group_strings_are_escaped() {
+        assertGroupDocumentSelection("'", "id.group=='\\''");
+        assertGroupDocumentSelection("hello 'world'", "id.group=='hello \\'world\\''");
+        assertGroupDocumentSelection("' goodbye moon", "id.group=='\\' goodbye moon'");
+    }
+
+    private void assertNumericIdFailsParsing(String id) {
+        String output = performV1RestCall(String.format("number/%s", encoded(id)));
+        assertThat(output, containsString("Failed to parse numeric part of selection URI"));
+    }
+
+    @Test
+    public void invalid_numeric_id_returns_error() {
+        assertNumericIdFailsParsing("123a");
+        assertNumericIdFailsParsing("a123");
+        assertNumericIdFailsParsing("0x1234");
+        assertNumericIdFailsParsing("\u0000");
     }
 
     @Test

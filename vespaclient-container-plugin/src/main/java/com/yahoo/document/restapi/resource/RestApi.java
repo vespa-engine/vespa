@@ -278,27 +278,60 @@ public class RestApi extends LoggingRequestHandler {
 
         return optionsBuilder.build();
     }
-    
-    private HttpResponse handleVisit(RestUri restUri, HttpRequest request) throws RestApiException {
+
+    /**
+     * Escapes all single quotes in input string.
+     * @param original non-escaped string that may contain single quotes
+     * @return original if no quotes to escaped were found, otherwise a quote-escaped string
+     */
+    private static String singleQuoteEscapedString(String original) {
+        if (original.indexOf('\'') == -1) {
+            return original;
+        }
+        StringBuilder builder = new StringBuilder(original.length() + 1);
+        for (int i = 0; i < original.length(); ++i) {
+            char c = original.charAt(i);
+            if (c != '\'') {
+                builder.append(c);
+            } else {
+                builder.append("\\'");
+            }
+        }
+        return builder.toString();
+    }
+
+    private static long parseAndValidateVisitNumericId(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            throw new BadRequestParameterException(SELECTION, "Failed to parse numeric part of selection URI");
+        }
+    }
+
+    private static String documentSelectionFromRequest(RestUri restUri, HttpRequest request) throws BadRequestParameterException {
         String documentSelection = Optional.ofNullable(request.getProperty(SELECTION)).orElse("");
         if (restUri.getGroup().isPresent() && ! restUri.getGroup().get().value.isEmpty()) {
             if (! documentSelection.isEmpty()) {
                 // TODO why is this restriction in place? Document selection allows composition of location predicate and other expressions
-                return Response.createErrorResponse(
-                        400,
-                        "Visiting does not support setting value for group/value in combination with expression, try using only expression parameter instead.",
-                        restUri,
-                        RestUri.apiErrorCodes.GROUP_AND_EXPRESSION_ERROR);
+                throw new BadRequestParameterException(SELECTION, "Visiting does not support setting value for group/value in combination with expression, try using only expression parameter instead.");
             }
             RestUri.Group group = restUri.getGroup().get();
             if (group.name == 'n') {
-                documentSelection = "id.user=" + group.value;
+                documentSelection = String.format("id.user==%d", parseAndValidateVisitNumericId(group.value));
             } else {
-                documentSelection = "id.group='" + group.value + "'";
+                // TODO first pass through Text.validateTextString? Cannot create doc IDs that don't match that anyway...
+                documentSelection = String.format("id.group=='%s'", singleQuoteEscapedString(group.value));
             }
         }
+        // TODO try to preemptively parse sub expression to ensure it is complete
+        return documentSelection;
+    }
+
+    private HttpResponse handleVisit(RestUri restUri, HttpRequest request) throws RestApiException {
+        String documentSelection;
         OperationHandler.VisitOptions options;
         try {
+            documentSelection = documentSelectionFromRequest(restUri, request);
             options = visitOptionsFromRequest(request);
         } catch (BadRequestParameterException e) {
             return createInvalidParameterResponse(e.getParameter(), e.getMessage());
