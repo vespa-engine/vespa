@@ -44,22 +44,27 @@ public class Editor {
 
         for (String line : lines) {
             LineEdit edit = editor.edit(line);
+            if (!edit.prependLines().isEmpty()) {
+                modified = true;
+                maybeAdd(diff, edit.prependLines());
+                newLines.addAll(edit.prependLines());
+            }
+
             switch (edit.getType()) {
-                case REMOVE:
-                    modified = true;
-                    maybeRemove(diff, line);
-                    break;
                 case REPLACE:
                     modified = true;
-                    String replacementLine = edit.replacementLine();
-                    newLines.add(replacementLine);
                     maybeRemove(diff, line);
-                    maybeAdd(diff, replacementLine);
                     break;
                 case NONE:
                     newLines.add(line);
                     break;
                 default: throw new IllegalArgumentException("Unknown EditType " + edit.getType());
+            }
+
+            if (!edit.appendLines().isEmpty()) {
+                modified = true;
+                maybeAdd(diff, edit.appendLines());
+                newLines.addAll(edit.appendLines());
             }
         }
 
@@ -67,7 +72,7 @@ public class Editor {
         if (!linesToAppend.isEmpty()) {
             modified = true;
             newLines.addAll(linesToAppend);
-            linesToAppend.forEach(line -> maybeAdd(diff, line));
+            maybeAdd(diff, linesToAppend);
         }
 
         if (!modified) {
@@ -80,9 +85,11 @@ public class Editor {
         return true;
     }
 
-    private static void maybeAdd(StringBuilder diff, String line) {
-        if (!diffTooLarge(diff)) {
-            diff.append('+').append(line).append('\n');
+    private static void maybeAdd(StringBuilder diff, List<String> lines) {
+        for (String line : lines) {
+            if (!diffTooLarge(diff)) {
+                diff.append('+').append(line).append('\n');
+            }
         }
     }
 
