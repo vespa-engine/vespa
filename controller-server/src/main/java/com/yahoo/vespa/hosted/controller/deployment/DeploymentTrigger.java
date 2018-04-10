@@ -268,22 +268,11 @@ public class DeploymentTrigger {
             return lastSuccess;
 
         Deployment deployment = application.deployments().get(jobType.zone(controller.system()).get());
-        if (deployment == null)
-            return Optional.empty();
-
-        int applicationComparison = application.change().application()
-                                               .map(version -> version.compareTo(deployment.applicationVersion()))
-                                               .orElse(0);
-
-        int platformComparison = application.change().platform()
-                                            .map(version -> version.compareTo(deployment.version()))
-                                            .orElse(0);
-
-        // TODO jvenstad: Allow downgrades when considering whether to trigger -- stop them at choice of deployment version.
-        // TODO jvenstad: This allows tests to be re-run, for instance, while keeping the deployment itself a no-op.
-        return Optional.of(deployment.at())
-                    .filter(ignored ->     applicationComparison == -1 || platformComparison == -1
-                                       || (applicationComparison ==  0 && platformComparison ==  0));
+        return Optional.ofNullable(deployment).map(Deployment::at)
+                       .filter(ignored ->      (   application.change().upgrades(deployment.version())
+                                                || application.change().upgrades(deployment.applicationVersion()))
+                                          && ! (   application.change().downgrades(deployment.version())
+                                                || application.change().downgrades(deployment.applicationVersion())));
     }
 
     private boolean canTrigger(Job job) {

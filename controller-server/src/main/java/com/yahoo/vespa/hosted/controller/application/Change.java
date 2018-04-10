@@ -95,4 +95,25 @@ public final class Change {
         return new Change(Optional.of(platformChange), Optional.empty());
     }
 
+    /** Returns whether this change carries an application downgrade relative to the given version. */
+    public boolean downgrades(ApplicationVersion version) {
+        return application.map(version::compareTo).orElse(0) < 0;
+    }
+
+    /** Returns whether this change carries a platform downgrade relative to the given version. */
+    public boolean downgrades(Version version) {
+        return platform.map(version::compareTo).orElse(0) < 0;
+    }
+
+    /** Returns whether this change carries an application upgrade relative to the given version. */
+    public boolean upgrades(ApplicationVersion version) {
+        return application.map(version::compareTo).orElse(0) > 0;
+    }
+
+    /** Returns whether this change carries a platform upgrade relative to the given version. */
+    public boolean upgrades(Version version) {
+        return platform.map(version::compareTo).orElse(0) > 0;
+    }
+
 }
+
