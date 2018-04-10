@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
@@ -40,6 +39,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.DeploymentExpirer;
@@ -102,7 +102,7 @@ public class ApplicationController {
                           AthenzClientFactory zmsClientFactory, RotationsConfig rotationsConfig,
                           NameService nameService, ConfigServerClient configServer,
                           ArtifactRepository artifactRepository,
-                          RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
+                          RoutingGenerator routingGenerator, Clock clock) {
         this.controller = controller;
         this.db = db;
         this.curator = curator;
@@ -114,7 +114,7 @@ public class ApplicationController {
 
         this.artifactRepository = artifactRepository;
         this.rotationRepository = new RotationRepository(rotationsConfig, this, curator);
-        this.deploymentTrigger = new DeploymentTrigger(controller, curator, buildService, clock);
+        this.deploymentTrigger = new DeploymentTrigger(controller, curator, clock);
 
         for (Application application : db.listApplications()) {
             lockIfPresent(application.id(), this::store);
@@ -308,6 +308,8 @@ public class ApplicationController {
 
                 // Clean up deployment jobs that are no longer referenced by deployment spec
                 application = deleteUnreferencedDeploymentJobs(application);
+
+                // TODO jvenstad: Store triggering information here, including versions, when job status is read from the build service.
 
                 store(application); // store missing information even if we fail deployment below
             }
@@ -556,6 +558,15 @@ public class ApplicationController {
         try (Lock lock = lock(applicationId)) {
             action.accept(new LockedApplication(require(applicationId), lock));
         }
+    }
+
+    public void notifyJobCompletion(JobReport report) {
+        if ( ! get(report.applicationId()).isPresent()) {
+            log.log(Level.WARNING, "Ignoring completion of job of project '" + report.projectId() +
+                                   "': Unknown application '" + report.applicationId() + "'");
+            return;
+        }
+        deploymentTrigger.triggerFromCompletion(report);
     }
 
     /**
