@@ -25,9 +25,7 @@ public class EditorTest {
 
     @Test
     public void testEdit() {
-        path.writeUtf8File("first\n" +
-                "second\n" +
-                "third\n");
+        path.writeUtf8File(joinLines("first", "second", "third"));
 
         LineEditor lineEditor = mock(LineEditor.class);
         when(lineEditor.edit(any())).thenReturn(
@@ -50,13 +48,12 @@ public class EditorTest {
                 modificationMessage.getValue());
 
         // Verify the new contents of the file:
-        assertEquals("first\n" +
-                "replacement\n", path.readUtf8File());
+        assertEquals(joinLines("first", "replacement"), path.readUtf8File());
     }
 
     @Test
     public void testInsert() {
-        path.writeUtf8File("second\neight\nfifth\nseventh\n");
+        path.writeUtf8File(joinLines("second", "eight", "fifth", "seventh"));
 
         LineEditor lineEditor = mock(LineEditor.class);
         when(lineEditor.edit(any())).thenReturn(
@@ -75,8 +72,8 @@ public class EditorTest {
         ArgumentCaptor<String> modificationMessage = ArgumentCaptor.forClass(String.class);
         verify(context).recordSystemModification(any(), modificationMessage.capture());
         assertEquals(
-                "Patching file /file:\n+" +
-                        "first\n" +
+                "Patching file /file:\n" +
+                        "+first\n" +
                         "-eight\n" +
                         "+third\n" +
                         "+fourth\n" +
@@ -85,7 +82,8 @@ public class EditorTest {
                 modificationMessage.getValue());
 
         // Verify the new contents of the file:
-        assertEquals("first\nsecond\nthird\nfourth\nfifth\nsixth\nseventh\neight\n", path.readUtf8File());
+        assertEquals(joinLines("first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eight"),
+                path.readUtf8File());
     }
 
     @Test
@@ -107,5 +105,10 @@ public class EditorTest {
 
         // Verify same contents
         assertEquals("line\n", path.readUtf8File());
+    }
+
+
+    private static String joinLines(String... lines) {
+        return String.join("\n", lines) + "\n";
     }
 }
