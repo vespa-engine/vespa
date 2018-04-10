@@ -11,7 +11,6 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
@@ -89,11 +88,11 @@ public class Controller extends AbstractComponent {
                       ZoneRegistry zoneRegistry, ConfigServerClient configServerClient, NodeRepositoryClientInterface nodeRepositoryClient,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chefClient, AthenzClientFactory athenzClientFactory,
-                      ArtifactRepository artifactRepository, BuildService buildService) {
+                      ArtifactRepository artifactRepository) {
         this(db, curator, rotationsConfig,
              gitHub, entityService, organization, globalRoutingService, zoneRegistry,
              configServerClient, nodeRepositoryClient, metricsService, nameService, routingGenerator, chefClient,
-             Clock.systemUTC(), athenzClientFactory, artifactRepository, buildService);
+             Clock.systemUTC(), athenzClientFactory, artifactRepository);
     }
 
     public Controller(ControllerDb db, CuratorDb curator, RotationsConfig rotationsConfig,
@@ -102,8 +101,7 @@ public class Controller extends AbstractComponent {
                       ZoneRegistry zoneRegistry, ConfigServerClient configServerClient, NodeRepositoryClientInterface nodeRepositoryClient,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chefClient, Clock clock,
-                      AthenzClientFactory athenzClientFactory, ArtifactRepository artifactRepository,
-                      BuildService buildService) {
+                      AthenzClientFactory athenzClientFactory, ArtifactRepository artifactRepository) {
         Objects.requireNonNull(db, "Controller db cannot be null");
         Objects.requireNonNull(curator, "Curator cannot be null");
         Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null");
@@ -121,7 +119,6 @@ public class Controller extends AbstractComponent {
         Objects.requireNonNull(clock, "Clock cannot be null");
         Objects.requireNonNull(athenzClientFactory, "Athens cannot be null");
         Objects.requireNonNull(artifactRepository, "ArtifactRepository cannot be null");
-        Objects.requireNonNull(buildService, "BuildService cannot be null");
 
         this.curator = curator;
         this.gitHub = gitHub;
@@ -140,7 +137,7 @@ public class Controller extends AbstractComponent {
         applicationController = new ApplicationController(this, dbProxy, curator, athenzClientFactory,
                                                           rotationsConfig,
                                                           nameService, configServerClient, artifactRepository,
-                                                          routingGenerator, buildService, clock);
+                                                          routingGenerator, clock);
         tenantController = new TenantController(this, dbProxy, curator, athenzClientFactory);
     }
     

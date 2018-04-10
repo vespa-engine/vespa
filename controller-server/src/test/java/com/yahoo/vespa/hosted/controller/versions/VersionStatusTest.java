@@ -81,8 +81,6 @@ public class VersionStatusTest {
 
         // version2 is released
         tester.upgradeSystem(version2);
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
 
         // - app1 is in production on version1, but then fails in system test on version2
         tester.completeUpgradeWithError(app1, version2, applicationPackage, systemTest);
@@ -94,6 +92,8 @@ public class VersionStatusTest {
         tester.updateVersionStatus();
         List<VespaVersion> versions = tester.controller().versionStatus().versions();
         assertEquals("The two versions above exist", 2, versions.size());
+
+        System.err.println(tester.controller().applications().deploymentTrigger().jobTimeoutLimit());
 
         VespaVersion v1 = versions.get(0);
         assertEquals(version1, v1.versionNumber());
@@ -148,8 +148,6 @@ public class VersionStatusTest {
         // New version is released
         Version version1 = new Version("5.1");
         tester.upgradeSystem(version1);
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
 
         // Canaries upgrade to new versions and fail
         tester.completeUpgrade(canary0, version1, "canary");
@@ -161,7 +159,6 @@ public class VersionStatusTest {
         // New version is released
         Version version2 = new Version("5.2");
         tester.upgradeSystem(version2);
-        tester.readyJobTrigger().maintain();
         assertEquals("Confidence defaults to low for version with no applications",
                      Confidence.low, confidence(tester.controller(), version2));
 
@@ -178,14 +175,7 @@ public class VersionStatusTest {
         // Remaining canary upgrades to version2 which raises confidence to normal and more apps upgrade
         tester.jobCompletion(systemTest).application(canary2).unsuccessful().submit();
         tester.completeUpgrade(canary2, version2, "canary");
-        tester.updateVersionStatus();
-        tester.upgrader().maintain();
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
+        tester.upgradeSystem(version2);
         assertEquals("Canaries have upgraded: Normal",
                      Confidence.normal, confidence(tester.controller(), version2));
         tester.completeUpgrade(default0, version2, "default");
@@ -223,20 +213,10 @@ public class VersionStatusTest {
         // as broken
         Version version3 = new Version("5.3");
         tester.upgradeSystem(version3);
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
         tester.completeUpgrade(canary0, version3, "canary");
         tester.completeUpgrade(canary1, version3, "canary");
         tester.completeUpgrade(canary2, version3, "canary");
         tester.upgradeSystem(version3);
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
-        tester.readyJobTrigger().maintain();
         tester.completeUpgradeWithError(default0, version3, "default", stagingTest);
         tester.completeUpgradeWithError(default1, version3, "default", stagingTest);
         tester.completeUpgradeWithError(default2, version3, "default", stagingTest);

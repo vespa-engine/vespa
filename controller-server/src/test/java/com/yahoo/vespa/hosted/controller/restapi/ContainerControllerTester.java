@@ -125,7 +125,7 @@ public class ContainerControllerTester {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        controller().applications().deploymentTrigger().notifyOfCompletion(jobReport);
+        controller().applications().notifyJobCompletion(jobReport);
         controller().applications().deploymentTrigger().triggerReadyJobs();
     }
 
