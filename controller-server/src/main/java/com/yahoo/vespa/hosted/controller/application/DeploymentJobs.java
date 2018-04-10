@@ -118,6 +118,7 @@ public class DeploymentJobs {
 
     /** Returns whether change can be deployed to the given environment */
     public boolean isDeployableTo(Environment environment, Change change) {
+        // TODO jvenstad: Rewrite to verify versions when deployment is already decided.
         if (environment == null || ! change.isPresent()) {
             return true;
         }

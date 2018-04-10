@@ -151,7 +151,8 @@ public class Application {
     /** Returns the version a new deployment to this zone should use for this application */
     public Version deployVersionIn(ZoneId zone, Controller controller) {
         Version current = versionIn(zone, controller);
-        return change.platform().filter(ignored -> ! change.downgrades(current)).orElse(current);
+        return change.effectiveAt(deploymentSpec, controller.clock().instant()).platform()
+                     .filter(ignored -> ! change.downgrades(current)).orElse(current);
     }
 
     /** Returns the current version this application has, or if none; should use, in the given zone */
@@ -182,13 +183,11 @@ public class Application {
 
         Optional<ApplicationVersion> current = Optional.ofNullable(deployments.get(jobType.zone(controller.system()).get()))
                 .map(Deployment::applicationVersion);
+        Optional<ApplicationVersion> changeVersion = change.effectiveAt(deploymentSpec, controller.clock().instant()).application();
 
-        return Optional.ofNullable(change.application()
-                                         .filter(version -> ! (useCurrentVersion || current.filter(cv -> cv.compareTo(version) > 0).isPresent()))
-                                         .orElse(current
-                                                         .orElse(deploymentJobs().lastSuccessfulApplicationVersionFor(jobType)
-                                                                                 .orElse(change.application()
-                                                                                               .orElse(null)))));
+        return Optional.ofNullable(changeVersion.filter(version -> ! (useCurrentVersion || current.filter(cv -> cv.compareTo(version) > 0).isPresent()))
+                                                .orElse(current.orElse(deploymentJobs().lastSuccessfulApplicationVersionFor(jobType)
+                                                                                       .orElse(changeVersion.orElse(null)))));
     }
 
     /** Returns the global rotation of this, if present */

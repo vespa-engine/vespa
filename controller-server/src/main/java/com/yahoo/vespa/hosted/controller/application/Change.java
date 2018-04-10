@@ -39,11 +39,10 @@ public final class Change {
         this.application = application;
     }
 
-    /** Returns true if this change is blocked by the given spec at the given instant */
-    public boolean blockedBy(DeploymentSpec deploymentSpec, Instant instant) {
-        if (platform.isPresent() && ! deploymentSpec.canUpgradeAt(instant)) return true;
-        if (application.isPresent() && ! deploymentSpec.canChangeRevisionAt(instant)) return true;
-        return false;
+    /** Returns this change with currently blocked parts removed. */
+    public Change effectiveAt(DeploymentSpec deploymentSpec, Instant instant) {
+        return new Change(platform.filter(__ -> deploymentSpec.canUpgradeAt(instant)),
+                          application.filter(__ -> deploymentSpec.canChangeRevisionAt(instant)));
     }
 
     /** Returns whether a change should currently be deployed */

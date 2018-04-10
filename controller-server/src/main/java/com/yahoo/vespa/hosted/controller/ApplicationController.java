@@ -279,7 +279,7 @@ public class ApplicationController {
             Version version;
             if (options.deployCurrentVersion) {
                 version = application.versionIn(zone, controller);
-            } else if (canDeployDirectlyTo(zone, options)) {
+            } else if (canDeployDirectly) {
                 version = options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
             } else if (! application.change().isPresent() && ! zone.environment().isManuallyDeployed()) {
                 return unexpectedDeployment(applicationId, zone, applicationPackageFromDeployer);
@@ -288,6 +288,7 @@ public class ApplicationController {
             }
 
             // Determine application package to use
+            // TODO jvenstad: Inline this and clean up with the above.
             Pair<ApplicationPackage, ApplicationVersion> artifact = artifactFor(zone, application,
                                                                                 applicationPackageFromDeployer,
                                                                                 canDeployDirectly,
@@ -645,12 +646,13 @@ public class ApplicationController {
                 });
     }
 
-    /** Verify that change is tested and that we aren't downgrading */
+    /** Verify that what we want to deploy is tested and that we aren't downgrading */
     private void validateChange(Application application, ZoneId zone, Version version) {
         if ( ! application.deploymentJobs().isDeployableTo(zone.environment(), application.change())) {
             throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
                                                " as " + application.change() + " is not tested");
         }
+        // TODO jvenstad: Rewrite to use decided versions. Simplifies the below.
         Deployment existingDeployment = application.deployments().get(zone);
         if (zone.environment().isProduction() && existingDeployment != null &&
             existingDeployment.version().isAfter(version)) {

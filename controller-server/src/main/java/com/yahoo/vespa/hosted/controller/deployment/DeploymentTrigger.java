@@ -292,31 +292,25 @@ public class DeploymentTrigger {
                                                        .mapToList(JobStatus::type)))
             return false;
 
-        // TODO jvenstad: This blocks all changes when dual, and in block window. Should rather remove the blocked component.
         // TODO jvenstad: If the above is implemented, take care not to deploy untested stuff?
-        if (application.change().blockedBy(application.deploymentSpec(), clock.instant()))
+        if ( ! application.change().effectiveAt(application.deploymentSpec(), clock.instant()).isPresent())
             return false;
 
         return true;
     }
+
+
+    // TODO jvenstad: platform/applicationDeployed() productionJobs.allMatch.!change::upgrade
 
     private ApplicationController applications() {
         return controller.applications();
     }
 
     private boolean acceptNewApplicationVersion(LockedApplication application) {
-        if ( ! application.change().isPresent()) return true;
-
         if (application.change().application().isPresent()) return true; // More application changes are ok.
-
         if (application.deploymentJobs().hasFailures()) return true; // Allow changes to fix upgrade problems.
-
-        if (   ! application.deploymentSpec().canUpgradeAt(clock.instant())
-            || ! application.deploymentSpec().canChangeRevisionAt(clock.instant()))
-            return true; // Allow testing changes while upgrade blocked (debatable).
-
-        // Otherwise, the application is currently upgrading, without failures, and we should wait with the new application version.
-        return false;
+        // Otherwise, allow an application change if not currently upgrading.
+        return ! application.change().effectiveAt(application.deploymentSpec(), clock.instant()).platform().isPresent();
     }
 
 
