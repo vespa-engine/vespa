@@ -340,6 +340,12 @@ public class RestApiTest {
     }
 
     @Test
+    public void non_text_group_string_character_returns_error() {
+        String output = performV1RestCall(String.format("group/%s", encoded("\u001f")));
+        assertThat(output, containsString("Failed to parse group part of selection URI; contains invalid text code point U001F"));
+    }
+
+    @Test
     public void can_specify_numeric_id_without_explicit_selection() {
         assertResultingDocumentSelection("number/1234", "id.user==1234");
     }
@@ -359,6 +365,20 @@ public class RestApiTest {
     public void can_specify_both_group_id_and_explicit_selection() {
         assertResultingDocumentSelection(String.format("group/bar?selection=%s", encoded("3 != 4")),
                 "id.group=='bar' and (3 != 4)");
+    }
+
+    private void assertDocumentSelectionFailsParsing(String expression) {
+        String output = performV1RestCall(String.format("number/1234?selection=%s", encoded(expression)));
+        assertThat(output, containsString("Failed to parse expression given in 'selection' parameter. Must be a complete and valid sub-expression."));
+    }
+
+    // Make sure that typoing the selection parameter doesn't corrupt the entire selection expression
+    @Test
+    public void explicit_selection_sub_expression_is_validated_for_completeness() {
+        assertDocumentSelectionFailsParsing("1 +");
+        assertDocumentSelectionFailsParsing(") or true");
+        assertDocumentSelectionFailsParsing("((1 + 2)");
+        assertDocumentSelectionFailsParsing("true) or (true");
     }
 
     @Test

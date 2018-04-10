@@ -21,10 +21,13 @@ import com.yahoo.document.restapi.OperationHandlerImpl;
 import com.yahoo.document.restapi.Response;
 import com.yahoo.document.restapi.RestApiException;
 import com.yahoo.document.restapi.RestUri;
+import com.yahoo.document.select.DocumentSelector;
+import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
@@ -312,14 +315,31 @@ public class RestApi extends LoggingRequestHandler {
         if (group.name == 'n') {
             return String.format("id.user==%d", parseAndValidateVisitNumericId(group.value));
         } else {
-            // TODO first pass through Text.validateTextString? Cannot create doc IDs that don't match that anyway...
+            // Cannot feed documents with groups that don't pass this test, so it makes sense
+            // to enforce this symmetry when trying to retrieve them as well.
+            Text.validateTextString(group.value).ifPresent(codepoint -> {
+                throw new BadRequestParameterException(SELECTION, String.format(
+                        "Failed to parse group part of selection URI; contains invalid text code point U%04X", codepoint));
+            });
             return String.format("id.group=='%s'", singleQuoteEscapedString(group.value));
         }
     }
 
+    private static void validateDocumentSelectionSyntax(String expression) {
+        try {
+            new DocumentSelector(expression);
+        } catch (ParseException e) {
+            throw new BadRequestParameterException(SELECTION, String.format("Failed to parse expression given in 'selection'" +
+                    " parameter. Must be a complete and valid sub-expression. Error: %s", e.getMessage()));
+        }
+    }
+
     private static String documentSelectionFromRequest(RestUri restUri, HttpRequest request) throws BadRequestParameterException {
-        // TODO try to preemptively parse sub expression to ensure it is complete
         String documentSelection = Optional.ofNullable(request.getProperty(SELECTION)).orElse("");
+        if (!documentSelection.isEmpty()) {
+            // Ensure that the selection parameter sub-expression is complete and valid by itself.
+            validateDocumentSelectionSyntax(documentSelection);
+        }
         if (restUri.getGroup().isPresent() && ! restUri.getGroup().get().value.isEmpty()) {
             String locationSubExpression = validateAndBuildLocationSubExpression(restUri.getGroup().get());
             if (documentSelection.isEmpty()) {
