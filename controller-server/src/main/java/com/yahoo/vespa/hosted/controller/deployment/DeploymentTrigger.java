@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
@@ -154,12 +155,7 @@ public class DeploymentTrigger {
         BuildService.BuildJob buildJob = new BuildService.BuildJob(job.projectId, job.jobType.jobName());
         if (buildService.trigger(buildJob)) {
             applications().lockOrThrow(job.id, application ->
-                    applications().store(application.withJobTriggering(job.jobType,
-                                                                       clock.instant(),
-                                                                       application.deployVersionFor(job.jobType, controller),
-                                                                       application.deployApplicationVersionFor(job.jobType, controller, false)
-                                                                                  .orElse(ApplicationVersion.unknown),
-                                                                       job.reason)));
+                    applications().store(application.withJobTriggering(job.jobType, runOf(job))));
             return true;
         }
         // TODO jvenstad: On 404: set empty projectId (and send ticket?). Throw and catch NoSuchElementException.
@@ -231,10 +227,11 @@ public class DeploymentTrigger {
                 }
                 else if (completedAt.isPresent()) { // Step not complete, because some jobs remain -- trigger these if the previous step was done.
                     for (JobType job : remainingJobs)
-                        jobs.add(new Job(application, job, reason, completedAt.get(), stepJobs));
+                        jobs.add(new Job(application, job, reason, completedAt.get(), stepJobs, controller));
                     completedAt = Optional.empty();
                 }
             }
+            // TODO jvenstad: Replace with completion of individual parts of Change.
             if (completedAt.isPresent())
                 applications().store(application.withChange(Change.empty()));
         });
@@ -313,41 +310,58 @@ public class DeploymentTrigger {
         return ! application.change().effectiveAt(application.deploymentSpec(), clock.instant()).platform().isPresent();
     }
 
+    private JobStatus.JobRun runOf(Job job) {
+        return new JobStatus.JobRun(-1, job.platform, job.application, job.reason, clock.instant());
+    }
+
 
     public static class Job {
 
         private final ApplicationId id;
         private final JobType jobType;
         private final long projectId;
-        private final Change change;
         private final String reason;
         private final Instant availableSince;
-        private final boolean retry;
         private final Collection<JobType> concurrentlyWith;
+        private final boolean isRetry;
+        private final boolean isApplicationUpgrade;
+        private final Change change;
+        private final Version platform;
+        private final ApplicationVersion application;
         // TODO jvenstad: Store target versions here, and set in withJobTriggering(Job job, Instant at).
         // TODO jvenstad: Use trigger-versions during deployment!
 
-        public Job(Application application, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith) {
+        public Job(Application application, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith, Controller controller) {
             this.id = application.id();
             this.jobType = jobType;
             this.projectId = application.deploymentJobs().projectId().get();
-            this.change = application.change();
             this.availableSince = availableSince;
             this.concurrentlyWith = concurrentlyWith;
 
-            JobStatus status = application.deploymentJobs().jobStatus().get(jobType);
-            this.retry = status != null && status.jobError().filter(JobError.outOfCapacity::equals).isPresent();
-            this.reason = retry ? "Retrying on out of capacity" : reason;
+            Optional<JobStatus> status = Optional.ofNullable(application.deploymentJobs().jobStatus().get(jobType));
+            this.isRetry = status.flatMap(JobStatus::jobError).filter(JobError.outOfCapacity::equals).isPresent();
+            this.reason = isRetry ? " Retrying on out of capacity" : reason;
+
+            this.change = application.change().effectiveAt(application.deploymentSpec(), controller.clock().instant());
+            this.isApplicationUpgrade = change.application().isPresent();
+            this.platform = jobType == JobType.component
+                    ? Version.emptyVersion
+                    : application.deployVersionIn(jobType.zone(controller.system()).get(), controller);
+            this.application = jobType == JobType.component
+                    ? ApplicationVersion.unknown
+                    : application.deployApplicationVersionFor(jobType, controller, false);
         }
 
         public ApplicationId id() { return id; }
         public JobType jobType() { return jobType; }
         public long projectId() { return projectId; }
-        public Change change() { return change; }
         public String reason() { return reason; }
         public Instant availableSince() { return availableSince; }
-        public boolean isRetry() { return retry; }
-        public boolean applicationUpgrade() { return change.application().isPresent(); }
+        public boolean isRetry() { return isRetry; }
+        public boolean applicationUpgrade() { return isApplicationUpgrade; }
+        public Change change() { return change; }
+        public Version platform() { return platform; }
+        public ApplicationVersion application() { return application; }
 
     }
 

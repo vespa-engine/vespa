@@ -368,9 +368,7 @@ public class ApplicationController {
             if (!job.isPresent()) {
                 throw new IllegalArgumentException("No job found for zone " + zone);
             }
-            version = application.deployApplicationVersionFor(job.get(), controller, deployCurrentVersion)
-                                 .orElseThrow(() -> new IllegalArgumentException("Cannot determine application version to use for " +
-                                                                    job.get()));
+            version = application.deployApplicationVersionFor(job.get(), controller, deployCurrentVersion);
             pkg = new ApplicationPackage(artifactRepository.getApplicationPackage(application.id(), version.id()));
         }
         return new Pair<>(pkg, version);

@@ -20,6 +20,8 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
@@ -67,10 +69,8 @@ public class LockedApplication extends Application {
         );
     }
 
-    public LockedApplication withJobTriggering(JobType type, Instant triggerTime,
-                                               Version version, ApplicationVersion applicationVersion,
-                                               String reason) {
-        return new LockedApplication(new Builder(this).with(deploymentJobs().withTriggering(type, version, applicationVersion, reason, triggerTime)));
+    public LockedApplication withJobTriggering(JobType jobType, JobStatus.JobRun job) {
+        return new LockedApplication(new Builder(this).with(deploymentJobs().withTriggering(jobType, job)));
     }
 
     public LockedApplication withNewDeployment(ZoneId zone, ApplicationVersion applicationVersion, Version version,

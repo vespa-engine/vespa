@@ -50,11 +50,21 @@ public final class Change {
         return platform.isPresent() || application.isPresent();
     }
 
-    /** Returns the platform version change which should currently be deployed, if any */
+    /** Returns the platform version carried by this. */
     public Optional<Version> platform() { return platform; }
 
-    /** Returns the application version change which should currently be deployed, if any */
+    /** Returns the platform version which will be deployed in a zone if the given version is currently deployed there. */
+    public Version platformAgainst(Version version) {
+        return downgrades(version) ? version : platform.orElse(version);
+    }
+
+    /** Returns the application version carried by this. */
     public Optional<ApplicationVersion> application() { return application; }
+
+    /** Returns the application version which will be deployed in a zone if the given version is currently deployed there. */
+    public ApplicationVersion applicationAgainst(ApplicationVersion version) {
+        return downgrades(version) ? version : application.orElse(version);
+    }
 
     /** Returns an instance representing no change */
     public static Change empty() { return empty; }

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -66,18 +65,11 @@ public class DeploymentJobs {
         return new DeploymentJobs(Optional.of(report.projectId()), status, issueId);
     }
 
-    public DeploymentJobs withTriggering(JobType jobType,
-                                         Version version,
-                                         ApplicationVersion applicationVersion,
-                                         String reason,
-                                         Instant triggerTime) {
+    public DeploymentJobs withTriggering(JobType jobType, JobStatus.JobRun jobRun) {
         Map<JobType, JobStatus> status = new LinkedHashMap<>(this.status);
-        status.compute(jobType, (type, job) -> {
+        status.compute(jobType, (__, job) -> {
             if (job == null) job = JobStatus.initial(jobType);
-            return job.withTriggering(version,
-                                      applicationVersion,
-                                      reason,
-                                      triggerTime);
+            return job.withTriggering(jobRun);
         });
         return new DeploymentJobs(projectId, status, issueId);
     }

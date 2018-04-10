@@ -94,7 +94,8 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
                                                                                         jobType,
                                                                                         "Triggered from screwdriver/v1",
                                                                                         controller.clock().instant(),
-                                                                                        Collections.emptySet()));
+                                                                                        Collections.emptySet(),
+                                                                                        controller));
 
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
@@ -122,12 +123,13 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
             Cursor jobArray = jobTypesObject.setArray(jobType.jobName());
             jobs.forEach(job -> {
                 Cursor buildJobObject = jobArray.addObject();
-                buildJobObject.setString("applicationId", job.id().toString());
-                buildJobObject.setString("jobName", job.jobType().jobName());
+                buildJobObject.setString("id", job.id().toString());
                 buildJobObject.setLong("projectId", job.projectId());
-                buildJobObject.setString("change", job.change().toString());
                 buildJobObject.setString("reason", job.reason());
+                buildJobObject.setString("change", job.change().toString());
                 buildJobObject.setLong("availableSince", job.availableSince().toEpochMilli());
+                buildJobObject.setString("platform", job.platform().toString());
+                buildJobObject.setString("application", job.application().toString());
             });
         });
         return new SlimeJsonResponse(slime);

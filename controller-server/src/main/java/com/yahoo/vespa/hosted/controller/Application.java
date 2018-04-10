@@ -161,33 +161,23 @@ public class Application {
                        .orElse(oldestDeployedVersion().orElse(controller.systemVersion()));
     }
 
-    /** Returns the Vespa version to use for the given job */
-    public Version deployVersionFor(DeploymentJobs.JobType jobType, Controller controller) {
-        // TODO jvenstad: Eliminate this and its sibling for component.
-        return jobType == DeploymentJobs.JobType.component
-                ? controller.systemVersion()
-                : deployVersionIn(jobType.zone(controller.system()).get(), controller);
-    }
-
     /**
      * Returns the application version to use for the given job.
      *
      * If no version is specified by the application's {@link Change}, or by {@code currentVersion},
      * returns the currently deployed application version, or the last successfully deployed one.
      */
-    public Optional<ApplicationVersion> deployApplicationVersionFor(DeploymentJobs.JobType jobType,
-                                                                    Controller controller,
-                                                                    boolean useCurrentVersion) {
-        if (jobType == DeploymentJobs.JobType.component)
-            return Optional.empty();
-
+    public ApplicationVersion deployApplicationVersionFor(DeploymentJobs.JobType jobType,
+                                                          Controller controller,
+                                                          boolean useCurrentVersion) {
         Optional<ApplicationVersion> current = Optional.ofNullable(deployments.get(jobType.zone(controller.system()).get()))
-                .map(Deployment::applicationVersion);
+                                                       .map(Deployment::applicationVersion);
         Optional<ApplicationVersion> changeVersion = change.effectiveAt(deploymentSpec, controller.clock().instant()).application();
 
         return Optional.ofNullable(changeVersion.filter(version -> ! (useCurrentVersion || current.filter(cv -> cv.compareTo(version) > 0).isPresent()))
                                                 .orElse(current.orElse(deploymentJobs().lastSuccessfulApplicationVersionFor(jobType)
-                                                                                       .orElse(changeVersion.orElse(null)))));
+                                                                                       .orElse(changeVersion.orElse(null)))))
+                       .orElseThrow(() -> new IllegalArgumentException("Cannot determine application version to use for " + jobType));
     }
 
     /** Returns the global rotation of this, if present */
