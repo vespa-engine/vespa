@@ -5,138 +5,161 @@ import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.verification.VerificationMode;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyVararg;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.startsWith;
 
 public class AclMaintainerTest {
 
     private static final String NODE_ADMIN_HOSTNAME = "node-admin.region-1.yahoo.com";
 
     private final IPAddressesMock ipAddresses = new IPAddressesMock();
-    private final DockerOperations dockerOperations  = mock(DockerOperations.class);
+    private final DockerOperations dockerOperations = mock(DockerOperations.class);
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
-    private final List<Container> containers = new ArrayList<>();
+    private final Map<String, Container> containers = new HashMap<>();
+    private final List<Container> containerList = new ArrayList<>();
     private final AclMaintainer aclMaintainer =
             new AclMaintainer(dockerOperations, nodeRepository, NODE_ADMIN_HOSTNAME, ipAddresses);
 
     @Before
     public void before() {
-        when(dockerOperations.getAllManagedContainers()).thenReturn(containers);
+        when(dockerOperations.getAllManagedContainers()).thenReturn(containerList);
     }
 
     @Test
-    public void configures_container_acl() {
-        Map<String, Container> containers = null;
-        Map<String, Acl> acls = null;
+    public void configures_container_acl_when_iptables_differs() {
+        Container container = addContainer("container1", Container.State.RUNNING);
+        Map<String, Acl> acls = makeAcl(container.name.asString(), 4321, "2001::1");
 
         when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers.keySet())).thenReturn(acls);
 
+        when(dockerOperations.executeCommandInNetworkNamespace(
+                eq(container.name),
+                eq("ip6tables -S -t filter"))).thenReturn(new ProcessResult(0, "", ""));
+
+        when(dockerOperations.executeCommandInNetworkNamespace(
+                eq(container.name),
+                startsWith("ip6tables-restore"))).thenReturn(new ProcessResult(0, "", ""));
+
         aclMaintainer.run();
 
-        assertAclsApplied(acls);
+        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(any(), any());
     }
 
     @Test
-    public void does_not_configure_acl_if_unchanged() {
-        Map<String, Container> containers = null;
-        Map<String, Acl> acls = null;
+    public void does_not_configure_acl_if_iptables_v6_are_ok() {
+        Container container = addContainer("container1", Container.State.RUNNING);
+        Map<String, Acl> acls = makeAcl(container.name.asString(), 4321, "2001::1");
 
         when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers.keySet())).thenReturn(acls);
 
-        aclMaintainer.run();
-        aclMaintainer.run();
+        String ONE_CONTAINER_IPV6 = "-P INPUT ACCEPT\n" +
+                "-P FORWARD ACCEPT\n" +
+                "-P OUTPUT ACCEPT\n" +
+                "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
+                "-A INPUT -i lo -j ACCEPT\n" +
+                "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
+                "-A INPUT -p tcp --dport 4321 -j ACCEPT\n" +
+                "-A INPUT -s 2001::1/128 -j ACCEPT\n" +
+                "-A INPUT -j REJECT\n" +
+                "-A OUTPUT -d 3001::1 -j REDIRECT";
+
+        when(dockerOperations.executeCommandInNetworkNamespace(
+                eq(container.name),
+                eq("ip6tables -S -t filter")))
+                .thenReturn(new ProcessResult(0, ONE_CONTAINER_IPV6, ""));
+
         aclMaintainer.run();
 
-        assertAclsApplied(acls, times(1));
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(any(), any());
     }
 
     @Test
-    public void does_not_configure_acl_for_stopped_container() {
-        Map<String, Container> containers = null;
-        Map<String, Acl> acls = null;
+    public void does_not_configure_acl_if_iptables_dualstack_are_ok() {
+        Container container = addContainer("container1", Container.State.RUNNING);
+        Map<String, Acl> acls = makeAcl(container.name.asString(), 4321, "2001::1");
 
         when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers.keySet())).thenReturn(acls);
 
+        String ONE_CONTAINER_IPV6 = "-P INPUT ACCEPT\n" +
+                "-P FORWARD ACCEPT\n" +
+                "-P OUTPUT ACCEPT\n" +
+                "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
+                "-A INPUT -i lo -j ACCEPT\n" +
+                "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
+                "-A INPUT -p tcp --dport 4321 -j ACCEPT\n" +
+                "-A INPUT -s 2001::1/128 -j ACCEPT\n" +
+                "-A INPUT -j REJECT\n" +
+                "-A OUTPUT -d 3001::1 -j REDIRECT";
+
+        when(dockerOperations.executeCommandInNetworkNamespace(
+                eq(container.name),
+                eq("ip6tables -S -t filter")))
+                .thenReturn(new ProcessResult(0, ONE_CONTAINER_IPV6, ""));
 
         aclMaintainer.run();
 
-        assertAclsApplied(acls, never());
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(any(), any());
     }
+
 
     @Test
     public void rollback_is_attempted_when_applying_acl_fail() {
-        Map<String, Container> containers = null;
-        Map<String, Acl> acls = null;
+        Container container = addContainer("container1", Container.State.RUNNING);
+        Map<String, Acl> acls = makeAcl(container.name.asString(), 4321, "2001::1");
+        when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers.keySet())).thenReturn(acls);
 
-        doThrow(new RuntimeException("iptables command failed"))
-                .doNothing()
-                .when(dockerOperations)
-                .executeCommandInNetworkNamespace(any(), anyVararg());
+        when(dockerOperations.executeCommandInNetworkNamespace(
+                eq(container.name),
+                eq("ip6tables -S -t filter"))).thenReturn(new ProcessResult(0, "", ""));
+
+        when(dockerOperations.executeCommandInNetworkNamespace(
+                eq(container.name),
+                startsWith("ip6tables-restore"))).thenThrow(new RuntimeException("iptables restore failed"));
 
         aclMaintainer.run();
 
-        verify(dockerOperations).executeCommandInNetworkNamespace(
-                eq(ContainerName.fromHostname("dsd.dsds.ds")),
-                eq("ip6tables"),
-                eq("-P"),
-                eq("INPUT"),
-                eq("ACCEPT")
-        );
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables -F"));
     }
 
-    private void assertAclsApplied(Map<String, Acl> acls) {
-        assertAclsApplied(acls, times(1));
-    }
-
-    private void assertAclsApplied(Map<String, Acl> acls, VerificationMode verificationMode) {
-
-        acls.forEach((containerName, acl) -> {
-            String iptables = "Somehing";
-            StringBuilder expectedCommand = new StringBuilder()
-                    .append(iptables + " -F INPUT; ")
-                    .append(iptables + " -P INPUT DROP; ")
-                    .append(iptables + " -P FORWARD DROP; ")
-                    .append(iptables + " -P OUTPUT ACCEPT; ")
-                    .append(iptables + " -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT; ")
-                    .append(iptables + " -A INPUT -i lo -j ACCEPT; ")
-                    .append(iptables + " -A INPUT -p ipv6-icmp -j ACCEPT; ");
-
-            acl.trustedNodes().forEach(node ->
-                    expectedCommand.append(iptables + " -A INPUT -s " +
-                            InetAddresses.toAddrString(node) +
-                            "TOD" + " -j ACCEPT; "));
-
-            acl.trustedPorts().forEach(node ->
-                    expectedCommand.append(iptables + " -A INPUT -p tcp --dport " + node + " -j ACCEPT; "));
-
-            verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
-                    eq(ContainerName.fromHostname(containerName)), eq("/bin/sh"), eq("-c"), eq(expectedCommand.toString()));
-        });
-    }
-
-    private Container makeContainer(String hostname, Container.State state, int pid) {
-        final ContainerName containerName = new ContainerName(hostname);
-        final Container container = new Container(hostname, new DockerImage("mock"), null,
-                containerName, state, pid);
-        containers.add(container);
+    private Container addContainer(String name, Container.State state) {
+        final ContainerName containerName = new ContainerName(name);
+        final Container container = new Container(name, new DockerImage("mock"), null,
+                containerName, state, 2);
+        containers.put(name, container);
+        containerList.add(container);
+        ipAddresses.addAddress(name, "3001::" + containers.size());
         return container;
+    }
+
+    private Map<String, Acl> makeAcl(String containerName, int port, String address) {
+        Map<String, Acl> map = new HashMap<>();
+        List<Integer> ports = new ArrayList<>();
+        ports.add(port);
+
+        List<InetAddress> hosts = new ArrayList<>();
+        hosts.add(InetAddresses.forString(address));
+
+        Acl acl = new Acl(ports, hosts);
+        map.put(containerName, acl);
+
+        return map;
     }
 }

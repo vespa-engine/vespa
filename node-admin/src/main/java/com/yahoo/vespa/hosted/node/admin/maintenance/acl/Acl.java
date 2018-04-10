@@ -56,9 +56,7 @@ public class Acl {
                 // Allow any loopback traffic
                 , "-A INPUT -i lo -j ACCEPT"
                 // Allow ICMP packets. See http://shouldiblockicmp.com/
-                , "-A INPUT -p " + ipVersion.icmpProtocol() + " -j ACCEPT"
-                // Redirect calls to itself to loopback interface (this to avoid socket collision on bridged networks)
-                , "-A OUTPUT -d " + InetAddresses.toAddrString(containerAddress) + " -j ACCEPT");
+                , "-A INPUT -p " + ipVersion.icmpProtocol() + " -j ACCEPT");
 
         // Allow trusted ports
         String ports = trustedPorts.stream()
@@ -73,7 +71,10 @@ public class Acl {
 
         String rejectEverythingElse = "-A INPUT -j REJECT";
 
-        return String.join("\n", basics, ports, nodes, rejectEverythingElse);
+        // Redirect calls to itself to loopback interface (this to avoid socket collision on bridged networks)
+        String redirectSelf = "-A OUTPUT -d " + InetAddresses.toAddrString(containerAddress) + " -j REDIRECT";
+
+        return String.join("\n", basics, ports, nodes, rejectEverythingElse, redirectSelf);
     }
 
     @Override
