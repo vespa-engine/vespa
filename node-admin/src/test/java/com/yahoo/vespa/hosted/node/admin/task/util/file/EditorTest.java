@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.nio.file.FileSystem;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -24,9 +25,7 @@ public class EditorTest {
 
     @Test
     public void testEdit() {
-        path.writeUtf8File("first\n" +
-                "second\n" +
-                "third\n");
+        path.writeUtf8File(joinLines("first", "second", "third"));
 
         LineEditor lineEditor = mock(LineEditor.class);
         when(lineEditor.edit(any())).thenReturn(
@@ -49,8 +48,42 @@ public class EditorTest {
                 modificationMessage.getValue());
 
         // Verify the new contents of the file:
-        assertEquals("first\n" +
-                "replacement\n", path.readUtf8File());
+        assertEquals(joinLines("first", "replacement"), path.readUtf8File());
+    }
+
+    @Test
+    public void testInsert() {
+        path.writeUtf8File(joinLines("second", "eight", "fifth", "seventh"));
+
+        LineEditor lineEditor = mock(LineEditor.class);
+        when(lineEditor.edit(any())).thenReturn(
+                LineEdit.insertBefore("first"), // insert first, and keep the second line
+                LineEdit.replaceWith("third", "fourth"), // remove eight, and replace with third and fourth instead
+                LineEdit.none(), // Keep fifth
+                LineEdit.insert(Collections.singletonList("sixth"), // insert sixth before seventh
+                        Collections.singletonList("eight"))); // add eight after seventh
+
+        Editor editor = new Editor(path.toPath(), lineEditor);
+        TaskContext context = mock(TaskContext.class);
+
+        assertTrue(editor.converge(context));
+
+        // Verify the system modification message
+        ArgumentCaptor<String> modificationMessage = ArgumentCaptor.forClass(String.class);
+        verify(context).recordSystemModification(any(), modificationMessage.capture());
+        assertEquals(
+                "Patching file /file:\n" +
+                        "+first\n" +
+                        "-eight\n" +
+                        "+third\n" +
+                        "+fourth\n" +
+                        "+sixth\n" +
+                        "+eight\n",
+                modificationMessage.getValue());
+
+        // Verify the new contents of the file:
+        assertEquals(joinLines("first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eight"),
+                path.readUtf8File());
     }
 
     @Test
@@ -72,5 +105,10 @@ public class EditorTest {
 
         // Verify same contents
         assertEquals("line\n", path.readUtf8File());
+    }
+
+
+    private static String joinLines(String... lines) {
+        return String.join("\n", lines) + "\n";
     }
 }
