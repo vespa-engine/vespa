@@ -40,7 +40,7 @@ public class Acl {
         return String.join("\n"
                 , "*filter"
                 , toListRules(containerAddress)
-                , "COMMIT");
+                , "COMMIT\n");
     }
 
     public String toListRules(InetAddress containerAddress) {
