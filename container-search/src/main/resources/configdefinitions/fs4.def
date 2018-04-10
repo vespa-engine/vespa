@@ -2,4 +2,4 @@
 namespace=container.search
 
 ##Number of listener threads
-numlistenerthreads int default=4
+numlistenerthreads int default=8
