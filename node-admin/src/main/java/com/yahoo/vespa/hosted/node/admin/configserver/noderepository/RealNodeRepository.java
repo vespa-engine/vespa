@@ -164,7 +164,7 @@ public class RealNodeRepository implements NodeRepository {
 
     @Override
     public void setNodeState(String hostName, Node.State nodeState) {
-        String state = nodeState == Node.State.ready ? "availablefornewallocations" : nodeState.name();
+        String state = nodeState.name();
         NodeMessageResponse response = configServerApi.put(
                 "/nodes/v2/state/" + state + "/" + hostName,
                 Optional.empty(), /* body */
