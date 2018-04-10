@@ -49,11 +49,10 @@ public class NodeAclResponse extends HttpResponse {
         nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toSlime(nodeAcl.trustedNetworks(),
                                                                                      nodeAcl.node(),
                                                                                      trustedNetworksArray));
-
         Cursor trustedPortsArray = object.setArray("trustedPorts");
         nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toSlime(nodeAcl.trustedPorts(),
                 nodeAcl,
-                trustedNetworksArray));
+                trustedPortsArray));
     }
 
     private void toSlime(NodeAcl nodeAcl, Cursor array) {
