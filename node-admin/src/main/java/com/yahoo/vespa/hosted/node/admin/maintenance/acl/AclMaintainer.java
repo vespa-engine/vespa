@@ -60,14 +60,14 @@ public class AclMaintainer implements Runnable {
         try {
             // 3. Get current iptables
             ProcessResult currentFilterTableResult =
-                    dockerOperations.executeCommandInContainerAsRoot(container.name, ipVersion.iptablesCmd() + " -S -t filter");
+                    dockerOperations.executeCommandInNetworkNamespace(container.name, ipVersion.iptablesCmd() + " -S -t filter");
             String currentFilterTable = currentFilterTableResult.getOutput();
 
             // 4. Compare and apply wanted if different
             if (!wantedFilterTable.equals(currentFilterTable)) {
                 String command = acl.toRestoreCommand(address.get());
                 file = writeTempFile(ipVersion.name(), command);
-                dockerOperations.executeCommandInContainerAsRoot(container.name, ipVersion.iptablesCmd() + "-restore " + file.getAbsolutePath());
+                dockerOperations.executeCommandInNetworkNamespace(container.name, ipVersion.iptablesCmd() + "-restore " + file.getAbsolutePath());
             }
         } catch (Exception e) {
             String rollbackCmd = ipVersion.iptablesCmd() + " -F";

@@ -17,6 +17,7 @@ import org.apache.commons.lang.StringUtils;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -55,6 +56,15 @@ public class RealNodeRepository implements NodeRepository {
         return nodesForHost.nodes.stream()
                 .map(RealNodeRepository::createNodeRepositoryNode)
                 .collect(Collectors.toList());
+    }
+
+
+    @Override
+    public List<NodeSpec> getNodes(NodeType... nodeTypes) {
+        if (nodeTypes.length == 0)
+            throw new IllegalArgumentException("Must specify at least 1 node type");
+
+        return getNodes(Optional.empty(), Arrays.asList(nodeTypes));
     }
 
     @Override

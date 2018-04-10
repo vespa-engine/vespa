@@ -14,15 +14,15 @@ import java.util.stream.Stream;
 /**
  * IP addresses - IP utilities to retrieve and manipulate addresses for docker host and docker containers in a
  * multi-home environment.
- *
+ * <p>
  * The assumption is that DNS is the source of truth for which address are assigned to the host and which
  * that belongs to the containers. Only one address should be assigned to each.
- *
+ * <p>
  * The behavior with respect to site-local addresses are distinct for IPv4 and IPv6. For IPv4 we choose
  * the site-local address (assume the public is a NAT address not assigned to the host interface (the typical aws setup)).
- *
+ * <p>
  * For IPv6 we disregard any site-local addresses (these are normally not in DNS anyway).
- *
+ * <p>
  * This class also provides some utilities for prefix translation.
  *
  * @author smorgrav
@@ -35,6 +35,16 @@ public interface IPAddresses {
         return ipVersion == IPVersion.IPv6
                 ? getIPv6Address(hostname).map(InetAddress.class::cast)
                 : getIPv4Address(hostname).map(InetAddress.class::cast);
+    }
+
+    /**
+     * Returns a list of string representation of the IP addresses (RFC 5952 compact format)
+     */
+    default List<String> getAddresses(String hostname, IPVersion ipVersion) {
+        return Stream.of(getAddresses(hostname))
+                .filter(inetAddress -> isOfType(inetAddress, ipVersion))
+                .map(InetAddresses::toAddrString)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -94,8 +104,8 @@ public interface IPAddresses {
     /**
      * For NPTed networks we want to find the private address from a public.
      *
-     * @param address    The original address to translate
-     * @param prefix     The prefix address
+     * @param address           The original address to translate
+     * @param prefix            The prefix address
      * @param subnetSizeInBytes in bits - e.g a /64 subnet equals 8 bytes
      * @return The translated address
      */

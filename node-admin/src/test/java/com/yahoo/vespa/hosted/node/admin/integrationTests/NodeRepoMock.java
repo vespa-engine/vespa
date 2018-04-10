@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.node.admin.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
@@ -10,6 +11,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +46,11 @@ public class NodeRepoMock implements NodeRepository {
         synchronized (monitor) {
             return Optional.ofNullable(nodeRepositoryNodesByHostname.get(hostName));
         }
+    }
+
+    @Override
+    public List<NodeSpec> getNodes(NodeType... nodeTypes) {
+        return Collections.emptyList();
     }
 
     @Override
