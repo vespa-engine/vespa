@@ -27,6 +27,7 @@ import java.util.logging.Logger;
  * Provider for {@link com.yahoo.fs4.mplex.ListenerPool}. All users will get the same pool instance.
  *
  * @author baldersheim
+ * @since 5.4.0
  */
 public class FS4ResourcePool extends AbstractComponent {
 

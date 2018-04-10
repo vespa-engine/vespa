@@ -69,6 +69,8 @@ public class FastSearcher extends VespaBackEndSearcher {
     
     private final FS4ResourcePool fs4ResourcePool;
     
+    private final String selfHostname;
+    
     /**
      * Creates a Fastsearcher.
      *
@@ -92,6 +94,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         this.dispatchBackend = dispatchBackend;
         this.fs4ResourcePool = fs4ResourcePool;
         this.dispatcher = dispatcher;
+        this.selfHostname = HostName.getLocalhost();
     }
 
     private int countFastHits(Result result) {
@@ -221,12 +224,16 @@ public class FastSearcher extends VespaBackEndSearcher {
      * for efficiency.
      */
     private Backend chooseBackend(Query query) {
-        if ( ! query.properties().getBoolean(dispatchDirect, true)) return dispatchBackend;
+        // TODO 2016-08-16: Turn this on by default (by changing the 'false' below to 'true')
+        if ( ! query.properties().getBoolean(dispatchDirect, false)) return dispatchBackend;
+
+        // Don't use direct dispatch if the upstream ClusterSearcher did not chose the local dispatch
+        // as that probably means that we are in a failover situation
+        if ( ! dispatchBackend.getHost().equals(selfHostname)) return dispatchBackend;
 
         Optional<SearchCluster.Node> directDispatchRecipient = dispatcher.searchCluster().directDispatchTarget();
         if ( ! directDispatchRecipient.isPresent()) return dispatchBackend;
 
-        // Dispatch directly to the single, local search node
         query.trace(false, 2, "Dispatching directly to ", directDispatchRecipient.get());
         return fs4ResourcePool.getBackend(directDispatchRecipient.get().hostname(), 
                                           directDispatchRecipient.get().fs4port());

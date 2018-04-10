@@ -29,10 +29,10 @@ public class DirectSearchTestCase {
     }
 
     @Test
-    public void testDirectSearchEnabledByDefault() {
+    public void testDirectSearchDisabledByDefault() {
         FastSearcherTester tester = new FastSearcherTester(1, FastSearcherTester.selfHostname + ":9999:0");
         tester.search("?query=test");
-        assertEquals("The FastSearcher has used the local search node connection", 1, tester.requestCount(FastSearcherTester.selfHostname, 9999));
+        assertEquals(0, tester.requestCount(FastSearcherTester.selfHostname, 9999));
     }
 
     @Test
