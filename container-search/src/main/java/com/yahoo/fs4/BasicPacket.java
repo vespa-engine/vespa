@@ -28,10 +28,8 @@ public abstract class BasicPacket {
 
     protected ByteBuffer encodingBuffer;
 
-    /**
-     * The length of this packet in bytes or -1 if not known
-     */
-    protected int length=-1;
+    /** The length of this packet in bytes or -1 if not known */
+    protected int length = -1;
 
     /**
      * A timestamp which can be set or inspected by clients of this class
@@ -49,6 +47,7 @@ public abstract class BasicPacket {
     /**
      * Sets the number of bytes the package must be before activating compression.
      * A value of 0 means no compression.
+     *
      * @param limit smallest package size that triggers compression.
      */
     public void setCompressionLimit(int limit) { compressionLimit = limit; }
@@ -64,8 +63,8 @@ public abstract class BasicPacket {
      * @throws UnsupportedOperationException if not implemented in the subclass
      */
     public BasicPacket decode(ByteBuffer buffer) {
-        length=buffer.getInt()+4; // Streamed packet length is the length-4
-        int code=buffer.getInt();
+        length = buffer.getInt()+4; // Streamed packet length is the length-4
+        int code = buffer.getInt();
 
         decodeAndDecompressBody(buffer, code, length - 2*4);
         return this;
@@ -88,7 +87,8 @@ public abstract class BasicPacket {
                 compressedData = new byte[compressedSize];
                 buffer.get(compressedData);
             }
-            byte[] body = compressor.decompress(CompressionType.valueOf(compressionType), compressedData, offset, uncompressedSize, Optional.of(compressedSize));
+            byte[] body = compressor.decompress(CompressionType.valueOf(compressionType), compressedData, offset,
+                                                uncompressedSize, Optional.of(compressedSize));
             ByteBuffer bodyBuffer = ByteBuffer.wrap(body);
             length += uncompressedSize - (compressedSize + 4);
             decodeBody(bodyBuffer);
@@ -104,8 +104,7 @@ public abstract class BasicPacket {
      * @throws UnsupportedOperationException if not implemented in the subclass
      */
     public void decodeBody(ByteBuffer buffer) {
-        throw new UnsupportedOperationException("Decoding of " + this +
-                                                " is not implemented");
+        throw new UnsupportedOperationException("Decoding of " + this + " is not implemented");
     }
 
     /**
@@ -115,7 +114,7 @@ public abstract class BasicPacket {
      * will use this method to store the code.
      */
     protected void codeDecodedHook(int code) {
-        if (code!=getCode())
+        if (code != getCode())
             throw new RuntimeException("Can not decode " + code + " into " + this);
     }
 
@@ -132,9 +131,7 @@ public abstract class BasicPacket {
      * @return this for convenience
      * @throws UnsupportedOperationException if not implemented in the subclass
      */
-    public BasicPacket encode(ByteBuffer buffer)
-        throws BufferTooSmallException
-    {
+    public BasicPacket encode(ByteBuffer buffer) throws BufferTooSmallException {
         int oldLimit = buffer.limit();
         int startPosition = buffer.position();
 
@@ -227,7 +224,7 @@ public abstract class BasicPacket {
         allocateAndEncode(channelId, DEFAULT_WRITE_BUFFER_SIZE);
     }
 
-    private final void allocateAndEncode(int channelId, int initialSize) {
+    private void allocateAndEncode(int channelId, int initialSize) {
         if (encodingBuffer != null) {
             patchChannelId(encodingBuffer, channelId);
             return;
@@ -261,25 +258,23 @@ public abstract class BasicPacket {
      * remove internal reference to it.
      */
     public final ByteBuffer grantEncodingBuffer(int channelId) {
-        ByteBuffer b;
         if (encodingBuffer == null) {
             allocateAndEncode(channelId);
         } else {
             patchChannelId(encodingBuffer, channelId);
         }
-        b = encodingBuffer;
+        ByteBuffer b = encodingBuffer;
         encodingBuffer = null;
         return b;
     }
 
     public final ByteBuffer grantEncodingBuffer(int channelId, int initialSize) {
-        ByteBuffer b;
         if (encodingBuffer == null) {
             allocateAndEncode(channelId, initialSize);
         } else {
             patchChannelId(encodingBuffer, channelId);
         }
-        b = encodingBuffer;
+        ByteBuffer b = encodingBuffer;
         encodingBuffer = null;
         return b;
     }

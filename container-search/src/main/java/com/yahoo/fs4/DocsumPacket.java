@@ -52,8 +52,7 @@ public class DocsumPacket extends Packet {
 
     public String toString() {
         return "docsum packet [globalId: " + globalId.toString() +
-            ", size: " + (data==null ? "(no data)" : data.length +
-                          " bytes") + " ]";
+               ", size: " + (data==null ? "(no data)" : data.length + " bytes") + " ]";
     }
 
 }

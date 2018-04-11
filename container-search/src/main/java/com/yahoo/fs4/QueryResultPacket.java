@@ -9,19 +9,20 @@ import java.util.List;
 
 
 /**
- * An "extended query result" packet. This is the query result packets used today,
- * they allow more flexible sets of parameters to be shipped with query results.
- * This packet can be decoded only.
+ * A query result packet (code 217). This packet can be decoded only.
  *
  * @author bratseth
  */
 public class QueryResultPacket extends Packet {
 
-    /** This may have code 202, 208, 214 or 217 of historical reasons */
-    private int code;
+    /** The code of this type of package */
+    private static final int code = 217;
 
-    /** Whether mld stuff, whatever that is, is included in this result */
-    private boolean mldFeature=false;
+    /** Whether mld data is included in this result */
+    private boolean mldFeature = false;
+
+    /** Whether sort data is included in this result */
+    private boolean sortData = false;
 
     /** Whether coverage information is included in this result */
     private boolean coverageNodes = false;
@@ -90,21 +91,29 @@ public class QueryResultPacket extends Packet {
 
     @Override
     public void decodeBody(ByteBuffer buffer) {
-        IntBuffer ints=buffer.asIntBuffer();
-
+        IntBuffer ints = buffer.asIntBuffer();
         decodeFeatures(ints);
         offset = ints.get();
-        int documentCount=ints.get();
-        buffer.position(buffer.position() + ints.position()*4);
+        int documentCount = ints.get();
+        buffer.position(buffer.position() + ints.position() * 4);
         totalDocumentCount = buffer.getLong();
         maxRank = decodeMaxRank(buffer);
         ints = buffer.asIntBuffer();
-        docstamp=ints.get();
-        buffer.position(buffer.position() + ints.position()*4);
+        docstamp = ints.get();
+        buffer.position(buffer.position() + ints.position() * 4);
+        // do not access "ints" below here!
+
         if (coverageNodes) {
             nodesQueried = buffer.getShort();
             nodesReplied = buffer.getShort();
         }
+
+        if (sortData && documentCount > 0) { // sort data is not needed - skip
+            buffer.position(buffer.position() + (documentCount -1) * 4); // one sortIndex int per document
+            int sortDataLengthInBytes = buffer.getInt();
+            buffer.position(buffer.position() + sortDataLengthInBytes);
+        }
+
         if (groupDataFeature) {
             int len = buffer.getInt();
             groupData = new byte[len];
@@ -134,44 +143,36 @@ public class QueryResultPacket extends Packet {
     /**
      * feature bits
      */
-    public static final int QRF_MLD             = 0x00000001;
-    public static final int QRF_COVERAGE_NODES  = 0x00000002;
-    public static final int QRF_SORTDATA        = 0x00000010;
-    public static final int QRF_UNUSED_1        = 0x00000020;
-    public static final int QRF_UNUSED_2        = 0x00000040;
-    public static final int QRF_GROUPDATA       = 0x00000200;
-    public static final int QRF_PROPERTIES      = 0x00000400;
+    private static final int QRF_MLD             = 0x00000001;
+    private static final int QRF_COVERAGE_NODES  = 0x00000002;
+    private static final int QRF_SORTDATA        = 0x00000010;
+    private static final int QRF_UNUSED_1        = 0x00000020;
+    private static final int QRF_UNUSED_2        = 0x00000040;
+    private static final int QRF_GROUPDATA       = 0x00000200;
+    private static final int QRF_PROPERTIES      = 0x00000400;
 
-    /**
-     * Sets the features of this package.
-     * Features are either encoded by different package codes
-     * or by a feature int, for reasons not easily comprehended.
-     */
+    /** Decodes the feature int of this package data into boolean feature fields */
     private void decodeFeatures(IntBuffer buffer) {
-        switch (getCode()) {
-        case 217:
-                int features=buffer.get();
-                mldFeature       = (QRF_MLD & features) != 0;
-                // Data given by sortFeature not currently used by QRS:
-                // sortFeature   = (QRF_SORTDATA & features) != 0;
-                coverageNodes    = (QRF_COVERAGE_NODES & features) != 0;
-                groupDataFeature = (QRF_GROUPDATA & features) != 0;
-                propsFeature     = (QRF_PROPERTIES & features) != 0;
-                break;
-            default:
-                throw new RuntimeException("Programming error, packet " + getCode() + "Not expected.");
-        }
+        int features = buffer.get();
+        mldFeature       = (QRF_MLD & features) != 0;
+        sortData = (QRF_SORTDATA & features) != 0;
+        coverageNodes    = (QRF_COVERAGE_NODES & features) != 0;
+        groupDataFeature = (QRF_GROUPDATA & features) != 0;
+        propsFeature     = (QRF_PROPERTIES & features) != 0;
     }
 
     private void decodeDocuments(ByteBuffer buffer, int documentCount) {
-        for (int i=0; i<documentCount; i++) {
+        for (int i = 0; i < documentCount; i++) {
             documents.add(new DocumentInfo(buffer, this));
         }
     }
 
     public int getCode() { return code; }
 
-    protected void codeDecodedHook(int code) { this.code=code; }
+    protected void codeDecodedHook(int code) {
+        if ( code != QueryResultPacket.code)
+            throw new RuntimeException("Programming error, packet " + getCode() + "Not expected.");
+    }
 
     public int getDocumentCount() { return documents.size(); }
 

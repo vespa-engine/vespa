@@ -21,6 +21,7 @@ import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.protect.FreezeDetector;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.Response;
 import com.yahoo.language.Linguistics;
 import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
@@ -55,6 +56,8 @@ import com.yahoo.statistics.Value;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
