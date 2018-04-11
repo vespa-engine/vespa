@@ -117,7 +117,7 @@ public class AclMaintainerTest {
                 "-P INPUT ACCEPT\n" +
                 "-P OUTPUT ACCEPT\n" +
                 "-P POSTROUTING ACCEPT\n" +
-                "-A OUTPUT -d 3001::1 -j REDIRECT";
+                "-A OUTPUT -d 3001::1/128 -j REDIRECT";
 
         whenListRules(container.name, "filter", IPVersion.IPv6, IPV6);
         whenListRules(container.name, "filter", IPVersion.IPv4, ""); //IPv4 will then differ from wanted
@@ -160,7 +160,7 @@ public class AclMaintainerTest {
                 "-P INPUT ACCEPT\n" +
                 "-P OUTPUT ACCEPT\n" +
                 "-P POSTROUTING ACCEPT\n" +
-                "-A OUTPUT -d 3001::1 -j REDIRECT";
+                "-A OUTPUT -d 3001::1/128 -j REDIRECT";
 
         whenListRules(container.name, "filter", IPVersion.IPv6, IPV6_FILTER);
         whenListRules(container.name, "nat", IPVersion.IPv6, IPV6_NAT);
@@ -183,7 +183,7 @@ public class AclMaintainerTest {
                 "-P INPUT ACCEPT\n" +
                 "-P OUTPUT ACCEPT\n" +
                 "-P POSTROUTING ACCEPT\n" +
-                "-A OUTPUT -d 3001::1 -j REDIRECT";
+                "-A OUTPUT -d 3001::1/128 -j REDIRECT";
 
         whenListRules(container.name, "filter", IPVersion.IPv6, "");
         whenListRules(container.name, "filter", IPVersion.IPv4, "");

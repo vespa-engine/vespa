@@ -50,7 +50,7 @@ public class AclMaintainer implements Runnable {
                 , "-P INPUT ACCEPT"
                 , "-P OUTPUT ACCEPT"
                 , "-P POSTROUTING ACCEPT"
-                , "-A OUTPUT -d " + InetAddresses.toAddrString(address) + " -j REDIRECT");
+                , "-A OUTPUT -d " + InetAddresses.toAddrString(address) + ipVersion.singleHostCidr() + " -j REDIRECT");
 
         IPTablesRestore.syncTableLogOnError(dockerOperations, container.name, ipVersion, "nat", redirectStatements);
     }
