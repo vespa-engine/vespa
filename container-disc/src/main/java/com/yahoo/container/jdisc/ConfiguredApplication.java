@@ -86,7 +86,7 @@ public final class ConfiguredApplication implements Application {
     private ScheduledThreadPoolExecutor shutdownDeadlineExecutor;
     private Thread reconfigurerThread;
     private Thread portWatcher;
-    private volatile QrConfig qrConfig;
+    private QrConfig qrConfig;
 
     static {
         LogSetup.initVespaLogging("Container");
@@ -122,14 +122,13 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void start() {
         qrConfig = getConfig(QrConfig.class);
-        log.info("QrConfig.restartOnDeploy: " + qrConfig.restartOnDeploy());
         hackToInitializeServer(qrConfig);
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
         configureComponents(builder.guiceModules().activate());
 
         intitializeAndActivateContainer(builder);
-        startReconfigurerThread();
+        if (! qrConfig.restartOnDeploy()) startReconfigurerThread();
         portWatcher = new Thread(this::watchPortChange);
         portWatcher.setDaemon(true);
         portWatcher.start();
@@ -202,12 +201,6 @@ public final class ConfiguredApplication implements Application {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
                     configurer.runOnceAndEnsureRegistryHackRun(builder.guiceModules().activate());
                     intitializeAndActivateContainer(builder);
-                    if (qrConfig.restartOnDeploy()) {
-                        log.info("Stopping reconfigurer thread.");
-                        break;
-                    } else {
-                        log.info("Keeping reconfigurer thread alive.");
-                    }
                 } catch (ConfigInterruptedException | InterruptedException e) {
                     break;
                 } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
@@ -219,7 +212,7 @@ public final class ConfiguredApplication implements Application {
                                                         "a bad state and will terminate", e);
                 }
             }
-            log.info("Shutting down HandlersConfigurerDi");
+            log.fine("Shutting down HandlersConfigurerDi");
         });
         reconfigurerThread.start();
     }
@@ -300,6 +293,7 @@ public final class ConfiguredApplication implements Application {
     }
 
     private void shutdownReconfigurerThread() {
+        if (reconfigurerThread == null) return;
         reconfigurerThread.interrupt();
         try {
             //Workaround for component constructors masking InterruptedException.
