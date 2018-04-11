@@ -1,8 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.yahoo.container.logging.AccessLog;
+import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
@@ -58,12 +60,13 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
  * @author bakksjo
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class HttpServerTest {
 
@@ -117,6 +120,34 @@ public class HttpServerTest {
         driver.client().get("/status.html")
               .expectStatusCode(is(REQUEST_URI_TOO_LONG));
         assertThat(driver.close(), is(true));
+    }
+
+    @Test
+    public void requireThatAccessLogIsCalledForRequestRejectedByJetty() throws Exception {
+        AccessLogMock accessLogMock = new AccessLogMock();
+        final TestDriver driver = TestDrivers.newConfiguredInstance(
+                mockRequestHandler(),
+                new ServerConfig.Builder(),
+                new ConnectorConfig.Builder().requestHeaderSize(1),
+                binder -> binder.bind(AccessLog.class).toInstance(accessLogMock));
+        driver.client().get("/status.html")
+                .expectStatusCode(is(REQUEST_URI_TOO_LONG));
+        assertThat(accessLogMock.logEntries.size(), equalTo(1));
+        AccessLogEntry accessLogEntry = accessLogMock.logEntries.get(0);
+        assertThat(accessLogEntry.getStatusCode(), equalTo(414));
+        assertThat(driver.close(), is(true));
+    }
+
+    private static class AccessLogMock extends AccessLog {
+
+        final List<AccessLogEntry> logEntries = new ArrayList<>();
+
+        AccessLogMock() { super(null); }
+
+        @Override
+        public void log(AccessLogEntry accessLogEntry) {
+            logEntries.add(accessLogEntry);
+        }
     }
 
     @Test

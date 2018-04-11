@@ -64,8 +64,8 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
             final long endTime = System.currentTimeMillis();
             accessLogEntry.setTimeStamp(startTime);
             accessLogEntry.setDurationBetweenRequestResponse(endTime - startTime);
-            accessLogEntry.setReturnedContentSize(response.getContentCount());
-            accessLogEntry.setStatusCode(response.getStatus());
+            accessLogEntry.setReturnedContentSize(response.getHttpChannel().getBytesWritten());
+            accessLogEntry.setStatusCode(response.getCommittedMetaData().getStatus());
 
             accessLog.log(accessLogEntry);
         } catch (Exception e) {
