@@ -48,6 +48,24 @@ public class AclMaintainerTest {
     }
 
     @Test
+    public void empty_trusted_ports_are_handled() {
+        Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
+        Map<String, Acl> acls = makeAcl(container.hostname, "4321", "2001::1");
+
+        when(nodeRepository.getAcls(NODE_ADMIN_HOSTNAME)).thenReturn(acls);
+
+        whenListRules(container.name, "filter", IPVersion.IPv6, "");
+        whenListRules(container.name, "filter", IPVersion.IPv4, "");
+        whenListRules(container.name, "nat", IPVersion.IPv4, "");
+        whenListRules(container.name, "nat", IPVersion.IPv6, "");
+
+        aclMaintainer.run();
+
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("iptables-restore"), anyVararg()); //we don;t have a ip4 address for the container so no redirect either
+        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables-restore"), anyVararg());
+    }
+
+    @Test
     public void configures_container_acl_when_iptables_differs() {
         Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
         Map<String, Acl> acls = makeAcl(container.hostname, "4321", "2001::1");
@@ -93,7 +111,7 @@ public class AclMaintainerTest {
                 "-A INPUT -p tcp -m multiport --dports 4321,2345,22 -j ACCEPT\n" +
                 "-A INPUT -s 2001::1/128 -j ACCEPT\n" +
                 "-A INPUT -s fd01:1234::4321/128 -j ACCEPT\n" +
-                "-A INPUT -j REJECT";
+                "-A INPUT -j REJECT --reject-with icmp-port-unreachable";
 
         String NATv6 = "-P PREROUTING ACCEPT\n" +
                 "-P INPUT ACCEPT\n" +
@@ -126,7 +144,7 @@ public class AclMaintainerTest {
                 "-A INPUT -p icmp -j ACCEPT\n" +
                 "-A INPUT -p tcp -m multiport --dports 22,4443,2222 -j ACCEPT\n" +
                 "-A INPUT -s 192.64.13.2/32 -j ACCEPT\n" +
-                "-A INPUT -j REJECT";
+                "-A INPUT -j REJECT --reject-with icmp-port-unreachable";
 
         String IPV6_FILTER = "-P INPUT ACCEPT\n" +
                 "-P FORWARD ACCEPT\n" +
@@ -136,7 +154,7 @@ public class AclMaintainerTest {
                 "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
                 "-A INPUT -p tcp -m multiport --dports 22,4443,2222 -j ACCEPT\n" +
                 "-A INPUT -s 2001::1/128 -j ACCEPT\n" +
-                "-A INPUT -j REJECT";
+                "-A INPUT -j REJECT --reject-with icmp-port-unreachable";
 
         String IPV6_NAT = "-P PREROUTING ACCEPT\n" +
                 "-P INPUT ACCEPT\n" +

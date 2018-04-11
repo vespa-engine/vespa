@@ -48,9 +48,9 @@ public class Acl {
                 // Allow ICMP packets. See http://shouldiblockicmp.com/
                 , "-A INPUT -p " + ipVersion.icmpProtocol() + " -j ACCEPT");
 
-        // Allow trusted ports
+        // Allow trusted ports if any
         String commaSeparatedPorts = trustedPorts.stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","));
-        String ports = "-A INPUT -p tcp -m multiport --dports " + commaSeparatedPorts + " -j ACCEPT";
+        String ports = commaSeparatedPorts.isEmpty() ? "" : "-A INPUT -p tcp -m multiport --dports " + commaSeparatedPorts + " -j ACCEPT\n";
 
         // Allow traffic from trusted nodes
         String nodes = trustedNodes.stream()
@@ -59,9 +59,9 @@ public class Acl {
                 .collect(Collectors.joining("\n"));
 
         // We reject instead of dropping to give us an easier time to figure out potential network issues
-        String rejectEverythingElse = "-A INPUT -j REJECT";
+        String rejectEverythingElse = "-A INPUT -j REJECT --reject-with icmp-port-unreachable";
 
-        return String.join("\n", basics, ports, nodes, rejectEverythingElse);
+        return basics + "\n" + ports + nodes + "\n" + rejectEverythingElse;
     }
 
     @Override
