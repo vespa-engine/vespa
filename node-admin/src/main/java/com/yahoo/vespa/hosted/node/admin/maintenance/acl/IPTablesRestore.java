@@ -39,16 +39,17 @@ public class IPTablesRestore {
 
             // Compare and apply wanted if different
             if (!rules.equals(currentRules)) {
+                log.info(ipVersion.iptablesCmd() + " table: " + table + " differs. Wanted:\n" + rules + "\nGot\n" + currentRules);
                 file = writeTempFile(ipVersion.name(),  "*" + table + "\n" + rules + "\nCOMMIT\n");
                 dockerOperations.executeCommandInNetworkNamespace(containerName,  ipVersion.iptablesCmd() + "-restore", file.getAbsolutePath());
             }
         } catch (Exception e) {
             if (flush) {
-                log.error("Exception occurred while configuring ACLs for " + containerName.asString() + ", attempting rollback", e);
+                log.error("Exception occurred while syncing iptable " + table + " for " + containerName.asString() + ", attempting rollback", e);
                 try {
                     dockerOperations.executeCommandInNetworkNamespace(containerName, ipVersion.iptablesCmd(), "-F", "-t", table);
                 } catch (Exception ne) {
-                    log.error("Rollback of ACLs for " + containerName.asString() + " failed, giving up", ne);
+                    log.error("Rollback of table " + table + " for " + containerName.asString() + " failed, giving up", ne);
                 }
             } else {
                 log.warning("Unable to sync iptables for " + table, e);

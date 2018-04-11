@@ -42,25 +42,28 @@ public class AclMaintainer implements Runnable {
         this.nodeAdminHostname = nodeAdminHostname;
     }
 
-    private void applyRedirect(Container container, InetAddress address, IPVersion ipVersion) {
+    private void applyRedirect(Container container, InetAddress address) {
+        IPVersion ipVersion = IPVersion.get(address);
+
         String redirectStatements = String.join("\n"
                 , "-P PREROUTING ACCEPT"
                 , "-P INPUT ACCEPT"
                 , "-P OUTPUT ACCEPT"
                 , "-P POSTROUTING ACCEPT"
-                , "-A OUTPUT -d " + InetAddresses.toAddrString(address) + ipVersion.singleHostCidr() + " -j REDIRECT");
+                , "-A OUTPUT -d " + InetAddresses.toAddrString(address) + " -j REDIRECT");
 
         IPTablesRestore.syncTableLogOnError(dockerOperations, container.name, ipVersion, "nat", redirectStatements);
     }
 
     private void apply(Container container, Acl acl) {
+        log.debug("Apply acl to container: " + container.name);
         // Apply acl to the filter table
         IPTablesRestore.syncTableFlushOnError(dockerOperations, container.name, IPVersion.IPv6, "filter", acl.toRules(IPVersion.IPv6));
         IPTablesRestore.syncTableFlushOnError(dockerOperations, container.name, IPVersion.IPv4, "filter", acl.toRules(IPVersion.IPv4));
 
         // Apply redirect to the nat table
-        ipAddresses.getAddress(container.hostname, IPVersion.IPv4).ifPresent(addr -> applyRedirect(container, addr, IPVersion.IPv4));
-        ipAddresses.getAddress(container.hostname, IPVersion.IPv6).ifPresent(addr -> applyRedirect(container, addr, IPVersion.IPv4));
+        ipAddresses.getAddress(container.hostname, IPVersion.IPv4).ifPresent(addr -> applyRedirect(container, addr));
+        ipAddresses.getAddress(container.hostname, IPVersion.IPv6).ifPresent(addr -> applyRedirect(container, addr));
     }
 
     private synchronized void configureAcls() {
