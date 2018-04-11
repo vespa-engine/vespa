@@ -143,17 +143,17 @@ public class QueryResultPacket extends Packet {
     /**
      * feature bits
      */
-    public static final int QRF_MLD             = 0x00000001;
-    public static final int QRF_COVERAGE_NODES  = 0x00000002;
-    public static final int QRF_SORTDATA        = 0x00000010;
-    public static final int QRF_UNUSED_1        = 0x00000020;
-    public static final int QRF_UNUSED_2        = 0x00000040;
-    public static final int QRF_GROUPDATA       = 0x00000200;
-    public static final int QRF_PROPERTIES      = 0x00000400;
+    private static final int QRF_MLD             = 0x00000001;
+    private static final int QRF_COVERAGE_NODES  = 0x00000002;
+    private static final int QRF_SORTDATA        = 0x00000010;
+    private static final int QRF_UNUSED_1        = 0x00000020;
+    private static final int QRF_UNUSED_2        = 0x00000040;
+    private static final int QRF_GROUPDATA       = 0x00000200;
+    private static final int QRF_PROPERTIES      = 0x00000400;
 
     /** Decodes the feature int of this package data into boolean feature fields */
     private void decodeFeatures(IntBuffer buffer) {
-        int features=buffer.get();
+        int features = buffer.get();
         mldFeature       = (QRF_MLD & features) != 0;
         sortData = (QRF_SORTDATA & features) != 0;
         coverageNodes    = (QRF_COVERAGE_NODES & features) != 0;
@@ -170,7 +170,7 @@ public class QueryResultPacket extends Packet {
     public int getCode() { return code; }
 
     protected void codeDecodedHook(int code) {
-        if ( code != this.code)
+        if ( code != QueryResultPacket.code)
             throw new RuntimeException("Programming error, packet " + getCode() + "Not expected.");
     }
 
