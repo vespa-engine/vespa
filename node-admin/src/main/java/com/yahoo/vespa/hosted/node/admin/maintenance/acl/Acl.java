@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -24,20 +25,23 @@ public class Acl {
     private final List<InetAddress> trustedNodes;
     private final List<Integer> trustedPorts;
 
+    /**
+     * @param trustedPorts Ports that hostname should trust
+     * @param trustedNodes Other hostnames that this hostname should trust
+     */
     public Acl(List<Integer> trustedPorts, List<InetAddress> trustedNodes) {
         this.trustedNodes = trustedNodes != null ? ImmutableList.copyOf(trustedNodes) : Collections.emptyList();
         this.trustedPorts = trustedPorts != null ? ImmutableList.copyOf(trustedPorts) : Collections.emptyList();
     }
 
-    public String toRestoreCommand(InetAddress containerAddress) {
+    public String toRestoreCommand(IPVersion ipVersion, Optional<InetAddress> redirectAddress) {
         return String.join("\n"
                 , "*filter"
-                , toListRules(containerAddress)
+                , toListRules(ipVersion, redirectAddress)
                 , "COMMIT\n");
     }
 
-    public String toListRules(InetAddress containerAddress) {
-        IPVersion ipVersion = IPVersion.get(containerAddress);
+    public String toListRules(IPVersion ipVersion, Optional<InetAddress> redirectAddress) {
 
         String basics = String.join("\n"
                 // We reject with rules instead of using policies
@@ -61,12 +65,19 @@ public class Acl {
                 .map(ipAddress -> "-A INPUT -s " + InetAddresses.toAddrString(ipAddress) + ipVersion.singleHostCidr() + " -j ACCEPT")
                 .collect(Collectors.joining("\n"));
 
+        // We reject instead of dropping to give us an easier time to figure out potential network issues
         String rejectEverythingElse = "-A INPUT -j REJECT";
 
-        // Redirect calls to itself to loopback interface (this to avoid socket collision on bridged networks)
-        String redirectSelf = "-A OUTPUT -d " + InetAddresses.toAddrString(containerAddress) + " -j REDIRECT";
+        // Temporary result before the conditional redirect
+        String result = String.join("\n", basics, ports, nodes, rejectEverythingElse);
 
-        return String.join("\n", basics, ports, nodes, rejectEverythingElse, redirectSelf);
+        // Redirect calls to itself to loopback interface (this to avoid socket collision on bridged networks)
+        if (redirectAddress.isPresent()) {
+            result = String.join("\n", result,
+                    "-A OUTPUT -d " + InetAddresses.toAddrString(redirectAddress.get()) + " -j REDIRECT");
+        }
+
+        return result;
     }
 
     @Override

@@ -23,7 +23,7 @@ public interface NodeRepository {
 
     List<NodeSpec> getNodes(NodeType... nodeTypes);
 
-    Map<String, Acl> getAcl(String hostname, Set<String> containers);
+    Map<String, Acl> getAcls(String hostname);
 
     void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes);
 

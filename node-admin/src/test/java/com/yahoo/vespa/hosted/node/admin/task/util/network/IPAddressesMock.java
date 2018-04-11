@@ -28,6 +28,7 @@ public class IPAddressesMock implements IPAddresses {
     @Override
     public InetAddress[] getAddresses(String hostname) {
         List<InetAddress> addresses = otherAddresses.get(hostname);
+        if (addresses == null) return new InetAddress[0];
         return addresses.toArray(new InetAddress[addresses.size()]);
     }
 }

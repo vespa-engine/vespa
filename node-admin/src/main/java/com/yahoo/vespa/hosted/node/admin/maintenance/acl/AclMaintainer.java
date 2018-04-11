@@ -50,12 +50,11 @@ public class AclMaintainer implements Runnable {
 
     private void apply(Container container, Acl acl, IPVersion ipVersion) {
 
-        // Get the local address - empty if system has no
+        // Get the DNS address for this host
         Optional<InetAddress> address = ipAddresses.getAddress(container.hostname, ipVersion);
-        if (!address.isPresent()) return;
 
         // Generate wanted/expected iptables
-        String wantedFilterTable = acl.toListRules(address.get());
+        String wantedFilterTable = acl.toListRules(ipVersion, address);
 
         File file = null;
         try {
@@ -66,7 +65,7 @@ public class AclMaintainer implements Runnable {
 
             // 4. Compare and apply wanted if different
             if (!wantedFilterTable.equals(currentFilterTable)) {
-                String command = acl.toRestoreCommand(address.get());
+                String command = acl.toRestoreCommand(ipVersion, address);
                 file = writeTempFile(ipVersion.name(), command);
                 dockerOperations.executeCommandInNetworkNamespace(container.name,  ipVersion.iptablesCmd() + "-restore", file.getAbsolutePath());
             }
@@ -105,10 +104,11 @@ public class AclMaintainer implements Runnable {
         Map<String, Container> runningContainers = dockerOperations
                 .getAllManagedContainers().stream()
                 .filter(container -> container.state.isRunning())
-                .collect(Collectors.toMap(container -> container.name.asString(), container -> container));
+                .collect(Collectors.toMap(container -> container.hostname, container -> container));
 
-        nodeRepository.getAcl(nodeAdminHostname, runningContainers.keySet())
-                .forEach((containerName, acl) -> apply(runningContainers.get(containerName), acl));
+        nodeRepository.getAcls(nodeAdminHostname).entrySet().stream()
+                .filter(entry -> runningContainers.containsKey(entry.getKey()))
+                .forEach(entry -> apply(runningContainers.get(entry.getKey()), entry.getValue()));
     }
 
     @Override

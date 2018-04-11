@@ -17,6 +17,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author stiankri, dybis
@@ -84,8 +86,12 @@ public class RealNodeRepository implements NodeRepository {
         }
     }
 
+    /**
+     * Get all ACLs that belongs to a hostname. Usually this is a parent host and all
+     * ACLs for child nodes are returned.
+     */
     @Override
-    public Map<String, Acl> getAcl(String hostName, Set<String> containerNames) {
+    public Map<String, Acl> getAcls(String hostName) {
         Map<String, Acl> acls = new HashMap<>();
         try {
             final String path = String.format("/nodes/v2/acl/%s?children=true", hostName);
@@ -99,13 +105,18 @@ public class RealNodeRepository implements NodeRepository {
             Map<String, List<GetAclResponse.Node>> trustedNodes = response.trustedNodes.stream()
                     .collect(Collectors.groupingBy(GetAclResponse.Node::getTrustedBy));
 
-            // For each container create an ACL - use empty lists if no trusted ports or nodes are found
-            containerNames.forEach(containerName -> acls.put(containerName,
-                    new Acl(trustedPorts.getOrDefault(containerName, new ArrayList<>())
-                            .stream().map(port -> port.port)
-                            .collect(Collectors.toList()), trustedNodes.getOrDefault(containerName, new ArrayList<>())
-                            .stream().map(node -> InetAddresses.forString(node.ipAddress))
-                            .collect(Collectors.toList()))));
+            // For each hostname create an ACL
+            Stream.of(trustedNodes.keySet(), trustedPorts.keySet())
+                    .flatMap(Set::stream)
+                    .forEach(hostname -> acls.put(hostname,
+                            new Acl(
+                                    trustedPorts.getOrDefault(hostname, new ArrayList<>())
+                                            .stream().map(port -> port.port)
+                                            .collect(Collectors.toList()),
+
+                                    trustedNodes.getOrDefault(hostname, new ArrayList<>())
+                                            .stream().map(node -> InetAddresses.forString(node.ipAddress))
+                                            .collect(Collectors.toList()))));
 
         } catch (HttpException.NotFoundException e) {
             NODE_ADMIN_LOGGER.warning("Failed to fetch ACLs for " + hostName + " No ACL will be applied");

@@ -55,7 +55,7 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public Map<String, Acl> getAcl(String hostname, Set<String> containers) {
+    public Map<String, Acl> getAcls(String hostname) {
         synchronized (monitor) {
             return acls;
         }
