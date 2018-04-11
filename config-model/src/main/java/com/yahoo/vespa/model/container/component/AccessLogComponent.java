@@ -27,10 +27,11 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     private final DeployState deployState;
     private final String symlinkName;
 
-    public AccessLogComponent(AccessLogType logType, String clusterName) {
+    public AccessLogComponent(AccessLogType logType, String clusterName, DeployState deployState)
+    {
         this(logType,
                 String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName, "%Y%m%d%H%M%S"),
-                null, null, null, null,
+                null, null, null, deployState,
                 capitalize(logType.name()) + "." + clusterName);
     }
 
