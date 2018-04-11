@@ -61,7 +61,8 @@ ResultProcessor::ResultProcessor(IAttributeContext &attrContext,
                                  GroupingContext &groupingContext,
                                  const vespalib::string &sessionId,
                                  const vespalib::string &sortSpec,
-                                 size_t offset, size_t hits)
+                                 size_t offset, size_t hits,
+                                 bool drop_sort_data)
     : _attrContext(attrContext),
       _metaStore(metaStore),
       _sessionMgr(sessionMgr),
@@ -70,6 +71,7 @@ ResultProcessor::ResultProcessor(IAttributeContext &attrContext,
       _sortSpec(sortSpec),
       _offset(offset),
       _hits(hits),
+      _drop_sort_data(drop_sort_data),
       _wasMerged(false)
 {
     if (!_groupingContext.empty()) {
@@ -138,7 +140,7 @@ ResultProcessor::makeReply(PartialResultUP full_result)
         dst.metric = src._rankValue;
         LOG(debug, "convertLidToGid: hit[%zu]: lid(%u) -> gid(%s)", i, docId, dst.gid.toString().c_str());
     }
-    if (result.hasSortData() && hitcnt > 0) {
+    if (result.hasSortData() && (hitcnt > 0) && !_drop_sort_data) {
         size_t sortDataSize = result.sortDataSize();
         for (size_t i = 0; i < hitOffset; ++i) {
             sortDataSize -= result.sortData(i).second;

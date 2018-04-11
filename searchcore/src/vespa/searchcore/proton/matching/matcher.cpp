@@ -245,7 +245,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
                            !_rankSetup->getSecondPhaseRank().empty(), !willNotNeedRanking(request, groupingContext));
 
         ResultProcessor rp(attrContext, metaStore, sessionMgr, groupingContext, sessionId,
-                           request.sortSpec, params.offset, params.hits);
+                           request.sortSpec, params.offset, params.hits, request.should_drop_sort_data());
 
         const Properties & rankProperties = request.propertiesMap.rankProperties();
         size_t numThreadsPerSearch = computeNumThreadsPerSearch(mtf->estimate(), rankProperties);

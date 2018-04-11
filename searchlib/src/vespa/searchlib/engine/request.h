@@ -24,6 +24,8 @@ public:
         return vespalib::stringref(&stackDump[0], stackDump.size());
     }
 
+    bool should_drop_sort_data() const;
+
 private:
     const fastos::TimeStamp _startTime;
     fastos::TimeStamp       _timeOfDoom;
