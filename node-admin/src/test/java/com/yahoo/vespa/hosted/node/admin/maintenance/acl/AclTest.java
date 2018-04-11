@@ -65,7 +65,7 @@ public class AclTest {
                         "-A INPUT -p tcp -m multiport --dports 1234,453 -j ACCEPT\n" +
                         "-A INPUT -s fb00::1/128 -j ACCEPT\n" +
                         "-A INPUT -s fe80::2/128 -j ACCEPT\n" +
-                        "-A INPUT -j REJECT --reject-with icmp-port-unreachable", listRulesIpv6);
+                        "-A INPUT -j REJECT --reject-with icmp6-port-unreachable", listRulesIpv6);
     }
 
     private List<Integer> createPortList(Integer... ports) {

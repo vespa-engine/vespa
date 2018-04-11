@@ -111,7 +111,7 @@ public class AclMaintainerTest {
                 "-A INPUT -p tcp -m multiport --dports 4321,2345,22 -j ACCEPT\n" +
                 "-A INPUT -s 2001::1/128 -j ACCEPT\n" +
                 "-A INPUT -s fd01:1234::4321/128 -j ACCEPT\n" +
-                "-A INPUT -j REJECT --reject-with icmp-port-unreachable";
+                "-A INPUT -j REJECT --reject-with icmp6-port-unreachable";
 
         String NATv6 = "-P PREROUTING ACCEPT\n" +
                 "-P INPUT ACCEPT\n" +
@@ -154,7 +154,7 @@ public class AclMaintainerTest {
                 "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
                 "-A INPUT -p tcp -m multiport --dports 22,4443,2222 -j ACCEPT\n" +
                 "-A INPUT -s 2001::1/128 -j ACCEPT\n" +
-                "-A INPUT -j REJECT --reject-with icmp-port-unreachable";
+                "-A INPUT -j REJECT --reject-with icmp6-port-unreachable";
 
         String IPV6_NAT = "-P PREROUTING ACCEPT\n" +
                 "-P INPUT ACCEPT\n" +

@@ -22,11 +22,11 @@ public class IPTablesRestore {
     private static final PrefixLogger log = PrefixLogger.getNodeAdminLogger(AclMaintainer.class);
 
     public static void syncTableFlushOnError(DockerOperations dockerOperations, ContainerName containerName, IPVersion ipVersion, String table, String rules) {
-       syncTable(dockerOperations,containerName,ipVersion, table, rules, true);
+        syncTable(dockerOperations, containerName, ipVersion, table, rules, true);
     }
 
     public static void syncTableLogOnError(DockerOperations dockerOperations, ContainerName containerName, IPVersion ipVersion, String table, String rules) {
-        syncTable(dockerOperations,containerName,ipVersion, table, rules, false);
+        syncTable(dockerOperations, containerName, ipVersion, table, rules, false);
     }
 
     private static void syncTable(DockerOperations dockerOperations, ContainerName containerName, IPVersion ipVersion, String table, String rules, boolean flush) {
@@ -34,14 +34,14 @@ public class IPTablesRestore {
         try {
             // Get current rules for table
             ProcessResult currentRulesResult =
-                    dockerOperations.executeCommandInNetworkNamespace(containerName,  ipVersion.iptablesCmd(),"-S","-t", table);
+                    dockerOperations.executeCommandInNetworkNamespace(containerName, ipVersion.iptablesCmd(), "-S", "-t", table);
             String currentRules = currentRulesResult.getOutput();
 
             // Compare and apply wanted if different
-            if (!rules.equals(currentRules)) {
+            if (!equalsWhenIgnoreSpaceAndCase(rules, currentRules)) {
                 log.info(ipVersion.iptablesCmd() + " table: " + table + " differs. Wanted:\n" + rules + "\nGot\n" + currentRules);
-                file = writeTempFile(ipVersion.name(),  "*" + table + "\n" + rules + "\nCOMMIT\n");
-                dockerOperations.executeCommandInNetworkNamespace(containerName,  ipVersion.iptablesRestore(), file.getAbsolutePath());
+                file = writeTempFile(ipVersion.name(), "*" + table + "\n" + rules + "\nCOMMIT\n");
+                dockerOperations.executeCommandInNetworkNamespace(containerName, ipVersion.iptablesRestore(), file.getAbsolutePath());
             }
         } catch (Exception e) {
             if (flush) {
@@ -71,5 +71,12 @@ public class IPTablesRestore {
         } catch (IOException e) {
             throw new RuntimeException("Unable to write restore file for iptables.", e);
         }
+    }
+
+    /**
+     * to be agnostic to potential variances in output (and simplify test cases)
+     */
+    private static boolean equalsWhenIgnoreSpaceAndCase(String a, String b) {
+        return a.trim().replaceAll("\\s+", " ").equalsIgnoreCase(b.trim().replaceAll("\\s+", " "));
     }
 }
