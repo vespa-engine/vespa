@@ -70,7 +70,7 @@ public class ClusterControllerContainer extends Container implements
         addBundle("file:" + getDefaults().underVespaHome("lib/jars/zkfacade-jar-with-dependencies.jar"));
 
         log.log(LogLevel.DEBUG, "Adding access log for cluster controller ...");
-        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.queryAccessLog, "controller"));
+        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.queryAccessLog, "controller", deployStateFrom(parent)));
     }
 
     @Override

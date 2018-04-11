@@ -709,7 +709,7 @@ public final class ContainerCluster
     }
 
     public void addDefaultSearchAccessLog() {
-        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.queryAccessLog, getName()));
+        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.queryAccessLog, getName(), getDeployState()));
     }
 
     @Override
