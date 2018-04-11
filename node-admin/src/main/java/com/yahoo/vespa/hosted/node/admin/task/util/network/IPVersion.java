@@ -12,23 +12,32 @@ import java.net.InetAddress;
  */
 public enum IPVersion {
 
-    IPv6("ip6tables", "ip -6", "ipv6-icmp", "/128"),
-    IPv4("iptables", "ip", "icmp", "/32");
+    IPv6("ip6tables", "ip -6", "ipv6-icmp", "/128", "icmp6-port-unreachable", "ip6tables-restore"),
+    IPv4("iptables", "ip", "icmp", "/32", "icmp-port-unreachable", "iptables-restore");
 
-    IPVersion(String iptablesCmd, String ipCmd, String icmpProtocol, String singleHostCidr) {
+    IPVersion(String iptablesCmd, String ipCmd,
+              String icmpProtocol, String singleHostCidr, String icmpPortUnreachable,
+              String iptablesRestore) {
         this.ipCmd = ipCmd;
         this.iptablesCmd = iptablesCmd;
         this.icmpProtocol = icmpProtocol;
         this.singleHostCidr = singleHostCidr;
+        this.icmpPortUnreachable = icmpPortUnreachable;
+        this.iptablesRestore = iptablesRestore;
     }
 
     private final String iptablesCmd;
     private final String ipCmd;
     private final String icmpProtocol;
     private final String singleHostCidr;
+    private final String icmpPortUnreachable;
+    private final String iptablesRestore;
 
     public String iptablesCmd() {
         return iptablesCmd;
+    }
+    public String iptablesRestore() {
+        return iptablesRestore;
     }
     public String ipCmd() {
         return ipCmd;
@@ -37,6 +46,7 @@ public enum IPVersion {
         return icmpProtocol;
     }
     public String singleHostCidr() { return singleHostCidr; }
+    public String icmpPortUnreachable() { return icmpPortUnreachable; }
 
     public boolean match(InetAddress address) {
         return this == IPVersion.get(address);

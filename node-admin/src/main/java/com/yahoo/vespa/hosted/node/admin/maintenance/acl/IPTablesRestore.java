@@ -41,7 +41,7 @@ public class IPTablesRestore {
             if (!rules.equals(currentRules)) {
                 log.info(ipVersion.iptablesCmd() + " table: " + table + " differs. Wanted:\n" + rules + "\nGot\n" + currentRules);
                 file = writeTempFile(ipVersion.name(),  "*" + table + "\n" + rules + "\nCOMMIT\n");
-                dockerOperations.executeCommandInNetworkNamespace(containerName,  ipVersion.iptablesCmd() + "-restore", file.getAbsolutePath());
+                dockerOperations.executeCommandInNetworkNamespace(containerName,  ipVersion.iptablesRestore(), file.getAbsolutePath());
             }
         } catch (Exception e) {
             if (flush) {

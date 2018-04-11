@@ -59,7 +59,7 @@ public class Acl {
                 .collect(Collectors.joining("\n"));
 
         // We reject instead of dropping to give us an easier time to figure out potential network issues
-        String rejectEverythingElse = "-A INPUT -j REJECT --reject-with icmp-port-unreachable";
+        String rejectEverythingElse = "-A INPUT -j REJECT --reject-with " + ipVersion.icmpPortUnreachable();
 
         return basics + "\n" + ports + nodes + "\n" + rejectEverythingElse;
     }
