@@ -280,17 +280,6 @@ public class RestApiTest {
         assertThat(rest, containsString(visit_response_part3));
     }
 
-    String visit_test_uri_selection_rewrite = "/document/v1/namespace/document-type/group/abc?continuation=abc";
-    String visit_test_response_selection_rewrite = "doc selection: 'id.group=='abc''";
-
-    @Test
-    public void testUseExpressionOnVisit() throws Exception {
-        Request request = new Request("http://localhost:" + getFirstListenPort() + visit_test_uri_selection_rewrite);
-        HttpGet get = new HttpGet(request.getUri());
-        String rest = doRest(get);
-        assertThat(rest, containsString(visit_test_response_selection_rewrite));
-    }
-
     private static String encoded(String original) {
         try {
             return URLEncoder.encode(original, StandardCharsets.UTF_8.name());
@@ -313,6 +302,11 @@ public class RestApiTest {
     private void assertResultingDocumentSelection(String suffix, String expected) {
         String output = performV1RestCall(suffix);
         assertThat(output, containsString(String.format("doc selection: '%s'", expected)));
+    }
+
+    @Test
+    public void testUseExpressionOnVisit() throws Exception {
+        assertResultingDocumentSelection("group/abc?continuation=xyz", "id.group=='abc'");
     }
 
     private void assertGroupDocumentSelection(String group, String expected) {
