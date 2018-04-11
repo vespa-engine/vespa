@@ -86,7 +86,7 @@ public final class ConfiguredApplication implements Application {
     private ScheduledThreadPoolExecutor shutdownDeadlineExecutor;
     private Thread reconfigurerThread;
     private Thread portWatcher;
-    private QrConfig qrConfig;
+    private volatile QrConfig qrConfig;
 
     static {
         LogSetup.initVespaLogging("Container");
@@ -205,6 +205,8 @@ public final class ConfiguredApplication implements Application {
                     if (qrConfig.restartOnDeploy()) {
                         log.info("Stopping reconfigurer thread.");
                         break;
+                    } else {
+                        log.info("Keeping reconfigurer thread alive.");
                     }
                 } catch (ConfigInterruptedException | InterruptedException e) {
                     break;
