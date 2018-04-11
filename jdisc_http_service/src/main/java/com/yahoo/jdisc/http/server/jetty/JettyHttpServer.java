@@ -19,13 +19,11 @@ import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
-import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnectionStatistics;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHttpOutputInterceptor;
@@ -137,6 +135,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         initializeJettyLogging();
 
         server = new Server();
+        server.setRequestLog(new AccessLogRequestLog(accessLog));
         setupJmx(server, serverConfig);
         ((QueuedThreadPool)server.getThreadPool()).setMaxThreads(serverConfig.maxWorkerThreads());
 
@@ -159,16 +158,13 @@ public class JettyHttpServer extends AbstractServerProvider {
         ServletHolder jdiscServlet = new ServletHolder(new JDiscHttpServlet(jDiscContext));
         FilterHolder jDiscFilterInvokerFilter = new FilterHolder(new JDiscFilterInvokerFilter(jDiscContext, filterInvoker));
 
-        RequestLog requestLog = new AccessLogRequestLog(accessLog);
-
         server.setHandler(
                 getHandlerCollection(
                         serverConfig,
                         servletPathsConfig,
                         jdiscServlet,
                         servletHolders,
-                        jDiscFilterInvokerFilter,
-                        requestLog));
+                        jDiscFilterInvokerFilter));
 
         int numMetricReporterThreads = 1;
         metricReporterExecutor = Executors.newScheduledThreadPool(
@@ -217,8 +213,7 @@ public class JettyHttpServer extends AbstractServerProvider {
             ServletPathsConfig servletPathsConfig,
             ServletHolder jdiscServlet,
             ComponentRegistry<ServletHolder> servletHolders,
-            FilterHolder jDiscFilterInvokerFilter,
-            RequestLog requestLog) {
+            FilterHolder jDiscFilterInvokerFilter) {
 
         ServletContextHandler servletContextHandler = createServletContextHandler();
 
@@ -236,11 +231,8 @@ public class JettyHttpServer extends AbstractServerProvider {
         StatisticsHandler statisticsHandler = newStatisticsHandler();
         statisticsHandler.setHandler(gzipHandler);
 
-        RequestLogHandler requestLogHandler = new RequestLogHandler();
-        requestLogHandler.setRequestLog(requestLog);
-
         HandlerCollection handlerCollection = new HandlerCollection();
-        handlerCollection.setHandlers(new Handler[]{statisticsHandler, requestLogHandler});
+        handlerCollection.setHandlers(new Handler[]{statisticsHandler});
         return handlerCollection;
     }
 
