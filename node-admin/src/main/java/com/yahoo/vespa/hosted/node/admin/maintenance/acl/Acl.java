@@ -34,14 +34,7 @@ public class Acl {
         this.trustedPorts = trustedPorts != null ? ImmutableList.copyOf(trustedPorts) : Collections.emptyList();
     }
 
-    public String toRestoreCommand(IPVersion ipVersion, Optional<InetAddress> redirectAddress) {
-        return String.join("\n"
-                , "*filter"
-                , toListRules(ipVersion, redirectAddress)
-                , "COMMIT\n");
-    }
-
-    public String toListRules(IPVersion ipVersion, Optional<InetAddress> redirectAddress) {
+    public String toRules(IPVersion ipVersion) {
 
         String basics = String.join("\n"
                 // We reject with rules instead of using policies
@@ -68,16 +61,7 @@ public class Acl {
         // We reject instead of dropping to give us an easier time to figure out potential network issues
         String rejectEverythingElse = "-A INPUT -j REJECT";
 
-        // Temporary result before the conditional redirect
-        String result = String.join("\n", basics, ports, nodes, rejectEverythingElse);
-
-        // Redirect calls to itself to loopback interface (this to avoid socket collision on bridged networks)
-        if (redirectAddress.isPresent()) {
-            result = String.join("\n", result,
-                    "-A OUTPUT -d " + InetAddresses.toAddrString(redirectAddress.get()) + " -j REDIRECT");
-        }
-
-        return result;
+        return String.join("\n", basics, ports, nodes, rejectEverythingElse);
     }
 
     @Override

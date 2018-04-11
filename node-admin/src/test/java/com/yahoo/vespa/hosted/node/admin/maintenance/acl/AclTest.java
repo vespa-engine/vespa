@@ -8,7 +8,6 @@ import org.junit.Test;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class AclTest {
@@ -19,7 +18,7 @@ public class AclTest {
 
     @Test
     public void ipv4_list_rules() {
-        String listRulesIpv4 = acl.toListRules(IPVersion.IPv4, Optional.of(InetAddresses.forString("169.254.1.2")));
+        String listRulesIpv4 = acl.toRules(IPVersion.IPv4);
         Assert.assertEquals(
                 "-P INPUT ACCEPT\n" +
                         "-P FORWARD ACCEPT\n" +
@@ -29,31 +28,13 @@ public class AclTest {
                         "-A INPUT -p icmp -j ACCEPT\n" +
                         "-A INPUT -p tcp -m multiport --dports 1234,453 -j ACCEPT\n" +
                         "-A INPUT -s 192.1.2.2/32 -j ACCEPT\n" +
-                        "-A INPUT -j REJECT\n" +
-                        "-A OUTPUT -d 169.254.1.2 -j REDIRECT",
+                        "-A INPUT -j REJECT",
                 listRulesIpv4);
     }
 
     @Test
-    public void ipv4_restore_command_without_redirect() {
-        String restoreCommandIpv4 = acl.toRestoreCommand(IPVersion.IPv4, Optional.empty());
-
-        Assert.assertEquals("*filter\n" +
-                "-P INPUT ACCEPT\n" +
-                "-P FORWARD ACCEPT\n" +
-                "-P OUTPUT ACCEPT\n" +
-                "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
-                "-A INPUT -i lo -j ACCEPT\n" +
-                "-A INPUT -p icmp -j ACCEPT\n" +
-                "-A INPUT -p tcp -m multiport --dports 1234,453 -j ACCEPT\n" +
-                "-A INPUT -s 192.1.2.2/32 -j ACCEPT\n" +
-                "-A INPUT -j REJECT\n" +
-                "COMMIT\n", restoreCommandIpv4);
-    }
-
-    @Test
     public void ipv6_list_rules() {
-        String listRulesIpv6 = acl.toListRules(IPVersion.IPv6, Optional.of(InetAddresses.forString("1234::1234")));
+        String listRulesIpv6 = acl.toRules(IPVersion.IPv6);
         Assert.assertEquals(
                 "-P INPUT ACCEPT\n" +
                         "-P FORWARD ACCEPT\n" +
@@ -64,29 +45,7 @@ public class AclTest {
                         "-A INPUT -p tcp -m multiport --dports 1234,453 -j ACCEPT\n" +
                         "-A INPUT -s fb00::1/128 -j ACCEPT\n" +
                         "-A INPUT -s fe80::2/128 -j ACCEPT\n" +
-                        "-A INPUT -j REJECT\n" +
-                        "-A OUTPUT -d 1234::1234 -j REDIRECT",
-                listRulesIpv6);
-    }
-
-    @Test
-    public void ipv6_restore_command() {
-        String restoreCommandIpv6 = acl.toRestoreCommand(IPVersion.IPv6, Optional.of(InetAddresses.forString("5005:2322:2323:aaaa::1")));
-
-        Assert.assertEquals("*filter\n" +
-                        "-P INPUT ACCEPT\n" +
-                        "-P FORWARD ACCEPT\n" +
-                        "-P OUTPUT ACCEPT\n" +
-                        "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
-                        "-A INPUT -i lo -j ACCEPT\n" +
-                        "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
-                        "-A INPUT -p tcp -m multiport --dports 1234,453 -j ACCEPT\n" +
-                        "-A INPUT -s fb00::1/128 -j ACCEPT\n" +
-                        "-A INPUT -s fe80::2/128 -j ACCEPT\n" +
-                        "-A INPUT -j REJECT\n" +
-                        "-A OUTPUT -d 5005:2322:2323:aaaa::1 -j REDIRECT\n" +
-                        "COMMIT\n",
-                restoreCommandIpv6);
+                        "-A INPUT -j REJECT", listRulesIpv6);
     }
 
     private List<Integer> createPortList(Integer... ports) {

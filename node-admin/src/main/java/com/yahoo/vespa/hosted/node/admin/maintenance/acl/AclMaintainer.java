@@ -1,33 +1,27 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
+import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * The responsibility of this class is to configure ACLs for all running containers. The ACLs are fetched from the Node
- * repository. Based on those ACLs, iptables commands are created and then executed in each of the containers network
- * namespace.
+ * This class maintains the iptables (ipv4 and ipv6) for all running containers.
+ * The filter table is synced with ACLs fetched from the Node repository while the nat table
+ * is synched with the proper redirect rule.
  * <p>
  * If an ACL cannot be configured (e.g. iptables process execution fails) we attempted to flush the rules
  * rendering the firewall open.
  * <p>
- * The configuration will be retried the next time the maintainer runs.
+ * An additional The configuration will be retried the next time the maintainer runs.
  *
  * @author mpolden
  * @author smorgrav
@@ -48,56 +42,25 @@ public class AclMaintainer implements Runnable {
         this.nodeAdminHostname = nodeAdminHostname;
     }
 
-    private void apply(Container container, Acl acl, IPVersion ipVersion) {
+    private void applyRedirect(Container container, InetAddress address, IPVersion ipVersion) {
+        String redirectStatements = String.join("\n"
+                , "-P PREROUTING ACCEPT"
+                , "-P INPUT ACCEPT"
+                , "-P OUTPUT ACCEPT"
+                , "-P POSTROUTING ACCEPT"
+                , "-A OUTPUT -d " + InetAddresses.toAddrString(address) + ipVersion.singleHostCidr() + " -j REDIRECT");
 
-        // Get the DNS address for this host
-        Optional<InetAddress> address = ipAddresses.getAddress(container.hostname, ipVersion);
-
-        // Generate wanted/expected iptables
-        String wantedFilterTable = acl.toListRules(ipVersion, address);
-
-        File file = null;
-        try {
-            // 3. Get current iptables
-            ProcessResult currentFilterTableResult =
-                    dockerOperations.executeCommandInNetworkNamespace(container.name,  ipVersion.iptablesCmd(),"-S", "-t", "filter");
-            String currentFilterTable = currentFilterTableResult.getOutput();
-
-            // 4. Compare and apply wanted if different
-            if (!wantedFilterTable.equals(currentFilterTable)) {
-                String command = acl.toRestoreCommand(ipVersion, address);
-                file = writeTempFile(ipVersion.name(), command);
-                dockerOperations.executeCommandInNetworkNamespace(container.name,  ipVersion.iptablesCmd() + "-restore", file.getAbsolutePath());
-            }
-        } catch (Exception e) {
-            log.error("Exception occurred while configuring ACLs for " + container.name.asString() + ", attempting rollback", e);
-            try {
-                dockerOperations.executeCommandInNetworkNamespace(container.name,  ipVersion.iptablesCmd(), "-F");
-            } catch (Exception ne) {
-                log.error("Rollback of ACLs for " + container.name.asString() + " failed, giving up", ne);
-            }
-        } finally {
-            if (file != null) {
-                file.delete();
-            }
-        }
-    }
-
-    private File writeTempFile(String postfix, String content) {
-        try {
-            Path path = Files.createTempFile("restore", "." + postfix);
-            File file = path.toFile();
-            Files.write(path, content.getBytes(StandardCharsets.UTF_8));
-            file.deleteOnExit();
-            return file;
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to write restore file for iptables.", e);
-        }
+        IPTablesRestore.syncTableLogOnError(dockerOperations, container.name, ipVersion, "nat", redirectStatements);
     }
 
     private void apply(Container container, Acl acl) {
-        apply(container, acl, IPVersion.IPv6);
-        apply(container, acl, IPVersion.IPv4);
+        // Apply acl to the filter table
+        IPTablesRestore.syncTableFlushOnError(dockerOperations, container.name, IPVersion.IPv6, "filter", acl.toRules(IPVersion.IPv6));
+        IPTablesRestore.syncTableFlushOnError(dockerOperations, container.name, IPVersion.IPv4, "filter", acl.toRules(IPVersion.IPv4));
+
+        // Apply redirect to the nat table
+        ipAddresses.getAddress(container.hostname, IPVersion.IPv4).ifPresent(addr -> applyRedirect(container, addr, IPVersion.IPv4));
+        ipAddresses.getAddress(container.hostname, IPVersion.IPv6).ifPresent(addr -> applyRedirect(container, addr, IPVersion.IPv4));
     }
 
     private synchronized void configureAcls() {
