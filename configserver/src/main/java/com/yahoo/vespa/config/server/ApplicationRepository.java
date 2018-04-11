@@ -370,11 +370,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return result;
     }
 
-    public PrepareResult createSessionAndPrepareAndActivate(Tenant tenant, InputStream in, String contentType, TimeoutBudget timeoutBudget,
-                                                            String name, PrepareParams prepareParams,
-                                                            boolean ignoreLockFailure, boolean ignoreSessionStaleFailure,
-                                                            Instant now) {
-        long sessionId = createSession(tenant, timeoutBudget, in, contentType, name);
+    public PrepareResult deploy(Tenant tenant, InputStream in, String contentType, PrepareParams prepareParams,
+                                boolean ignoreLockFailure, boolean ignoreSessionStaleFailure, Instant now) {
+        long sessionId = createSession(tenant, prepareParams.getTimeoutBudget(), in, contentType, prepareParams.getApplicationName());
         return prepareAndActivate(tenant, sessionId, prepareParams, ignoreLockFailure, ignoreSessionStaleFailure, now);
     }
 

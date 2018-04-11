@@ -85,10 +85,8 @@ public class ApplicationRepositoryTest {
 
     private PrepareResult createAndPrepareAndActivateApp() throws IOException {
         File file = CompressedApplicationInputStreamTest.createTarFile();
-        return applicationRepository.createSessionAndPrepareAndActivate(tenant, new FileInputStream(file),
-                                                                        ApplicationApiHandler.APPLICATION_X_GZIP,
-                                                                        timeoutBudget, "testapp", prepareParams(),
-                                                                        false, false, Instant.now());
+        return applicationRepository.deploy(tenant, new FileInputStream(file), ApplicationApiHandler.APPLICATION_X_GZIP,
+                                            prepareParams(), false, false, Instant.now());
     }
 
     private PrepareParams prepareParams() {
