@@ -21,6 +21,7 @@ import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.protect.FreezeDetector;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.Response;
 import com.yahoo.language.Linguistics;
 import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
@@ -55,6 +56,8 @@ import com.yahoo.statistics.Value;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -116,6 +119,18 @@ public class SearchHandler extends LoggingRequestHandler {
             metric.set(SEARCH_CONNECTIONS, v.getMean(), null);
         }
     }
+
+    private void warmupQueries() {
+        String[] requestUris = new String[] {"warmupRequestUrl1", "warmupRequestUrl2"};
+        int warmupIterations = 50;
+
+        for (int i = 0; i < warmupIterations; i++) {
+            for (String requestUri : requestUris) {
+                handle(HttpRequest.createTestRequest(requestUri, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+            }
+        }
+    }
+
 
     @Inject
     public SearchHandler(

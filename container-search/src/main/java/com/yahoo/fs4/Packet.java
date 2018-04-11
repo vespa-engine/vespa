@@ -10,14 +10,16 @@ import java.util.logging.Logger;
  * @author bratseth
  */
 public abstract class Packet extends BasicPacket {
+
     private static Logger log = Logger.getLogger(Packet.class.getName());
+
     /**
      * The channel at which this packet will be sent or was received,
      * or -1 when this is not known
      */
-    protected int channel=-1;
+    protected int channel = -1;
 
-    protected static final int CHANNEL_ID_OFFSET = 8;
+    private static final int CHANNEL_ID_OFFSET = 8;
 
     /**
      * Fills this package from a byte buffer positioned at the first
@@ -28,21 +30,18 @@ public abstract class Packet extends BasicPacket {
      */
     public BasicPacket decode(ByteBuffer buffer) {
         int originalPos = buffer.position();
-        length=buffer.getInt()+4; // Streamed packet length is the length-4
+        length = buffer.getInt()+4; // Streamed packet length is the length-4
         int packetLength = length;
         try {
-            int code=buffer.getInt();
-            channel=buffer.getInt();
+            int code = buffer.getInt();
+            channel = buffer.getInt();
 
             decodeAndDecompressBody(buffer, code, length - 3*4);
         }
         finally {
             int targetPosition = (originalPos + packetLength);
             if (buffer.position() != targetPosition) {
-                log.warning(" position in buffer, is "
-                            + buffer.position()
-                            + " should be "
-                            + targetPosition);
+                log.warning("Position in buffer is " + buffer.position() + " should be " + targetPosition);
                 buffer.position(targetPosition);
             }
         }
@@ -64,7 +63,7 @@ public abstract class Packet extends BasicPacket {
      * @throws UnsupportedOperationException if not implemented in the subclass
      */
     public final Packet encode(ByteBuffer buffer, int channel) throws BufferTooSmallException {
-        this.channel=channel;
+        this.channel = channel;
         int oldLimit = buffer.limit();
         int startPosition = buffer.position();
 
