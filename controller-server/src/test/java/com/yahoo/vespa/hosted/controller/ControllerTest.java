@@ -635,7 +635,7 @@ public class ControllerTest {
                 .build();
 
         tester.deployCompletely(application, applicationPackage);
-        assertEquals(2, tester.controllerTester().nameService().records().size());
+        assertEquals(3, tester.controllerTester().nameService().records().size());
 
         Optional<Record> record = tester.controllerTester().nameService().findRecord(
                 Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.yahooapis.com")
@@ -644,7 +644,14 @@ public class ControllerTest {
         assertEquals("app1--tenant1.global.vespa.yahooapis.com", record.get().name().asString());
         assertEquals("rotation-fqdn-01.", record.get().data().asString());
 
-       record = tester.controllerTester().nameService().findRecord(
+        record = tester.controllerTester().nameService().findRecord(
+                Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.oath.cloud")
+        );
+        assertTrue(record.isPresent());
+        assertEquals("app1--tenant1.global.vespa.oath.cloud", record.get().name().asString());
+        assertEquals("rotation-fqdn-01.", record.get().data().asString());
+
+        record = tester.controllerTester().nameService().findRecord(
                 Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
         );
         assertTrue(record.isPresent());
@@ -667,7 +674,7 @@ public class ControllerTest {
                     .build();
 
             tester.deployCompletely(app1, applicationPackage);
-            assertEquals(2, tester.controllerTester().nameService().records().size());
+            assertEquals(3, tester.controllerTester().nameService().records().size());
 
             Optional<Record> record = tester.controllerTester().nameService().findRecord(
                     Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.yahooapis.com")
@@ -706,6 +713,11 @@ public class ControllerTest {
             assertTrue(record.isPresent());
 
             record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.oath.cloud")
+            );
+            assertTrue(record.isPresent());
+
+            record = tester.controllerTester().nameService().findRecord(
                     Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")
             );
             assertTrue(record.isPresent());
@@ -721,13 +733,20 @@ public class ControllerTest {
                     .region("us-central-1")
                     .build();
             tester.deployCompletely(app2, applicationPackage);
-            assertEquals(4, tester.controllerTester().nameService().records().size());
+            assertEquals(6, tester.controllerTester().nameService().records().size());
 
             Optional<Record> record = tester.controllerTester().nameService().findRecord(
                     Record.Type.CNAME, RecordName.from("app2--tenant2.global.vespa.yahooapis.com")
                                                                                         );
             assertTrue(record.isPresent());
             assertEquals("app2--tenant2.global.vespa.yahooapis.com", record.get().name().asString());
+            assertEquals("rotation-fqdn-01.", record.get().data().asString());
+
+            record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app2--tenant2.global.vespa.oath.cloud")
+                                                                                        );
+            assertTrue(record.isPresent());
+            assertEquals("app2--tenant2.global.vespa.oath.cloud", record.get().name().asString());
             assertEquals("rotation-fqdn-01.", record.get().data().asString());
 
             record = tester.controllerTester().nameService().findRecord(
@@ -753,10 +772,16 @@ public class ControllerTest {
             assertEquals("rotation-id-02", app1.rotation().get().id().asString());
 
             // Existing DNS records are updated to point to the newly assigned rotation
-            assertEquals(4, tester.controllerTester().nameService().records().size());
+            assertEquals(6, tester.controllerTester().nameService().records().size());
 
             Optional<Record> record = tester.controllerTester().nameService().findRecord(
                     Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.yahooapis.com")
+                                                                                        );
+            assertTrue(record.isPresent());
+            assertEquals("rotation-fqdn-02.", record.get().data().asString());
+
+            record = tester.controllerTester().nameService().findRecord(
+                    Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.oath.cloud")
                                                                                         );
             assertTrue(record.isPresent());
             assertEquals("rotation-fqdn-02.", record.get().data().asString());

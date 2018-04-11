@@ -46,13 +46,20 @@ public class DnsMaintainerTest {
 
         // Deploy application
         tester.deployCompletely(application, applicationPackage);
-        assertEquals(2, tester.controllerTester().nameService().records().size());
+        assertEquals(3, tester.controllerTester().nameService().records().size());
 
         Optional<Record> record = tester.controllerTester().nameService().findRecord(
                 Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.yahooapis.com")
                                                                                     );
         assertTrue(record.isPresent());
         assertEquals("app1--tenant1.global.vespa.yahooapis.com", record.get().name().asString());
+        assertEquals("rotation-fqdn-01.", record.get().data().asString());
+
+        record = tester.controllerTester().nameService().findRecord(
+                Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.oath.cloud")
+                                                                                    );
+        assertTrue(record.isPresent());
+        assertEquals("app1--tenant1.global.vespa.oath.cloud", record.get().name().asString());
         assertEquals("rotation-fqdn-01.", record.get().data().asString());
 
         record = tester.controllerTester().nameService().findRecord(
@@ -66,6 +73,8 @@ public class DnsMaintainerTest {
         dnsMaintainer.maintain();
         assertTrue("DNS record is not removed", tester.controllerTester().nameService().findRecord(
                 Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.yahooapis.com")).isPresent());
+        assertTrue("DNS record is not removed", tester.controllerTester().nameService().findRecord(
+                Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.oath.cloud")).isPresent());
         assertTrue("DNS record is not removed", tester.controllerTester().nameService().findRecord(
                 Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")).isPresent());
 
@@ -85,6 +94,9 @@ public class DnsMaintainerTest {
         dnsMaintainer.maintain();
         assertFalse("DNS record removed", tester.controllerTester().nameService().findRecord(
                 Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.yahooapis.com")).isPresent());
+        dnsMaintainer.maintain();
+        assertFalse("DNS record removed", tester.controllerTester().nameService().findRecord(
+                Record.Type.CNAME, RecordName.from("app1--tenant1.global.vespa.oath.cloud")).isPresent());
         dnsMaintainer.maintain();
         assertFalse("DNS record removed", tester.controllerTester().nameService().findRecord(
                 Record.Type.CNAME, RecordName.from("app1.tenant1.global.vespa.yahooapis.com")).isPresent());
