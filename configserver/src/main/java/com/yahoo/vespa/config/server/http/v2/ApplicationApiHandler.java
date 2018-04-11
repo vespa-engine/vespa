@@ -10,7 +10,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -66,19 +65,17 @@ public class ApplicationApiHandler extends SessionHandler {
     protected HttpResponse handlePOST(HttpRequest request) {
         Tenant tenant = getExistingTenant(request);
         TenantName tenantName = tenant.getName();
-        TimeoutBudget timeoutBudget = SessionHandler.getTimeoutBudget(request, zookeeperBarrierTimeout);
         PrepareParams prepareParams = PrepareParams.fromHttpRequest(request, tenantName, zookeeperBarrierTimeout);
         Slime deployLog = createDeployLog();
         DeployLogger logger = SessionCreateHandler.createLogger(request, deployLog, tenantName);
-        String name = SessionCreateHandler.getNameProperty(request, logger);
         SessionCreateHandler.validateDataAndHeader(request);
 
         PrepareResult result =
-                applicationRepository.createSessionAndPrepareAndActivate(tenant, request.getData(),
-                                                                         request.getHeader(contentTypeHeader),
-                                                                         timeoutBudget, name, prepareParams,
-                                                                         shouldIgnoreLockFailure(request), shouldIgnoreSessionStaleFailure(request),
-                                                                         Instant.now());
+                applicationRepository.deploy(tenant, request.getData(),
+                                             request.getHeader(contentTypeHeader),
+                                             prepareParams,
+                                             shouldIgnoreLockFailure(request), shouldIgnoreSessionStaleFailure(request),
+                                             Instant.now());
         return new SessionPrepareAndActivateResponse(result, tenantName, request, prepareParams.getApplicationId(), zone);
     }
 
