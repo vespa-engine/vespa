@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -42,17 +43,16 @@ public class NodeAclResponse extends HttpResponse {
                 .orElseGet(() -> nodeRepository.getConfigNode(hostname)
                         .orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'")));
 
+        List<NodeAcl> acls = nodeRepository.getNodeAcls(node, aclsForChildren);
+
         Cursor trustedNodesArray = object.setArray("trustedNodes");
-        nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toSlime(nodeAcl, trustedNodesArray));
+        acls.forEach(nodeAcl -> toSlime(nodeAcl, trustedNodesArray));
 
         Cursor trustedNetworksArray = object.setArray("trustedNetworks");
-        nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toSlime(nodeAcl.trustedNetworks(),
-                                                                                     nodeAcl.node(),
-                                                                                     trustedNetworksArray));
+        acls.forEach(nodeAcl -> toSlime(nodeAcl.trustedNetworks(), nodeAcl.node(), trustedNetworksArray));
+
         Cursor trustedPortsArray = object.setArray("trustedPorts");
-        nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toSlime(nodeAcl.trustedPorts(),
-                nodeAcl,
-                trustedPortsArray));
+        acls.forEach(nodeAcl -> toSlime(nodeAcl.trustedPorts(), nodeAcl, trustedPortsArray));
     }
 
     private void toSlime(NodeAcl nodeAcl, Cursor array) {

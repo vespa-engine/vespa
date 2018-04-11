@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import java.net.InetAddress;
 import java.util.ArrayList;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -24,16 +25,8 @@ public class Acl {
     private final List<Integer> trustedPorts;
 
     public Acl(List<Integer> trustedPorts, List<InetAddress> trustedNodes) {
-        this.trustedNodes = trustedNodes != null ? ImmutableList.copyOf(trustedNodes) : new ArrayList<>();
-        this.trustedPorts = trustedPorts != null ? ImmutableList.copyOf(trustedPorts) : new ArrayList<>();
-    }
-
-    public List<InetAddress> trustedNodes() {
-        return trustedNodes;
-    }
-
-    public List<Integer> trustedPorts() {
-        return trustedPorts;
+        this.trustedNodes = trustedNodes != null ? ImmutableList.copyOf(trustedNodes) : Collections.emptyList();
+        this.trustedPorts = trustedPorts != null ? ImmutableList.copyOf(trustedPorts) : Collections.emptyList();
     }
 
     public String toRestoreCommand(InetAddress containerAddress) {
@@ -59,9 +52,8 @@ public class Acl {
                 , "-A INPUT -p " + ipVersion.icmpProtocol() + " -j ACCEPT");
 
         // Allow trusted ports
-        String ports = trustedPorts.stream()
-                .map(port -> "-A INPUT -p tcp --dport " + port + " -j ACCEPT")
-                .collect(Collectors.joining("\n"));
+        String commaSeparatedPorts = trustedPorts.stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","));
+        String ports = "-A INPUT -p tcp -m multiport --dports " + commaSeparatedPorts + " -j ACCEPT";
 
         // Allow traffic from trusted nodes
         String nodes = trustedNodes.stream()

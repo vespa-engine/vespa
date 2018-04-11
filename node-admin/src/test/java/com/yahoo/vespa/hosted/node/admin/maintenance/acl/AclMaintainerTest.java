@@ -14,9 +14,11 @@ import org.junit.Test;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -24,7 +26,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.startsWith;
+import static org.mockito.Mockito.anyVararg;
 
 public class AclMaintainerTest {
 
@@ -46,27 +48,28 @@ public class AclMaintainerTest {
     @Test
     public void configures_container_acl_when_iptables_differs() {
         Container container = addContainer("container1", Container.State.RUNNING);
-        Map<String, Acl> acls = makeAcl(container.name.asString(), 4321, "2001::1");
+        Map<String, Acl> acls = makeAcl(container.name.asString(), "4321", "2001::1");
 
         when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers.keySet())).thenReturn(acls);
 
         when(dockerOperations.executeCommandInNetworkNamespace(
                 eq(container.name),
-                eq("ip6tables -S -t filter"))).thenReturn(new ProcessResult(0, "", ""));
+                eq("ip6tables"), eq("-S"), eq("-t"), eq("filter")))
+                .thenReturn(new ProcessResult(0, "", ""));
 
         when(dockerOperations.executeCommandInNetworkNamespace(
                 eq(container.name),
-                startsWith("ip6tables-restore"))).thenReturn(new ProcessResult(0, "", ""));
+                eq("ip6tables-restore"), anyVararg())).thenReturn(new ProcessResult(0, "", ""));
 
         aclMaintainer.run();
 
-        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(any(), any());
+        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(any(), anyVararg());
     }
 
     @Test
     public void does_not_configure_acl_if_iptables_v6_are_ok() {
         Container container = addContainer("container1", Container.State.RUNNING);
-        Map<String, Acl> acls = makeAcl(container.name.asString(), 4321, "2001::1");
+        Map<String, Acl> acls = makeAcl(container.name.asString(), "4321,2345,22", "2001::1", "fd01:1234::4321");
 
         when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers.keySet())).thenReturn(acls);
 
@@ -76,25 +79,26 @@ public class AclMaintainerTest {
                 "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
                 "-A INPUT -i lo -j ACCEPT\n" +
                 "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
-                "-A INPUT -p tcp --dport 4321 -j ACCEPT\n" +
+                "-A INPUT -p tcp -m multiport --dports 4321,2345,22 -j ACCEPT\n" +
                 "-A INPUT -s 2001::1/128 -j ACCEPT\n" +
+                "-A INPUT -s fd01:1234::4321/128 -j ACCEPT\n" +
                 "-A INPUT -j REJECT\n" +
                 "-A OUTPUT -d 3001::1 -j REDIRECT";
 
         when(dockerOperations.executeCommandInNetworkNamespace(
                 eq(container.name),
-                eq("ip6tables -S -t filter")))
+                eq("ip6tables"), eq("-S"), eq("-t"), eq("filter")))
                 .thenReturn(new ProcessResult(0, ONE_CONTAINER_IPV6, ""));
 
         aclMaintainer.run();
 
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(any(), any());
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(any(), anyVararg());
     }
 
     @Test
     public void does_not_configure_acl_if_iptables_dualstack_are_ok() {
         Container container = addContainer("container1", Container.State.RUNNING);
-        Map<String, Acl> acls = makeAcl(container.name.asString(), 4321, "2001::1");
+        Map<String, Acl> acls = makeAcl(container.name.asString(), "22,4443,2222", "2001::1");
 
         when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers.keySet())).thenReturn(acls);
 
@@ -104,39 +108,40 @@ public class AclMaintainerTest {
                 "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" +
                 "-A INPUT -i lo -j ACCEPT\n" +
                 "-A INPUT -p ipv6-icmp -j ACCEPT\n" +
-                "-A INPUT -p tcp --dport 4321 -j ACCEPT\n" +
+                "-A INPUT -p tcp -m multiport --dports 22,4443,2222 -j ACCEPT\n" +
                 "-A INPUT -s 2001::1/128 -j ACCEPT\n" +
                 "-A INPUT -j REJECT\n" +
                 "-A OUTPUT -d 3001::1 -j REDIRECT";
 
         when(dockerOperations.executeCommandInNetworkNamespace(
                 eq(container.name),
-                eq("ip6tables -S -t filter")))
+                eq("ip6tables"), eq("-S"), eq("-t"), eq("filter")))
                 .thenReturn(new ProcessResult(0, ONE_CONTAINER_IPV6, ""));
 
         aclMaintainer.run();
 
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(any(), any());
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(any(), anyVararg());
     }
 
 
     @Test
     public void rollback_is_attempted_when_applying_acl_fail() {
         Container container = addContainer("container1", Container.State.RUNNING);
-        Map<String, Acl> acls = makeAcl(container.name.asString(), 4321, "2001::1");
+        Map<String, Acl> acls = makeAcl(container.name.asString(), "4321", "2001::1");
         when(nodeRepository.getAcl(NODE_ADMIN_HOSTNAME, containers.keySet())).thenReturn(acls);
 
         when(dockerOperations.executeCommandInNetworkNamespace(
                 eq(container.name),
-                eq("ip6tables -S -t filter"))).thenReturn(new ProcessResult(0, "", ""));
+                eq("ip6tables"), eq("-S"), eq("-t"), eq("filter")))
+                .thenReturn(new ProcessResult(0, "", ""));
 
         when(dockerOperations.executeCommandInNetworkNamespace(
                 eq(container.name),
-                startsWith("ip6tables-restore"))).thenThrow(new RuntimeException("iptables restore failed"));
+                eq("ip6tables-restore"), anyVararg())).thenThrow(new RuntimeException("iptables restore failed"));
 
         aclMaintainer.run();
 
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables -F"));
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables"), eq("-F"));
     }
 
     private Container addContainer(String name, Container.State state) {
@@ -149,13 +154,16 @@ public class AclMaintainerTest {
         return container;
     }
 
-    private Map<String, Acl> makeAcl(String containerName, int port, String address) {
+    private Map<String, Acl> makeAcl(String containerName, String portsCommaSeparated, String... addresses) {
         Map<String, Acl> map = new HashMap<>();
-        List<Integer> ports = new ArrayList<>();
-        ports.add(port);
 
-        List<InetAddress> hosts = new ArrayList<>();
-        hosts.add(InetAddresses.forString(address));
+        List<Integer> ports = Arrays.stream(portsCommaSeparated.split(","))
+                .map(Integer::valueOf)
+                .collect(Collectors.toList());
+
+        List<InetAddress> hosts = Arrays.stream(addresses)
+                .map(InetAddresses::forString)
+                .collect(Collectors.toList());
 
         Acl acl = new Acl(ports, hosts);
         map.put(containerName, acl);

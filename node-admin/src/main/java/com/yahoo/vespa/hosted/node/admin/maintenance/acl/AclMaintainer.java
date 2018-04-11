@@ -15,7 +15,8 @@ import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -49,31 +50,30 @@ public class AclMaintainer implements Runnable {
 
     private void apply(Container container, Acl acl, IPVersion ipVersion) {
 
-        // 1. Get address
+        // Get the local address - empty if system has no
         Optional<InetAddress> address = ipAddresses.getAddress(container.hostname, ipVersion);
         if (!address.isPresent()) return;
 
-        // 2. Generated wanted/expected iptables
+        // Generate wanted/expected iptables
         String wantedFilterTable = acl.toListRules(address.get());
 
         File file = null;
         try {
             // 3. Get current iptables
             ProcessResult currentFilterTableResult =
-                    dockerOperations.executeCommandInNetworkNamespace(container.name, ipVersion.iptablesCmd() + " -S -t filter");
+                    dockerOperations.executeCommandInNetworkNamespace(container.name,  ipVersion.iptablesCmd(),"-S", "-t", "filter");
             String currentFilterTable = currentFilterTableResult.getOutput();
 
             // 4. Compare and apply wanted if different
             if (!wantedFilterTable.equals(currentFilterTable)) {
                 String command = acl.toRestoreCommand(address.get());
                 file = writeTempFile(ipVersion.name(), command);
-                dockerOperations.executeCommandInNetworkNamespace(container.name, ipVersion.iptablesCmd() + "-restore " + file.getAbsolutePath());
+                dockerOperations.executeCommandInNetworkNamespace(container.name,  ipVersion.iptablesCmd() + "-restore", file.getAbsolutePath());
             }
         } catch (Exception e) {
-            String rollbackCmd = ipVersion.iptablesCmd() + " -F";
             log.error("Exception occurred while configuring ACLs for " + container.name.asString() + ", attempting rollback", e);
             try {
-                dockerOperations.executeCommandInNetworkNamespace(container.name, rollbackCmd);
+                dockerOperations.executeCommandInNetworkNamespace(container.name,  ipVersion.iptablesCmd(), "-F");
             } catch (Exception ne) {
                 log.error("Rollback of ACLs for " + container.name.asString() + " failed, giving up", ne);
             }
