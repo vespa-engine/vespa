@@ -108,6 +108,7 @@ public class RealNodeRepository implements NodeRepository {
             // For each hostname create an ACL
             Stream.of(trustedNodes.keySet(), trustedPorts.keySet())
                     .flatMap(Set::stream)
+                    .distinct()
                     .forEach(hostname -> acls.put(hostname,
                             new Acl(
                                     trustedPorts.getOrDefault(hostname, new ArrayList<>())
