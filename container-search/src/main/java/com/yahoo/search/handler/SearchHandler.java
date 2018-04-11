@@ -120,18 +120,6 @@ public class SearchHandler extends LoggingRequestHandler {
         }
     }
 
-    private void warmupQueries() {
-        String[] requestUris = new String[] {"warmupRequestUrl1", "warmupRequestUrl2"};
-        int warmupIterations = 50;
-
-        for (int i = 0; i < warmupIterations; i++) {
-            for (String requestUri : requestUris) {
-                handle(HttpRequest.createTestRequest(requestUri, com.yahoo.jdisc.http.HttpRequest.Method.GET));
-            }
-        }
-    }
-
-
     @Inject
     public SearchHandler(
             final ChainsConfig chainsConfig,
