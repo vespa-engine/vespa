@@ -141,7 +141,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
         int deactivatedContainers = getDeactivatedContainersSnapshot(GC_GRACE_PERIOD).size();
         boolean shouldGc = deactivatedContainers > 0;
         if (!shouldGc) return;
-        log.log(Level.FINE, String.format("Triggering GC (currently %d deactivated containers still alive)", deactivatedContainers));
+        log.log(Level.INFO, String.format("Triggering GC and finalization (currently %d deactivated containers still alive)", deactivatedContainers));
         System.gc();
         System.runFinalization();
     }
