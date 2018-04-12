@@ -149,7 +149,6 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .withEnv(environmentAssignments)
                 .withBinds(volumeBinds)
                 .withUlimits(ulimits)
-                .withExtraHosts(hostName + ":::1", hostName + ":127.0.0.1")
                 .withCapAdd(new ArrayList<>(addCapabilities))
                 .withCapDrop(new ArrayList<>(dropCapabilities))
                 .withPrivileged(privileged);
