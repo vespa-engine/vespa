@@ -319,7 +319,6 @@ public class DockerOperationsImpl implements DockerOperations {
      */
     private static Map<Path, Boolean> getDirectoriesToMount(Environment environment) {
         final Map<Path, Boolean> directoriesToMount = new HashMap<>();
-        directoriesToMount.put(Paths.get("/var/log/secret-agent"), false);
         directoriesToMount.put(Paths.get("/etc/yamas-agent"), true);
         directoriesToMount.put(Paths.get("/etc/filebeat"), true);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/daemontools_y"), false);
