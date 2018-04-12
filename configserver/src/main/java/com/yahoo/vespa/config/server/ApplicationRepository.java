@@ -360,18 +360,33 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return result;
     }
 
-    public PrepareResult deploy(Tenant tenant, InputStream in, String contentType, PrepareParams prepareParams,
+    public PrepareResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
+        Tenant tenant = tenants.getTenant(prepareParams.getApplicationId().tenant());
+        return deploy(tenant, in, prepareParams, false, false, clock.instant());
+    }
+
+    public PrepareResult deploy(Tenant tenant, CompressedApplicationInputStream in, PrepareParams prepareParams,
                                 boolean ignoreLockFailure, boolean ignoreSessionStaleFailure, Instant now) {
-        long sessionId = createSession(tenant, prepareParams.getTimeoutBudget(), in, contentType, prepareParams.getApplicationName());
+        File tempDir = Files.createTempDir();
+        long sessionId = createSession(tenant, prepareParams.getTimeoutBudget(), decompressApplication(in, tempDir), prepareParams.getApplicationName());
+        cleanupApplicationDirectory(tempDir, logger);
         return prepareAndActivate(tenant, sessionId, prepareParams, ignoreLockFailure, ignoreSessionStaleFailure, now);
     }
 
     private File decompressApplication(InputStream in, String contentType, File tempDir) {
         try (CompressedApplicationInputStream application =
                      CompressedApplicationInputStream.createFromCompressedStream(in, contentType)) {
-            return application.decompress(tempDir);
+            return decompressApplication(application, tempDir);
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to decompress data in body", e);
+        }
+    }
+
+    private File decompressApplication(CompressedApplicationInputStream in, File tempDir) {
+        try {
+            return in.decompress(tempDir);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Unable to decompress stream", e);
         }
     }
 

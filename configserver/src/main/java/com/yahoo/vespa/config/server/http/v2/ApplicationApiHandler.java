@@ -3,13 +3,12 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -66,15 +65,14 @@ public class ApplicationApiHandler extends SessionHandler {
         Tenant tenant = getExistingTenant(request);
         TenantName tenantName = tenant.getName();
         PrepareParams prepareParams = PrepareParams.fromHttpRequest(request, tenantName, zookeeperBarrierTimeout);
-        Slime deployLog = createDeployLog();
-        DeployLogger logger = SessionCreateHandler.createLogger(request, deployLog, tenantName);
         SessionCreateHandler.validateDataAndHeader(request);
 
         PrepareResult result =
-                applicationRepository.deploy(tenant, request.getData(),
-                                             request.getHeader(contentTypeHeader),
+                applicationRepository.deploy(tenant,
+                                             CompressedApplicationInputStream.createFromCompressedStream(request.getData(), request.getHeader(contentTypeHeader)),
                                              prepareParams,
-                                             shouldIgnoreLockFailure(request), shouldIgnoreSessionStaleFailure(request),
+                                             shouldIgnoreLockFailure(request),
+                                             shouldIgnoreSessionStaleFailure(request),
                                              Instant.now());
         return new SessionPrepareAndActivateResponse(result, tenantName, request, prepareParams.getApplicationId(), zone);
     }
