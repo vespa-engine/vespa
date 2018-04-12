@@ -26,7 +26,6 @@ import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
-import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.RefeedActions;
@@ -80,7 +79,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private final Tenants tenants;
     private final Optional<Provisioner> hostProvisioner;
-    private final LogServerLogGrabber logServerLogGrabber;
     private final ApplicationConvergenceChecker convergeChecker;
     private final HttpProxy httpProxy;
     private final Clock clock;
@@ -92,11 +90,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     @Inject
     public ApplicationRepository(Tenants tenants,
                                  HostProvisionerProvider hostProvisionerProvider,
-                                 LogServerLogGrabber logServerLogGrabber,
                                  ApplicationConvergenceChecker applicationConvergenceChecker,
                                  HttpProxy httpProxy, 
                                  ConfigserverConfig configserverConfig) {
-        this(tenants, hostProvisionerProvider.getHostProvisioner(), logServerLogGrabber,
+        this(tenants, hostProvisionerProvider.getHostProvisioner(),
              applicationConvergenceChecker, httpProxy, configserverConfig, Clock.systemUTC(), new FileDistributionStatus());
     }
 
@@ -104,14 +101,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public ApplicationRepository(Tenants tenants,
                                  Provisioner hostProvisioner,
                                  Clock clock) {
-        this(tenants, Optional.of(hostProvisioner), new LogServerLogGrabber(),
+        this(tenants, Optional.of(hostProvisioner),
              new ApplicationConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
              new ConfigserverConfig(new ConfigserverConfig.Builder()), clock, new FileDistributionStatus());
     }
 
     private ApplicationRepository(Tenants tenants,
                                   Optional<Provisioner> hostProvisioner,
-                                  LogServerLogGrabber logServerLogGrabber,
                                   ApplicationConvergenceChecker applicationConvergenceChecker,
                                   HttpProxy httpProxy,
                                   ConfigserverConfig configserverConfig,
@@ -119,7 +115,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   FileDistributionStatus fileDistributionStatus) {
         this.tenants = tenants;
         this.hostProvisioner = hostProvisioner;
-        this.logServerLogGrabber = logServerLogGrabber;
         this.convergeChecker = applicationConvergenceChecker;
         this.httpProxy = httpProxy;
         this.clock = clock;
@@ -215,11 +210,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         transaction.commit();
 
         return true;
-    }
-
-    public String grabLog(Tenant tenant, ApplicationId applicationId) {
-        Application application = getApplication(tenant, applicationId);
-        return logServerLogGrabber.grabLog(application);
     }
 
     public HttpResponse serviceConvergenceCheck(Tenant tenant, ApplicationId applicationId, String hostname, URI uri) {
