@@ -70,6 +70,7 @@ HttpServer =  element server {
 AccessLog = element accesslog {
     attribute type { string "yapache" | string "vespa" | string "json" | string "disabled" }? &
     attribute fileNamePattern { string }? &
+    attribute compressOnRotation { xsd:boolean }? &
     attribute symlinkName { string }? &
 
     attribute rotationInterval { string }? &
