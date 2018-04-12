@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.CompressedApplicationInputStreamTest;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.v2.ApplicationApiHandler;
@@ -85,7 +86,9 @@ public class ApplicationRepositoryTest {
 
     private PrepareResult createAndPrepareAndActivateApp() throws IOException {
         File file = CompressedApplicationInputStreamTest.createTarFile();
-        return applicationRepository.deploy(tenant, new FileInputStream(file), ApplicationApiHandler.APPLICATION_X_GZIP,
+        return applicationRepository.deploy(tenant,
+                                            CompressedApplicationInputStream.createFromCompressedStream(
+                                                    new FileInputStream(file), ApplicationApiHandler.APPLICATION_X_GZIP),
                                             prepareParams(), false, false, Instant.now());
     }
 
