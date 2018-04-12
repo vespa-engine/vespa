@@ -126,6 +126,8 @@ public:
     AvgVal getMinimum() const { return _values.getValues()._min; }
     AvgVal getMaximum() const { return _values.getValues()._max; }
     AvgVal getCount() const { return _values.getValues()._count; }
+    TotVal getTotal() const { return _values.getValues()._total; }
+
     AvgVal getLast() const { return _values.getValues()._last; }
 
     void reset() override { _values.reset(); }

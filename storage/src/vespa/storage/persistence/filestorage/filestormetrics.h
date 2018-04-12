@@ -106,15 +106,27 @@ struct FileStorThreadMetrics : public metrics::MetricSet
     ~FileStorThreadMetrics();
 };
 
+class FileStorStripeMetrics : public metrics::MetricSet
+{
+public:
+    using SP = std::shared_ptr<FileStorStripeMetrics>;
+    metrics::LoadMetric<metrics::DoubleAverageMetric> averageQueueWaitingTime;
+    FileStorStripeMetrics(const std::string& name, const std::string& description,
+                          const metrics::LoadTypeSet& loadTypes);
+    ~FileStorStripeMetrics();
+};
+
 class FileStorDiskMetrics : public metrics::MetricSet
 {
 public:
-    typedef std::shared_ptr<FileStorDiskMetrics> SP;
+    using SP = std::shared_ptr<FileStorDiskMetrics>;
 
     std::vector<FileStorThreadMetrics::SP> threads;
-    metrics::SumMetric<MetricSet> sum;
-    metrics::LongAverageMetric queueSize;
+    std::vector<FileStorStripeMetrics::SP> stripes;
+    metrics::SumMetric<MetricSet> sumThreads;
+    metrics::SumMetric<MetricSet> sumStripes;
     metrics::LoadMetric<metrics::DoubleAverageMetric> averageQueueWaitingTime;
+    metrics::LongAverageMetric queueSize;
     metrics::LongAverageMetric pendingMerges;
     metrics::DoubleAverageMetric waitingForLockHitRate;
     metrics::DoubleAverageMetric lockWaitTime;
@@ -123,7 +135,7 @@ public:
                         const metrics::LoadTypeSet& loadTypes, MetricSet* owner);
     ~FileStorDiskMetrics();
 
-    void initDiskMetrics(const metrics::LoadTypeSet& loadTypes, uint32_t threadsPerDisk);
+    void initDiskMetrics(const metrics::LoadTypeSet& loadTypes, uint32_t numStripes, uint32_t threadsPerDisk);
 };
 
 struct FileStorMetrics : public metrics::MetricSet
@@ -137,7 +149,7 @@ struct FileStorMetrics : public metrics::MetricSet
     FileStorMetrics(const metrics::LoadTypeSet&);
     ~FileStorMetrics();
 
-    void initDiskMetrics(uint16_t numDisks, const metrics::LoadTypeSet& loadTypes, uint32_t threadsPerDisk);
+    void initDiskMetrics(uint16_t numDisks, const metrics::LoadTypeSet& loadTypes, uint32_t numStripes, uint32_t threadsPerDisk);
 };
 
 }

@@ -4,11 +4,16 @@
 
 namespace storage {
 
-FileStorHandler::FileStorHandler(MessageSender& sender,
-                                 FileStorMetrics& metrics,
-                                 const spi::PartitionStateList& partitions,
-                                 ServiceLayerComponentRegister& compReg)
-    : _impl(new FileStorHandlerImpl(sender, metrics, partitions, compReg))
+FileStorHandler::FileStorHandler(MessageSender& sender, FileStorMetrics& metrics,
+                                 const spi::PartitionStateList& partitions, ServiceLayerComponentRegister& compReg)
+        : _impl(new FileStorHandlerImpl(1, sender, metrics, partitions, compReg))
+{
+}
+
+
+FileStorHandler::FileStorHandler(uint32_t numStripes, MessageSender& sender, FileStorMetrics& metrics,
+                                 const spi::PartitionStateList& partitions, ServiceLayerComponentRegister& compReg)
+    : _impl(new FileStorHandlerImpl(numStripes, sender, metrics, partitions, compReg))
 {
 }
 
@@ -48,21 +53,21 @@ FileStorHandler::pause()
 }
 
 bool
-FileStorHandler::schedule(const api::StorageMessage::SP& msg, uint16_t thread)
+FileStorHandler::schedule(const api::StorageMessage::SP& msg, uint16_t disk)
 {
-    return _impl->schedule(msg, thread);
+    return _impl->schedule(msg, disk);
 }
 
 FileStorHandler::LockedMessage
-FileStorHandler::getNextMessage(uint16_t thread)
+FileStorHandler::getNextMessage(uint16_t disk, uint32_t stripeId)
 {
-    return _impl->getNextMessage(thread);
+    return _impl->getNextMessage(disk, stripeId);
 }
 
 FileStorHandler::LockedMessage &
-FileStorHandler::getNextMessage(uint16_t thread, LockedMessage& lck)
+FileStorHandler::getNextMessage(uint16_t disk, uint32_t stripeId, LockedMessage& lck)
 {
-    return _impl->getNextMessage(thread, lck);
+    return _impl->getNextMessage(disk, stripeId, lck);
 }
 
 FileStorHandler::BucketLockInterface::SP
@@ -72,12 +77,9 @@ FileStorHandler::lock(const document::Bucket& bucket, uint16_t disk)
 }
 
 void
-FileStorHandler::remapQueueAfterDiskMove(
-        const document::Bucket& bucket,
-        uint16_t sourceDisk, uint16_t targetDisk)
+FileStorHandler::remapQueueAfterDiskMove(const document::Bucket& bucket, uint16_t sourceDisk, uint16_t targetDisk)
 {
     RemapInfo target(bucket, targetDisk);
-
     _impl->remapQueue(RemapInfo(bucket, sourceDisk), target, FileStorHandlerImpl::MOVE);
 }
 
@@ -151,6 +153,11 @@ uint32_t
 FileStorHandler::getNumActiveMerges() const
 {
     return _impl->getNumActiveMerges();
+}
+
+uint32_t
+FileStorHandler::getNextStripeId(uint32_t disk) {
+    return _impl->getNextStripeId(disk);
 }
 
 void

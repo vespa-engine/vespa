@@ -47,6 +47,7 @@ public:
     MessageTracker::UP handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd);
 
 private:
+    uint32_t                  _stripeId;
     PersistenceUtil           _env;
     uint32_t                  _warnOnSlowOperations;
     spi::PersistenceProvider& _spi;

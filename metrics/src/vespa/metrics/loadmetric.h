@@ -57,6 +57,7 @@ public:
     const MetricType& operator[](const LoadType& type) const
         { return const_cast<LoadMetric<MetricType>*>(this)->getMetric(type); }
     MetricType& getMetric(const LoadType& type);
+    const MetricMap & getMetricMap() const { return _metrics; }
 
     void addMemoryUsage(MemoryConsumption& mc) const override;
 };

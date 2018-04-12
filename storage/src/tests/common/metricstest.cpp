@@ -111,10 +111,8 @@ void MetricsTest::setUp() {
     uint16_t diskCount = _node->getPartitions().size();
     documentapi::LoadTypeSet::SP loadTypes(_node->getLoadTypes());
 
-    _filestorMetrics.reset(new FileStorMetrics(
-            _node->getLoadTypes()->getMetricLoadTypes()));
-    _filestorMetrics->initDiskMetrics(
-            diskCount, loadTypes->getMetricLoadTypes(), 1);
+    _filestorMetrics.reset(new FileStorMetrics(_node->getLoadTypes()->getMetricLoadTypes()));
+    _filestorMetrics->initDiskMetrics(diskCount, loadTypes->getMetricLoadTypes(), 1, 1);
     _topSet->registerMetric(*_filestorMetrics);
 
     _bucketManagerMetrics.reset(new BucketManagerMetrics);
@@ -156,7 +154,7 @@ void MetricsTest::createFakeLoad()
     for (uint32_t i=0; i<_filestorMetrics->disks.size(); ++i) {
         FileStorDiskMetrics& disk(*_filestorMetrics->disks[i]);
         disk.queueSize.addValue(4 * n);
-        disk.averageQueueWaitingTime[documentapi::LoadType::DEFAULT].addValue(10 * n);
+        //disk.averageQueueWaitingTime[documentapi::LoadType::DEFAULT].addValue(10 * n);
         disk.pendingMerges.addValue(4 * n);
         for (uint32_t j=0; j<disk.threads.size(); ++j) {
             FileStorThreadMetrics& thread(*disk.threads[j]);

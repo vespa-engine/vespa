@@ -67,17 +67,16 @@ PersistenceQueueTest::testFetchNextUnlockedMessageIfBucketLocked()
 {
     DummyStorageLink top;
     DummyStorageLink *dummyManager;
-    top.push_back(std::unique_ptr<StorageLink>(
-                          dummyManager = new DummyStorageLink));
+    top.push_back(std::unique_ptr<StorageLink>(dummyManager = new DummyStorageLink));
     top.open();
     ForwardingMessageSender messageSender(*dummyManager);
 
     documentapi::LoadTypeSet loadTypes("raw:");
     FileStorMetrics metrics(loadTypes.getMetricLoadTypes());
-    metrics.initDiskMetrics(_node->getPartitions().size(),
-                            loadTypes.getMetricLoadTypes(), 1);
+    metrics.initDiskMetrics(_node->getPartitions().size(), loadTypes.getMetricLoadTypes(), 1, 1);
 
     FileStorHandler filestorHandler(messageSender, metrics, _node->getPartitions(), _node->getComponentRegister());
+    uint32_t stripeId = filestorHandler.getNextStripeId(0);
 
     // Send 2 puts, 2 to the first bucket, 1 to the second. Calling
     // getNextMessage 2 times should then return a lock on the first bucket,
@@ -87,12 +86,12 @@ PersistenceQueueTest::testFetchNextUnlockedMessageIfBucketLocked()
     filestorHandler.schedule(createPut(1234, 1), 0);
     filestorHandler.schedule(createPut(5432, 0), 0);
 
-    auto lock0 = filestorHandler.getNextMessage(0);
+    auto lock0 = filestorHandler.getNextMessage(0, stripeId);
     CPPUNIT_ASSERT(lock0.first.get());
     CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 1234),
                          dynamic_cast<api::PutCommand&>(*lock0.second).getBucketId());
 
-    auto lock1 = filestorHandler.getNextMessage(0);
+    auto lock1 = filestorHandler.getNextMessage(0, stripeId);
     CPPUNIT_ASSERT(lock1.first.get());
     CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 5432),
                          dynamic_cast<api::PutCommand&>(*lock1.second).getBucketId());

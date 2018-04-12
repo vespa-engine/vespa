@@ -51,8 +51,7 @@ PersistenceTestEnvironment::PersistenceTestEnvironment(DiskCount numDisks, const
       _metrics(_component.getLoadTypes()->getMetricLoadTypes())
 {
     _node.setupDummyPersistence();
-    _metrics.initDiskMetrics(
-            numDisks, _node.getLoadTypes()->getMetricLoadTypes(), 1);
+    _metrics.initDiskMetrics(numDisks, _node.getLoadTypes()->getMetricLoadTypes(), 1, 1);
     _handler.reset(new FileStorHandler(_messageKeeper, _metrics,
                                        _node.getPersistenceProvider().getPartitionStates().getList(),
                                        _node.getComponentRegister()));

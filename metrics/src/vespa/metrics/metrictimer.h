@@ -25,11 +25,10 @@ public:
      * underflow or be affected by system clock changes.
      */
     template<typename AvgVal, typename TotVal, bool SumOnAdd>
-    AvgVal stop(ValueMetric<AvgVal, TotVal, SumOnAdd>& metric) {
+    AvgVal stop(ValueMetric<AvgVal, TotVal, SumOnAdd>& metric) const {
         const auto delta = std::chrono::steady_clock::now() - _startTime;
         using ToDuration = std::chrono::duration<AvgVal, std::milli>;
-        const auto deltaMs(
-                std::chrono::duration_cast<ToDuration>(delta).count());
+        const auto deltaMs(std::chrono::duration_cast<ToDuration>(delta).count());
         metric.addValue(deltaMs);
         return deltaMs;
     }

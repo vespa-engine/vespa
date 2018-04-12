@@ -100,7 +100,6 @@ struct StorageServerTest : public CppUnit::TestFixture {
     void testShutdownStorageDuringDiskLoad();
     void testShutdownDistributorDuringDiskLoad();
     void testShutdownAfterDiskFailure_Stress();
-    void testSplitJoinSplitThroughDistributor_Stress();
     void testPriorityAndQueueSneakingWhileSplitJoinStressTest();
     void testStatusPages();
 
@@ -118,8 +117,8 @@ struct StorageServerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE_END();
 };
 
-StorageServerTest::StorageServerTest() {}
-StorageServerTest::~StorageServerTest() {}
+StorageServerTest::StorageServerTest() = default;
+StorageServerTest::~StorageServerTest() = default;
 
 CPPUNIT_TEST_SUITE_REGISTRATION(StorageServerTest);
 
