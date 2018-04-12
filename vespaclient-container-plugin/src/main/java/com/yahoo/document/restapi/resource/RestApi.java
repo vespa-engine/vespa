@@ -21,10 +21,13 @@ import com.yahoo.document.restapi.OperationHandlerImpl;
 import com.yahoo.document.restapi.Response;
 import com.yahoo.document.restapi.RestApiException;
 import com.yahoo.document.restapi.RestUri;
+import com.yahoo.document.select.DocumentSelector;
+import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
@@ -278,27 +281,81 @@ public class RestApi extends LoggingRequestHandler {
 
         return optionsBuilder.build();
     }
-    
-    private HttpResponse handleVisit(RestUri restUri, HttpRequest request) throws RestApiException {
-        String documentSelection = Optional.ofNullable(request.getProperty(SELECTION)).orElse("");
-        if (restUri.getGroup().isPresent() && ! restUri.getGroup().get().value.isEmpty()) {
-            if (! documentSelection.isEmpty()) {
-                // TODO why is this restriction in place? Document selection allows composition of location predicate and other expressions
-                return Response.createErrorResponse(
-                        400,
-                        "Visiting does not support setting value for group/value in combination with expression, try using only expression parameter instead.",
-                        restUri,
-                        RestUri.apiErrorCodes.GROUP_AND_EXPRESSION_ERROR);
-            }
-            RestUri.Group group = restUri.getGroup().get();
-            if (group.name == 'n') {
-                documentSelection = "id.user=" + group.value;
+
+    /**
+     * Escapes all single quotes in input string.
+     * @param original non-escaped string that may contain single quotes
+     * @return original if no quotes to escaped were found, otherwise a quote-escaped string
+     */
+    private static String singleQuoteEscapedString(String original) {
+        if (original.indexOf('\'') == -1) {
+            return original;
+        }
+        StringBuilder builder = new StringBuilder(original.length() + 1);
+        for (int i = 0; i < original.length(); ++i) {
+            char c = original.charAt(i);
+            if (c != '\'') {
+                builder.append(c);
             } else {
-                documentSelection = "id.group='" + group.value + "'";
+                builder.append("\\'");
             }
         }
+        return builder.toString();
+    }
+
+    private static long parseAndValidateVisitNumericId(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            throw new BadRequestParameterException(SELECTION, "Failed to parse numeric part of selection URI");
+        }
+    }
+
+    private static String validateAndBuildLocationSubExpression(RestUri.Group group) {
+        if (group.name == 'n') {
+            return String.format("id.user==%d", parseAndValidateVisitNumericId(group.value));
+        } else {
+            // Cannot feed documents with groups that don't pass this test, so it makes sense
+            // to enforce this symmetry when trying to retrieve them as well.
+            Text.validateTextString(group.value).ifPresent(codepoint -> {
+                throw new BadRequestParameterException(SELECTION, String.format(
+                        "Failed to parse group part of selection URI; contains invalid text code point U%04X", codepoint));
+            });
+            return String.format("id.group=='%s'", singleQuoteEscapedString(group.value));
+        }
+    }
+
+    private static void validateDocumentSelectionSyntax(String expression) {
+        try {
+            new DocumentSelector(expression);
+        } catch (ParseException e) {
+            throw new BadRequestParameterException(SELECTION, String.format("Failed to parse expression given in 'selection'" +
+                    " parameter. Must be a complete and valid sub-expression. Error: %s", e.getMessage()));
+        }
+    }
+
+    private static String documentSelectionFromRequest(RestUri restUri, HttpRequest request) throws BadRequestParameterException {
+        String documentSelection = Optional.ofNullable(request.getProperty(SELECTION)).orElse("");
+        if (!documentSelection.isEmpty()) {
+            // Ensure that the selection parameter sub-expression is complete and valid by itself.
+            validateDocumentSelectionSyntax(documentSelection);
+        }
+        if (restUri.getGroup().isPresent() && ! restUri.getGroup().get().value.isEmpty()) {
+            String locationSubExpression = validateAndBuildLocationSubExpression(restUri.getGroup().get());
+            if (documentSelection.isEmpty()) {
+                documentSelection = locationSubExpression;
+            } else {
+                documentSelection = String.format("%s and (%s)", locationSubExpression, documentSelection);
+            }
+        }
+        return documentSelection;
+    }
+
+    private HttpResponse handleVisit(RestUri restUri, HttpRequest request) throws RestApiException {
+        String documentSelection;
         OperationHandler.VisitOptions options;
         try {
+            documentSelection = documentSelectionFromRequest(restUri, request);
             options = visitOptionsFromRequest(request);
         } catch (BadRequestParameterException e) {
             return createInvalidParameterResponse(e.getParameter(), e.getMessage());

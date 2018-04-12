@@ -24,6 +24,9 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 
 import static org.hamcrest.core.Is.is;
@@ -277,29 +280,99 @@ public class RestApiTest {
         assertThat(rest, containsString(visit_response_part3));
     }
 
-    // TODO why is this a limitation?
-    String visit_test_bad_uri = "/document/v1/namespace/document-type/group/abc?continuation=abc&selection=foo";
-    String visit_test_bad_response = "Visiting does not support setting value for group/value in combination with expression";
-
-
-    @Test
-    public void testBadVisit() throws Exception {
-        Request request = new Request("http://localhost:" + getFirstListenPort() + visit_test_bad_uri);
-        HttpGet get = new HttpGet(request.getUri());
-        String rest = doRest(get);
-        assertThat(rest, containsString(visit_test_bad_response));
+    private static String encoded(String original) {
+        try {
+            return URLEncoder.encode(original, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    String visit_test_uri_selection_rewrite = "/document/v1/namespace/document-type/group/abc?continuation=abc";
-    String visit_test_response_selection_rewrite = "doc selection: 'id.group='abc''";
+    private String performV1RestCall(String pathSuffix) {
+        try {
+            Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/%s",
+                    getFirstListenPort(), pathSuffix));
+            HttpGet get = new HttpGet(request.getUri());
+            return doRest(get);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
+    private void assertResultingDocumentSelection(String suffix, String expected) {
+        String output = performV1RestCall(suffix);
+        assertThat(output, containsString(String.format("doc selection: '%s'", expected)));
+    }
 
     @Test
     public void testUseExpressionOnVisit() throws Exception {
-        Request request = new Request("http://localhost:" + getFirstListenPort() + visit_test_uri_selection_rewrite);
-        HttpGet get = new HttpGet(request.getUri());
-        String rest = doRest(get);
-        assertThat(rest, containsString(visit_test_response_selection_rewrite));
+        assertResultingDocumentSelection("group/abc?continuation=xyz", "id.group=='abc'");
+    }
+
+    private void assertGroupDocumentSelection(String group, String expected) {
+        assertResultingDocumentSelection("group/" + encoded(group), expected);
+    }
+
+    @Test
+    public void group_strings_are_escaped() {
+        assertGroupDocumentSelection("'", "id.group=='\\''");
+        assertGroupDocumentSelection("hello 'world'", "id.group=='hello \\'world\\''");
+        assertGroupDocumentSelection("' goodbye moon", "id.group=='\\' goodbye moon'");
+    }
+
+    private void assertNumericIdFailsParsing(String id) {
+        String output = performV1RestCall(String.format("number/%s", encoded(id)));
+        assertThat(output, containsString("Failed to parse numeric part of selection URI"));
+    }
+
+    @Test
+    public void invalid_numeric_id_returns_error() {
+        assertNumericIdFailsParsing("123a");
+        assertNumericIdFailsParsing("a123");
+        assertNumericIdFailsParsing("0x1234");
+        assertNumericIdFailsParsing("\u0000");
+    }
+
+    @Test
+    public void non_text_group_string_character_returns_error() {
+        String output = performV1RestCall(String.format("group/%s", encoded("\u001f")));
+        assertThat(output, containsString("Failed to parse group part of selection URI; contains invalid text code point U001F"));
+    }
+
+    @Test
+    public void can_specify_numeric_id_without_explicit_selection() {
+        assertResultingDocumentSelection("number/1234", "id.user==1234");
+    }
+
+    @Test
+    public void can_specify_group_id_without_explicit_selection() {
+        assertResultingDocumentSelection("group/foo", "id.group=='foo'");
+    }
+
+    @Test
+    public void can_specify_both_numeric_id_and_explicit_selection() {
+        assertResultingDocumentSelection(String.format("number/1234?selection=%s", encoded("1 != 2")),
+                "id.user==1234 and (1 != 2)");
+    }
+
+    @Test
+    public void can_specify_both_group_id_and_explicit_selection() {
+        assertResultingDocumentSelection(String.format("group/bar?selection=%s", encoded("3 != 4")),
+                "id.group=='bar' and (3 != 4)");
+    }
+
+    private void assertDocumentSelectionFailsParsing(String expression) {
+        String output = performV1RestCall(String.format("number/1234?selection=%s", encoded(expression)));
+        assertThat(output, containsString("Failed to parse expression given in 'selection' parameter. Must be a complete and valid sub-expression."));
+    }
+
+    // Make sure that typoing the selection parameter doesn't corrupt the entire selection expression
+    @Test
+    public void explicit_selection_sub_expression_is_validated_for_completeness() {
+        assertDocumentSelectionFailsParsing("1 +");
+        assertDocumentSelectionFailsParsing(") or true");
+        assertDocumentSelectionFailsParsing("((1 + 2)");
+        assertDocumentSelectionFailsParsing("true) or (true");
     }
 
     @Test

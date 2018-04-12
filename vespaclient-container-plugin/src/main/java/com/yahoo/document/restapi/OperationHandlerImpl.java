@@ -355,12 +355,6 @@ public class OperationHandlerImpl implements OperationHandler {
                 clusterListToString(clusters) + " not " + wantedCluster.get() + ". Please select a valid vespa cluster.", RestUri.apiErrorCodes.MISSING_CLUSTER));
     }
 
-    // Based on resolveClusterRoute in VdsVisit, protected for testability
-    // TODO remove in favor of resolveClusterDef
-    protected static String resolveClusterRoute(Optional<String> wantedCluster, List<ClusterDef> clusters) throws RestApiException {
-        return clusterDefToRoute(resolveClusterDef(wantedCluster, clusters));
-    }
-
     protected static String clusterDefToRoute(ClusterDef clusterDef) {
         return "[Storage:cluster=" + clusterDef.getName() + ";clusterconfigid=" + clusterDef.getConfigId() + "]";
     }
