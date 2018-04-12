@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
@@ -37,9 +36,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerato
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
+import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.DeploymentExpirer;
@@ -273,32 +273,40 @@ public class ApplicationController {
                     .map(app -> new LockedApplication(app, lock))
                     .orElseGet(() -> new LockedApplication(createApplication(applicationId, Optional.empty()), lock));
 
-            final boolean canDeployDirectly = canDeployDirectlyTo(zone, options);
+            boolean canDeployDirectly =   ! options.screwdriverBuildJob.map(job1 -> job1.screwdriverId).isPresent()
+                                        ||  zone.environment().isManuallyDeployed();
+            boolean preferOldestVersion = options.deployCurrentVersion;
 
-            // Determine Vespa version to use
-            Version version;
-            if (options.deployCurrentVersion) {
-                version = application.versionIn(zone, controller);
-            } else if (canDeployDirectly) {
-                version = options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
-            } else if (! application.change().isPresent() && ! zone.environment().isManuallyDeployed()) {
-                return unexpectedDeployment(applicationId, zone, applicationPackageFromDeployer);
+            // Determine versions to use.
+            Version platformVersion;
+            ApplicationVersion applicationVersion;
+            ApplicationPackage applicationPackage;
+            if (canDeployDirectly) {
+                platformVersion = options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
+                applicationVersion = ApplicationVersion.unknown;
+                applicationPackage = applicationPackageFromDeployer.orElseThrow(
+                        () -> new IllegalArgumentException("Application package must be given when deploying to " + zone));
             } else {
-                version = application.deployVersionIn(zone, controller);
+                JobType jobType = JobType.from(controller.system(), zone)
+                                         .orElseThrow(() -> new IllegalArgumentException("No job found for zone " + zone));
+                Optional<JobStatus.JobRun> triggered = Optional.ofNullable(application.deploymentJobs().jobStatus().get(jobType))
+                        .flatMap(JobStatus::lastTriggered);
+                // TODO jvenstad: Verify this response with a test, and see that it sorts itself when triggered.
+                if ( ! triggered.isPresent())
+                    return unexpectedDeployment(applicationId, zone);
+                platformVersion = preferOldestVersion
+                        ? application.oldestDeployedPlatform().orElse(controller.systemVersion())
+                        : triggered.get().version();
+                applicationVersion = preferOldestVersion
+                        ? application.oldestDeployedApplication().orElse(triggered.get().applicationVersion())
+                        : triggered.get().applicationVersion();
+                applicationPackage = new ApplicationPackage(artifactRepository.getApplicationPackage(application.id(), applicationVersion.id()));
             }
 
-            // Determine application package to use
-            // TODO jvenstad: Inline this and clean up with the above.
-            Pair<ApplicationPackage, ApplicationVersion> artifact = artifactFor(zone, application,
-                                                                                applicationPackageFromDeployer,
-                                                                                canDeployDirectly,
-                                                                                options.deployCurrentVersion);
-            ApplicationPackage applicationPackage = artifact.getFirst();
-            ApplicationVersion applicationVersion = artifact.getSecond();
             validate(applicationPackage.deploymentSpec());
 
             // Update application with information from application package
-            if (!options.deployCurrentVersion) {
+            if ( ! preferOldestVersion) {
                 // Store information about application package
                 application = application.with(applicationPackage.deploymentSpec());
                 application = application.with(applicationPackage.validationOverrides());
@@ -316,7 +324,7 @@ public class ApplicationController {
             // TODO jvenstad: Use code from DeploymentTrigger? Also, validate application version.
             // Validate the change being deployed
             if ( ! canDeployDirectly) {
-                validateChange(application, zone, version);
+                validateChange(application, zone, platformVersion);
             }
 
             // Assign global rotation
@@ -330,8 +338,7 @@ public class ApplicationController {
             });
 
             // Carry out deployment
-            options = withVersion(version, options);
-
+            options = withVersion(platformVersion, options);
 
             ConfigServerClient.PreparedApplication preparedApplication;
             DeploymentId deploymentId = new DeploymentId(applicationId, zone);
@@ -342,36 +349,14 @@ public class ApplicationController {
                 preparedApplication = configServer.prepare(deploymentId, options, cnames, rotationNames, applicationPackage.zippedContent());
                 preparedApplication.activate();
             }
-            application = application.withNewDeployment(zone, applicationVersion, version, clock.instant());
+            // TODO: Set new deployment after convergence, rather than after deployment call, succeeds.
+            application = application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant());
 
             store(application);
 
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
         }
-    }
-
-    /** Decide application package and version pair to use in given zone */
-    private Pair<ApplicationPackage, ApplicationVersion> artifactFor(ZoneId zone,
-                                                                     Application application,
-                                                                     Optional<ApplicationPackage> applicationPackage,
-                                                                     boolean canDeployDirectly,
-                                                                     boolean deployCurrentVersion) {
-        ApplicationVersion version;
-        ApplicationPackage pkg;
-        Optional<DeploymentJobs.JobType> job = DeploymentJobs.JobType.from(controller.system(), zone);
-        if (canDeployDirectly) {
-            pkg = applicationPackage.orElseThrow(() -> new IllegalArgumentException("Application package must be " +
-                                                                                    "given when deploying to " + zone));
-            version = ApplicationVersion.unknown;
-        } else {
-            if (!job.isPresent()) {
-                throw new IllegalArgumentException("No job found for zone " + zone);
-            }
-            version = application.deployApplicationVersionFor(job.get(), controller, deployCurrentVersion);
-            pkg = new ApplicationPackage(artifactRepository.getApplicationPackage(application.id(), version.id()));
-        }
-        return new Pair<>(pkg, version);
     }
 
     /** Makes sure the application has a global rotation, if eligible. */
@@ -389,8 +374,7 @@ public class ApplicationController {
         return application;
     }
 
-    private ActivateResult unexpectedDeployment(ApplicationId applicationId, ZoneId zone,
-                                                Optional<ApplicationPackage> applicationPackage) {
+    private ActivateResult unexpectedDeployment(ApplicationId applicationId, ZoneId zone) {
         Log logEntry = new Log();
         logEntry.level = "WARNING";
         logEntry.time = clock.instant().toEpochMilli();
@@ -399,9 +383,7 @@ public class ApplicationController {
         PrepareResponse prepareResponse = new PrepareResponse();
         prepareResponse.log = Collections.singletonList(logEntry);
         prepareResponse.configChangeActions = new ConfigChangeActions(Collections.emptyList(), Collections.emptyList());
-        return new ActivateResult(new RevisionId(applicationPackage.map(ApplicationPackage::hash)
-                                                                   .orElse("0")), prepareResponse,
-                                  applicationPackage.map(a -> a.zippedContent().length).orElse(0));
+        return new ActivateResult(new RevisionId("0"), prepareResponse, 0);
     }
 
     private LockedApplication deleteRemovedDeployments(LockedApplication application) {
@@ -429,7 +411,7 @@ public class ApplicationController {
     }
 
     private LockedApplication deleteUnreferencedDeploymentJobs(LockedApplication application) {
-        for (DeploymentJobs.JobType job : application.deploymentJobs().jobStatus().keySet()) {
+        for (JobType job : application.deploymentJobs().jobStatus().keySet()) {
             Optional<ZoneId> zone = job.zone(controller.system());
 
             if ( ! job.isProduction() || (zone.isPresent() && application.deploymentSpec().includes(zone.get().environment(), zone.map(ZoneId::region))))
@@ -622,13 +604,6 @@ public class ApplicationController {
      */
     Lock lock(ApplicationId application) {
         return curator.lock(application, Duration.ofMinutes(10));
-    }
-
-    /** Returns whether a direct deployment to given zone is allowed */
-    private static boolean canDeployDirectlyTo(ZoneId zone, DeployOptions options) {
-        return !options.screwdriverBuildJob.isPresent() ||
-               options.screwdriverBuildJob.get().screwdriverId == null ||
-               zone.environment().isManuallyDeployed();
     }
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system. */

@@ -82,7 +82,6 @@ public class JobStatus {
                                             ", but that has neither been triggered nor deployed");
 
         } else {
-            // TODO jvenstad: This is wrong, because triggering versions are not necessarily the same as deployed versions!
             version = lastTriggered.get().version();
             applicationVersion = lastTriggered.get().applicationVersion();
             reason = lastTriggered.get().reason();

@@ -25,7 +25,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
@@ -48,7 +47,6 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -244,7 +242,7 @@ public class ControllerTest {
         tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
 
         app1 = applications.require(app1.id());
-        assertEquals("First deployment gets system version", systemVersion, app1.oldestDeployedVersion().get());
+        assertEquals("First deployment gets system version", systemVersion, app1.oldestDeployedPlatform().get());
         assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
 
         // Unexpected deployment
@@ -267,13 +265,13 @@ public class ControllerTest {
         tester.deployAndNotify(app1, applicationPackage, true, productionUsWest1);
 
         app1 = applications.require(app1.id());
-        assertEquals("Application change preserves version", systemVersion, app1.oldestDeployedVersion().get());
+        assertEquals("Application change preserves version", systemVersion, app1.oldestDeployedPlatform().get());
         assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
 
         // A deployment to the new region gets the same version
         tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
         app1 = applications.require(app1.id());
-        assertEquals("Application change preserves version", systemVersion, app1.oldestDeployedVersion().get());
+        assertEquals("Application change preserves version", systemVersion, app1.oldestDeployedPlatform().get());
         assertEquals(systemVersion, tester.configServer().lastPrepareVersion().get());
         assertFalse("Change deployed", app1.change().isPresent());
 
@@ -286,7 +284,7 @@ public class ControllerTest {
         tester.deployAndNotify(app1, applicationPackage, true, productionUsEast3);
 
         app1 = applications.require(app1.id());
-        assertEquals("Version upgrade changes version", newSystemVersion, app1.oldestDeployedVersion().get());
+        assertEquals("Version upgrade changes version", newSystemVersion, app1.oldestDeployedPlatform().get());
         assertEquals(newSystemVersion, tester.configServer().lastPrepareVersion().get());
     }
 

@@ -20,6 +20,7 @@ import java.util.stream.Stream;
  *
  * @author bratseth
  */
+// TODO jvenstad: Make an AbstractFilteringList based on JobList and let this extend it for free not()s?
 public class ApplicationList {
 
     private final ImmutableList<Application> list;
@@ -52,7 +53,7 @@ public class ApplicationList {
 
     // ----------------------------------- Filters
 
-    /** Returns the subset of applications which are currently upgrading (to any version) */
+    /** Returns the subset of applications which are upgrading (to any version), not considering block windows. */
     public ApplicationList upgrading() {
         return listOf(list.stream().filter(application -> application.change().platform().isPresent()));
     }
@@ -81,7 +82,7 @@ public class ApplicationList {
         return listOf(list.stream().filter(application -> application.change().isPresent()));
     }
 
-    /** Returns the subset of applications which is currently not deploying a change */
+    /** Returns the subset of applications which are currently not deploying a change */
     public ApplicationList notDeploying() {
         return listOf(list.stream().filter(application -> ! application.change().isPresent()));
     }
@@ -175,7 +176,7 @@ public class ApplicationList {
      * Applications without any deployments are ordered first.
      */
     public ApplicationList byIncreasingDeployedVersion() {
-        return listOf(list.stream().sorted(Comparator.comparing(application -> application.oldestDeployedVersion().orElse(Version.emptyVersion))));
+        return listOf(list.stream().sorted(Comparator.comparing(application -> application.oldestDeployedPlatform().orElse(Version.emptyVersion))));
     }
 
     // ----------------------------------- Internal helpers

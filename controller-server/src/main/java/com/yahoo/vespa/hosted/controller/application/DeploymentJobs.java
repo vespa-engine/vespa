@@ -122,11 +122,16 @@ public class DeploymentJobs {
         return true; // other environments do not have any preconditions
     }
 
+    /** Returns the JobStatus of the given JobType, or empty. */
+    public Optional<JobStatus> statusOf(JobType jobType) {
+        return Optional.ofNullable(jobStatus().get(jobType));
+    }
+
     /** Returns the last successful application version for the given job */
     public Optional<ApplicationVersion> lastSuccessfulApplicationVersionFor(JobType jobType) {
-        return Optional.ofNullable(jobStatus().get(jobType))
-                       .flatMap(JobStatus::lastSuccess)
-                       .map(JobStatus.JobRun::applicationVersion);
+        return statusOf(jobType)
+                .flatMap(JobStatus::lastSuccess)
+                .map(JobStatus.JobRun::applicationVersion);
     }
 
     /**
@@ -140,10 +145,10 @@ public class DeploymentJobs {
 
     /** Returns the time of success for the given change for the given job type, or empty if unsuccessful. */
     public Optional<Instant> successAt(Change change, JobType jobType) {
-        return Optional.ofNullable(jobStatus().get(jobType))
-                       .flatMap(JobStatus::lastSuccess)
-                       .filter(status -> status.lastCompletedWas(change))
-                       .map(JobStatus.JobRun::at);
+        return statusOf(jobType)
+                .flatMap(JobStatus::lastSuccess)
+                .filter(status -> status.lastCompletedWas(change))
+                .map(JobStatus.JobRun::at);
     }
 
     private static Optional<Long> requireId(Optional<Long> id, String message) {

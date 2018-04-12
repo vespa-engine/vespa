@@ -390,7 +390,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         });
 
         // Compile version. The version that should be used when building an application
-        object.setString("compileVersion", application.oldestDeployedVersion().orElse(controller.systemVersion()).toFullString());
+        object.setString("compileVersion", application.oldestDeployedPlatform().orElse(controller.systemVersion()).toFullString());
 
         // Rotation
         Cursor globalRotationsArray = object.setArray("globalRotations");
@@ -679,10 +679,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         controller.applications().lockOrThrow(id, application -> {
-            if (application.change().isPresent())
-                throw new IllegalArgumentException("Can not start a deployment of " + application + " at this time: " +
-                                                   application.change() + " is in progress");
-
             controller.applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
         });
         return new MessageResponse("Triggered deployment of application '" + id + "' on version " + version);

@@ -46,6 +46,7 @@ import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
 import java.util.Optional;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -59,7 +60,7 @@ public final class ControllerTester {
 
     private final ControllerDb db;
     private final AthenzDbMock athenzDb;
-    private final ManualClock clock; // TODO jvenstad: Let this clock determine log time stamps.
+    private final ManualClock clock;
     private final ConfigServerClientMock configServer;
     private final ZoneRegistryMock zoneRegistry;
     private final GitHubMock gitHub;
@@ -109,6 +110,13 @@ public final class ControllerTester {
         this.buildService = buildService;
         this.controller = createController(db, curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
                                            athenzDb, nameService, artifactRepository, entityService, buildService);
+
+        // Set the log output from the root logger to use timestamps from the manual clock ;)
+        Logger.getLogger("").getHandlers()[0].setFilter(
+                record -> {
+                    record.setMillis(clock.millis());
+                    return true;
+                });
     }
 
     public Controller controller() { return controller; }

@@ -53,18 +53,8 @@ public final class Change {
     /** Returns the platform version carried by this. */
     public Optional<Version> platform() { return platform; }
 
-    /** Returns the platform version which will be deployed in a zone if the given version is currently deployed there. */
-    public Version platformAgainst(Version version) {
-        return downgrades(version) ? version : platform.orElse(version);
-    }
-
     /** Returns the application version carried by this. */
     public Optional<ApplicationVersion> application() { return application; }
-
-    /** Returns the application version which will be deployed in a zone if the given version is currently deployed there. */
-    public ApplicationVersion applicationAgainst(ApplicationVersion version) {
-        return downgrades(version) ? version : application.orElse(version);
-    }
 
     /** Returns an instance representing no change */
     public static Change empty() { return empty; }
