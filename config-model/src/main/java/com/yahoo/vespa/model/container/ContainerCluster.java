@@ -174,7 +174,7 @@ public final class ContainerCluster
     private final ConfigProducerGroup<RestApi> restApiGroup;
     private final ConfigProducerGroup<Servlet> servletGroup;
     private final ContainerClusterVerifier clusterVerifier;
-    private final DeployState deployState;
+    private final boolean isHostedVespa;
 
     private Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
     private MetricDefaultsConfig.Factory.Enum defaultMetricConsumerFactory;
@@ -207,8 +207,9 @@ public final class ContainerCluster
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, ContainerClusterVerifier verifier) {
         super(parent, subId);
         this.clusterVerifier = verifier;
-        this.deployState = deployStateFrom(parent);
         this.name = name;
+        DeployState deployState = deployStateFrom(parent);
+        this.isHostedVespa = stateIsHosted(deployState);
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
         componentGroup = new ComponentGroup<>(this, "component");
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
@@ -236,8 +237,6 @@ public final class ContainerCluster
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
         addJaxProviders();
     }
-
-    public DeployState getDeployState() { return deployState; }
 
     public void setZone(Zone zone) {
         this.zone = zone;
@@ -709,7 +708,7 @@ public final class ContainerCluster
     }
 
     public void addDefaultSearchAccessLog() {
-        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.queryAccessLog, getName(), getDeployState()));
+        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.queryAccessLog, getName(), isHostedVespa));
     }
 
     @Override
@@ -771,12 +770,12 @@ public final class ContainerCluster
     }
 
     public boolean isHostedVespa() {
-        return stateIsHosted(deployState);
+        return isHostedVespa;
     }
 
     @Override
     public void getConfig(RoutingProviderConfig.Builder builder) {
-        builder.enabled(isHostedVespa());
+        builder.enabled(isHostedVespa);
     }
 
     public Map<String, String> concreteDocumentTypes() { return concreteDocumentTypes; }

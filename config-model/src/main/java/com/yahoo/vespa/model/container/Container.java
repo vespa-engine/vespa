@@ -56,7 +56,7 @@ public class Container extends AbstractService implements
 
     private final AbstractConfigProducer parent;
     private final String name;
-    private final DeployState deployState;
+    private final boolean isHostedVespa;
 
     private String clusterName = null;
     private boolean rpcServerEnabled = true;
@@ -96,7 +96,7 @@ public class Container extends AbstractService implements
         super(parent, name);
         this.name = name;
         this.parent = parent;
-        this.deployState = deployStateFrom(parent);
+        this.isHostedVespa = stateIsHosted(deployStateFrom(parent));
         this.portOverrides = Collections.unmodifiableList(new ArrayList<>(portOverrides));
         this.retired = retired;
         this.index = index;
@@ -313,15 +313,11 @@ public class Container extends AbstractService implements
         }
     }
 
-    private boolean isHostedVespa() {
-        return stateIsHosted(deployState);
-    }
-
     /** Returns the jvm arguments this should start with */
     @Override
     public String getJvmArgs() {
         String jvmArgs = super.getJvmArgs();
-        return isHostedVespa() && hasDocproc()
+        return isHostedVespa && hasDocproc()
                 ? ("".equals(jvmArgs) ? defaultHostedJVMArgs : defaultHostedJVMArgs + " " + jvmArgs)
                 : jvmArgs;
     }

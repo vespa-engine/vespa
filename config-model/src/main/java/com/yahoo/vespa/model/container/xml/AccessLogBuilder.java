@@ -7,7 +7,6 @@ import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.AccessLogComponent.AccessLogType;
-import com.yahoo.config.model.deploy.DeployState;
 import org.w3c.dom.Element;
 
 import java.util.Optional;
@@ -46,11 +45,11 @@ public class AccessLogBuilder {
 
     private static class DomBuilder extends VespaDomBuilder.DomConfigProducerBuilder<AccessLogComponent> {
         private final AccessLogType accessLogType;
-        private final DeployState deployState;
+        private final boolean isHostedVespa;
 
-        public DomBuilder(AccessLogType accessLogType, DeployState deployState) {
+        public DomBuilder(AccessLogType accessLogType, boolean isHostedVespa) {
             this.accessLogType = accessLogType;
-            this.deployState = deployState;
+            this.isHostedVespa = isHostedVespa;
         }
 
         @Override
@@ -61,7 +60,7 @@ public class AccessLogBuilder {
                     rotationInterval(spec),
                     rotationScheme(spec),
                     compressOnRotation(spec),
-                    deployState,
+                    isHostedVespa,
                     symlinkName(spec));
         }
 
@@ -111,7 +110,7 @@ public class AccessLogBuilder {
         if (logType == null) {
             return Optional.empty();
         }
-        DeployState deployState = cluster.getDeployState();
-        return Optional.of(new DomBuilder(logType, deployState).build(cluster, accessLogSpec));
+        boolean hosted = cluster.isHostedVespa();
+        return Optional.of(new DomBuilder(logType, hosted).build(cluster, accessLogSpec));
     }
 }

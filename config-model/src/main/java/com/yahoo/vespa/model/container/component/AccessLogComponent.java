@@ -7,7 +7,6 @@ import com.yahoo.container.logging.YApacheAccessLog;
 import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import com.yahoo.config.model.deploy.DeployState;
 
 import static com.yahoo.container.core.AccessLogConfig.FileHandler.RotateScheme;
 
@@ -24,14 +23,14 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     private final String rotationInterval;
     private final RotateScheme.Enum rotationScheme;
     private final Boolean compression;
-    private final DeployState deployState;
+    private final boolean isHostedVespa;
     private final String symlinkName;
 
-    public AccessLogComponent(AccessLogType logType, String clusterName, DeployState deployState)
+    public AccessLogComponent(AccessLogType logType, String clusterName, boolean isHostedVespa)
     {
         this(logType,
                 String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName, "%Y%m%d%H%M%S"),
-                null, null, null, deployState,
+                null, null, null, isHostedVespa,
                 capitalize(logType.name()) + "." + clusterName);
     }
 
@@ -44,7 +43,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
                               String rotationInterval,
                               RotateScheme.Enum rotationScheme,
                               Boolean compressOnRotation,
-                              DeployState deployState,
+                              boolean isHostedVespa,
                               String symlinkName)
     {
         super(new ComponentModel(accessLogClass(logType), null, "container-core", null));
@@ -52,7 +51,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         this.rotationInterval = rotationInterval;
         this.rotationScheme = rotationScheme;
         this.compression = compressOnRotation;
-        this.deployState = deployState;
+        this.isHostedVespa = isHostedVespa;
         this.symlinkName = symlinkName;
 
         if (fileNamePattern == null)
@@ -77,10 +76,6 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         builder.fileHandler(fileHandlerConfig());
     }
 
-    private boolean isHostedVespa() {
-        return stateIsHosted(deployState);
-    }
-
     private AccessLogConfig.FileHandler.Builder fileHandlerConfig() {
         AccessLogConfig.FileHandler.Builder builder = new AccessLogConfig.FileHandler.Builder();
         if (fileNamePattern != null)
@@ -93,7 +88,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
             builder.symlink(symlinkName);
         if (compression != null) {
             builder.compressOnRotation(compression);
-        } else if (isHostedVespa()) {
+        } else if (isHostedVespa) {
             builder.compressOnRotation(true);
         }
 

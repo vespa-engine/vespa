@@ -16,7 +16,6 @@ import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.metrics.MetricsmanagerConfig;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Service;
@@ -64,7 +63,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
     // TODO: Make private
     private String documentSelection;
     ContentSearchCluster search;
-    private final DeployState deployState;
+    private final boolean isHostedVespa;
     private final Map<String, NewDocumentType> documentDefinitions;
     private final Set<NewDocumentType> globallyDistributedDocuments;
     // Experimental flag (TODO: remove when feature is enabled by default)
@@ -485,7 +484,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                            Redundancy redundancy,
                            Zone zone) {
         super(parent, clusterName);
-        this.deployState = deployStateFrom(parent);
+        this.isHostedVespa = stateIsHosted(deployStateFrom(parent));
         this.clusterName = clusterName;
         this.documentDefinitions = documentDefinitions;
         this.globallyDistributedDocuments = globallyDistributedDocuments;
@@ -626,13 +625,13 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
     }
 
     public boolean isHostedVespa() {
-        return stateIsHosted(deployState);
+        return isHostedVespa;
     }
 
     @Override
     public void validate() throws Exception {
         super.validate();
-        if (search.usesHierarchicDistribution() && ! isHostedVespa()) {
+        if (search.usesHierarchicDistribution() && ! isHostedVespa) {
             // validate manually configured groups
             new IndexedHierarchicDistributionValidator(search.getClusterName(), rootGroup, redundancy, search.getIndexed().getTuning().dispatch.policy).validate();
             if (search.getIndexed().useMultilevelDispatchSetup()) {

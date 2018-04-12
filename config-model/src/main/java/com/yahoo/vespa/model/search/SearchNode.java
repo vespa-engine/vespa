@@ -49,7 +49,7 @@ public class SearchNode extends AbstractService implements
         TranslogserverConfig.Producer {
 
     private static final long serialVersionUID = 1L;
-    private final DeployState deployState;
+    private final boolean isHostedVespa;
     private final boolean flushOnShutdown;
     private NodeSpec nodeSpec;
     private int distributionKey;
@@ -104,7 +104,7 @@ public class SearchNode extends AbstractService implements
 
     private SearchNode(AbstractConfigProducer parent, String name, NodeSpec nodeSpec, String clusterName, boolean flushOnShutdown, Optional<Tuning> tuning) {
         super(parent, name);
-        this.deployState = deployStateFrom(parent);
+        this.isHostedVespa = stateIsHosted(deployStateFrom(parent));
         this.nodeSpec = nodeSpec;
         this.clusterName = clusterName;
         this.flushOnShutdown = flushOnShutdown;
@@ -235,10 +235,6 @@ public class SearchNode extends AbstractService implements
         }
     }
 
-    private boolean isHostedVespa() {
-        return stateIsHosted(deployState);
-    }
-
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         builder.
@@ -253,7 +249,7 @@ public class SearchNode extends AbstractService implements
             slobrokconfigid(getClusterConfigId()).
             routingconfigid(getClusterConfigId()).
             distributionkey(getDistributionKey());
-        if (isHostedVespa()) {
+        if (isHostedVespa) {
             // 4 days, 1 hour, 1 minute due to failed nodes can be in failed for 4 days and we want at least one hour more
             // to make sure the node failer has done its work
             builder.pruneremoveddocumentsage(4 * 24 * 3600 + 3600 + 60);
