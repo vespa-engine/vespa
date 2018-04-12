@@ -1929,8 +1929,8 @@ PageDict4Reader::setup()
     _spd.skipBits(getFileHeaderPad(_ssReader._spStartOffset));
     assert(_pFileBitLen >= _pd.getReadOffset());
     if (_pFileBitLen > _pd.getReadOffset()) {
-        setupPage();
         setupSPage();
+        setupPage();
     }
 
     const ComprBuffer &sscb  = _ssReader._cb;
@@ -2233,17 +2233,18 @@ PageDict4Reader::readCounts(vespalib::string &word,
             --_l3Residue;
         }
         --_countsResidue;
+        wordNum = _wordNum++;
         if (_countsResidue == 0) {
             assert((_pd.getReadOffset() & (getPageBitSize() - 1)) == 0);
             if (_pd.getReadOffset() < _pFileBitLen) {
-                setupPage();
-                if (_l3Residue == 0)
+                if (_l3Residue == 0) {
                     setupSPage();
+                }
+                setupPage();
             } else {
                 assert(_pd.getReadOffset() == _pFileBitLen);
             }
         }
-        wordNum = _wordNum++;
     } else if (_overflowPage) {
         readOverflowCounts(word, counts);
         _overflowPage = false;
@@ -2256,15 +2257,16 @@ PageDict4Reader::readCounts(vespalib::string &word,
         assert(tword == word);
         --_l3Residue;
         _lastWord = word;
+        wordNum = _wordNum++;
         _pd.align(getPageBitSize());
         if (_pd.getReadOffset() < _pFileBitLen) {
-            setupPage();
-            if (_l3Residue == 0)
+            if (_l3Residue == 0) {
                 setupSPage();
+            }
+            setupPage();
         } else {
             assert(_pd.getReadOffset() == _pFileBitLen);
         }
-        wordNum = _wordNum++;
     } else {
         // Mark end of file.
         word.clear();
