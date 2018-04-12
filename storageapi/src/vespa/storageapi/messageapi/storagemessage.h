@@ -367,8 +367,9 @@ public:
 
     const StorageMessageAddress* getAddress() const { return _address.get(); }
 
-    void setAddress(const StorageMessageAddress& address)
-        { _address.reset(new StorageMessageAddress(address)); }
+    void setAddress(const StorageMessageAddress& address) {
+        _address.reset(new StorageMessageAddress(address));
+    }
 
     /**
      *  Returns the approximate memory footprint (in bytes) of a storage message.
@@ -387,11 +388,13 @@ public:
      * created, whether it was a storageprotocol message, a documentprotocol
      * message, or an RPC call.
      */
-    void setTransportContext(std::unique_ptr<TransportContext> context)
-        { _transportContext = std::move(context); }
+    void setTransportContext(std::unique_ptr<TransportContext> context) {
+        _transportContext = std::move(context);
+    }
 
-    std::unique_ptr<TransportContext> getTransportContext() const
-        { return std::move(_transportContext); }
+    std::unique_ptr<TransportContext> getTransportContext() const {
+        return std::move(_transportContext);
+    }
 
     /**
      * This method is overloaded in subclasses and will call the correct
