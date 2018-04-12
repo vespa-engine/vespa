@@ -70,6 +70,13 @@ operator<<(std::ostream &stream, const index::PostingListCounts &counts)
     return stream;
 }
 
+std::ostream &
+operator<<(std::ostream &stream, const PageDict4StartOffset &startOffset)
+{
+    stream << "(accNumDocs=" << startOffset._accNumDocs << ",fileOffset=" << startOffset._fileOffset << ")";
+    return stream;
+}
+
 typedef index::PostingListCounts Counts;
 typedef PageDict4StartOffset StartOffset;
 
@@ -1911,7 +1918,12 @@ PageDict4Reader::PageDict4Reader(const SSReader &ssReader,
       _spwc(),
       _spwe(),
       _ssd(),
-      _wordNum(1u)
+      _wordNum(1u),
+      _l1SkipChecks(),
+      _l2SkipChecks(),
+      _l3SkipChecks(),
+      _l4SkipChecks(),
+      _l5SkipChecks()
 {
 }
 
@@ -1943,14 +1955,61 @@ PageDict4Reader::~PageDict4Reader()
 {
 }
 
+namespace
+{
+
+template <typename CheckVector>
+void checkWordOffset(CheckVector &skip, uint32_t &skipAdjust, uint32_t wordOffset, uint32_t wordEntryLen)
+{
+    if (skip.valid() && skip->wordOffset + skipAdjust <= wordOffset) {
+        assert(skip->wordOffset + skipAdjust == wordOffset);
+        skipAdjust += wordEntryLen;
+        skip.step();
+    }
+}
+
+}
+
+
+template <typename Entry1, typename Entry2>
+void
+PageDict4Reader::checkWordOffsets(const std::vector<char> &words,
+                 CheckVector<Entry1> &skip1,
+                 CheckVector<Entry2> &skip2)
+{
+    skip1.setup();
+    skip2.setup();
+    uint32_t wordOffset = 0;
+    uint32_t skip1Adjust = 0;
+    uint32_t skip2Adjust = 0;
+    auto c = words.cbegin();
+    auto ce = words.cend();
+    while (c != ce) {
+        wordOffset = c - words.cbegin();
+        ++c; // skip lcp
+        assert(c != ce);
+        while (*c != '\0') {
+            ++c;
+            assert(c != ce);
+        }
+        assert(c != ce);
+        ++c;
+        uint32_t wordEntryLen = c - words.cbegin() - wordOffset;
+        checkWordOffset(skip1, skip1Adjust, wordOffset, wordEntryLen);
+        checkWordOffset(skip2, skip2Adjust, wordOffset, wordEntryLen);
+    }
+    assert(!skip1.valid());
+    assert(!skip2.valid());
+}
 
 void
 PageDict4Reader::setupPage()
 {
 #if 0
     LOG(info,
-        "setupPage(%ld), "
+        "setupPage(%lu)",
         (long int) _pd.getReadOffset());
+    uint32_t pageNum = _pd.getReadOffset() / getPageBitSize();
 #endif
     uint32_t l2Size = _pd.readBits(15);
     uint32_t l1Size = _pd.readBits(15);
@@ -1961,57 +2020,107 @@ PageDict4Reader::setupPage()
     if (countsEntries == 0 && l1Size == 0 && l2Size == 0) {
         _pd.smallAlign(64);
         _overflowPage = true;
+#if 0
+        LOG(info, "setupPage(%u): overflow wordNum = %lu",
+            pageNum, _wordNum);
+#endif
         return;
     }
     _overflowPage = false;
     assert(countsEntries > 0);
     uint32_t l1Residue = getL1Entries(countsEntries);
     uint32_t l2Residue = getL2Entries(l1Residue);
+#if 0
+    LOG(info, "setupPage(%u): countsEntries=%u, l1Residue=%u, l2Residue=%u wordNum = [%lu,%lu)",
+        pageNum,
+        countsEntries, l1Residue, l2Residue, _wordNum, _wordNum + countsEntries);
+#endif
 
     uint64_t beforePos = _pd.getReadOffset();
     Counts counts;
-    StartOffset startOffset;
+    _l2SkipChecks.clear();
+    L2SkipCheck l2SkipCheck(_startOffset);
     while (l2Residue > 0) {
         UC64_DECODECONTEXT(o);
         uint32_t length;
+        uint64_t val64;
         const bool bigEndian = true;
         UC64_DECODECONTEXT_LOAD(o, _pd._);
-        UC64_SKIPEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L2_WORDOFFSET, EC);
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L2_WORDOFFSET, EC);
+        l2SkipCheck.wordOffset += val64;
         UC64_DECODECONTEXT_STORE(o, _pd._);
         readStartOffset(_pd,
-                        startOffset,
+                        l2SkipCheck.startOffset,
                         K_VALUE_COUNTFILE_L2_FILEOFFSET,
                         K_VALUE_COUNTFILE_L2_ACCNUMDOCS);
         UC64_DECODECONTEXT_LOAD(o, _pd._);
-        UC64_SKIPEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L2_COUNTOFFSET, EC);
-        UC64_SKIPEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L2_L1OFFSET, EC);
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L2_COUNTOFFSET, EC);
+        l2SkipCheck.countOffset += val64;
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L2_L1OFFSET, EC);
+        l2SkipCheck.l1Offset += val64;
         UC64_DECODECONTEXT_STORE(o, _pd._);
         --l2Residue;
+        _l2SkipChecks.push_back(l2SkipCheck);
     }
+    _l2SkipChecks.setup();
     assert(_pd.getReadOffset() == beforePos + l2Size);
+    _l1SkipChecks.clear();
+    L1SkipCheck l1SkipCheck(_startOffset);
     while (l1Residue > 0) {
         UC64_DECODECONTEXT(o);
         uint32_t length;
+        uint64_t val64;
         const bool bigEndian = true;
         UC64_DECODECONTEXT_LOAD(o, _pd._);
-        UC64_SKIPEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L1_WORDOFFSET, EC);
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L1_WORDOFFSET, EC);
+        l1SkipCheck.wordOffset += val64;
         UC64_DECODECONTEXT_STORE(o, _pd._);
         readStartOffset(_pd,
-                        startOffset,
+                        l1SkipCheck.startOffset,
                         K_VALUE_COUNTFILE_L1_FILEOFFSET,
                         K_VALUE_COUNTFILE_L1_ACCNUMDOCS);
         UC64_DECODECONTEXT_LOAD(o, _pd._);
-        UC64_SKIPEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L1_COUNTOFFSET, EC);
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L1_COUNTOFFSET, EC);
+        l1SkipCheck.countOffset += val64;
         UC64_DECODECONTEXT_STORE(o, _pd._);
         --l1Residue;
+        _l1SkipChecks.push_back(l1SkipCheck);
+        if (_l2SkipChecks.valid()) {
+            uint64_t l1CheckOffset = beforePos + l2Size + _l2SkipChecks->l1Offset;
+            uint64_t l1Offset = _pd.getReadOffset();
+            if (l1Offset >= l1CheckOffset) {
+                assert(l1Offset == l1CheckOffset);
+                assert(_l2SkipChecks->check(l1SkipCheck));
+                _l2SkipChecks.step();
+            }
+        }
     }
+    assert(!_l2SkipChecks.valid());
+    _l1SkipChecks.setup();
     assert(_pd.getReadOffset() == beforePos + l2Size + l1Size);
     (void) beforePos;
     _counts.clear();
+    StartOffset startOffset(_startOffset);
     while (countsEntries > 0) {
         _pd.readCounts(counts);
         _counts.push_back(counts);
+        startOffset.adjust(counts);
         --countsEntries;
+        if (_l1SkipChecks.valid()) {
+            uint64_t countsCheckOffset = beforePos + l2Size + l1Size + _l1SkipChecks->countOffset;
+            uint64_t countsOffset = _pd.getReadOffset();
+            if (countsOffset >= countsCheckOffset) {
+                assert(countsOffset == countsCheckOffset);
+                assert(startOffset == _l1SkipChecks->startOffset);
+                _l1SkipChecks.step();
+            }
+        }
+    }
+    assert(!_l1SkipChecks.valid());
+    if (_l3SkipChecks.valid()) {
+        assert(_l3SkipChecks->startOffset == startOffset);
+        assert(_l3SkipChecks->wordNum == _wordNum + _countsResidue);
+        _l3SkipChecks.step();
     }
     _cc = _counts.begin();
     _ce = _counts.end();
@@ -2022,6 +2131,7 @@ PageDict4Reader::setupPage()
     _pd.readBytes(reinterpret_cast<uint8_t *>(&_words[0]), wordsSize);
     _wc = _words.begin();
     _we = _words.end();
+    checkWordOffsets(_words, _l1SkipChecks, _l2SkipChecks);
 }
 
 
@@ -2029,73 +2139,129 @@ void
 PageDict4Reader::setupSPage()
 {
 #if 0
-    LOG(info, "setupSPage(%d),", (int) _spd.getReadOffset());
+    LOG(info, "setupSPage(%" PRIu64 "),", _spd.getReadOffset());
+    uint32_t pageNum = _spd.getReadOffset() / getPageBitSize();
 #endif
     uint32_t l5Size = _spd.readBits(15);
     uint32_t l4Size = _spd.readBits(15);
     uint32_t l3Entries = _spd.readBits(15);
     uint32_t wordsSize = _spd.readBits(12);
     _l3Residue = l3Entries;
+    assert(!_l3SkipChecks.valid());
 
     assert(l3Entries > 0);
     uint32_t l4Residue = getL4Entries(l3Entries);
     uint32_t l5Residue = getL5Entries(l4Residue);
+#if 0
+    LOG(info, "setupSPage(%u): l3Entries=%u, l4Residue=%u, l5Residue=%u wordNum = %lu",
+        pageNum, l3Entries, l4Residue, l5Residue, _wordNum);
+#endif
 
     uint64_t beforePos = _spd.getReadOffset();
-    StartOffset startOffset;
+    _l5SkipChecks.clear();
+    L5SkipCheck l5SkipCheck(_startOffset, _wordNum);
     while (l5Residue > 0) {
         UC64_DECODECONTEXT(o);
         uint32_t length;
+        uint64_t val64;
         const bool bigEndian = true;
         UC64_DECODECONTEXT_LOAD(o, _spd._);
-        UC64_SKIPEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L5_WORDOFFSET, EC);
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L5_WORDOFFSET, EC);
+        l5SkipCheck.wordOffset += val64;
         UC64_DECODECONTEXT_STORE(o, _spd._);
         readStartOffset(_spd,
-                        startOffset,
+                        l5SkipCheck.startOffset,
                         K_VALUE_COUNTFILE_L5_FILEOFFSET,
                         K_VALUE_COUNTFILE_L5_ACCNUMDOCS);
         UC64_DECODECONTEXT_LOAD(o, _spd._);
-        UC64_SKIPEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L5_WORDNUM, EC);
-        UC64_SKIPEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L5_L3OFFSET, EC);
-        UC64_SKIPEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L5_L4OFFSET, EC);
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L5_WORDNUM, EC);
+        l5SkipCheck.wordNum += val64;
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L5_L3OFFSET, EC);
+        l5SkipCheck.l3Offset += val64;
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L5_L4OFFSET, EC);
+        l5SkipCheck.l4Offset += val64;
         UC64_DECODECONTEXT_STORE(o, _spd._);
         --l5Residue;
+        _l5SkipChecks.push_back(l5SkipCheck);
     }
+    _l5SkipChecks.setup();
     assert(_spd.getReadOffset() == beforePos + l5Size);
+    _l4SkipChecks.clear();
+    L4SkipCheck l4SkipCheck(_startOffset, _wordNum);
     while (l4Residue > 0) {
         UC64_DECODECONTEXT(o);
         uint32_t length;
+        uint64_t val64;
         const bool bigEndian = true;
         UC64_DECODECONTEXT_LOAD(o, _spd._);
-        UC64_SKIPEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L4_WORDOFFSET, EC);
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L4_WORDOFFSET, EC);
+        l4SkipCheck.wordOffset += val64;
         UC64_DECODECONTEXT_STORE(o, _spd._);
         readStartOffset(_spd,
-                        startOffset,
+                        l4SkipCheck.startOffset,
                         K_VALUE_COUNTFILE_L4_FILEOFFSET,
                         K_VALUE_COUNTFILE_L4_ACCNUMDOCS);
         UC64_DECODECONTEXT_LOAD(o, _spd._);
-        UC64_SKIPEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L4_WORDNUM, EC);
-        UC64_SKIPEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L4_L3OFFSET, EC);
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L4_WORDNUM, EC);
+        l4SkipCheck.wordNum += val64;
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L4_L3OFFSET, EC);
+        l4SkipCheck.l3Offset += val64;
         UC64_DECODECONTEXT_STORE(o, _spd._);
         --l4Residue;
+        _l4SkipChecks.push_back(l4SkipCheck);
+        if (_l5SkipChecks.valid()) {
+            uint64_t l4CheckOffset = beforePos + l5Size + _l5SkipChecks->l4Offset;
+            uint64_t l4Offset = _spd.getReadOffset();
+            if (l4Offset >= l4CheckOffset) {
+                assert(l4Offset == l4CheckOffset);
+                assert(_l5SkipChecks->check(l4SkipCheck));
+                _l5SkipChecks.step();
+            }
+        }
     }
+    assert(!_l5SkipChecks.valid());
+    _l4SkipChecks.setup();
     assert(_spd.getReadOffset() == beforePos + l5Size + l4Size);
     (void) l4Size;
     (void) l5Size;
     (void) beforePos;
+    _l3SkipChecks.clear();
+    L3SkipCheck l3SkipCheck(_startOffset, _wordNum);
+#if 0
+    uint64_t wordNum = _wordNum;
+#endif
     while (l3Entries > 1) {
         readStartOffset(_spd,
-                        startOffset,
+                        l3SkipCheck.startOffset,
                         K_VALUE_COUNTFILE_L3_FILEOFFSET,
                         K_VALUE_COUNTFILE_L3_ACCNUMDOCS);
         UC64_DECODECONTEXT(o);
         uint32_t length;
+        uint64_t val64;
         const bool bigEndian = true;
         UC64_DECODECONTEXT_LOAD(o, _spd._);
-        UC64_SKIPEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L3_WORDNUM, EC);
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_L3_WORDNUM, EC);
+        l3SkipCheck.wordNum += val64;
         UC64_DECODECONTEXT_STORE(o, _spd._);
         --l3Entries;
+        _l3SkipChecks.push_back(l3SkipCheck);
+        if (_l4SkipChecks.valid()) {
+            uint64_t l3CheckOffset = beforePos + l5Size + l4Size + _l4SkipChecks->l3Offset;
+            uint64_t l3Offset = _spd.getReadOffset();
+            if (l3Offset >= l3CheckOffset) {
+                assert(l3Offset == l3CheckOffset);
+                assert(_l4SkipChecks->check(l3SkipCheck));
+                _l4SkipChecks.step();
+            }
+        }
+#if 0
+        LOG(info, "setupSPage(%u): l3[%u]: wordNum = [%lu,%lu)",
+            pageNum, _l3Residue - l3Entries - 1, wordNum, l3SkipCheck.wordNum);
+        wordNum = l3SkipCheck.wordNum;
+#endif
     }
+    assert(!_l4SkipChecks.valid());
+    _l3SkipChecks.setup();
     uint32_t pageOffset = _spd.getReadOffset() & (getPageBitSize() - 1);
     uint32_t padding = getPageBitSize() - wordsSize * 8 - pageOffset;
     _spd.skipBits(padding);
@@ -2103,6 +2269,7 @@ PageDict4Reader::setupSPage()
     _spd.readBytes(reinterpret_cast<uint8_t *>(&_spwords[0]), wordsSize);
     _spwc = _spwords.begin();
     _spwe = _spwords.end();
+    checkWordOffsets(_spwords, _l4SkipChecks, _l5SkipChecks);
 }
 
 
@@ -2299,16 +2466,22 @@ PageDict4Reader::readOverflowCounts(vespalib::string &word,
     txtStartOffset << _startOffset;
     txtLRStartOffset << wtsslr._startOffset;
     LOG(info,
-        "readOverflowCounts _wordNum=%" PRIu64
+        "readOverflowCounts _wordNum=%" PRIu64 ", %" PRIu64
         ", counts=%s, startOffset=%s (should be %s)",
-        _wordNum,
+        _wordNum, wordNum,
         txtCounts.str().c_str(),
         txtLRStartOffset.str().c_str(),
         txtStartOffset.str().c_str());
 #endif
 
+    assert(wordNum == _wordNum);
     assert(wtsslr._startOffset == _startOffset);
     _startOffset.adjust(counts);
+    if (_l3SkipChecks.valid()) {
+        assert(_l3SkipChecks->startOffset == _startOffset);
+        assert(_l3SkipChecks->wordNum == _wordNum + 1);
+        _l3SkipChecks.step();
+    }
 }
 
 } // namespace bitcompression

@@ -663,6 +663,109 @@ public:
     StartOffset _startOffset;
     bool _overflowPage;
     typedef std::vector<Counts> PCV;
+    struct L1SkipCheck
+    {
+        uint32_t    wordOffset;
+        StartOffset startOffset;
+        uint32_t    countOffset;
+        L1SkipCheck(const StartOffset &startOffset_)
+            : wordOffset(0),
+              startOffset(startOffset_),
+              countOffset(0)
+        {
+        }
+    };
+    struct L2SkipCheck : public L1SkipCheck
+    {
+        uint32_t    l1Offset;
+        L2SkipCheck(const StartOffset &startOffset_)
+            : L1SkipCheck(startOffset_),
+              l1Offset(0)
+        {
+        }
+
+        bool check(const L1SkipCheck &rhs) const {
+            return startOffset == rhs.startOffset &&
+                countOffset == rhs.countOffset;
+        }
+    };
+    struct L3SkipCheck
+    {
+        StartOffset startOffset;
+        uint64_t    wordNum;
+        L3SkipCheck(const StartOffset &startOffset_, uint64_t wordNum_)
+            : startOffset(startOffset_),
+              wordNum(wordNum_)
+        {
+        }
+    };
+    struct L4SkipCheck
+    {
+        uint32_t    wordOffset;
+        StartOffset startOffset;
+        uint64_t    wordNum;
+        uint32_t    l3Offset;
+        L4SkipCheck(const StartOffset &startOffset_, uint64_t wordNum_)
+            : wordOffset(0),
+              startOffset(startOffset_),
+              wordNum(wordNum_),
+              l3Offset(0)
+        {
+        }
+        bool check(const L3SkipCheck &rhs) const {
+            return startOffset == rhs.startOffset &&
+                wordNum == rhs.wordNum;
+        }
+    };
+    struct L5SkipCheck : public L4SkipCheck
+    {
+        uint32_t    l4Offset;
+        L5SkipCheck(const StartOffset &startOffset_, uint64_t wordNum_)
+            : L4SkipCheck(startOffset_, wordNum_),
+              l4Offset(0)
+        {
+        }
+        bool check(const L4SkipCheck &rhs) const {
+            return startOffset == rhs.startOffset &&
+                wordNum == rhs.wordNum &&
+                l3Offset == rhs.l3Offset;
+        }
+    };
+    template <typename Element>
+    class CheckVector
+    {
+        using Vector = std::vector<Element>;
+        Vector _vector;
+        typename Vector::const_iterator _cur;
+        typename Vector::const_iterator _end;
+    public:
+        CheckVector()
+            : _vector(),
+              _cur(),
+              _end()
+        {
+        }
+        void clear() {
+            _vector.clear();
+        }
+        void setup() {
+            _cur = _vector.cbegin();
+            _end = _vector.cend();
+        }
+        bool valid() const { return _cur != _end; }
+        const Element *operator->() const { return _cur.operator->(); }
+        void step() {
+            ++_cur;
+        }
+        void push_back(const Element &element) {
+            _vector.push_back(element);
+        }
+    };
+    template <typename Entry1, typename Entry2>
+    void
+    checkWordOffsets(const std::vector<char> &words,
+                     CheckVector<Entry1> &skip1,
+                     CheckVector<Entry2> &skip2);
     PCV _counts;
     PCV::const_iterator _cc;
     PCV::const_iterator _ce;
@@ -681,6 +784,11 @@ public:
 
     DC _ssd;
     uint64_t _wordNum;
+    CheckVector<L1SkipCheck> _l1SkipChecks;
+    CheckVector<L2SkipCheck> _l2SkipChecks;
+    CheckVector<L3SkipCheck> _l3SkipChecks;
+    CheckVector<L4SkipCheck> _l4SkipChecks;
+    CheckVector<L5SkipCheck> _l5SkipChecks;
 
 
     PageDict4Reader(const SSReader &ssReader,
