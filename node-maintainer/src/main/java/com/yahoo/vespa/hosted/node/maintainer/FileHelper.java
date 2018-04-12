@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author freva
@@ -153,8 +154,8 @@ public class FileHelper {
     }
 
     static List<Path> listContentsOfDirectory(Path basePath) {
-        try {
-            return Files.list(basePath).collect(Collectors.toList());
+        try (Stream<Path> directoryStream = Files.list(basePath)) {
+            return directoryStream.collect(Collectors.toList());
         } catch (NoSuchFileException ignored) {
             return Collections.emptyList();
         } catch (IOException e) {
