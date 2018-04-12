@@ -521,12 +521,6 @@ RequestBucketInfoReply::RequestBucketInfoReply(
 
 RequestBucketInfoReply::~RequestBucketInfoReply() { }
 
-uint32_t
-RequestBucketInfoReply::getMemoryFootprint() const
-{
-    return sizeof(Entry) * _buckets.capacity();
-}
-
 void
 RequestBucketInfoReply::print(std::ostream& out, bool verbose,
                               const std::string& indent) const

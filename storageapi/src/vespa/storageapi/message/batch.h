@@ -106,11 +106,6 @@ public:
     */
     Operation& getOperation(uint32_t index) { return *_operations[index]; }
 
-    /**
-       Returns an approximate size of this message.
-    */
-    uint32_t getMemoryFootprint() const override { return _approxSize + 20; }
-
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(BatchPutRemoveCommand, onBatchPutRemove)

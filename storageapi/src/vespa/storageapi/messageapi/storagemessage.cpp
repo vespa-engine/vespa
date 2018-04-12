@@ -273,7 +273,8 @@ StorageMessage::StorageMessage(const MessageType& type, Id id)
       _msgId(id),
       _priority(NORMAL),
       _address(),
-      _loadType(documentapi::LoadType::DEFAULT)
+      _loadType(documentapi::LoadType::DEFAULT),
+      _approxByteSize(50)
 {
 }
 
@@ -282,7 +283,8 @@ StorageMessage::StorageMessage(const StorageMessage& other, Id id)
       _msgId(id),
       _priority(other._priority),
       _address(),
-      _loadType(other._loadType)
+      _loadType(other._loadType),
+      _approxByteSize(other._approxByteSize)
 {
 }
 

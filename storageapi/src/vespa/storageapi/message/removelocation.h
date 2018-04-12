@@ -14,9 +14,6 @@ public:
     ~RemoveLocationCommand();
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    uint32_t getMemoryFootprint() const override {
-        return _documentSelection.length();
-    }
     const vespalib::string& getDocumentSelection() const { return _documentSelection; }
     DECLARE_STORAGECOMMAND(RemoveLocationCommand, onRemoveLocation);
 private:

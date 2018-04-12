@@ -17,7 +17,6 @@ class SearchResultCommand : public StorageCommand, public vdslib::SearchResult {
 public:
     SearchResultCommand();
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    uint32_t getMemoryFootprint() const override { return getSerializedSize(); }
     DECLARE_STORAGECOMMAND(SearchResultCommand, onSearchResult)
 };
 

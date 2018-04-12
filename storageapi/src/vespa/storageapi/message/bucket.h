@@ -400,7 +400,6 @@ public:
     ~RequestBucketInfoReply();
     const EntryVector & getBucketInfo() const { return _buckets; }
     EntryVector & getBucketInfo() { return _buckets; }
-    uint32_t getMemoryFootprint() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(RequestBucketInfoReply, onRequestBucketInfoReply)
 };

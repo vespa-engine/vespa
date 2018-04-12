@@ -20,9 +20,6 @@ public:
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    uint32_t getMemoryFootprint() const override {
-        return getSearchResult().getSerializedSize() + getDocumentSummary().getSerializedSize();
-    }
     const vdslib::SearchResult & getSearchResult() const { return _searchResult; }
     vdslib::SearchResult & getSearchResult() { return _searchResult; }
     const vdslib::DocumentSummary & getDocumentSummary() const { return _summary; }
