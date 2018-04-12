@@ -201,7 +201,7 @@ private:
     uint32_t _l4WordOffset; // Offset for last L4 word written
     uint32_t _l5WordOffset; // Offset for last L5 word written
 
-    // file offsets
+    // Offsets in data files for last L3 entry
     StartOffset _l3StartOffset;
 
     // Offsets in data files for last L4 entry
@@ -213,7 +213,7 @@ private:
     // Offsets in data files for last L6 entry
     StartOffset _l6StartOffset;
 
-    uint64_t _l3WordNum;    // word number next L3 entry to write
+    uint64_t _l3WordNum;    // word number last L3 entry
     uint64_t _l4WordNum;    // word number last L4 entry
     uint64_t _l5WordNum;    // word number last L5 entry
     uint64_t _l6WordNum;    // word number last L6 entry

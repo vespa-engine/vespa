@@ -555,7 +555,7 @@ PageDict4SPWriter::addL3Skip(const vespalib::stringref &word,
         // Flush existing full writes.
         flushPage();
 
-        // Compensate for elided entry.
+        // Promote elided L3 entry to L6 entry
         _l6Word = word;
         _l6StartOffset = startOffset;
         _l6WordNum = wordNum;
