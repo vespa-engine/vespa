@@ -95,13 +95,12 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     void onContainerActivation(ActiveContainer nextContainer) {
         synchronized (monitor) {
             Instant now = clock.instant();
-            ActiveContainer previousContainer = currentContainer;
+            if (currentContainer != null) {
+                deactivatedContainers.put(currentContainer, new LifecycleStats(currentContainerActivationTime, now));
+                destructorReferences.add(new ActiveContainerPhantomReference(currentContainer, garbageCollectedContainers));
+            }
             currentContainer = nextContainer;
             currentContainerActivationTime = now;
-            if (previousContainer != null) {
-                deactivatedContainers.put(previousContainer, new LifecycleStats(currentContainerActivationTime, now));
-                destructorReferences.add(new ActiveContainerPhantomReference(previousContainer, garbageCollectedContainers));
-            }
         }
     }
 
