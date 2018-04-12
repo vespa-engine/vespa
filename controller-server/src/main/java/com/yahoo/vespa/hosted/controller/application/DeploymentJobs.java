@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -66,18 +65,11 @@ public class DeploymentJobs {
         return new DeploymentJobs(Optional.of(report.projectId()), status, issueId);
     }
 
-    public DeploymentJobs withTriggering(JobType jobType,
-                                         Version version,
-                                         ApplicationVersion applicationVersion,
-                                         String reason,
-                                         Instant triggerTime) {
+    public DeploymentJobs withTriggering(JobType jobType, JobStatus.JobRun jobRun) {
         Map<JobType, JobStatus> status = new LinkedHashMap<>(this.status);
-        status.compute(jobType, (type, job) -> {
+        status.compute(jobType, (__, job) -> {
             if (job == null) job = JobStatus.initial(jobType);
-            return job.withTriggering(version,
-                                      applicationVersion,
-                                      reason,
-                                      triggerTime);
+            return job.withTriggering(jobRun);
         });
         return new DeploymentJobs(projectId, status, issueId);
     }
@@ -118,6 +110,7 @@ public class DeploymentJobs {
 
     /** Returns whether change can be deployed to the given environment */
     public boolean isDeployableTo(Environment environment, Change change) {
+        // TODO jvenstad: Rewrite to verify versions when deployment is already decided.
         if (environment == null || ! change.isPresent()) {
             return true;
         }
@@ -129,11 +122,16 @@ public class DeploymentJobs {
         return true; // other environments do not have any preconditions
     }
 
+    /** Returns the JobStatus of the given JobType, or empty. */
+    public Optional<JobStatus> statusOf(JobType jobType) {
+        return Optional.ofNullable(jobStatus().get(jobType));
+    }
+
     /** Returns the last successful application version for the given job */
     public Optional<ApplicationVersion> lastSuccessfulApplicationVersionFor(JobType jobType) {
-        return Optional.ofNullable(jobStatus().get(jobType))
-                       .flatMap(JobStatus::lastSuccess)
-                       .map(JobStatus.JobRun::applicationVersion);
+        return statusOf(jobType)
+                .flatMap(JobStatus::lastSuccess)
+                .map(JobStatus.JobRun::applicationVersion);
     }
 
     /**
@@ -147,10 +145,10 @@ public class DeploymentJobs {
 
     /** Returns the time of success for the given change for the given job type, or empty if unsuccessful. */
     public Optional<Instant> successAt(Change change, JobType jobType) {
-        return Optional.ofNullable(jobStatus().get(jobType))
-                       .flatMap(JobStatus::lastSuccess)
-                       .filter(status -> status.lastCompletedWas(change))
-                       .map(JobStatus.JobRun::at);
+        return statusOf(jobType)
+                .flatMap(JobStatus::lastSuccess)
+                .filter(status -> status.lastCompletedWas(change))
+                .map(JobStatus.JobRun::at);
     }
 
     private static Optional<Long> requireId(Optional<Long> id, String message) {

@@ -57,11 +57,11 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
                                    new byte[0], Request.Method.POST),
                        200, "{\"message\":\"Triggered component for tenant1.application1\"}");
 
-        // Triggers specific job when given
+        // Triggers specific job when given -- fails here because the job has never run before, and so application version can't be resolved.
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/" +
                                    app.id().tenant().value() + "/application/" + app.id().application().value(),
                                    "staging-test".getBytes(StandardCharsets.UTF_8), Request.Method.POST),
-                       200, "{\"message\":\"Triggered staging-test for tenant1.application1\"}");
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot determine application version to use for stagingTest\"}");
     }
 
 }

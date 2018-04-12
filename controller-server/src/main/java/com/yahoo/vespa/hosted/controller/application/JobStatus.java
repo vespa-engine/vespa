@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -55,11 +56,12 @@ public class JobStatus {
         return new JobStatus(type, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    public JobStatus withTriggering(Version version, ApplicationVersion applicationVersion, String reason,
-                                    Instant triggerTime) {
-        return new JobStatus(type, jobError, Optional.of(new JobRun(-1, version, applicationVersion, reason,
-                                                                    triggerTime)),
-                             lastCompleted, firstFailing, lastSuccess);
+    public JobStatus withTriggering(Version platform, ApplicationVersion application, String reason, Instant triggeredAt) {
+        return withTriggering(new JobRun(-1, platform, application, reason, triggeredAt));
+    }
+
+    public JobStatus withTriggering(JobRun jobRun) {
+        return new JobStatus(type, jobError, Optional.of(jobRun), lastCompleted, firstFailing, lastSuccess);
     }
 
     public JobStatus withCompletion(long runId, Optional<DeploymentJobs.JobError> jobError, Instant completionTime,
@@ -80,7 +82,6 @@ public class JobStatus {
                                             ", but that has neither been triggered nor deployed");
 
         } else {
-            // TODO jvenstad: This is wrong, because triggering versions are not necessarily the same as deployed versions!
             version = lastTriggered.get().version();
             applicationVersion = lastTriggered.get().applicationVersion();
             reason = lastTriggered.get().reason();

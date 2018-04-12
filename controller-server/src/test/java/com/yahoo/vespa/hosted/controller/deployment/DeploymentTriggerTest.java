@@ -296,8 +296,6 @@ public class DeploymentTriggerTest {
 
         Application app = tester.createAndDeploy("app1", 1, applicationPackageBuilder.build());
 
-
-
         tester.clock().advance(Duration.ofHours(1)); // --------------- Enter block window: 18:30
 
         readyJobsTrigger.run();

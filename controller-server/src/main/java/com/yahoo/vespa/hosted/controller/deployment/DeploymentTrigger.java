@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -119,29 +121,29 @@ public class DeploymentTrigger {
     }
 
     /**
-     * Finds and triggers jobs that can and should run but are currently not.
+     * Finds and triggers jobs that can and should run but are currently not, and returns the number of triggered jobs.
      *
      * Only one job is triggered each run for test jobs, since those environments have limited capacity.
      */
-    public void triggerReadyJobs() {
-        computeReadyJobs().collect(partitioningBy(job -> job.jobType().isTest()))
-                          .entrySet().stream()
-                          .flatMap(entry -> (entry.getKey()
-                                  // True for capacity constrained zones -- sort by priority and make a task for each job type.
-                                  ? entry.getValue().stream()
-                                         .sorted(comparing(Job::isRetry)
-                                                         .thenComparing(Job::applicationUpgrade)
-                                                         .reversed()
-                                                         .thenComparing(Job::availableSince))
-                                         .collect(groupingBy(Job::jobType))
-                                  // False for production jobs -- keep step order and make a task for each application.
-                                  : entry.getValue().stream()
-                                         .collect(groupingBy(Job::id)))
-                                  .values().stream()
-                                  .map(jobs -> (Runnable) jobs.stream()
-                                                              .filter(job -> canTrigger(job) && trigger(job))
-                                                              .limit(entry.getKey() ? 1 : Long.MAX_VALUE)::count))
-                          .parallel().forEach(Runnable::run);
+    public long triggerReadyJobs() {
+        return computeReadyJobs().collect(partitioningBy(job -> job.jobType().isTest()))
+                                 .entrySet().stream()
+                                 .flatMap(entry -> (entry.getKey()
+                                         // True for capacity constrained zones -- sort by priority and make a task for each job type.
+                                         ? entry.getValue().stream()
+                                                .sorted(comparing(Job::isRetry)
+                                                                .thenComparing(Job::applicationUpgrade)
+                                                                .reversed()
+                                                                .thenComparing(Job::availableSince))
+                                                .collect(groupingBy(Job::jobType))
+                                         // False for production jobs -- keep step order and make a task for each application.
+                                         : entry.getValue().stream()
+                                                .collect(groupingBy(Job::id)))
+                                         .values().stream()
+                                         .map(jobs -> (Supplier<Long>) jobs.stream()
+                                                                           .filter(job -> canTrigger(job) && trigger(job))
+                                                                           .limit(entry.getKey() ? 1 : Long.MAX_VALUE)::count))
+                                 .parallel().map(Supplier::get).reduce(0L, Long::sum);
     }
 
     /**
@@ -152,13 +154,8 @@ public class DeploymentTrigger {
 
         BuildService.BuildJob buildJob = new BuildService.BuildJob(job.projectId, job.jobType.jobName());
         if (buildService.trigger(buildJob)) {
-            applications().lockOrThrow(job.id, application ->
-                    applications().store(application.withJobTriggering(job.jobType,
-                                                                       clock.instant(),
-                                                                       application.deployVersionFor(job.jobType, controller),
-                                                                       application.deployApplicationVersionFor(job.jobType, controller, false)
-                                                                                  .orElse(ApplicationVersion.unknown),
-                                                                       job.reason)));
+            applications().lockOrThrow(job.id, application -> applications().store(application.withJobTriggering(
+                    job.jobType, new JobStatus.JobRun(-1, job.platformVersion, job.applicationVersion, job.reason, clock.instant()))));
             return true;
         }
         // TODO jvenstad: On 404: set empty projectId (and send ticket?). Throw and catch NoSuchElementException.
@@ -216,7 +213,7 @@ public class DeploymentTrigger {
 
             for (DeploymentSpec.Step step : steps) {
                 Set<JobType> stepJobs = step.zones().stream().map(order::toJob).collect(toSet());
-                Set<JobType> remainingJobs = stepJobs.stream().filter(job -> ! completedAt(application, job).isPresent()).collect(toSet());
+                Set<JobType> remainingJobs = stepJobs.stream().filter(job -> ! completedAt(application.change(), application, job).isPresent()).collect(toSet());
                 if (remainingJobs.isEmpty()) { // All jobs are complete -- find the time of completion of this step.
                     if (stepJobs.isEmpty()) { // No jobs means this is delay step.
                         Duration delay = ((DeploymentSpec.Delay) step).duration();
@@ -224,16 +221,18 @@ public class DeploymentTrigger {
                         reason += " after a delay of " + delay;
                     }
                     else {
-                        completedAt = stepJobs.stream().map(job -> completedAt(application, job).get()).max(naturalOrder());
+                        completedAt = stepJobs.stream().map(job -> completedAt(application.change(), application, job).get()).max(naturalOrder());
                         reason = "Available change in " + stepJobs.stream().map(JobType::jobName).collect(joining(", "));
                     }
                 }
                 else if (completedAt.isPresent()) { // Step not complete, because some jobs remain -- trigger these if the previous step was done.
                     for (JobType job : remainingJobs)
-                        jobs.add(new Job(application, job, reason, completedAt.get(), stepJobs));
+                        jobs.add(deploymentJob(application, job, reason, completedAt.get(), stepJobs));
                     completedAt = Optional.empty();
+                    break;
                 }
             }
+            // TODO jvenstad: Replace with completion of individual parts of Change.
             if (completedAt.isPresent())
                 applications().store(application.withChange(Change.empty()));
         });
@@ -254,28 +253,29 @@ public class DeploymentTrigger {
     }
 
     /**
-     * Returns the instant when the given application's current change was completed for the given job.
+     * Returns the instant when the given change is complete for the given application for the given job.
      *
-     * Any job is complete if its current change was already successful on that job.
+     * Any job is complete if the given change is already successful on that job.
      * A production job is also considered complete if its current change is strictly dominated by what
      * is already deployed in its zone, i.e., no parts of the change are upgrades, and at least one
      * part is a downgrade, regardless of the status of the job.
      */
-    private Optional<Instant> completedAt(Application application, JobType jobType) {
-        Optional<Instant> lastSuccess = application.deploymentJobs().successAt(application.change(), jobType);
+    private Optional<Instant> completedAt(Change change, Application application, JobType jobType) {
+        Optional<Instant> lastSuccess = application.deploymentJobs().successAt(change, jobType);
         if (lastSuccess.isPresent() || ! jobType.isProduction())
             return lastSuccess;
 
-        Deployment deployment = application.deployments().get(jobType.zone(controller.system()).get());
-        return Optional.ofNullable(deployment).map(Deployment::at)
-                       .filter(ignored ->    ! (   application.change().upgrades(deployment.version())
-                                                || application.change().upgrades(deployment.applicationVersion()))
-                                          &&   (   application.change().downgrades(deployment.version())
-                                                || application.change().downgrades(deployment.applicationVersion())));
+        return deploymentFor(application, jobType)
+                .filter(deployment ->    ! (   change.upgrades(deployment.version())
+                                            || change.upgrades(deployment.applicationVersion()))
+                                      &&   (   change.downgrades(deployment.version())
+                                            || change.downgrades(deployment.applicationVersion())))
+                .map(Deployment::at);
     }
 
     private boolean canTrigger(Job job) {
         Application application = applications().require(job.id);
+        // TODO jvenstad: Check versions, not change.
         if ( ! application.deploymentJobs().isDeployableTo(job.jobType.environment(), application.change()))
             return false;
 
@@ -291,9 +291,7 @@ public class DeploymentTrigger {
                                                        .mapToList(JobStatus::type)))
             return false;
 
-        // TODO jvenstad: This blocks all changes when dual, and in block window. Should rather remove the blocked component.
-        // TODO jvenstad: If the above is implemented, take care not to deploy untested stuff?
-        if (application.change().blockedBy(application.deploymentSpec(), clock.instant()))
+        if ( ! application.changeAt(clock.instant()).isPresent())
             return false;
 
         return true;
@@ -304,18 +302,43 @@ public class DeploymentTrigger {
     }
 
     private boolean acceptNewApplicationVersion(LockedApplication application) {
-        if ( ! application.change().isPresent()) return true;
-
         if (application.change().application().isPresent()) return true; // More application changes are ok.
-
         if (application.deploymentJobs().hasFailures()) return true; // Allow changes to fix upgrade problems.
+        // Otherwise, allow an application change if not currently upgrading.
+        return ! application.changeAt(clock.instant()).platform().isPresent();
+    }
 
-        if (   ! application.deploymentSpec().canUpgradeAt(clock.instant())
-            || ! application.deploymentSpec().canChangeRevisionAt(clock.instant()))
-            return true; // Allow testing changes while upgrade blocked (debatable).
+    private Optional<Deployment> deploymentFor(Application application, JobType jobType) {
+        return Optional.ofNullable(application.deployments().get(jobType.zone(controller.system()).get()));
+    }
 
-        // Otherwise, the application is currently upgrading, without failures, and we should wait with the new application version.
-        return false;
+    public Job forcedDeploymentJob(Application application, JobType jobType, String reason) {
+        return deploymentJob(application, jobType, reason, clock.instant(), Collections.emptySet());
+    }
+
+    public Job deploymentJob(Application application, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith) {
+        boolean isRetry = application.deploymentJobs().statusOf(jobType).flatMap(JobStatus::jobError)
+                                  .filter(JobError.outOfCapacity::equals).isPresent();
+        if (isRetry) reason += "; retrying on out of capacity";
+
+        Change change = application.change();
+        // For both versions, use the newer of the change's and the currently deployed versions, or a fallback if none of these exist.
+        Version platform = jobType == JobType.component
+                ? Version.emptyVersion
+                : deploymentFor(application, jobType).map(Deployment::version)
+                                                     .filter(version -> ! change.upgrades(version))
+                                                     .orElse(change.platform()
+                                                                   .orElse(application.oldestDeployedPlatform()
+                                                                                      .orElse(controller.systemVersion())));
+        ApplicationVersion applicationVersion = jobType == JobType.component
+                ? ApplicationVersion.unknown
+                : deploymentFor(application, jobType).map(Deployment::applicationVersion)
+                                                     .filter(version -> ! change.upgrades(version))
+                                                     .orElse(change.application()
+                                                                   .orElseGet(() -> application.oldestDeployedApplication()
+                                                                                               .orElseThrow(() -> new IllegalArgumentException("Cannot determine application version to use for " + jobType))));
+
+        return new Job(application, jobType, reason, availableSince, concurrentlyWith, isRetry, change, platform, applicationVersion);
     }
 
 
@@ -324,35 +347,39 @@ public class DeploymentTrigger {
         private final ApplicationId id;
         private final JobType jobType;
         private final long projectId;
-        private final Change change;
         private final String reason;
         private final Instant availableSince;
-        private final boolean retry;
         private final Collection<JobType> concurrentlyWith;
-        // TODO jvenstad: Store target versions here, and set in withJobTriggering(Job job, Instant at).
-        // TODO jvenstad: Use trigger-versions during deployment!
+        private final boolean isRetry;
+        private final boolean isApplicationUpgrade;
+        private final Change change;
+        private final Version platformVersion;
+        private final ApplicationVersion applicationVersion;
 
-        public Job(Application application, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith) {
+        private Job(Application application, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith, boolean isRetry, Change change, Version platformVersion, ApplicationVersion applicationVersion) {
             this.id = application.id();
             this.jobType = jobType;
             this.projectId = application.deploymentJobs().projectId().get();
-            this.change = application.change();
             this.availableSince = availableSince;
             this.concurrentlyWith = concurrentlyWith;
-
-            JobStatus status = application.deploymentJobs().jobStatus().get(jobType);
-            this.retry = status != null && status.jobError().filter(JobError.outOfCapacity::equals).isPresent();
-            this.reason = retry ? "Retrying on out of capacity" : reason;
+            this.reason = reason;
+            this.isRetry = isRetry;
+            this.isApplicationUpgrade = change.application().isPresent();
+            this.change = change;
+            this.platformVersion = platformVersion;
+            this.applicationVersion = applicationVersion;
         }
 
         public ApplicationId id() { return id; }
         public JobType jobType() { return jobType; }
         public long projectId() { return projectId; }
-        public Change change() { return change; }
         public String reason() { return reason; }
         public Instant availableSince() { return availableSince; }
-        public boolean isRetry() { return retry; }
-        public boolean applicationUpgrade() { return change.application().isPresent(); }
+        public boolean isRetry() { return isRetry; }
+        public boolean applicationUpgrade() { return isApplicationUpgrade; }
+        public Change change() { return change; }
+        public Version platform() { return platformVersion; }
+        public ApplicationVersion application() { return applicationVersion; }
 
     }
 

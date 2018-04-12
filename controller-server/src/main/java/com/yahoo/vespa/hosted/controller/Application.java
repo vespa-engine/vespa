@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -119,10 +120,16 @@ public class Application {
     public DeploymentJobs deploymentJobs() { return deploymentJobs; }
 
     /**
-     * Returns the change that should currently be deployed for this application,
-     * which is empty when no change is in progress.
+     * Returns base change for this application, i.e., the change that is deployed outside block windows.
+     * This is empty when no change is currently under deployment.
      */
     public Change change() { return change; }
+
+    /**
+     * Returns the change that should used for this application at the given instant, typically now.
+     */
+    public Change changeAt(Instant now) {
+        return change.effectiveAt(deploymentSpec, now); }
 
     /**
      * Returns whether this has an outstanding change (in the source repository), which
@@ -139,56 +146,21 @@ public class Application {
     }
 
     /**
-     * Returns the oldest version this has deployed in a permanent zone (not test or staging),
-     * or empty version if it is not deployed anywhere
+     * Returns the oldest platform version this has deployed in a permanent zone (not test or staging).
      */
-    public Optional<Version> oldestDeployedVersion() {
+    public Optional<Version> oldestDeployedPlatform() {
         return productionDeployments().values().stream()
-                .map(Deployment::version)
-                .min(Comparator.naturalOrder());
-    }
-
-    /** Returns the version a new deployment to this zone should use for this application */
-    public Version deployVersionIn(ZoneId zone, Controller controller) {
-        Version current = versionIn(zone, controller);
-        return change.platform().filter(ignored -> ! change.downgrades(current)).orElse(current);
-    }
-
-    /** Returns the current version this application has, or if none; should use, in the given zone */
-    public Version versionIn(ZoneId zone, Controller controller) {
-        return Optional.ofNullable(deployments().get(zone)).map(Deployment::version) // Already deployed in this zone: Use that version
-                       .orElse(oldestDeployedVersion().orElse(controller.systemVersion()));
-    }
-
-    /** Returns the Vespa version to use for the given job */
-    public Version deployVersionFor(DeploymentJobs.JobType jobType, Controller controller) {
-        // TODO jvenstad: Eliminate this and its sibling for component.
-        return jobType == DeploymentJobs.JobType.component
-                ? controller.systemVersion()
-                : deployVersionIn(jobType.zone(controller.system()).get(), controller);
+                                      .map(Deployment::version)
+                                      .min(Comparator.naturalOrder());
     }
 
     /**
-     * Returns the application version to use for the given job.
-     *
-     * If no version is specified by the application's {@link Change}, or by {@code currentVersion},
-     * returns the currently deployed application version, or the last successfully deployed one.
+     * Returns the oldest application version this has deployed in a permanent zone (not test or staging).
      */
-    public Optional<ApplicationVersion> deployApplicationVersionFor(DeploymentJobs.JobType jobType,
-                                                                    Controller controller,
-                                                                    boolean useCurrentVersion) {
-        if (jobType == DeploymentJobs.JobType.component)
-            return Optional.empty();
-
-        Optional<ApplicationVersion> current = Optional.ofNullable(deployments.get(jobType.zone(controller.system()).get()))
-                .map(Deployment::applicationVersion);
-
-        return Optional.ofNullable(change.application()
-                                         .filter(version -> ! (useCurrentVersion || current.filter(cv -> cv.compareTo(version) > 0).isPresent()))
-                                         .orElse(current
-                                                         .orElse(deploymentJobs().lastSuccessfulApplicationVersionFor(jobType)
-                                                                                 .orElse(change.application()
-                                                                                               .orElse(null)))));
+    public Optional<ApplicationVersion> oldestDeployedApplication() {
+        return productionDeployments().values().stream()
+                                      .map(Deployment::applicationVersion)
+                                      .min(Comparator.naturalOrder());
     }
 
     /** Returns the global rotation of this, if present */
