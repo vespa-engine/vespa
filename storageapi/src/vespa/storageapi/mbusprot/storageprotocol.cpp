@@ -154,7 +154,11 @@ decodeMessage(const ProtocolSerialization & serializer,
     if (type.isReply()) {
         return std::make_unique<StorageReply>(data, serializer);
     } else {
-        return mbus::Routable::UP(serializer.decodeCommand(data).release());
+        auto command = serializer.decodeCommand(data);
+        if (command && command->getInternalMessage()) {
+            command->getInternalMessage()->setApproxByteSize(data.size());
+        }
+        return mbus::Routable::UP(command.release());
     }
 }
 

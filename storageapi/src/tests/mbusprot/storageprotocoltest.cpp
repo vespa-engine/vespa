@@ -105,6 +105,8 @@ struct StorageProtocolTest : public CppUnit::TestFixture {
     void testCreateVisitorWithBucketSpace6_0();
     void testRequestBucketInfoWithBucketSpace6_0();
 
+    void serialized_size_is_used_to_set_approx_size_of_storage_message();
+
     CPPUNIT_TEST_SUITE(StorageProtocolTest);
 
     // Enable to see string outputs of messages
@@ -145,6 +147,8 @@ struct StorageProtocolTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testPutCommandWithBucketSpace6_0);
     CPPUNIT_TEST(testCreateVisitorWithBucketSpace6_0);
     CPPUNIT_TEST(testRequestBucketInfoWithBucketSpace6_0);
+
+    CPPUNIT_TEST(serialized_size_is_used_to_set_approx_size_of_storage_message);
 
     CPPUNIT_TEST_SUITE_END();
 };
@@ -965,6 +969,18 @@ StorageProtocolTest::testRequestBucketInfoWithBucketSpace6_0()
     auto cmd2 = copyCommand(cmd, _version6_0);
     CPPUNIT_ASSERT_EQUAL(bucketSpace, cmd2->getBucketSpace());
     CPPUNIT_ASSERT_EQUAL(ids, cmd2->getBuckets());
+}
+
+void
+StorageProtocolTest::serialized_size_is_used_to_set_approx_size_of_storage_message()
+{
+    ScopedName test("serialized_size_is_used_to_set_approx_size_of_storage_message");
+
+    PutCommand::SP cmd(new PutCommand(_bucket, _testDoc, 14));
+    CPPUNIT_ASSERT_EQUAL(50u, cmd->getApproxByteSize());
+
+    PutCommand::SP cmd2(copyCommand(cmd, _version6_0));
+    CPPUNIT_ASSERT_EQUAL(181u, cmd2->getApproxByteSize());
 }
 
 void
