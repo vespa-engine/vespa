@@ -1,11 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di.componentgraph.core
 
+import java.util.logging.Logger
+
 import com.yahoo.component.ComponentId
 import com.yahoo.container.di.ConfigKeyT
 import com.yahoo.container.di.componentgraph.Provider
 import com.google.inject.Key
 import Node._
+import com.yahoo.log.LogLevel.{DEBUG, SPAM}
 
 /**
  * @author Tony Vaagenes
@@ -28,11 +31,15 @@ abstract class Node(val componentId: ComponentId) {
   protected def newInstance() : AnyRef
 
   def newOrCachedInstance() : AnyRef = {
-    component(
-      instance.getOrElse {
-        instance = Some(newInstance())
-        instance.get
-      })
+    val inst = if (instance.isEmpty) {
+      log.log(DEBUG, s"Creating new instance for component with ID $componentId")
+      instance = Some(newInstance())
+      instance.get
+    } else {
+      log.log(SPAM, s"Reusing instance for component with ID $componentId")
+      instance.get
+    }
+    component(inst)
   }
 
   private def component(instance: AnyRef) = instance match {
@@ -76,6 +83,7 @@ abstract class Node(val componentId: ComponentId) {
 }
 
 object Node {
+  private val log = Logger.getLogger(classOf[Node].getName)
 
   def equalEdges(edges1: List[AnyRef], edges2: List[AnyRef]): Boolean = {
     def compare(objects: (AnyRef, AnyRef)): Boolean = {
