@@ -120,12 +120,11 @@ public class ApplicationHandler extends HttpHandler {
         return new JSONResponse(Response.Status.OK); // return empty
     }
 
-    // TODO: Deprecated, will soon be removed, will always return empty string in payload
     private HttpResponse grabLog(HttpRequest request, ApplicationId applicationId, Tenant tenant) {
         if (getBindingMatch(request).groupCount() != 7)
             throw new NotFoundException("Illegal POST log request '" + request.getUri() +
                     "': Must have 6 arguments but had " + ( getBindingMatch(request).groupCount()-1 ) );
-        final String response = "";
+        final String response = applicationRepository.grabLog(tenant, applicationId);
         return new HttpResponse(200) {
             @Override
             public void render(OutputStream outputStream) throws IOException {

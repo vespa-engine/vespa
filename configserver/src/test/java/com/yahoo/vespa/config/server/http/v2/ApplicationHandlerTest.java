@@ -22,6 +22,7 @@ import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
 import com.yahoo.vespa.config.server.application.HttpProxy;
+import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.StaticResponse;
@@ -86,20 +87,27 @@ public class ApplicationHandlerTest {
 
         tenants = testBuilder.createTenants();
         provisioner = new SessionHandlerTest.MockProvisioner();
-        mockHandler = createApplicationHandler(provisioner, new ApplicationConvergenceChecker(stateApiFactory), mockHttpProxy);
+        mockHandler = createMockApplicationHandler(
+                provisioner,
+                new ApplicationConvergenceChecker(stateApiFactory),
+                mockHttpProxy,
+                new MockLogServerLogGrabber());
         listApplicationsHandler = new ListApplicationsHandler(
                 ListApplicationsHandler.testOnlyContext(),
                 tenants, Zone.defaultZone());
     }
 
-    private ApplicationHandler createApplicationHandler(Provisioner provisioner,
-                                                        ApplicationConvergenceChecker convergeChecker,
-                                                        HttpProxy httpProxy) {
+    private ApplicationHandler createMockApplicationHandler(
+            Provisioner provisioner,
+            ApplicationConvergenceChecker convergeChecker,
+            HttpProxy httpProxy,
+            LogServerLogGrabber logServerLogGrabber) {
         return new ApplicationHandler(
                 ApplicationHandler.testOnlyContext(),
                 Zone.defaultZone(),
                 new ApplicationRepository(tenants,
                                           HostProvisionerProvider.withProvisioner(provisioner),
+                                          logServerLogGrabber,
                                           convergeChecker,
                                           httpProxy,
                                           new ConfigserverConfig(new ConfigserverConfig.Builder())));
@@ -111,6 +119,7 @@ public class ApplicationHandlerTest {
                 Zone.defaultZone(),
                 new ApplicationRepository(tenants,
                                           HostProvisionerProvider.withProvisioner(provisioner),
+                                          new LogServerLogGrabber(),
                                           new ApplicationConvergenceChecker(stateApiFactory),
                                           new HttpProxy(new SimpleHttpFetcher()),
                                           new ConfigserverConfig(new ConfigserverConfig.Builder())));
@@ -205,13 +214,12 @@ public class ApplicationHandlerTest {
         converge(application, Zone.defaultZone());
     }
 
-    // TODO: Deprecated, will soon be removed, implementation always returns empty string
     @Test
     public void testGrabLog() throws Exception {
         long sessionId = 1;
         ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
         addMockApplication(tenants.getTenant(mytenantName), application, sessionId, Clock.systemUTC());
-        assertEquals("", grabLog(application, Zone.defaultZone()));
+        assertEquals("log line", grabLog(application, Zone.defaultZone()));
     }
 
     @Test
@@ -238,7 +246,11 @@ public class ApplicationHandlerTest {
     @Ignore
     public void testFailingProvisioner() throws Exception {
         provisioner = new SessionHandlerTest.FailingMockProvisioner();
-        mockHandler = createApplicationHandler(provisioner, new ApplicationConvergenceChecker(stateApiFactory), new HttpProxy(new SimpleHttpFetcher()));
+        mockHandler = createMockApplicationHandler(
+                provisioner,
+                new ApplicationConvergenceChecker(stateApiFactory),
+                new HttpProxy(new SimpleHttpFetcher()),
+                new LogServerLogGrabber());
         final ApplicationId applicationId = ApplicationId.defaultId();
         addMockApplication(tenants.getTenant(mytenantName), applicationId, 1, Clock.systemUTC());
         assertApplicationExists(mytenantName, applicationId, Zone.defaultZone());
@@ -420,4 +432,10 @@ public class ApplicationHandlerTest {
         }
     }
 
+    private static class MockLogServerLogGrabber extends LogServerLogGrabber {
+        @Override
+        protected String readLog(String host, int port) throws IOException {
+            return "log line";
+        }
+    }
 }
