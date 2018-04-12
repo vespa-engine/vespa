@@ -23,6 +23,15 @@ public class MetricUpdater {
         return metricReporter.createContext(dimensions);
     }
 
+    private static int nodesInAvailableState(Map<State, Integer> nodeCounts) {
+        return nodeCounts.getOrDefault(State.INITIALIZING, 0)
+                + nodeCounts.getOrDefault(State.RETIRED, 0)
+                + nodeCounts.getOrDefault(State.UP, 0)
+                // Even though technically not true, we here treat Maintenance as an available state to
+                // avoid triggering false alerts when a node is taken down transiently in an orchestrated manner.
+                + nodeCounts.getOrDefault(State.MAINTENANCE, 0);
+    }
+
     public void updateClusterStateMetrics(ContentCluster cluster, ClusterState state) {
         Map<String, String> dimensions = new HashMap<>();
         dimensions.put("cluster", cluster.getName());
@@ -42,6 +51,10 @@ public class MetricUpdater {
                 String name = s.toString().toLowerCase() + ".count";
                 metricReporter.set(name, nodeCounts.get(s), context);
             }
+
+            final int availableNodes = nodesInAvailableState(nodeCounts);
+            final int totalNodes = Math.max(cluster.getConfiguredNodes().size(), 1); // Assumes 1-1 between distributor and storage
+            metricReporter.set("available-nodes.ratio", (double)availableNodes / totalNodes, context);
         }
         dimensions.remove("node-type");
         MetricReporter.Context context = createContext(dimensions);
