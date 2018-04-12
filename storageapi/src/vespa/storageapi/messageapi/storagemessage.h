@@ -340,6 +340,7 @@ protected:
     std::unique_ptr<StorageMessageAddress> _address;
     documentapi::LoadType _loadType;
     mbus::Trace _trace;
+    uint32_t _approxByteSize;
 
     StorageMessage(const MessageType& code, Id id);
     StorageMessage(const StorageMessage&, Id id);
@@ -366,16 +367,20 @@ public:
 
     const StorageMessageAddress* getAddress() const { return _address.get(); }
 
-    void setAddress(const StorageMessageAddress& address)
-        { _address.reset(new StorageMessageAddress(address)); }
+    void setAddress(const StorageMessageAddress& address) {
+        _address.reset(new StorageMessageAddress(address));
+    }
 
     /**
-       Returns the approximate memory footprint of a storage message.
-       By default, returns 50 bytes. This only needs to be overriden if the
-       message potentially can be much larger than this.
-    */
-    virtual uint32_t getMemoryFootprint() const {
-        return 50;
+     *  Returns the approximate memory footprint (in bytes) of a storage message.
+     *  By default, returns 50 bytes.
+     */
+    uint32_t getApproxByteSize() const noexcept {
+        return _approxByteSize;
+    }
+
+    void setApproxByteSize(uint32_t value) {
+        _approxByteSize = value;
     }
 
     /**
@@ -383,11 +388,13 @@ public:
      * created, whether it was a storageprotocol message, a documentprotocol
      * message, or an RPC call.
      */
-    void setTransportContext(std::unique_ptr<TransportContext> context)
-        { _transportContext = std::move(context); }
+    void setTransportContext(std::unique_ptr<TransportContext> context) {
+        _transportContext = std::move(context);
+    }
 
-    std::unique_ptr<TransportContext> getTransportContext() const
-        { return std::move(_transportContext); }
+    std::unique_ptr<TransportContext> getTransportContext() const {
+        return std::move(_transportContext);
+    }
 
     /**
      * This method is overloaded in subclasses and will call the correct

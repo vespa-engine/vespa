@@ -64,9 +64,6 @@ public:
     const document::DocumentId& getDocumentId() const override { return _doc->getId(); }
     Timestamp getTimestamp() const { return _timestamp; }
 
-    uint32_t getMemoryFootprint() const override {
-        return (_doc.get() ? 4096 : 0) + 20;
-    }
     vespalib::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
@@ -128,10 +125,6 @@ public:
         { return _update->getId(); }
     Timestamp getTimestamp() const { return _timestamp; }
     Timestamp getOldTimestamp() const { return _oldTimestamp; }
-
-    uint32_t getMemoryFootprint() const override {
-        return (_update.get() ? 1024 : 0) + 30;
-    }
 
     vespalib::string getSummary() const override;
 
@@ -236,9 +229,6 @@ public:
     Timestamp getBeforeTimestamp() const { return _beforeTimestamp; }
 
     bool wasFound() const { return (_doc.get() != 0); }
-    uint32_t getMemoryFootprint() const override {
-        return (_doc.get() ? 4096 : 0) + 30;
-    }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(GetReply, onGetReply)
 };

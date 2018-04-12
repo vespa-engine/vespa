@@ -19,9 +19,6 @@ class DocumentSummaryCommand : public StorageCommand,
 public:
     explicit DocumentSummaryCommand();
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    uint32_t getMemoryFootprint() const override {
-        return getSerializedSize();
-    }
     DECLARE_STORAGECOMMAND(DocumentSummaryCommand, onDocumentSummary)
 };
 
