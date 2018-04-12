@@ -2016,7 +2016,7 @@ PageDict4Reader::setupPage()
     _cc = _counts.begin();
     _ce = _counts.end();
     uint32_t pageOffset = _pd.getReadOffset() & (getPageBitSize() - 1);
-    uint32_t padding = getPageBitSize() - wordsSize * 8 - pageOffset;
+    uint32_t padding = (getPageBitSize() - wordsSize * 8 - pageOffset) & (getPageBitSize() - 1);
     _pd.skipBits(padding);
     _words.resize(wordsSize);
     _pd.readBytes(reinterpret_cast<uint8_t *>(&_words[0]), wordsSize);
