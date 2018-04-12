@@ -74,8 +74,8 @@ public class DeploymentJobs {
         return new DeploymentJobs(projectId, status, issueId);
     }
 
-    public DeploymentJobs withProjectId(long projectId) {
-        return new DeploymentJobs(Optional.of(projectId), status, issueId);
+    public DeploymentJobs withProjectId(Optional<Long> projectId) {
+        return new DeploymentJobs(projectId, status, issueId);
     }
 
     public DeploymentJobs with(IssueId issueId) {

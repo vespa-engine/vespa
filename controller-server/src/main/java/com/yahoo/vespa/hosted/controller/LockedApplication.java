@@ -54,7 +54,7 @@ public class LockedApplication extends Application {
               builder.outstandingChange, builder.ownershipIssueId, builder.metrics, builder.rotation);
     }
 
-    public LockedApplication withProjectId(long projectId) {
+    public LockedApplication withProjectId(Optional<Long> projectId) {
         return new LockedApplication(new Builder(this).with(deploymentJobs().withProjectId(projectId)));
     }
 

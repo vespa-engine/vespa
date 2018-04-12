@@ -221,7 +221,7 @@ public final class ControllerTester {
         ApplicationId applicationId = ApplicationId.from(tenant.value(), applicationName, instanceName);
         controller().applications().createApplication(applicationId, Optional.of(TestIdentities.userNToken));
         controller().applications().lockOrThrow(applicationId, lockedApplication ->
-                controller().applications().store(lockedApplication.withProjectId(projectId)));
+                controller().applications().store(lockedApplication.withProjectId(Optional.of(projectId))));
         return controller().applications().require(applicationId);
     }
 

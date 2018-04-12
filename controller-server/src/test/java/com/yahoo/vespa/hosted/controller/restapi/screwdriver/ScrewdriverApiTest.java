@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 /**
  * @author bratseth
@@ -38,7 +39,7 @@ public class ScrewdriverApiTest extends ControllerContainerTest {
 
         Application app = tester.createApplication();
         tester.controller().applications().lockOrThrow(app.id(), application ->
-                tester.controller().applications().store(application.withProjectId(1)));
+                tester.controller().applications().store(application.withProjectId(Optional.of(1L))));
 
         // Unknown application
         assertResponse(new Request("http://localhost:8080/screwdriver/v1/trigger/tenant/foo/application/bar",

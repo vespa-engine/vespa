@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -106,7 +107,7 @@ public class DeploymentTrigger {
             ApplicationVersion applicationVersion = report.sourceRevision().map(sr -> ApplicationVersion.from(sr, report.buildNumber()))
                                                           .orElse(ApplicationVersion.unknown);
             application = application.withJobCompletion(report, applicationVersion, clock.instant(), controller);
-            application = application.withProjectId(report.projectId());
+            application = application.withProjectId(Optional.of(report.projectId()));
 
             if (report.jobType() == JobType.component && report.success()) {
                 if (acceptNewApplicationVersion(application))
@@ -150,18 +151,22 @@ public class DeploymentTrigger {
      * Triggers the given job for the given application.
      */
     public boolean trigger(Job job) {
-        log.info(String.format("Attempting to trigger %s for %s, deploying %s: %s", job.jobType, job.id, job.change, job.reason));
+        log.log(LogLevel.INFO, String.format("Attempting to trigger %s for %s, deploying %s: %s", job.jobType, job.id, job.change, job.reason));
 
         BuildService.BuildJob buildJob = new BuildService.BuildJob(job.projectId, job.jobType.jobName());
-        if (buildService.trigger(buildJob)) {
-            applications().lockOrThrow(job.id, application -> applications().store(application.withJobTriggering(
-                    job.jobType, new JobStatus.JobRun(-1, job.platformVersion, job.applicationVersion, job.reason, clock.instant()))));
-            return true;
+        try {
+            if (buildService.trigger(buildJob)) {
+                applications().lockOrThrow(job.id, application -> applications().store(application.withJobTriggering(
+                        job.jobType, new JobStatus.JobRun(-1, job.platformVersion, job.applicationVersion, job.reason, clock.instant()))));
+                return true;
+            }
         }
-        // TODO jvenstad: On 404: set empty projectId (and send ticket?). Throw and catch NoSuchElementException.
-        // TODO jvensatd: On 401, 403 with crumb issues: refresh auth. Handle in client.
-        // TODO jvenstad: On 403 with missing collaborator status: send deployment issue ticket? Throw and catch IllegalArumentException.
-        log.log(LogLevel.WARNING, "Failed to trigger " + buildJob + " for " + job.id);
+        catch (NoSuchElementException | IllegalArgumentException e) {
+            applications().lockOrThrow(job.id, application -> applications().store(application.withProjectId(Optional.empty())));
+            log.log(LogLevel.WARNING, "Removing projectId " + job.projectId + " from " + job.id
+                                      + " because of exception trying to trigger " + buildJob + ": " + e.getMessage());
+        }
+        log.log(LogLevel.INFO, "Failed to trigger " + buildJob + " for " + job.id);
         return false;
     }
 
