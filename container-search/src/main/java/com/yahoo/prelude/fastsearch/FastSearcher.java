@@ -262,7 +262,7 @@ public class FastSearcher extends VespaBackEndSearcher {
             CompressionType compression =
                 CompressionType.valueOf(query.properties().getString(dispatchCompression, "LZ4").toUpperCase());
             fillSDDocName(result);
-            dispatcher.fill(result, summaryClass, compression);
+            dispatcher.fill(result, summaryClass, getDocumentDatabase(query), compression);
             return;
         }
 

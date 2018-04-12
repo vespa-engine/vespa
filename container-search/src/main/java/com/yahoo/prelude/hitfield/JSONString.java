@@ -19,7 +19,7 @@ import java.util.Iterator;
 /**
  * A JSON wrapper. Contains XML-style rendering of a JSON structure.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class JSONString implements Inspectable {
 

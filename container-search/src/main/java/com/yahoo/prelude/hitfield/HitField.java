@@ -10,11 +10,10 @@ import com.yahoo.prelude.searcher.JuniperSearcher;
 import com.yahoo.text.XML;
 
 /**
- * Represents a Field in a Hit. The original raw content and the field
- * name cannot be modified. But the tokenized version can be retrieved
- * and set.
+ * Represents a tokenized string field in a Hit. The original raw content and the field
+ * name cannot be modified. But the tokenized version can be retrieved and set.
  *
- * @author <a href="mailto:larschr@yahoo-inc.com">Lars Christian Jensen</a>
+ * @author Lars Christian Jensen
  */
 public class HitField {
 
@@ -345,10 +344,7 @@ public class HitField {
         return xml.toString();
     }
 
-    /**
-     * @return the content of this field, using the arguments as bolding
-     * tags, as an XML string
-     */
+    /** Returns the content of this field, using the arguments as bolding tags, as an XML string */
     public String quotedContent(String boldOpenTag,
                                 String boldCloseTag,
                                 String separatorTag,
