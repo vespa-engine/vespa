@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -160,6 +161,18 @@ public class Authorizer implements BiPredicate<Principal, URI> {
     private static List<NodeType> nodeTypesFor(URI uri) {
         if (isChildOf("/routing/v1/", uri.getPath())) {
             return Arrays.asList(NodeType.proxy, NodeType.proxyhost);
+        }
+
+        if ("/nodes/v2/node/".equals(uri.getPath())) {
+            Set<String> nodeTypeFilters = URLEncodedUtils.parse(uri, StandardCharsets.UTF_8.name()).stream()
+                    .filter(pair -> "type".equals(pair.getName()))
+                    .map(NameValuePair::getValue)
+                    .collect(Collectors.toSet());
+
+            // Config server hosts needs to access state of all config servers
+            if (nodeTypeFilters.equals(Collections.singleton(NodeType.config.name()))) {
+                return Collections.singletonList(NodeType.confighost);
+            }
         }
         return Collections.emptyList();
     }

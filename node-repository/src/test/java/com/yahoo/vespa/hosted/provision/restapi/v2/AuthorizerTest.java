@@ -57,6 +57,9 @@ public class AuthorizerTest {
 
             nodes.add(nodeRepository.createNode("proxy1-host1", "proxy1-host", ipAddresses,
                                                 Optional.empty(), flavor, NodeType.proxyhost));
+
+            nodes.add(nodeRepository.createNode("cfg1-host", "cfg1-host", ipAddresses,
+                                                Optional.empty(), flavor, NodeType.confighost));
             nodeRepository.addNodes(nodes);
         }
     }
@@ -92,6 +95,8 @@ public class AuthorizerTest {
         assertTrue(authorized("node1", "/nodes/v2/acl/node1"));
         assertTrue(authorized("node1", "/nodes/v2/command/reboot?hostname=node1"));
         assertTrue(authorized("node1", "/nodes/v2/node/?parentHost=node1"));
+        assertTrue(authorized("cfg1-host", "/nodes/v2/node/?recursive=true&type=config"));
+        assertFalse(authorized("cfg1-host", "/nodes/v2/node/?recursive=true&type=proxy"));
 
         // Host node can access itself and its children
         assertFalse(authorized("host1", "/nodes/v2/node/child2-1"));
