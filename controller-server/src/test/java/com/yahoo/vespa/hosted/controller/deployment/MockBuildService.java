@@ -20,6 +20,11 @@ public class MockBuildService implements BuildService {
         return jobs.add(buildJob);
     }
 
+    @Override
+    public boolean isRunning(BuildJob buildJob) {
+        return jobs.contains(buildJob);
+    }
+
     /** List all running jobs. */
     public List<BuildJob> jobs() {
         return new ArrayList<>(jobs);

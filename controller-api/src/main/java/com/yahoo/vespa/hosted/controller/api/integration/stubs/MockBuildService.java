@@ -9,4 +9,9 @@ public class MockBuildService implements BuildService {
         return true;
     }
 
+    @Override
+    public boolean isRunning(BuildJob buildJob) {
+        return false;
+    }
+
 }

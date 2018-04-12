@@ -9,11 +9,16 @@ import java.util.Objects;
 public interface BuildService {
 
     /**
-     * Enqueue a job defined by buildJob in an external build system, and return the outcome of the enqueue request.
+     * Enqueues a job defined by buildJob in an external build system, and returns the outcome of the enqueue request.
      * This method should return false only when a retry is in order, and true otherwise, e.g., on success, or for
      * invalid jobs.
      */
     boolean trigger(BuildJob buildJob);
+
+    /**
+     * Returns whether the given job is currently running.
+     */
+    boolean isRunning(BuildJob buildJob);
 
 
     // TODO jvenstad: Implement with DeploymentTrigger.Job
