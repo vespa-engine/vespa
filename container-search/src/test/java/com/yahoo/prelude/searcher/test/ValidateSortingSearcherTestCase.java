@@ -49,6 +49,9 @@ public class ValidateSortingSearcherTestCase {
         assertNotNull(quoteAndTransform("+a -b +c"));
         assertNotNull(quoteAndTransform("+a"));
         assertNotNull(quoteAndTransform(null));
+        assertEquals("[ASCENDING:[rank]]", quoteAndTransform("+[rank]"));
+        assertEquals("[ASCENDING:[docid]]", quoteAndTransform("+[docid]"));
+        assertEquals("[ASCENDING:[rank]]", quoteAndTransform("+[relevancy]"));
     }
 
     @Test
