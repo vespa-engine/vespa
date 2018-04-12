@@ -119,6 +119,9 @@ public class ValidateSortingSearcher extends Searcher {
             String name = f.getFieldName();
             if ("[rank]".equals(name) || "[docid]".equals(name)) {
                 // built-in constants - ok
+            } else if ("[relevancy]".equals(name)) {
+                // built-in constant '[relevancy]' must map to '[rank]'
+                f.getSorter().setName("[rank]");
             } else if (names.containsKey(name)) {
                 AttributesConfig.Attribute attrConfig = names.get(name);
                 if (attrConfig != null) {
