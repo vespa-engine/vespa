@@ -1958,10 +1958,6 @@ PageDict4Reader::setupPage()
     uint32_t wordsSize = _pd.readBits(12);
     _countsResidue = countsEntries;
 
-#if 0
-    _pd.skipBits(l2Size + l1Size);
-    Counts counts;
-#else
     if (countsEntries == 0 && l1Size == 0 && l2Size == 0) {
         _pd.smallAlign(64);
         _overflowPage = true;
@@ -2011,7 +2007,6 @@ PageDict4Reader::setupPage()
     }
     assert(_pd.getReadOffset() == beforePos + l2Size + l1Size);
     (void) beforePos;
-#endif
     _counts.clear();
     while (countsEntries > 0) {
         _pd.readCounts(counts);
@@ -2041,10 +2036,6 @@ PageDict4Reader::setupSPage()
     uint32_t l3Entries = _spd.readBits(15);
     uint32_t wordsSize = _spd.readBits(12);
     _l3Residue = l3Entries;
-
-#if 0
-    _spd.skipBits(l5Size + l4Size);
-#else
 
     assert(l3Entries > 0);
     uint32_t l4Residue = getL4Entries(l3Entries);
@@ -2092,7 +2083,6 @@ PageDict4Reader::setupSPage()
     (void) l4Size;
     (void) l5Size;
     (void) beforePos;
-#endif
     while (l3Entries > 1) {
         readStartOffset(_spd,
                         startOffset,
