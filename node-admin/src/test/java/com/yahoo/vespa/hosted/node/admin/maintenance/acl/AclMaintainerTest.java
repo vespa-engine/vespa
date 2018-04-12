@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
@@ -39,12 +40,33 @@ public class AclMaintainerTest {
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Map<String, Container> containers = new HashMap<>();
     private final List<Container> containerList = new ArrayList<>();
+    private final Environment env = mock(Environment.class);
     private final AclMaintainer aclMaintainer =
-            new AclMaintainer(dockerOperations, nodeRepository, NODE_ADMIN_HOSTNAME, ipAddresses);
+            new AclMaintainer(dockerOperations, nodeRepository, NODE_ADMIN_HOSTNAME, ipAddresses, env);
 
     @Before
     public void before() {
         when(dockerOperations.getAllManagedContainers()).thenReturn(containerList);
+        when(env.getCloud()).thenReturn("AWS");
+    }
+
+    @Test
+    public void no_redirect_in_yahoo() {
+        when(env.getCloud()).thenReturn("YAHOO");
+
+        Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
+        Map<String, Acl> acls = makeAcl(container.hostname, "4321", "2001::1");
+        when(nodeRepository.getAcls(NODE_ADMIN_HOSTNAME)).thenReturn(acls);
+
+        whenListRules(container.name, "filter", IPVersion.IPv6, "");
+        whenListRules(container.name, "filter", IPVersion.IPv4, "");
+
+        aclMaintainer.run();
+
+        verify(dockerOperations, never()).executeCommandInNetworkNamespace(eq(container.name), eq("iptables"), eq("-S"), eq("-t"), eq("nat"));
+        verify(dockerOperations, never()).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables"), eq("-S"), eq("-t"), eq("nat"));
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("iptables-restore"), anyVararg());
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables-restore"), anyVararg());
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
@@ -21,7 +22,9 @@ import java.util.stream.Collectors;
  * If an ACL cannot be configured (e.g. iptables process execution fails) we attempted to flush the rules
  * rendering the firewall open.
  * <p>
- * An additional The configuration will be retried the next time the maintainer runs.
+ * This class currently assumes control over the filter and nat table.
+ * <p>
+ * The configuration will be retried the next time the maintainer runs.
  *
  * @author mpolden
  * @author smorgrav
@@ -34,12 +37,15 @@ public class AclMaintainer implements Runnable {
     private final NodeRepository nodeRepository;
     private final IPAddresses ipAddresses;
     private final String nodeAdminHostname;
+    private final Environment environment;
 
-    public AclMaintainer(DockerOperations dockerOperations, NodeRepository nodeRepository, String nodeAdminHostname, IPAddresses ipAddresses) {
+    public AclMaintainer(DockerOperations dockerOperations, NodeRepository nodeRepository,
+                         String nodeAdminHostname, IPAddresses ipAddresses, Environment environment) {
         this.dockerOperations = dockerOperations;
         this.nodeRepository = nodeRepository;
         this.ipAddresses = ipAddresses;
         this.nodeAdminHostname = nodeAdminHostname;
+        this.environment = environment;
     }
 
     private void applyRedirect(Container container, InetAddress address) {
@@ -56,14 +62,15 @@ public class AclMaintainer implements Runnable {
     }
 
     private void apply(Container container, Acl acl) {
-        log.debug("Apply acl to container: " + container.name);
         // Apply acl to the filter table
         IPTablesRestore.syncTableFlushOnError(dockerOperations, container.name, IPVersion.IPv6, "filter", acl.toRules(IPVersion.IPv6));
         IPTablesRestore.syncTableFlushOnError(dockerOperations, container.name, IPVersion.IPv4, "filter", acl.toRules(IPVersion.IPv4));
 
         // Apply redirect to the nat table
-        ipAddresses.getAddress(container.hostname, IPVersion.IPv4).ifPresent(addr -> applyRedirect(container, addr));
-        ipAddresses.getAddress(container.hostname, IPVersion.IPv6).ifPresent(addr -> applyRedirect(container, addr));
+        if (this.environment.getCloud().equals("AWS")) {
+            ipAddresses.getAddress(container.hostname, IPVersion.IPv4).ifPresent(addr -> applyRedirect(container, addr));
+            ipAddresses.getAddress(container.hostname, IPVersion.IPv6).ifPresent(addr -> applyRedirect(container, addr));
+        }
     }
 
     private synchronized void configureAcls() {

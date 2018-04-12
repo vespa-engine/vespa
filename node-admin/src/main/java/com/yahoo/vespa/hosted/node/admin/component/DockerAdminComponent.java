@@ -107,7 +107,8 @@ public class DockerAdminComponent implements AdminComponent {
                 dockerOperations,
                 configServerClients.nodeRepository(),
                 dockerHostHostName,
-                new IPAddressesImpl());
+                new IPAddressesImpl(),
+                environment.get());
 
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(
                 hostName,
