@@ -3,11 +3,11 @@ package com.yahoo.container.di.componentgraph.core
 
 import java.util.logging.Logger
 
+import com.google.inject.Key
 import com.yahoo.component.ComponentId
 import com.yahoo.container.di.ConfigKeyT
 import com.yahoo.container.di.componentgraph.Provider
-import com.google.inject.Key
-import Node._
+import com.yahoo.container.di.componentgraph.core.Node._
 import com.yahoo.log.LogLevel.{DEBUG, SPAM}
 
 /**
