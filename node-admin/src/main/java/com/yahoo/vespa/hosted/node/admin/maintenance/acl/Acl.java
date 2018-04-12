@@ -3,69 +3,65 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InetAddresses;
-import com.yahoo.vespa.hosted.node.admin.AclSpec;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Action;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Chain;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Command;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.FilterCommand;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.PolicyCommand;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 
-import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.util.ArrayList;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
- * This class represents an ACL for a specific container instance
+ * This class represents an ACL for a specific container instance.
  *
  * @author mpolden
+ * @author smorgrav
  */
 public class Acl {
 
-    private final int containerPid;
-    private final List<AclSpec> aclSpecs;
+    private final List<InetAddress> trustedNodes;
+    private final List<Integer> trustedPorts;
 
-    public Acl(int containerPid, List<AclSpec> aclSpecs) {
-        this.containerPid = containerPid;
-        this.aclSpecs = ImmutableList.copyOf(aclSpecs);
+    /**
+     * @param trustedPorts Ports that hostname should trust
+     * @param trustedNodes Other hostnames that this hostname should trust
+     */
+    public Acl(List<Integer> trustedPorts, List<InetAddress> trustedNodes) {
+        this.trustedNodes = trustedNodes != null ? ImmutableList.copyOf(trustedNodes) : Collections.emptyList();
+        this.trustedPorts = trustedPorts != null ? ImmutableList.copyOf(trustedPorts) : Collections.emptyList();
     }
 
-    public List<Command> toCommands() {
-        final ImmutableList.Builder<Command> commands = ImmutableList.builder();
-        commands.add(
-                // Default policies. Packets that do not match any rules will be processed according to policy.
-                new PolicyCommand(Chain.INPUT, Action.DROP),
-                new PolicyCommand(Chain.FORWARD, Action.DROP),
-                new PolicyCommand(Chain.OUTPUT, Action.ACCEPT),
+    public String toRules(IPVersion ipVersion) {
 
+        String basics = String.join("\n"
+                // We reject with rules instead of using policies
+                , "-P INPUT ACCEPT"
+                , "-P FORWARD ACCEPT"
+                , "-P OUTPUT ACCEPT"
                 // Allow packets belonging to established connections
-                new FilterCommand(Chain.INPUT, Action.ACCEPT)
-                        .withOption("-m", "state")
-                        .withOption("--state", "RELATED,ESTABLISHED"),
-
+                , "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT"
                 // Allow any loopback traffic
-                new FilterCommand(Chain.INPUT, Action.ACCEPT)
-                         .withOption("-i", "lo"),
+                , "-A INPUT -i lo -j ACCEPT"
+                // Allow ICMP packets. See http://shouldiblockicmp.com/
+                , "-A INPUT -p " + ipVersion.icmpProtocol() + " -j ACCEPT");
 
-                // Allow IPv6 ICMP packets. This is required for IPv6 routing (e.g. path MTU) to work correctly.
-                new FilterCommand(Chain.INPUT, Action.ACCEPT)
-                        .withOption("-p", "ipv6-icmp"));
+        // Allow trusted ports if any
+        String commaSeparatedPorts = trustedPorts.stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","));
+        String ports = commaSeparatedPorts.isEmpty() ? "" : "-A INPUT -p tcp -m multiport --dports " + commaSeparatedPorts + " -j ACCEPT\n";
 
-        // Allow traffic from trusted containers
-        aclSpecs.stream()
-                .map(AclSpec::ipAddress)
-                .filter(Acl::isIpv6)
-                .map(ipAddress -> new FilterCommand(Chain.INPUT, Action.ACCEPT)
-                        .withOption("-s", String.format("%s/128", ipAddress)))
-                .forEach(commands::add);
+        // Allow traffic from trusted nodes
+        String nodes = trustedNodes.stream()
+                .filter(ipVersion::match)
+                .map(ipAddress -> "-A INPUT -s " + InetAddresses.toAddrString(ipAddress) + ipVersion.singleHostCidr() + " -j ACCEPT")
+                .collect(Collectors.joining("\n"));
 
-        // Reject all other packets. This means that packets that would otherwise be processed according to policy, are
-        // matched by the following rule.
-        //
-        // Ideally, we want to set the INPUT policy to REJECT and get rid of this rule, but unfortunately REJECT is not
-        // a valid policy action.
-        commands.add(new FilterCommand(Chain.INPUT, Action.REJECT));
+        // We reject instead of dropping to give us an easier time to figure out potential network issues
+        String rejectEverythingElse = "-A INPUT -j REJECT --reject-with " + ipVersion.icmpPortUnreachable();
 
-        return commands.build();
+        return basics + "\n" + ports + nodes + "\n" + rejectEverythingElse;
     }
 
     @Override
@@ -73,16 +69,12 @@ public class Acl {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Acl that = (Acl) o;
-        return containerPid == that.containerPid &&
-                Objects.equals(aclSpecs, that.aclSpecs);
+        return Objects.equals(trustedPorts, that.trustedPorts) &&
+                Objects.equals(trustedNodes, that.trustedNodes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(containerPid, aclSpecs);
-    }
-
-    private static boolean isIpv6(String ipAddress) {
-        return InetAddresses.forString(ipAddress) instanceof Inet6Address;
+        return Objects.hash(trustedPorts, trustedNodes);
     }
 }

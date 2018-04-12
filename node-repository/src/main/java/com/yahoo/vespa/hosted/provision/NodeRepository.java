@@ -166,11 +166,12 @@ public class NodeRepository extends AbstractComponent {
     public List<Node> getFailed() { return db.getNodes(Node.State.failed); }
 
     /**
-     * Returns a set of nodes that should be trusted by the given node.
+     * Returns the ACL for the node (trusted nodes, networks and ports)
      */
     private NodeAcl getNodeAcl(Node node, NodeList candidates) {
         Set<Node> trustedNodes = new TreeSet<>(Comparator.comparing(Node::hostname));
         Set<String> trustedNetworks = new HashSet<>();
+        Set<Integer> trustedPorts = new HashSet<>();
 
         // For all cases below, trust:
         // - nodes in same application
@@ -198,13 +199,18 @@ public class NodeRepository extends AbstractComponent {
             case config:
                 // Config servers trust all nodes
                 trustedNodes.addAll(candidates.asList());
+
+                // And all connections on 4443
+                trustedPorts.add(4443);
                 break;
 
             case proxy:
-                // No special rules for proxies
+                // Accept connections from the world on 4443
+                trustedPorts.add(4443);
                 break;
 
             case host:
+                // This is only needed for macvlan networks - for nated networks this is handled elsewhere.
                 // Docker bridge network
                 trustedNetworks.add("172.17.0.0/16");
                 break;
@@ -215,7 +221,7 @@ public class NodeRepository extends AbstractComponent {
                                 node.hostname(), node.type()));
         }
 
-        return new NodeAcl(node, trustedNodes, trustedNetworks);
+        return new NodeAcl(node, trustedNodes, trustedNetworks, trustedPorts);
     }
 
     /**

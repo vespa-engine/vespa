@@ -94,7 +94,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 command.withVolume("/opt/yahoo/share/ssl/certs/", "/opt/yahoo/share/ssl/certs/");
             }
 
-            if (!docker.networkNPTed()) {
+            if (!docker.networkNATed()) {
                 command.withIpAddress(nodeInetAddress);
                 command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
                 command.withVolume("/etc/hosts", "/etc/hosts"); // TODO This is probably not necessary - review later
@@ -148,7 +148,7 @@ public class DockerOperationsImpl implements DockerOperations {
             boolean isIPv6 = nodeInetAddress instanceof Inet6Address;
 
             if (isIPv6) {
-                if (!docker.networkNPTed()) {
+                if (!docker.networkNATed()) {
                     docker.connectContainerToNetwork(containerName, "bridge");
                 }
 
@@ -213,7 +213,7 @@ public class DockerOperationsImpl implements DockerOperations {
      * IPv6 gateway in containers connected to more than one docker network
      */
     private void setupContainerNetworkConnectivity(ContainerName containerName) throws IOException {
-        if (!docker.networkNPTed()) {
+        if (!docker.networkNATed()) {
             InetAddress hostDefaultGateway = DockerNetworkCreator.getDefaultGatewayLinux(true);
             executeCommandInNetworkNamespace(containerName,
                     "route", "-A", "inet6", "add", "default", "gw", hostDefaultGateway.getHostAddress(), "dev", "eth1");
@@ -246,7 +246,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void executeCommandInNetworkNamespace(ContainerName containerName, String... command) {
+    public ProcessResult executeCommandInNetworkNamespace(ContainerName containerName, String... command) {
         final PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         final Integer containerPid = docker.getContainer(containerName)
                 .filter(container -> container.state.isRunning())
@@ -270,11 +270,13 @@ public class DockerOperationsImpl implements DockerOperations {
                 logger.error(msg);
                 throw new RuntimeException(msg);
             }
+            return new ProcessResult(0, result.getSecond(), "");
         } catch (IOException e) {
             logger.warning(String.format("IOException while executing %s in network namespace for %s (PID = %d)",
                     Arrays.toString(wrappedCommand), containerName.asString(), containerPid), e);
             throw new RuntimeException(e);
         }
+
     }
 
     @Override

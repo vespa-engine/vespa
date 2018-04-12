@@ -1,99 +1,87 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
-import com.yahoo.collections.Pair;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.AclSpec;
+import com.google.common.net.InetAddresses;
+import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Action;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Chain;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.Command;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.FlushCommand;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.iptables.PolicyCommand;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
-import java.util.HashMap;
-import java.util.List;
+import java.net.InetAddress;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
- * The responsibility of this class is to configure ACLs for all running containers. The ACLs are fetched from the Node
- * repository. Based on those ACLs, iptables commands are created and then executed in each of the containers network
- * namespace.
+ * This class maintains the iptables (ipv4 and ipv6) for all running containers.
+ * The filter table is synced with ACLs fetched from the Node repository while the nat table
+ * is synched with the proper redirect rule.
  * <p>
- * If an ACL cannot be configured (e.g. iptables process execution fails), a rollback is attempted by setting the
- * default policy to ACCEPT which will allow any traffic. The configuration will be retried the next time the
- * maintainer runs.
+ * If an ACL cannot be configured (e.g. iptables process execution fails) we attempted to flush the rules
+ * rendering the firewall open.
  * <p>
- * The ACL maintainer does not handle IPv4 addresses and is thus only intended to configure ACLs for IPv6-only
- * containers (e.g. any container, except node-admin).
+ * This class currently assumes control over the filter and nat table.
+ * <p>
+ * The configuration will be retried the next time the maintainer runs.
  *
  * @author mpolden
+ * @author smorgrav
  */
 public class AclMaintainer implements Runnable {
 
     private static final PrefixLogger log = PrefixLogger.getNodeAdminLogger(AclMaintainer.class);
-    private static final String IPTABLES_COMMAND = "ip6tables";
 
     private final DockerOperations dockerOperations;
     private final NodeRepository nodeRepository;
+    private final IPAddresses ipAddresses;
     private final String nodeAdminHostname;
-    private final Map<ContainerName, Acl> containerAcls;
+    private final Environment environment;
 
     public AclMaintainer(DockerOperations dockerOperations, NodeRepository nodeRepository,
-                         String nodeAdminHostname) {
+                         String nodeAdminHostname, IPAddresses ipAddresses, Environment environment) {
         this.dockerOperations = dockerOperations;
         this.nodeRepository = nodeRepository;
+        this.ipAddresses = ipAddresses;
         this.nodeAdminHostname = nodeAdminHostname;
-        this.containerAcls = new HashMap<>();
+        this.environment = environment;
     }
 
-    private boolean isAclActive(ContainerName containerName, Acl acl) {
-        return Optional.ofNullable(containerAcls.get(containerName))
-                .map(acl::equals)
-                .orElse(false);
+    private void applyRedirect(Container container, InetAddress address) {
+        IPVersion ipVersion = IPVersion.get(address);
+
+        String redirectStatements = String.join("\n"
+                , "-P PREROUTING ACCEPT"
+                , "-P INPUT ACCEPT"
+                , "-P OUTPUT ACCEPT"
+                , "-P POSTROUTING ACCEPT"
+                , "-A OUTPUT -d " + InetAddresses.toAddrString(address) + ipVersion.singleHostCidr() + " -j REDIRECT");
+
+        IPTablesRestore.syncTableLogOnError(dockerOperations, container.name, ipVersion, "nat", redirectStatements);
     }
 
-    private void applyAcl(ContainerName containerName, Acl acl) {
-        if (isAclActive(containerName, acl)) {
-            return;
-        }
-        final Command flush = new FlushCommand(Chain.INPUT);
-        final Command rollback = new PolicyCommand(Chain.INPUT, Action.ACCEPT);
-        try {
-            String commands = Stream.concat(Stream.of(flush), acl.toCommands().stream())
-                    .map(command -> command.asString(IPTABLES_COMMAND))
-                    .collect(Collectors.joining("; "));
+    private void apply(Container container, Acl acl) {
+        // Apply acl to the filter table
+        IPTablesRestore.syncTableFlushOnError(dockerOperations, container.name, IPVersion.IPv6, "filter", acl.toRules(IPVersion.IPv6));
+        IPTablesRestore.syncTableFlushOnError(dockerOperations, container.name, IPVersion.IPv4, "filter", acl.toRules(IPVersion.IPv4));
 
-            log.debug("Running ACL command '" + commands + "' in " + containerName.asString());
-            dockerOperations.executeCommandInNetworkNamespace(containerName, "/bin/sh", "-c", commands);
-            containerAcls.put(containerName, acl);
-        } catch (Exception e) {
-            log.error("Exception occurred while configuring ACLs for " + containerName.asString() + ", attempting rollback", e);
-            try {
-                dockerOperations.executeCommandInNetworkNamespace(containerName, rollback.asArray(IPTABLES_COMMAND));
-            } catch (Exception ne) {
-                log.error("Rollback of ACLs for " + containerName.asString() + " failed, giving up", ne);
-            }
+        // Apply redirect to the nat table
+        if (this.environment.getCloud().equals("AWS")) {
+            ipAddresses.getAddress(container.hostname, IPVersion.IPv4).ifPresent(addr -> applyRedirect(container, addr));
+            ipAddresses.getAddress(container.hostname, IPVersion.IPv6).ifPresent(addr -> applyRedirect(container, addr));
         }
     }
 
     private synchronized void configureAcls() {
-        final Map<ContainerName, List<AclSpec>> nodeAclGroupedByContainerName = nodeRepository
-                .getNodesAcl(nodeAdminHostname).stream()
-                .collect(Collectors.groupingBy(AclSpec::trustedBy));
-
-        dockerOperations
+        Map<String, Container> runningContainers = dockerOperations
                 .getAllManagedContainers().stream()
                 .filter(container -> container.state.isRunning())
-                .map(container -> new Pair<>(container, nodeAclGroupedByContainerName.get(container.name)))
-                .filter(pair -> pair.getSecond() != null)
-                .forEach(pair ->
-                        applyAcl(pair.getFirst().name, new Acl(pair.getFirst().pid, pair.getSecond())));
+                .collect(Collectors.toMap(container -> container.hostname, container -> container));
+
+        nodeRepository.getAcls(nodeAdminHostname).entrySet().stream()
+                .filter(entry -> runningContainers.containsKey(entry.getKey()))
+                .forEach(entry -> apply(runningContainers.get(entry.getKey()), entry.getValue()));
     }
 
     @Override

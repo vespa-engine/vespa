@@ -14,7 +14,7 @@ public class IPAddressesMock implements IPAddresses {
 
     Map<String, List<InetAddress>> otherAddresses = new HashMap<>();
 
-    IPAddressesMock addAddress(String hostname, String ip) {
+    public IPAddressesMock addAddress(String hostname, String ip) {
         List<InetAddress> addresses = otherAddresses.getOrDefault(hostname, new ArrayList<>());
         try {
             addresses.add(InetAddress.getByName(ip));
@@ -28,6 +28,7 @@ public class IPAddressesMock implements IPAddresses {
     @Override
     public InetAddress[] getAddresses(String hostname) {
         List<InetAddress> addresses = otherAddresses.get(hostname);
+        if (addresses == null) return new InetAddress[0];
         return addresses.toArray(new InetAddress[addresses.size()]);
     }
 }

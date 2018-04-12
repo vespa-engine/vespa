@@ -193,5 +193,11 @@
       "trustedBy": "cfg1"
     }
   ],
-  "trustedNetworks": []
+  "trustedNetworks": [],
+  "trustedPorts": [
+    {
+      "port": 4443,
+      "trustedBy": "cfg1"
+    }
+  ]
 }

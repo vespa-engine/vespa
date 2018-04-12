@@ -84,5 +84,6 @@
       "network": "172.17.0.0/16",
       "trustedBy": "dockerhost1.yahoo.com"
     }
-  ]
+  ],
+  "trustedPorts": []
 }

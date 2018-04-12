@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -42,13 +43,16 @@ public class NodeAclResponse extends HttpResponse {
                 .orElseGet(() -> nodeRepository.getConfigNode(hostname)
                         .orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'")));
 
+        List<NodeAcl> acls = nodeRepository.getNodeAcls(node, aclsForChildren);
+
         Cursor trustedNodesArray = object.setArray("trustedNodes");
-        nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toSlime(nodeAcl, trustedNodesArray));
+        acls.forEach(nodeAcl -> toSlime(nodeAcl, trustedNodesArray));
 
         Cursor trustedNetworksArray = object.setArray("trustedNetworks");
-        nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toSlime(nodeAcl.trustedNetworks(),
-                                                                                     nodeAcl.node(),
-                                                                                     trustedNetworksArray));
+        acls.forEach(nodeAcl -> toSlime(nodeAcl.trustedNetworks(), nodeAcl.node(), trustedNetworksArray));
+
+        Cursor trustedPortsArray = object.setArray("trustedPorts");
+        acls.forEach(nodeAcl -> toSlime(nodeAcl.trustedPorts(), nodeAcl, trustedPortsArray));
     }
 
     private void toSlime(NodeAcl nodeAcl, Cursor array) {
@@ -61,11 +65,19 @@ public class NodeAclResponse extends HttpResponse {
         }));
     }
 
-    private void toSlime(Set<String> trustedNetworks, Node trustedBy, Cursor array) {
+    private void toSlime(Set<String> trustedNetworks, Node trustedby, Cursor array) {
         trustedNetworks.forEach(network -> {
             Cursor object = array.addObject();
             object.setString("network", network);
-            object.setString("trustedBy", trustedBy.hostname());
+            object.setString("trustedBy", trustedby.hostname());
+        });
+    }
+
+    private void toSlime(Set<Integer> trustedPorts, NodeAcl trustedBy, Cursor array) {
+        trustedPorts.forEach(port -> {
+            Cursor object = array.addObject();
+            object.setLong("port", port);
+            object.setString("trustedBy", trustedBy.node().hostname());
         });
     }
 

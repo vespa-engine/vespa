@@ -139,5 +139,6 @@
       "trustedBy": "foo.yahoo.com"
     }
   ],
-  "trustedNetworks": []
+  "trustedNetworks": [],
+  "trustedPorts":[]
 }

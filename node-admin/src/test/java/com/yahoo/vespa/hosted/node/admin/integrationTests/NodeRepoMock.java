@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
+
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.node.admin.AclSpec;
+import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.node.admin.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.maintenance.acl.Acl;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.ArrayList;
@@ -14,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Mock with some simple logic
@@ -24,7 +27,8 @@ public class NodeRepoMock implements NodeRepository {
     private static final Object monitor = new Object();
 
     private final Map<String, NodeSpec> nodeRepositoryNodesByHostname = new HashMap<>();
-    private final Map<String, List<AclSpec>> acls = new HashMap<>();
+    private final Map<String, Acl> acls = new HashMap<>();
+
     private final CallOrderVerifier callOrderVerifier;
 
     public NodeRepoMock(CallOrderVerifier callOrderVerifier) {
@@ -39,11 +43,6 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public List<NodeSpec> getNodes(NodeType... nodeTypes) {
-        return Collections.emptyList();
-    }
-
-    @Override
     public Optional<NodeSpec> getNode(String hostName) {
         synchronized (monitor) {
             return Optional.ofNullable(nodeRepositoryNodesByHostname.get(hostName));
@@ -51,10 +50,14 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public List<AclSpec> getNodesAcl(String hostName) {
+    public List<NodeSpec> getNodes(NodeType... nodeTypes) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Map<String, Acl> getAcls(String hostname) {
         synchronized (monitor) {
-            return Optional.ofNullable(acls.get(hostName))
-                    .orElseGet(Collections::emptyList);
+            return acls;
         }
     }
 
