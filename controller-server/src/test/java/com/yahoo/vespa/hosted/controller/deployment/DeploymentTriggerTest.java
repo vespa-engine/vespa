@@ -3,12 +3,12 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
@@ -22,7 +22,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -34,6 +33,7 @@ import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobTy
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -78,7 +78,9 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
 
         // staging-test times out and is retried
-        tester.buildService().takeJobsToRun();
+        synchronized (tester.buildService()) {
+            tester.buildService().clear();
+        }
         tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
         tester.readyJobTrigger().maintain();
         assertEquals("Retried dead job", 1, tester.buildService().jobs().size());
@@ -324,9 +326,8 @@ public class DeploymentTriggerTest {
 
         tester.clock().advance(Duration.ofHours(2)); // ---------------- Exit block window: 20:30
         tester.deploymentTrigger().triggerReadyJobs(); // Schedules the blocked production job(s)
-        assertEquals(1, tester.buildService().jobs().size());
-        BuildService.BuildJob productionJob = tester.buildService().takeJobsToRun().get(0);
-        assertEquals("production-us-west-1", productionJob.jobName());
+        assertEquals(singletonList(new BuildService.BuildJob(app.deploymentJobs().projectId().get(), "production-us-west-1")),
+                     tester.buildService().jobs());
     }
 
     @Test

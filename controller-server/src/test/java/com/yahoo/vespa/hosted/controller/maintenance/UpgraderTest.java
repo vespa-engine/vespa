@@ -123,8 +123,14 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
-        tester.buildService().removeJob(canary0.deploymentJobs().projectId().get(), stagingTest);
-        tester.buildService().removeJob(canary1.deploymentJobs().projectId().get(), systemTest);
+        boolean result1;
+        synchronized (tester.buildService()) {
+            result1 = tester.buildService().removeJob(canary0.deploymentJobs().projectId().get(), stagingTest.jobName());
+        }
+        boolean result;
+        synchronized (tester.buildService()) {
+            result = tester.buildService().removeJob(canary1.deploymentJobs().projectId().get(), systemTest.jobName());
+        }
         tester.readyJobTrigger().maintain();
         tester.readyJobTrigger().maintain();
 
@@ -254,7 +260,9 @@ public class UpgraderTest {
         tester.jobCompletion(DeploymentJobs.JobType.productionUsWest1).application(default3).unsuccessful().submit();
 
         tester.upgrader().maintain();
-        tester.buildService().takeJobsToRun();
+        synchronized (tester.buildService()) {
+            tester.buildService().clear();
+        }
         tester.readyJobTrigger().maintain();
         assertEquals("Upgrade of defaults are scheduled on 5.4 instead, since 5.5 broken: " +
                      "This is default3 since it failed upgrade on both 5.4 and 5.5",
@@ -339,7 +347,9 @@ public class UpgraderTest {
         // > 40% and at least 4 failed - version is broken
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
-        tester.buildService().takeJobsToRun();
+        synchronized (tester.buildService()) {
+            tester.buildService().clear();
+        }
         tester.readyJobTrigger().maintain();
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
         assertEquals("Upgrades are cancelled", 0, tester.buildService().jobs().size());
@@ -393,12 +403,11 @@ public class UpgraderTest {
         tester.jobCompletion(stagingTest).application(app).unsuccessful().submit();
         assertTrue("Application still has failures", tester.application(app.id()).deploymentJobs().hasFailures());
         assertEquals(1, tester.buildService().jobs().size());
-        tester.buildService().takeJobsToRun();
 
         // Upgrader runs again, nothing happens as there's already a job in progress for this change
         tester.upgrader().maintain();
         tester.readyJobTrigger().maintain();
-        assertTrue("No more jobs triggered at this time", tester.buildService().jobs().isEmpty());
+        assertEquals(1, tester.buildService().jobs().size());
     }
 
     @Test
@@ -518,7 +527,9 @@ public class UpgraderTest {
         tester.deploymentTrigger().cancelChange(default1.id(), false);
         tester.deploymentTrigger().cancelChange(default2.id(), false);
         tester.deploymentTrigger().cancelChange(default3.id(), false);
-        tester.buildService().takeJobsToRun();
+        synchronized (tester.buildService()) {
+            tester.buildService().clear();
+        }
         tester.clock().advance(Duration.ofHours(13)); // Currently we don't cancel running jobs, so this is necessary to allow a new triggering below
 
         // Applications with default policy start upgrading to V2
@@ -542,7 +553,9 @@ public class UpgraderTest {
         assertEquals(v2, tester.application("default0").deployments().get(ZoneId.from("prod.us-west-1")).version());
         assertEquals(v0, tester.application("default0").deployments().get(ZoneId.from("prod.us-east-3")).version());
         tester.upgrader().maintain();
-        tester.buildService().takeJobsToRun();
+        synchronized (tester.buildService()) {
+            tester.buildService().clear();
+        }
         tester.clock().advance(Duration.ofHours(13)); // TODO jvenstad: Reduce all these when build service is polled for status.
         tester.readyJobTrigger().maintain();
         tester.readyJobTrigger().maintain();
@@ -859,7 +872,7 @@ public class UpgraderTest {
 
         // 5th app never reports back and has a dead job, but no ongoing change
         Application deadLocked = tester.applications().require(default4.id());
-        assertTrue("Jobs in progress", deadLocked.deploymentJobs().isRunning(tester.controller().applications().deploymentTrigger().jobTimeoutLimit()));
+        assertTrue("Jobs in progress", tester.deploymentTrigger().isRunning(deadLocked, systemTest));
         assertFalse("No change present", deadLocked.change().isPresent());
 
         // 4 out of 5 applications are repaired and confidence is restored

@@ -96,18 +96,6 @@ public class DeploymentJobs {
         return ! JobList.from(status.values()).failing().isEmpty();
     }
 
-    /** Returns whether any job is currently in progress */
-    public boolean isRunning(Instant timeoutLimit) {
-        return ! JobList.from(status.values()).running(timeoutLimit).isEmpty();
-    }
-
-    /** Returns whether the given job type is currently running and was started after timeoutLimit */
-    public boolean isRunning(JobType jobType, Instant timeoutLimit) {
-        JobStatus jobStatus = status.get(jobType);
-        if ( jobStatus == null) return false;
-        return jobStatus.isRunning(timeoutLimit);
-    }
-
     /** Returns whether change can be deployed to the given environment */
     public boolean isDeployableTo(Environment environment, Change change) {
         // TODO jvenstad: Rewrite to verify versions when deployment is already decided.
@@ -125,13 +113,6 @@ public class DeploymentJobs {
     /** Returns the JobStatus of the given JobType, or empty. */
     public Optional<JobStatus> statusOf(JobType jobType) {
         return Optional.ofNullable(jobStatus().get(jobType));
-    }
-
-    /** Returns the last successful application version for the given job */
-    public Optional<ApplicationVersion> lastSuccessfulApplicationVersionFor(JobType jobType) {
-        return statusOf(jobType)
-                .flatMap(JobStatus::lastSuccess)
-                .map(JobStatus.JobRun::applicationVersion);
     }
 
     /**

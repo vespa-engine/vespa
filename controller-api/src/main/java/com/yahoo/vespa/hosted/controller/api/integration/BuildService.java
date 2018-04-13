@@ -9,11 +9,11 @@ import java.util.Objects;
 public interface BuildService {
 
     /**
-     * Enqueues a job defined by buildJob in an external build system, and returns the outcome of the enqueue request.
-     * This method should return false only when a retry is in order, and true otherwise, e.g., on success, or for
-     * invalid jobs.
+     * Enqueues a job defined by buildJob in an external build system.
+     *
+     * Implementations should throw an exception if the triggering fails.
      */
-    boolean trigger(BuildJob buildJob);
+    void trigger(BuildJob buildJob);
 
     /**
      * Returns whether the given job is currently running.

@@ -8,7 +8,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -21,9 +20,7 @@ import java.time.Duration;
 import java.util.Collections;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionCdUsCentral1;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionUsEast3;
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -95,36 +92,6 @@ public class FailureRedeployerTest {
         assertTrue("All jobs consumed", tester.buildService().jobs().isEmpty());
         assertFalse("No failures", tester.application(app.id()).deploymentJobs().hasFailures());
     }
-
-    @Test
-    public void testRetriesDeploymentWithStuckJobs() {
-        DeploymentTester tester = new DeploymentTester();
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .upgradePolicy("canary")
-                .environment(Environment.prod)
-                .region("us-east-3")
-                .build();
-
-        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
-        tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
-
-        // staging-test starts, but does not complete
-        assertEquals(DeploymentJobs.JobType.stagingTest.jobName(), tester.buildService().takeJobsToRun().get(0).jobName());
-        tester.readyJobTrigger().maintain();
-        assertTrue("No jobs retried", tester.buildService().jobs().isEmpty());
-
-        // Just over 12 hours pass, job is retried
-        tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
-        tester.readyJobTrigger().maintain();
-        tester.assertRunning(app.id(), stagingTest);
-
-        // Deployment completes
-        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.productionUsEast3);
-        assertTrue("All jobs consumed", tester.buildService().jobs().isEmpty());
-    }
-
     @Test
     public void testRetriesJobsFailingForCurrentChange() {
         DeploymentTester tester = new DeploymentTester();
@@ -158,8 +125,10 @@ public class FailureRedeployerTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
-        // Job is left "running", so needs to time out before it can be retried.
-        tester.clock().advance(Duration.ofHours(13));
+        boolean result;
+        synchronized (tester.buildService()) {
+            result = tester.buildService().removeJob((long) 1, systemTest.jobName());
+        }
         tester.upgrader().maintain();
         tester.readyJobTrigger().maintain();
         assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());

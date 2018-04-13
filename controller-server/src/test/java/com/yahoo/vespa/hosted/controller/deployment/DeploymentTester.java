@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.ConfigServerClientMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -258,10 +259,10 @@ public class DeploymentTester {
     }
 
     private void notifyJobCompletion(DeploymentJobs.JobReport report) {
-        if (report.jobType() != JobType.component && ! buildService().removeJob(report.projectId(), report.jobType()))
+        if (report.jobType() != JobType.component && ! buildService().removeJob(report.projectId(), report.jobType().jobName()))
             throw new IllegalArgumentException(report.jobType() + " is not running for " + report.applicationId());
         assertFalse("Unexpected entry '" + report.jobType() + "@" + report.projectId() + " in: " + buildService().jobs(),
-                    buildService().removeJob(report.projectId(), report.jobType()));
+                    buildService().removeJob(report.projectId(), report.jobType().jobName()));
 
         clock().advance(Duration.ofMillis(1));
         applications().deploymentTrigger().notifyOfCompletion(report);
