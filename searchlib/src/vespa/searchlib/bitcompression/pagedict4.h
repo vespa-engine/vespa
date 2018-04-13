@@ -699,16 +699,13 @@ public:
         {
         }
     };
-    struct L4SkipCheck
+    struct L4SkipCheck : public L3SkipCheck
     {
         uint32_t    wordOffset;
-        StartOffset startOffset;
-        uint64_t    wordNum;
         uint32_t    l3Offset;
         L4SkipCheck(const StartOffset &startOffset_, uint64_t wordNum_)
-            : wordOffset(0),
-              startOffset(startOffset_),
-              wordNum(wordNum_),
+            : L3SkipCheck(startOffset_, wordNum_),
+              wordOffset(0),
               l3Offset(0)
         {
         }
