@@ -63,20 +63,6 @@ PageDict4PageParams::getFileHeaderPad(uint32_t offset)
 }
 
 
-std::ostream &
-operator<<(std::ostream &stream, const index::PostingListCounts &counts)
-{
-    stream << "(d=" << counts._numDocs << ",b=" << counts._bitLength << ")";
-    return stream;
-}
-
-std::ostream &
-operator<<(std::ostream &stream, const PageDict4StartOffset &startOffset)
-{
-    stream << "(accNumDocs=" << startOffset._accNumDocs << ",fileOffset=" << startOffset._fileOffset << ")";
-    return stream;
-}
-
 typedef index::PostingListCounts Counts;
 typedef PageDict4StartOffset StartOffset;
 
@@ -209,19 +195,6 @@ PageDict4SSWriter::addL6Skip(const vespalib::stringref &word,
                              uint64_t pageNum,
                              uint32_t sparsePageNum)
 {
-#if 0
-    LOG(info,
-        "addL6SKip, \"%s\" -> wordnum %d, page (%d,%d) startOffset %" PRId64
-        ", SS bitOffset %" PRIu64,
-        word.c_str(),
-        (int) wordNum,
-        (int) pageNum,
-        (int) sparsePageNum,
-        startOffset.empty() ?
-        static_cast<int64_t>(0) :
-        startOffset[0]._fileOffset,
-        _eL6.getWriteOffset());
-#endif
     _eL6.writeBits(0, 1);   // Selector bit
     writeStartOffset(_eL6,
                      startOffset,
@@ -234,12 +207,6 @@ PageDict4SSWriter::addL6Skip(const vespalib::stringref &word,
     size_t lcp = getLCP(word, _l6Word);
     vespalib::stringref wordSuffix = word.substr(lcp);
     _eL6.smallAlign(8);
-#if 0
-    LOG(info,
-        "lcp=%d, at offset %" PRIu64 ,
-        (int) lcp,
-        _eL6.getWriteOffset());
-#endif
     _eL6.writeBits(lcp, 8);
     _eL6.writeComprBufferIfNeeded();
     _eL6.writeString(wordSuffix);
@@ -254,10 +221,6 @@ PageDict4SSWriter::addL6Skip(const vespalib::stringref &word,
     _l6StartOffset = startOffset;
     _l6Word = word;
     _l6WordNum = wordNum;
-#if 0
-    LOG(info, "after .. SS bit Offset %" PRId64,
-        _eL6.getWriteOffset());
-#endif
 }
 
 
@@ -268,21 +231,6 @@ addOverflowCounts(const vespalib::stringref &word,
                   const StartOffset &startOffset,
                   uint64_t wordNum)
 {
-#if 0
-    std::ostringstream txtCounts;
-    std::ostringstream txtStartOffset;
-    std::ostringstream txtL6StartOffset;
-    txtCounts << counts;
-    txtStartOffset << startOffset;
-    txtL6StartOffset << _l6StartOffset;
-    LOG(info,
-        "addL6Overflow, \"%s\" wordNum %d, counts %s fileoffset %s l6startOffset %s",
-        word.c_str(),
-        (int) wordNum,
-        txtCounts.str().c_str(),
-        txtStartOffset.str().c_str(),
-        txtL6StartOffset.str().c_str());
-#endif
     _eL6.writeBits(1, 1);   // Selector bit
     writeStartOffset(_eL6,
                      startOffset,
@@ -511,11 +459,6 @@ PageDict4SPWriter::addL3Skip(const vespalib::stringref &word,
                              uint64_t wordNum,
                              uint64_t pageNum)
 {
-#if 0
-    LOG(info,
-        "addL3Skip(\"%s\"), wordNum=%d pageNum=%d",
-        word.c_str(), (int) wordNum, (int) pageNum);
-#endif
     assert(_l3WordOffset == _words.size());
     /*
      * Update notion of previous size, converting tentative writes to
@@ -537,10 +480,6 @@ PageDict4SPWriter::addL3Skip(const vespalib::stringref &word,
                      _l3StartOffset,
                      K_VALUE_COUNTFILE_L3_FILEOFFSET,
                      K_VALUE_COUNTFILE_L3_ACCNUMDOCS);
-#if 0
-    LOG(info,
-        "Adding l3 delta %d", (int) (wordNum - _l3WordNum));
-#endif
     _eL3.encodeExpGolomb(wordNum - _l3WordNum,
                          K_VALUE_COUNTFILE_L3_WORDNUM);
     _eL3.writeComprBufferIfNeeded();
@@ -579,11 +518,6 @@ PageDict4SPWriter::addL3Skip(const vespalib::stringref &word,
 void
 PageDict4SPWriter::addL4Skip(size_t &lcp)
 {
-#if 0
-    LOG(info,
-        "addL4Skip(\"%s\")",
-        _l3Word.c_str());
-#endif
     size_t tlcp = getLCP(_l3Word, _l4Word);
     assert(tlcp <= lcp);
     if (tlcp < lcp)
@@ -620,11 +554,6 @@ PageDict4SPWriter::addL4Skip(size_t &lcp)
 void
 PageDict4SPWriter::addL5Skip(size_t &lcp)
 {
-#if 0
-    LOG(info,
-        "addL5Skip(\"%s\")",
-        _l3Word.c_str());
-#endif
     size_t tlcp = getLCP(_l3Word, _l5Word);
     assert(tlcp <= lcp);
     if (tlcp < lcp)
@@ -845,15 +774,6 @@ PageDict4PWriter::
 addCounts(const vespalib::stringref &word,
           const Counts &counts)
 {
-#if 0
-    std::ostringstream txtcounts;
-    txtcounts << counts;
-    LOG(info,
-        "addCounts(\"%s\", %s), wordNum=%d",
-        word.c_str(),
-        txtcounts.str().c_str(),
-        (int) _wordNum);
-#endif
     assert(_countsWordOffset == _words.size());
     size_t lcp = getLCP(_pendingCountsWord, _countsWord);
     if (_l1StrideCheck >= getL1SkipStride())
@@ -865,14 +785,6 @@ addCounts(const vespalib::stringref &word,
     if (eCountsOffset + _l1Size + _l2Size + _headerSize +
         8 * (_countsWordOffset + 2 + _pendingCountsWord.size() - lcp) >
         getPageBitSize()) {
-#if 0
-        LOG(info,
-            "Backtrack: eCountsOffset=%d, l1size=%d, l2size=%d, hdrsize=%d",
-            (int) eCountsOffset,
-            (int) _l1Size,
-            (int) _l2Size,
-            (int) _headerSize);
-#endif
         if (_l1StrideCheck == 0u) {
             _l1Size = _prevL1Size;  // Undo L1
             _l2Size = _prevL2Size;  // Undo L2
@@ -897,11 +809,6 @@ addCounts(const vespalib::stringref &word,
                                 _l3WordNum,
                                 getPageNum());
             resetPage();
-#if 0
-            std::ostringstream txtoffsets;
-            txtoffsets << _countsStartOffset;
-            LOG(info, "countsStartOffsets=%s", txtoffsets.str().c_str());
-#endif
             return;
         }
     }
@@ -909,11 +816,6 @@ addCounts(const vespalib::stringref &word,
     ++_countsEntries;
     ++_l1StrideCheck;
     _countsStartOffset.adjust(counts);
-#if 0
-    std::ostringstream txtoffsets;
-    txtoffsets << _countsStartOffset;
-    LOG(info, "countsStartOffsets=%s", txtoffsets.str().c_str());
-#endif
     _countsWord = _pendingCountsWord;
     _countsWordOffset = _words.size();
     _pendingCountsWord = word;
@@ -943,10 +845,6 @@ PageDict4PWriter::addOverflowCounts(const vespalib::stringref &word,
     e.smallAlign(64);
     e.writeComprBufferIfNeeded();
     e.writeBits(_wordNum, 64);  // Identifies overflow for later read
-#if 0
-    LOG(info,
-        "AddOverflowCounts wordnum %d", (int) _wordNum);
-#endif
     uint32_t alignedHeaderSize = (_headerSize + 63) & -64;
     uint32_t padding = getPageBitSize() - alignedHeaderSize - 64;
     e.padBits(padding);
@@ -970,14 +868,6 @@ PageDict4PWriter::addL1Skip(size_t &lcp)
     if (tlcp < lcp)
         lcp = tlcp;
     _l1StrideCheck = 0u;
-#if 0
-    LOG(info,
-        "addL1SKip(\"%s\"), lcp=%d, offset=%d -> %d",
-        _pendingCountsWord.c_str(),
-        (int) lcp,
-        (int) _l1WordOffset,
-        (int) _countsWordOffset);
-#endif
     _eL1.encodeExpGolomb(_countsWordOffset - _l1WordOffset,
                          K_VALUE_COUNTFILE_L1_WORDOFFSET);
     _eL1.writeComprBufferIfNeeded();
@@ -1007,14 +897,6 @@ PageDict4PWriter::addL2Skip(size_t &lcp)
     if (tlcp < lcp)
         lcp = tlcp;
     _l2StrideCheck = 0;
-#if 0
-    LOG(info,
-        "addL2SKip(\"%s\"), lcp=%d, offset=%d -> %d",
-        _pendingCountsWord.c_str(),
-        (int) lcp,
-        (int) _l2WordOffset,
-        (int) _countsWordOffset);
-#endif
     _eL2.encodeExpGolomb(_countsWordOffset - _l2WordOffset,
                          K_VALUE_COUNTFILE_L2_WORDOFFSET);
     _eL2.writeComprBufferIfNeeded();
@@ -1108,12 +990,6 @@ PageDict4SSReader::setup(DC &ssd)
 
     DC dL6;
 
-#if 0
-    LOG(info,
-        "comprBuf=%p, comprBufSize=%d",
-        static_cast<const void *>(_cb._comprBuf),
-        (int) _cb._comprBufSize);
-#endif
     setDecoderPosition(dL6, _cb, _ssStartOffset);
 
     dL6.copyParams(_ssd);
@@ -1134,12 +1010,6 @@ PageDict4SSReader::setup(DC &ssd)
     bool overflow = false;
 
     while (l6Offset < _ssFileBitLen) {
-#if 0
-        LOG(info,
-            "L6Offset=%" PRIu32 ", bitLen=%" PRIu64,
-            l6Offset,
-            _ssFileBitLen);
-#endif
         UC64_DECODECONTEXT(o);
         uint32_t length;
         uint64_t val64;
@@ -1173,11 +1043,6 @@ PageDict4SSReader::setup(DC &ssd)
         UC64_DECODEEXPGOLOMB_NS(o,
                                 K_VALUE_COUNTFILE_L6_WORDNUM,
                                 EC);
-#if 0
-        LOG(info,
-            "Bumping l6wordnum from %d to %d (delta %d)",
-            (int) l6WordNum, (int) (l6WordNum + val64) , (int) val64);
-#endif
         l6WordNum += val64;
         UC64_DECODECONTEXT_STORE(o, dL6._);
         dL6.smallAlign(8);
@@ -1189,10 +1054,6 @@ PageDict4SSReader::setup(DC &ssd)
         word += reinterpret_cast<const char *>(bytes);
         dL6.setByteCompr(bytes + word.size() + 1 - lcp);
         if (overflow) {
-#if 0
-            LOG(info,
-                "AddOverflowRef2 wordnum %d", (int) (l6WordNum - 1));
-#endif
             _overflows.push_back(OverflowRef(l6WordNum - 1, _l7.size()));
             dL6.readCounts(counts);
             startOffset.adjust(counts);
@@ -1206,18 +1067,6 @@ PageDict4SSReader::setup(DC &ssd)
             ++sparsePageNum;
             UC64_DECODECONTEXT_STORE(o, dL6._);
         }
-#if 0
-        std::ostringstream txtfileoffset;
-        txtfileoffset << startOffset;
-        LOG(info,
-            "ssreader::setup "
-            "word=%s, l6offset=%d->%d, startOffsets=%s overflow=%s",
-            word.c_str(),
-            (int) l6Offset,
-            (int) dL6.getReadOffset(),
-            txtfileoffset.str().c_str(),
-            overflow ? "true" : "false");
-#endif
         ++l7StrideCheck;
         l6Offset = dL6.getReadOffset();
     }
@@ -1288,14 +1137,6 @@ lookup(const vespalib::stringref &key)
         l6WordNum = l7e._l7WordNum;
     }
 
-#if 0
-    LOG(info,
-        "sslookup1: l6WordNum=%d, l6Word=\"%s\", key=\"%s\", l6Offset=%d",
-        (int) l6WordNum,
-        l6Word.c_str(),
-        key.c_str(),
-        (int) l6Offset);
-#endif
 
     setDecoderPosition(dL6, _cb, l6Offset);
 
@@ -1332,13 +1173,6 @@ lookup(const vespalib::stringref &key)
         word += reinterpret_cast<const char *>(bytes);
         dL6.setByteCompr(bytes + word.size() + 1 - lcp);
         if (overflow) {
-#if 0
-            LOG(info,
-                "sslookup: wordNum=%d, word=\"%s\", key=\"%s\"",
-                (int) wordNum,
-                word.c_str(),
-                key.c_str());
-#endif
             bool l6NotLessThanKey = !(word < key);
             if (l6NotLessThanKey) {
                 if (key == word) {
@@ -1405,13 +1239,6 @@ lookupOverflow(uint64_t wordNum) const
     assert(l7Ref < _l7.size());
 
     const vespalib::string &word = _l7[l7Ref]._l7Word;
-#if 0
-    LOG(info,
-        "lookupOverflow: wordNum %d -> word %s, next l7 Pos is %d",
-        (int) wordNum,
-        word.c_str(),
-        (int) l7Ref);
-#endif
     uint64_t l6Offset = _ssStartOffset;
     StartOffset startOffset;
     if (l7Ref > 0) {
@@ -1434,18 +1261,6 @@ lookupOverflow(uint64_t wordNum) const
 
     dL6.copyParams(_ssd);
     setDecoderPosition(dL6, _cb, l6Offset);
-
-#if 0
-    std::ostringstream txtStartOffset;
-    std::ostringstream txtL6StartOffset;
-    txtStartOffset << startOffset;
-    txtL6StartOffset << l6StartOffset;
-    LOG(info,
-        "Lookupoverflow l6Offset=%d, l6fileoffset=%s, fileoffset=%s",
-        (int) l6Offset,
-        txtL6StartOffset.str().c_str(),
-        txtStartOffset.str().c_str());
-#endif
 
     UC64_DECODECONTEXT(o);
     uint32_t length;
@@ -1481,16 +1296,6 @@ lookupOverflow(uint64_t wordNum) const
     (void) lcp;
     Counts counts;
     dL6.readCounts(counts);
-#if 0
-    std::ostringstream txtCounts;
-    txtStartOffset.str("");
-    txtStartOffset << startOffset;
-    txtCounts << counts;
-    LOG(info,
-        "Lookupoverflow fileoffset=%s, counts=%s",
-        txtStartOffset.str().c_str(),
-        txtCounts.str().c_str());
-#endif
     res._overflow = true;
     res._counts = counts;
     res._startOffset = startOffset;
@@ -2005,12 +1810,6 @@ PageDict4Reader::checkWordOffsets(const std::vector<char> &words,
 void
 PageDict4Reader::setupPage()
 {
-#if 0
-    LOG(info,
-        "setupPage(%lu)",
-        (long int) _pd.getReadOffset());
-    uint32_t pageNum = _pd.getReadOffset() / getPageBitSize();
-#endif
     uint32_t l2Size = _pd.readBits(15);
     uint32_t l1Size = _pd.readBits(15);
     uint32_t countsEntries = _pd.readBits(15);
@@ -2020,21 +1819,12 @@ PageDict4Reader::setupPage()
     if (countsEntries == 0 && l1Size == 0 && l2Size == 0) {
         _pd.smallAlign(64);
         _overflowPage = true;
-#if 0
-        LOG(info, "setupPage(%u): overflow wordNum = %lu",
-            pageNum, _wordNum);
-#endif
         return;
     }
     _overflowPage = false;
     assert(countsEntries > 0);
     uint32_t l1Residue = getL1Entries(countsEntries);
     uint32_t l2Residue = getL2Entries(l1Residue);
-#if 0
-    LOG(info, "setupPage(%u): countsEntries=%u, l1Residue=%u, l2Residue=%u wordNum = [%lu,%lu)",
-        pageNum,
-        countsEntries, l1Residue, l2Residue, _wordNum, _wordNum + countsEntries);
-#endif
 
     uint64_t beforePos = _pd.getReadOffset();
     Counts counts;
@@ -2138,10 +1928,6 @@ PageDict4Reader::setupPage()
 void
 PageDict4Reader::setupSPage()
 {
-#if 0
-    LOG(info, "setupSPage(%" PRIu64 "),", _spd.getReadOffset());
-    uint32_t pageNum = _spd.getReadOffset() / getPageBitSize();
-#endif
     uint32_t l5Size = _spd.readBits(15);
     uint32_t l4Size = _spd.readBits(15);
     uint32_t l3Entries = _spd.readBits(15);
@@ -2152,10 +1938,6 @@ PageDict4Reader::setupSPage()
     assert(l3Entries > 0);
     uint32_t l4Residue = getL4Entries(l3Entries);
     uint32_t l5Residue = getL5Entries(l4Residue);
-#if 0
-    LOG(info, "setupSPage(%u): l3Entries=%u, l4Residue=%u, l5Residue=%u wordNum = %lu",
-        pageNum, l3Entries, l4Residue, l5Residue, _wordNum);
-#endif
 
     uint64_t beforePos = _spd.getReadOffset();
     _l5SkipChecks.clear();
@@ -2227,9 +2009,6 @@ PageDict4Reader::setupSPage()
     (void) beforePos;
     _l3SkipChecks.clear();
     L3SkipCheck l3SkipCheck(_startOffset, _wordNum);
-#if 0
-    uint64_t wordNum = _wordNum;
-#endif
     while (l3Entries > 1) {
         readStartOffset(_spd,
                         l3SkipCheck.startOffset,
@@ -2254,11 +2033,6 @@ PageDict4Reader::setupSPage()
                 _l4SkipChecks.step();
             }
         }
-#if 0
-        LOG(info, "setupSPage(%u): l3[%u]: wordNum = [%lu,%lu)",
-            pageNum, _l3Residue - l3Entries - 1, wordNum, l3SkipCheck.wordNum);
-        wordNum = l3SkipCheck.wordNum;
-#endif
     }
     assert(!_l4SkipChecks.valid());
     _l3SkipChecks.setup();
@@ -2345,13 +2119,6 @@ PageDict4Reader::decodeSSWord(vespalib::string &word)
         word += reinterpret_cast<const char *>(bytes);
         _ssd.setByteCompr(bytes + word.size() + 1 - lcp);
         _lastSSWord = word;
-#if 0
-        LOG(info,
-            "word is %s LCP %d, overflow=%s",
-            word.c_str(),
-            (int) lcp,
-            overflow ? "true" : "false");
-#endif
         if (overflow) {
             Counts counts;
             _ssd.readCounts(counts);
@@ -2456,23 +2223,6 @@ PageDict4Reader::readOverflowCounts(vespalib::string &word,
 
     word = wtsslr._lastWord;
     counts = wtsslr._counts;
-
-#if 0
-    std::ostringstream txtCounts;
-    std::ostringstream txtStartOffset;
-    std::ostringstream txtLRStartOffset;
-
-    txtCounts << counts;
-    txtStartOffset << _startOffset;
-    txtLRStartOffset << wtsslr._startOffset;
-    LOG(info,
-        "readOverflowCounts _wordNum=%" PRIu64 ", %" PRIu64
-        ", counts=%s, startOffset=%s (should be %s)",
-        _wordNum, wordNum,
-        txtCounts.str().c_str(),
-        txtLRStartOffset.str().c_str(),
-        txtStartOffset.str().c_str());
-#endif
 
     assert(wordNum == _wordNum);
     assert(wtsslr._startOffset == _startOffset);
