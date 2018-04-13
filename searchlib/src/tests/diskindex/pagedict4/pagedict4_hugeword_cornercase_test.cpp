@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/bitcompression/compression.h>
@@ -22,28 +22,28 @@ struct BitBuffer
 {
     using EC = search::bitcompression::PostingListCountFileEncodeContext;
 
-    EC e;
-    ComprFileWriteContext wc;
+    EC encodeCtx;
+    ComprFileWriteContext writeCtx;
 
     BitBuffer()
-        : e(),
-          wc(e)
+        : encodeCtx(),
+          writeCtx(encodeCtx)
     {
-        e._minChunkDocs = minChunkDocs;
-        e._numWordIds = numWordIds;
-        wc.allocComprBuf();
-        e.setWriteContext(&wc);
-        e.setupWrite(wc);
-        assert(e.getWriteOffset() == 0);
+        encodeCtx._minChunkDocs = minChunkDocs;
+        encodeCtx._numWordIds = numWordIds;
+        writeCtx.allocComprBuf();
+        encodeCtx.setWriteContext(&writeCtx);
+        encodeCtx.setupWrite(writeCtx);
+        assert(encodeCtx.getWriteOffset() == 0);
     }
 
-    void clear() { e.setupWrite(wc); }
+    void clear() { encodeCtx.setupWrite(writeCtx); }
 
     uint64_t getSize(const PostingListCounts &counts)
     {
         clear();
-        e.writeCounts(counts);
-        return e.getWriteOffset();
+        encodeCtx.writeCounts(counts);
+        return encodeCtx.getWriteOffset();
     }
 
     ~BitBuffer() = default;
@@ -103,6 +103,9 @@ calcSegments(uint32_t maxLen)
     return counts._segments.size() - 1;
 }
 
+/*
+ * Calculate posting list counts that compresses to wantLen bits.
+ */
 PostingListCounts makeCounts(uint32_t wantLen)
 {
     BitBuffer bb;
@@ -111,7 +114,7 @@ PostingListCounts makeCounts(uint32_t wantLen)
     PostingListCounts counts2 = makeSegmentedCounts(segments - 1);
     uint32_t len = bb.getSize(counts);
     uint32_t len2 = bb.getSize(counts2);
-    for (unsigned int i = 1; i + 2 < counts._segments.size(); ++i) {
+    for (uint32_t i = 1; i + 2 < counts._segments.size(); ++i) {
         counts._bitLength += counts._segments[0]._bitLength;
         counts._segments[i]._bitLength += counts._segments[0]._bitLength;
         counts2._bitLength += counts2._segments[0]._bitLength;
@@ -133,6 +136,10 @@ using StartOffset = search::bitcompression::PageDict4StartOffset;
 using Writer = search::diskindex::test::PageDict4MemWriter;
 using SeqReader = search::diskindex::test::PageDict4MemSeqReader;
 
+/*
+ * Test corner case where a dictionary page has a single word, and the
+ * page header and compressed counts completely fills the page.
+ */
 void testPageSizedCounts()
 {
     uint32_t pageBitSize = 32768;
