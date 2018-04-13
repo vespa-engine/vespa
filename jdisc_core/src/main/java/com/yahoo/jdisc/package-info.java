@@ -50,5 +50,6 @@
  * @see com.yahoo.jdisc.service
  * @see com.yahoo.jdisc.test
  */
+// TODO: Vespa 7 remove internal classes (at least Container) out of this PublicApi package.
 @com.yahoo.api.annotations.PublicApi
 package com.yahoo.jdisc;
