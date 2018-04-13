@@ -125,6 +125,7 @@ class FileAcquirerImpl implements FileAcquirer {
         supervisor.transport().shutdown().join();
     }
 
+
     /**
      * Returns the path to a file or directory corresponding to the
      * given file reference.  File references are produced by the
@@ -133,7 +134,7 @@ class FileAcquirerImpl implements FileAcquirer {
      * @throws TimeoutException if the file or directory could not be
      *     retrieved in time.
      * @throws FileReferenceDoesNotExistException if the file is no
-     *     longer available(due to reloading of config).
+     *     longer available (due to reloading of config).
      */
     public File waitFor(FileReference fileReference, long timeout, TimeUnit timeUnit)
             throws InterruptedException {
@@ -146,28 +147,27 @@ class FileAcquirerImpl implements FileAcquirer {
             Request request = new Request("waitFor");
             request.parameters().add(new StringValue(fileReference.value()));
 
-            log.log(LogLevel.DEBUG, "InvokeSync waitFor " + fileReference + " with waiting time " + timeout + " " + timeUnit.name().toLowerCase());
-            target.invokeSync(request, timer.timeLeft(TimeUnit.SECONDS));
+            double rpcTimeout = Math.min(timer.timeLeft(TimeUnit.SECONDS), 60.0);
+            log.log(LogLevel.DEBUG, "InvokeSync waitFor " + fileReference + " with " + rpcTimeout + " seconds timeout");
+            target.invokeSync(request, rpcTimeout);
 
             if (request.checkReturnTypes("s")) {
                 return new File(request.returnValues().get(0).asString());
             } else if (!request.isError()) {
-                throw new RuntimeException("Invalid answer from config proxy: " + request.returnValues());
+                throw new RuntimeException("Invalid response: " + request.returnValues());
             } else if (temporaryError(request.errorCode())) {
-                log.log(LogLevel.INFO, "Retrying waitFor: " + request.errorCode() + " -- " + request.errorMessage());
+                log.log(LogLevel.INFO, "Retrying waitFor for " + fileReference + ": " + request.errorCode() + " -- " + request.errorMessage());
                 Thread.sleep(1000);
             } else {
                 if (request.errorCode() == FileDistributionErrorCode.fileReferenceDoesNotExists)
                     throw new FileReferenceDoesNotExistException(fileReference.value());
                 else if (request.errorCode() == FileDistributionErrorCode.fileReferenceRemoved)
                     throw new FileReferenceRemovedException(fileReference.value());
-                else {
-                    throw new RuntimeException("Wait for blocking failed:" +
-                                               request.errorMessage() +
-                                               " (" + request.errorCode() + ")");
-                }
+                else
+                    throw new RuntimeException("Wait for " + fileReference + " failed:" + request.errorMessage() + " (" + request.errorCode() + ")");
             }
         } while ( timer.isTimeLeft() );
         throw new TimeoutException("Timed out waiting for " + fileReference + " after " + timeout + " " + timeUnit.name().toLowerCase());
     }
+
 }
