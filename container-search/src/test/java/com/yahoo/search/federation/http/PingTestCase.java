@@ -13,6 +13,7 @@ import com.yahoo.statistics.Statistics;
 import com.yahoo.text.Utf8;
 import com.yahoo.yolean.Exceptions;
 import org.apache.http.HttpEntity;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,14 +25,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Check for different keep-alive scenarios. What we really want to test
  * is the server does not hang.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class PingTestCase extends junit.framework.TestCase {
-    static final int TIMEOUT_MS = 60000;
+public class PingTestCase {
+
+    private static final int TIMEOUT_MS = 60000;
+
+    @Test
     public void testNiceCase() throws Exception {
         NiceStupidServer server = new NiceStupidServer();
         server.start();
@@ -82,6 +89,7 @@ public class PingTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testUselessCase() throws Exception {
         UselessStupidServer server = new UselessStupidServer();
         server.start();
@@ -89,6 +97,7 @@ public class PingTestCase extends junit.framework.TestCase {
         server.stop();
     }
 
+    @Test
     public void testGrumpyCase() throws Exception {
         GrumpyStupidServer server = new GrumpyStupidServer();
         server.start();
@@ -96,6 +105,7 @@ public class PingTestCase extends junit.framework.TestCase {
         server.stop();
     }
 
+    @Test
     public void testPassiveAggressiveCase() throws Exception {
         PassiveAggressiveStupidServer server = new PassiveAggressiveStupidServer();
         server.start();

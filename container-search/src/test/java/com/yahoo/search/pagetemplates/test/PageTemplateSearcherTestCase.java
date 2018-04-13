@@ -18,15 +18,22 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.text.interpretation.Interpretation;
+import org.junit.Test;
 
 import java.util.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
  */
-@SuppressWarnings("deprecation")
-public class PageTemplateSearcherTestCase extends junit.framework.TestCase {
+public class PageTemplateSearcherTestCase {
 
+    @Test
     public void testSearcher() {
         PageTemplateSearcher s = new PageTemplateSearcher(createPageTemplateRegistry(), new FirstChoiceResolver());
         Chain<Searcher> chain = new Chain<>(s,new MockFederator());

@@ -3,8 +3,6 @@ package com.yahoo.search.federation.vespa.test;
 
 import java.util.Iterator;
 
-import junit.framework.TestCase;
-
 import com.yahoo.net.URI;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -12,18 +10,19 @@ import com.yahoo.search.federation.vespa.ResultBuilder;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.HitGroup;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test XML parsing of results.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @SuppressWarnings("deprecation")
-public class ResultBuilderTestCase extends TestCase {
-
-    public ResultBuilderTestCase (String name) {
-        super(name);
-    }
+public class ResultBuilderTestCase {
 
     private boolean quickCompare(double a, double b) {
         double z = Math.min(Math.abs(a), Math.abs(b));
@@ -34,6 +33,7 @@ public class ResultBuilderTestCase extends TestCase {
         }
     }
 
+    @Test
     public void testSimpleResult() {
         boolean gotErrorDetails = false;
         ResultBuilder r = new ResultBuilder();
@@ -62,6 +62,7 @@ public class ResultBuilderTestCase extends TestCase {
                 + "<x><y><z /></y></x>", res.hits().get(3).getField("annoying").toString());
     }
 
+    @Test
     public void testNestedResult() {
         ResultBuilder r = new ResultBuilder();
         Result res = r.parse("file:src/test/java/com/yahoo/search/federation/vespa/test/nestedhits.xml", new Query("?query=a"));
@@ -79,6 +80,7 @@ public class ResultBuilderTestCase extends TestCase {
         assertEquals("badge/Topic Explorer 5", g3.get(0).getField("name").toString());
     }
 
+    @Test
     public void testWeirdDocumentID() {
         ResultBuilder r = new ResultBuilder();
         Result res = r.parse("file:src/test/java/com/yahoo/search/federation/vespa/test/idhits.xml", new Query("?query=a"));
@@ -88,4 +90,5 @@ public class ResultBuilderTestCase extends TestCase {
         assertEquals(new URI("tralle"), res.hits().get(1).getId());
         assertEquals(new URI("kalle"), res.hits().get(2).getId());
     }
+
 }

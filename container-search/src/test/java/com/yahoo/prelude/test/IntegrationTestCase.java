@@ -5,6 +5,7 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
 
 /**
  * Runs a query thru the configured search chain from a real http channel
@@ -13,11 +14,7 @@ import com.yahoo.search.searchchain.Execution;
  *
  * @author bratseth
  */
-public class IntegrationTestCase extends junit.framework.TestCase {
-
-    public IntegrationTestCase (String name) {
-        super(name);
-    }
+public class IntegrationTestCase {
 
     public static class SecondSearcher extends Searcher {
         public Result search(com.yahoo.search.Query query, Execution execution) {
@@ -34,6 +31,7 @@ public class IntegrationTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testQuery() throws java.io.IOException {
     /*
        TODO: (JSB) This blocks forever on Linux (not Windows) because

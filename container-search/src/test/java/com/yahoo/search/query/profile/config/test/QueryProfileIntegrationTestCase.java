@@ -14,19 +14,24 @@ import com.yahoo.search.handler.HttpSearchResponse;
 import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Tests using query profiles in searches
  *
  * @author bratseth
  */
-public class QueryProfileIntegrationTestCase extends junit.framework.TestCase {
+public class QueryProfileIntegrationTestCase {
 
-    @Override
+    @org.junit.After
     public void tearDown() {
         System.getProperties().remove("config.id");
     }
 
+    @Test
     public void testUntyped() {
         String configId = "dir:src/test/java/com/yahoo/search/query/profile/config/test/untyped";
         System.setProperty("config.id", configId);
@@ -69,6 +74,7 @@ public class QueryProfileIntegrationTestCase extends junit.framework.TestCase {
         configurer.shutdown();
     }
 
+    @Test
     public void testTyped() {
         String configId = "dir:src/test/java/com/yahoo/search/query/profile/config/test/typed";
         System.setProperty("config.id", configId);

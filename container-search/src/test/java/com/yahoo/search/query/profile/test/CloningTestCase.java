@@ -6,12 +6,16 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.jdisc.http.HttpRequest.Method;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
  */
-public class CloningTestCase extends junit.framework.TestCase {
+public class CloningTestCase {
 
+    @Test
     public void testCloningWithVariants() {
         QueryProfile test = new QueryProfile("test");
         test.setDimensions(new String[] {"x"} );
@@ -24,6 +28,7 @@ public class CloningTestCase extends junit.framework.TestCase {
         assertEquals("a2",q2.properties().get("a"));
     }
 
+    @Test
     public void testShallowCloning() {
         QueryProfile test = new QueryProfile("test");
         test.freeze();
@@ -35,6 +40,7 @@ public class CloningTestCase extends junit.framework.TestCase {
         assertEquals("a2",q2.properties().get("a").toString());
     }
 
+    @Test
     public void testShallowCloningWithVariants() {
         QueryProfile test = new QueryProfile("test");
         test.setDimensions(new String[] {"x"} );
@@ -47,6 +53,7 @@ public class CloningTestCase extends junit.framework.TestCase {
         assertEquals("a2",q2.properties().get("a").toString());
     }
 
+    @Test
     public void testDeepCloning() {
         QueryProfile test=new QueryProfile("test");
         test.freeze();
@@ -58,6 +65,7 @@ public class CloningTestCase extends junit.framework.TestCase {
         assertEquals("a2",q2.properties().get("a").toString());
     }
 
+    @Test
     public void testDeepCloningWithVariants() {
         QueryProfile test=new QueryProfile("test");
         test.setDimensions(new String[] {"x"} );
@@ -70,6 +78,7 @@ public class CloningTestCase extends junit.framework.TestCase {
         assertEquals("a2",q2.properties().get("a").toString());
     }
 
+    @Test
     public void testReAssignment() {
         QueryProfile test=new QueryProfile("test");
         test.setDimensions(new String[] {"x"} );
@@ -80,6 +89,7 @@ public class CloningTestCase extends junit.framework.TestCase {
         assertEquals("a2",q1.properties().get("a"));
     }
 
+    @Test
     public void testThreeLevelsOfCloning() {
         QueryProfile test = new QueryProfile("test");
         test.set("a", "config-a", (QueryProfileRegistry)null);
@@ -105,6 +115,7 @@ public class CloningTestCase extends junit.framework.TestCase {
         assertEquals("q32-a",q32.properties().get("a").toString());
     }
 
+    @Test
     public void testThreeLevelsOfCloningReverseSetOrder() {
         QueryProfile test = new QueryProfile("test");
         test.set("a", "config-a", (QueryProfileRegistry)null);
@@ -130,6 +141,7 @@ public class CloningTestCase extends junit.framework.TestCase {
         assertEquals("q32-a",q32.properties().get("a").toString());
     }
 
+    @Test
     public void testThreeLevelsOfCloningMiddleFirstSetOrder1() {
         QueryProfile test = new QueryProfile("test");
         test.set("a", "config-a", (QueryProfileRegistry)null);
@@ -155,6 +167,7 @@ public class CloningTestCase extends junit.framework.TestCase {
         assertEquals("q32-a",q32.properties().get("a").toString());
     }
 
+    @Test
     public void testThreeLevelsOfCloningMiddleFirstSetOrder2() {
         QueryProfile test = new QueryProfile("test");
         test.set("a", "config-a", (QueryProfileRegistry)null);

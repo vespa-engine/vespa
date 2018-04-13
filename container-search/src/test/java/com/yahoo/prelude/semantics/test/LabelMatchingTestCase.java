@@ -4,6 +4,7 @@ package com.yahoo.prelude.semantics.test;
 import java.io.IOException;
 
 import com.yahoo.prelude.semantics.parser.ParseException;
+import org.junit.Test;
 
 /**
  * Tests label-dependent matching
@@ -12,11 +13,12 @@ import com.yahoo.prelude.semantics.parser.ParseException;
  */
 public class LabelMatchingTestCase extends RuleBaseAbstractTestCase {
 
-    public LabelMatchingTestCase(String name) {
-        super(name,"labelmatching.sr");
+    public LabelMatchingTestCase() {
+        super("labelmatching.sr");
     }
 
     /** Tests that matching with no label matches the default label (index) only */
+    @Test
     public void testDefaultLabelMatching() throws IOException, ParseException {
         assertSemantics("matched:term","term");
         assertSemantics("alabel:term","alabel:term");
@@ -25,10 +27,12 @@ public class LabelMatchingTestCase extends RuleBaseAbstractTestCase {
         assertSemantics("alabel:term2","alabel:term2");
     }
 
+    @Test
     public void testSpecificLabelMatchingInConditionReference() throws IOException, ParseException {
         assertSemantics("+dcattitle:restaurants -dcat:hotel","dcattitle:restaurants");
     }
 
+    @Test
     public void testSpecificlabelMatchingInNestedCondition() throws IOException, ParseException {
         assertSemantics("three","foo:one");
         assertSemantics("three","foo:two");

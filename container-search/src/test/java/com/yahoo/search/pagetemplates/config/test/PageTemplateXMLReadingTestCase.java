@@ -13,17 +13,24 @@ import com.yahoo.search.pagetemplates.model.Choice;
 import com.yahoo.search.pagetemplates.model.Renderer;
 import com.yahoo.search.pagetemplates.model.Section;
 import com.yahoo.search.pagetemplates.model.Source;
+import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * @author bratseth
  */
-public class PageTemplateXMLReadingTestCase extends junit.framework.TestCase {
+public class PageTemplateXMLReadingTestCase {
 
     private String root="src/test/java/com/yahoo/search/pagetemplates/config/test/";
 
+    @Test
     public void testExamples() {
         PageTemplateRegistry registry=new PageTemplateXMLReader().read(root + "examples");
         assertCorrectSerp(registry.getComponent("serp"));
@@ -34,6 +41,7 @@ public class PageTemplateXMLReadingTestCase extends junit.framework.TestCase {
         assertCorrectGeneric(registry.getComponent("generic"));
     }
 
+    @Test
     public void testConfigReading() {
         PageTemplatesConfig config = new PageTemplatesConfig(new PageTemplatesConfig.Builder()
                 .page("<page id=\"slottingSerp\" layout=\"mainAndRight\">\n    <section layout=\"column\" region=\"main\" source=\"*\" order=\"-[rank]\"/>\n    <section layout=\"column\" region=\"right\" source=\"ads\"/>\n</page>\n")
@@ -48,6 +56,7 @@ public class PageTemplateXMLReadingTestCase extends junit.framework.TestCase {
         assertCorrectRicherSerp(registry.getComponent("richerSerp"));
     }
 
+    @Test
     public void testInvalidFilename() {
         try {
             PageTemplateRegistry registry=new PageTemplateXMLReader().read(root + "examples/invalidfilename");

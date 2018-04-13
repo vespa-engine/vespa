@@ -7,14 +7,19 @@ import com.yahoo.search.pagetemplates.PageTemplateRegistry;
 import com.yahoo.search.pagetemplates.PageTemplateSearcher;
 import com.yahoo.search.pagetemplates.config.PageTemplateXMLReader;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author bratseth
  */
-public class SourceParametersTestCase extends junit.framework.TestCase {
+public class SourceParametersTestCase {
 
     private static final String root="src/test/java/com/yahoo/search/pagetemplates/test/";
 
+    @Test
     public void testSourceParametersWithSourcesDeterminedByTemplate() {
         // Create the page template
         PageTemplateRegistry pageTemplateRegistry=new PageTemplateRegistry();
@@ -31,6 +36,7 @@ public class SourceParametersTestCase extends junit.framework.TestCase {
         assertEquals("We get the correct number of parameters",5,query.properties().listProperties("source").size());
     }
 
+    @Test
     public void testSourceParametersWithSourcesDeterminedByParameter() {
         // Create the page template
         PageTemplateRegistry pageTemplateRegistry=new PageTemplateRegistry();

@@ -7,19 +7,22 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.federation.vespa.VespaSearcher;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
  */
-@SuppressWarnings("deprecation")
-public class VespaIntegrationTestCase extends junit.framework.TestCase {
+public class VespaIntegrationTestCase {
 
     // TODO: Setup the answering vespa searcher from this test....
+    @Test
     public void testIt() {
         if (System.currentTimeMillis() > 0) return;
-        Chain<Searcher> chain=new Chain<>(new VespaSearcher("test","example.yahoo.com",19010,""));
-        Result result=new Execution(chain, Execution.Context.createContextStub()).search(new Query("?query=test"));
-        assertEquals(23,result.hits().size());
+        Chain<Searcher> chain = new Chain<>(new VespaSearcher("test","example.yahoo.com",19010,""));
+        Result result = new Execution(chain, Execution.Context.createContextStub()).search(new Query("?query=test"));
+        assertEquals(23, result.hits().size());
     }
 
 }

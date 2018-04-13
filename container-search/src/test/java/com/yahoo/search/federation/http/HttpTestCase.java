@@ -10,6 +10,9 @@ import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.text.Utf8;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
@@ -19,16 +22,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Rudimentary http searcher test.
  *
  * @author bratseth
  */
-public class HttpTestCase extends junit.framework.TestCase {
+public class HttpTestCase {
 
     private StupidSingleThreadedHttpServer httpServer;
     private TestHTTPClientSearcher searcher;
 
+    @Test
     public void testSearcher() throws JAXBException {
         Result result = searchUsingLocalhost();
 
@@ -44,6 +50,7 @@ public class HttpTestCase extends junit.framework.TestCase {
         return searcher.search(query, new Execution(searcher, Execution.Context.createContextStub()));
     }
 
+    @Test
     public void test_that_ip_address_set_on_meta_hit() {
         Result result = searchUsingLocalhost();
         Hit metaHit = getFirstMetaHit(result.hits());
@@ -61,7 +68,7 @@ public class HttpTestCase extends junit.framework.TestCase {
         return null;
     }
 
-    @Override
+    @Before
     public void setUp() throws Exception {
         httpServer = new StupidSingleThreadedHttpServer(0, 0) {
             @Override
@@ -81,7 +88,7 @@ public class HttpTestCase extends junit.framework.TestCase {
         return httpServer.getServerPort();
     }
 
-    @Override
+    @After
     public void tearDown() throws Exception {
         httpServer.stop();
         if (searcher != null) {

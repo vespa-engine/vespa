@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.test;
 
+import org.junit.Test;
+
 /**
  * Tests that using rule bases containing cjk characters work
  *
@@ -8,10 +10,11 @@ package com.yahoo.prelude.semantics.test;
  */
 public class CJKTestCase extends RuleBaseAbstractTestCase {
 
-    public CJKTestCase(String name) {
-        super(name,"cjk.sr");
+    public CJKTestCase() {
+        super("cjk.sr");
     }
 
+    @Test
     public void testIt() {
         assertSemantics("\u7d22a","a\u7d22");
         assertSemantics("\u7d22a","\u7d22a");

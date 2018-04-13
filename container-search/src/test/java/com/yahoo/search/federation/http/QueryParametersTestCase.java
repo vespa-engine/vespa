@@ -4,22 +4,24 @@ package com.yahoo.search.federation.http;
 import com.yahoo.component.ComponentId;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.federation.vespa.VespaSearcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.vespa.defaults.Defaults;
+import org.junit.Test;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests that source and backend specific parameters from the query are added correctly to the backend requests
  *
  * @author bratseth
  */
-public class QueryParametersTestCase extends junit.framework.TestCase {
+public class QueryParametersTestCase {
 
+    @Test
     public void testQueryParameters() {
         Query query=new Query();
         query.properties().set("a","a-value");

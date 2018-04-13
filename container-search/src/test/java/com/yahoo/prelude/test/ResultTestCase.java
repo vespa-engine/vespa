@@ -6,19 +6,18 @@ import java.util.Iterator;
 import com.yahoo.search.Query;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.Result;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests the result class
  *
  * @author bratseth
  */
-public class ResultTestCase extends junit.framework.TestCase {
+public class ResultTestCase {
 
-    public ResultTestCase (String name) {
-        super(name);
-
-    }
-
+    @Test
     public void testHitOrdering() {
         Result result=new Result(new Query("dummy"));
         result.hits().add(new Hit("test:hit1",80));
@@ -43,6 +42,7 @@ public class ResultTestCase extends junit.framework.TestCase {
         result.hits().add(new Hit("test:hit9",75));
     }
 
+    @Test
     public void testHitTrimming(){
         Result result=new Result(new Query("dummy"));
 
@@ -86,7 +86,6 @@ public class ResultTestCase extends junit.framework.TestCase {
         hits= result.hits().deepIterator();
         assertEquals(false,hits.hasNext());
     }
-
 
     //This test is broken
     /*

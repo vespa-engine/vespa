@@ -3,7 +3,6 @@ package com.yahoo.prelude.searcher.test;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.result.Hit;
@@ -13,23 +12,24 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import com.yahoo.prelude.searcher.QueryValidatingSearcher;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 /**
  * Tests correct denial of query.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class QueryValidatingSearcherTestCase extends junit.framework.TestCase {
+public class QueryValidatingSearcherTestCase {
 
-    public QueryValidatingSearcherTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testBasic() {
         // Setup
         Map<Searcher, Searcher> chained = new HashMap<>();

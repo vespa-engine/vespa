@@ -2,6 +2,9 @@
 package com.yahoo.prelude.semantics.test;
 
 import com.yahoo.search.Query;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests blending rules
@@ -10,24 +13,26 @@ import com.yahoo.search.Query;
  */
 public class BlendingTestCase extends RuleBaseAbstractTestCase {
 
-    public BlendingTestCase(String name) {
-        super(name,"blending.sr");
+    public BlendingTestCase() {
+        super("blending.sr");
     }
 
     /** Tests parameter literal matching */
+    @Test
     public void testLiteralEquals() {
         assertParameterSemantics("AND a sun came cd","a sun came cd","search","[music]");
         assertParameterSemantics("AND driving audi","driving audi","search","[cars]");
         //assertParameterSemantics("AND audi music quality","audi music quality","search","carstereos",1);
     }
 
-    private void assertParameterSemantics(String producedQuery,String inputQuery,
-                                          String producedParameterName,String producedParameterValue) {
+    private void assertParameterSemantics(String producedQuery, String inputQuery,
+                                          String producedParameterName, String producedParameterValue) {
         assertParameterSemantics(producedQuery,inputQuery,producedParameterName,producedParameterValue,0);
     }
 
     private void assertParameterSemantics(String producedQuery,String inputQuery,
-                                          String producedParameterName,String producedParameterValue,int tracing) {
+                                          String producedParameterName,String producedParameterValue,
+                                          int tracing) {
         Query query=assertSemantics(producedQuery,inputQuery,tracing);
         assertEquals(producedParameterValue, query.properties().getString(producedParameterName));
     }

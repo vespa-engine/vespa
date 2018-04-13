@@ -5,12 +5,14 @@ import com.yahoo.search.Query;
 import com.yahoo.search.federation.vespa.VespaSearcher;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Tests that source and backend specific parameters from the query are added correctly to the backend requests
  *
  * @author bratseth
  */
-public class QueryParametersTestCase extends junit.framework.TestCase {
+public class QueryParametersTestCase {
 
     public void testQueryParameters() {
         Query query=new Query();

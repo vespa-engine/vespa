@@ -11,30 +11,36 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.query.parser.ParserFactory;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
-import junit.framework.TestCase;
 import org.apache.http.HttpEntity;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.net.URI;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Check query marshaling in VespaSearcher works.
  *
  * @author Steinar Knutsen
  */
-public class VespaSearcherTestCase extends TestCase {
-
-    // TODO: More tests
+public class VespaSearcherTestCase {
 
     private VespaSearcher searcher;
 
-    protected @Override void setUp() {
+    @Before
+    protected void setUp() {
         searcher = new VespaSearcher("cache1","",0,"");
     }
 
-    protected @Override void tearDown() {
+    @After
+    protected void tearDown() {
         searcher.deconstruct();
     }
 
+    @Test
     public void testMarshalQuery() {
         RankItem root = new RankItem();
         QueryTree r = new QueryTree(root);
@@ -59,6 +65,7 @@ public class VespaSearcherTestCase extends TestCase {
         assertEquals("( \"new york\" AND shoes AND silly ) RANK nike RANK adidas RANK \"bloody expensive\"", searcher.marshalQuery(r));
     }
 
+    @Test
     public void testMarshalQuerySmallTree() {
         RankItem root = new RankItem();
         QueryTree r = new QueryTree(root);
@@ -83,6 +90,7 @@ public class VespaSearcherTestCase extends TestCase {
         // assertMarshals(root)
     }
 
+    @Test
     public void testWandMarshalling() {
         WeakAndItem root = new WeakAndItem();
         root.setN(32);
@@ -92,6 +100,7 @@ public class VespaSearcherTestCase extends TestCase {
         assertMarshals(root);
     }
 
+    @Test
     public void testWandMarshalling2() {
         // AND (WAND(10) a!1 the!10) source:yahoonews
         AndItem root = new AndItem();
@@ -121,6 +130,7 @@ public class VespaSearcherTestCase extends TestCase {
         return parser.parse(new Parsable().setQuery(query).setFilter(filter));
     }
 
+    @Test
     public void testSourceProviderProperties() throws Exception {
         /* TODO: update test
         Server httpServer = new Server();
@@ -163,6 +173,7 @@ public class VespaSearcherTestCase extends TestCase {
         */
     }
 
+    @Test
     public void testVespaSearcher() {
         VespaSearcher v=new VespaSearcherValidatingSubclass();
         new Execution(v, Execution.Context.createContextStub()).search(new Query(com.yahoo.search.test.QueryTestCase.httpEncode("?query=test&filter=myfilter")));

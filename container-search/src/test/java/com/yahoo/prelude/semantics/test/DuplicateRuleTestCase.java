@@ -4,18 +4,19 @@ package com.yahoo.prelude.semantics.test;
 import com.yahoo.prelude.semantics.RuleBaseException;
 import com.yahoo.prelude.semantics.RuleImporter;
 import com.yahoo.prelude.semantics.parser.ParseException;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
  */
-public class DuplicateRuleTestCase extends junit.framework.TestCase {
+public class DuplicateRuleTestCase {
 
     private final String root="src/test/java/com/yahoo/prelude/semantics/test/rulebases/";
 
-    public DuplicateRuleTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testDuplicateRuleBaseLoading() throws java.io.IOException, ParseException  {
         if (System.currentTimeMillis() > 0) return; // TODO: Include this test...
 

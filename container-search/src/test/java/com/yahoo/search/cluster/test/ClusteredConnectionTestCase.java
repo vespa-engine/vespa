@@ -11,16 +11,21 @@ import com.yahoo.search.cluster.ClusterSearcher;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 /**
  * @author bratseth
  */
-public class ClusteredConnectionTestCase extends junit.framework.TestCase {
+public class ClusteredConnectionTestCase {
 
+    @Test
     public void testClustering() {
         Connection connection0=new Connection("0");
         Connection connection1=new Connection("1");
@@ -88,6 +93,7 @@ public class ClusteredConnectionTestCase extends junit.framework.TestCase {
         assertEquals("from:0",r.hits().get(0).getId().stringValue());
     }
 
+    @Test
     public void testClusteringWithPing() {
         Connection connection0=new Connection("0");
         Connection connection1=new Connection("1");

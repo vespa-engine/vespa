@@ -7,42 +7,49 @@ import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
  */
-public class QueryProfileSubstitutionTestCase extends junit.framework.TestCase {
+public class QueryProfileSubstitutionTestCase {
 
+    @Test
     public void testSingleSubstitution() {
         QueryProfile p=new QueryProfile("test");
-        p.set("message","Hello %{world}!", (QueryProfileRegistry)null);
-        p.set("world", "world", (QueryProfileRegistry)null);
+        p.set("message","Hello %{world}!", null);
+        p.set("world", "world", null);
         assertEquals("Hello world!",p.compile(null).get("message"));
 
         QueryProfile p2=new QueryProfile("test2");
         p2.addInherited(p);
-        p2.set("world", "universe", (QueryProfileRegistry)null);
+        p2.set("world", "universe", null);
         assertEquals("Hello universe!",p2.compile(null).get("message"));
     }
 
+    @Test
     public void testMultipleSubstitutions() {
         QueryProfile p=new QueryProfile("test");
-        p.set("message","%{greeting} %{entity}%{exclamation}", (QueryProfileRegistry)null);
-        p.set("greeting","Hola", (QueryProfileRegistry)null);
-        p.set("entity","local group", (QueryProfileRegistry)null);
-        p.set("exclamation","?", (QueryProfileRegistry)null);
+        p.set("message","%{greeting} %{entity}%{exclamation}", null);
+        p.set("greeting","Hola", null);
+        p.set("entity","local group", null);
+        p.set("exclamation","?", null);
         assertEquals("Hola local group?",p.compile(null).get("message"));
 
         QueryProfile p2=new QueryProfile("test2");
         p2.addInherited(p);
-        p2.set("entity","milky way", (QueryProfileRegistry)null);
+        p2.set("entity","milky way", null);
         assertEquals("Hola milky way?",p2.compile(null).get("message"));
     }
 
+    @Test
     public void testUnclosedSubstitution1() {
         try {
             QueryProfile p=new QueryProfile("test");
-            p.set("message1","%{greeting} %{entity}%{exclamation", (QueryProfileRegistry)null);
+            p.set("message1","%{greeting} %{entity}%{exclamation", null);
             fail("Should have produced an exception");
         }
         catch (IllegalArgumentException e) {
@@ -51,10 +58,11 @@ public class QueryProfileSubstitutionTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testUnclosedSubstitution2() {
         try {
             QueryProfile p=new QueryProfile("test");
-            p.set("message1","%{greeting} %{entity%{exclamation}", (QueryProfileRegistry)null);
+            p.set("message1","%{greeting} %{entity%{exclamation}", null);
             fail("Should have produced an exception");
         }
         catch (IllegalArgumentException e) {
@@ -63,23 +71,25 @@ public class QueryProfileSubstitutionTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testNullSubstitution() {
         QueryProfile p=new QueryProfile("test");
-        p.set("message","%{greeting} %{entity}%{exclamation}", (QueryProfileRegistry)null);
-        p.set("greeting","Hola", (QueryProfileRegistry)null);
+        p.set("message","%{greeting} %{entity}%{exclamation}", null);
+        p.set("greeting","Hola", null);
         assertEquals("Hola ", p.compile(null).get("message"));
 
         QueryProfile p2=new QueryProfile("test2");
         p2.addInherited(p);
-        p2.set("greeting","Hola", (QueryProfileRegistry)null);
-        p2.set("exclamation", "?", (QueryProfileRegistry)null);
+        p2.set("greeting","Hola", null);
+        p2.set("exclamation", "?", null);
         assertEquals("Hola ?",p2.compile(null).get("message"));
     }
 
+    @Test
     public void testNoOverridingOfPropertiesSetAtRuntime() {
         QueryProfile p=new QueryProfile("test");
-        p.set("message","Hello %{world}!", (QueryProfileRegistry)null);
-        p.set("world","world", (QueryProfileRegistry)null);
+        p.set("message","Hello %{world}!", null);
+        p.set("world","world", null);
         p.freeze();
 
         Properties runtime=new QueryProfileProperties(p.compile(null));
@@ -88,27 +98,30 @@ public class QueryProfileSubstitutionTestCase extends junit.framework.TestCase {
         assertEquals("Hello %{world}!",runtime.get("runtimeMessage"));
     }
 
+    @Test
     public void testButPropertiesSetAtRuntimeAreUsedInSubstitutions() {
         QueryProfile p=new QueryProfile("test");
-        p.set("message","Hello %{world}!", (QueryProfileRegistry)null);
-        p.set("world","world", (QueryProfileRegistry)null);
+        p.set("message","Hello %{world}!", null);
+        p.set("world","world", null);
 
         Properties runtime=new QueryProfileProperties(p.compile(null));
         runtime.set("world","Earth");
         assertEquals("Hello Earth!",runtime.get("message"));
     }
 
+    @Test
     public void testInspection() {
         QueryProfile p=new QueryProfile("test");
-        p.set("message", "%{greeting} %{entity}%{exclamation}", (QueryProfileRegistry)null);
+        p.set("message", "%{greeting} %{entity}%{exclamation}", null);
         assertEquals("message","%{greeting} %{entity}%{exclamation}",
                      p.declaredContent().entrySet().iterator().next().getValue().toString());
     }
 
+    @Test
     public void testVariants() {
         QueryProfile p=new QueryProfile("test");
-        p.set("message","Hello %{world}!", (QueryProfileRegistry)null);
-        p.set("world","world", (QueryProfileRegistry)null);
+        p.set("message","Hello %{world}!", null);
+        p.set("world","world", null);
         p.setDimensions(new String[] {"x"});
         p.set("message","Halo %{world}!",new String[] {"x1"}, null);
         p.set("world","Europe",new String[] {"x2"}, null);
@@ -119,11 +132,12 @@ public class QueryProfileSubstitutionTestCase extends junit.framework.TestCase {
         assertEquals("Hello Europe!", cp.get("message", QueryProfileVariantsTestCase.toMap("x=x2")));
     }
 
+    @Test
     public void testRecursion() {
         QueryProfile p=new QueryProfile("test");
-        p.set("message","Hello %{world}!", (QueryProfileRegistry)null);
-        p.set("world","sol planet number %{number}", (QueryProfileRegistry)null);
-        p.set("number",3, (QueryProfileRegistry)null);
+        p.set("message","Hello %{world}!", null);
+        p.set("world","sol planet number %{number}", null);
+        p.set("number",3, null);
         assertEquals("Hello sol planet number 3!",p.compile(null).get("message"));
     }
 

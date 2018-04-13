@@ -4,7 +4,6 @@ package com.yahoo.prelude.semantics.test;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.Query;
@@ -16,25 +15,28 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.test.QueryTestCase;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Tests creating a set of rule bases (the same set as in inheritingrules) from config
  *
  * @author bratseth
  */
-@SuppressWarnings("deprecation")
-public class ConfigurationTestCase extends junit.framework.TestCase {
+public class ConfigurationTestCase {
 
-    private final String root="src/test/java/com/yahoo/prelude/semantics/test/rulebases/";
+    private static final String root="src/test/java/com/yahoo/prelude/semantics/test/rulebases/";
 
-    private SemanticSearcher searcher;
-    private SemanticRulesConfig semanticRulesConfig;
+    private static final SemanticSearcher searcher;
+    private static final SemanticRulesConfig semanticRulesConfig;
 
-    public ConfigurationTestCase(String name) {
-        super(name);
+    static {
         semanticRulesConfig = new ConfigGetter<>(SemanticRulesConfig.class).getConfig("file:" + root + "semantic-rules.cfg");
         searcher=new SemanticSearcher(semanticRulesConfig);
     }
@@ -51,6 +53,7 @@ public class ConfigurationTestCase extends junit.framework.TestCase {
         assertEquals(result, query.getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testReadingConfigurationRuleBase() {
         RuleBase parent=searcher.getRuleBase("parent");
         assertNotNull(parent);
@@ -58,6 +61,7 @@ public class ConfigurationTestCase extends junit.framework.TestCase {
         assertEquals("semantic-rules.cfg",parent.getSource());
     }
 
+    @Test
     public void testParent() throws Exception {
         assertSemantics("vehiclebrand:audi","audi cars","parent");
         assertSemantics("vehiclebrand:alfa","alfa bus","parent");
@@ -66,6 +70,7 @@ public class ConfigurationTestCase extends junit.framework.TestCase {
         assertSemantics("AND skoda car",    "skoda cars","parent.sr");
     }
 
+    @Test
     public void testChild1() throws Exception {
         assertSemantics("vehiclebrand:skoda","audi cars","child1.sr");
         assertSemantics("vehiclebrand:alfa", "alfa bus","child1");
@@ -74,6 +79,7 @@ public class ConfigurationTestCase extends junit.framework.TestCase {
         assertSemantics("AND skoda car",     "skoda cars","child1");
     }
 
+    @Test
     public void testChild2() throws Exception {
         assertSemantics("vehiclebrand:audi","audi cars","child2");
         assertSemantics("vehiclebrand:alfa","alfa bus","child2.sr");
@@ -82,6 +88,7 @@ public class ConfigurationTestCase extends junit.framework.TestCase {
         assertSemantics("vehiclebrand:skoda","skoda cars","child2");
     }
 
+    @Test
     public void testGrandchild() throws Exception {
         assertSemantics("vehiclebrand:skoda","audi cars","grandchild.sr");
         assertSemantics("vehiclebrand:alfa","alfa bus","grandchild");
@@ -90,6 +97,7 @@ public class ConfigurationTestCase extends junit.framework.TestCase {
         assertSemantics("vehiclebrand:skoda","skoda cars","grandchild");
     }
 
+    @Test
     public void testSearcher() {
         assertSemantics("vehiclebrand:skoda", "vw cars",   "grandchild");
         assertSemantics("vehiclebrand:skoda", "vw cars",   "grandchild.sd");

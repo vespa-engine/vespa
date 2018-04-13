@@ -3,7 +3,6 @@ package com.yahoo.prelude.searcher.test;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -12,16 +11,19 @@ import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.result.Hit;
 import com.yahoo.prelude.searcher.QuerySnapshotSearcher;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author bratseth
  */
-@SuppressWarnings("deprecation")
-public class QuerySnapshotSearcherTestCase extends junit.framework.TestCase {
+public class QuerySnapshotSearcherTestCase {
 
+    @Test
     public void test() {
         Searcher searcher=new QuerySnapshotSearcher();
         Result result = doSearch(searcher, new Query(), 0,10);
