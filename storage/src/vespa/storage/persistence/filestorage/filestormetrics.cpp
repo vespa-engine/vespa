@@ -9,7 +9,7 @@ namespace storage {
 using metrics::MetricSet;
 using metrics::LoadTypeSet;
 
-FileStorThreadMetrics::Op::Op(const std::string& id, const std::string name, MetricSet* owner)
+FileStorThreadMetrics::Op::Op(const std::string& id, const std::string& name, MetricSet* owner)
     : MetricSet(id, id, name + " load in filestor thread", owner, "operationtype"),
       _name(name),
       count("count", "yamasdefault", "Number of requests processed.", this),
@@ -17,7 +17,7 @@ FileStorThreadMetrics::Op::Op(const std::string& id, const std::string name, Met
       failed("failed", "yamasdefault", "Number of failed requests.", this)
 { }
 
-FileStorThreadMetrics::Op::~Op() { }
+FileStorThreadMetrics::Op::~Op() = default;
 
 MetricSet *
 FileStorThreadMetrics::Op::clone(std::vector<Metric::UP>& ownerList,
@@ -57,15 +57,13 @@ FileStorThreadMetrics::OpWithRequestSize<BaseOp>::clone(
             ->assignValues(*this));
 }
 
-template class FileStorThreadMetrics::OpWithRequestSize<FileStorThreadMetrics::Op>;
-
-FileStorThreadMetrics::OpWithNotFound::OpWithNotFound(const std::string& id, const std::string name, MetricSet* owner)
+FileStorThreadMetrics::OpWithNotFound::OpWithNotFound(const std::string& id, const std::string& name, MetricSet* owner)
     : Op(id, name, owner),
       notFound("not_found", "", "Number of requests that could not be "
                "completed due to source document not found.", this)
 { }
 
-FileStorThreadMetrics::OpWithNotFound::~OpWithNotFound() { }
+FileStorThreadMetrics::OpWithNotFound::~OpWithNotFound() = default;
 
 MetricSet *
 FileStorThreadMetrics::OpWithNotFound::clone(std::vector<Metric::UP>& ownerList,
@@ -86,7 +84,7 @@ FileStorThreadMetrics::Update::Update(MetricSet* owner)
       latencyRead("latency_read", "", "Latency of the source read in the request.", this)
 { }
 
-FileStorThreadMetrics::Update::~Update() { }
+FileStorThreadMetrics::Update::~Update() = default;
 
 MetricSet *
 FileStorThreadMetrics::Update::clone(std::vector<Metric::UP>& ownerList,
@@ -105,7 +103,7 @@ FileStorThreadMetrics::Visitor::Visitor(MetricSet* owner)
       documentsPerIterate("docs", "", "Number of entries read per iterate call", this)
 { }
 
-FileStorThreadMetrics::Visitor::~Visitor() { }
+FileStorThreadMetrics::Visitor::~Visitor() = default;
 
 MetricSet *
 FileStorThreadMetrics::Visitor::clone(std::vector<Metric::UP>& ownerList,

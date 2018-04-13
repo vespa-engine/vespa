@@ -19,14 +19,14 @@ struct FileStorThreadMetrics : public metrics::MetricSet
 {
     typedef std::shared_ptr<FileStorThreadMetrics> SP;
 
-    struct Op : public metrics::MetricSet {
+    struct Op : metrics::MetricSet {
         std::string _name;
         metrics::LongCountMetric count;
         metrics::DoubleAverageMetric latency;
         metrics::LongCountMetric failed;
 
-        Op(const std::string& id, const std::string name, MetricSet* owner = 0);
-        ~Op();
+        Op(const std::string& id, const std::string& name, MetricSet* owner = nullptr);
+        ~Op() override;
 
         MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                           MetricSet* owner, bool includeUnused) const override;
@@ -37,40 +37,40 @@ struct FileStorThreadMetrics : public metrics::MetricSet
     struct OpWithRequestSize : BaseOp {
         metrics::LongAverageMetric request_size;
 
-        OpWithRequestSize(const std::string& id, const std::string& name, MetricSet* owner = 0);
-        ~OpWithRequestSize();
+        OpWithRequestSize(const std::string& id, const std::string& name, MetricSet* owner = nullptr);
+        ~OpWithRequestSize() override;
 
         MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                           MetricSet* owner, bool includeUnused) const override;
         OpWithRequestSize* operator&() { return this; }
     };
 
-    struct OpWithNotFound : public Op {
+    struct OpWithNotFound : Op {
         metrics::LongCountMetric notFound;
 
-        OpWithNotFound(const std::string& id, const std::string name, metrics::MetricSet* owner = 0);
-        ~OpWithNotFound();
+        OpWithNotFound(const std::string& id, const std::string& name, metrics::MetricSet* owner = nullptr);
+        ~OpWithNotFound() override;
         MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                          MetricSet* owner, bool includeUnused) const override;
         OpWithNotFound* operator&() { return this; }
     };
 
-    struct Update : public OpWithRequestSize<OpWithNotFound> {
+    struct Update : OpWithRequestSize<OpWithNotFound> {
         metrics::LongAverageMetric latencyRead;
 
-        Update(MetricSet* owner = 0);
-        ~Update();
+        explicit Update(MetricSet* owner = nullptr);
+        ~Update() override;
 
         MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                          MetricSet* owner, bool includeUnused) const override;
         Update* operator&() { return this; }
     };
 
-    struct Visitor : public Op {
+    struct Visitor : Op {
         metrics::LongAverageMetric documentsPerIterate;
 
-        Visitor(MetricSet* owner = 0);
-        ~Visitor();
+        explicit Visitor(MetricSet* owner = nullptr);
+        ~Visitor() override;
 
         MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                          MetricSet* owner, bool includeUnused) const override;
@@ -116,7 +116,7 @@ struct FileStorThreadMetrics : public metrics::MetricSet
     metrics::LongAverageMetric batchingSize;
 
     FileStorThreadMetrics(const std::string& name, const std::string& desc, const metrics::LoadTypeSet& lt);
-    ~FileStorThreadMetrics();
+    ~FileStorThreadMetrics() override;
 };
 
 class FileStorStripeMetrics : public metrics::MetricSet
@@ -126,7 +126,7 @@ public:
     metrics::LoadMetric<metrics::DoubleAverageMetric> averageQueueWaitingTime;
     FileStorStripeMetrics(const std::string& name, const std::string& description,
                           const metrics::LoadTypeSet& loadTypes);
-    ~FileStorStripeMetrics();
+    ~FileStorStripeMetrics() override;
 };
 
 class FileStorDiskMetrics : public metrics::MetricSet
@@ -146,7 +146,7 @@ public:
 
     FileStorDiskMetrics(const std::string& name, const std::string& description,
                         const metrics::LoadTypeSet& loadTypes, MetricSet* owner);
-    ~FileStorDiskMetrics();
+    ~FileStorDiskMetrics() override;
 
     void initDiskMetrics(const metrics::LoadTypeSet& loadTypes, uint32_t numStripes, uint32_t threadsPerDisk);
 };
@@ -159,8 +159,8 @@ struct FileStorMetrics : public metrics::MetricSet
     metrics::LongCountMetric partitionEvents;
     metrics::LongCountMetric diskEvents;
 
-    FileStorMetrics(const metrics::LoadTypeSet&);
-    ~FileStorMetrics();
+    explicit FileStorMetrics(const metrics::LoadTypeSet&);
+    ~FileStorMetrics() override;
 
     void initDiskMetrics(uint16_t numDisks, const metrics::LoadTypeSet& loadTypes, uint32_t numStripes, uint32_t threadsPerDisk);
 };
