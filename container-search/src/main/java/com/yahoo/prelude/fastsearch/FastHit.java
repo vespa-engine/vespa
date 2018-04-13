@@ -74,10 +74,9 @@ public class FastHit extends Hit {
         setPartId(0, 0);
     }
 
-    @Override
     public String toString() {
         return super.toString() + " [fasthit, globalid: " + globalId + ", partId: "
-               + partId + ", distributionkey: " + distributionKey + "]";
+            + partId + ", distributionkey: " + distributionKey + "]";
     }
 
     public static String asHexString(GlobalId gid) {
@@ -268,8 +267,7 @@ public class FastHit extends Hit {
         this.distributionKey = distributionKey;
     }
 
-    /** For internal use */
-    public void addSummary(DocsumDefinition docsumDef, Inspector value) {
+    void addSummary(DocsumDefinition docsumDef, Inspector value) {
         reserve(docsumDef.getFieldCount());
         for (DocsumField field : docsumDef.getFields()) {
             String fieldName = field.getName();
@@ -292,8 +290,10 @@ public class FastHit extends Hit {
      * easier. This is not a method to be used for efficiency, as it causes
      * object allocations.
      *
-     * @param fieldName the name of the field to insert undecoded UTF-8 into
-     * @param value an array of valid UTF-8 data
+     * @param fieldName
+     *            the name of the field to insert undecoded UTF-8 into
+     * @param value
+     *            an array of valid UTF-8 data
      */
     @Beta
     public void setLazyStringField(String fieldName, byte[] value) {
