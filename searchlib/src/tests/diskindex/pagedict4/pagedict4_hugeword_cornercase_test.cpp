@@ -160,17 +160,16 @@ void testWords()
         counts.clear();
         r.readCounts(word, checkWordNum, counts);
         if (wordNum < 6) {
-            assert(checkWordNum == wordNum);
+            EXPECT_EQUAL(checkWordNum, wordNum);
             if (wordNum == 3) {
-                assert(counts == largeCounts);
+                EXPECT_TRUE(counts == largeCounts);
             } else {
-                assert(counts == baseCounts);
+                EXPECT_TRUE(counts == baseCounts);
             }
         } else {
-            assert(checkWordNum > 100);
+            EXPECT_GREATER(checkWordNum, 100u);
         }
     }
-    LOG(info, "words seqRead test OK");
 }
 
 
