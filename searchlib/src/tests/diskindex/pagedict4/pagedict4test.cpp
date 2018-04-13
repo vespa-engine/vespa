@@ -366,9 +366,6 @@ testWords(const std::string &logname,
           bool firstWordForcedCommon,
           bool lastWordForcedCommon)
 {
-    typedef search::bitcompression::PostingListCountFileEncodeContext EC;
-    typedef search::bitcompression::PostingListCountFileDecodeContext DC;
-
     LOG(info, "%s: word test start", logname.c_str());
     std::vector<WordCounts> myrand;
     makeWords(myrand, rnd, numWordIds, tupleCount,
@@ -384,17 +381,7 @@ testWords(const std::string &logname,
     }
     LOG(info, "%s: word counts generated", logname.c_str());
 
-    EC pe;
-    EC spe;
-    EC sse;
-
-    sse._minChunkDocs = chunkSize;
-    sse._numWordIds = numWordIds;
-    spe.copyParams(sse);
-    pe.copyParams(sse);
-    Writer w(sse, spe, pe);
-    w.startPad(ssPad, spPad, pPad);
-    w.allocWriters();
+    Writer w(chunkSize, numWordIds, ssPad, spPad, pPad);
 
     PostingListCounts counts;
     for (std::vector<WordCounts>::const_iterator
@@ -411,23 +398,15 @@ testWords(const std::string &logname,
         "%s: Used %" PRIu64 "+%" PRIu64 "+%" PRIu64
         " bits for %d words",
         logname.c_str(),
-        w._pFileBitSize,
-        w._spFileBitSize,
-        w._ssFileBitSize,
+        w._buffers._pFileBitSize,
+        w._buffers._spFileBitSize,
+        w._buffers._ssFileBitSize,
         (int) myrand.size());
 
     StartOffset checkOffset;
 
     {
-        DC ssd;
-        ssd._minChunkDocs = chunkSize;
-        ssd._numWordIds = numWordIds;
-        DC spd;
-        spd.copyParams(ssd);
-        DC pd;
-        pd.copyParams(ssd);
-
-        SeqReader r(ssd, spd, pd, w);
+        SeqReader r(chunkSize, numWordIds, w._buffers);
 
         uint64_t wordNum = 1;
         uint64_t checkWordNum = 0;
@@ -444,20 +423,12 @@ testWords(const std::string &logname,
             checkOffset._fileOffset += counts._bitLength;
             checkOffset._accNumDocs += counts._numDocs;
         }
-        assert(pd.getReadOffset() == w._pFileBitSize);
+        assert(r._decoders.pd.getReadOffset() == w._buffers._pFileBitSize);
         LOG(info, "%s: words seqRead test OK", logname.c_str());
     }
 
     {
-        DC ssd;
-        ssd._minChunkDocs = chunkSize;
-        ssd._numWordIds = numWordIds;
-        DC spd;
-        spd.copyParams(ssd);
-        DC pd;
-        pd.copyParams(ssd);
-
-        RandReader rr(ssd, spd, pd, w);
+        RandReader rr(chunkSize, numWordIds, w._buffers);
 
         uint64_t wordNum = 1;
         uint64_t checkWordNum = 0;

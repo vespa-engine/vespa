@@ -5,14 +5,15 @@
 
 namespace search::diskindex::test {
 
-PageDict4MemWriter::PageDict4MemWriter(EC &sse,
-                                       EC &spe,
-                                       EC &pe)
-    : ThreeLevelCountWriteBuffers(sse, spe, pe),
+PageDict4MemWriter::PageDict4MemWriter(uint32_t chunkSize, uint64_t numWordIds, uint32_t ssPad, uint32_t spPad, uint32_t pPad)
+    : _encoders(chunkSize, numWordIds),
+      _buffers(_encoders.sse, _encoders.spe, _encoders.pe),
       _ssw(NULL),
       _spw(NULL),
       _pw(NULL)
 {
+    _buffers.startPad(ssPad, spPad, pPad);
+    allocWriters();
 }
 
 PageDict4MemWriter::~PageDict4MemWriter()
@@ -25,9 +26,9 @@ PageDict4MemWriter::~PageDict4MemWriter()
 void
 PageDict4MemWriter::allocWriters()
 {
-    _ssw = new PageDict4SSWriter(_sse);
-    _spw = new PageDict4SPWriter(*_ssw, _spe);
-    _pw = new PageDict4PWriter(*_spw, _pe);
+    _ssw = new PageDict4SSWriter(_buffers._sse);
+    _spw = new PageDict4SPWriter(*_ssw, _buffers._spe);
+    _pw = new PageDict4PWriter(*_spw, _buffers._pe);
     _spw->setup();
     _pw->setup();
 }
@@ -36,7 +37,7 @@ void
 PageDict4MemWriter::flush()
 {
     _pw->flush();
-    ThreeLevelCountWriteBuffers::flush();
+    _buffers.flush();
 }
 
 void

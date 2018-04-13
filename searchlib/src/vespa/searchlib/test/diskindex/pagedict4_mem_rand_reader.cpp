@@ -4,20 +4,19 @@
 
 namespace search::diskindex::test {
 
-PageDict4MemRandReader::PageDict4MemRandReader(DC &ssd,
-                                               DC &spd,
-                                               DC &pd,
+PageDict4MemRandReader::PageDict4MemRandReader(uint32_t chunkSize, uint64_t numWordIds,
                                                ThreeLevelCountWriteBuffers &wb)
-    : ThreeLevelCountReadBuffers(ssd, spd, pd, wb),
-      _ssr(_rcssd,
+    : _decoders(chunkSize, numWordIds),
+      _buffers(_decoders.ssd, _decoders.spd, _decoders.pd, wb),
+      _ssr(_buffers._rcssd,
            wb._ssHeaderLen, wb._ssFileBitSize,
            wb._spHeaderLen, wb._spFileBitSize,
            wb._pHeaderLen, wb._pFileBitSize),
-      _spData(static_cast<const char *>(_rcspd._comprBuf)),
-      _pData(static_cast<const char *>(_rcpd._comprBuf)),
+      _spData(static_cast<const char *>(_buffers._rcspd._comprBuf)),
+      _pData(static_cast<const char *>(_buffers._rcpd._comprBuf)),
       _pageSize(search::bitcompression::PageDict4PageParams::getPageByteSize())
 {
-    _ssr.setup(ssd);
+    _ssr.setup(_decoders.ssd);
 }
 
 PageDict4MemRandReader::~PageDict4MemRandReader() = default;

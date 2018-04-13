@@ -7,7 +7,6 @@
 #include <vespa/searchlib/test/diskindex/threelevelcountbuffers.h>
 #include <vespa/searchlib/test/diskindex/pagedict4_mem_writer.h>
 #include <vespa/searchlib/test/diskindex/pagedict4_mem_seq_reader.h>
-#include <vespa/searchlib/test/diskindex/pagedict4_mem_rand_reader.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
 
 #include <vespa/log/log.h>
@@ -133,29 +132,16 @@ PostingListCounts makeCounts(uint32_t wantLen)
 using StartOffset = search::bitcompression::PageDict4StartOffset;
 using Writer = search::diskindex::test::PageDict4MemWriter;
 using SeqReader = search::diskindex::test::PageDict4MemSeqReader;
-using RandReader = search::diskindex::test::PageDict4MemRandReader;
 
 void testWords()
 {
-    using EC = search::bitcompression::PostingListCountFileEncodeContext;
-    using DC = search::bitcompression::PostingListCountFileDecodeContext;
-
-    EC pe;
-    EC spe;
-    EC sse;
     uint32_t pageBitSize = 32768;
     uint32_t startBits = 15 * 3 + 12;
 
-    sse._minChunkDocs = minChunkDocs;
-    sse._numWordIds = numWordIds;
-    spe.copyParams(sse);
-    pe.copyParams(sse);
-    Writer w(sse, spe, pe);
     uint32_t ssPad = 64;
     uint32_t spPad = 64;
     uint32_t pPad = 64;
-    w.startPad(ssPad, spPad, pPad);
-    w.allocWriters();
+    Writer w(minChunkDocs, numWordIds, ssPad, spPad, pPad);
     PostingListCounts baseCounts = makeBaseCounts();
     PostingListCounts largeCounts = makeCounts(pageBitSize - startBits);
     w.addCounts("a", baseCounts);
@@ -165,14 +151,7 @@ void testWords()
     w.addCounts("e", baseCounts);
     w.flush();
 
-    DC ssd;
-    ssd._minChunkDocs = minChunkDocs;
-    ssd._numWordIds = numWordIds;
-    DC spd;
-    spd.copyParams(ssd);
-    DC pd;
-    pd.copyParams(ssd);
-    SeqReader r(ssd, spd, pd, w);
+    SeqReader r(minChunkDocs, numWordIds, w._buffers);
 
     uint64_t checkWordNum = 0;
     PostingListCounts counts;

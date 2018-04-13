@@ -4,18 +4,17 @@
 
 namespace search::diskindex::test {
 
-PageDict4MemSeqReader::PageDict4MemSeqReader(DC &ssd,
-                                             DC &spd,
-                                             DC &pd,
+PageDict4MemSeqReader::PageDict4MemSeqReader(uint32_t chunkSize, uint64_t numWordIds,
                                              ThreeLevelCountWriteBuffers &wb)
-    : ThreeLevelCountReadBuffers(ssd, spd, pd, wb),
-      _ssr(_rcssd,
+    : _decoders(chunkSize, numWordIds),
+      _buffers(_decoders.ssd, _decoders.spd, _decoders.pd, wb),
+      _ssr(_buffers._rcssd,
            wb._ssHeaderLen, wb._ssFileBitSize,
            wb._spHeaderLen, wb._spFileBitSize,
            wb._pHeaderLen, wb._pFileBitSize),
-      _pr(_ssr, spd, pd)
+      _pr(_ssr, _decoders.spd, _decoders.pd)
 {
-    _ssr.setup(ssd);
+    _ssr.setup(_decoders.ssd);
     _pr.setup();
 }
 
