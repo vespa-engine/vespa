@@ -32,6 +32,19 @@ struct FileStorThreadMetrics : public metrics::MetricSet
                           MetricSet* owner, bool includeUnused) const override;
         Op* operator&() { return this; }
     };
+
+    template <typename BaseOp>
+    struct OpWithRequestSize : BaseOp {
+        metrics::LongAverageMetric request_size;
+
+        OpWithRequestSize(const std::string& id, const std::string& name, MetricSet* owner = 0);
+        ~OpWithRequestSize();
+
+        MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
+                          MetricSet* owner, bool includeUnused) const override;
+        OpWithRequestSize* operator&() { return this; }
+    };
+
     struct OpWithNotFound : public Op {
         metrics::LongCountMetric notFound;
 
@@ -42,7 +55,7 @@ struct FileStorThreadMetrics : public metrics::MetricSet
         OpWithNotFound* operator&() { return this; }
     };
 
-    struct Update : public OpWithNotFound {
+    struct Update : public OpWithRequestSize<OpWithNotFound> {
         metrics::LongAverageMetric latencyRead;
 
         Update(MetricSet* owner = 0);
@@ -66,9 +79,9 @@ struct FileStorThreadMetrics : public metrics::MetricSet
 
     metrics::LongCountMetric operations;
     metrics::LongCountMetric failedOperations;
-    metrics::LoadMetric<Op> put;
-    metrics::LoadMetric<OpWithNotFound> get;
-    metrics::LoadMetric<OpWithNotFound> remove;
+    metrics::LoadMetric<OpWithRequestSize<Op>> put;
+    metrics::LoadMetric<OpWithRequestSize<OpWithNotFound>> get;
+    metrics::LoadMetric<OpWithRequestSize<OpWithNotFound>> remove;
     metrics::LoadMetric<Op> removeLocation;
     metrics::LoadMetric<Op> statBucket;
     metrics::LoadMetric<Update> update;

@@ -48,7 +48,11 @@ try{ \
 namespace storage {
 
 namespace {
-    spi::LoadType defaultLoadType(0, "default");
+
+spi::LoadType defaultLoadType(0, "default");
+
+struct TestFileStorComponents;
+
 }
 
 struct FileStorManagerTest : public CppUnit::TestFixture {
@@ -97,6 +101,10 @@ struct FileStorManagerTest : public CppUnit::TestFixture {
     void testStateChange();
     void testRepairNotifiesDistributorOnChange();
     void testDiskMove();
+    void put_command_size_is_added_to_metric();
+    void update_command_size_is_added_to_metric();
+    void remove_command_size_is_added_to_metric();
+    void get_command_size_is_added_to_metric();
 
     CPPUNIT_TEST_SUITE(FileStorManagerTest);
     CPPUNIT_TEST(testPut);
@@ -131,6 +139,10 @@ struct FileStorManagerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testStateChange);
     CPPUNIT_TEST(testRepairNotifiesDistributorOnChange);
     CPPUNIT_TEST(testDiskMove);
+    CPPUNIT_TEST(put_command_size_is_added_to_metric);
+    CPPUNIT_TEST(update_command_size_is_added_to_metric);
+    CPPUNIT_TEST(remove_command_size_is_added_to_metric);
+    CPPUNIT_TEST(get_command_size_is_added_to_metric);
     CPPUNIT_TEST_SUITE_END();
 
     void createBucket(document::BucketId bid, uint16_t disk)
@@ -215,6 +227,15 @@ struct FileStorManagerTest : public CppUnit::TestFixture {
                 FileStorHandler& filestorHandler,
                 const document::BucketId& bucket,
                 uint32_t docNum);
+
+    template <typename Metric>
+    void assert_request_size_set(TestFileStorComponents& c,
+                                 std::shared_ptr<api::StorageMessage> cmd,
+                                 const Metric& metric);
+
+    auto& thread_metrics_of(FileStorManager& manager) {
+        return manager._metrics->disks[0]->threads[0];
+    }
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(FileStorManagerTest);
@@ -2677,6 +2698,59 @@ FileStorManagerTest::testCreateBucketSetsActiveFlagInDatabaseAndReply()
         CPPUNIT_ASSERT(entry->info.isReady());
         CPPUNIT_ASSERT(entry->info.isActive());
     }
+}
+
+template <typename Metric>
+void FileStorManagerTest::assert_request_size_set(TestFileStorComponents& c, std::shared_ptr<api::StorageMessage> cmd, const Metric& metric) {
+    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
+    cmd->setApproxByteSize(54321);
+    cmd->setAddress(address);
+    c.top.sendDown(cmd);
+    c.top.waitForMessages(1, _waitTime);
+    CPPUNIT_ASSERT_EQUAL(static_cast<int64_t>(cmd->getApproxByteSize()), metric.request_size.getLast());
+}
+
+void FileStorManagerTest::put_command_size_is_added_to_metric() {
+    TestFileStorComponents c(*this, "put_command_size_is_added_to_metric");
+    document::BucketId bucket(16, 4000);
+    createBucket(bucket, 0);
+    auto cmd = std::make_shared<api::PutCommand>(
+            makeDocumentBucket(bucket), _node->getTestDocMan().createRandomDocument(), api::Timestamp(12345));
+
+    assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->put[defaultLoadType]);
+}
+
+void FileStorManagerTest::update_command_size_is_added_to_metric() {
+    TestFileStorComponents c(*this, "update_command_size_is_added_to_metric");
+    document::BucketId bucket(16, 4000);
+    createBucket(bucket, 0);
+    auto update = std::make_shared<document::DocumentUpdate>(
+            _node->getTestDocMan().createRandomDocument()->getType(),
+            document::DocumentId("id:foo:testdoctype1::bar"));
+    auto cmd = std::make_shared<api::UpdateCommand>(
+            makeDocumentBucket(bucket), std::move(update), api::Timestamp(123456));
+
+    assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->update[defaultLoadType]);
+}
+
+void FileStorManagerTest::remove_command_size_is_added_to_metric() {
+    TestFileStorComponents c(*this, "remove_command_size_is_added_to_metric");
+    document::BucketId bucket(16, 4000);
+    createBucket(bucket, 0);
+    auto cmd = std::make_shared<api::RemoveCommand>(
+            makeDocumentBucket(bucket), document::DocumentId("id:foo:testdoctype1::bar"), api::Timestamp(123456));
+
+    assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->remove[defaultLoadType]);
+}
+
+void FileStorManagerTest::get_command_size_is_added_to_metric() {
+    TestFileStorComponents c(*this, "get_command_size_is_added_to_metric");
+    document::BucketId bucket(16, 4000);
+    createBucket(bucket, 0);
+    auto cmd = std::make_shared<api::GetCommand>(
+            makeDocumentBucket(bucket), document::DocumentId("id:foo:testdoctype1::bar"), "[all]");
+
+    assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->get[defaultLoadType]);
 }
 
 } // storage

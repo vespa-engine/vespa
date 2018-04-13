@@ -105,7 +105,9 @@ bool PersistenceThread::tasConditionMatches(const api::TestAndSetCommand & cmd, 
 MessageTracker::UP
 PersistenceThread::handlePut(api::PutCommand& cmd)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.put[cmd.getLoadType()],_env._component.getClock());
+    auto& metrics = _env._metrics.put[cmd.getLoadType()];
+    auto tracker = std::make_unique<MessageTracker>(metrics, _env._component.getClock());
+    metrics.request_size.addValue(cmd.getApproxByteSize());
 
     if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker)) {
         return tracker;
@@ -120,7 +122,9 @@ PersistenceThread::handlePut(api::PutCommand& cmd)
 MessageTracker::UP
 PersistenceThread::handleRemove(api::RemoveCommand& cmd)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.remove[cmd.getLoadType()],_env._component.getClock());
+    auto& metrics = _env._metrics.remove[cmd.getLoadType()];
+    auto tracker = std::make_unique<MessageTracker>(metrics,_env._component.getClock());
+    metrics.request_size.addValue(cmd.getApproxByteSize());
 
     if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker)) {
         return tracker;
@@ -140,7 +144,9 @@ PersistenceThread::handleRemove(api::RemoveCommand& cmd)
 MessageTracker::UP
 PersistenceThread::handleUpdate(api::UpdateCommand& cmd)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.update[cmd.getLoadType()],_env._component.getClock());
+    auto& metrics = _env._metrics.update[cmd.getLoadType()];
+    auto tracker = std::make_unique<MessageTracker>(metrics, _env._component.getClock());
+    metrics.request_size.addValue(cmd.getApproxByteSize());
 
     if (tasConditionExists(cmd) && !tasConditionMatches(cmd, *tracker)) {
         return tracker;
@@ -159,7 +165,9 @@ PersistenceThread::handleUpdate(api::UpdateCommand& cmd)
 MessageTracker::UP
 PersistenceThread::handleGet(api::GetCommand& cmd)
 {
-    auto tracker = std::make_unique<MessageTracker>(_env._metrics.get[cmd.getLoadType()],_env._component.getClock());
+    auto& metrics = _env._metrics.get[cmd.getLoadType()];
+    auto tracker = std::make_unique<MessageTracker>(metrics,_env._component.getClock());
+    metrics.request_size.addValue(cmd.getApproxByteSize());
 
     document::FieldSetRepo repo;
     document::FieldSet::UP fieldSet = repo.parse(*_env._component.getTypeRepo(), cmd.getFieldSet());
