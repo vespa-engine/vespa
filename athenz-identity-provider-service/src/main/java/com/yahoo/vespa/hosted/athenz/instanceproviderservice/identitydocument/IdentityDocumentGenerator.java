@@ -10,10 +10,12 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 
+import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Objects;
 
 /**
  * @author mortent
@@ -85,6 +87,29 @@ public class IdentityDocumentGenerator {
 
     private static String toZoneDnsSuffix(Zone zone, String dnsSuffix) {
         return zone.environment().value() + "-" + zone.region().value() + "." + dnsSuffix;
+    }
+
+    /*
+     * Basic access control until we have mutual auth where athenz x509certs are distributed on all docker nodes by node admin
+     * Checks:
+     *  If remote hostname == requested hostname --> OK
+     *  If remote hostname is parent of requested hostname in node repo --> OK
+     *  Otherwise NOT OK
+     */
+    boolean validateAccess(String hostname, String remoteAddr) {
+        try {
+            InetAddress addr = InetAddress.getByName(remoteAddr);
+            String remoteHostname = addr.getHostName();
+            if (Objects.equals(hostname, remoteHostname)) {
+                return true;
+            }
+            Node node = nodeRepository.getNode(hostname).orElseThrow(() -> new RuntimeException("Unable to find node " + hostname));
+            return node.parentHostname()
+                    .map(parent -> Objects.equals(parent, remoteHostname))
+                    .orElse(false);
+         } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
 

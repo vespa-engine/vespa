@@ -5,12 +5,15 @@ import com.google.inject.Inject;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.log.LogLevel;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.logging.Logger;
 
@@ -31,8 +34,14 @@ public class IdentityDocumentResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public SignedIdentityDocument getIdentityDocument(@QueryParam("hostname") String hostname) {
+    public SignedIdentityDocument getIdentityDocument(@QueryParam("hostname") String hostname,
+                                                      @Context HttpServletRequest request) {
         // TODO Use TLS client authentication instead of blindly trusting hostname
+        // Until we have distributed Athenz x509 certificates we will validate that remote address
+        // is authorized to access the provided hostname. This means any container
+        if (!identityDocumentGenerator.validateAccess(hostname, request.getRemoteAddr())) {
+            throw new ForbiddenException();
+        }
         if (hostname == null) {
             throw new BadRequestException("The 'hostname' query parameter is missing");
         }
@@ -44,5 +53,4 @@ public class IdentityDocumentResource {
             throw new InternalServerErrorException(message, e);
         }
     }
-
 }
