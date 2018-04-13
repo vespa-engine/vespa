@@ -442,4 +442,55 @@ public class DeploymentTriggerTest {
         assertFalse(app.get().deploymentJobs().jobStatus().get(productionUsCentral1).isSuccess());
     }
 
+    @Test
+    public void eachDeployTargetIsTested() {
+        DeploymentTester tester = new DeploymentTester();
+        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Supplier<Application> app = () -> tester.application(application.id());
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-central-1")
+                .parallel("eu-west-1", "us-east-3")
+                .build();
+        // Application version 42 and platform version 6.1.
+        tester.deployCompletely(application, applicationPackage);
+
+        // Success in first prod zone, change cancelled between triggering and deployment to two parallel zones.
+        // One of the parallel zones get a deployment, but both fail their jobs.
+        Version v1 = new Version("6.1");
+        Version v2 = new Version("6.2");
+        tester.upgradeSystem(v2);
+        tester.deployAndNotify(application, Optional.empty(), true, systemTest);
+        tester.deployAndNotify(application, Optional.empty(), true, stagingTest);
+        tester.deployAndNotify(application, Optional.empty(), true, productionUsCentral1);
+        tester.deploymentTrigger().cancelChange(application.id(), true);
+        tester.deploy(productionEuWest1, application, applicationPackage);
+        tester.deployAndNotify(application, applicationPackage, false, productionEuWest1);
+        tester.deployAndNotify(application, applicationPackage, false, productionUsEast3);
+        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
+        assertEquals(v2, app.get().deployments().get(productionEuWest1.zone(main).get()).version());
+        assertEquals(v1, app.get().deployments().get(productionUsEast3.zone(main).get()).version());
+
+        // New application version should run system and staging tests first against 6.2, then against 6.1.
+        tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().version());
+        tester.deployAndNotify(application, Optional.empty(), true, systemTest);
+        assertEquals(v2, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().version());
+        tester.deployAndNotify(application, Optional.empty(), true, stagingTest);
+        tester.deployAndNotify(application, Optional.empty(), true, productionUsCentral1);
+        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().version());
+        tester.deployAndNotify(application, Optional.empty(), true, systemTest);
+        assertEquals(v1, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().version());
+        tester.deployAndNotify(application, Optional.empty(), true, stagingTest);
+
+        // The production job on version 6.2 fails and must retry -- this is OK, even though staging now has a different version.
+        tester.deployAndNotify(application, Optional.empty(), false, productionEuWest1);
+        tester.deployAndNotify(application, Optional.empty(), true, productionUsEast3);
+        tester.deployAndNotify(application, Optional.empty(), true, productionEuWest1);
+        assertFalse(app.get().change().isPresent());
+        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastSuccess().get().applicationVersion().buildNumber().get().longValue());
+        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionEuWest1).lastSuccess().get().applicationVersion().buildNumber().get().longValue());
+        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsEast3).lastSuccess().get().applicationVersion().buildNumber().get().longValue());
+    }
+
 }
