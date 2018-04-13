@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.persistence;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
@@ -217,9 +216,9 @@ public class CuratorDatabaseClient {
         return node.status();
     }
 
-    /** In automated test environments, nodes need to be reused quickly to achieve fast test turnaronud time */
+    /** In automated test environments, nodes need to be reused quickly to achieve fast test turnaround time */
     private boolean needsFastNodeReuse(Zone zone) {
-        return zone.environment() == Environment.staging || zone.environment() == Environment.test;
+        return zone.environment().isTest();
     }
 
     /**
