@@ -392,7 +392,7 @@ public class ConfigCurator {
         catch (Exception e) {
             log.log(LogLevel.ERROR, "Unable to contact ZooKeeper on " + curator.connectionSpec() +
                     ". Please verify for all configserver nodes that " +
-                    "services.addr_configserver points to the correct configserver(s), " +
+                    "VESPA_CONFIGSERVERS points to the correct configserver(s), " +
                     "the same configserver(s) as in services.xml, and that they are started. " +
                     "Check the log(s) for configserver errors. Aborting.", e);
         }

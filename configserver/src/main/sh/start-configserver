@@ -87,7 +87,7 @@ fixddir ${VESPA_HOME}/var/zookeeper/version-2
 
 ${VESPA_HOME}/libexec/vespa/vespa-config.pl -isthisaconfigserver 1>/dev/null
 if [ "$?" != "0" ] ; then
-    echo "Not able to start config server, host `hostname` is not part of 'services.addr_configserver'"
+    echo "Not able to start config server, host `hostname` is not part of 'VESPA_CONFIGSERVERS'"
     exit 1;
 fi
 
