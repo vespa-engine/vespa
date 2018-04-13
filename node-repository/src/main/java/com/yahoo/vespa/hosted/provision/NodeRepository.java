@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The hosted Vespa production node repository, which stores its state in Zookeeper.
@@ -394,12 +395,31 @@ public class NodeRepository extends AbstractComponent {
         return db.writeTo(Node.State.dirty, node, agent, Optional.of(reason));
     }
 
-    public Node setDirty(String hostname, Agent agent, String reason) {
-        Node node = getNode(hostname, Node.State.provisioned, Node.State.failed, Node.State.parked).orElseThrow(() ->
-                new IllegalArgumentException("Could not deallocate " + hostname +
-                                             ": No such node in the provisioned, failed or parked state"));
+    public List<Node> dirtyRecursively(String hostname, Agent agent, String reason) {
+        Node nodeToDirty = getNode(hostname).orElseThrow(() ->
+                new IllegalArgumentException("Could not deallocate " + hostname + ": Node not found"));
 
-        return setDirty(node, agent, reason);
+        List<Node> nodesToDirty =
+                (nodeToDirty.type().isDockerHost() ?
+                        Stream.concat(getChildNodes(hostname).stream(), Stream.of(nodeToDirty)) :
+                        Stream.of(nodeToDirty))
+                .filter(node -> node.state() != Node.State.dirty)
+                .collect(Collectors.toList());
+
+        List<String> hostnamesNotAllowedToDirty = nodesToDirty.stream()
+                .filter(node -> node.state() != Node.State.provisioned)
+                .filter(node -> node.state() != Node.State.failed)
+                .filter(node -> node.state() != Node.State.parked)
+                .map(Node::hostname)
+                .collect(Collectors.toList());
+        if (!hostnamesNotAllowedToDirty.isEmpty()) {
+            throw new IllegalArgumentException("Could not deallocate " + hostname + ": " +
+                    String.join(", ", hostnamesNotAllowedToDirty) + " must be in either provisioned, failed or parked state");
+        }
+
+        return nodesToDirty.stream()
+                .map(node -> setDirty(node, agent, reason))
+                .collect(Collectors.toList());
     }
 
     /**

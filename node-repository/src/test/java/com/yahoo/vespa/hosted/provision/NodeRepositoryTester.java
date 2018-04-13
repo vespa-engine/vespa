@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
@@ -56,6 +57,16 @@ public class NodeRepositoryTester {
         Node node = nodeRepository.createNode(id, hostname, Optional.of(parentHostname),
                 nodeFlavors.getFlavorOrThrow(flavor), type);
         return nodeRepository.addNodes(Collections.singletonList(node)).get(0);
+    }
+
+    /**
+     * Moves a node directly to the given state without doing any validation, useful
+     * to create wanted test scenario without having to move every node through series
+     * of valid state transitions
+     */
+    public void setNodeState(String hostname, Node.State state) {
+        Node node = nodeRepository.getNode(hostname).orElseThrow(RuntimeException::new);
+        nodeRepository.database().writeTo(state, node, Agent.system, Optional.empty());
     }
 
     private FlavorsConfig createConfig() {
