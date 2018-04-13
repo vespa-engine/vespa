@@ -133,7 +133,7 @@ using StartOffset = search::bitcompression::PageDict4StartOffset;
 using Writer = search::diskindex::test::PageDict4MemWriter;
 using SeqReader = search::diskindex::test::PageDict4MemSeqReader;
 
-void testWords()
+void testPageSizedCounts()
 {
     uint32_t pageBitSize = 32768;
     uint32_t startBits = 15 * 3 + 12;
@@ -176,7 +176,7 @@ void testWords()
 
 TEST("require that counts exactly filling dictionary page works")
 {
-    testWords();
+    testPageSizedCounts();
 }
 
 
