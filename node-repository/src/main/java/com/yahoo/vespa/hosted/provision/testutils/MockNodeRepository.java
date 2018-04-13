@@ -108,7 +108,7 @@ public class MockNodeRepository extends NodeRepository {
         setReady(nodes, Agent.system, getClass().getSimpleName());
 
         fail("host5.yahoo.com", Agent.system, getClass().getSimpleName());
-        setDirty("host55.yahoo.com", Agent.system, getClass().getSimpleName());
+        dirtyRecursively("host55.yahoo.com", Agent.system, getClass().getSimpleName());
 
         ApplicationId zoneApp = ApplicationId.from(TenantName.from("zoneapp"), ApplicationName.from("zoneapp"), InstanceName.from("zoneapp"));
         ClusterSpec zoneCluster = ClusterSpec.request(ClusterSpec.Type.container,

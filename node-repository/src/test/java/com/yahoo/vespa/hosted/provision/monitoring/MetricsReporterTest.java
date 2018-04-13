@@ -125,7 +125,7 @@ public class MetricsReporterTest {
 
         Node dockerHost = Node.create("openStackId1", Collections.singleton("::1"), additionalIps, "dockerHost", Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
         nodeRepository.addNodes(Collections.singletonList(dockerHost));
-        nodeRepository.setDirty("dockerHost", Agent.system, getClass().getSimpleName());
+        nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
 
         Node container1 = Node.createDockerNode("openStackId1:1", Collections.singleton("::2"), Collections.emptySet(), "container1", Optional.of("dockerHost"), nodeFlavors.getFlavorOrThrow("docker"), NodeType.tenant);

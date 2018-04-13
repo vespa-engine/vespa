@@ -34,7 +34,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -122,8 +121,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Moved " + parkedHostnames + " to parked");
         }
         else if (path.startsWith("/nodes/v2/state/dirty/")) {
-            nodeRepository.setDirty(lastElement(path), Agent.operator, "Dirtied through the nodes/v2 API");
-            return new MessageResponse("Moved " + lastElement(path) + " to dirty");
+            List<Node> dirtiedNodes = nodeRepository.dirtyRecursively(lastElement(path), Agent.operator, "Dirtied through the nodes/v2 API");
+            String dirtiedHostnames = dirtiedNodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
+            return new MessageResponse("Moved " + dirtiedHostnames + " to dirty");
         }
         else if (path.startsWith("/nodes/v2/state/active/")) {
             nodeRepository.reactivate(lastElement(path), Agent.operator, "Reactivated through nodes/v2 API");

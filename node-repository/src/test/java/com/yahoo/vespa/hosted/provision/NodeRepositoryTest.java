@@ -11,7 +11,12 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
@@ -72,7 +77,7 @@ public class NodeRepositoryTest {
             // Expected
         }
 
-        tester.nodeRepository().setDirty("host1", Agent.system, getClass().getSimpleName());
+        tester.nodeRepository().dirtyRecursively("host1", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().setReady("host1", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().removeRecursively("host1");
     }
@@ -89,7 +94,7 @@ public class NodeRepositoryTest {
         tester.addNode("node20", "node20", "host2", "docker", NodeType.tenant);
         assertEquals(6, tester.nodeRepository().getNodes().size());
 
-        tester.nodeRepository().setDirty("node11", Agent.system, getClass().getSimpleName());
+        tester.setNodeState("node11", Node.State.dirty);
 
         try {
             tester.nodeRepository().removeRecursively("host1");
@@ -110,5 +115,47 @@ public class NodeRepositoryTest {
 
         tester.nodeRepository().removeRecursively("host1");
         assertEquals(0, tester.nodeRepository().getNodes().size());
+    }
+
+    @Test
+    public void dirty_host_only_if_we_can_dirty_children() {
+        NodeRepositoryTester tester = new NodeRepositoryTester();
+
+        tester.addNode("id1", "host1", "default", NodeType.host);
+        tester.addNode("id2", "host2", "default", NodeType.host);
+        tester.addNode("node10", "node10", "host1", "docker", NodeType.tenant);
+        tester.addNode("node11", "node11", "host1", "docker", NodeType.tenant);
+        tester.addNode("node12", "node12", "host1", "docker", NodeType.tenant);
+        tester.addNode("node20", "node20", "host2", "docker", NodeType.tenant);
+
+        tester.setNodeState("node11", Node.State.ready);
+        tester.setNodeState("node12", Node.State.active);
+        tester.setNodeState("node20", Node.State.failed);
+
+        assertEquals(6, tester.nodeRepository().getNodes().size());
+
+        // Should be OK to dirty host2 as it is in provisioned and its only child is in failed
+        tester.nodeRepository().dirtyRecursively("host2", Agent.system, NodeRepositoryTest.class.getSimpleName());
+        assertEquals(asSet("host2", "node20"), filterNodes(tester, node -> node.state() == Node.State.dirty));
+
+        // Cant dirty host1, node11 is ready and node12 is active
+        try {
+            tester.nodeRepository().dirtyRecursively("host1", Agent.system, NodeRepositoryTest.class.getSimpleName());
+            fail("Should not be able to dirty host1");
+        } catch (IllegalArgumentException ignored) { } // Expected;
+
+        assertEquals(asSet("host2", "node20"), filterNodes(tester, node -> node.state() == Node.State.dirty));
+    }
+
+    private static Set<String> asSet(String... elements) {
+        return new HashSet<>(Arrays.asList(elements));
+    }
+
+    private static Set<String> filterNodes(NodeRepositoryTester tester, Predicate<Node> filter) {
+        return tester.nodeRepository()
+                .getNodes().stream()
+                .filter(filter)
+                .map(Node::hostname)
+                .collect(Collectors.toSet());
     }
 }
