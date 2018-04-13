@@ -9,9 +9,13 @@ import com.yahoo.vespa.hosted.node.admin.util.KeyStoreOptions;
 
 import java.net.URI;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.function.Function;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Information necessary to e.g. establish communication with the config servers
@@ -20,7 +24,7 @@ import java.util.stream.Collectors;
  */
 public class ConfigServerInfo {
     private final List<String> configServerHostNames;
-    private final List<URI> configServerURIs;
+    private final Map<String, URI> configServerURIs;
     private final Optional<KeyStoreOptions> keyStoreOptions;
     private final Optional<KeyStoreOptions> trustStoreOptions;
     private final Optional<AthenzIdentity> athenzIdentity;
@@ -49,7 +53,16 @@ public class ConfigServerInfo {
     }
 
     public List<URI> getConfigServerUris() {
-        return configServerURIs;
+        return new ArrayList<>(configServerURIs.values());
+    }
+
+    public URI getConfigServerUri(String hostname) {
+        URI uri = configServerURIs.get(hostname);
+        if (uri == null) {
+            throw new IllegalArgumentException("There is no config server '" + hostname + "'");
+        }
+
+        return uri;
     }
 
     public Optional<KeyStoreOptions> getKeyStoreOptions() {
@@ -64,10 +77,13 @@ public class ConfigServerInfo {
         return athenzIdentity;
     }
 
-    private static List<URI> createConfigServerUris(String scheme, List<String> configServerHosts, int port) {
-        return configServerHosts.stream()
-                .map(hostname -> URI.create(scheme + "://" + hostname + ":" + port))
-                .collect(Collectors.toList());
+    private static Map<String, URI> createConfigServerUris(
+            String scheme,
+            List<String> configServerHosts,
+            int port) {
+        return configServerHosts.stream().collect(toMap(
+                Function.identity(),
+                hostname -> URI.create(scheme + "://" + hostname + ":" + port)));
     }
 
     private static Optional<KeyStoreOptions> createKeyStoreOptions(String pathToKeyStore, char[] password, String type) {

@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -38,6 +40,10 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
     private final List<URI> configServerHosts;
 
+    // If this instance is associated with asynchronous updating, this field is set
+    // to unregister from the updater at close()
+    private Optional<SslConnectionSocketFactoryUpdater> socketFactoryUpdater = Optional.empty();
+
     /**
      * The 'client' will be periodically re-created by clientRefresherScheduler if we provide keyStoreOptions
      * or trustStoreOptions. This is needed because the key/trust stores are updated outside of node-admin,
@@ -48,15 +54,72 @@ public class ConfigServerApiImpl implements ConfigServerApi {
      */
     private volatile SelfCloseableHttpClient client;
 
-    public ConfigServerApiImpl(Collection<URI> configServerUris) {
-        this(configServerUris, SSLConnectionSocketFactory.getSocketFactory());
+    /**
+     * Creates an api for talking to the config servers.
+     *
+     * <p>Registers with a SslConnectionSocketFactoryUpdater to keep the socket factory
+     * up to date as e.g. any client certificate expires (and unregisters at {@link #close()})
+     */
+    public static ConfigServerApiImpl create(ConfigServerInfo configServerInfo,
+                                             SslConnectionSocketFactoryUpdater updater) {
+        return createFor(updater, configServerInfo.getConfigServerUris());
     }
 
-    ConfigServerApiImpl(Collection<URI> configServerUris, SSLConnectionSocketFactory sslConnectionSocketFactory) {
-        this(randomizeConfigServerUris(configServerUris), new SelfCloseableHttpClient(sslConnectionSocketFactory));
+    /**
+     * Creates an api for talking to a single config server.
+     *
+     * <p>Registers with a SslConnectionSocketFactoryUpdater to keep the socket factory
+     * up to date as e.g. any client certificate expires (and unregisters at {@link #close()})
+     */
+    public static ConfigServerApiImpl createFor(ConfigServerInfo configServerInfo,
+                                                SslConnectionSocketFactoryUpdater updater,
+                                                HostName configServer) {
+        URI uri = configServerInfo.getConfigServerUri(configServer.value());
+        return createFor(updater, Collections.singletonList(uri));
     }
 
-    ConfigServerApiImpl(List<URI> configServerHosts, SelfCloseableHttpClient client) {
+    /**
+     * Creates an api for talking to the config servers with a fixed socket factory.
+     *
+     * <p>This should only be necessary for certificate signing requests (CSR) against
+     * the config server when client validation is enabled in the config server.
+     */
+    public static ConfigServerApiImpl createWithSocketFactory(
+            ConfigServerInfo configServerInfo,
+            SSLConnectionSocketFactory socketFactory) {
+        return new ConfigServerApiImpl(configServerInfo.getConfigServerUris(), socketFactory);
+    }
+
+    public static ConfigServerApiImpl createForTestingRemote(URI configServerUri) {
+        return new ConfigServerApiImpl(
+                Collections.singletonList(configServerUri),
+                SSLConnectionSocketFactory.getSocketFactory());
+    }
+
+    public static ConfigServerApiImpl createForTestingWithClient(List<URI> configServerHosts,
+                                                                 SelfCloseableHttpClient client) {
+        return new ConfigServerApiImpl(configServerHosts, client);
+    }
+
+    private static ConfigServerApiImpl createFor(SslConnectionSocketFactoryUpdater updater,
+                                                 List<URI> configServers) {
+        ConfigServerApiImpl api = new ConfigServerApiImpl(
+                configServers,
+                // Passing null here (only) works because startSocketFactoryUpdating will
+                // set the client. This avoids an unnecessary allocation of a client.
+                (SelfCloseableHttpClient) null);
+        api.startSocketFactoryUpdating(updater);
+        assert api.client != null;
+        return api;
+    }
+
+    private ConfigServerApiImpl(Collection<URI> configServerUris,
+                                SSLConnectionSocketFactory sslConnectionSocketFactory) {
+        this(randomizeConfigServerUris(configServerUris),
+                new SelfCloseableHttpClient(sslConnectionSocketFactory));
+    }
+
+    private ConfigServerApiImpl(List<URI> configServerHosts, SelfCloseableHttpClient client) {
         this.configServerHosts = configServerHosts;
         this.client = client;
     }
@@ -110,6 +173,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                 + configServerHosts + ") failed, last as follows:", lastException);
     }
 
+    @Override
     public <T> T put(String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
             HttpPut put = new HttpPut(configServer.resolve(path));
@@ -121,6 +185,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         }, wantedReturnType);
     }
 
+    @Override
     public <T> T patch(String path, Object bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
             HttpPatch patch = new HttpPatch(configServer.resolve(path));
@@ -130,16 +195,19 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         }, wantedReturnType);
     }
 
+    @Override
     public <T> T delete(String path, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer ->
                 new HttpDelete(configServer.resolve(path)), wantedReturnType);
     }
 
+    @Override
     public <T> T get(String path, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer ->
                 new HttpGet(configServer.resolve(path)), wantedReturnType);
     }
 
+    @Override
     public <T> T post(String path, Object bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
             HttpPost post = new HttpPost(configServer.resolve(path));
@@ -153,6 +221,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         request.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
     }
 
+    @Override
     public void setSSLConnectionSocketFactory(SSLConnectionSocketFactory sslSocketFactory) {
         this.client = new SelfCloseableHttpClient(sslSocketFactory);
     }
@@ -164,8 +233,19 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         return shuffledConfigServerHosts;
     }
 
+    private void startSocketFactoryUpdating(SslConnectionSocketFactoryUpdater updater) {
+        updater.registerConfigServerApi(this);
+        this.socketFactoryUpdater = Optional.of(updater);
+    }
+
+    private void stopSocketFactoryUpdating() {
+        this.socketFactoryUpdater.ifPresent(updater -> updater.unregisterConfigServerApi(this));
+        this.socketFactoryUpdater = Optional.empty();
+    }
+
     @Override
     public void close() {
+        stopSocketFactoryUpdating();
         client.close();
     }
 }
