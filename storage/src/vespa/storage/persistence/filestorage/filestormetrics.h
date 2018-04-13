@@ -30,7 +30,6 @@ struct FileStorThreadMetrics : public metrics::MetricSet
 
         MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                           MetricSet* owner, bool includeUnused) const override;
-        Op* operator&() { return this; }
     };
 
     template <typename BaseOp>
@@ -42,7 +41,6 @@ struct FileStorThreadMetrics : public metrics::MetricSet
 
         MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                           MetricSet* owner, bool includeUnused) const override;
-        OpWithRequestSize* operator&() { return this; }
     };
 
     struct OpWithNotFound : Op {
@@ -52,7 +50,6 @@ struct FileStorThreadMetrics : public metrics::MetricSet
         ~OpWithNotFound() override;
         MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                          MetricSet* owner, bool includeUnused) const override;
-        OpWithNotFound* operator&() { return this; }
     };
 
     struct Update : OpWithRequestSize<OpWithNotFound> {
@@ -63,7 +60,6 @@ struct FileStorThreadMetrics : public metrics::MetricSet
 
         MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                          MetricSet* owner, bool includeUnused) const override;
-        Update* operator&() { return this; }
     };
 
     struct Visitor : Op {
@@ -74,7 +70,6 @@ struct FileStorThreadMetrics : public metrics::MetricSet
 
         MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                          MetricSet* owner, bool includeUnused) const override;
-        Visitor* operator&() { return this; }
     };
 
     metrics::LongCountMetric operations;
