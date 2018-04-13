@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.application.validation.first;
 
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validator;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -28,10 +27,6 @@ public class AccessControlValidator extends Validator {
         if (! deployState.isHosted()) return;
         if (! deployState.zone().environment().isProduction()) return;
         if (model.getAdmin().getApplicationType() != ApplicationType.DEFAULT) return;
-
-        // Temporarily validate apps in CD zones only
-        // TODO: remove, and also remove the zone setting in the unit test
-        if (deployState.zone().system() != SystemName.cd) return;
 
         List<String> offendingClusters = new ArrayList<>();
         for (ContainerCluster cluster : model.getContainerClusters().values()) {
