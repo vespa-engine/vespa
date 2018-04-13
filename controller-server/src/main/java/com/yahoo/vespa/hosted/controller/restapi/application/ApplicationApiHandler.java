@@ -411,12 +411,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             deploymentObject.setString("environment", deployment.zone().environment().value());
             deploymentObject.setString("region", deployment.zone().region().value());
             deploymentObject.setString("instance", application.id().instance().value()); // pointless
-            if (application.rotation().isPresent()) {
-                Map<String, RotationStatus> rotationHealthStatus = application.rotation()
-                                                                              .map(rotation -> controller.getHealthStatus(rotation.dnsName()))
-                                                                              .orElse(Collections.emptyMap());
+            controller.applications().rotationRepository().getRotation(application).ifPresent(rotation -> {
+                Map<String, RotationStatus> rotationHealthStatus = controller.rotationStatus(rotation);
                 setRotationStatus(deployment, rotationHealthStatus, deploymentObject);
-            }
+            });
 
             if (recurseOverDeployments(request)) // List full deployment information when recursive.
                 toSlime(deploymentObject, new DeploymentId(application.id(), deployment.zone()), deployment, request);
@@ -572,11 +570,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor response = slime.setObject();
 
-        Map<String, RotationStatus> rotationHealthStatus = controller.getHealthStatus(application.rotation().get().dnsName());
-        for (String rotationEndpoint : rotationHealthStatus.keySet()) {
+        Map<String, RotationStatus> rotationStatus = controller.applications().rotationRepository()
+                                                               .getRotation(application)
+                                                               .map(controller::rotationStatus)
+                                                               .orElseGet(Collections::emptyMap);
+        for (String rotationEndpoint : rotationStatus.keySet()) {
             if (rotationEndpoint.contains(toDns(environment)) && rotationEndpoint.contains(toDns(region))) {
                 Cursor bcpStatusObject = response.setObject("bcpStatus");
-                bcpStatusObject.setString("rotationStatus", rotationHealthStatus.getOrDefault(rotationEndpoint, RotationStatus.UNKNOWN).name());
+                bcpStatusObject.setString("rotationStatus", rotationStatus.getOrDefault(rotationEndpoint, RotationStatus.UNKNOWN).name());
             }
         }
 

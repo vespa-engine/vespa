@@ -363,7 +363,7 @@ public class ApplicationController {
     private LockedApplication withRotation(LockedApplication application, ZoneId zone) {
         if (zone.environment() == Environment.prod && application.deploymentSpec().globalServiceId().isPresent()) {
             try (RotationLock rotationLock = rotationRepository.lock()) {
-                Rotation rotation = rotationRepository.getRotation(application, rotationLock);
+                Rotation rotation = rotationRepository.getOrAssignRotation(application, rotationLock);
                 application = application.with(rotation.id());
                 store(application); // store assigned rotation even if deployment fails
 
