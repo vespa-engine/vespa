@@ -132,10 +132,11 @@ public class HttpServerTest {
                 binder -> binder.bind(AccessLog.class).toInstance(accessLogMock));
         driver.client().get("/status.html")
                 .expectStatusCode(is(REQUEST_URI_TOO_LONG));
+        assertThat(driver.close(), is(true));
+
         assertThat(accessLogMock.logEntries.size(), equalTo(1));
         AccessLogEntry accessLogEntry = accessLogMock.logEntries.get(0);
         assertThat(accessLogEntry.getStatusCode(), equalTo(414));
-        assertThat(driver.close(), is(true));
     }
 
     private static class AccessLogMock extends AccessLog {
