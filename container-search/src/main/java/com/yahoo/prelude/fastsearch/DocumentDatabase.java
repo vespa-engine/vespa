@@ -4,13 +4,10 @@ package com.yahoo.prelude.fastsearch;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.container.search.LegacyEmulationConfig;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Representation of a back-end document database.
@@ -27,16 +24,12 @@ public class DocumentDatabase {
     private final String name;
     private final DocsumDefinitionSet docsumDefSet;
 
-    private final ImmutableMap<String, RankProfile> rankProfiles;
+    private final Map<String, RankProfile> rankProfiles;
 
     public DocumentDatabase(DocumentdbInfoConfig.Documentdb documentDb, LegacyEmulationConfig emulConfig) {
-        this(documentDb.name(), new DocsumDefinitionSet(documentDb, emulConfig), toRankProfiles(documentDb.rankprofile()));
-    }
-
-    public DocumentDatabase(String name, DocsumDefinitionSet docsumDefinitionSet, Collection<RankProfile> rankProfiles) {
-        this.name = name;
-        this.docsumDefSet = docsumDefinitionSet;
-        this.rankProfiles = ImmutableMap.copyOf(rankProfiles.stream().collect(Collectors.toMap(RankProfile::getName, p -> p)));
+        this.name = documentDb.name();
+        this.docsumDefSet = new DocsumDefinitionSet(documentDb, emulConfig);
+        this.rankProfiles = ImmutableMap.copyOf(toRankProfiles(documentDb.rankprofile()));
     }
 
     public String getName() {
@@ -50,14 +43,11 @@ public class DocumentDatabase {
     /** Returns an unmodifiable map of all the rank profiles in this indexed by rank profile name */
     public Map<String, RankProfile> rankProfiles() { return rankProfiles; }
 
-    private static ImmutableMap<String, RankProfile> toMap(Collection<RankProfile> rankProfiles) {
-        return ImmutableMap.copyOf(rankProfiles.stream().collect(Collectors.toMap(RankProfile::getName, p -> p)));
-    }
-
-    private static Collection<RankProfile> toRankProfiles(Collection<DocumentdbInfoConfig.Documentdb.Rankprofile> rankProfileConfigList) {
-        List<RankProfile> rankProfiles = new ArrayList<>();
-        for (DocumentdbInfoConfig.Documentdb.Rankprofile c : rankProfileConfigList)
-            rankProfiles.add(new RankProfile(c.name(), c.hasSummaryFeatures(), c.hasRankFeatures()));
+    private Map<String, RankProfile> toRankProfiles(List<DocumentdbInfoConfig.Documentdb.Rankprofile> rankProfileConfigList) {
+        Map<String, RankProfile> rankProfiles = new HashMap<>();
+        for (DocumentdbInfoConfig.Documentdb.Rankprofile c : rankProfileConfigList) {
+            rankProfiles.put(c.name(), new RankProfile(c.name(), c.hasSummaryFeatures(), c.hasRankFeatures()));
+        }
         return rankProfiles;
     }
 

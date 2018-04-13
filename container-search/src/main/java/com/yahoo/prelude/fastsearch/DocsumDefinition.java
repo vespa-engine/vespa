@@ -21,33 +21,20 @@ import java.util.Map;
  */
 public class DocsumDefinition {
 
-    private final String name;
-    private final ImmutableList<DocsumField> fields;
+    private String name;
+    private final List<DocsumField> fields;
 
     /** True if this contains dynamic fields */
-    private final boolean dynamic;
+    private boolean dynamic = false;
 
     // Mapping between field names and their index in this.fields
-    private final ImmutableMap<String, Integer> fieldNameToIndex;
+    private final Map<String,Integer> fieldNameToIndex;
 
-    public DocsumDefinition(String name, List<DocsumField> fields) {
-        this.name = name;
-        this.dynamic = false;
-        this.fields = ImmutableList.copyOf(fields);
-        ImmutableMap.Builder<String, Integer> fieldNameToIndexBuilder = new ImmutableMap.Builder<>();
-        int i = 0;
-        for (DocsumField field : fields)
-            fieldNameToIndexBuilder.put(field.name, i++);
-        this.fieldNameToIndex = fieldNameToIndexBuilder.build();
-    }
-
-    // TODO: Remove LegacyEmulationConfig (the config, not just the usage) on Vespa 7
     DocsumDefinition(DocumentdbInfoConfig.Documentdb.Summaryclass config, LegacyEmulationConfig emulConfig) {
         this.name = config.name();
-
         List<DocsumField> fieldsBuilder = new ArrayList<>();
-        Map<String, Integer> fieldNameToIndexBuilder = new HashMap<>();
-        boolean dynamic = false;
+        Map<String,Integer> fieldNameToIndexBuilder = new HashMap<>();
+
         for (DocumentdbInfoConfig.Documentdb.Summaryclass.Fields field : config.fields()) {
             // no, don't switch the order of the two next lines :)
             fieldNameToIndexBuilder.put(field.name(), fieldsBuilder.size());
@@ -55,7 +42,6 @@ public class DocsumDefinition {
             if (field.dynamic())
                 dynamic = true;
         }
-        this.dynamic = dynamic;
         fields = ImmutableList.copyOf(fieldsBuilder);
         fieldNameToIndex = ImmutableMap.copyOf(fieldNameToIndexBuilder);
     }
