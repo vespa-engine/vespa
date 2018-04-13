@@ -77,8 +77,6 @@ public class DeploymentTrigger {
         return order;
     }
 
-    //--- Start of methods which triggers deployment jobs -------------------------
-
     /**
      * Called each time a job completes (successfully or not) to record information used when deciding what to trigger.
      */
@@ -115,7 +113,7 @@ public class DeploymentTrigger {
     /**
      * Finds and triggers jobs that can and should run but are currently not, and returns the number of triggered jobs.
      *
-     * Only one job is triggered each run for test jobs, since those environments have limited capacity.
+     * Only one job is triggered each run for test jobs, since their environments have limited capacity.
      */
     public long triggerReadyJobs() {
         return computeReadyJobs().collect(partitioningBy(job -> job.jobType().isTest()))
@@ -139,7 +137,10 @@ public class DeploymentTrigger {
     }
 
     /**
-     * Triggers the given job for the given application.
+     * Attempts to trigger the given job for the given application and returns the outcome.
+     *
+     * If the build service can not find the given job, or claims it is illegal to trigger it,
+     * the project id is removed from the application owning the job, to prevent further trigger attemps.
      */
     public boolean trigger(Job job) {
         log.log(LogLevel.INFO, String.format("Attempting to trigger %s for %s, deploying %s: %s (platform: %s, application: %s)", job.jobType, job.id, job.change, job.reason, job.platformVersion, job.applicationVersion.id()));
@@ -162,7 +163,7 @@ public class DeploymentTrigger {
      * Triggers a change of this application
      *
      * @param applicationId the application to trigger
-     * @throws IllegalArgumentException if this application already have an ongoing change
+     * @throws IllegalArgumentException if this application already has an ongoing change
      */
     public void triggerChange(ApplicationId applicationId, Change change) {
         applications().lockOrThrow(applicationId, application -> {
@@ -177,11 +178,7 @@ public class DeploymentTrigger {
         });
     }
 
-    /**
-     * Cancels any ongoing upgrade of the given application
-     *
-     * @param applicationId the application to trigger
-     */
+    /** Cancels a platform upgrade of the given application, and an application upgrade as well if {@code keepApplicationChange}. */
     public void cancelChange(ApplicationId applicationId, boolean keepApplicationChange) {
         applications().lockOrThrow(applicationId, application -> {
             applications().store(application.withChange(application.change().application()
@@ -191,9 +188,7 @@ public class DeploymentTrigger {
         });
     }
 
-    /**
-     * Returns the set of all jobs which have changes to propagate from the upstream steps, sorted by job.
-     */
+    /** Returns the set of all jobs which have changes to propagate from the upstream steps, sorted by job. */
     public Stream<Job> computeReadyJobs() {
         return ApplicationList.from(applications().asList())
                               .notPullRequest()
@@ -204,6 +199,7 @@ public class DeploymentTrigger {
                               .flatMap(List::stream);
     }
 
+    /** Returns whether the given job is currently running; false if completed since last triggered, asking the build service othewise. */
     public boolean isRunning(Application application, JobType jobType) {
         return    ! application.deploymentJobs().statusOf(jobType)
                                .flatMap(job -> job.lastCompleted().map(run -> run.at().isAfter(job.lastTriggered().get().at()))).orElse(false)
@@ -213,8 +209,6 @@ public class DeploymentTrigger {
     public Job forcedDeploymentJob(Application application, JobType jobType, String reason) {
         return deploymentJob(application, jobType, reason, clock.instant(), Collections.emptySet());
     }
-
-    // TODO JVENSTAD: CHECK ALL TESTS WITH LOW VERSIONS!!!!!
 
     private Job deploymentJob(Application application, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith) {
         boolean isRetry = application.deploymentJobs().statusOf(jobType).flatMap(JobStatus::jobError)
