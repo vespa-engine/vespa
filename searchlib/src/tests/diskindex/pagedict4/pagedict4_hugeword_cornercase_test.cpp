@@ -20,9 +20,9 @@ constexpr uint32_t numWordIds = 65536;
 
 struct BitBuffer
 {
-    using EC = search::bitcompression::PostingListCountFileEncodeContext;
+    using EncodeContext = search::bitcompression::PostingListCountFileEncodeContext;
 
-    EC encodeCtx;
+    EncodeContext encodeCtx;
     ComprFileWriteContext writeCtx;
 
     BitBuffer()
