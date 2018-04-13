@@ -8,7 +8,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Rule;
@@ -138,9 +137,10 @@ public class AccessControlValidatorTest  {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .build();
+
         DeployState.Builder builder = new DeployState.Builder()
                 .applicationPackage(app)
-                .zone(new Zone(SystemName.cd, Environment.prod, RegionName.from("foo")) )// TODO: remove cd setting
+                .zone(new Zone(Environment.prod, RegionName.from("foo")) )
                 .properties(new DeployProperties.Builder()
                                     .hostedVespa(true)
                                     .build());
