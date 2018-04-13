@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.ControllerDbProxy;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
@@ -154,8 +155,8 @@ public class Controller extends AbstractComponent {
 
     public ZoneRegistry zoneRegistry() { return zoneRegistry; }
 
-    public Map<String, RotationStatus> getHealthStatus(String hostname) {
-        return globalRoutingService.getHealthStatus(hostname);
+    public Map<String, RotationStatus> rotationStatus(Rotation rotation) {
+        return globalRoutingService.getHealthStatus(rotation.name());
     }
 
     // TODO: Model the response properly

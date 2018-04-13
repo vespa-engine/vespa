@@ -68,7 +68,7 @@ public class RotationTest {
         assertEquals(URI.create("http://app1.tenant1.global.vespa.yahooapis.com:4080/"),
                      application.rotation().get().url());
         try (RotationLock lock = repository.lock()) {
-            Rotation rotation = repository.getRotation(tester.applications().require(application.id()), lock);
+            Rotation rotation = repository.getOrAssignRotation(tester.applications().require(application.id()), lock);
             assertEquals(expected, rotation);
         }
 
@@ -93,7 +93,7 @@ public class RotationTest {
         application = tester.applications().require(application.id());
 
         try (RotationLock lock = repository.lock()) {
-            Rotation rotation = repository.getRotation(application, lock);
+            Rotation rotation = repository.getOrAssignRotation(application, lock);
             Rotation assignedRotation = new Rotation(new RotationId("foo-1"), "foo-1.com");
             assertEquals(assignedRotation, rotation);
         }

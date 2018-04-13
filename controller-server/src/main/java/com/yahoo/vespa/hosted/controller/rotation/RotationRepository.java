@@ -13,6 +13,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -45,6 +46,11 @@ public class RotationRepository {
         return new RotationLock(curator.lockRotations());
     }
 
+    /** Get rotation for given application */
+    public Optional<Rotation> getRotation(Application application) {
+        return application.rotation().map(r -> allRotations.get(r.id()));
+    }
+
     /**
      * Returns a rotation for the given application
      *
@@ -54,7 +60,7 @@ public class RotationRepository {
      * @param application The application requesting a rotation
      * @param lock Lock which must be acquired by the caller
      */
-    public Rotation getRotation(Application application, RotationLock lock) {
+    public Rotation getOrAssignRotation(Application application, RotationLock lock) {
         if (application.rotation().isPresent()) {
             return allRotations.get(application.rotation().get().id());
         }
