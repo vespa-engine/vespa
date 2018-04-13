@@ -1,10 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.metric;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.statistics.ActiveContainerMetrics;
 
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -35,13 +34,13 @@ public class MetricUpdater extends AbstractComponent {
     private final Scheduler scheduler;
 
     @Inject
-    public MetricUpdater(Metric metric, ActiveContainerMetrics activeContainerMetrics) {
-        this(new TimerScheduler(), metric, activeContainerMetrics);
+    public MetricUpdater(Metric metric) {
+        this(new TimerScheduler(), metric);
     }
 
-    MetricUpdater(Scheduler scheduler, Metric metric, ActiveContainerMetrics activeContainerMetrics) {
+    MetricUpdater(Scheduler scheduler, Metric metric) {
         this.scheduler = scheduler;
-        scheduler.schedule(new UpdaterTask(metric, activeContainerMetrics), Duration.ofSeconds(10));
+        scheduler.schedule(new UpdaterTask(metric), Duration.ofSeconds(10));
     }
 
     @Override
@@ -88,11 +87,9 @@ public class MetricUpdater extends AbstractComponent {
 
         private final Runtime runtime = Runtime.getRuntime();
         private final Metric metric;
-        private final ActiveContainerMetrics activeContainerMetrics;
 
-        public UpdaterTask(Metric metric, ActiveContainerMetrics activeContainerMetrics) {
+        public UpdaterTask(Metric metric) {
             this.metric = metric;
-            this.activeContainerMetrics = activeContainerMetrics;
         }
 
         @SuppressWarnings("deprecation")
@@ -109,7 +106,6 @@ public class MetricUpdater extends AbstractComponent {
             metric.set(TOTAL_MEMORY_BYTES, totalMemory, null);
             metric.set(MEMORY_MAPPINGS_COUNT, count_mappings(), null);
             metric.set(OPEN_FILE_DESCRIPTORS, count_open_files(), null);
-            activeContainerMetrics.emitMetrics(metric);
         }
 
     }

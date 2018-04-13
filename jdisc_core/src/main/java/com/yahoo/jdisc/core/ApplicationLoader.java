@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
 import com.google.inject.AbstractModule;
@@ -15,7 +15,6 @@ import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.application.OsgiHeader;
 import com.yahoo.jdisc.service.ContainerNotReadyException;
 import com.yahoo.jdisc.service.CurrentContainer;
-import com.yahoo.jdisc.statistics.ActiveContainerMetrics;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
@@ -41,7 +40,6 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
     private final AtomicReference<ActiveContainer> containerRef = new AtomicReference<>();
     private final Object appLock = new Object();
     private final List<Bundle> appBundles = new ArrayList<>();
-    private final ActiveContainerDeactivationWatchdog watchdog = new ActiveContainerDeactivationWatchdog();
     private Application application;
     private ApplicationInUseTracker applicationInUseTracker;
 
@@ -70,7 +68,6 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
                 next.retainReference(applicationInUseTracker);
             }
 
-            watchdog.onContainerActivation(next);
             prev = containerRef.getAndSet(next);
             if (prev == null) {
                 return null;
@@ -195,7 +192,6 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
     @Override
     public void destroy() {
         log.finer("Destroying application loader.");
-        watchdog.close();
         try {
             osgiFramework.stop();
         } catch (BundleException e) {
@@ -209,10 +205,6 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
         }
     }
 
-    public ActiveContainerMetrics getActiveContainerMetrics() {
-        return watchdog;
-    }
-
     public OsgiFramework osgiFramework() {
         return osgiFramework;
     }
@@ -224,20 +216,6 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
         @Override
         protected void destroy() {
             applicationInUseLatch.countDown();
-        }
-    }
-
-    private static class Interruption {
-        interface Runnable_throws<E extends Throwable>  {
-            void run() throws E;
-        }
-
-        public static void mapExceptionToThreadState(Runnable_throws<InterruptedException> runnable) {
-            try {
-                runnable.run();
-            } catch (InterruptedException ignored) {
-                Thread.currentThread().interrupt();
-            }
         }
     }
 
