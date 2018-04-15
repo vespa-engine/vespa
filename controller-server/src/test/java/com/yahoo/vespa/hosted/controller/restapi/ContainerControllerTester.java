@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAthenzIdentities;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -38,6 +39,8 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
+
+import static org.junit.Assert.assertFalse;
 
 /**
  * Provides testing of controller functionality accessed through the container
@@ -119,13 +122,19 @@ public class ContainerControllerTester {
                 .addRoleMember(action, HostedAthenzIdentities.from(screwdriverId));
     }
 
-    private void notifyJobCompletion(DeploymentJobs.JobReport jobReport) {
+    private void notifyJobCompletion(DeploymentJobs.JobReport report) {
+
+        MockBuildService buildService = (MockBuildService) containerTester.container().components().getComponent(MockBuildService.class.getName());
+        if (report.jobType() != DeploymentJobs.JobType.component && ! buildService.removeJob(report.projectId(), report.jobType().jobName()))
+            throw new IllegalArgumentException(report.jobType() + " is not running for " + report.applicationId());
+        assertFalse("Unexpected entry '" + report.jobType() + "@" + report.projectId() + " in: " + buildService.jobs(),
+                    buildService.removeJob(report.projectId(), report.jobType().jobName()));
         try {
             Thread.sleep(1);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        controller().applications().deploymentTrigger().notifyOfCompletion(jobReport);
+        controller().applications().deploymentTrigger().notifyOfCompletion(report);
         controller().applications().deploymentTrigger().triggerReadyJobs();
     }
 

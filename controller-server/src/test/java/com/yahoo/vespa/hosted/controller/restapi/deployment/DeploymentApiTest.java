@@ -42,7 +42,6 @@ public class DeploymentApiTest extends ControllerContainerTest {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
         Version version = Version.fromString("5.0");
         tester.containerTester().updateSystemVersion(version);
-        long projectId = 11;
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("corp-us-east-1")
@@ -55,11 +54,11 @@ public class DeploymentApiTest extends ControllerContainerTest {
                                                                      "application2");
         Application applicationWithoutDeployment = tester.createApplication("domain3", "tenant3",
                                                                              "application3");
-        deployCompletely(failingApplication, applicationPackage, projectId, true);
-        deployCompletely(productionApplication, applicationPackage, projectId, true);
+        deployCompletely(failingApplication, applicationPackage, 1L, true);
+        deployCompletely(productionApplication, applicationPackage, 2L, true);
 
         // Deploy once so that job information is stored, then remove the deployment
-        deployCompletely(applicationWithoutDeployment, applicationPackage, projectId, true);
+        deployCompletely(applicationWithoutDeployment, applicationPackage, 3L, true);
         tester.controller().applications().deactivate(applicationWithoutDeployment,
                                                       ZoneId.from("prod", "corp-us-east-1"));
 
@@ -70,8 +69,9 @@ public class DeploymentApiTest extends ControllerContainerTest {
         // Applications upgrade, 1/2 succeed
         tester.upgrader().maintain();
         tester.controller().applications().deploymentTrigger().triggerReadyJobs();
-        deployCompletely(failingApplication, applicationPackage, projectId, false);
-        deployCompletely(productionApplication, applicationPackage, projectId, true);
+        tester.controller().applications().deploymentTrigger().triggerReadyJobs();
+        deployCompletely(failingApplication, applicationPackage, 1L, false);
+        deployCompletely(productionApplication, applicationPackage, 2L, true);
 
         tester.controller().updateVersionStatus(censorConfigServers(VersionStatus.compute(tester.controller()),
                                                                     tester.controller()));

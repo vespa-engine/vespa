@@ -77,7 +77,7 @@ public class JobStatus {
         if (type == DeploymentJobs.JobType.component) { // not triggered by us
             version = controller.systemVersion(); // TODO jvenstad: Get rid of this, and perhaps all of component info?
             reason = "Application commit";
-        } else if (! lastTriggered.isPresent()) {
+        } else if ( ! lastTriggered.isPresent()) {
             throw new IllegalStateException("Got notified about completion of " + this +
                                             ", but that has neither been triggered nor deployed");
 
@@ -107,14 +107,6 @@ public class JobStatus {
     /** Returns true unless this job last completed with a failure */
     public boolean isSuccess() {
         return lastCompleted().isPresent() && ! jobError.isPresent();
-    }
-
-    /** Returns true if last triggered is newer than last completed and was started after timeoutLimit */
-    public boolean isRunning(Instant timeoutLimit) {
-        if ( ! lastTriggered.isPresent()) return false;
-        if (lastTriggered.get().at().isBefore(timeoutLimit)) return false;
-        if ( ! lastCompleted.isPresent()) return true;
-        return ! lastTriggered.get().at().isBefore(lastCompleted.get().at());
     }
 
     /** The error of the last completion, or empty if the last run succeeded */
