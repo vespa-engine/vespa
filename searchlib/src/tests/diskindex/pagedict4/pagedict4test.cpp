@@ -6,6 +6,9 @@
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/pagedict4.h>
 #include <vespa/searchlib/test/diskindex/threelevelcountbuffers.h>
+#include <vespa/searchlib/test/diskindex/pagedict4_mem_writer.h>
+#include <vespa/searchlib/test/diskindex/pagedict4_mem_seq_reader.h>
+#include <vespa/searchlib/test/diskindex/pagedict4_mem_rand_reader.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/diskindex/pagedict4file.h>
@@ -44,164 +47,9 @@ using search::index::schema::DataType;
 using namespace search::index;
 
 using StartOffset = search::bitcompression::PageDict4StartOffset;
-
-namespace
-{
-
-
-class Writer : public search::diskindex::ThreeLevelCountWriteBuffers
-{
-public:
-    PageDict4SSWriter *_ssw;
-    PageDict4SPWriter *_spw;
-    PageDict4PWriter *_pw;
-
-    Writer(EC &sse,
-           EC &spe,
-           EC &pe)
-        : ThreeLevelCountWriteBuffers(sse, spe, pe),
-          _ssw(NULL),
-          _spw(NULL),
-          _pw(NULL)
-    {
-    }
-
-    ~Writer()
-    {
-        delete _ssw;
-        delete _spw;
-        delete _pw;
-    }
-
-    void allocWriters()
-    {
-        _ssw = new PageDict4SSWriter(_sse);
-        _spw = new PageDict4SPWriter(*_ssw, _spe);
-        _pw = new PageDict4PWriter(*_spw, _pe);
-        _spw->setup();
-        _pw->setup();
-    }
-
-    void flush()
-    {
-        _pw->flush();
-        ThreeLevelCountWriteBuffers::flush();
-    }
-
-    void addCounts(const std::string &word,
-                   const PostingListCounts &counts)
-    {
-        _pw->addCounts(word, counts);
-    }
-};
-
-
-class SeqReader : public search::diskindex::ThreeLevelCountReadBuffers
-{
-public:
-    PageDict4SSReader _ssr;
-    PageDict4Reader _pr;
-
-    SeqReader(DC &ssd,
-              DC &spd,
-              DC &pd,
-              search::diskindex::ThreeLevelCountWriteBuffers &wb)
-        : ThreeLevelCountReadBuffers(ssd, spd, pd, wb),
-          _ssr(_rcssd,
-               wb._ssHeaderLen, wb._ssFileBitSize,
-               wb._spHeaderLen, wb._spFileBitSize,
-               wb._pHeaderLen, wb._pFileBitSize),
-          _pr(_ssr, spd, pd)
-    {
-        _ssr.setup(ssd);
-        _pr.setup();
-    }
-
-    void readCounts(vespalib::string &word,
-                    uint64_t &wordNum,
-                    PostingListCounts &counts)
-    {
-        _pr.readCounts(word, wordNum, counts);
-    }
-};
-
-class RandReader : public search::diskindex::ThreeLevelCountReadBuffers
-{
-public:
-    PageDict4SSReader _ssr;
-    const char *_spData;
-    const char *_pData;
-    size_t _pageSize;
-
-    RandReader(DC &ssd,
-               DC &spd,
-               DC &pd,
-               search::diskindex::ThreeLevelCountWriteBuffers &wb)
-        : ThreeLevelCountReadBuffers(ssd, spd, pd, wb),
-          _ssr(_rcssd,
-               wb._ssHeaderLen, wb._ssFileBitSize,
-               wb._spHeaderLen, wb._spFileBitSize,
-               wb._pHeaderLen, wb._pFileBitSize),
-          _spData(static_cast<const char *>(_rcspd._comprBuf)),
-          _pData(static_cast<const char *>(_rcpd._comprBuf)),
-          _pageSize(search::bitcompression::PageDict4PageParams::getPageByteSize())
-    {
-        _ssr.setup(ssd);
-    }
-
-    bool
-    lookup(const std::string &key,
-           uint64_t &wordNum,
-           PostingListCounts &counts,
-           StartOffset &offsets)
-    {
-        PageDict4SSLookupRes sslr;
-
-        sslr = _ssr.lookup(key);
-        if (!sslr._res) {
-            counts.clear();
-            offsets = sslr._l6StartOffset;
-            wordNum = sslr._l6WordNum;
-            return false;
-        }
-
-        if (sslr._overflow) {
-            wordNum = sslr._l6WordNum;
-            counts = sslr._counts;
-            offsets = sslr._startOffset;
-            return true;
-        }
-        PageDict4SPLookupRes splr;
-        splr.lookup(_ssr,
-                    _spData +
-                    _pageSize * sslr._sparsePageNum,
-                    key,
-                    sslr._l6Word,
-                    sslr._lastWord,
-                    sslr._l6StartOffset,
-                    sslr._l6WordNum,
-                    sslr._pageNum);
-
-        PageDict4PLookupRes plr;
-        plr.lookup(_ssr,
-                   _pData + _pageSize * splr._pageNum,
-                   key,
-                   splr._l3Word,
-                   splr._lastWord,
-                   splr._l3StartOffset,
-                   splr._l3WordNum);
-        wordNum = plr._wordNum;
-        offsets = plr._startOffset;
-        if (plr._res) {
-            counts = plr._counts;
-            return true;
-        }
-        counts.clear();
-        return false;
-    }
-};
-
-}
+using Writer = search::diskindex::test::PageDict4MemWriter;
+using SeqReader = search::diskindex::test::PageDict4MemSeqReader;
+using RandReader = search::diskindex::test::PageDict4MemRandReader;
 
 class PageDict4TestApp : public FastOS_Application
 {
@@ -518,9 +366,6 @@ testWords(const std::string &logname,
           bool firstWordForcedCommon,
           bool lastWordForcedCommon)
 {
-    typedef search::bitcompression::PostingListCountFileEncodeContext EC;
-    typedef search::bitcompression::PostingListCountFileDecodeContext DC;
-
     LOG(info, "%s: word test start", logname.c_str());
     std::vector<WordCounts> myrand;
     makeWords(myrand, rnd, numWordIds, tupleCount,
@@ -536,17 +381,7 @@ testWords(const std::string &logname,
     }
     LOG(info, "%s: word counts generated", logname.c_str());
 
-    EC pe;
-    EC spe;
-    EC sse;
-
-    sse._minChunkDocs = chunkSize;
-    sse._numWordIds = numWordIds;
-    spe.copyParams(sse);
-    pe.copyParams(sse);
-    Writer w(sse, spe, pe);
-    w.startPad(ssPad, spPad, pPad);
-    w.allocWriters();
+    Writer w(chunkSize, numWordIds, ssPad, spPad, pPad);
 
     PostingListCounts counts;
     for (std::vector<WordCounts>::const_iterator
@@ -563,23 +398,15 @@ testWords(const std::string &logname,
         "%s: Used %" PRIu64 "+%" PRIu64 "+%" PRIu64
         " bits for %d words",
         logname.c_str(),
-        w._pFileBitSize,
-        w._spFileBitSize,
-        w._ssFileBitSize,
+        w._buffers._pFileBitSize,
+        w._buffers._spFileBitSize,
+        w._buffers._ssFileBitSize,
         (int) myrand.size());
 
     StartOffset checkOffset;
 
     {
-        DC ssd;
-        ssd._minChunkDocs = chunkSize;
-        ssd._numWordIds = numWordIds;
-        DC spd;
-        spd.copyParams(ssd);
-        DC pd;
-        pd.copyParams(ssd);
-
-        SeqReader r(ssd, spd, pd, w);
+        SeqReader r(chunkSize, numWordIds, w._buffers);
 
         uint64_t wordNum = 1;
         uint64_t checkWordNum = 0;
@@ -596,20 +423,12 @@ testWords(const std::string &logname,
             checkOffset._fileOffset += counts._bitLength;
             checkOffset._accNumDocs += counts._numDocs;
         }
-        assert(pd.getReadOffset() == w._pFileBitSize);
+        assert(r._decoders.pd.getReadOffset() == w._buffers._pFileBitSize);
         LOG(info, "%s: words seqRead test OK", logname.c_str());
     }
 
     {
-        DC ssd;
-        ssd._minChunkDocs = chunkSize;
-        ssd._numWordIds = numWordIds;
-        DC spd;
-        spd.copyParams(ssd);
-        DC pd;
-        pd.copyParams(ssd);
-
-        RandReader rr(ssd, spd, pd, w);
+        RandReader rr(chunkSize, numWordIds, w._buffers);
 
         uint64_t wordNum = 1;
         uint64_t checkWordNum = 0;
