@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.state;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.vespa.hosted.node.admin.configserver.state.bindings.HealthResponse;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

@@ -52,12 +52,12 @@ public class SslConnectionSocketFactoryUpdater implements AutoCloseable {
         this.configServerInfo = configServerInfo;
         this.socketFactoryCreator = socketFactoryCreator;
 
-        // The default socket factory is one without a keystore
-        socketFactory = socketFactoryCreator.createSocketFactory(configServerInfo, Optional.empty());
-
         // ConfigServerApi used to refresh the key store. Does not itself rely on a socket
         // factory with key store, of course.
-        configServerApi = ConfigServerApiImpl.createWithSocketFactory(configServerInfo, socketFactory);
+        SSLConnectionSocketFactory socketFactoryWithoutKeyStore =
+                socketFactoryCreator.createSocketFactory(configServerInfo, Optional.empty());
+        configServerApi = ConfigServerApiImpl.createWithSocketFactory(
+                configServerInfo.getConfigServerUris(), socketFactoryWithoutKeyStore);
 
         // If we have keystore options, we should make sure we use the keystore with the latest certificate,
         // start the keystore refresher.

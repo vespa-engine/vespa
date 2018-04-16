@@ -81,23 +81,17 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     /**
      * Creates an api for talking to the config servers with a fixed socket factory.
      *
-     * <p>This should only be necessary for certificate signing requests (CSR) against
-     * the config server when client validation is enabled in the config server.
+     * <p>This may be used to avoid requiring background certificate signing requests (CSR)
+     * against the config server when client validation is enabled in the config server.
      */
     public static ConfigServerApiImpl createWithSocketFactory(
-            ConfigServerInfo configServerInfo,
+            List<URI> configServerHosts,
             SSLConnectionSocketFactory socketFactory) {
-        return new ConfigServerApiImpl(configServerInfo.getConfigServerUris(), socketFactory);
+        return new ConfigServerApiImpl(configServerHosts, socketFactory);
     }
 
-    public static ConfigServerApiImpl createForTestingRemote(URI configServerUri) {
-        return new ConfigServerApiImpl(
-                Collections.singletonList(configServerUri),
-                SSLConnectionSocketFactory.getSocketFactory());
-    }
-
-    public static ConfigServerApiImpl createForTestingWithClient(List<URI> configServerHosts,
-                                                                 SelfCloseableHttpClient client) {
+    static ConfigServerApiImpl createForTestingWithClient(List<URI> configServerHosts,
+                                                          SelfCloseableHttpClient client) {
         return new ConfigServerApiImpl(configServerHosts, client);
     }
 

@@ -8,5 +8,5 @@ package com.yahoo.vespa.hosted.node.admin.configserver.state;
  */
 public interface State {
     /** Issue GET on /state/v1/health */
-    HealthResponse getHealth();
+    HealthCode getHealth();
 }
