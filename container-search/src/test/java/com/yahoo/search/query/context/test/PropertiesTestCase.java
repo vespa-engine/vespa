@@ -38,7 +38,7 @@ public class PropertiesTestCase {
         h2.setProperty("c","c3");
         h.setProperty("c","c4");
 
-        assertEquals("a@2",h.getProperty("a"));
+        assertEquals("a2",h.getProperty("a"));
         assertEquals("b5",h.getProperty("b"));
         assertEquals("c4",h.getProperty("c"));
         assertEquals("d1",h.getProperty("d"));

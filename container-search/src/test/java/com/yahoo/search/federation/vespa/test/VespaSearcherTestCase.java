@@ -31,12 +31,12 @@ public class VespaSearcherTestCase {
     private VespaSearcher searcher;
 
     @Before
-    protected void setUp() {
+    public void setUp() {
         searcher = new VespaSearcher("cache1","",0,"");
     }
 
     @After
-    protected void tearDown() {
+    public void tearDown() {
         searcher.deconstruct();
     }
 
