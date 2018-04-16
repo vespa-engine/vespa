@@ -2,7 +2,6 @@
 #pragma once
 
 #include "iroutingpolicyfactory.h"
-#include <vespa/documentapi/messagebus/systemstate/systemstate.h>
 
 namespace document { class DocumentTypeRepo; }
 
