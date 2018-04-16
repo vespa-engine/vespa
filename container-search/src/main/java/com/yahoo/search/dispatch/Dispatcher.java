@@ -93,6 +93,7 @@ public class Dispatcher extends AbstractComponent {
             }
             responseReceiver.processResponses(result.getQuery(), summaryClass, documentDb);
             result.hits().setSorted(false);
+            result.analyzeHits();
         }
         catch (TimeoutException e) {
             result.hits().addError(ErrorMessage.createTimeout("Summary data is incomplete: " + e.getMessage()));
