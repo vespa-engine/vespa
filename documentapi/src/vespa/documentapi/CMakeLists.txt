@@ -4,7 +4,6 @@ vespa_add_library(documentapi
     $<TARGET_OBJECTS:documentapi_documentapimessagebus>
     $<TARGET_OBJECTS:documentapi_documentapimessages>
     $<TARGET_OBJECTS:documentapi_documentapipolicies>
-    $<TARGET_OBJECTS:documentapi_documentapisystemstate>
     $<TARGET_OBJECTS:documentapi_documentapiloadtypes>
     INSTALL lib64
     DEPENDS

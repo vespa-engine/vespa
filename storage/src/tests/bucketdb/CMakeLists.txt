@@ -3,7 +3,6 @@ vespa_add_library(storage_testbucketdb TEST
     SOURCES
     bucketinfotest.cpp
     bucketmanagertest.cpp
-    distribution_hash_normalizer_test.cpp
     initializertest.cpp
     judyarraytest.cpp
     judymultimaptest.cpp

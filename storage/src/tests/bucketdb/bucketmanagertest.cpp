@@ -82,7 +82,6 @@ public:
     CPPUNIT_TEST(testConflictSetOnlyClearedAfterAllBucketRequestsDone);
     CPPUNIT_TEST(testRejectRequestWithMismatchingDistributionHash);
     CPPUNIT_TEST(testDbNotIteratedWhenAllRequestsRejected);
-    CPPUNIT_TEST(testReceivedDistributionHashIsNormalized);
 
     // FIXME(vekterli): test is not deterministic and enjoys failing
     // sporadically when running under Valgrind. See bug 5932891.
@@ -1309,30 +1308,6 @@ BucketManagerTest::testDbNotIteratedWhenAllRequestsRejected()
     auto infoCmd = fixture.createFullFetchCommandWithHash("(0;0;1;2)");
     _top->sendDown(infoCmd);
     auto replies = fixture.awaitAndGetReplies(1);
-}
-
-/**
- * Accept bucket info requests if their distribution hash is a valid permutation
- * of our own config (i.e. they are set-wise identical even though the
- * ordering of nodes may differ). See VESPA-1980 for context.
- */
-void
-BucketManagerTest::testReceivedDistributionHashIsNormalized()
-{
-    ConcurrentOperationFixture fixture(*this);
-    document::BucketId bucket(17, 0);
-    fixture.setUp(WithBuckets().add(bucket, api::BucketInfo(50, 100, 200)));
-
-    // Test is configured with 10 nodes in increasing order. Jumble the order
-    // around.
-    auto infoCmd = fixture.createFullFetchCommandWithHash(
-            "(0;2;1;3;9;6;4;5;8;7;0)");
-    _top->sendDown(infoCmd);
-    auto replies = fixture.awaitAndGetReplies(1);
-    auto& reply = dynamic_cast<api::RequestBucketInfoReply&>(*replies[0]);
-    // Should NOT have been rejected despite hash not matching config order
-    // verbatim.
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::OK, reply.getResult().getResult());
 }
 
 } // storage

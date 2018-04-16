@@ -20,7 +20,6 @@ vespa_define_module(
     src/vespa/documentapi/messagebus
     src/vespa/documentapi/messagebus/messages
     src/vespa/documentapi/messagebus/policies
-    src/vespa/documentapi/messagebus/systemstate
 
     TEST_DEPENDS
     messagebus_messagebus-test
@@ -34,5 +33,4 @@ vespa_define_module(
     src/tests/priority
     src/tests/replymerger
     src/tests/routablefactory
-    src/tests/systemstate
 )

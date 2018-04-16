@@ -28,7 +28,6 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
                                    const string &configId) :
     _routingPolicyRepository(new RoutingPolicyRepository()),
     _routableRepository(new RoutableRepository(loadTypes)),
-    _systemState(SystemState::newInstance("")),
     _repo(repo)
 {
     // Prepare config string for routing policy factories.
