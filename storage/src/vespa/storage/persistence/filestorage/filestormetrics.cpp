@@ -9,7 +9,7 @@ namespace storage {
 using metrics::MetricSet;
 using metrics::LoadTypeSet;
 
-FileStorThreadMetrics::Op::Op(const std::string& id, const std::string name, MetricSet* owner)
+FileStorThreadMetrics::Op::Op(const std::string& id, const std::string& name, MetricSet* owner)
     : MetricSet(id, id, name + " load in filestor thread", owner, "operationtype"),
       _name(name),
       count("count", "yamasdefault", "Number of requests processed.", this),
@@ -17,7 +17,7 @@ FileStorThreadMetrics::Op::Op(const std::string& id, const std::string name, Met
       failed("failed", "yamasdefault", "Number of failed requests.", this)
 { }
 
-FileStorThreadMetrics::Op::~Op() { }
+FileStorThreadMetrics::Op::~Op() = default;
 
 MetricSet *
 FileStorThreadMetrics::Op::clone(std::vector<Metric::UP>& ownerList,
@@ -31,13 +31,39 @@ FileStorThreadMetrics::Op::clone(std::vector<Metric::UP>& ownerList,
     return (Op*) (new Op(getName(), _name, owner))->assignValues(*this);
 }
 
-FileStorThreadMetrics::OpWithNotFound::OpWithNotFound(const std::string& id, const std::string name, MetricSet* owner)
+template <typename BaseOp>
+FileStorThreadMetrics::OpWithRequestSize<BaseOp>::OpWithRequestSize(const std::string& id, const std::string& name, MetricSet* owner)
+        : BaseOp(id, name, owner),
+          request_size("request_size", "", "Size of requests, in bytes", this)
+{
+}
+
+template <typename BaseOp>
+FileStorThreadMetrics::OpWithRequestSize<BaseOp>::~OpWithRequestSize() = default;
+
+// FIXME this has very non-intuitive semantics, ending up with copy&paste patterns
+template <typename BaseOp>
+MetricSet*
+FileStorThreadMetrics::OpWithRequestSize<BaseOp>::clone(
+        std::vector<Metric::UP>& ownerList,
+        CopyType copyType,
+        MetricSet* owner,
+        bool includeUnused) const
+{
+    if (copyType == INACTIVE) {
+        return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
+    }
+    return static_cast<OpWithRequestSize<BaseOp>*>((new OpWithRequestSize<BaseOp>(this->getName(), this->_name, owner))
+            ->assignValues(*this));
+}
+
+FileStorThreadMetrics::OpWithNotFound::OpWithNotFound(const std::string& id, const std::string& name, MetricSet* owner)
     : Op(id, name, owner),
       notFound("not_found", "", "Number of requests that could not be "
                "completed due to source document not found.", this)
 { }
 
-FileStorThreadMetrics::OpWithNotFound::~OpWithNotFound() { }
+FileStorThreadMetrics::OpWithNotFound::~OpWithNotFound() = default;
 
 MetricSet *
 FileStorThreadMetrics::OpWithNotFound::clone(std::vector<Metric::UP>& ownerList,
@@ -54,11 +80,11 @@ FileStorThreadMetrics::OpWithNotFound::clone(std::vector<Metric::UP>& ownerList,
 }
 
 FileStorThreadMetrics::Update::Update(MetricSet* owner)
-    : OpWithNotFound("update", "Update", owner),
+    : OpWithRequestSize("update", "Update", owner),
       latencyRead("latency_read", "", "Latency of the source read in the request.", this)
 { }
 
-FileStorThreadMetrics::Update::~Update() { }
+FileStorThreadMetrics::Update::~Update() = default;
 
 MetricSet *
 FileStorThreadMetrics::Update::clone(std::vector<Metric::UP>& ownerList,
@@ -77,7 +103,7 @@ FileStorThreadMetrics::Visitor::Visitor(MetricSet* owner)
       documentsPerIterate("docs", "", "Number of entries read per iterate call", this)
 { }
 
-FileStorThreadMetrics::Visitor::~Visitor() { }
+FileStorThreadMetrics::Visitor::~Visitor() = default;
 
 MetricSet *
 FileStorThreadMetrics::Visitor::clone(std::vector<Metric::UP>& ownerList,
@@ -95,16 +121,16 @@ FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std:
     : MetricSet(name, "filestor partofsum thread", desc, nullptr, "thread"),
       operations("operations", "", "Number of operations processed.", this),
       failedOperations("failedoperations", "", "Number of operations throwing exceptions.", this),
-      put(lt, *&Op("put", "Put"), this),
-      get(lt, *&OpWithNotFound("get", "Get"), this),
-      remove(lt, *&OpWithNotFound("remove", "Remove"), this),
-      removeLocation(lt, *&Op("remove_location", "Remove location"), this),
-      statBucket(lt, *&Op("stat_bucket", "Stat bucket"), this),
-      update(lt, *&Update(), this),
-      revert(lt, *&OpWithNotFound("revert", "Revert"), this),
+      put(lt, OpWithRequestSize<Op>("put", "Put"), this),
+      get(lt, OpWithRequestSize<OpWithNotFound>("get", "Get"), this),
+      remove(lt, OpWithRequestSize<OpWithNotFound>("remove", "Remove"), this),
+      removeLocation(lt, Op("remove_location", "Remove location"), this),
+      statBucket(lt, Op("stat_bucket", "Stat bucket"), this),
+      update(lt, Update(), this),
+      revert(lt, OpWithNotFound("revert", "Revert"), this),
       createIterator("createiterator", "", this),
-      visit(lt, *&Visitor(), this),
-      multiOp(lt, *&Op("multioperations", "The number of multioperations that have been created"), this),
+      visit(lt, Visitor(), this),
+      multiOp(lt, Op("multioperations", "The number of multioperations that have been created"), this),
       createBuckets("createbuckets", "Number of buckets that has been created.", this),
       deleteBuckets("deletebuckets", "Number of buckets that has been deleted.", this),
       repairs("bucketverified", "Number of times buckets have been checked.", this),
@@ -245,6 +271,8 @@ template class metrics::LoadMetric<storage::FileStorThreadMetrics::Op>;
 template class metrics::LoadMetric<storage::FileStorThreadMetrics::OpWithNotFound>;
 template class metrics::LoadMetric<storage::FileStorThreadMetrics::Update>;
 template class metrics::LoadMetric<storage::FileStorThreadMetrics::Visitor>;
+template class metrics::LoadMetric<storage::FileStorThreadMetrics::OpWithRequestSize<storage::FileStorThreadMetrics::Op>>;
+template class metrics::LoadMetric<storage::FileStorThreadMetrics::OpWithRequestSize<storage::FileStorThreadMetrics::OpWithNotFound>>;
 template class metrics::SumMetric<storage::FileStorThreadMetrics::Op>;
 template class metrics::SumMetric<storage::FileStorThreadMetrics::OpWithNotFound>;
 template class metrics::SumMetric<storage::FileStorThreadMetrics::Update>;
