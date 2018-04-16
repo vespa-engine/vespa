@@ -1357,6 +1357,51 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testModelWithReferencedIndexingCluster() {
+        String services =
+                "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                "<services version=\"1.0\">\n" +
+                "\n" +
+                "  <admin version=\"2.0\">\n" +
+                "    <adminserver hostalias=\"vespa-1\"/>\n" +
+                "    <configservers>\n" +
+                "      <configserver hostalias=\"vespa-1\"/>\n" +
+                "    </configservers>\n" +
+                "  </admin>\n" +
+                "\n" +
+                "  <container id=\"container\" version=\"1.0\">\n" +
+                "    <document-processing/>\n" +
+                "    <document-api/>\n" +
+                "    <search/>\n" +
+                "    <nodes jvmargs=\"-Xms512m -Xmx512m\">\n" +
+                "      <node hostalias=\"vespa-1\"/>\n" +
+                "    </nodes>\n" +
+                "  </container>\n" +
+                "\n" +
+                "  <content id=\"storage\" version=\"1.0\">\n" +
+                "    <search>\n" +
+                "      <visibility-delay>1.0</visibility-delay>\n" +
+                "    </search>\n" +
+                "    <redundancy>2</redundancy>\n" +
+                "    <documents>\n" +
+                "      <document type=\"type1\" mode=\"index\"/>\n" +
+                "      <document-processing cluster=\"container\"/>\n" +
+                "    </documents>\n" +
+                "    <nodes>\n" +
+                "      <node hostalias=\"vespa-1\" distribution-key=\"0\"/>\n" +
+                "    </nodes>\n" +
+                "  </content>\n" +
+                "\n" +
+                "</services>";
+        VespaModel model = createNonProvisionedMultitenantModel(services);
+        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(1));
+        ContentCluster content = model.getContentClusters().get("storage");
+        assertEquals(1, content.getRootGroup().getNodes().size());
+        ContainerCluster controller = content.getClusterControllers();
+        assertEquals(1, controller.getContainers().size());
+    }
+
+    @Test
     public void testMultitenantButNotHostedSharedContentNode() {
         String services =
         "<?xml version='1.0' encoding='UTF-8' ?>" +
