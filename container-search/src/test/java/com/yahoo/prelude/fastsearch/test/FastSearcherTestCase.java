@@ -124,7 +124,7 @@ public class FastSearcherTestCase {
                 new MockDispatcher(nodes, mockFs4ResourcePool, 1, new VipStatus()),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
-                new CacheParams(100, 1e64),
+                new CacheParams(0, 0),
                 documentdbConfigWithOneDb);
 
         { // No direct.summaries
