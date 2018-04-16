@@ -4,5 +4,3 @@ vespa_add_executable(searchcore_vespa-dump-feed_app
     vespa-dump-feed.cpp
     DEPENDS
 )
-vespa_add_target_system_dependency(searchcore_vespa-dump-feed_app boost boost_system${VESPA_BOOST_LIB_SUFFIX})
-vespa_add_target_system_dependency(searchcore_vespa-dump-feed_app boost boost_filesystem${VESPA_BOOST_LIB_SUFFIX})
