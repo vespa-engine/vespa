@@ -261,6 +261,7 @@ public class FastSearcher extends VespaBackEndSearcher {
 
         if (query.properties().getBoolean(dispatchSummaries, true)
             && ! summaryNeedsQuery(query)
+            && ! cacheControl.useCache(query)
             && ! legacyEmulationConfigIsSet(getDocumentDatabase(query))) {
 
             CompressionType compression =
