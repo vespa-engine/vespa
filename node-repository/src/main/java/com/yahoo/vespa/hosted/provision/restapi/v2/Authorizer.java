@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import org.apache.http.NameValuePair;
@@ -17,8 +16,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiPredicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -31,16 +30,12 @@ public class Authorizer implements BiPredicate<Principal, URI> {
 
     private final SystemName system;
     private final NodeRepository nodeRepository;
-    private final Supplier<String> hostnameSupplier;
+    private final Set<String> whitelistedHostnames;
 
-    public Authorizer(SystemName system, NodeRepository nodeRepository) {
-        this(system, nodeRepository, HostName::getLocalhost);
-    }
-
-    Authorizer(SystemName system, NodeRepository nodeRepository, Supplier<String> hostnameSupplier) {
+    public Authorizer(SystemName system, NodeRepository nodeRepository, Set<String> whitelistedHostnames) {
         this.system = system;
         this.nodeRepository = nodeRepository;
-        this.hostnameSupplier = hostnameSupplier;
+        this.whitelistedHostnames = whitelistedHostnames;
     }
 
     /** Returns whether principal is authorized to access given URI */
@@ -62,7 +57,7 @@ public class Authorizer implements BiPredicate<Principal, URI> {
         }
 
         // The host itself can access all resources
-        if (isLocalhost(principal)) {
+        if (whitelistedHostnames.contains(principal.getName())) {
             return true;
         }
 
@@ -86,11 +81,6 @@ public class Authorizer implements BiPredicate<Principal, URI> {
     private boolean isNodeType(NodeType type, Principal principal) {
         return getNode(principal.getName()).map(node -> node.type() == type)
                                            .orElse(false);
-    }
-
-    /** Returns whether given principal is the hostname of this node */
-    private boolean isLocalhost(Principal principal) {
-        return principal.getName().equals(hostnameSupplier.get());
     }
 
     /** Returns whether principal can access all given resources */

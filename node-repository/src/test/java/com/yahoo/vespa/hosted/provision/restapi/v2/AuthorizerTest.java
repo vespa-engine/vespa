@@ -15,6 +15,7 @@ import org.junit.Test;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +36,7 @@ public class AuthorizerTest {
     public void before() {
         NodeFlavors flavors = new MockNodeFlavors();
         nodeRepository = new MockNodeRepository(new MockCurator(), flavors);
-        authorizer = new Authorizer(SystemName.main, nodeRepository, () -> "cfg1");
+        authorizer = new Authorizer(SystemName.main, nodeRepository, new HashSet<>(Arrays.asList("cfg1", "cfghost1")));
         { // Populate with nodes used in this test. Note that only nodes requiring node repository lookup are added here
             Set<String> ipAddresses = new HashSet<>(Arrays.asList("127.0.0.1", "::1"));
             Flavor flavor = flavors.getFlavorOrThrow("default");
@@ -102,7 +103,7 @@ public class AuthorizerTest {
 
         // Trusted services can access everything in their own system
         assertFalse(authorized("vespa.vespa.cd.hosting", "/")); // Wrong system
-        assertTrue(new Authorizer(SystemName.cd, nodeRepository).test(() -> "vespa.vespa.cd.hosting", uri("/")));
+        assertTrue(new Authorizer(SystemName.cd, nodeRepository, Collections.emptySet()).test(() -> "vespa.vespa.cd.hosting", uri("/")));
         assertTrue(authorized("vespa.vespa.hosting", "/"));
         assertTrue(authorized("vespa.vespa.hosting", "/nodes/v2/node/"));
         assertTrue(authorized("vespa.vespa.hosting", "/nodes/v2/node/node1"));
@@ -144,6 +145,7 @@ public class AuthorizerTest {
     public void host_authorization() {
         assertTrue(authorized("cfg1", "/"));
         assertTrue(authorized("cfg1", "/application/v2"));
+        assertTrue(authorized("cfghost1", "/application/v2"));
     }
 
     private boolean authorized(String principal, String path) {
