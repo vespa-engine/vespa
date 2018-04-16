@@ -45,7 +45,6 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  */
-@Beta
 public class Dispatcher extends AbstractComponent {
 
     private final static Logger log = Logger.getLogger(Dispatcher.class.getName());
@@ -93,6 +92,7 @@ public class Dispatcher extends AbstractComponent {
                 sendGetDocsumsRequest(nodeHits.getKey(), nodeHits.getValue(), summaryClass, compression, result, responseReceiver);
             }
             responseReceiver.processResponses(result.getQuery(), summaryClass, documentDb);
+            result.hits().setSorted(false);
         }
         catch (TimeoutException e) {
             result.hits().addError(ErrorMessage.createTimeout("Summary data is incomplete: " + e.getMessage()));
