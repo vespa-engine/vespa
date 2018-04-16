@@ -56,6 +56,9 @@ public class FastSearcher extends VespaBackEndSearcher {
     /** If this is turned on this will make search queries directly to the local search node when possible */
     private final static CompoundName dispatchDirect = new CompoundName("dispatch.direct");
 
+    /** Unless turned off this will fill summaries by dispatching directly to search nodes over RPC when possible */
+    private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
+
     /** The compression method which will be used with rpc dispatch. "lz4" (default) and "none" is supported. */
     private final static CompoundName dispatchCompression = new CompoundName("dispatch.compression");
 
@@ -255,11 +258,11 @@ public class FastSearcher extends VespaBackEndSearcher {
         Query query = result.getQuery();
         traceQuery(getName(), "fill", query, query.getOffset(), query.getHits(), 2, quotedSummaryClass(summaryClass));
 
-        if (wantsRPCSummaryFill(query)) {
+        if (query.properties().getBoolean(dispatchSummaries, true) && !summaryNeedsQuery(query)) {
             CompressionType compression =
                 CompressionType.valueOf(query.properties().getString(dispatchCompression, "LZ4").toUpperCase());
             fillSDDocName(result);
-            dispatcher.fill(result, summaryClass, compression);
+            dispatcher.fill(result, summaryClass, getDocumentDatabase(query), compression);
             return;
         }
 

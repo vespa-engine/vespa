@@ -1,21 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.hitfield;
 
-import com.yahoo.text.Utf8;
 import com.yahoo.text.XML;
 import com.yahoo.data.access.Inspector;
-import com.yahoo.data.access.Inspectable;
 import com.yahoo.data.access.Type;
-import com.yahoo.data.access.simple.Value;
-import com.yahoo.data.access.slime.SlimeAdapter;
-import java.nio.charset.StandardCharsets;
-
-import java.util.Iterator;
 import java.util.Map;
 
 /**
  * Utility class for converting accessible data into the historical "prelude" xml format.
- **/
+ */
 public class XmlRenderer {
 
     public static StringBuilder render(StringBuilder target, Inspector value) {

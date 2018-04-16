@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.slime.Slime;
@@ -10,9 +11,12 @@ import com.yahoo.container.search.LegacyEmulationConfig;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.data.access.Type.OBJECT;
 
@@ -27,17 +31,24 @@ public final class DocsumDefinitionSet {
     public static final int SLIME_MAGIC_ID = 0x55555555;
     private final static Logger log = Logger.getLogger(DocsumDefinitionSet.class.getName());
 
-    private final HashMap<String, DocsumDefinition> definitionsByName = new HashMap<>();
+    private final Map<String, DocsumDefinition> definitionsByName;
     private final LegacyEmulationConfig emulationConfig;
 
     public DocsumDefinitionSet(DocumentdbInfoConfig.Documentdb config) {
-        this.emulationConfig = new LegacyEmulationConfig(new LegacyEmulationConfig.Builder());
-        configure(config);
+        this(config, new LegacyEmulationConfig(new LegacyEmulationConfig.Builder()));
     }
 
     public DocsumDefinitionSet(DocumentdbInfoConfig.Documentdb config, LegacyEmulationConfig emulConfig) {
+        this(toDocsums(config, emulConfig), emulConfig);
+    }
+
+    public DocsumDefinitionSet(Collection<DocsumDefinition> docsumDefinitions) {
+        this(docsumDefinitions, new LegacyEmulationConfig(new LegacyEmulationConfig.Builder()));
+    }
+
+    public DocsumDefinitionSet(Collection<DocsumDefinition> docsumDefinitions, LegacyEmulationConfig emulConfig) {
+        this.definitionsByName = ImmutableMap.copyOf(docsumDefinitions.stream().collect(Collectors.toMap(DocsumDefinition::getName, p -> p)));
         this.emulationConfig = emulConfig;
-        configure(config);
     }
 
     /**
@@ -106,14 +117,13 @@ public final class DocsumDefinitionSet {
         return definitionsByName.size();
     }
 
-    private void configure(DocumentdbInfoConfig.Documentdb config) {
-        for (int i = 0; i < config.summaryclass().size(); ++i) {
-            DocumentdbInfoConfig.Documentdb.Summaryclass sc = config.summaryclass(i);
-            DocsumDefinition docSumDef = new DocsumDefinition(sc, emulationConfig);
-            definitionsByName.put(sc.name(), docSumDef);
-        }
-        if (definitionsByName.size() == 0) {
+    private static Collection<DocsumDefinition> toDocsums(DocumentdbInfoConfig.Documentdb config, LegacyEmulationConfig emulConfig) {
+        Collection<DocsumDefinition> docsums = new ArrayList<>();
+        for (int i = 0; i < config.summaryclass().size(); ++i)
+            docsums.add(new DocsumDefinition(config.summaryclass(i), emulConfig));
+        if (docsums.isEmpty())
             log.warning("No summary classes found in DocumentdbInfoConfig.Documentdb");
-        }
+        return docsums;
     }
+
 }

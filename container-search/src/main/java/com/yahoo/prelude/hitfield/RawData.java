@@ -6,8 +6,8 @@ package com.yahoo.prelude.hitfield;
  *
  * @author arnej27959
  */
-public final class RawData
-{
+public final class RawData {
+
     private byte[] content;
 
     /**
@@ -52,4 +52,5 @@ public final class RawData
         }
         return buf.toString();
     }
+
 }
