@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
 import com.google.inject.AbstractModule;
@@ -17,16 +17,12 @@ import com.yahoo.jdisc.service.ServerProvider;
 
 import java.net.URI;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 /**
  * @author Simon Thoresen
  * @author bjorncs
  */
 public class ActiveContainer extends AbstractResource implements CurrentContainer {
-
-    private static final Logger log = Logger.getLogger(ActiveContainer.class.getName());
 
     private final ContainerTermination termination;
     private final Injector guiceInjector;
@@ -36,7 +32,6 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
     private final Map<String, BindingSet<RequestHandler>> clientBindings;
     private final BindingSetSelector bindingSetSelector;
     private final TimeoutManagerImpl timeoutMgr;
-    private final Destructor destructor;
 
     public ActiveContainer(ContainerBuilder builder) {
         serverProviders = builder.serverProviders().activate();
@@ -61,16 +56,14 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
         });
         guiceInjector = builder.guiceModules().activate();
         termination = new ContainerTermination(builder.appContext());
-        destructor = new Destructor(resourceReferences, timeoutMgr, termination);
     }
 
     @Override
     protected void destroy() {
-        boolean alreadyDestructed = destructor.destruct();
-        if (alreadyDestructed) {
-            throw new IllegalStateException(
-                    "Already destructed! This should not occur unless destroy have been called directly!");
-        }
+        resourceReferences.release();
+        timeoutMgr.shutdown();
+        termination.run();
+        super.destroy();
     }
 
     /**
@@ -126,40 +119,4 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
         return new ContainerSnapshot(this, serverBindings, clientBindings);
     }
 
-    // TODO Rewrite to use cleaners after Java 9 migration
-    @Override
-    protected void finalize() throws Throwable {
-        boolean alreadyDestructed = destructor.destruct();
-        if (!alreadyDestructed) {
-            log.severe(toString() + " was not correctly cleaned up " +
-                               "because of a resource leak or invalid use of reference counting.");
-        }
-        super.finalize();
-    }
-
-    // NOTE: An instance of this class must never contain a reference to the outer class (ActiveContainer).
-    private static class Destructor {
-        private final ResourcePool resourceReferences;
-        private final TimeoutManagerImpl timeoutMgr;
-        private final ContainerTermination termination;
-        private final AtomicBoolean done = new AtomicBoolean();
-
-        private Destructor(ResourcePool resourceReferences,
-                           TimeoutManagerImpl timeoutMgr,
-                           ContainerTermination termination) {
-            this.resourceReferences = resourceReferences;
-            this.timeoutMgr = timeoutMgr;
-            this.termination = termination;
-        }
-
-        boolean destruct() {
-            boolean alreadyDestructed = this.done.getAndSet(true);
-            if (!alreadyDestructed) {
-                resourceReferences.release();
-                timeoutMgr.shutdown();
-                termination.run();
-            }
-            return alreadyDestructed;
-        }
-    }
 }
