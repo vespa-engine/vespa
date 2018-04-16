@@ -87,6 +87,9 @@ public class Dispatcher extends AbstractComponent {
         try {
             ListMap<Integer, FastHit> hitsByNode = hitsByNode(result);
 
+            if (result.getQuery().getTraceLevel() >=3)
+                result.getQuery().trace("Sending " + hitsByNode.size() + " summary fetch RPC requests", 3);
+
             GetDocsumsResponseReceiver responseReceiver = new GetDocsumsResponseReceiver(hitsByNode.size(), compressor, result);
             for (Map.Entry<Integer, List<FastHit>> nodeHits : hitsByNode.entrySet()) {
                 sendGetDocsumsRequest(nodeHits.getKey(), nodeHits.getValue(), summaryClass, compression, result, responseReceiver);
