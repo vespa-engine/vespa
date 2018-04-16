@@ -4,6 +4,7 @@ package com.yahoo.prelude.fastsearch;
 import java.util.Optional;
 
 import com.yahoo.compress.CompressionType;
+import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.fs4.BasicPacket;
 import com.yahoo.fs4.ChannelTimeoutException;
 import com.yahoo.fs4.GetDocSumsPacket;
@@ -15,7 +16,6 @@ import com.yahoo.fs4.QueryResultPacket;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.FS4Channel;
 import com.yahoo.fs4.mplex.InvalidChannelException;
-import com.yahoo.net.HostName;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.querytransform.QueryRewrite;
@@ -234,6 +234,7 @@ public class FastSearcher extends VespaBackEndSearcher {
 
     /**
      * Only used to fill the sddocname field when using direct dispatching as that is normally done in VespaBackEndSearcher.decodeSummary
+     *
      * @param result The result
      */
     private void fillSDDocName(Result result) {
@@ -258,7 +259,10 @@ public class FastSearcher extends VespaBackEndSearcher {
         Query query = result.getQuery();
         traceQuery(getName(), "fill", query, query.getOffset(), query.getHits(), 2, quotedSummaryClass(summaryClass));
 
-        if (query.properties().getBoolean(dispatchSummaries, true) && !summaryNeedsQuery(query)) {
+        if (query.properties().getBoolean(dispatchSummaries, true)
+            && ! summaryNeedsQuery(query)
+            && ! legacyEmulationConfigIsSet(getDocumentDatabase(query))) {
+
             CompressionType compression =
                 CompressionType.valueOf(query.properties().getString(dispatchCompression, "LZ4").toUpperCase());
             fillSDDocName(result);
@@ -350,6 +354,14 @@ public class FastSearcher extends VespaBackEndSearcher {
         } finally {
             channel.close();
         }
+    }
+
+    private boolean legacyEmulationConfigIsSet(DocumentDatabase db) {
+        LegacyEmulationConfig config = db.getDocsumDefinitionSet().legacyEmulationConfig();
+        if (config.forceFillEmptyFields()) return true;
+        if (config.stringBackedFeatureData()) return true;
+        if (config.stringBackedStructuredData()) return true;
+        return false;
     }
 
     private static @NonNull Optional<String> quotedSummaryClass(String summaryClass) {

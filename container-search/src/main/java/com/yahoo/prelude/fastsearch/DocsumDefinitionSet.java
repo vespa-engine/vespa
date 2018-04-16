@@ -51,6 +51,8 @@ public final class DocsumDefinitionSet {
         this.emulationConfig = emulConfig;
     }
 
+    LegacyEmulationConfig legacyEmulationConfig() { return emulationConfig; }
+
     /**
      * Returns a docsum definition by name, or null if not found
      *
