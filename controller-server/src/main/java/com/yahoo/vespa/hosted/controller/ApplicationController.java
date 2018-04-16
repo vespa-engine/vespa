@@ -43,7 +43,6 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.DeploymentExpirer;
-import com.yahoo.vespa.hosted.controller.persistence.ControllerDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
@@ -82,10 +81,7 @@ public class ApplicationController {
     /** The controller owning this */
     private final Controller controller;
 
-    /** For permanent storage */
-    private final ControllerDb db;
-
-    /** For working memory storage and sharing between controllers */
+    /** For persistence */
     private final CuratorDb curator;
 
     private final ArtifactRepository artifactRepository;
@@ -98,13 +94,12 @@ public class ApplicationController {
 
     private final DeploymentTrigger deploymentTrigger;
 
-    ApplicationController(Controller controller, ControllerDb db, CuratorDb curator,
+    ApplicationController(Controller controller, CuratorDb curator,
                           AthenzClientFactory zmsClientFactory, RotationsConfig rotationsConfig,
                           NameService nameService, ConfigServerClient configServer,
                           ArtifactRepository artifactRepository,
                           RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
         this.controller = controller;
-        this.db = db;
         this.curator = curator;
         this.zmsClientFactory = zmsClientFactory;
         this.nameService = nameService;
@@ -116,14 +111,14 @@ public class ApplicationController {
         this.rotationRepository = new RotationRepository(rotationsConfig, this, curator);
         this.deploymentTrigger = new DeploymentTrigger(controller, curator, buildService, clock);
 
-        for (Application application : db.listApplications()) {
+        for (Application application : curator.readApplications()) {
             lockIfPresent(application.id(), this::store);
         }
     }
 
     /** Returns the application with the given id, or null if it is not present */
     public Optional<Application> get(ApplicationId id) {
-        return db.getApplication(id);
+        return curator.readApplication(id);
     }
 
     /**
@@ -137,12 +132,12 @@ public class ApplicationController {
 
     /** Returns a snapshot of all applications */
     public List<Application> asList() {
-        return sort(db.listApplications());
+        return sort(curator.readApplications());
     }
 
     /** Returns all applications of a tenant */
     public List<Application> asList(TenantName tenant) {
-        return sort(db.listApplications(tenant));
+        return sort(curator.readApplications(tenant));
     }
 
     /**
@@ -499,7 +494,7 @@ public class ApplicationController {
                                 .deleteApplication(((AthenzTenant) tenant).domain(),
                                                    new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
             }
-            db.deleteApplication(id);
+            curator.removeApplication(id);
 
             log.info("Deleted " + application);
         }));
@@ -511,7 +506,7 @@ public class ApplicationController {
      * @param application a locked application to store
      */
     public void store(LockedApplication application) {
-        db.store(application);
+        curator.writeApplication(application);
     }
 
     /**

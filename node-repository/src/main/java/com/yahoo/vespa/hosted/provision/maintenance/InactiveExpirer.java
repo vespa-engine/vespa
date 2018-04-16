@@ -42,7 +42,7 @@ public class InactiveExpirer extends Expirer {
             if (node.status().wantToRetire()) {
                 nodeRepository.park(node.hostname(), Agent.system, "Expired by InactiveExpirer");
             } else {
-                nodeRepository.setDirty(node, Agent.system, "Expired by InactiveExprier");
+                nodeRepository.setDirty(node, Agent.system, "Expired by InactiveExpirer");
             }
         });
     }
