@@ -4,17 +4,26 @@ package com.yahoo.search.pagetemplates.config.test;
 import com.yahoo.search.pagetemplates.PageTemplate;
 import com.yahoo.search.pagetemplates.PageTemplateRegistry;
 import com.yahoo.search.pagetemplates.config.PageTemplateXMLReader;
-import com.yahoo.search.pagetemplates.model.*;
+import com.yahoo.search.pagetemplates.model.MapChoice;
+import com.yahoo.search.pagetemplates.model.Placeholder;
+import com.yahoo.search.pagetemplates.model.Section;
+import com.yahoo.search.pagetemplates.model.Source;
+import org.junit.Test;
 
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
  */
-public class MapPageTemplateXMLReadingTestCase extends junit.framework.TestCase {
+public class MapPageTemplateXMLReadingTestCase {
 
     private String root="src/test/java/com/yahoo/search/pagetemplates/config/test/examples/mapexamples/";
 
+    @Test
     public void testMap1() {
         PageTemplateRegistry registry=new PageTemplateXMLReader().read(root);
         assertCorrectMap1(registry.getComponent("map1"));

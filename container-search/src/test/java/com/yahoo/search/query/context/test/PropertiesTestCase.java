@@ -3,12 +3,17 @@ package com.yahoo.search.query.context.test;
 
 import com.yahoo.search.Query;
 import com.yahoo.search.query.context.QueryContext;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author bratseth
  */
-public class PropertiesTestCase extends junit.framework.TestCase {
+public class PropertiesTestCase {
 
+    @Test
     public void testProperties() {
         Query query=new Query();
         QueryContext h = query.getContext(true);

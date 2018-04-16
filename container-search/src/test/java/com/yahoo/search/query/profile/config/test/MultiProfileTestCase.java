@@ -7,12 +7,17 @@ import java.util.Map;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author bratseth
  */
-public class MultiProfileTestCase extends junit.framework.TestCase {
+public class MultiProfileTestCase {
 
+    @Test
     public void testValid() {
         QueryProfileRegistry registry=
                 new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/multiprofile");

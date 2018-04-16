@@ -17,6 +17,7 @@ import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -25,6 +26,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Tests representing a federated and grouped result as a Result object and
  * rendering a tiled output of the result
@@ -32,18 +36,13 @@ import java.nio.charset.CharsetDecoder;
  * @author bratseth
  */
 @SuppressWarnings("deprecation")
-public class TilingTestCase extends junit.framework.TestCase {
-
-    public TilingTestCase(String name) {
-        super(name);
-    }
+public class TilingTestCase {
 
     /**
      * This result contains two blocks (center and right).
      * The center block contains multiple subblocks while the right one contains a single block of ads.
-     * <p>
-     * Incidentally, this also tests using an old searcher in new search chains.
      */
+    @Test
     public void testTiling() throws IOException {
         Chain<Searcher> chain=new Chain<>("tiling", new TiledResultProducer());
 
@@ -55,9 +54,8 @@ public class TilingTestCase extends junit.framework.TestCase {
 
     /**
      * This result contains center section and meta blocks.
-     * <p>
-     * Incidentally, this also tests using an old searcher in new search chains.
      */
+    @Test
     public void testTiling2() throws IOException {
         Chain<Searcher> chain= new Chain<>("tiling", new TiledResultProducer2());
 
@@ -113,8 +111,8 @@ public class TilingTestCase extends junit.framework.TestCase {
     private static class TiledResultProducer extends Searcher {
 
         @Override
-        public Result search(Query query,Execution execution) {
-            Result result=new Result(query);
+        public Result search(Query query, Execution execution) {
+            Result result = new Result(query);
             result.setTotalHitCount(2800000000l);
 
             // Blocks
@@ -307,4 +305,5 @@ public class TilingTestCase extends junit.framework.TestCase {
         }
 
     }
+
 }

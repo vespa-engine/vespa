@@ -13,40 +13,41 @@ import com.yahoo.prelude.semantics.rule.ReferenceTermProduction;
 import com.yahoo.prelude.semantics.rule.ReplacingProductionRule;
 import com.yahoo.prelude.semantics.rule.TermCondition;
 import com.yahoo.prelude.semantics.rule.TermProduction;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
  */
-public class ProductionRuleTestCase extends junit.framework.TestCase {
+public class ProductionRuleTestCase {
 
-    public ProductionRuleTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testProductionRule() {
-        TermCondition term=new TermCondition("sony");
-        NamedCondition named=new NamedCondition("brand",term);
-        ConditionReference reference=new ConditionReference("brand");
+        TermCondition term = new TermCondition("sony");
+        NamedCondition named = new NamedCondition("brand", term);
+        ConditionReference reference = new ConditionReference("brand");
 
-        TermProduction termProduction =new ReferenceTermProduction("brand","brand");
-        ProductionList productionList =new ProductionList();
+        TermProduction termProduction = new ReferenceTermProduction("brand", "brand");
+        ProductionList productionList = new ProductionList();
         productionList.addProduction(termProduction);
 
-        ProductionRule rule=new ReplacingProductionRule();
+        ProductionRule rule = new ReplacingProductionRule();
         rule.setCondition(reference);
         rule.setProduction(productionList);
 
         // To initialize the condition reference...
-        RuleBase ruleBase=new RuleBase();
+        RuleBase ruleBase = new RuleBase();
         ruleBase.setName("test");
         ruleBase.addCondition(named);
         ruleBase.addRule(rule);
         ruleBase.initialize();
 
-        assertTrue("Brand is referenced",rule.matchReferences().contains("brand"));
+        assertTrue("Brand is referenced", rule.matchReferences().contains("brand"));
 
-        Query query=new Query("?query=sony");
-        RuleEvaluation e=new Evaluation(query).freshRuleEvaluation();
+        Query query = new Query("?query=sony");
+        RuleEvaluation e = new Evaluation(query).freshRuleEvaluation();
         assertTrue(rule.matches(e));
         rule.produce(e);
         assertEquals("brand:sony", query.getModel().getQueryTree().getRoot().toString());

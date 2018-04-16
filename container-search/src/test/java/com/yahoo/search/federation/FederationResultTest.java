@@ -13,14 +13,13 @@ import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth

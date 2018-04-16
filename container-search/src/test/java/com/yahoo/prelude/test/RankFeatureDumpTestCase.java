@@ -17,6 +17,9 @@ import com.yahoo.search.Result;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests that rank features are rendered when requested in the query
@@ -24,11 +27,12 @@ import com.yahoo.search.searchchain.Execution;
  * @author bratseth
  */
 @SuppressWarnings("deprecation")
-public class RankFeatureDumpTestCase extends junit.framework.TestCase {
+public class RankFeatureDumpTestCase {
 
     private static final String rankFeatureString=
             "{\"match.weight.as1\":10,\"attribute(ai1)\":1.000000,\"proximity(as1, 1, 2)\":2.000000}";
 
+    @Test
     public void test() throws IOException {
         Query query=new Query("?query=five&rankfeatures");
         assertTrue(query.getRanking().getListFeatures()); // New api

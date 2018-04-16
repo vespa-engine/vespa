@@ -2,18 +2,18 @@
 package com.yahoo.prelude.test;
 
 import com.yahoo.prelude.Location;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests the Location class. Currently does not test all "features" of Location class.
  *
- * @author  <a href="mailto:einarmr@yahoo-inc.com">Einar M. R. Rosenvinge</a>
+ * @author Einar M. R. Rosenvinge
  */
-public class LocationTestCase extends junit.framework.TestCase {
+public class LocationTestCase {
 
-    public LocationTestCase (String name) {
-        super(name);
-    }
-
+    @Test
     public void testAspect() {
         //0 degrees latitude, on the equator
         Location loc1 = new Location("[2,-1110000,330000,-1160000,340000](2,-1100222,0,300,0,1,0,CalcLatLon)");

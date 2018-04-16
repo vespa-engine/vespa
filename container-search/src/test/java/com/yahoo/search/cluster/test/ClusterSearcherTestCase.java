@@ -4,8 +4,6 @@ package com.yahoo.search.cluster.test;
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import com.yahoo.component.ComponentId;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
@@ -18,10 +16,11 @@ import com.yahoo.search.cluster.PingableSearcher;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
 
-// TODO: Author!
-public class ClusterSearcherTestCase extends TestCase {
+import static org.junit.Assert.assertEquals;
 
+public class ClusterSearcherTestCase {
 
     class TestingBackendSearcher extends PingableSearcher {
 
@@ -145,7 +144,7 @@ public class ClusterSearcherTestCase extends TestCase {
 
     }
 
-
+    @Test
     public void testSimple() {
         Hit blockingHit = new Hit("blocking");
         Hit nonblockingHit = new Hit("nonblocking");

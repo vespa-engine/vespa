@@ -8,14 +8,18 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.types.QueryProfileType;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test using the profile to set the query to execute
  *
  * @author bratseth
  */
-public class QueryFromProfileTestCase extends junit.framework.TestCase {
+public class QueryFromProfileTestCase {
 
+    @Test
     public void testQueryFromProfile1() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfile topLevel = new QueryProfile("topLevel");
@@ -34,6 +38,7 @@ public class QueryFromProfileTestCase extends junit.framework.TestCase {
         assertEquals("best", query.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testQueryFromProfile2() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfileType rootType = new QueryProfileType("root");
@@ -56,6 +61,7 @@ public class QueryFromProfileTestCase extends junit.framework.TestCase {
         assertEquals("overrides", query.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testQueryFromProfile3() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfileType rootType = new QueryProfileType("root");

@@ -5,18 +5,18 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests composition of grouped results using the HitGroup class
  *
  * @author bratseth
  */
-public class GroupedResultTestCase extends junit.framework.TestCase {
+public class GroupedResultTestCase {
 
-    public GroupedResultTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testGroupedResult() {
         Result result=new Result(new Query("?query=foo"));
         HitGroup hitGroup1=new HitGroup("group1",300);

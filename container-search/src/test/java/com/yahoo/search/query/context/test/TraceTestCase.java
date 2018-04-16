@@ -3,17 +3,22 @@ package com.yahoo.search.query.context.test;
 
 import com.yahoo.search.Query;
 import com.yahoo.search.query.context.QueryContext;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Iterator;
 
-/**
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- */
-public class TraceTestCase extends junit.framework.TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+/**
+ * @author Steinar Knutsen
+ */
+public class TraceTestCase {
+
+    @Test
     public void testBasicTracing() {
         Query query=new Query();
         QueryContext h = query.getContext(true);
@@ -22,6 +27,7 @@ public class TraceTestCase extends junit.framework.TestCase {
         assertEquals("trace: [ [ first message second message ] ]", h.toString());
     }
 
+    @Test
     public void testCloning() throws IOException {
         Query query=new Query();
         QueryContext h = query.getContext(true);
@@ -53,6 +59,7 @@ public class TraceTestCase extends junit.framework.TestCase {
         assertEquals("fifth message",i.next());
     }
 
+    @Test
     public void testEmpty() throws IOException {
         Query query=new Query();
         QueryContext h = query.getContext(true);
@@ -61,6 +68,7 @@ public class TraceTestCase extends junit.framework.TestCase {
         assertEquals("", w.toString());
     }
 
+    @Test
     public void testEmptySubSequence() {
         Query query=new Query();
         QueryContext h = query.getContext(true);
@@ -73,6 +81,7 @@ public class TraceTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testAttachedTraces() throws IOException {
         String needle0 = "nalle";
         String needle1 = "tralle";

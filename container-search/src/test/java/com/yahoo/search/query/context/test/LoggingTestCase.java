@@ -8,12 +8,17 @@ import java.util.Set;
 import com.yahoo.processing.execution.Execution;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.context.QueryContext;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
  */
-public class LoggingTestCase extends junit.framework.TestCase {
+public class LoggingTestCase {
 
+    @Test
     public void testLogging() {
         Query query=new Query();
         QueryContext queryContext = query.getContext(true);

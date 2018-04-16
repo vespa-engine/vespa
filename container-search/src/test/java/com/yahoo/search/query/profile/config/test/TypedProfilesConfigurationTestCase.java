@@ -6,13 +6,19 @@ import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
  */
-public class TypedProfilesConfigurationTestCase extends junit.framework.TestCase {
+public class TypedProfilesConfigurationTestCase {
 
     /** Asserts that everything is read correctly from this configuration */
+    @Test
     public void testIt() {
         QueryProfileConfigurer configurer=
                 new QueryProfileConfigurer("file:src/test/java/com/yahoo/search/query/profile/config/test/typed-profiles.cfg");

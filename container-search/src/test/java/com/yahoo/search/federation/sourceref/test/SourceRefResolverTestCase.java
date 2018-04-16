@@ -20,9 +20,9 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import static com.yahoo.search.federation.sourceref.test.SearchChainResolverTestCase.emptySourceToProviderMap;
-import static junit.framework.Assert.fail;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 
 

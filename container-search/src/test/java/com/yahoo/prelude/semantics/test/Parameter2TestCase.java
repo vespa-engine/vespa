@@ -2,6 +2,9 @@
 package com.yahoo.prelude.semantics.test;
 
 import com.yahoo.search.Query;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests parameter matching and production
@@ -10,11 +13,12 @@ import com.yahoo.search.Query;
  */
 public class Parameter2TestCase extends RuleBaseAbstractTestCase {
 
-    public Parameter2TestCase(String name) {
-        super(name,"parameter2.sr");
+    public Parameter2TestCase() {
+        super("parameter2.sr");
     }
 
     /** Tests parameter production */
+    @Test
     public void testParameterProduction() {
         assertRankParameterSemantics("a","a&ranking=usrank","date",0);
     }

@@ -5,7 +5,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.searcher.QrQuotetableConfig;
 import com.yahoo.search.rendering.RendererRegistry;
@@ -19,29 +18,30 @@ import com.yahoo.search.Searcher;
 import com.yahoo.prelude.searcher.DocumentSourceSearcher;
 import com.yahoo.prelude.searcher.QuotingSearcher;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Tests hit property quoting.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @SuppressWarnings("deprecation")
-public class QuotingSearcherTestCase extends junit.framework.TestCase {
-
-    public QuotingSearcherTestCase (String name) {
-        super(name);
-    }
+public class QuotingSearcherTestCase {
 
     public static QuotingSearcher createQuotingSearcher(String configId) {
         QrQuotetableConfig config = new ConfigGetter<>(QrQuotetableConfig.class).getConfig(configId);
         return new QuotingSearcher(new ComponentId("QuotingSearcher"), config);
     }
 
+    @Test
     public void testBasicQuoting() {
         Map<Searcher, Searcher> chained = new HashMap<>();
         Searcher s = createQuotingSearcher("file:src/test/java/com/yahoo/prelude/"
@@ -61,6 +61,7 @@ public class QuotingSearcherTestCase extends junit.framework.TestCase {
         assertTrue(check.hits().get(0).fields().containsKey("title"));
     }
 
+    @Test
     public void testBasicQuotingWithNoisyStrings() {
         Map<Searcher, Searcher> chained = new HashMap<>();
         Searcher s = createQuotingSearcher("file:src/test/java/com/yahoo/prelude/"
@@ -80,6 +81,7 @@ public class QuotingSearcherTestCase extends junit.framework.TestCase {
         assertTrue(check.hits().get(0).fields().containsKey("title"));
     }
 
+    @Test
     public void testFieldQuotingWithNoisyStrings() {
         Map<Searcher, Searcher> chained = new HashMap<>();
         Searcher s = createQuotingSearcher("file:src/test/java/com/yahoo/prelude/"
@@ -100,6 +102,7 @@ public class QuotingSearcherTestCase extends junit.framework.TestCase {
     }
 
 
+    @Test
     public void testNoQuotingWithOtherTypes() {
         Map<Searcher, Searcher> chained = new HashMap<>();
         Searcher s = createQuotingSearcher("file:src/test/java/com/yahoo/prelude/"

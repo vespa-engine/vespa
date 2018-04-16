@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.test;
 
+import org.junit.Test;
+
 /**
  * Tests numbers as conditions and productions
  *
@@ -8,10 +10,11 @@ package com.yahoo.prelude.semantics.test;
  */
 public class NumbersTestCase extends RuleBaseAbstractTestCase {
 
-    public NumbersTestCase(String name) {
-        super(name,"numbers.sr");
+    public NumbersTestCase() {
+        super("numbers.sr");
     }
 
+    @Test
     public void testNumbers() {
         assertSemantics("elite","1337");
         assertSemantics("1","one");

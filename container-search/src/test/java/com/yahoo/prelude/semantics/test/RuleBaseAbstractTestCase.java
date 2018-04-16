@@ -3,7 +3,6 @@ package com.yahoo.prelude.semantics.test;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.semantics.RuleBase;
@@ -16,7 +15,8 @@ import com.yahoo.search.test.QueryTestCase;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests semantic searching
@@ -24,28 +24,24 @@ import java.util.concurrent.Executors;
  * @author bratseth
  */
 @SuppressWarnings("deprecation")
-public abstract class RuleBaseAbstractTestCase extends junit.framework.TestCase {
+public abstract class RuleBaseAbstractTestCase {
 
-    protected final String root="src/test/java/com/yahoo/prelude/semantics/test/rulebases/";
+    protected final String root = "src/test/java/com/yahoo/prelude/semantics/test/rulebases/";
     protected final SemanticSearcher searcher;
 
-    protected RuleBaseAbstractTestCase(String name,String ruleBaseName) {
-        this(name,ruleBaseName,null);
+    protected RuleBaseAbstractTestCase(String ruleBaseName) {
+        this(ruleBaseName, null);
     }
 
-    protected RuleBaseAbstractTestCase(String name,String ruleBaseName,String automataFileName) {
-        super(name);
-        searcher = createSearcher(ruleBaseName,automataFileName);
-    }
-
-    public void setUp() {
+    protected RuleBaseAbstractTestCase(String ruleBaseName, String automataFileName) {
+        searcher = createSearcher(ruleBaseName, automataFileName);
     }
 
     protected SemanticSearcher createSearcher(String ruleBaseName,String automataFileName) {
         try {
-            if (automataFileName!=null)
-                automataFileName=root + automataFileName;
-            RuleBase ruleBase = RuleBase.createFromFile(root + ruleBaseName,automataFileName);
+            if (automataFileName != null)
+                automataFileName = root + automataFileName;
+            RuleBase ruleBase = RuleBase.createFromFile(root + ruleBaseName, automataFileName);
             return new SemanticSearcher(ruleBase);
         } catch (Exception e) {
             throw new RuleBaseException("Initialization of rule base '" + ruleBaseName + "' failed",e);
@@ -67,7 +63,6 @@ public abstract class RuleBaseAbstractTestCase extends junit.framework.TestCase 
     }
 
     protected Query assertSemantics(String result, Query query) {
-        System.out.println(query.getModel().getQueryTree());
         createExecution(searcher).search(query);
         assertEquals(result, query.getModel().getQueryTree().getRoot().toString());
         return query;

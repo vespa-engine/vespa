@@ -1,29 +1,31 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.templates.test;
 
-
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 
 import com.yahoo.io.ByteWriter;
 import com.yahoo.prelude.templates.UserTemplate;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
- * @author  <a href="mailt:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class TemplateTestCase extends junit.framework.TestCase {
+public class TemplateTestCase {
 
     private CharsetEncoder encoder;
     private ByteArrayOutputStream stream;
 
-    public TemplateTestCase (String name) {
-        super(name);
+    public TemplateTestCase () {
         Charset cs = Charset.forName("UTF-8");
         encoder = cs.newEncoder();
         stream = new ByteArrayOutputStream();
     }
 
+    @Test
     public void testASCIIQuoting() throws java.io.IOException {
         stream.reset();
         byte[] c = new byte[] { 97, 98, 99, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 };
@@ -36,6 +38,7 @@ public class TemplateTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testXMLQuoting() throws java.io.IOException {
         stream.reset();
         // c = <s>&gt;

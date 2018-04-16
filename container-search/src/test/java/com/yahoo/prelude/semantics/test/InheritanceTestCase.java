@@ -7,7 +7,6 @@ import java.util.StringTokenizer;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.semantics.RuleBase;
@@ -18,39 +17,50 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.test.QueryTestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
  */
 @SuppressWarnings("deprecation")
-public class InheritanceTestCase extends junit.framework.TestCase {
+public class InheritanceTestCase {
 
-    private final String root="src/test/java/com/yahoo/prelude/semantics/test/rulebases/";
+    private static final String root = "src/test/java/com/yahoo/prelude/semantics/test/rulebases/";
 
-    private RuleBase parent, child1, child2, grandchild;
-    private SemanticSearcher searcher;
+    private static final RuleBase parent, child1, child2, grandchild;
+    private static final SemanticSearcher searcher;
 
-    public InheritanceTestCase(String name) throws Exception {
-        super(name);
-        parent=RuleBase.createFromFile(root + "inheritingrules/parent.sr",null);
-        child1=RuleBase.createFromFile(root + "inheritingrules/child1.sr",null);
-        child2=RuleBase.createFromFile(root + "inheritingrules/child2.sr",null);
-        grandchild=RuleBase.createFromFile(root + "inheritingrules/grandchild.sr",null);
-        grandchild.setDefault(true);
+    static {
+        try {
+            parent = RuleBase.createFromFile(root + "inheritingrules/parent.sr", null);
+            child1 = RuleBase.createFromFile(root + "inheritingrules/child1.sr", null);
+            child2 = RuleBase.createFromFile(root + "inheritingrules/child2.sr", null);
+            grandchild = RuleBase.createFromFile(root + "inheritingrules/grandchild.sr", null);
+            grandchild.setDefault(true);
 
-        searcher=new SemanticSearcher(parent,child1,child2,grandchild);
+            searcher = new SemanticSearcher(parent, child1, child2, grandchild);
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    protected void assertSemantics(String result,String input,RuleBase base) {
-        assertSemantics(result,input,base,0);
+    protected void assertSemantics(String result, String input, RuleBase base) {
+        assertSemantics(result, input, base, 0);
     }
 
-    protected void assertSemantics(String result,String input,RuleBase base,int tracelevel) {
-        Query query=new Query("?query=" + QueryTestCase.httpEncode(input));
-        base.analyze(query,tracelevel);
+    protected void assertSemantics(String result, String input, RuleBase base, int tracelevel) {
+        Query query = new Query("?query=" + QueryTestCase.httpEncode(input));
+        base.analyze(query, tracelevel);
         assertEquals(result, query.getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testInclusion() {
         assertTrue(grandchild.includes("child1"));
         assertTrue(grandchild.includes("child2"));
@@ -66,58 +76,65 @@ public class InheritanceTestCase extends junit.framework.TestCase {
         assertTrue(parent.includes("grandmother"));
     }
 
+    @Test
     public void testInclusionOrderAndContentDump() {
-        StringTokenizer lines=new StringTokenizer(grandchild.toContentString(),"\n",false);
-        assertEquals("vw -> audi",lines.nextToken());
-        assertEquals("cars -> car",lines.nextToken());
-        assertEquals("[brand] [vehicle] -> vehiclebrand:[brand]",lines.nextToken());
-        assertEquals("vehiclebrand:bmw +> expensivetv",lines.nextToken());
-        assertEquals("vehiclebrand:audi -> vehiclebrand:skoda",lines.nextToken());
-        assertEquals("vehiclebrand:vw -> vehiclebrand:audi",lines.nextToken());
-        assertEquals("causesphrase -> \"a produced phrase\"",lines.nextToken());
-        assertEquals("[vehicle] :- car, motorcycle, bus",lines.nextToken());
-        assertEquals("[brand] :- alfa, audi, bmw, skoda",lines.nextToken());
+        StringTokenizer lines = new StringTokenizer(grandchild.toContentString(),"\n",false);
+        assertEquals("vw -> audi", lines.nextToken());
+        assertEquals("cars -> car", lines.nextToken());
+        assertEquals("[brand] [vehicle] -> vehiclebrand:[brand]", lines.nextToken());
+        assertEquals("vehiclebrand:bmw +> expensivetv", lines.nextToken());
+        assertEquals("vehiclebrand:audi -> vehiclebrand:skoda", lines.nextToken());
+        assertEquals("vehiclebrand:vw -> vehiclebrand:audi", lines.nextToken());
+        assertEquals("causesphrase -> \"a produced phrase\"", lines.nextToken());
+        assertEquals("[vehicle] :- car, motorcycle, bus", lines.nextToken());
+        assertEquals("[brand] :- alfa, audi, bmw, skoda", lines.nextToken());
     }
 
-    public void testParent() throws Exception {
-        assertSemantics("vehiclebrand:audi","audi cars",parent);
-        assertSemantics("vehiclebrand:alfa","alfa bus",parent);
-        assertSemantics("AND vehiclebrand:bmw expensivetv","bmw motorcycle",parent);
-        assertSemantics("AND vw car",       "vw cars",parent);
-        assertSemantics("AND skoda car",    "skoda cars",parent);
+    @Test
+    public void testParent()  {
+        assertSemantics("vehiclebrand:audi", "audi cars", parent);
+        assertSemantics("vehiclebrand:alfa", "alfa bus", parent);
+        assertSemantics("AND vehiclebrand:bmw expensivetv", "bmw motorcycle", parent);
+        assertSemantics("AND vw car",       "vw cars", parent);
+        assertSemantics("AND skoda car",    "skoda cars", parent);
     }
 
-    public void testChild1() throws Exception {
-        assertSemantics("vehiclebrand:skoda","audi cars",child1);
-        assertSemantics("vehiclebrand:alfa", "alfa bus",child1);
-        assertSemantics("AND vehiclebrand:bmw expensivetv","bmw motorcycle",child1);
-        assertSemantics("vehiclebrand:skoda","vw cars",child1);
-        assertSemantics("AND skoda car",     "skoda cars",child1);
+    @Test
+    public void testChild1() {
+        assertSemantics("vehiclebrand:skoda", "audi cars", child1);
+        assertSemantics("vehiclebrand:alfa", "alfa bus", child1);
+        assertSemantics("AND vehiclebrand:bmw expensivetv", "bmw motorcycle", child1);
+        assertSemantics("vehiclebrand:skoda", "vw cars", child1);
+        assertSemantics("AND skoda car",      "skoda cars", child1);
     }
 
-    public void testChild2() throws Exception {
-        assertSemantics("vehiclebrand:audi","audi cars",child2);
-        assertSemantics("vehiclebrand:alfa","alfa bus",child2);
-        assertSemantics("AND vehiclebrand:bmw expensivetv","bmw motorcycle",child2);
-        assertSemantics("AND vw car","vw cars",child2);
-        assertSemantics("vehiclebrand:skoda","skoda cars",child2);
+    @Test
+    public void testChild2() {
+        assertSemantics("vehiclebrand:audi","audi cars", child2);
+        assertSemantics("vehiclebrand:alfa","alfa bus", child2);
+        assertSemantics("AND vehiclebrand:bmw expensivetv","bmw motorcycle", child2);
+        assertSemantics("AND vw car","vw cars", child2);
+        assertSemantics("vehiclebrand:skoda","skoda cars", child2);
     }
 
-    public void testGrandchild() throws Exception {
-        assertSemantics("vehiclebrand:skoda","audi cars",grandchild);
-        assertSemantics("vehiclebrand:alfa","alfa bus",grandchild);
-        assertSemantics("AND vehiclebrand:bmw expensivetv","bmw motorcycle",grandchild);
-        assertSemantics("vehiclebrand:skoda","vw cars",grandchild);
-        assertSemantics("vehiclebrand:skoda","skoda cars",grandchild);
+    @Test
+    public void testGrandchild() {
+        assertSemantics("vehiclebrand:skoda","audi cars", grandchild);
+        assertSemantics("vehiclebrand:alfa","alfa bus", grandchild);
+        assertSemantics("AND vehiclebrand:bmw expensivetv","bmw motorcycle", grandchild);
+        assertSemantics("vehiclebrand:skoda","vw cars", grandchild);
+        assertSemantics("vehiclebrand:skoda","skoda cars", grandchild);
     }
 
+    @Test
     public void testRuleBaseNames() {
-        assertEquals("parent",parent.getName());
-        assertEquals("child1",child1.getName());
-        assertEquals("child2",child2.getName());
-        assertEquals("grandchild",grandchild.getName());
+        assertEquals("parent", parent.getName());
+        assertEquals("child1", child1.getName());
+        assertEquals("child2", child2.getName());
+        assertEquals("grandchild", grandchild.getName());
     }
 
+    @Test
     public void testSearcher() {
         assertSemantics("vehiclebrand:skoda","vw cars",   "");
         assertSemantics("vehiclebrand:skoda","vw cars",   "&rules.rulebase=grandchild");
@@ -144,7 +161,7 @@ public class InheritanceTestCase extends junit.framework.TestCase {
     }
 
     protected void assertSemantics(String result,String input,String ruleSelection) {
-        Query query=new Query("?query=" + QueryTestCase.httpEncode(input) + "&tracelevel=0&tracelevel.rules=0" + ruleSelection);
+        Query query = new Query("?query=" + QueryTestCase.httpEncode(input) + "&tracelevel=0&tracelevel.rules=0" + ruleSelection);
         doSearch(searcher, query, 0,10);
         assertEquals(result, query.getModel().getQueryTree().getRoot().toString());
     }
@@ -156,7 +173,8 @@ public class InheritanceTestCase extends junit.framework.TestCase {
     }
 
     private Execution createExecution(Searcher searcher) {
-        Execution.Context context = new Execution.Context(null, null, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
+        Execution.Context context = new Execution.Context(null, null, null,
+                                                          new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
         return new Execution(chainedAsSearchChain(searcher), context);
     }
 

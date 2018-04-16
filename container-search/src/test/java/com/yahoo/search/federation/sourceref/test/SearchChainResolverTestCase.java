@@ -16,10 +16,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.SortedSet;
 
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.fail;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * @author tonytv
@@ -149,4 +149,5 @@ public class SearchChainResolverTestCase {
         assertThat(res.federationOptions, is(federationOptions));
         return res;
     }
+
 }

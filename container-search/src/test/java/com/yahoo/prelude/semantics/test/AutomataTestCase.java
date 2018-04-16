@@ -3,6 +3,11 @@ package com.yahoo.prelude.semantics.test;
 
 import com.yahoo.search.Query;
 import com.yahoo.prelude.semantics.RuleBase;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests rule bases using automatas for matching
@@ -13,11 +18,12 @@ public class AutomataTestCase extends RuleBaseAbstractTestCase {
 
     private final String root="src/test/java/com/yahoo/prelude/semantics/test/rulebases/";
 
-    public AutomataTestCase(String name) {
-        super(name,"automatarules.sr","semantics.fsa");
+    public AutomataTestCase() {
+        super("automatarules.sr", "semantics.fsa");
     }
 
-    public void testAutomataRuleBase() throws Exception {
+    @Test
+    public void testAutomataRuleBase() {
         RuleBase ruleBase=searcher.getDefaultRuleBase();
         assertEquals(RuleBase.class,ruleBase.getClass());
         assertTrue(ruleBase.getSource().endsWith(root + "automatarules.sr"));
@@ -35,16 +41,19 @@ public class AutomataTestCase extends RuleBaseAbstractTestCase {
         assertEquals("RANK (AND sony digital camera) dsp1:sony dsp5:digicamera", query.getModel().getQueryTree().getRoot().toString());
     }
 
-    public void testAutomataSingleQuery() throws Exception {
+    @Test
+    public void testAutomataSingleQuery() {
         assertSemantics("RANK sony dsp1:sony","sony");
     }
 
-    public void testAutomataFilterIsIgnored() throws Exception {
+    @Test
+    public void testAutomataFilterIsIgnored() {
         assertSemantics("RANK sony |something dsp1:sony","sony&filter=something");
         assertSemantics("RANK something |sony","something&filter=sony");
     }
 
-    public void testAutomataPluralMatches() throws Exception {
+    @Test
+    public void testAutomataPluralMatches() {
         assertSemantics("RANK sonys dsp1:sony","sonys");
 
         assertSemantics("RANK (AND car cleaner) dsp1:\"car cleaners\" dsp5:\"car cleaners\"","car cleaner");
@@ -52,15 +61,19 @@ public class AutomataTestCase extends RuleBaseAbstractTestCase {
         assertSemantics("RANK (AND sony digitals cameras) dsp1:sony dsp5:digicamera","sony digitals cameras");
     }
 
+    @Test
     public void testMatchingMultipleAutomataConditionsSingleWord() {
         assertSemantics("RANK carpenter dsp1:carpenter dsp5:carpenter","carpenter");
     }
 
+    @Test
     public void testMatchingMultipleAutomataConditionsPhrase() {
         assertSemantics("RANK (AND car cleaners) dsp1:\"car cleaners\" dsp5:\"car cleaners\"","car cleaners");
     }
 
-    public void tstReplaceOnNoMatch() { // TODO: Make this work again
+    @Test
+    @Ignore // TODO: Make this work again
+    public void testReplaceOnNoMatch() {
         assertSemantics("nomatch:sonny","sonny&donomatch");
         assertSemantics("RANK sony dsp1:sony","sony&donomatch");
         assertSemantics("RANK sonys dsp1:sony","sonys&donomatch");

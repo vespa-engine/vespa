@@ -2,6 +2,9 @@
 package com.yahoo.prelude.semantics.test;
 
 import com.yahoo.search.Query;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests parameter matching and production
@@ -10,11 +13,12 @@ import com.yahoo.search.Query;
  */
 public class ParameterTestCase extends RuleBaseAbstractTestCase {
 
-    public ParameterTestCase(String name) {
-        super(name,"parameter.sr");
+    public ParameterTestCase() {
+        super("parameter.sr");
     }
 
     /** Tests parameter literal matching */
+    @Test
     public void testLiteralEquals() {
         assertSemantics("a","a");
         assertSemantics("RANK a foo:a","a&ranking=category");
@@ -23,6 +27,7 @@ public class ParameterTestCase extends RuleBaseAbstractTestCase {
     }
 
     /** Tests parameter matching of larger */
+    @Test
     public void testLarger() {
         assertSemantics("a","a");
         assertSemantics("AND a largepage","a&hits=11");
@@ -30,6 +35,7 @@ public class ParameterTestCase extends RuleBaseAbstractTestCase {
     }
 
     /** Tests parameter containment matching */
+    @Test
     public void testContainsAsList() {
         assertSemantics("a","a");
         assertSemantics("AND a intent:music","a&search=music");
@@ -38,6 +44,7 @@ public class ParameterTestCase extends RuleBaseAbstractTestCase {
     }
 
     /** Tests parameter production */
+    @Test
     public void testParameterProduction() {
         assertParameterSemantics("AND a b c","a b c","search","[letters, alphabet]");
         assertParameterSemantics("AND a c d","a c d","search","[letters, someletters]");
@@ -46,6 +53,7 @@ public class ParameterTestCase extends RuleBaseAbstractTestCase {
         assertParameterSemantics("AND a f g","a f g","grouping.nolearning","true");
     }
 
+    @Test
     public void testMultipleAlternativeParameterValuesInCondition() {
         assertInputRankParameterSemantics("one","foo","cat");
         assertInputRankParameterSemantics("one","foo","cat0");

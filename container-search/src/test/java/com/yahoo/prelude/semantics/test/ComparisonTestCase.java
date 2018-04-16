@@ -1,19 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.test;
 
+import org.junit.Test;
+
 /**
  * @author bratseth
  */
 public class ComparisonTestCase extends RuleBaseAbstractTestCase {
 
-    public ComparisonTestCase(String name) {
-        super(name,"comparison.sr");
+    public ComparisonTestCase() {
+        super("comparison.sr");
     }
 
     /**
      * Tests that we can wriote rules which depends on the <i>same term</i> (java) being matched by two
      * different conditions (coffee, island)
      */
+    @Test
     public void testNamedConditionReturnComparison() {
         // Not sufficient that both conditions are matched
         assertSemantics("AND borneo arabica island:borneo coffee:arabica","borneo arabica");
@@ -26,12 +29,14 @@ public class ComparisonTestCase extends RuleBaseAbstractTestCase {
                         "borneo arabica java");
     }
 
+    @Test
     public void testContainsAsSubstring() {
         assertSemantics("AND java island:java coffee:java control:ambigous off","java");
         assertSemantics("AND kanava island:kanava off","kanava");
         assertSemantics("AND borneo island:borneo","borneo");
     }
 
+    @Test
     public void testAlphanumericComparison() {
         assertSemantics("a","a");
         assertSemantics("AND z highletter","z");
