@@ -294,12 +294,6 @@ public:
      */
     static bool hasOnlyErrorsOfType(const mbus::Reply &reply, uint32_t errCode);
 
-    /**
-     * Returns the curren state of the system, as observed by this protocol. This state object may be freely
-     * modified by the caller.
-     *
-     * @return The system state.
-     */
     const mbus::string &getName() const override { return NAME; }
     mbus::IRoutingPolicy::UP createPolicy(const mbus::string &name, const mbus::string &param) const override;
     mbus::Blob encode(const vespalib::Version &version, const mbus::Routable &routable) const override;
