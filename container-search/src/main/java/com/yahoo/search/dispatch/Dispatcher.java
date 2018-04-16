@@ -92,6 +92,7 @@ public class Dispatcher extends AbstractComponent {
                 sendGetDocsumsRequest(nodeHits.getKey(), nodeHits.getValue(), summaryClass, compression, result, responseReceiver);
             }
             responseReceiver.processResponses(result.getQuery(), summaryClass, documentDb);
+            result.hits().setFilled(summaryClass);
             result.hits().setSorted(false);
             result.analyzeHits();
         }
