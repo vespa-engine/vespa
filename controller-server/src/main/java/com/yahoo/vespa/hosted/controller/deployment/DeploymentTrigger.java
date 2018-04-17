@@ -188,7 +188,7 @@ public class DeploymentTrigger {
         });
     }
 
-    /** Returns the set of all jobs which have changes to propagate from the upstream steps, sorted by job. */
+    /** Returns the set of all jobs which have changes to propagate from the upstream steps. */
     public Stream<Job> computeReadyJobs() {
         return ApplicationList.from(applications().asList())
                               .notPullRequest()
@@ -240,7 +240,7 @@ public class DeploymentTrigger {
      */
     private List<Job> computeReadyJobs(ApplicationId id) {
         List<Job> jobs = new ArrayList<>();
-        applications().lockIfPresent(id, application -> {
+        applications().get(id).ifPresent(application -> {
             List<DeploymentSpec.Step> steps = application.deploymentSpec().steps().isEmpty()
                     ? Collections.singletonList(new DeploymentSpec.DeclaredZone(Environment.test))
                     : application.deploymentSpec().steps();
@@ -271,7 +271,7 @@ public class DeploymentTrigger {
             }
             // TODO jvenstad: Replace with completion of individual parts of Change.
             if (completedAt.isPresent())
-                applications().store(application.withChange(Change.empty()));
+                applications().lockIfPresent(id, lockedApplication -> applications().store(lockedApplication.withChange(Change.empty())));
         });
         return jobs;
     }
