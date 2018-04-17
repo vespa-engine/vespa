@@ -21,13 +21,13 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 /**
  * A combination of an application instance and a lock for that application. Provides methods for updating application
@@ -54,7 +54,7 @@ public class LockedApplication extends Application {
               builder.outstandingChange, builder.ownershipIssueId, builder.metrics, builder.rotation);
     }
 
-    public LockedApplication withProjectId(Optional<Long> projectId) {
+    public LockedApplication withProjectId(OptionalLong projectId) {
         return new LockedApplication(new Builder(this).with(deploymentJobs().withProjectId(projectId)));
     }
 

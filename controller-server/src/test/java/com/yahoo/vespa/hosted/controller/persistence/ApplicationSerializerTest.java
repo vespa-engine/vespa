@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 import static com.yahoo.vespa.hosted.controller.ControllerTester.writable;
 import static org.junit.Assert.assertEquals;
@@ -69,7 +70,7 @@ public class ApplicationSerializerTest {
         deployments.add(new Deployment(zone2, applicationVersion2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
                 createClusterUtils(3, 0.2), createClusterInfo(3, 4),new DeploymentMetrics(2,3,4,5,6)));
 
-        Optional<Long> projectId = Optional.of(123L);
+        OptionalLong projectId = OptionalLong.of(123L);
         List<JobStatus> statusList = new ArrayList<>();
 
         statusList.add(JobStatus.initial(DeploymentJobs.JobType.systemTest)

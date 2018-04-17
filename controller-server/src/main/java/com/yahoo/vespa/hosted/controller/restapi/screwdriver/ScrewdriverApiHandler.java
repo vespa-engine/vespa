@@ -70,7 +70,7 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
             return vespaVersion();
         }
         if (path.matches("/screwdriver/v1/jobsToRun"))
-            return buildJobs(controller.applications().deploymentTrigger().computeReadyJobs().collect(groupingBy(job -> job.jobType())));
+            return buildJobs(controller.applications().deploymentTrigger().computeReadyJobs().stream().collect(groupingBy(job -> job.jobType())));
         return notFound(request);
     }
 

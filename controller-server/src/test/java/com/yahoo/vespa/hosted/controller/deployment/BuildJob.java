@@ -49,7 +49,7 @@ public class BuildJob {
     public BuildJob application(Application application) {
         this.applicationId = application.id();
         if (application.deploymentJobs().projectId().isPresent()) {
-            this.projectId = application.deploymentJobs().projectId().get();
+            this.projectId = application.deploymentJobs().projectId().getAsLong();
         }
         return this;
     }

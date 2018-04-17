@@ -31,11 +31,11 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
@@ -96,7 +96,7 @@ public class DeploymentTrigger {
             ApplicationVersion applicationVersion = report.sourceRevision().map(sr -> ApplicationVersion.from(sr, report.buildNumber()))
                                                           .orElse(ApplicationVersion.unknown);
             application = application.withJobCompletion(report, applicationVersion, clock.instant(), controller);
-            application = application.withProjectId(Optional.of(report.projectId()));
+            application = application.withProjectId(OptionalLong.of(report.projectId()));
 
             if (report.jobType() == JobType.component && report.success()) {
                 if (acceptNewApplicationVersion(application))
@@ -116,7 +116,8 @@ public class DeploymentTrigger {
      * Only one job is triggered each run for test jobs, since their environments have limited capacity.
      */
     public long triggerReadyJobs() {
-        return computeReadyJobs().collect(partitioningBy(job -> job.jobType().isTest()))
+        return computeReadyJobs().stream()
+                                 .collect(partitioningBy(job -> job.jobType().isTest()))
                                  .entrySet().stream()
                                  .flatMap(entry -> (entry.getKey()
                                          // True for capacity constrained zones -- sort by priority and make a task for each job type.
@@ -152,9 +153,9 @@ public class DeploymentTrigger {
             return true;
         }
         catch (RuntimeException e) {
-            if (e instanceof NoSuchElementException || e instanceof IllegalArgumentException)
-            applications().lockOrThrow(job.id, application -> applications().store(application.withProjectId(Optional.empty())));
             log.log(LogLevel.WARNING, String.format("Exception triggering %s for %s (%s): %s", job.jobType, job.id, job.projectId, e));
+            if (e instanceof NoSuchElementException || e instanceof IllegalArgumentException)
+                applications().lockOrThrow(job.id, application -> applications().store(application.withProjectId(OptionalLong.empty())));
             return false;
         }
     }
@@ -189,21 +190,22 @@ public class DeploymentTrigger {
     }
 
     /** Returns the set of all jobs which have changes to propagate from the upstream steps. */
-    public Stream<Job> computeReadyJobs() {
+    public List<Job> computeReadyJobs() {
         return ApplicationList.from(applications().asList())
                               .notPullRequest()
                               .withProjectId()
                               .deploying()
                               .idList().stream()
                               .map(this::computeReadyJobs)
-                              .flatMap(List::stream);
+                              .flatMap(List::stream)
+                .collect(Collectors.toList());
     }
 
     /** Returns whether the given job is currently running; false if completed since last triggered, asking the build service othewise. */
     public boolean isRunning(Application application, JobType jobType) {
         return    ! application.deploymentJobs().statusOf(jobType)
                                .flatMap(job -> job.lastCompleted().map(run -> run.at().isAfter(job.lastTriggered().get().at()))).orElse(false)
-               &&   buildService.isRunning(new BuildService.BuildJob(application.deploymentJobs().projectId().get(), jobType.jobName()));
+               &&   buildService.isRunning(new BuildService.BuildJob(application.deploymentJobs().projectId().getAsLong(), jobType.jobName()));
     }
 
     public Job forcedDeploymentJob(Application application, JobType jobType, String reason) {
@@ -357,7 +359,7 @@ public class DeploymentTrigger {
         private Job(Application application, JobType jobType, String reason, Instant availableSince, Collection<JobType> concurrentlyWith, boolean isRetry, Change change, Version platformVersion, ApplicationVersion applicationVersion) {
             this.id = application.id();
             this.jobType = jobType;
-            this.projectId = application.deploymentJobs().projectId().get();
+            this.projectId = application.deploymentJobs().projectId().getAsLong();
             this.availableSince = availableSince;
             this.concurrentlyWith = concurrentlyWith;
             this.reason = reason;

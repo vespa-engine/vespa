@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.stream.Stream;
 
 /**
@@ -28,16 +29,16 @@ import java.util.stream.Stream;
  */
 public class DeploymentJobs {
 
-    private final Optional<Long> projectId;
+    private final OptionalLong projectId;
     private final ImmutableMap<JobType, JobStatus> status;
     private final Optional<IssueId> issueId;
 
-    public DeploymentJobs(Optional<Long> projectId, Collection<JobStatus> jobStatusEntries,
+    public DeploymentJobs(OptionalLong projectId, Collection<JobStatus> jobStatusEntries,
                           Optional<IssueId> issueId) {
         this(projectId, asMap(jobStatusEntries), issueId);
     }
 
-    private DeploymentJobs(Optional<Long> projectId, Map<JobType, JobStatus> status, Optional<IssueId> issueId) {
+    private DeploymentJobs(OptionalLong projectId, Map<JobType, JobStatus> status, Optional<IssueId> issueId) {
         requireId(projectId, "projectId must be a positive integer");
         Objects.requireNonNull(status, "status cannot be null");
         Objects.requireNonNull(issueId, "issueId cannot be null");
@@ -62,7 +63,7 @@ public class DeploymentJobs {
             return job.withCompletion(report.buildNumber(), applicationVersion, report.jobError(), notificationTime,
                                       controller);
         });
-        return new DeploymentJobs(Optional.of(report.projectId()), status, issueId);
+        return new DeploymentJobs(OptionalLong.of(report.projectId()), status, issueId);
     }
 
     public DeploymentJobs withTriggering(JobType jobType, JobStatus.JobRun jobRun) {
@@ -74,7 +75,7 @@ public class DeploymentJobs {
         return new DeploymentJobs(projectId, status, issueId);
     }
 
-    public DeploymentJobs withProjectId(Optional<Long> projectId) {
+    public DeploymentJobs withProjectId(OptionalLong projectId) {
         return new DeploymentJobs(projectId, status, issueId);
     }
 
@@ -120,7 +121,7 @@ public class DeploymentJobs {
      * - or empty when this is not known or does not exist.
      * It is not known until the jobs have run once and reported back to the controller.
      */
-    public Optional<Long> projectId() { return projectId; }
+    public OptionalLong projectId() { return projectId; }
 
     public Optional<IssueId> issueId() { return issueId; }
 
@@ -132,12 +133,12 @@ public class DeploymentJobs {
                 .map(JobStatus.JobRun::at);
     }
 
-    private static Optional<Long> requireId(Optional<Long> id, String message) {
+    private static OptionalLong requireId(OptionalLong id, String message) {
         Objects.requireNonNull(id, message);
         if ( ! id.isPresent()) {
             return id;
         }
-        if (id.get() <= 0) {
+        if (id.getAsLong() <= 0) {
             throw new IllegalArgumentException(message);
         }
         return id;

@@ -279,7 +279,7 @@ public class DeploymentTester {
     }
 
     public void assertRunning(ApplicationId id, JobType jobType) {
-        assertRunning(application(id).deploymentJobs().projectId().get(), jobType);
+        assertRunning(application(id).deploymentJobs().projectId().getAsLong(), jobType);
     }
 
     public void assertRunning(long projectId, JobType jobType) {

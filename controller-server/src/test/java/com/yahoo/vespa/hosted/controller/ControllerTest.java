@@ -436,42 +436,40 @@ public class ControllerTest {
         assertEquals(3, mockBuildService.jobs().size());
 
         // Abort all running jobs, so we have three candidate jobs, of which only one should be triggered at a time.
-        synchronized (tester.buildService()) {
-            tester.buildService().clear();
-        }
+        tester.buildService().clear();
         tester.clock().advance(Duration.ofHours(13));
 
         List<BuildService.BuildJob> jobs = new ArrayList<>();
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.readyJobTrigger().maintain();
-        jobs.add(new BuildService.BuildJob(app2.deploymentJobs().projectId().get(), stagingTest.jobName()));
+        jobs.add(new BuildService.BuildJob(app2.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.readyJobTrigger().maintain();
-        jobs.add(new BuildService.BuildJob(app1.deploymentJobs().projectId().get(), stagingTest.jobName()));
+        jobs.add(new BuildService.BuildJob(app1.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.readyJobTrigger().maintain();
-        jobs.add(new BuildService.BuildJob(app3.deploymentJobs().projectId().get(), stagingTest.jobName()));
+        jobs.add(new BuildService.BuildJob(app3.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
         assertEquals(jobs, tester.buildService().jobs());
 
         // Remove the jobs for app1 and app2, and then let app3 fail with outOfCapacity.
         // All three jobs are now eligible, but the one for app3 should trigger first as an outOfCapacity-retry.
-        tester.buildService().removeJob(app1.deploymentJobs().projectId().get(), stagingTest.jobName());
-        tester.buildService().removeJob(app2.deploymentJobs().projectId().get(), stagingTest.jobName());
+        tester.buildService().removeJob(app1.deploymentJobs().projectId().getAsLong(), stagingTest.jobName());
+        tester.buildService().removeJob(app2.deploymentJobs().projectId().getAsLong(), stagingTest.jobName());
         tester.clock().advance(Duration.ofHours(13));
-        jobs.remove(new BuildService.BuildJob(app1.deploymentJobs().projectId().get(), stagingTest.jobName()));
-        jobs.remove(new BuildService.BuildJob(app2.deploymentJobs().projectId().get(), stagingTest.jobName()));
+        jobs.remove(new BuildService.BuildJob(app1.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
+        jobs.remove(new BuildService.BuildJob(app2.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
         tester.jobCompletion(stagingTest).application(app3).error(JobError.outOfCapacity).submit();
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.readyJobTrigger().maintain();
-        jobs.add(new BuildService.BuildJob(app2.deploymentJobs().projectId().get(), stagingTest.jobName()));
+        jobs.add(new BuildService.BuildJob(app2.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.readyJobTrigger().maintain();
-        jobs.add(new BuildService.BuildJob(app1.deploymentJobs().projectId().get(), stagingTest.jobName()));
+        jobs.add(new BuildService.BuildJob(app1.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
         assertEquals(jobs, tester.buildService().jobs());
 
         // Finish deployment for apps 2 and 3, then release a new version, leaving only app1 with an application upgrade.
@@ -491,21 +489,21 @@ public class ControllerTest {
 
         // Let the last system test job start, then remove the ones for apps 1 and 2, and let app3 fail with outOfCapacity again.
         tester.readyJobTrigger().maintain();
-        tester.buildService().removeJob(app1.deploymentJobs().projectId().get(), systemTest.jobName());
-        tester.buildService().removeJob(app2.deploymentJobs().projectId().get(), systemTest.jobName());
+        tester.buildService().removeJob(app1.deploymentJobs().projectId().getAsLong(), systemTest.jobName());
+        tester.buildService().removeJob(app2.deploymentJobs().projectId().getAsLong(), systemTest.jobName());
         tester.clock().advance(Duration.ofHours(13));
         jobs.clear();
-        jobs.add(new BuildService.BuildJob(app1.deploymentJobs().projectId().get(), stagingTest.jobName()));
-        jobs.add(new BuildService.BuildJob(app3.deploymentJobs().projectId().get(), systemTest.jobName()));
+        jobs.add(new BuildService.BuildJob(app1.deploymentJobs().projectId().getAsLong(), stagingTest.jobName()));
+        jobs.add(new BuildService.BuildJob(app3.deploymentJobs().projectId().getAsLong(), systemTest.jobName()));
         tester.jobCompletion(systemTest).application(app3).error(JobError.outOfCapacity).submit();
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.readyJobTrigger().maintain();
-        jobs.add(new BuildService.BuildJob(app1.deploymentJobs().projectId().get(), systemTest.jobName()));
+        jobs.add(new BuildService.BuildJob(app1.deploymentJobs().projectId().getAsLong(), systemTest.jobName()));
         assertEquals(jobs, tester.buildService().jobs());
 
         tester.readyJobTrigger().maintain();
-        jobs.add(new BuildService.BuildJob(app2.deploymentJobs().projectId().get(), systemTest.jobName()));
+        jobs.add(new BuildService.BuildJob(app2.deploymentJobs().projectId().getAsLong(), systemTest.jobName()));
         assertEquals(jobs, tester.buildService().jobs());
 
     }

@@ -123,14 +123,8 @@ public class UpgraderTest {
         tester.updateVersionStatus(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
-        boolean result1;
-        synchronized (tester.buildService()) {
-            result1 = tester.buildService().removeJob(canary0.deploymentJobs().projectId().get(), stagingTest.jobName());
-        }
-        boolean result;
-        synchronized (tester.buildService()) {
-            result = tester.buildService().removeJob(canary1.deploymentJobs().projectId().get(), systemTest.jobName());
-        }
+        tester.buildService().removeJob(canary0.deploymentJobs().projectId().getAsLong(), stagingTest.jobName());
+        tester.buildService().removeJob(canary1.deploymentJobs().projectId().getAsLong(), systemTest.jobName());
         tester.readyJobTrigger().maintain();
         tester.readyJobTrigger().maintain();
 
@@ -260,9 +254,7 @@ public class UpgraderTest {
         tester.jobCompletion(DeploymentJobs.JobType.productionUsWest1).application(default3).unsuccessful().submit();
 
         tester.upgrader().maintain();
-        synchronized (tester.buildService()) {
-            tester.buildService().clear();
-        }
+        tester.buildService().clear();
         tester.readyJobTrigger().maintain();
         assertEquals("Upgrade of defaults are scheduled on 5.4 instead, since 5.5 broken: " +
                      "This is default3 since it failed upgrade on both 5.4 and 5.5",
@@ -347,9 +339,7 @@ public class UpgraderTest {
         // > 40% and at least 4 failed - version is broken
         tester.updateVersionStatus(version);
         tester.upgrader().maintain();
-        synchronized (tester.buildService()) {
-            tester.buildService().clear();
-        }
+        tester.buildService().clear();
         tester.readyJobTrigger().maintain();
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
         assertEquals("Upgrades are cancelled", 0, tester.buildService().jobs().size());
@@ -527,9 +517,7 @@ public class UpgraderTest {
         tester.deploymentTrigger().cancelChange(default1.id(), false);
         tester.deploymentTrigger().cancelChange(default2.id(), false);
         tester.deploymentTrigger().cancelChange(default3.id(), false);
-        synchronized (tester.buildService()) {
-            tester.buildService().clear();
-        }
+        tester.buildService().clear();
         tester.clock().advance(Duration.ofHours(13)); // Currently we don't cancel running jobs, so this is necessary to allow a new triggering below
 
         // Applications with default policy start upgrading to V2
@@ -553,9 +541,7 @@ public class UpgraderTest {
         assertEquals(v2, tester.application("default0").deployments().get(ZoneId.from("prod.us-west-1")).version());
         assertEquals(v0, tester.application("default0").deployments().get(ZoneId.from("prod.us-east-3")).version());
         tester.upgrader().maintain();
-        synchronized (tester.buildService()) {
-            tester.buildService().clear();
-        }
+        tester.buildService().clear();
         tester.clock().advance(Duration.ofHours(13)); // TODO jvenstad: Reduce all these when build service is polled for status.
         tester.readyJobTrigger().maintain();
         tester.readyJobTrigger().maintain();

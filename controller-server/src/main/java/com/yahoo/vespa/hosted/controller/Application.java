@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -50,7 +51,7 @@ public class Application {
     /** Creates an empty application */
     public Application(ApplicationId id) {
         this(id, DeploymentSpec.empty, ValidationOverrides.empty, Collections.emptyMap(),
-             new DeploymentJobs(Optional.empty(), Collections.emptyList(), Optional.empty()),
+             new DeploymentJobs(OptionalLong.empty(), Collections.emptyList(), Optional.empty()),
              Change.empty(), Change.empty(), Optional.empty(), new ApplicationMetrics(0, 0),
              Optional.empty());
     }
