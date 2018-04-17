@@ -13,7 +13,7 @@ import org.junit.Test;
 
 import java.util.Collection;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test BooleanSearcher
@@ -118,4 +118,5 @@ public class BooleanSearcherTestCase {
         }
         return q;
     }
+
 }

@@ -10,17 +10,24 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.AsyncExecution;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.FutureResult;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Test for aynchrounous execution
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ *
+ * @author Arne Bergene Fossaa
  */
-public class AsyncExecutionTestCase extends junit.framework.TestCase {
+public class AsyncExecutionTestCase {
 
     public class WaitingSearcher extends Searcher {
 
@@ -50,7 +57,8 @@ public class AsyncExecutionTestCase extends junit.framework.TestCase {
 
     }
 
-    //This should take ~50+ ms
+    // This should take ~50+ ms
+    @Test
     public void testAsync() {
         List<Searcher> searchList = new ArrayList<>();
         searchList.add(new WaitingSearcher("one",60000));
@@ -64,6 +72,7 @@ public class AsyncExecutionTestCase extends junit.framework.TestCase {
         assertTrue(result.hits().getError() != null);
     }
 
+    @Test
     public void testWaitForAll() {
         Chain<Searcher> slowChain = new Chain<>(
                 new ComponentId("slow"),
@@ -89,6 +98,7 @@ public class AsyncExecutionTestCase extends junit.framework.TestCase {
         assertNull(results.get(1).hits().getErrorHit());
     }
 
+    @Test
     public void testSync() {
         Query query=new Query("?query=test");
         Searcher searcher=new ResultProducingSearcher();
@@ -98,6 +108,7 @@ public class AsyncExecutionTestCase extends junit.framework.TestCase {
         assertEquals("hello",result.hits().get(0).getField("test"));
     }
 
+    @Test
     public void testSyncThroughSync() {
         Query query=new Query("?query=test");
         Searcher searcher=new ResultProducingSearcher();
@@ -107,6 +118,7 @@ public class AsyncExecutionTestCase extends junit.framework.TestCase {
         assertEquals("hello",result.hits().get(0).getField("test"));
     }
 
+    @Test
     public void testAsyncThroughSync() {
         Query query=new Query("?query=test");
         Searcher searcher=new ResultProducingSearcher();
@@ -134,7 +146,6 @@ public class AsyncExecutionTestCase extends junit.framework.TestCase {
 
     }
 
-    @SuppressWarnings("deprecation")
     public void testAsyncExecutionTimeout() {
         Chain<Searcher> chain = new Chain<>(new Searcher() {
             @Override

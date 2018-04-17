@@ -17,26 +17,32 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * tests query profiles with/and types
  *
  * @author bratseth
  */
-public class QueryProfileTypeTestCase extends junit.framework.TestCase {
+public class QueryProfileTypeTestCase {
 
     private QueryProfileRegistry registry;
 
     private QueryProfileType type, typeStrict, user, userStrict;
 
-    @Override
-    protected void setUp() {
+    @Before
+    public void setUp() {
         registry = new QueryProfileRegistry();
 
         type = new QueryProfileType(new ComponentId("testtype"));
@@ -81,6 +87,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
         user.addField(new FieldDescription("myUserInteger",FieldType.fromString("integer",registry),"uint"), registry);
     }
 
+    @Test
     public void testTypedOfPrimitivesAssignmentNonStrict() {
         QueryProfile profile=new QueryProfile("test");
         profile.setType(type);
@@ -147,6 +154,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
         assertEquals(51, properties.get("myInteger"));
     }
 
+    @Test
     public void testTypedOfPrimitivesAssignmentStrict() {
         QueryProfile profile=new QueryProfile("test");
         profile.setType(typeStrict);
@@ -188,6 +196,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
     }
 
     /** Tests assigning a subprofile directly */
+    @Test
     public void testTypedAssignmentOfQueryProfilesNonStrict() {
         QueryProfile profile=new QueryProfile("test");
         profile.setType(type);
@@ -218,6 +227,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
     }
 
     /** Tests assigning a subprofile directly */
+    @Test
     public void testTypedAssignmentOfQueryProfilesStrict() {
         QueryProfile profile=new QueryProfile("test");
         profile.setType(typeStrict);
@@ -248,6 +258,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
     }
 
     /** Tests assigning a subprofile as an id string */
+    @Test
     public void testTypedAssignmentOfQueryProfileReferencesNonStrict() {
         QueryProfile profile = new QueryProfile("test");
         profile.setType(type);
@@ -291,6 +302,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
      * Tests overriding a subprofile as an id string through the query.
      * Here there exists a user profile already, and then a new one is overwritten
      */
+    @Test
     public void testTypedOverridingOfQueryProfileReferencesNonStrictThroughQuery() {
         QueryProfile profile=new QueryProfile("test");
         profile.setType(type);
@@ -324,6 +336,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
      * Tests overriding a subprofile as an id string through the query.
      * Here no user profile is set before it is assigned in the query
      */
+    @Test
     public void testTypedAssignmentOfQueryProfileReferencesNonStrictThroughQuery() {
         QueryProfile profile=new QueryProfile("test");
         profile.setType(type);
@@ -350,6 +363,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
      * Tests overriding a subprofile as an id string through the query.
      * Here no user profile is set before it is assigned in the query
      */
+    @Test
     public void testTypedAssignmentOfQueryProfileReferencesStrictThroughQuery() {
         QueryProfile profile=new QueryProfile("test");
         profile.setType(typeStrict);
@@ -381,6 +395,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
 
     }
 
+    @Test
     public void testTensorRankFeatureInRequest() throws UnsupportedEncodingException {
         QueryProfile profile=new QueryProfile("test");
         profile.setType(type);
@@ -400,6 +415,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
         return URLEncoder.encode(s, "utf8");
     }
 
+    @Test
     public void testIllegalStrictAssignmentFromRequest() {
         QueryProfile profile=new QueryProfile("test");
         profile.setType(typeStrict);
@@ -429,6 +445,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
      * Here there exists a user profile already, and then a new one is overwritten.
      * The whole thing is accessed through a two levels of nontyped top-level profiles
      */
+    @Test
     public void testTypedOverridingOfQueryProfileReferencesNonStrictThroughQueryNestedInAnUntypedProfile() {
         QueryProfile topMap=new QueryProfile("topMap");
 
@@ -468,6 +485,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
     /**
      * Same as previous test but using the untyped myQueryProfile reference instead of the typed myUserQueryProfile
      */
+    @Test
     public void testAnonTypedOverridingOfQueryProfileReferencesNonStrictThroughQueryNestedInAnUntypedProfile() {
         QueryProfile topMap=new QueryProfile("topMap");
 
@@ -506,6 +524,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
     /**
      * Tests setting a illegal value in a strict profile nested under untyped maps
      */
+    @Test
     public void testSettingValueInStrictTypeNestedUnderUntypedMaps() {
         QueryProfile topMap=new QueryProfile("topMap");
 
@@ -541,6 +560,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
      * Here, no user profile is set before it is assigned in the query
      * The whole thing is accessed through a two levels of nontyped top-level profiles
      */
+    @Test
     public void testTypedSettingOfQueryProfileReferencesNonStrictThroughQueryNestedInAnUntypedProfile() {
         QueryProfile topMap=new QueryProfile("topMap");
 

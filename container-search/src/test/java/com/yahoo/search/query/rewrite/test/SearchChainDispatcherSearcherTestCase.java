@@ -12,13 +12,15 @@ import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.query.rewrite.RewritesConfig;
 import com.yahoo.search.intent.model.*;
 import com.yahoo.component.chain.Chain;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Test Cases for SearchChainDispatcherSearcher
  *
- * @author karenlee@yahoo-inc.com
+ * @author Karen Lee
  */
-public class SearchChainDispatcherSearcherTestCase extends junit.framework.TestCase {
+public class SearchChainDispatcherSearcherTestCase {
 
     private QueryRewriteSearcherTestUtils utils;
     private final String NAME_REWRITER_CONFIG_PATH = "file:src/test/java/com/yahoo/search/query/rewrite/test/" +
@@ -29,13 +31,12 @@ public class SearchChainDispatcherSearcherTestCase extends junit.framework.TestC
     private final String MISSPELL_REWRITER_NAME = MisspellRewriter.REWRITER_NAME;
     private final String US_MARKET_SEARCH_CHAIN = "us_qrw";
 
-
     /**
      * Load the QueryRewriteSearcher and prepare the
      * execution object
      */
-    @SuppressWarnings("deprecation")
-    protected void setUp() {
+    @Before
+    public void setUp() {
         // Instantiate Name Rewriter
         RewritesConfig config = QueryRewriteSearcherTestUtils.createConfigObj(NAME_REWRITER_CONFIG_PATH);
         HashMap<String, File> fileList = new HashMap<>();
@@ -64,14 +65,11 @@ public class SearchChainDispatcherSearcherTestCase extends junit.framework.TestC
         utils = new QueryRewriteSearcherTestUtils(execution);
     }
 
-    public SearchChainDispatcherSearcherTestCase(String name) {
-        super(name);
-    }
-
     /**
      * Execute the market chain
      * Query will be rewritten twice
      */
+    @Test
     public void testMarketChain() {
         IntentModel intentModel = new IntentModel(
                                   utils.createInterpretation("wills smith", 0.9,
@@ -98,6 +96,7 @@ public class SearchChainDispatcherSearcherTestCase extends junit.framework.TestC
      * Market chain is not valid
      * Query will be passed to next rewriter
      */
+    @Test
     public void testInvalidMarketChain() {
         utils.assertRewrittenQuery("?query=will smith&QRWChain=abc&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
@@ -111,6 +110,7 @@ public class SearchChainDispatcherSearcherTestCase extends junit.framework.TestC
      * Empty market chain value
      * Query will be passed to next rewriter
      */
+    @Test
     public void testEmptyMarketChain() {
         utils.assertRewrittenQuery("?query=will smith&QRWChain=&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
@@ -124,7 +124,7 @@ public class SearchChainDispatcherSearcherTestCase extends junit.framework.TestC
      * Searchers down the chain after SearchChainDispatcher
      * should be executed
      */
-    @SuppressWarnings("deprecation")
+    @Test
     public void testChainContinuation() {
         // Instantiate Name Rewriter
         RewritesConfig config = QueryRewriteSearcherTestUtils.createConfigObj(NAME_REWRITER_CONFIG_PATH);
@@ -175,5 +175,6 @@ public class SearchChainDispatcherSearcherTestCase extends junit.framework.TestC
                                    "\"will smith biography\"'",
                                    intentModel);
     }
+
 }
 

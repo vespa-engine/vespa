@@ -12,19 +12,24 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests overriding of field values
  *
  * @author bratseth
  */
-public class OverrideTestCase extends junit.framework.TestCase {
+public class OverrideTestCase {
 
     private QueryProfileTypeRegistry registry;
 
     private QueryProfileType type, user;
 
-    protected @Override void setUp() {
+    @Before
+    public void setUp() {
         type=new QueryProfileType(new ComponentId("testtype"));
         user=new QueryProfileType(new ComponentId("user"));
         registry=new QueryProfileTypeRegistry();
@@ -53,6 +58,7 @@ public class OverrideTestCase extends junit.framework.TestCase {
     }
 
     /** Check that a simple non-overridable string cannot be overridden */
+    @Test
     public void testSimpleUnoverridable() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfile test=new QueryProfile("test");
@@ -72,6 +78,7 @@ public class OverrideTestCase extends junit.framework.TestCase {
     }
 
     /** Check that a query profile cannot be overridden */
+    @Test
     public void testUnoverridableQueryProfile() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
 
@@ -99,6 +106,7 @@ public class OverrideTestCase extends junit.framework.TestCase {
     }
 
     /** Check that non-overridables are protected also in nested untyped references */
+    @Test
     public void testUntypedNestedUnoverridable() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfile topMap = new QueryProfile("topMap");
@@ -129,6 +137,7 @@ public class OverrideTestCase extends junit.framework.TestCase {
     }
 
     /** Tests overridability in an inherited field */
+    @Test
     public void testInheritedNonOverridableInType() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
 
@@ -153,6 +162,7 @@ public class OverrideTestCase extends junit.framework.TestCase {
     }
 
     /** Tests overridability in an inherited field */
+    @Test
     public void testInheritedNonOverridableInProfile() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfile test = new QueryProfile("test");

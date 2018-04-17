@@ -10,15 +10,16 @@ import org.junit.Test;
 
 import java.io.StringReader;
 
-import static junit.framework.Assert.assertNull;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
  * @author tonytv
  */
 public class ParseItemTestCase {
+
     public static Object parse(String input) throws ParseException {
         ItemContext context = new ItemContext();
         Object result = new Parser(new StringReader(input.replace("'", "\"")), new ItemFormHandler(), context).start();

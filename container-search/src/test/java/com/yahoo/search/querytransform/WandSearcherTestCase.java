@@ -4,7 +4,14 @@ package com.yahoo.search.querytransform;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.DotProductItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.WandItem;
+import com.yahoo.prelude.query.WeakAndItem;
+import com.yahoo.prelude.query.WeightedSetItem;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.processing.request.ErrorMessage;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -16,10 +23,10 @@ import org.junit.Test;
 import java.util.ListIterator;
 
 import static com.yahoo.container.protect.Error.INVALID_QUERY_PARAMETER;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Testing of WandSearcher.
@@ -27,9 +34,11 @@ import static org.junit.Assert.assertNotNull;
 public class WandSearcherTestCase {
 
     private static final String VESPA_FIELD = "vespa-field";
+    private static final double delta = 0.0000001;
 
     private Execution exec;
 
+    @SuppressWarnings("deprecation")
     private IndexFacts buildIndexFacts() {
         IndexFacts retval = new IndexFacts();
         retval.addIndex("test", new Index(VESPA_FIELD));
@@ -201,8 +210,8 @@ public class WandSearcherTestCase {
         WandItem root = (WandItem)TestUtils.getQueryTreeRoot(r);
         assertEquals(VESPA_FIELD, root.getIndexName());
         assertEquals(100, root.getTargetNumHits());
-        assertEquals(0.0, root.getScoreThreshold());
-        assertEquals(1.0, root.getThresholdBoostFactor());
+        assertEquals(0.0, root.getScoreThreshold(), delta);
+        assertEquals(1.0, root.getThresholdBoostFactor(), delta);
         assertWeightedSetItem(root);
     }
 
@@ -214,8 +223,8 @@ public class WandSearcherTestCase {
         WandItem root = (WandItem)TestUtils.getQueryTreeRoot(r);
         assertEquals(VESPA_FIELD, root.getIndexName());
         assertEquals(50, root.getTargetNumHits());
-        assertEquals(70.5, root.getScoreThreshold());
-        assertEquals(2.3, root.getThresholdBoostFactor());
+        assertEquals(70.5, root.getScoreThreshold(), delta);
+        assertEquals(2.3, root.getThresholdBoostFactor(), delta);
         assertWeightedSetItem(root);
     }
 

@@ -2,12 +2,16 @@
 package com.yahoo.search.test;
 
 import com.yahoo.search.Query;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
  */
-public class RequestParameterPreservationTestCase extends junit.framework.TestCase {
+public class RequestParameterPreservationTestCase {
 
+    @Test
     public void testPreservation() {
         Query query=new Query("?query=test...&offset=15&hits=10");
         query.setWindow(25,13);

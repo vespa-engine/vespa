@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.statistics;
 
-import junit.framework.TestCase;
-
 import com.yahoo.component.ComponentId;
 import com.yahoo.prelude.Ping;
 import com.yahoo.search.Query;
@@ -12,8 +10,12 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.statistics.TimingSearcher.Parameters;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.statistics.Value;
+import org.junit.Test;
 
-public class TimingSearcherTestCase extends TestCase {
+import static org.junit.Assert.assertEquals;
+
+public class TimingSearcherTestCase {
+
     public static class MockValue extends Value {
         public int putCount = 0;
 
@@ -27,6 +29,7 @@ public class TimingSearcherTestCase extends TestCase {
         }
     }
 
+    @Test
     public void testMeasurementSearchPath() {
         Parameters p = new Parameters("timingtest", TimeTracker.Activity.SEARCH);
         TimingSearcher ts = new TimingSearcher(new ComponentId("lblblbl"), p, Statistics.nullImplementation);
@@ -45,6 +48,7 @@ public class TimingSearcherTestCase extends TestCase {
         assertEquals(1, v.putCount);
     }
 
+    @Test
     public void testMeasurementFillPath() {
         Parameters p = new Parameters("timingtest", TimeTracker.Activity.FILL);
         TimingSearcher ts = new TimingSearcher(new ComponentId("lblblbl"), p, Statistics.nullImplementation);
@@ -63,6 +67,7 @@ public class TimingSearcherTestCase extends TestCase {
         assertEquals(2, v.putCount);
     }
 
+    @Test
     public void testMeasurementPingPath() {
         Parameters p = new Parameters("timingtest", TimeTracker.Activity.PING);
         TimingSearcher ts = new TimingSearcher(new ComponentId("lblblbl"), p, Statistics.nullImplementation);
@@ -80,4 +85,5 @@ public class TimingSearcherTestCase extends TestCase {
         exec.ping(new Ping());
         assertEquals(3, v.putCount);
     }
+
 }

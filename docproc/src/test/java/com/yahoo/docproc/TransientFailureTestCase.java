@@ -6,18 +6,23 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentType;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class TransientFailureTestCase extends junit.framework.TestCase {
+
     DocumentType type;
 
+    @Before
     public void setUp() {
         type = new DocumentType("test");
         type.addField("boo", DataType.STRING);
     }
 
+    @Test
     public void testTransientFailures() {
         DocprocService service = new DocprocService("transfail");
         CallStack stack = new CallStack();
@@ -94,4 +99,5 @@ public class TransientFailureTestCase extends junit.framework.TestCase {
             }
         }
     }
+
 }

@@ -4,16 +4,19 @@ package com.yahoo.search.result.test;
 import com.yahoo.prelude.templates.SearchRendererAdaptor;
 import com.yahoo.search.result.DefaultErrorHit;
 import com.yahoo.search.result.ErrorMessage;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringWriter;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author bratseth
  */
-public class DefaultErrorHitTestCase extends junit.framework.TestCase {
+public class DefaultErrorHitTestCase {
 
-    @SuppressWarnings("null")
+    @Test
     public void testErrorHitRenderingWithException() throws IOException {
         NullPointerException cause=null;
         try {

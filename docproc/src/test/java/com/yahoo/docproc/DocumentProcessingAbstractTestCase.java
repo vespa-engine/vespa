@@ -2,23 +2,20 @@
 package com.yahoo.docproc;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.StringFieldValue;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Convenience superclass of document processor test cases
  *
  * @author bratseth
  */
-public abstract class DocumentProcessingAbstractTestCase extends junit.framework.TestCase {
-
-    public DocumentProcessingAbstractTestCase(String name) {
-        super(name);
-    }
+public abstract class DocumentProcessingAbstractTestCase {
 
     /**
      * Asserts that a document processing service works

@@ -7,14 +7,19 @@ import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * tests creating invalid names
  *
  * @author bratseth
  */
-public class NameTestCase extends junit.framework.TestCase {
+public class NameTestCase {
 
+    @Test
     public void testNames() {
         assertLegalName("aB");
         assertIllegalName("a.");
@@ -26,6 +31,7 @@ public class NameTestCase extends junit.framework.TestCase {
         assertIllegalName("");
     }
 
+    @Test
     public void testFieldNames() {
         assertLegalFieldName("aB");
         try {

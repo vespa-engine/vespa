@@ -8,12 +8,16 @@ import com.yahoo.prelude.templates.test.TilingTestCase;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Hit;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
  */
-public class ArrayOutputTestCase extends junit.framework.TestCase {
+public class ArrayOutputTestCase {
 
+    @Test
     public void testArrayOutput() throws IOException {
         Result r=new Result(new Query("?query=ignored"));
         Hit hit=new Hit("test");

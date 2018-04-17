@@ -14,23 +14,27 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.StringTokenizer;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Simple test case for testing that processing of both documents and
  * document updates works.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class ProcessingUpdateTestCase extends junit.framework.TestCase {
+public class ProcessingUpdateTestCase {
 
     private DocumentPut put;
     private DocumentUpdate update;
 
     private DocumentTypeManager dtm;
 
+    @Test
     public void testProcessingUpdates() {
         DocumentType articleType = new DocumentType("article");
         articleType.addField(new Field("body", DataType.STRING, true));
@@ -100,4 +104,5 @@ public class ProcessingUpdateTestCase extends junit.framework.TestCase {
             return title;
         }
     }
+
 }

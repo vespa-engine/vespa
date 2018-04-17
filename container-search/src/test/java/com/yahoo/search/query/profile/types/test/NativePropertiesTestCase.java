@@ -8,17 +8,20 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.yolean.Exceptions;
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * Tests that properties can not be set even if they are native, if declared not settable in the query profile
  *
  * @author bratseth
  */
-public class NativePropertiesTestCase extends junit.framework.TestCase {
+public class NativePropertiesTestCase {
 
+    @Test
     public void testNativeInStrict() {
         QueryProfileType strictType=new QueryProfileType("strict");
         strictType.setStrict(true);

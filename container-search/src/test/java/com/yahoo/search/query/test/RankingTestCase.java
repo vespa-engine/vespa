@@ -2,18 +2,19 @@
 package com.yahoo.search.query.test;
 
 import com.yahoo.search.Query;
-import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.Sorting;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
-public class RankingTestCase extends junit.framework.TestCase {
+public class RankingTestCase {
 
     /** tests setting rank feature values */
+    @Test
     public void testRankFeatures() {
         // Check initializing from query
         Query query = new Query("?query=test&ranking.features.query(name)=0.1&ranking.features.fieldMatch(foo)=0.2");
@@ -43,6 +44,7 @@ public class RankingTestCase extends junit.framework.TestCase {
     }
 
     //This test is order dependent. Fix this!!
+    @Test
     public void test_setting_rank_feature_values() {
         // Check initializing from query
         Query query = new Query("?query=test&ranking.properties.foo=bar1&ranking.properties.foo2=bar2&ranking.properties.other=10");
@@ -69,6 +71,7 @@ public class RankingTestCase extends junit.framework.TestCase {
     }
 
     /** Test setting sorting to null does not cause an exception. */
+    @Test
     public void testResetSorting() {
         Query q=new Query();
         q.getRanking().setSorting((Sorting)null);

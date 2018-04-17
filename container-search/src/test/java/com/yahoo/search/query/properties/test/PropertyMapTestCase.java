@@ -2,21 +2,26 @@
 package com.yahoo.search.query.properties.test;
 
 import com.yahoo.processing.request.properties.PropertyMap;
+import org.junit.Test;
 
 import java.util.Collections;
 import java.util.List;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author bratseth
  */
-public class PropertyMapTestCase extends junit.framework.TestCase {
+public class PropertyMapTestCase {
 
+    @Test
     public void testCloning() {
-        PropertyMap map=new PropertyMap();
-        map.set("clonable",new ClonableObject());
-        map.set("nonclonable",new NonClonableObject());
-        map.set("clonableArray",new ClonableObject[] {new ClonableObject()});
-        map.set("nonclonableArray",new NonClonableObject[] {new NonClonableObject()});
+        PropertyMap map = new PropertyMap();
+        map.set("clonable", new ClonableObject());
+        map.set("nonclonable", new NonClonableObject());
+        map.set("clonableArray", new ClonableObject[] {new ClonableObject()});
+        map.set("nonclonableArray", new NonClonableObject[] {new NonClonableObject()});
         map.set("clonableList", Collections.singletonList(new ClonableObject()));
         map.set("nonclonableList", Collections.singletonList(new NonClonableObject()));
         assertNotNull(map.get("clonable"));
@@ -56,6 +61,5 @@ public class PropertyMapTestCase extends junit.framework.TestCase {
     private static class NonClonableObject {
 
     }
-
 
 }
