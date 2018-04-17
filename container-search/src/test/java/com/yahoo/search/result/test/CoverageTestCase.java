@@ -4,18 +4,24 @@ package com.yahoo.search.result.test;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Coverage;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class CoverageTestCase extends junit.framework.TestCase {
+public class CoverageTestCase {
 
+    @Test
     public void testZeroCoverage() {
         Coverage c = new Coverage(0L, 0, false, 0);
         assertEquals(0, c.getResultPercentage());
         assertEquals(0, c.getResultSets());
     }
 
+    @Test
     public void testActiveCoverage() {
         Coverage c = new Coverage(6, 5);
         assertEquals(5, c.getActive());
@@ -27,6 +33,7 @@ public class CoverageTestCase extends junit.framework.TestCase {
         assertEquals(13, c.getDocs());
     }
 
+    @Test
     public void testDefaultCoverage() {
         boolean create=true;
 
@@ -38,6 +45,7 @@ public class CoverageTestCase extends junit.framework.TestCase {
         assertEquals(0,r1.getCoverage(create).getResultSets());
     }
 
+    @Test
     public void testDefaultSearchScenario() {
         boolean create=true;
 
@@ -48,6 +56,7 @@ public class CoverageTestCase extends junit.framework.TestCase {
         assertEquals(0,federationSearcherResult.getCoverage(create).getResultSets());
     }
 
+    @Test
     public void testRequestingCoverageSearchScenario() {
         boolean create=true;
 

@@ -1,15 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.Iterator;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests call stacks
  *
  * @author bratseth
  */
-@SuppressWarnings({"unchecked","rawtypes"})
-public class CallStackTestCase extends junit.framework.TestCase {
+@SuppressWarnings("rawtypes")
+public class CallStackTestCase {
 
     private CallStack callStack, insertStack;
 
@@ -17,11 +26,8 @@ public class CallStackTestCase extends junit.framework.TestCase {
 
     private DocumentProcessor processor2, noProcessor;
 
-    public CallStackTestCase(String name) {
-        super(name);
-    }
-
-    protected void setUp() {
+    @Before
+    public void setUp() {
         callStack = new CallStack();
         call1 = new Call(new TestDocumentProcessor());
         processor2 = new TestDocumentProcessor();
@@ -39,6 +45,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         insertStack.addLast(insert1).addLast(insert2).addLast(insert3);
     }
 
+    @Test
     public void testFind() {
         assertSame(call2, callStack.findCall(processor2));
         assertSame(call2, callStack.findCall(processor2.getId()));
@@ -47,6 +54,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertNull(callStack.findCall(new TestDocumentProcessor()));
     }
 
+    @Test
     public void testAddBefore() {
         callStack.addBefore(call2, newCall);
         Iterator i = callStack.iterator();
@@ -57,6 +65,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testAddStackBefore() {
         callStack.addBefore(call2, insertStack);
         Iterator i = callStack.iterator();
@@ -69,6 +78,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testAddAfter() {
         callStack.addAfter(call2, newCall);
         Iterator i = callStack.iterator();
@@ -79,6 +89,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testAddStackAfter() {
         callStack.addAfter(call2, insertStack);
         Iterator i = callStack.iterator();
@@ -91,6 +102,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testAddBeforeFirst() {
         callStack.addBefore(call1, newCall);
         Iterator i = callStack.iterator();
@@ -101,6 +113,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testAddStackBeforeFirst() {
         callStack.addBefore(call1, insertStack);
         Iterator i = callStack.iterator();
@@ -113,6 +126,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testAddAfterLast() {
         callStack.addAfter(call3, newCall);
         Iterator i = callStack.iterator();
@@ -123,6 +137,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testAddStackAfterLast() {
         callStack.addAfter(call3, insertStack);
         Iterator i = callStack.iterator();
@@ -135,6 +150,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testAddBeforeNonExisting() {
         callStack.addBefore(noCall, newCall);
         Iterator i = callStack.iterator();
@@ -145,6 +161,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testAddStackBeforeNonExisting() {
         callStack.addBefore(noCall, insertStack);
         Iterator i = callStack.iterator();
@@ -157,6 +174,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testAddAfterNonExisting() {
         callStack.addAfter(noCall, newCall);
         Iterator i = callStack.iterator();
@@ -167,6 +185,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testAddStackAfterNonExisting() {
         callStack.addAfter(noCall, insertStack);
         Iterator i = callStack.iterator();
@@ -179,6 +198,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testRemove() {
         callStack.remove(call1);
         Iterator i = callStack.iterator();
@@ -187,6 +207,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testRemoveNonExisting() {
         callStack.remove(noCall);
         Iterator i = callStack.iterator();
@@ -196,6 +217,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
     public void testContains() {
         callStack.addLast(newCall);
         assertTrue(callStack.contains(call1));
@@ -205,6 +227,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertFalse(callStack.contains(noCall));
     }
 
+    @Test
     public void testPop() {
         assertEquals(call1, callStack.pop());
         assertEquals(call2, callStack.pop());
@@ -225,6 +248,7 @@ public class CallStackTestCase extends junit.framework.TestCase {
         assertNull(callStack.pop());
     }
 
+    @Test
     public void testGetLastPopped() {
         CallStack stakk = new CallStack();
         assertNull(stakk.getLastPopped());

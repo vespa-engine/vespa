@@ -7,19 +7,16 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.Iterator;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
- * Created with IntelliJ IDEA.
- * User: magnarn
- * Date: 2/5/13
- * Time: 3:52 PM
+ * @author magnarn
  */
 public class BooleanAttributeParserTest {
 
     @Test
-    public void requireThatParseHandlesAllFormats() throws Exception {
+    public void requireThatParseHandlesAllFormats() {
         assertParse(null, 0);
         assertParse("{}", 0);
         assertParse("{foo:bar}", 1);
@@ -40,7 +37,7 @@ public class BooleanAttributeParserTest {
     }
 
     @Test
-    public void requireThatIllegalStringsFail() throws Exception {
+    public void requireThatIllegalStringsFail() {
         assertException("{foo:[bar:[baz]}");
         assertException("{foo:[bar:baz}");
         assertException("{foo:bar:[0,1,2}");
@@ -63,7 +60,7 @@ public class BooleanAttributeParserTest {
     }
 
     @Test
-    public void requireThatTermsCanHaveBitmaps() throws Exception {
+    public void requireThatTermsCanHaveBitmaps() {
         PredicateQueryItem q = assertParse("{foo:bar:0x1}", 1);
         PredicateQueryItem.Entry[] features = new PredicateQueryItem.Entry[q.getFeatures().size()];
         q.getFeatures().toArray(features);
@@ -98,4 +95,5 @@ public class BooleanAttributeParserTest {
         assertEquals(numFeatures, item.getFeatures().size());
         return item;
     }
+
 }

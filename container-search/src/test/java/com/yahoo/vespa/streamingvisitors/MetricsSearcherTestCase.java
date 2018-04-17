@@ -11,7 +11,7 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vdslib.VisitorStatistics;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -19,6 +19,7 @@ import static org.junit.Assert.assertTrue;
  * @author Ulf Carlin
  */
 public class MetricsSearcherTestCase {
+
     private MetricsSearcher metricsSearcher = new MetricsSearcher();
     private MockBackend backend = new MockBackend();
     private Chain<Searcher> chain = new Chain<>(metricsSearcher, backend);
@@ -139,4 +140,5 @@ public class MetricsSearcherTestCase {
             }
         }
     }
+
 }

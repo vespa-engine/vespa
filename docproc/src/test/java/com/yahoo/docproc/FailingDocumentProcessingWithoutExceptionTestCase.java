@@ -2,28 +2,25 @@
 package com.yahoo.docproc;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.StringFieldValue;
+import org.junit.Test;
 
 /**
  * Tests a document processing where some processings fail with an exception
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M. R. Rosenvinge</a>
+ * @author Einar M. R. Rosenvinge
  */
 public class FailingDocumentProcessingWithoutExceptionTestCase extends junit.framework.TestCase {
-
-    public FailingDocumentProcessingWithoutExceptionTestCase(String name) {
-        super(name);
-    }
 
     /**
      * Tests chaining of some processors, and execution of the processors
      * on some documents
      */
+    @Test
     public void testFailingProcessing() {
         // Set up service programmatically
         DocprocService service = new DocprocService("failing-no-exception");

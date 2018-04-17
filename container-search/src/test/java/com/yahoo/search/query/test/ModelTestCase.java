@@ -4,26 +4,34 @@ package com.yahoo.search.query.test;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.Model;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+
 
 /**
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
-public class ModelTestCase extends junit.framework.TestCase {
+public class ModelTestCase {
 
     String oldConfigId;
 
+    @Before
     public void setUp() {
         oldConfigId = System.getProperty("config.id");
         System.setProperty("config.id", "file:src/test/java/com/yahoo/prelude/test/fieldtypes/field-info.cfg");
     }
 
-
+    @After
     public void tearDown() {
         if (oldConfigId == null)
             System.getProperties().remove("config.id");
@@ -31,6 +39,7 @@ public class ModelTestCase extends junit.framework.TestCase {
             System.setProperty("config.id", oldConfigId);
     }
 
+    @Test
     public void testCopyParameters() {
         Query q1 = new Query("?query=test1&filter=test2&defidx=content&default-index=lala&encoding=iso8859-1");
         Query q2 = q1.clone();
@@ -41,6 +50,7 @@ public class ModelTestCase extends junit.framework.TestCase {
         assertEquals("test1",r2.getQueryString());
     }
 
+    @Test
     public void testSetQuery() {
         Query q1 = new Query("?query=test1");
         Item r1 = q1.getModel().getQueryTree();
@@ -52,7 +62,7 @@ public class ModelTestCase extends junit.framework.TestCase {
         assertEquals(r1,q1.getModel().getQueryTree());
     }
 
-
+    @Test
     public void testSetofSetters() {
         Query q1 = new Query("?query=test1&encoding=iso-8859-1&language=en&default-index=subject&filter=" + enc("\u00C5"));
         Model r1 = q1.getModel();
@@ -71,11 +81,13 @@ public class ModelTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testSearchPath() {
         assertEquals("c6/r8",new Query("?query=test1&model.searchPath=c6/r8").getModel().getSearchPath());
         assertEquals("c6/r8",new Query("?query=test1&searchpath=c6/r8").getModel().getSearchPath());
     }
 
+    @Test
     public void testClone() {
         Query q= new Query();
         Model sr = new Model(q);
@@ -85,6 +97,7 @@ public class ModelTestCase extends junit.framework.TestCase {
         assertEquals(sr.getRestrict(),new LinkedHashSet<>(Arrays.asList(new String[]{"cheese","music","other"})));
     }
 
+    @Test
     public void testEquals() {
         Query q = new Query();
         Model sra = new Model(q);
@@ -99,6 +112,7 @@ public class ModelTestCase extends junit.framework.TestCase {
         assertNotSame(sra,srb);
     }
 
+    @Test
     public void testSearchRestrictQueryParameters() {
         Query query=new Query("?query=test&search=news,archive&restrict=fish,bird");
         assertTrue(query.getModel().getSources().contains("news"));

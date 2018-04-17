@@ -9,6 +9,7 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchers.CacheControlSearcher;
 import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.util.List;
 
@@ -19,7 +20,6 @@ import static com.yahoo.search.searchers.CacheControlSearcher.CACHE_CONTROL_HEAD
  *
  * @author frodelu
  */
-@SuppressWarnings("deprecation")
 public class CacheControlSearcherTestCase extends TestCase {
 
     private Searcher getDocSource() {
@@ -60,6 +60,7 @@ public class CacheControlSearcherTestCase extends TestCase {
         }
     }
 
+    @Test
     public void testNoHeader() {
         Chain<Searcher> chain = getSearchChain();
         Query query = new Query("?query=foo&custid=foo");
@@ -67,6 +68,7 @@ public class CacheControlSearcherTestCase extends TestCase {
         assertEquals(0, getCacheControlHeaders(result).size());
     }
 
+    @Test
     public void testInvalidAgeParams() {
         Chain<Searcher> chain = getSearchChain();
 
@@ -91,6 +93,7 @@ public class CacheControlSearcherTestCase extends TestCase {
         }
     }
 
+    @Test
     public void testMaxAge() {
         Chain<Searcher> chain = getSearchChain();
 
@@ -99,6 +102,7 @@ public class CacheControlSearcherTestCase extends TestCase {
         assertCacheHeaders(new String[]{"max-age=120"}, getCacheControlHeaders(result));
     }
 
+    @Test
     public void testNoCache() {
         Chain<Searcher> chain = getSearchChain();
 
@@ -111,6 +115,7 @@ public class CacheControlSearcherTestCase extends TestCase {
         assertCacheHeaders(new String[]{"no-cache"}, getCacheControlHeaders(result));
     }
 
+    @Test
     public void testStateWhileRevalidate() {
         Chain<Searcher> chain = getSearchChain();
 
@@ -119,6 +124,7 @@ public class CacheControlSearcherTestCase extends TestCase {
         assertCacheHeaders(new String[]{"stale-while-revalidate=3600"}, getCacheControlHeaders(result));
     }
 
+    @Test
     public void testStaleAndMaxAge() {
         Chain<Searcher> chain = getSearchChain();
 

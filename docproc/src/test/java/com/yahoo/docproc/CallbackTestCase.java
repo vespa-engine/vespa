@@ -2,26 +2,30 @@
 package com.yahoo.docproc;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.StringFieldValue;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class CallbackTestCase extends junit.framework.TestCase {
+public class CallbackTestCase {
+
     private DocumentPut put1;
     private DocumentPut put2;
     private List<DocumentOperation> operations = new ArrayList<>(2);
     DocprocService service;
 
-
+    @Before
     public void setUp() {
         service = new DocprocService("callback");
         service.setCallStack(new CallStack().addNext(new TestCallbackDp()));
@@ -36,6 +40,7 @@ public class CallbackTestCase extends junit.framework.TestCase {
         operations.add(new DocumentPut(type, new DocumentId("doc:callback:test:4")));
     }
 
+    @Test
     public void testProcessingWithCallbackSingleDoc() {
         ProcessingEndpoint drecv = new TestProcessingEndpoint();
 
@@ -45,6 +50,7 @@ public class CallbackTestCase extends junit.framework.TestCase {
         assertEquals(new StringFieldValue("received"), put1.getDocument().getFieldValue("status"));
     }
 
+    @Test
     public void testProcessingWithCallbackMultipleDocs() {
         ProcessingEndpoint drecv = new TestProcessingEndpoint();
 
@@ -62,6 +68,7 @@ public class CallbackTestCase extends junit.framework.TestCase {
         return processing;
     }
 
+    @Test
     public void testProcessingWithCallbackProcessing() {
         ProcessingEndpoint drecv = new TestProcessingEndpoint();
 
@@ -87,4 +94,5 @@ public class CallbackTestCase extends junit.framework.TestCase {
 
     public static class TestCallbackDp extends com.yahoo.docproc.SimpleDocumentProcessor {
     }
+
 }

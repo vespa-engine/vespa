@@ -4,12 +4,16 @@ package com.yahoo.search.query.profile.types.test;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
  */
-public class FieldTypeTestCase extends junit.framework.TestCase {
+public class FieldTypeTestCase {
 
+    @Test
     public void testConvertToFromString() {
         QueryProfileTypeRegistry registry=new QueryProfileTypeRegistry();
         registry.register(new QueryProfileType("foo"));

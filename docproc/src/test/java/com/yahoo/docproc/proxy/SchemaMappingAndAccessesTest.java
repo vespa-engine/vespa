@@ -33,9 +33,17 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.update.FieldUpdate;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @SuppressWarnings("unchecked")
-public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
+public class SchemaMappingAndAccessesTest {
 
     private Document getDoc() {
         DocumentType type = new DocumentType("album");
@@ -79,6 +87,7 @@ public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
         return doc;
     }
 
+    @Test
     public void testMappingArrays() {
         Document doc = getDoc();
         DocumentProcessor proc = new TestMappingArrayProcessor();
@@ -111,6 +120,7 @@ public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
         assertEquals(new StringFieldValue("tylden"), ((Array<StringFieldValue>) doc.getFieldValue("labels")).get(1));
     }
 
+    @Test
     public void testMappingStructsInArrays() {
         Document doc = getDoc();
         DocumentProcessor proc = new TestMappingStructInArrayProcessor();
@@ -183,7 +193,7 @@ public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
 
     }
 
-
+    @Test
     public void testMappingSpanTrees() {
         Document doc = getDoc();
         Map<String, String> fieldMap = new HashMap<>();
@@ -224,6 +234,7 @@ public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
         //assertSame(bona, mapped.getFieldValue("a"));
     }
 
+    @Test
     public void testMappedDoc() {
         Document doc = getDoc();
         Map<String, String> fieldMap = new HashMap<>();
@@ -268,6 +279,7 @@ public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
         assertEquals(mapped.getFieldValue("a"), null);
     }
 
+    @Test
     public void testMappedDocAPI() {
         Document doc = getDoc();
         Map<String, String> fieldMap = new HashMap<>();
@@ -310,7 +322,8 @@ public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
         mapped.setDataType(new DocumentType("newType"));
         assertEquals(doc.getDataType().getName(), "newType");
     }
-    
+
+    @Test
     public void testMappedDocUpdateAPI() {
         Document doc = getDoc();
         DocumentType type = doc.getDataType();
@@ -336,7 +349,8 @@ public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
         assertEquals(pup.size(), dud.size());
         assertEquals(pup.getWrappedDocumentOperation().getId().toString(), "doc:map:test:1");
     }
-    
+
+    @Test
     public void testMappedDocStruct() {
         StructDataType materialsStructType = new StructDataType("materialstype");
         materialsStructType.addField(new com.yahoo.document.Field("ceiling", DataType.STRING));
@@ -388,6 +402,7 @@ public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
         //assertEquals(new StringFieldValue("LevangerKommuneStyre"), mapped.getFieldValue("c"));
     }
 
+    @Test
     public void testSchemaMap() {
         SchemaMap map = new SchemaMap();
         map.addMapping("mychain", "com.yahoo.MyDocProc", "mydoctype", "inDoc1", "inProc1");
@@ -408,6 +423,7 @@ public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
         assertEquals("inDoc2", dMap.get("inProc2"));
     }
 
+    @Test
     public void testSchemaMapKey() {
         SchemaMap map = new SchemaMap(null);
         SchemaMap.SchemaMapKey key1 = map.new SchemaMapKey("chain", "docproc", "doctype", "from");
@@ -416,7 +432,8 @@ public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
         assertTrue(key1.equals(key1_1));
         assertFalse(key1.equals(key2));
     }
-    
+
+    @Test
     public void testSchemaMapConfig() {
         SchemaMap map = new SchemaMap(null);
         SchemamappingConfig.Builder scb = new SchemamappingConfig.Builder();
@@ -425,7 +442,8 @@ public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
         map.configure(new SchemamappingConfig(scb));
         assertEquals(map.chainMap("mychain", "mydocproc").get(new Pair<>("mydoctype", "myinprocessor")), "myindoc");
     }
-    
+
+    @Test
     public void testSchemaMapNoDocType() {
         SchemaMap map = new SchemaMap(null);
         map.addMapping("mychain", "com.yahoo.MyDocProc", null, "inDoc1", "inProc1");
@@ -438,6 +456,7 @@ public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
         assertEquals("inDoc2", dMap.get("inProc2"));
     }
 
+    @Test
     public void testProxyAndSecure() {
         DocumentProcessor procOK = new TestDPSecure();
         Map<Pair<String, String>, String> fieldMap = new HashMap<>();
@@ -449,6 +468,7 @@ public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
         assertEquals(proxyDoc.getFieldValue("title").toString(), "MyTitle MyTitle");
     }
 
+    @Test
     public void testProxyAndSecureSecureFailing() {
         DocumentProcessor procInsecure = new TestDPInsecure();
         Map<Pair<String, String>, String> fieldMap = new HashMap<>();
@@ -469,6 +489,7 @@ public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
      * To make it less likely to break schema mapping, we enforce that ProxyDocument does wrap every public
      * non-static, non-final method on Document and StructuredFieldValue
      */
+    @Test
     public void testVerifyProxyDocumentOverridesEverything() {
         List<Method> allPublicFromProxyDocument = new ArrayList<>();
         for (Method m : ProxyDocument.class.getDeclaredMethods()) {

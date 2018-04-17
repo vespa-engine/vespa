@@ -5,8 +5,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import junit.framework.TestCase;
-
 import com.yahoo.container.protect.Error;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.AndItem;
@@ -14,19 +12,28 @@ import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit testing of the searcher com.yahoo.search.querytransform.LegacyCombinator.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class LegacyCombinatorTestCase extends TestCase {
+public class LegacyCombinatorTestCase {
+
     Searcher searcher;
 
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         searcher = new LegacyCombinator();
     }
 
+    @Test
     public void testStraightForwardSearch() {
         Query q = new Query("?query=a&query.juhu=b");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -46,6 +53,7 @@ public class LegacyCombinatorTestCase extends TestCase {
         assertEquals("AND a c b", q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testNoBaseQuery() {
         Query q = new Query("?query.juhu=b");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -53,6 +61,7 @@ public class LegacyCombinatorTestCase extends TestCase {
         assertEquals("b", q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testIncompatibleNewAndOldQuery() {
         Query q = new Query("?query.juhu=b&defidx.juhu=a&query.juhu.defidx=c");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -63,6 +72,7 @@ public class LegacyCombinatorTestCase extends TestCase {
                 Error.INVALID_QUERY_PARAMETER.code, q.errors().get(0).getCode());
     }
 
+    @Test
     public void testNotCombinatorWithoutRoot() {
         Query q = new Query("?query.juhu=b&query.juhu.defidx=nalle&query.juhu.operator=not");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -74,6 +84,7 @@ public class LegacyCombinatorTestCase extends TestCase {
                 Error.INVALID_QUERY_PARAMETER.code, q.errors().get(0).getCode());
     }
 
+    @Test
     public void testRankCombinator() {
         Query q = new Query("?query.juhu=b&query.juhu.defidx=nalle&query.juhu.operator=rank");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -81,6 +92,7 @@ public class LegacyCombinatorTestCase extends TestCase {
         assertEquals("nalle:b", q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testRankAndNot() {
         Query q = new Query("?query.yahoo=2&query.yahoo.defidx=1&query.yahoo.operator=not&query.juhu=b&query.juhu.defidx=nalle&query.juhu.operator=rank");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -88,6 +100,7 @@ public class LegacyCombinatorTestCase extends TestCase {
         assertEquals("+nalle:b -1:2", q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testReqAndRankAndNot() {
         Query q = new Query("?query.yahoo=2&query.yahoo.defidx=1&query.yahoo.operator=not&query.juhu=b&query.juhu.defidx=nalle&query.juhu.operator=rank&query.bamse=z&query.bamse.defidx=y");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -95,6 +108,7 @@ public class LegacyCombinatorTestCase extends TestCase {
         assertEquals("+(RANK y:z nalle:b) -1:2", q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testReqAndRank() {
         Query q = new Query("?query.juhu=b&query.juhu.defidx=nalle&query.juhu.operator=rank&query.bamse=z&query.bamse.defidx=y");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -102,6 +116,7 @@ public class LegacyCombinatorTestCase extends TestCase {
         assertEquals("RANK y:z nalle:b", q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testReqAndNot() {
         Query q = new Query("?query.juhu=b&query.juhu.defidx=nalle&query.juhu.operator=not&query.bamse=z&query.bamse.defidx=y");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -109,6 +124,7 @@ public class LegacyCombinatorTestCase extends TestCase {
         assertEquals("+y:z -nalle:b", q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testNewAndOld() {
         Query q = new Query("?query.juhu=b&defidx.juhu=nalle&query.bamse=z&query.bamse.defidx=y");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -125,13 +141,14 @@ public class LegacyCombinatorTestCase extends TestCase {
                 nastierItems.remove(asPair);
             } else {
                 assertFalse("Got unexpected item in query tree: ("
-                        + word.getIndexName() + ", " + word.stringValue() + ")",
-                        true);
+                            + word.getIndexName() + ", " + word.stringValue() + ")",
+                           true);
             }
         }
         assertEquals("Not all expected items found in query.", 0, nastierItems.size());
     }
 
+    @Test
     public void testReqAndNotWithQuerySyntaxAll() {
         Query q = new Query("?query.juhu=b+c&query.juhu.defidx=nalle&query.juhu.operator=not&query.juhu.type=any&query.bamse=z&query.bamse.defidx=y");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -139,6 +156,7 @@ public class LegacyCombinatorTestCase extends TestCase {
         assertEquals("+y:z -(OR nalle:b nalle:c)", q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testDefaultIndexWithoutQuery() {
         Query q = new Query("?defidx.juhu=b");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -151,6 +169,7 @@ public class LegacyCombinatorTestCase extends TestCase {
     }
 
     private static class StringPair {
+
         public final String index;
         public final String value;
 
@@ -193,6 +212,7 @@ public class LegacyCombinatorTestCase extends TestCase {
 
     }
 
+    @Test
     public void testMultiPart() {
         Query q = new Query("?query=a&query.juhu=b&query.nalle=c");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -238,8 +258,6 @@ public class LegacyCombinatorTestCase extends TestCase {
             }
         }
         assertEquals("Not all expected items found in query.", 0, nastierItems.size());
-
     }
-
 
 }

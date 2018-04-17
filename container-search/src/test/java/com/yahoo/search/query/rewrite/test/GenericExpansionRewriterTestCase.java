@@ -8,13 +8,15 @@ import com.yahoo.search.searchchain.*;
 import com.yahoo.search.query.rewrite.*;
 import com.yahoo.search.query.rewrite.rewriters.*;
 import com.yahoo.search.query.rewrite.RewritesConfig;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Test Cases for GenericExpansionRewriter
  *
- * @author karenlee@yahoo-inc.com
+ * @author Karen Lee
  */
-public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
+public class GenericExpansionRewriterTestCase {
 
     private QueryRewriteSearcherTestUtils utils;
     private final String CONFIG_PATH = "file:src/test/java/com/yahoo/search/query/rewrite/test/" +
@@ -27,7 +29,8 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
      * Load the GenericExpansionRewriterSearcher and prepare the
      * execution object
      */
-    protected void setUp() {
+    @Before
+    public void setUp() {
         RewritesConfig config = QueryRewriteSearcherTestUtils.createConfigObj(CONFIG_PATH);
         HashMap<String, File> fileList = new HashMap<>();
         fileList.put(GenericExpansionRewriter.GENERIC_EXPAND_DICT, new File(GENERIC_EXPAND_DICT_PATH));
@@ -37,13 +40,10 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
         utils = new QueryRewriteSearcherTestUtils(execution);
     }
 
-    public GenericExpansionRewriterTestCase(String name) {
-        super(name);
-    }
-
     /**
      * MaxRewrites=3, PartialPhraseMatch is on, type=adv case
      */
+    @Test
     public void testPartialPhraseMaxRewriteAdvType() {
         utils.assertRewrittenQuery("?query=(modern new york city travel phone number) OR (travel agency) OR travel&type=adv&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true&" +
@@ -56,6 +56,7 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
     /**
      * PartialPhraseMatch is off, type=adv case
      */
+    @Test
     public void testPartialPhraseNoMaxRewriteAdvType() {
         utils.assertRewrittenQuery("?query=(modern new york city travel phone number) OR (travel agency) OR travel&type=adv&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
@@ -66,6 +67,7 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
     /**
      * No MaxRewrites, PartialPhraseMatch is off, type=adv, added filter case
      */
+    @Test
     public void testFullPhraseNoMaxRewriteAdvTypeFilter() {
         utils.assertRewrittenQuery("?query=ca OR (modern new york city travel phone number) OR (travel agency) OR travel&" +
                                    "type=adv&filter=citystate:santa clara ca&" +
@@ -77,6 +79,7 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
     /**
      * MaxRewrites=0 (i.e No MaxRewrites), PartialPhraseMatch is on, type=adv, added filter case
      */
+    @Test
     public void testPartialPhraseNoMaxRewriteAdvTypeFilter() {
         utils.assertRewrittenQuery("?query=ca OR (modern new york city travel phone number) OR (travel agency) OR travel&" +
                                    "type=adv&filter=citystate:santa clara ca&" +
@@ -92,6 +95,7 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
     /**
      * No MaxRewrites, PartialPhraseMatch is off, single word, added filter case
      */
+    @Test
     public void testFullPhraseNoMaxRewriteSingleWordFilter() {
         utils.assertRewrittenQuery("?query=ca&" +
                                    "filter=citystate:santa clara ca&" +
@@ -102,6 +106,7 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
     /**
      * No MaxRewrites, PartialPhraseMatch is on, single word, added filter case
      */
+    @Test
     public void testPartialPhraseNoMaxRewriteSingleWordFilter() {
         utils.assertRewrittenQuery("?query=ca&" +
                                    "filter=citystate:santa clara ca&" +
@@ -112,6 +117,7 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
     /**
      * No MaxRewrites, PartialPhraseMatch is off, multi word, added filter case
      */
+    @Test
     public void testFullPhraseNoMaxRewriteMultiWordFilter() {
         utils.assertRewrittenQuery("?query=travel agency&" +
                                    "filter=citystate:santa clara ca&" +
@@ -122,6 +128,7 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
     /**
      * No MaxRewrites, PartialPhraseMatch is on, multi word, added filter case
      */
+    @Test
     public void testPartialPhraseNoMaxRewriteMultiWordFilter() {
         utils.assertRewrittenQuery("?query=modern new york city travel phone number&" +
                                    "filter=citystate:santa clara ca&" +
@@ -134,6 +141,7 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
     /**
      * No MaxRewrites, PartialPhraseMatch is off, single word
      */
+    @Test
     public void testFullPhraseNoMaxRewriteSingleWord() {
         utils.assertRewrittenQuery("?query=ca&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
@@ -143,6 +151,7 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
     /**
      * No MaxRewrites, PartialPhraseMatch is on, single word
      */
+    @Test
     public void testPartialPhraseNoMaxRewriteSingleWord() {
         utils.assertRewrittenQuery("?query=ca&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
@@ -152,6 +161,7 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
     /**
      * No MaxRewrites, PartialPhraseMatch is off, multi word
      */
+    @Test
     public void testFullPhraseNoMaxRewriteMultiWord() {
         utils.assertRewrittenQuery("?query=travel agency&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
@@ -161,6 +171,7 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
     /**
      * No MaxRewrites, PartialPhraseMatch is off, multi word, no full match
      */
+    @Test
     public void testFullPhraseNoMaxRewriteMultiWordNoMatch() {
         utils.assertRewrittenQuery("?query=nyc travel agency&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
@@ -170,6 +181,7 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
     /**
      * No MaxRewrites, PartialPhraseMatch is on, multi word
      */
+    @Test
     public void testPartialPhraseNoMaxRewriteMultiWord() {
         utils.assertRewrittenQuery("?query=modern new york city travel phone number&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
@@ -182,6 +194,7 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
      * Dictionary contain the word "travel agency", the word "agency" and the word "travel"
      * Should rewrite travel but not travel agency in this case
      */
+    @Test
     public void testPartialPhraseMultiWordRankTree() {
         utils.assertRewrittenQuery("?query=travel RANK agency&type=adv&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
@@ -193,10 +206,12 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
      * Dictionary contain the word "travel agency", the word "agency" and the word "travel"
      * Should rewrite travel but not travel agency in this case
      */
+    @Test
     public void testFullPhraseMultiWordRankTree() {
         utils.assertRewrittenQuery("?query=travel RANK agency&type=adv&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
                                    "query 'RANK (OR tr travel) agency'");
     }
+
 }
 

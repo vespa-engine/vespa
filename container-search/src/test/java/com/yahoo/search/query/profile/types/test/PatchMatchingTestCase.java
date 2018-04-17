@@ -4,14 +4,19 @@ package com.yahoo.search.query.profile.types.test;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.QueryProfileType;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * Tests that matching query profiles by path name works
  *
  * @author bratseth
  */
-public class PatchMatchingTestCase extends junit.framework.TestCase {
+public class PatchMatchingTestCase {
 
+    @Test
     public void testPatchMatching() {
         QueryProfileType type=new QueryProfileType("type");
 
@@ -43,6 +48,7 @@ public class PatchMatchingTestCase extends junit.framework.TestCase {
         assertNull(registry.findQueryProfile("abee"));
     }
 
+    @Test
     public void testNoPatchMatching() {
         QueryProfileType type=new QueryProfileType("type");
 
@@ -75,6 +81,7 @@ public class PatchMatchingTestCase extends junit.framework.TestCase {
     }
 
     /** Check that the path matching property is inherited to subtypes */
+    @Test
     public void testPatchMatchingInheritance() {
         QueryProfileType type=new QueryProfileType("type");
         QueryProfileType subType=new QueryProfileType("subType");
@@ -109,6 +116,7 @@ public class PatchMatchingTestCase extends junit.framework.TestCase {
     }
 
     /** Check that the path matching works with versioned profiles */
+    @Test
     public void testPatchMatchingVersions() {
         QueryProfileType type=new QueryProfileType("type");
 
@@ -148,6 +156,7 @@ public class PatchMatchingTestCase extends junit.framework.TestCase {
         assertNull(registry.findQueryProfile("abee"));
     }
 
+    @Test
     public void testQuirkyNames() {
         QueryProfileType type=new QueryProfileType("type");
 
@@ -181,6 +190,5 @@ public class PatchMatchingTestCase extends junit.framework.TestCase {
         assertEquals("/a",registry.findQueryProfile("/a/bee").getId().getName());
         assertNull(registry.findQueryProfile("abee"));
     }
-
 
 }

@@ -19,14 +19,21 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Tests basic search chain execution functionality
  *
  * @author bratseth
  */
-@SuppressWarnings("deprecation")
-public class ExecutionTestCase extends junit.framework.TestCase {
+public class ExecutionTestCase {
 
+    @Test
     public void testLinearExecutions()  {
         // Make a chain
         List<Searcher> searchers1=new ArrayList<>();
@@ -58,6 +65,7 @@ public class ExecutionTestCase extends junit.framework.TestCase {
         assertNotNull(result2.hits().get("searcher6-1"));
     }
 
+    @Test
     public void testNestedExecution() {
         // Make a chain
         List<Searcher> searchers1=new ArrayList<>();
@@ -81,6 +89,7 @@ public class ExecutionTestCase extends junit.framework.TestCase {
         assertNotNull(result1.hits().get("searcher3-2-filled"));
     }
 
+    @Test
     public void testContextCacheSingleLengthSearchChain() {
         IndexFacts[] contextsBefore = new IndexFacts[1];
         IndexFacts[] contextsAfter = new IndexFacts[1];
@@ -93,6 +102,7 @@ public class ExecutionTestCase extends junit.framework.TestCase {
         assertSame(contextsBefore[0], contextsAfter[0]);
     }
 
+    @Test
     public void testContextCache() {
         IndexFacts[] contextsBefore = new IndexFacts[5];
         IndexFacts[] contextsAfter = new IndexFacts[5];
@@ -118,6 +128,7 @@ public class ExecutionTestCase extends junit.framework.TestCase {
         assertSame(contextsBefore[3], contextsBefore[4]);
     }
 
+    @Test
     public void testContextCacheMoreSearchers() {
         IndexFacts[] contextsBefore = new IndexFacts[7];
         IndexFacts[] contextsAfter = new IndexFacts[7];
@@ -298,6 +309,5 @@ public class ExecutionTestCase extends junit.framework.TestCase {
         }
 
     }
-
 
 }

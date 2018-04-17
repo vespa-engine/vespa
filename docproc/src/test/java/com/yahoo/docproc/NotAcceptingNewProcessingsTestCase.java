@@ -1,11 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc;
 
-/**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- */
-public class NotAcceptingNewProcessingsTestCase extends junit.framework.TestCase {
+import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+/**
+ * @author Einar M R Rosenvinge
+ */
+public class NotAcceptingNewProcessingsTestCase {
+
+    @Test
     public void testNotAccepting() {
         DocprocService service = new DocprocService("habla");
         service.setCallStack(new CallStack());
@@ -24,4 +30,5 @@ public class NotAcceptingNewProcessingsTestCase extends junit.framework.TestCase
         }
         assertEquals(1, service.getQueueSize());
     }
+
 }

@@ -7,14 +7,21 @@ import java.util.NoSuchElementException;
 import com.yahoo.search.result.DeepHitIterator;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Ensure that the {@link DeepHitIterator} works as intended.
  *
- * @author  havardpe
+ * @author havardpe
  */
-public class DeepHitIteratorTestCase extends junit.framework.TestCase {
+public class DeepHitIteratorTestCase {
 
+    @Test
     public void testEmpty() {
         HitGroup hits = new HitGroup();
         Iterator<Hit> it = hits.deepIterator();
@@ -27,6 +34,7 @@ public class DeepHitIteratorTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testRemove() {
         HitGroup hits = new HitGroup();
         hits.add(new Hit("foo"));
@@ -53,6 +61,7 @@ public class DeepHitIteratorTestCase extends junit.framework.TestCase {
         assertFalse(it.hasNext());
     }
 
+    @Test
     public void testShallow() {
         HitGroup hits = new HitGroup();
         hits.add(new Hit("foo"));
@@ -69,6 +78,7 @@ public class DeepHitIteratorTestCase extends junit.framework.TestCase {
         assertFalse(it.hasNext());
     }
 
+    @Test
     public void testDeep() {
         HitGroup grandParent = new HitGroup();
         grandParent.add(new Hit("a"));
@@ -103,6 +113,7 @@ public class DeepHitIteratorTestCase extends junit.framework.TestCase {
         assertFalse(it.hasNext());
     }
 
+    @Test
     public void testFirstHitIsGroup() {
         HitGroup root = new HitGroup();
         HitGroup group = new HitGroup();
@@ -118,6 +129,7 @@ public class DeepHitIteratorTestCase extends junit.framework.TestCase {
         assertFalse(it.hasNext());
     }
 
+    @Test
     public void testSecondHitIsGroup() {
         HitGroup root = new HitGroup();
         root.add(new Hit("foo"));
@@ -133,6 +145,7 @@ public class DeepHitIteratorTestCase extends junit.framework.TestCase {
         assertFalse(it.hasNext());
     }
 
+    @Test
     public void testOrder() {
         HitGroup root = new HitGroup();
         MyHitGroup group = new MyHitGroup();
@@ -169,4 +182,5 @@ public class DeepHitIteratorTestCase extends junit.framework.TestCase {
             return super.unorderedIterator();
         }
     }
+
 }

@@ -5,14 +5,18 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.test.QueryTestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests that dimension arguments in queries are transferred correctly to dimension values
  *
  * @author bratseth
  */
-public class RequestContextPropertiesTestCase extends junit.framework.TestCase {
+public class RequestContextPropertiesTestCase {
 
+    @Test
     public void testIt() {
         QueryProfile p=new QueryProfile("test");
         p.setDimensions(new String[] {"x"});

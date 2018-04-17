@@ -7,12 +7,17 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentType;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class FailingWithErrorTestCase extends junit.framework.TestCase {
+public class FailingWithErrorTestCase {
 
+    @Test
     public void testErrors() {
         DocprocService service = new DocprocService("failing");
         DocumentProcessor first = new ErrorThrowingProcessor();
@@ -34,7 +39,6 @@ public class FailingWithErrorTestCase extends junit.framework.TestCase {
             assertEquals(0, service.getQueueSize());
         }
         assertEquals(0, service.getQueueSize());
-
     }
 
     private class ErrorThrowingProcessor extends DocumentProcessor {

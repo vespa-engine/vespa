@@ -4,13 +4,18 @@ package com.yahoo.search.query.test;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.Presentation;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
-public class PresentationTestCase extends  junit.framework.TestCase {
+public class PresentationTestCase {
 
-
+    @Test
     public void testClone() {
         Query q= new Query("");
         Presentation p = new Presentation(q);
@@ -24,11 +29,7 @@ public class PresentationTestCase extends  junit.framework.TestCase {
         pc.getHighlight().getHighlightItems();
         assertTrue(pc.getHighlight().getHighlightItems().containsKey("date"));
         assertFalse(pc.getHighlight().getHighlightItems().containsKey("title"));
-
         assertEquals(p,pc);
-
     }
-
-
 
 }

@@ -8,13 +8,15 @@ import com.yahoo.search.searchchain.*;
 import com.yahoo.search.query.rewrite.*;
 import com.yahoo.search.query.rewrite.rewriters.*;
 import com.yahoo.search.query.rewrite.RewritesConfig;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Test Cases for NameRewriter
  *
- * @author karenlee@yahoo-inc.com
+ * @author Karen Lee
  */
-public class NameRewriterTestCase extends junit.framework.TestCase {
+public class NameRewriterTestCase {
 
     private QueryRewriteSearcherTestUtils utils;
     private final String CONFIG_PATH = "file:src/test/java/com/yahoo/search/query/rewrite/test/" +
@@ -27,7 +29,8 @@ public class NameRewriterTestCase extends junit.framework.TestCase {
      * Load the NameRewriterSearcher and prepare the
      * execution object
      */
-    protected void setUp() {
+    @Before
+    public void setUp() {
         RewritesConfig config = QueryRewriteSearcherTestUtils.createConfigObj(CONFIG_PATH);
         HashMap<String, File> fileList = new HashMap<>();
         fileList.put(NameRewriter.NAME_ENTITY_EXPAND_DICT, new File(NAME_ENTITY_EXPAND_DICT_PATH));
@@ -37,13 +40,10 @@ public class NameRewriterTestCase extends junit.framework.TestCase {
         utils = new QueryRewriteSearcherTestUtils(execution);
     }
 
-    public NameRewriterTestCase(String name) {
-        super(name);
-    }
-
     /**
      * RewritesAsEquiv and OriginalAsUnit are on
      */
+    @Test
     public void testRewritesAsEquivAndOriginalAsUnit() {
         utils.assertRewrittenQuery("?query=will smith&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_EQUIV + "=true&" +
@@ -58,6 +58,7 @@ public class NameRewriterTestCase extends junit.framework.TestCase {
     /**
      * RewritesAsEquiv is on
      */
+    @Test
     public void testRewritesAsEquiv() {
         utils.assertRewrittenQuery("?query=will smith&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_EQUIV + "=true&",
@@ -72,6 +73,7 @@ public class NameRewriterTestCase extends junit.framework.TestCase {
      * Complex query with more than two levels for RewritesAsEquiv is on case
      * Should not rewrite
      */
+    @Test
     public void testComplextQueryRewritesAsEquiv() {
         utils.assertRewrittenQuery("?query=((will smith) OR (willl smith)) AND (tom cruise)&type=adv&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_EQUIV + "=true&",
@@ -81,6 +83,7 @@ public class NameRewriterTestCase extends junit.framework.TestCase {
     /**
      * Single word query for RewritesAsEquiv and OriginalAsUnit on case
      */
+    @Test
     public void testSingleWordForRewritesAsEquivAndOriginalAsUnit() {
         utils.assertRewrittenQuery("?query=obama&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_EQUIV + "=true&" +
@@ -97,6 +100,7 @@ public class NameRewriterTestCase extends junit.framework.TestCase {
     /**
      * RewritesAsUnitEquiv and OriginalAsUnitEquiv are on
      */
+    @Test
     public void testRewritesAsUnitEquivAndOriginalAsUnitEquiv() {
         utils.assertRewrittenQuery("?query=will smith&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
@@ -113,6 +117,7 @@ public class NameRewriterTestCase extends junit.framework.TestCase {
     /**
      * Single word query for RewritesAsUnitEquiv and OriginalAsUnitEquiv on case
      */
+    @Test
     public void testSingleWordForRewritesAsUnitEquivAndOriginalAsUnitEquiv() {
         utils.assertRewrittenQuery("?query=obama&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
@@ -132,6 +137,7 @@ public class NameRewriterTestCase extends junit.framework.TestCase {
      * Boosting only query (n/a as rewrite in FSA)
      * for RewritesAsEquiv and OriginalAsUnit on case
      */
+    @Test
     public void testBoostingQueryForRewritesAsEquivAndOriginalAsUnit() {
         utils.assertRewrittenQuery("?query=angelina jolie&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_EQUIV + "=true&" +
@@ -143,6 +149,7 @@ public class NameRewriterTestCase extends junit.framework.TestCase {
      * No match in FSA for the query
      * RewritesAsEquiv and OriginalAsUnit on case
      */
+    @Test
     public void testFSANoMatchForRewritesAsEquivAndOriginalAsUnit() {
         utils.assertRewrittenQuery("?query=tom cruise&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_EQUIV + "=true&" +
@@ -153,6 +160,7 @@ public class NameRewriterTestCase extends junit.framework.TestCase {
     /**
      * RewritesAsUnitEquiv is on
      */
+    @Test
     public void testRewritesAsUnitEquiv() {
         utils.assertRewrittenQuery("?query=will smith&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
@@ -167,6 +175,7 @@ public class NameRewriterTestCase extends junit.framework.TestCase {
     /**
      * RewritesAsUnitEquiv is on and MaxRewrites is set to 2
      */
+    @Test
     public void testRewritesAsUnitEquivAndMaxRewrites() {
         utils.assertRewrittenQuery("?query=will smith&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
@@ -175,5 +184,6 @@ public class NameRewriterTestCase extends junit.framework.TestCase {
                                    "query 'OR (AND will smith) \"will smith movies\" " +
                                    "\"will smith news\"'");
     }
+
 }
 

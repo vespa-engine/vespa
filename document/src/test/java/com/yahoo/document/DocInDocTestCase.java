@@ -3,19 +3,20 @@ package com.yahoo.document;
 
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.serialization.*;
+import com.yahoo.document.serialization.DocumentDeserializer;
+import com.yahoo.document.serialization.DocumentDeserializerFactory;
+import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.io.GrowableByteBuffer;
-import junit.framework.TestCase;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
-public class DocInDocTestCase extends TestCase {
+public class DocInDocTestCase {
 
     @Test
     public void testDocInDoc() {
@@ -47,6 +48,6 @@ public class DocInDocTestCase extends TestCase {
 
         assertEquals(outer, outerDeserialized);
         assertNotSame(outer, outerDeserialized);
-
     }
+
 }

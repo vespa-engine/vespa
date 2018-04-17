@@ -6,13 +6,17 @@ import com.yahoo.search.searchchain.*;
 import com.yahoo.search.intent.model.*;
 import com.yahoo.search.query.rewrite.*;
 import com.yahoo.search.query.rewrite.rewriters.*;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.fail;
 
 /**
  * Test Cases for MisspellRewriter
  *
- * @author karenlee@yahoo-inc.com
+ * @author Karen Lee
  */
-public class MisspellRewriterTestCase extends junit.framework.TestCase {
+public class MisspellRewriterTestCase {
 
     private QueryRewriteSearcherTestUtils utils;
     public final String REWRITER_NAME = MisspellRewriter.REWRITER_NAME;
@@ -21,20 +25,18 @@ public class MisspellRewriterTestCase extends junit.framework.TestCase {
      * Load the QueryRewriteSearcher and prepare the
      * execution object
      */
-    protected void setUp() {
+    @Before
+    public void setUp() {
         MisspellRewriter searcher = new MisspellRewriter();
         Execution execution = QueryRewriteSearcherTestUtils.createExecutionObj(searcher);
         utils = new QueryRewriteSearcherTestUtils(execution);
-    }
-
-    public MisspellRewriterTestCase(String name) {
-        super(name);
     }
 
     /**
      * QSSRewrite and QSSSuggest are on
      * QLAS returns spell correction: qss_rw=0.9 qss_sugg=1.0
      */
+    @Test
     public void testQSSRewriteQSSSuggestWithRewrite() {
         IntentModel intentModel = new IntentModel(
                                   utils.createInterpretation("will smith rw", 0.9,
@@ -53,6 +55,7 @@ public class MisspellRewriterTestCase extends junit.framework.TestCase {
      * QSSRewrite is on
      * QLAS returns spell correction: qss_rw=0.9 qss_rw=0.9 qss_sugg=1.0
      */
+    @Test
     public void testQSSRewriteWithRewrite() {
         IntentModel intentModel = new IntentModel(
                                   utils.createInterpretation("will smith rw1", 0.9,
@@ -72,6 +75,7 @@ public class MisspellRewriterTestCase extends junit.framework.TestCase {
      * QSSSuggest is on
      * QLAS returns spell correction: qss_rw=1.0 qss_sugg=0.9 qss_sugg=0.8
      */
+    @Test
     public void testQSSSuggWithRewrite() {
         IntentModel intentModel = new IntentModel(
                                   utils.createInterpretation("will smith rw", 1.0,
@@ -91,6 +95,7 @@ public class MisspellRewriterTestCase extends junit.framework.TestCase {
      * QSSRewrite and QSSSuggest are off
      * QLAS returns spell correction: qss_rw=1.0 qss_sugg=1.0
      */
+    @Test
     public void testFeautureOffWithRewrite() {
         IntentModel intentModel = new IntentModel(
                                   utils.createInterpretation("will smith rw", 1.0,
@@ -107,6 +112,7 @@ public class MisspellRewriterTestCase extends junit.framework.TestCase {
      * QSSRewrite and QSSSuggest are on
      * QLAS returns no spell correction
      */
+    @Test
     public void testQSSRewriteQSSSuggWithoutRewrite() {
         IntentModel intentModel = new IntentModel(
                                   utils.createInterpretation("use diff query for testing", 1.0,
@@ -125,6 +131,7 @@ public class MisspellRewriterTestCase extends junit.framework.TestCase {
      * IntentModel is null
      * It should throw exception
      */
+    @Test
     public void testNullIntentModelException() {
         try {
             RewriterUtils.getSpellCorrected(new Query("willl smith"), true, true);
@@ -132,5 +139,6 @@ public class MisspellRewriterTestCase extends junit.framework.TestCase {
         } catch (RuntimeException e) {
         }
     }
+
 }
 

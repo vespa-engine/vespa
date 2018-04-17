@@ -5,18 +5,24 @@ import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.DoubleFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.HashMap;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author thomasg
  */
-public class DocumentCalculatorTestCase extends junit.framework.TestCase {
+public class DocumentCalculatorTestCase {
 
     DocumentType testDocType = null;
     DocumentTypeManager docMan;
     Document doc;
 
+    @Before
     public void setUp() {
         docMan = new DocumentTypeManager();
         testDocType = new DocumentType("testdoc");
@@ -35,74 +41,83 @@ public class DocumentCalculatorTestCase extends junit.framework.TestCase {
         doc.setFieldValue(testDocType.getField("doubleattr"), new DoubleFieldValue(25.0));
     }
 
+    @Test
     public void testConstant() throws Exception {
         DocumentCalculator calculator = new DocumentCalculator("4.0");
-        assertEquals(4.0, calculator.evaluate(doc, new HashMap<String, Object>()));
+        assertEquals(4.0, calculator.evaluate(doc, new HashMap<>()));
     }
 
+    @Test
     public void testSimple() throws Exception {
         DocumentCalculator calculator = new DocumentCalculator("(3 + 5) / 2");
-        assertEquals(4.0, calculator.evaluate(doc, new HashMap<String, Object>()));
+        assertEquals(4.0, calculator.evaluate(doc, new HashMap<>()));
     }
 
+    @Test
     public void testDivideByZero() throws Exception {
         DocumentCalculator calculator = new DocumentCalculator("(3 + 5) / 0");
         try {
-            System.out.println(calculator.evaluate(doc, new HashMap<String, Object>()));
+            System.out.println(calculator.evaluate(doc, new HashMap<>()));
             assertTrue(false);
         } catch (IllegalArgumentException e) {
             // ok
         }
     }
 
+    @Test
     public void testModByZero() throws Exception {
         DocumentCalculator calculator = new DocumentCalculator("(3 + 5) % 0");
         try {
-            System.out.println(calculator.evaluate(doc, new HashMap<String, Object>()));
+            System.out.println(calculator.evaluate(doc, new HashMap<>()));
             assertTrue(false);
         } catch (IllegalArgumentException e) {
             // ok
         }
     }
 
+    @Test
     public void testFieldDivideByZero() throws Exception {
         try {
             DocumentCalculator calculator = new DocumentCalculator("(testdoc.byteattr + testdoc.intattr) / testdoc.doubleattr");
             doc.setFieldValue("doubleattr", new DoubleFieldValue(0.0));
-            calculator.evaluate(doc, new HashMap<String, Object>());
+            calculator.evaluate(doc, new HashMap<>());
             assertTrue(false);
         } catch (IllegalArgumentException e) {
             // ok
         }
     }
 
+    @Test
     public void testVariables() throws Exception {
-        HashMap<String, Object> vars = new HashMap<String, Object>();
+        HashMap<String, Object> vars = new HashMap<>();
         vars.put("x", new Double(3.0));
         vars.put("y", new Double(5.0));
         DocumentCalculator calculator = new DocumentCalculator("($x + $y) / 2");
         assertEquals(4.0, calculator.evaluate(doc, vars));
     }
 
+    @Test
     public void testFields() throws Exception {
         DocumentCalculator calculator = new DocumentCalculator("(testdoc.byteattr + testdoc.intattr) / testdoc.doubleattr");
         assertEquals(20.0, calculator.evaluate(doc, new HashMap<String, Object>()));
     }
 
+    @Test
     public void testMissingField() throws Exception {
         try {
             DocumentCalculator calculator = new DocumentCalculator("(testdoc.nosuchattribute + testdoc.intattr) / testdoc.doubleattr");
-            calculator.evaluate(doc, new HashMap<String, Object>());
+            calculator.evaluate(doc, new HashMap<>());
             assertTrue(false);
         } catch (IllegalArgumentException e) {
             // ok
         }
     }
 
+    @Test
     public void testFieldNotSet() throws Exception {
         try {
             DocumentCalculator calculator = new DocumentCalculator("(testdoc.missingattr + testdoc.intattr) / testdoc.doubleattr");
-            calculator.evaluate(doc, new HashMap<String, Object>());
+            calculator.evaluate(doc, new HashMap<>());
             assertTrue(false);
         } catch (IllegalArgumentException e) {
             // ok

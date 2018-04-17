@@ -8,17 +8,18 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.AsyncExecution;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.FutureResult;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 /**
  * Externally provided test for async execution of search chains.
  *
- * @author <a href="mailto:pthomas@yahoo-inc.com">Peter Thomas</a>
+ * @author Peter Thomas
  */
-public class VespaAsyncSearcherTest extends TestCase {
+public class VespaAsyncSearcherTest {
+
     private static class FirstSearcher extends Searcher {
 
         @Override
@@ -46,13 +47,13 @@ public class VespaAsyncSearcherTest extends TestCase {
 
     }
 
+    @Test
     public void testAsyncExecution() {
-        Chain<Searcher> chain = new Chain<>(new FirstSearcher(),
-                new SecondSearcher());
-        Execution execution = new Execution(chain,
-                Execution.Context.createContextStub(null));
+        Chain<Searcher> chain = new Chain<>(new FirstSearcher(), new SecondSearcher());
+        Execution execution = new Execution(chain, Execution.Context.createContextStub(null));
         Query query = new Query();
         // fails with exception on old versions
         execution.search(query);
     }
+
 }

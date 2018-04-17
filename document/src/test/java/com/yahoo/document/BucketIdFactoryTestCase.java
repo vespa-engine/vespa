@@ -5,18 +5,18 @@ import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.BucketId;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.idstring.*;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Date: Sep 7, 2007
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
+ * @author Håkon Humberset
  */
-public class BucketIdFactoryTestCase extends junit.framework.TestCase {
+public class BucketIdFactoryTestCase {
 
-    public BucketIdFactoryTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testNormalUsage() {
         BucketIdFactory factory = new BucketIdFactory();
         assertEquals(BucketId.COUNT_BITS, factory.getCountBitCount());
@@ -43,6 +43,7 @@ public class BucketIdFactoryTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testBucketGeneration() {
         BucketIdFactory factory = new BucketIdFactory(32, 26, 6);
         DocumentId doc1 = new DocumentId(new DocIdString("ns", "spec"));
@@ -99,6 +100,7 @@ public class BucketIdFactoryTestCase extends junit.framework.TestCase {
     }
 
     //Actually a BucketId testcase ...
+    @Test
     public void testBidContainsBid() {
         BucketId bid = new BucketId(18, 0x123456789L);
 
@@ -109,6 +111,7 @@ public class BucketIdFactoryTestCase extends junit.framework.TestCase {
         assert(!bid.contains(new BucketId(16, 0x123456789L)));
     }
 
+    @Test
     public void testBidContainsDocId() {
         DocumentId docId = new DocumentId("userdoc:recovery:18:99999");
         BucketIdFactory factory = new BucketIdFactory(32, 26, 6);
@@ -122,6 +125,7 @@ public class BucketIdFactoryTestCase extends junit.framework.TestCase {
         assert(!bid.contains(docId, factory));
     }
 
+    @Test
     public void testBucketIdSerializationAndCompare() {
         BucketId bid = new BucketId(18, 0x123456789L);
 

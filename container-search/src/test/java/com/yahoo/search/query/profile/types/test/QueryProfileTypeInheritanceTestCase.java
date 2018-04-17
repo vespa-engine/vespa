@@ -9,17 +9,25 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
  */
-public class QueryProfileTypeInheritanceTestCase extends junit.framework.TestCase {
+public class QueryProfileTypeInheritanceTestCase {
 
     private QueryProfileTypeRegistry registry;
 
     private QueryProfileType type, typeStrict, user, userStrict;
 
-    protected @Override void setUp() {
+    @Before
+    public void setUp() {
         type=new QueryProfileType(new ComponentId("testtype"));
         typeStrict=new QueryProfileType(new ComponentId("testtypeStrict"));
         typeStrict.setStrict(true);
@@ -54,6 +62,7 @@ public class QueryProfileTypeInheritanceTestCase extends junit.framework.TestCas
         user.addField(new FieldDescription("myUserInteger",FieldType.fromString("integer",registry)));
     }
 
+    @Test
     public void testInheritance() {
         type.inherited().add(user);
         type.freeze();
@@ -73,6 +82,7 @@ public class QueryProfileTypeInheritanceTestCase extends junit.framework.TestCas
         assertEquals("38", ctest.get("myUnknownInteger"));
     }
 
+    @Test
     public void testInheritanceStrict() {
         typeStrict.inherited().add(userStrict);
         typeStrict.freeze();
@@ -95,6 +105,7 @@ public class QueryProfileTypeInheritanceTestCase extends junit.framework.TestCas
         assertNull(test.get("myUnknownInteger"));
     }
 
+    @Test
     public void testStrictIsInherited() {
         type.inherited().add(userStrict);
         type.freeze();

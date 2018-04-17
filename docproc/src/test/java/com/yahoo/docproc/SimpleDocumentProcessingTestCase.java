@@ -3,6 +3,10 @@ package com.yahoo.docproc;
 
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.docproc.Accesses.Field.Tree;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Tests the basic operation of the docproc service
@@ -11,14 +15,11 @@ import com.yahoo.docproc.Accesses.Field.Tree;
  */
 public class SimpleDocumentProcessingTestCase extends DocumentProcessingAbstractTestCase {
 
-    public SimpleDocumentProcessingTestCase(String name) {
-        super(name);
-    }
-
     /**
      * Tests chaining of some processors, and execution of the processors
      * on some documents
      */
+    @Test
     public void testSimpleProcessing() {
         // Set up service programmatically
         DocprocService service = new DocprocService("simple");
@@ -31,6 +32,7 @@ public class SimpleDocumentProcessingTestCase extends DocumentProcessingAbstract
         assertProcessingWorks(service);
     }
 
+    @Test
     public void testAnnotationBasic() {
         Accesses accesses = MyDocProc.class.getAnnotation(Accesses.class);
         After after = MyDocProc.class.getAnnotation(After.class);
@@ -58,5 +60,6 @@ public class SimpleDocumentProcessingTestCase extends DocumentProcessingAbstract
             return null;
         }
     }
+
 }
 

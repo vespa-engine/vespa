@@ -8,22 +8,25 @@ import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.StringFieldValue;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests a document processing where some processings fail permanently
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M. R. Rosenvinge</a>
+ * @author Einar M. R. Rosenvinge
  */
-public class FailingPermanentlyDocumentProcessingTestCase extends junit.framework.TestCase {
-
-    public FailingPermanentlyDocumentProcessingTestCase(String name) {
-        super(name);
-    }
+public class FailingPermanentlyDocumentProcessingTestCase {
 
     /**
      * Tests chaining of some processors, and execution of the processors
      * on some documents
      */
+    @Test
     public void testFailingProcessing() {
         // Set up service programmatically
         DocprocService service = new DocprocService("failing-permanently");

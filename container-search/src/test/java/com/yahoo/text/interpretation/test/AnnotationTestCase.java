@@ -7,18 +7,23 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import junit.framework.TestCase;
-
 import com.yahoo.text.interpretation.AnnotationClass;
 import com.yahoo.text.interpretation.Annotations;
 import com.yahoo.text.interpretation.Interpretation;
 import com.yahoo.text.interpretation.Span;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
-public class AnnotationTestCase extends TestCase {
+public class AnnotationTestCase {
 
+    @Test
     public void testSimpleAnnotations() {
         Interpretation i= new Interpretation("new york hotel");
         i.annotate("sentence").put("isValid",true);
@@ -31,6 +36,7 @@ public class AnnotationTestCase extends TestCase {
         assertNotNull(i.get("sentence"));
     }
 
+    @Test
     public void testAnnotationAPI() {
         Interpretation a = new Interpretation("new york hotel");
 
@@ -80,6 +86,7 @@ public class AnnotationTestCase extends TestCase {
     }
 
     //The following testcase is a test with the api on a use_case, no cornercases here
+    @Test
     public void testUsability() {
 
         Interpretation interpretation = new Interpretation("new york crab pizza");
@@ -118,6 +125,6 @@ public class AnnotationTestCase extends TestCase {
             assertEquals(2459115,woe_id);
 
         }
-
     }
+
 }

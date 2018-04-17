@@ -10,19 +10,24 @@ import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.AsyncExecution;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.FutureResult;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author bratseth
  */
-public class AsyncExecutionOfOneChainTestCase extends TestCase {
+public class AsyncExecutionOfOneChainTestCase {
+
+    private static final double delta = 0.0000001;
 
     /** Tests having a result with some slow source data which should pass directly to rendering */
+    @Test
     public void testParallelExecutionOfOneChain() {
         // Setup
         Chain<Searcher> mainChain=new Chain<>(new ParallelExecutor(),new ResultProcessor(),new RegularProvider());
@@ -32,12 +37,12 @@ public class AsyncExecutionOfOneChainTestCase extends TestCase {
 
         // Verify
         assertEquals("Received 2 hits from 3 threads",3*2,result.hits().size());
-        assertEquals(1.0, result.hits().get("thread-0:hit-0").getRelevance().getScore());
-        assertEquals(1.0, result.hits().get("thread-1:hit-0").getRelevance().getScore());
-        assertEquals(1.0, result.hits().get("thread-2:hit-0").getRelevance().getScore());
-        assertEquals(0.5, result.hits().get("thread-0:hit-1").getRelevance().getScore());
-        assertEquals(0.5, result.hits().get("thread-1:hit-1").getRelevance().getScore());
-        assertEquals(0.5, result.hits().get("thread-2:hit-1").getRelevance().getScore());
+        assertEquals(1.0, result.hits().get("thread-0:hit-0").getRelevance().getScore(), delta);
+        assertEquals(1.0, result.hits().get("thread-1:hit-0").getRelevance().getScore(), delta);
+        assertEquals(1.0, result.hits().get("thread-2:hit-0").getRelevance().getScore(), delta);
+        assertEquals(0.5, result.hits().get("thread-0:hit-1").getRelevance().getScore(), delta);
+        assertEquals(0.5, result.hits().get("thread-1:hit-1").getRelevance().getScore(), delta);
+        assertEquals(0.5, result.hits().get("thread-2:hit-1").getRelevance().getScore(), delta);
     }
 
     private class ParallelExecutor extends Searcher {

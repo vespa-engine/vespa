@@ -14,25 +14,28 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.querytransform.QueryCombinator;
 import com.yahoo.search.searchchain.Execution;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Unit testing of the searcher com.yahoo.search.querytransform.QueryCombinator.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-public class QueryCombinatorTestCase extends TestCase {
+public class QueryCombinatorTestCase {
+
     Searcher searcher;
 
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    @SuppressWarnings("deprecation")
+    public void setUp() throws Exception {
         searcher = new QueryCombinator(new ComponentId("combinationTest"));
     }
 
-    protected void tearDown() throws Exception {
-        super.tearDown();
-    }
-
+    @Test
     public void testStraightForwardSearch() {
         Query q = new Query("?query=a&query.juhu=b");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -52,6 +55,7 @@ public class QueryCombinatorTestCase extends TestCase {
         assertEquals("AND a c b", q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testNoBaseQuery() {
         Query q = new Query("?query.juhu=b");
         Execution e = new Execution(searcher,  Execution.Context.createContextStub(new IndexFacts()));
@@ -59,6 +63,7 @@ public class QueryCombinatorTestCase extends TestCase {
         assertEquals("b", q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testDefaultIndexWithoutQuery() {
         Query q = new Query("?defidx.juhu=b");
         Execution e = new Execution(searcher, Execution.Context.createContextStub(new IndexFacts()));
@@ -71,6 +76,7 @@ public class QueryCombinatorTestCase extends TestCase {
     }
 
     private static class StringPair {
+
         public final String index;
         public final String value;
 
@@ -113,6 +119,7 @@ public class QueryCombinatorTestCase extends TestCase {
 
     }
 
+    @Test
     public void testMultiPart() {
         Query q = new Query("?query=a&query.juhu=b&query.nalle=c");
         Execution e = new Execution(searcher,  Execution.Context.createContextStub(new IndexFacts()));
@@ -158,8 +165,6 @@ public class QueryCombinatorTestCase extends TestCase {
             }
         }
         assertEquals("Not all expected items found in query.", 0, nastierItems.size());
-
     }
-
 
 }

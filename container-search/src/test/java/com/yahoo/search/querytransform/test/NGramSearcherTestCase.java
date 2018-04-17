@@ -8,11 +8,9 @@ import java.util.Map;
 
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.Language;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
-import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.hitfield.JSONString;
 import com.yahoo.prelude.hitfield.XMLString;
 import com.yahoo.prelude.query.AndItem;
@@ -30,18 +28,23 @@ import com.yahoo.search.querytransform.NGramSearcher;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Before;
+import org.junit.Test;
 
 import static com.yahoo.search.searchchain.Execution.Context.createContextStub;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
  */
-public class NGramSearcherTestCase extends junit.framework.TestCase {
+public class NGramSearcherTestCase {
 
     private Searcher searcher;
     private IndexFacts indexFacts;
 
-    @Override
+    @Before
     public void setUp() {
         searcher=new NGramSearcher(new SimpleLinguistics());
         indexFacts=new IndexFacts();
@@ -88,6 +91,7 @@ public class NGramSearcherTestCase extends junit.framework.TestCase {
         return indexFacts;
     }
 
+    @Test
     public void testMixedDocTypes() {
         final IndexFacts mixedSetup = getMixedSetup();
         {
@@ -117,6 +121,7 @@ public class NGramSearcherTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testMixedClusters() {
         final IndexFacts mixedSetup = getMixedSetup();
         {
@@ -141,41 +146,48 @@ public class NGramSearcherTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testClusterMappingWithMixedDoctypes() {
         final IndexFacts mixedSetup = getMixedSetup();
 
     }
 
+    @Test
     public void testNGramRewritingMixedQuery() {
         Query q=new Query("?query=foo+gram3:engul+test:bar");
         new Execution(searcher,Execution.Context.createContextStub(indexFacts)).search(q);
         assertEquals("AND foo (AND gram3:eng gram3:ngu gram3:gul) test:bar",q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testNGramRewritingNGramOnly() {
         Query q=new Query("?query=gram3:engul");
         new Execution(searcher,Execution.Context.createContextStub(indexFacts)).search(q);
         assertEquals("AND gram3:eng gram3:ngu gram3:gul",q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testNGramRewriting2NGramsOnly() {
         Query q=new Query("?query=gram3:engul+gram2:123");
         new Execution(searcher,Execution.Context.createContextStub(indexFacts)).search(q);
         assertEquals("AND (AND gram3:eng gram3:ngu gram3:gul) (AND gram2:12 gram2:23)",q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testNGramRewritingShortOnly() {
         Query q=new Query("?query=gram3:en");
         new Execution(searcher,Execution.Context.createContextStub(indexFacts)).search(q);
         assertEquals("gram3:en",q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testNGramRewritingShortInMixes() {
         Query q=new Query("?query=test:a+gram3:en");
         new Execution(searcher,Execution.Context.createContextStub(indexFacts)).search(q);
         assertEquals("AND test:a gram3:en",q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testNGramRewritingPhrase() {
         Query q=new Query("?query=gram3:%22engul+a+holi%22");
         new Execution(searcher,Execution.Context.createContextStub(indexFacts)).search(q);
@@ -186,12 +198,14 @@ public class NGramSearcherTestCase extends junit.framework.TestCase {
      * Note that single-term phrases are simplified to just the term at parse time,
      * so the ngram rewriter cannot know to keep the grams as a phrase in this case.
      */
+    @Test
     public void testNGramRewritingPhraseSingleTerm() {
         Query q=new Query("?query=gram3:%22engul%22");
         new Execution(searcher,Execution.Context.createContextStub(indexFacts)).search(q);
         assertEquals("AND gram3:eng gram3:ngu gram3:gul",q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testNGramRewritingAdditionalTermInfo() {
         Query q=new Query("?query=gram3:engul!50+foo+gram2:123!150");
         new Execution(searcher,Execution.Context.createContextStub(indexFacts)).search(q);
@@ -214,23 +228,27 @@ public class NGramSearcherTestCase extends junit.framework.TestCase {
         assertFalse(gram.isFromQuery());
     }
 
+    @Test
     public void testNGramRewritingExplicitDefault() {
         Query q=new Query("?query=default:engul");
         new Execution(searcher,Execution.Context.createContextStub(indexFacts)).search(q);
         assertEquals("AND default:eng default:ngu default:gul",q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testNGramRewritingImplicitDefault() {
         Query q=new Query("?query=engul");
         new Execution(searcher,Execution.Context.createContextStub(indexFacts)).search(q);
         assertEquals("AND eng ngu gul",q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testGramsWithSegmentation() {
         assertGramsWithSegmentation(new Chain<>(searcher));
         assertGramsWithSegmentation(new Chain<>(new CJKSearcher(),searcher));
         assertGramsWithSegmentation(new Chain<>(searcher,new CJKSearcher()));
     }
+
     public void assertGramsWithSegmentation(Chain<Searcher> chain) {
         // "first" "second" and "third" are segments in the "test" language
         Item item = parseQuery("gram14:firstsecondthird", Query.Type.ANY);
@@ -241,11 +259,13 @@ public class NGramSearcherTestCase extends junit.framework.TestCase {
         assertEquals("AND gram14:firstsecondthi gram14:irstsecondthir gram14:rstsecondthird",q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testGramsWithSegmentationSingleSegment() {
         assertGramsWithSegmentationSingleSegment(new Chain<>(searcher));
         assertGramsWithSegmentationSingleSegment(new Chain<>(new CJKSearcher(),searcher));
         assertGramsWithSegmentationSingleSegment(new Chain<>(searcher,new CJKSearcher()));
     }
+
     public void assertGramsWithSegmentationSingleSegment(Chain<Searcher> chain) {
         // "first" "second" and "third" are segments in the "test" language
         Item item = parseQuery("gram14:first", Query.Type.ANY);
@@ -256,11 +276,13 @@ public class NGramSearcherTestCase extends junit.framework.TestCase {
         assertEquals("gram14:first",q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testGramsWithSegmentationSubstringSegmented() {
         assertGramsWithSegmentationSubstringSegmented(new Chain<>(searcher));
         assertGramsWithSegmentationSubstringSegmented(new Chain<>(new CJKSearcher(),searcher));
         assertGramsWithSegmentationSubstringSegmented(new Chain<>(searcher,new CJKSearcher()));
     }
+
     public void assertGramsWithSegmentationSubstringSegmented(Chain<Searcher> chain) {
         // "first" "second" and "third" are segments in the "test" language
         Item item = parseQuery("gram14:afirstsecondthirdo", Query.Type.ANY);
@@ -271,11 +293,13 @@ public class NGramSearcherTestCase extends junit.framework.TestCase {
         assertEquals("AND gram14:afirstsecondth gram14:firstsecondthi gram14:irstsecondthir gram14:rstsecondthird gram14:stsecondthirdo",q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testGramsWithSegmentationMixed() {
         assertGramsWithSegmentationMixed(new Chain<>(searcher));
         assertGramsWithSegmentationMixed(new Chain<>(new CJKSearcher(),searcher));
         assertGramsWithSegmentationMixed(new Chain<>(searcher,new CJKSearcher()));
     }
+
     public void assertGramsWithSegmentationMixed(Chain<Searcher> chain) {
         // "first" "second" and "third" are segments in the "test" language
         Item item = parseQuery("a gram14:afirstsecondthird b gram14:hi", Query.Type.ALL);
@@ -286,11 +310,13 @@ public class NGramSearcherTestCase extends junit.framework.TestCase {
         assertEquals("AND a (AND gram14:afirstsecondth gram14:firstsecondthi gram14:irstsecondthir gram14:rstsecondthird) b gram14:hi",q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testGramsWithSegmentationMixedAndPhrases() {
         assertGramsWithSegmentationMixedAndPhrases(new Chain<>(searcher));
         assertGramsWithSegmentationMixedAndPhrases(new Chain<>(new CJKSearcher(),searcher));
         assertGramsWithSegmentationMixedAndPhrases(new Chain<>(searcher,new CJKSearcher()));
     }
+
     public void assertGramsWithSegmentationMixedAndPhrases(Chain<Searcher> chain) {
         // "first" "second" and "third" are segments in the "test" language
         Item item = parseQuery("a gram14:\"afirstsecondthird b hi\"", Query.Type.ALL);
@@ -301,6 +327,7 @@ public class NGramSearcherTestCase extends junit.framework.TestCase {
         assertEquals("AND a gram14:\"afirstsecondth firstsecondthi irstsecondthir rstsecondthird b hi\"",q.getModel().getQueryTree().toString());
     }
 
+    @Test
     public void testNGramRecombining() {
         Query q=new Query("?query=ignored");
         Result r=new Execution(new Chain<>(searcher,new MockBackend1()),createContextStub(indexFacts)).search(q);
@@ -363,7 +390,5 @@ public class NGramSearcherTestCase extends junit.framework.TestCase {
         }
 
     }
-
-
 
 }

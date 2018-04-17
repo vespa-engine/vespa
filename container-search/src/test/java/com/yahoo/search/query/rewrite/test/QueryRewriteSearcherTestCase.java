@@ -10,13 +10,15 @@ import com.yahoo.search.intent.model.*;
 import com.yahoo.search.query.rewrite.RewritesConfig;
 import com.yahoo.search.query.rewrite.*;
 import com.yahoo.search.query.rewrite.rewriters.*;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Generic Test Cases for QueryRewriteSearcher
  *
- * @author karenlee@yahoo-inc.com
+ * @author Karen Lee
  */
-public class QueryRewriteSearcherTestCase extends junit.framework.TestCase {
+public class QueryRewriteSearcherTestCase {
 
     private QueryRewriteSearcherTestUtils utils;
     private final String NAME_REWRITER_CONFIG_PATH = "file:src/test/java/com/yahoo/search/query/rewrite/test/" +
@@ -34,7 +36,8 @@ public class QueryRewriteSearcherTestCase extends junit.framework.TestCase {
      * Load the QueryRewriteSearcher and prepare the
      * execution object
      */
-    protected void setUp() {
+    @Before
+    public void setUp() {
         // Instantiate Name Rewriter
         RewritesConfig config = QueryRewriteSearcherTestUtils.createConfigObj(NAME_REWRITER_CONFIG_PATH);
         HashMap<String, File> fileList = new HashMap<>();
@@ -53,14 +56,11 @@ public class QueryRewriteSearcherTestCase extends junit.framework.TestCase {
         utils = new QueryRewriteSearcherTestUtils(execution);
     }
 
-    public QueryRewriteSearcherTestCase(String name) {
-        super(name);
-    }
-
     /**
      * Invalid FSA config path
      * Query will be passed to next rewriter
      */
+    @Test
     public void testInvalidFSAConfigPath() {
         // Instantiate Name Rewriter with fake FSA path
         RewritesConfig config = QueryRewriteSearcherTestUtils.createConfigObj(FAKE_FSA_CONFIG_PATH);
@@ -89,7 +89,8 @@ public class QueryRewriteSearcherTestCase extends junit.framework.TestCase {
      * IntentModel is null and rewriter throws exception
      * It should skip to the next rewriter
      */
-     public void testExceptionInRewriter() {
+    @Test
+    public void testExceptionInRewriter() {
         utils.assertRewrittenQuery("?query=will smith&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
@@ -108,6 +109,7 @@ public class QueryRewriteSearcherTestCase extends junit.framework.TestCase {
      * Two rewrites in chain
      * Query will be rewritten twice
      */
+    @Test
     public void testTwoRewritersInChain() {
         IntentModel intentModel = new IntentModel(
                                   utils.createInterpretation("wills smith", 0.9,
@@ -129,5 +131,6 @@ public class QueryRewriteSearcherTestCase extends junit.framework.TestCase {
                                    "\"will smith biography\"'",
                                    intentModel);
     }
+
 }
 
