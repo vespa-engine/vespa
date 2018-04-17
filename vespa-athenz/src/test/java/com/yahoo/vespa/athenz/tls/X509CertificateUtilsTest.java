@@ -1,6 +1,5 @@
 package com.yahoo.vespa.athenz.tls;
 
-import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import javax.security.auth.x500.X500Principal;

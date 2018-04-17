@@ -68,7 +68,7 @@ public class X509CertificateUtils {
         }
     }
 
-    public static List<String> getCommonNames(X509Certificate certificate) {
+    public static List<String> getSubjectCommonNames(X509Certificate certificate) {
         return getCommonNames(certificate.getSubjectX500Principal());
     }
 

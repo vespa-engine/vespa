@@ -53,7 +53,7 @@ public class AthenzIdentities {
     }
 
     private static String getCommonName(X509Certificate certificate) {
-        List<String> commonNames = X509CertificateUtils.getCommonNames(certificate);
+        List<String> commonNames = X509CertificateUtils.getSubjectCommonNames(certificate);
         if (commonNames.size() != 1) {
             String subjectName = certificate.getSubjectX500Principal().getName();
             throw new IllegalArgumentException("Expected single CN in certificate's subject: " + subjectName);

@@ -82,7 +82,7 @@ public class AuthorizationFilter implements SecurityRequestFilter {
 
     /** Read common name (CN) from certificate */
     private static Optional<String> commonName(X509Certificate certificate) {
-        return X509CertificateUtils.getCommonNames(certificate).stream().findFirst();
+        return X509CertificateUtils.getSubjectCommonNames(certificate).stream().findFirst();
     }
 
 }
