@@ -4,11 +4,13 @@ package com.yahoo.prelude.hitfield;
 /**
  * Represents an element of a hit property
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public interface FieldPart {
-    public abstract boolean isFinal();
-    public abstract boolean isToken();
-    public abstract String getContent();
-    public abstract String toString();
+
+    boolean isFinal();
+    boolean isToken();
+    String getContent();
+    String toString();
+
 }

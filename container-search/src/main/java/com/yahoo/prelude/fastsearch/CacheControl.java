@@ -12,7 +12,7 @@ import com.yahoo.processing.request.CompoundName;
 /**
  * The cache control logic for FastSearcher
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class CacheControl {
 
