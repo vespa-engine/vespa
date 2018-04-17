@@ -49,7 +49,6 @@ public class Environment {
     private final List<String> logstashNodes;
     private final Optional<String> coredumpFeedEndpoint;
     private final NodeType nodeType;
-    private final String defaultFlavor;
     private final String cloud;
     private final ContainerEnvironmentResolver containerEnvironmentResolver;
 
@@ -68,7 +67,6 @@ public class Environment {
              getLogstashNodesFromEnvironment(),
              Optional.of(getEnvironmentVariable(COREDUMP_FEED_ENDPOINT)),
              NodeType.host,
-             "d-2-8-50",
              getEnvironmentVariable(CLOUD),
              new DefaultContainerEnvironmentResolver());
     }
@@ -83,14 +81,12 @@ public class Environment {
                         List<String> logstashNodes,
                         Optional<String> coreDumpFeedEndpoint,
                         NodeType nodeType,
-                        String defaultFlavor,
                         String cloud,
                         ContainerEnvironmentResolver containerEnvironmentResolver) {
         Objects.requireNonNull(configServerConfig, "configServerConfig cannot be null");
         Objects.requireNonNull(environment, "environment cannot be null");
         Objects.requireNonNull(region, "region cannot be null");
         Objects.requireNonNull(system, "system cannot be null");
-        Objects.requireNonNull(defaultFlavor, "default flavor cannot be null");
         Objects.requireNonNull(cloud, "cloud cannot be null");
 
         this.configServerInfo = new ConfigServerInfo(configServerConfig);
@@ -103,7 +99,6 @@ public class Environment {
         this.logstashNodes = logstashNodes;
         this.coredumpFeedEndpoint = coreDumpFeedEndpoint;
         this.nodeType = nodeType;
-        this.defaultFlavor = defaultFlavor;
         this.cloud = cloud;
         this.containerEnvironmentResolver = containerEnvironmentResolver;
     }
@@ -215,8 +210,6 @@ public class Environment {
 
     public NodeType getNodeType() { return nodeType; }
 
-    public String getDefaultFlavor() { return defaultFlavor; }
-
     public String getCloud() { return cloud; }
 
     public ContainerEnvironmentResolver getContainerEnvironmentResolver() {
@@ -238,7 +231,6 @@ public class Environment {
         private List<String> logstashNodes = Collections.emptyList();
         private Optional<String> coredumpFeedEndpoint = Optional.empty();
         private NodeType nodeType = NodeType.tenant;
-        private String defaultFlavor;
         private String cloud;
         private ContainerEnvironmentResolver containerEnvironmentResolver;
 
@@ -297,11 +289,6 @@ public class Environment {
             return this;
         }
 
-        public Builder defaultFlavor(String defaultFlavor) {
-            this.defaultFlavor = defaultFlavor;
-            return this;
-        }
-
         public Builder cloud(String cloud) {
             this.cloud = cloud;
             return this;
@@ -318,7 +305,6 @@ public class Environment {
                                    logstashNodes,
                                    coredumpFeedEndpoint,
                                    nodeType,
-                                   defaultFlavor,
                                    cloud,
                                    Optional.ofNullable(containerEnvironmentResolver).orElseGet(DefaultContainerEnvironmentResolver::new));
         }

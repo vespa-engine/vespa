@@ -66,7 +66,6 @@ public class DockerTester implements AutoCloseable {
                 .environment("prod")
                 .system("main")
                 .pathResolver(new PathResolver(pathToVespaHome, Paths.get("/tmp"), Paths.get("/tmp")))
-                .defaultFlavor("d-2-8-50")
                 .cloud("mycloud")
                 .build();
         Clock clock = Clock.systemUTC();

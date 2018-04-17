@@ -90,7 +90,6 @@ public class NodeAgentImplTest {
             .parentHostHostname("parent.host.name.yahoo.com")
             .inetAddressResolver(new InetAddressResolver())
             .pathResolver(pathResolver)
-            .defaultFlavor("d-2-8-50")
             .cloud("mycloud")
             .build();
 
