@@ -17,7 +17,6 @@ import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -56,7 +55,7 @@ public class RealNodeRepository implements NodeRepository {
         final GetNodesResponse nodesForHost = configServerApi.get(path, GetNodesResponse.class);
 
         return nodesForHost.nodes.stream()
-                .map(RealNodeRepository::createNodeRepositoryNode)
+                .map(RealNodeRepository::createNodeSpec)
                 .collect(Collectors.toList());
     }
 
@@ -72,12 +71,12 @@ public class RealNodeRepository implements NodeRepository {
     @Override
     public Optional<NodeSpec> getNode(String hostName) {
         try {
-            GetNodesResponse.Node nodeResponse = configServerApi.get("/nodes/v2/node/" + hostName,
-                    GetNodesResponse.Node.class);
+            NodeRepositoryNode nodeResponse = configServerApi.get("/nodes/v2/node/" + hostName,
+                    NodeRepositoryNode.class);
             if (nodeResponse == null) {
                 return Optional.empty();
             }
-            return Optional.of(createNodeRepositoryNode(nodeResponse));
+            return Optional.of(createNodeSpec(nodeResponse));
         } catch (HttpException.NotFoundException | HttpException.ForbiddenException e) {
             // Return empty on 403 in addition to 404 as it likely means we're trying to access a node that
             // has been deleted. When a node is deleted, the parent-child relationship no longer exists and
@@ -126,59 +125,6 @@ public class RealNodeRepository implements NodeRepository {
         return acls;
     }
 
-    private static NodeSpec createNodeRepositoryNode(GetNodesResponse.Node node)
-            throws IllegalArgumentException, NullPointerException {
-        Objects.requireNonNull(node.nodeType, "Unknown node type");
-        NodeType nodeType = NodeType.valueOf(node.nodeType);
-
-        Objects.requireNonNull(node.nodeState, "Unknown node state");
-        Node.State nodeState = Node.State.valueOf(node.nodeState);
-        if (nodeState == Node.State.active) {
-            Objects.requireNonNull(node.wantedVespaVersion, "Unknown vespa version for active node");
-            Objects.requireNonNull(node.wantedDockerImage, "Unknown docker image for active node");
-            Objects.requireNonNull(node.wantedRestartGeneration, "Unknown wantedRestartGeneration for active node");
-            Objects.requireNonNull(node.currentRestartGeneration, "Unknown currentRestartGeneration for active node");
-        }
-
-        String hostName = Objects.requireNonNull(node.hostname, "hostname is null");
-
-        NodeSpec.Owner owner = null;
-        if (node.owner != null) {
-            owner = new NodeSpec.Owner(node.owner.tenant, node.owner.application, node.owner.instance);
-        }
-
-        NodeSpec.Membership membership = null;
-        if (node.membership != null) {
-            membership = new NodeSpec.Membership(node.membership.clusterType, node.membership.clusterId,
-                    node.membership.group, node.membership.index, node.membership.retired);
-        }
-
-        return new NodeSpec(
-                hostName,
-                Optional.ofNullable(node.wantedDockerImage).map(DockerImage::new),
-                Optional.ofNullable(node.currentDockerImage).map(DockerImage::new),
-                nodeState,
-                nodeType,
-                node.nodeFlavor,
-                node.nodeCanonicalFlavor,
-                Optional.ofNullable(node.wantedVespaVersion),
-                Optional.ofNullable(node.vespaVersion),
-                Optional.ofNullable(node.allowedToBeDown),
-                Optional.ofNullable(owner),
-                Optional.ofNullable(membership),
-                Optional.ofNullable(node.wantedRestartGeneration),
-                Optional.ofNullable(node.currentRestartGeneration),
-                node.wantedRebootGeneration,
-                node.currentRebootGeneration,
-                node.minCpuCores,
-                node.minMainMemoryAvailableGb,
-                node.minDiskAvailableGb,
-                node.fastDisk,
-                node.ipAddresses,
-                Optional.ofNullable(node.hardwareDivergence),
-                Optional.ofNullable(node.parentHostname));
-    }
-
     @Override
     public void updateNodeAttributes(final String hostName, final NodeAttributes nodeAttributes) {
         UpdateNodeAttributesResponse response = configServerApi.patch(
@@ -205,5 +151,59 @@ public class RealNodeRepository implements NodeRepository {
             return;
         }
         throw new RuntimeException("Unexpected message " + response.message + " " + response.errorCode);
+    }
+
+
+    private static NodeSpec createNodeSpec(NodeRepositoryNode node)
+            throws IllegalArgumentException, NullPointerException {
+        Objects.requireNonNull(node.type, "Unknown node type");
+        NodeType nodeType = NodeType.valueOf(node.type);
+
+        Objects.requireNonNull(node.state, "Unknown node state");
+        Node.State nodeState = Node.State.valueOf(node.state);
+        if (nodeState == Node.State.active) {
+            Objects.requireNonNull(node.wantedVespaVersion, "Unknown vespa version for active node");
+            Objects.requireNonNull(node.wantedDockerImage, "Unknown docker image for active node");
+            Objects.requireNonNull(node.restartGeneration, "Unknown restartGeneration for active node");
+            Objects.requireNonNull(node.currentRestartGeneration, "Unknown currentRestartGeneration for active node");
+        }
+
+        String hostName = Objects.requireNonNull(node.hostname, "hostname is null");
+
+        NodeSpec.Owner owner = null;
+        if (node.owner != null) {
+            owner = new NodeSpec.Owner(node.owner.tenant, node.owner.application, node.owner.instance);
+        }
+
+        NodeSpec.Membership membership = null;
+        if (node.membership != null) {
+            membership = new NodeSpec.Membership(node.membership.clusterType, node.membership.clusterId,
+                    node.membership.group, node.membership.index, node.membership.retired);
+        }
+
+        return new NodeSpec(
+                hostName,
+                Optional.ofNullable(node.wantedDockerImage).map(DockerImage::new),
+                Optional.ofNullable(node.currentDockerImage).map(DockerImage::new),
+                nodeState,
+                nodeType,
+                node.flavor,
+                node.canonicalFlavor,
+                Optional.ofNullable(node.wantedVespaVersion),
+                Optional.ofNullable(node.vespaVersion),
+                Optional.ofNullable(node.allowedToBeDown),
+                Optional.ofNullable(owner),
+                Optional.ofNullable(membership),
+                Optional.ofNullable(node.restartGeneration),
+                Optional.ofNullable(node.currentRestartGeneration),
+                node.rebootGeneration,
+                node.currentRebootGeneration,
+                node.minCpuCores,
+                node.minMainMemoryAvailableGb,
+                node.minDiskAvailableGb,
+                node.fastDisk,
+                node.ipAddresses,
+                Optional.ofNullable(node.hardwareDivergence),
+                Optional.ofNullable(node.parentHostname));
     }
 }
