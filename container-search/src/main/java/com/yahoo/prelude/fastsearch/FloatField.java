@@ -9,9 +9,10 @@ import com.yahoo.data.access.Inspector;
 
 
 /**
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias M\u00f8lster Lidal</a>
+ * @author Mathias Mølster Lidal
  */
 public class FloatField extends DocsumField {
+
     static final double EMPTY_VALUE = Float.NaN;
 
     public FloatField(String name) {
@@ -26,10 +27,12 @@ public class FloatField extends DocsumField {
         }
     }
 
+    @Override
     public Object decode(ByteBuffer b) {
         return convert(b.getFloat());
     }
 
+    @Override
     public Object decode(ByteBuffer b, FastHit hit) {
         Object field = decode(b);
         hit.setField(name, field);
@@ -46,4 +49,5 @@ public class FloatField extends DocsumField {
     public Object convert(Inspector value) {
         return convert((float)value.asDouble(EMPTY_VALUE));
     }
+
 }
