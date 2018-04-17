@@ -419,7 +419,8 @@ public final class ContainerCluster
     @NonNull
     public SearchChains getSearchChains() {
         if (containerSearch == null)
-            throw new IllegalStateException("Null search components!");
+            throw new IllegalStateException("Search components not found in container cluster '" + getSubId() +
+                                            "': Add <search/> to the cluster in services.xml");
         return containerSearch.getChains();
     }
 
@@ -479,7 +480,8 @@ public final class ContainerCluster
     @NonNull
     public DocprocChains getDocprocChains() {
         if (containerDocproc == null)
-            throw new IllegalStateException("Null docproc components!");
+            throw new IllegalStateException("Document processing components not found in container cluster '" + getSubId() +
+                                            "': Add <document-processing/> to the cluster in services.xml");
         return containerDocproc.getChains();
     }
 
