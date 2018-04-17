@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 
 /**
  * Automagically handles (de)serialization based on 1:1 message fields and identifier names.
