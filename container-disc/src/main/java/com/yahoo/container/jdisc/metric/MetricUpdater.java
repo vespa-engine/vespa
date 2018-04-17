@@ -4,6 +4,7 @@ package com.yahoo.container.jdisc.metric;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
 
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -34,13 +35,13 @@ public class MetricUpdater extends AbstractComponent {
     private final Scheduler scheduler;
 
     @Inject
-    public MetricUpdater(Metric metric) {
-        this(new TimerScheduler(), metric);
+    public MetricUpdater(Metric metric, ContainerWatchdogMetrics containerWatchdogMetrics) {
+        this(new TimerScheduler(), metric, containerWatchdogMetrics);
     }
 
-    MetricUpdater(Scheduler scheduler, Metric metric) {
+    MetricUpdater(Scheduler scheduler, Metric metric, ContainerWatchdogMetrics containerWatchdogMetrics) {
         this.scheduler = scheduler;
-        scheduler.schedule(new UpdaterTask(metric), Duration.ofSeconds(10));
+        scheduler.schedule(new UpdaterTask(metric, containerWatchdogMetrics), Duration.ofSeconds(10));
     }
 
     @Override
@@ -87,9 +88,11 @@ public class MetricUpdater extends AbstractComponent {
 
         private final Runtime runtime = Runtime.getRuntime();
         private final Metric metric;
+        private final ContainerWatchdogMetrics containerWatchdogMetrics;
 
-        public UpdaterTask(Metric metric) {
+        public UpdaterTask(Metric metric, ContainerWatchdogMetrics containerWatchdogMetrics) {
             this.metric = metric;
+            this.containerWatchdogMetrics = containerWatchdogMetrics;
         }
 
         @SuppressWarnings("deprecation")
@@ -106,6 +109,7 @@ public class MetricUpdater extends AbstractComponent {
             metric.set(TOTAL_MEMORY_BYTES, totalMemory, null);
             metric.set(MEMORY_MAPPINGS_COUNT, count_mappings(), null);
             metric.set(OPEN_FILE_DESCRIPTORS, count_open_files(), null);
+            containerWatchdogMetrics.emitMetrics(metric);
         }
 
     }

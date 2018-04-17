@@ -2,6 +2,7 @@
 package com.yahoo.container.jdisc.metric;
 
 import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -20,7 +21,9 @@ public class MetricUpdaterTest {
     @Test
     public void metrics_are_updated_in_scheduler_cycle() throws InterruptedException {
         Metric metric = mock(Metric.class);
-        new MetricUpdater(new MockScheduler(), metric);
+        ContainerWatchdogMetrics containerWatchdogMetrics = mock(ContainerWatchdogMetrics.class);
+        new MetricUpdater(new MockScheduler(), metric, containerWatchdogMetrics);
+        verify(containerWatchdogMetrics, times(1)).emitMetrics(any());
         verify(metric, times(8)).set(anyString(), any(), any());
     }
 
