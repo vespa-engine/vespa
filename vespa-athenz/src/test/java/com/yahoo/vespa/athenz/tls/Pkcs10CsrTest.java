@@ -7,6 +7,7 @@ import java.security.KeyPair;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -19,8 +20,8 @@ public class Pkcs10CsrTest {
     public void can_read_subject_alternative_names() {
         X500Principal subject = new X500Principal("CN=subject");
         KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
-        String san1 = "san1.com";
-        String san2 = "san2.com";
+        SubjectAlternativeName san1 = new SubjectAlternativeName(DNS_NAME, "san1.com");
+        SubjectAlternativeName san2 = new SubjectAlternativeName(DNS_NAME, "san2.com");
         Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(subject, keypair, SignatureAlgorithm.SHA256_WITH_RSA)
                 .addSubjectAlternativeName(san1)
                 .addSubjectAlternativeName(san2)
